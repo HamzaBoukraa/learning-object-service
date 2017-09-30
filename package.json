@@ -1,0 +1,24 @@
+{
+  "name": "learning-outcome-suggestion",
+  "version": "1.0.0",
+  "description": "Semantic search to recommend related learning outcomes in Bloomin Onion",
+  "main": "src/lo-suggestion.js",
+  "scripts": {
+    "start": "node src/lo-suggestion.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ksherb1/learning-outcome-suggestion.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ksherb1/learning-outcome-suggestion/issues"
+  },
+  "homepage": "https://github.com/ksherb1/learning-outcome-suggestion#readme",
+  "dependencies": {
+    "mongodb": "^2.2.31",
+    "socket.io": "^2.0.3"
+  }
+}
