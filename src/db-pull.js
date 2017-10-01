@@ -5,7 +5,13 @@
 
 var db = require('./db.service');
 
-db.insert('standardLO', {
-    outcome: "this is a test",
-    criterion: 12
-});
+db.connect((err) => {
+    if(err) throw err;
+
+    db.insert('standardLO', {
+        outcome: "this is a test again",
+        criterion: 15
+    });
+
+    db.disconnect();
+})
