@@ -14,7 +14,7 @@ Assuming your present working directory is the root folder of your cloned projec
 
 ## How to use
 
-There are several independent runnable scripts in this project at present. A brief description of each is below. Run them by "node <filename>". But first you will need to ensure the database is running. Start and stop it with steps 2 and 4 of the installation instructions above.
+There are several independent runnable scripts in this project at present. A brief description of each is below. Run them by "node [filename]". But first you will need to ensure the database is running. Start and stop it with steps 2 and 4 of the installation instructions above.
 - db-init.js - initializes your local databases collections. Also deletes any existing data, so only run this once!
 - db-pull.js - pulls data from our existing MySQL database and puts it into your local MongoDB database. (actually right now it's just a quick test that db.driver.js works...)
 - lo-suggestion.js - runs a service which listens for queries on a socket and sends back related standard learning outcomes. You can also run this by "npm start"
