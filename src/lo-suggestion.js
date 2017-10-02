@@ -12,9 +12,9 @@ db.connect((err) => {
 
     io.on('connection', function(socket) {
         // what to do when client sends learning outcome text
-        socket.on('outcome', function(outcome) {
+        socket.on('outcome', function(msg) {
             let cursor = db.find('standardLO',
-                    { $text: {$search: outcome} },
+                    { $text: {$search: msg} },
                     { score: {$meta: "textScore"} })
                 .sort( { score: {$meta: "textScore"} } ) ;
             
@@ -33,10 +33,6 @@ db.connect((err) => {
             }, (err) => {
                 if(err) throw err;
                 socket.emit('suggestion', suggestions);
-
-                // TODO: the next couple bits are just for testing
-                console.log("--- Server --- "+outcome);
-                console.log(suggestions);
             });
         });
     });
@@ -54,6 +50,10 @@ http.listen(3000, ()=> {
     testit("test");
     testit("complete");
     testit("complete test");
+
+    client.on('suggestion', (suggestions) => {
+        console.log(suggestions);
+    });
     // So, the text search feature of mongo is certainly convenient,
     // but I'm not sure yet how it actually works. Just searching "complete"
     // yields nothing, yet the word certainly affects things in "complete test".
