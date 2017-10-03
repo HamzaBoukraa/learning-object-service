@@ -19,6 +19,7 @@
   "homepage": "https://github.com/ksherb1/learning-outcome-suggestion#readme",
   "dependencies": {
     "express": "^4.16.1",
+    "line-reader": "^0.4.0",
     "mongodb": "^2.2.31",
     "request": "^2.83.0",
     "socket.io": "^2.0.3"

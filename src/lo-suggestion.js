@@ -47,9 +47,7 @@ http.listen(3000, ()=> {
         console.log("Client: sending "+outcome);
         client.emit('outcome', outcome);
     }
-    testit("test");
-    testit("complete");
-    testit("complete test");
+    testit("cryptography management");
 
     client.on('suggestion', (suggestions) => {
         console.log(suggestions);
