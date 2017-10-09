@@ -4,7 +4,11 @@
   "description": "Semantic search to recommend related learning outcomes in Bloomin Onion",
   "main": "src/lo-suggestion.js",
   "scripts": {
-    "start": "node src/lo-suggestion.js",
+    "build": "tsc -p ts/",
+    "build:watch": "tsc -p ts/ -w",
+    "prestart": "mongod -f mongod.conf",
+    "start": "npm run build:watch",
+    "stop": "mongod -f mongod.conf --shutdown",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -23,6 +27,7 @@
     "mongodb": "^2.2.31",
     "mysql": "^2.15.0",
     "request": "^2.83.0",
-    "socket.io": "^2.0.3"
+    "socket.io": "^2.0.3",
+    "typescript": "^2.5.3"
   }
 }
