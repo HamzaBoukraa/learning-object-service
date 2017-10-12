@@ -8,7 +8,7 @@ export interface Outcome {
     author: string;    // standard outcome sources have 'authors' like 'NCWF' or 'CAE'
     name: string;      // standard outcome sources have 'names' like 'K0027' or 'Operating Systems Concepts'
     // specifics of outcome
-    text: string;
+    outcome: string;
 }
 
 export class StandardOutcome implements Outcome {
@@ -18,13 +18,13 @@ export class StandardOutcome implements Outcome {
     private _name: string;
     get name(): string { return this._name; }
 
-    private _text: string;
-    get text(): string { return this._text; }
+    private _outcome: string;
+    get outcome(): string { return this._outcome; }
 
-    constructor(author: string, name: string, text: string) {
+    constructor(author: string, name: string, outcome: string) {
         this._author = author,
         this._name = name
-        this._text = text;
+        this._outcome = outcome;
     }
 }
 
@@ -76,6 +76,7 @@ export class LearningOutcome implements Outcome {
     // exposed source properties
     get author(): string { return this._source.author.name; }
     get name(): string { return this._source.name; }
+    get outcome(): string { return this._verb+" "+this._text; }
 
     constructor(source: LearningObject) {
         this._source = source;

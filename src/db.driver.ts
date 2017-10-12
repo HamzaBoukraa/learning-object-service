@@ -53,6 +53,7 @@ export async function insertLearningOutcome(record: LearningOutcomeInsert): Prom
         //  and use it in the generic insert function. I don't really think it's worth the effort...
         record['author'] = author.name_;
         record['name_'] = source.name_;
+        record['outcome'] = record.verb+" "+record.text;
         return insert(LearningOutcomeSchema, record);
     } catch(e) {
         return Promise.reject("Problem inserting a Learning Outcome:\n\t"+e);
@@ -84,6 +85,7 @@ export async function updateLearningObject(id: LearningObjectID, record: Learnin
 }
 
 export async function LearningOutcomeUser(id: LearningOutcomeID, record: LearningOutcomeUpdate): Promise<void> {
+    record['outcome'] = record.verb+" "+record.text;
     return update(LearningOutcomeSchema, id, record);
 }
 
@@ -98,6 +100,7 @@ export async function editLearningObject(id: LearningObjectID, record: LearningO
 }
 
 export async function editLearningOutcome(id: LearningOutcomeID, record: LearningOutcomeEdit): Promise<void> {
+    record['outcome'] = record.verb+" "+record.text;
     return edit(LearningOutcomeSchema, id, edit);
 }
 

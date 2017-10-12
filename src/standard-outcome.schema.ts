@@ -14,8 +14,8 @@ export abstract class StandardOutcomeSchema {
     @fixed @field
     static name_: string;
 
-    @fixed @text @field
-    static text: string;
+    @auto @fixed @text @field
+    static outcome: string;
 }
 
 /*
@@ -32,7 +32,7 @@ export interface StandardOutcomeRecord extends OutcomeRecord, StandardOutcomeIns
 export interface StandardOutcomeInsert extends Insert, StandardOutcomeUpdate {
     author: string;
     name_: string;
-    text: string;
+    outcome: string;
 }
 
 // add in foreign fields

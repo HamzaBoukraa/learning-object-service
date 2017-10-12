@@ -20,7 +20,7 @@ db.connect()
                 await db.insertStandardOutcome({
                     author: "NCWF",
                     name_: dat[0],
-                    text: dat[1]
+                    outcome: dat[1]
                 });
                 cnt += 1;
             } catch(err) {  // database error

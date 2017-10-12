@@ -90,11 +90,11 @@ export async function editLearningOutcome(id: LearningOutcomeID, outcome: Learni
     });
 }
 
-export async function addStandardOutcome(outcome: StandardOutcome) {
+export async function addStandardOutcome(standard: StandardOutcome) {
     return db.insertStandardOutcome({
-        author: outcome.author,
-        name_: outcome.name,
-        text: outcome.text
+        author: standard.author,
+        name_: standard.name,
+        outcome: standard.outcome
     });
 }
 

@@ -16,13 +16,16 @@ export abstract class LearningOutcomeSchema {
     @auto @fixed
     static name_: string;   // source's name
 
+    @auto @text
+    static outcome: string; // verb + text together
+
     @field
     static bloom: string;
     
     @field
     static verb: string;
     
-    @text @field
+    @field
     static text: string;
 
     @field
@@ -49,7 +52,7 @@ export interface InstructionalStrategyInterface {
 export interface OutcomeRecord extends Record {
     author: string;
     name_: string;
-    text: string;
+    outcome: string;
 }
 
 /*

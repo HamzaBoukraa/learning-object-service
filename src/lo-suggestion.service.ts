@@ -31,7 +31,7 @@ db.connect()
                 suggestions.push({
                     author: doc.author,
                     name: doc.name_,
-                    text: doc.text
+                    outcome: doc.outcome
                 });
             }, (err) => {
                 if(err) throw err;
