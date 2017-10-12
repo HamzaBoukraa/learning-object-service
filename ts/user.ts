@@ -9,7 +9,11 @@ export class User {
     
     private _objects: LearningObject[];
     get objects(): LearningObject[] { return this._objects; }
-    addObject(): number { return this._objects.push(new LearningObject(this)); }
+    addObject(): LearningObject {
+        let object = new LearningObject(this);
+        this._objects.push(new LearningObject(this));
+        return object
+    }
     removeObject(i: number): LearningObject { return this._objects.splice(i, 1)[0]; }
 
     constructor(id: string, name: string) {
