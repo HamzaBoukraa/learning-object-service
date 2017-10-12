@@ -1,0 +1,8 @@
+{
+    "heroku": {
+        "host": "us-cdbr-iron-east-03.cleardb.net",
+        "user": "demo",      // I don't know this yet
+        // "password": "",  // I think we can just omit this and enter it in console?
+        "database": "heroku_137d663431d042b"
+    }
+}
