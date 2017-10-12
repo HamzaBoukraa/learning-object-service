@@ -1,6 +1,7 @@
 import { collection, unique, text, auto, fixed, foreign, field } from './db.schema';
 import { Edit, Update, Insert, Record } from './db.schema';
 import { StandardOutcomeID } from './db.schema';
+import { OutcomeRecord } from './learning-outcome.schema';
 
 @collection('outcomes')
 export abstract class StandardOutcomeSchema {
@@ -11,7 +12,7 @@ export abstract class StandardOutcomeSchema {
     static author: string;
     
     @fixed @field
-    static source: string;
+    static name_: string;
 
     @fixed @text @field
     static text: string;
@@ -23,14 +24,14 @@ export abstract class StandardOutcomeSchema {
  */
 
 // all auto fields
-export interface StandardOutcomeRecord extends Record, StandardOutcomeInsert {
+export interface StandardOutcomeRecord extends OutcomeRecord, StandardOutcomeInsert {
     _id: string;
 }
 
 // add in fixed fields
 export interface StandardOutcomeInsert extends Insert, StandardOutcomeUpdate {
     author: string;
-    source: string;
+    name_: string;
     text: string;
 }
 

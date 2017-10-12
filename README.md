@@ -4,23 +4,23 @@ This is a microservice project associated with Towson's CLARK platform for devel
 
 ## How to install
 
-In addition to cloning the repository with git and running "npm install" to install all node dependencies, you will need to do a couple extra steps to set up a local database.
-
-Assuming your present working directory is the root folder of your cloned project:
-1) make a directory db with "mkdir db" (or however you'd prefer to do it)
-2) start the mongodb process with "mongod -f mongod.conf"
-3) run the database schema initialization file: "node src/db-init.js"
-4) stop the mongodb process with "mongod -f mongod.conf --shutdown"
+1) Run "git clone https://github.com/ksherb1/learning-outcome-suggestion.git" to clone the Github repository to your local machine.
+2) Run "npm install" to install all node directories.
+3) Run "mkdir db" to set up a directory for the database to use.
+4) Run "npm start" to both start the database and transpile all TypeScript files to JavaScript.
+5) Run "node dist/db-init.script.js" to initialize the database collections.
+6) Run "node dist/db-NCWF.script.js" to fill the database with NCWF Outcomes.
+7) Run "node dist/db-pull.script.js" to fill the database with legacy mysql records. *NOT TESTED*
+8) Run "npm stop" to shut down the database
 
 ## How to use
 
-To start both the database and automatic TypeScript compiling from the 'ts' directory, run "npm start". When you are finished working, run "npm stop" to shut down the database.
+To start the Learning Outcome Suggestion service:
+1) Run "mongod -f mongod.conf" to start the database.
+2) Run "node dist/lo-suggestion.service.js" to start listening for queries and relaying related outcomes.
+3) When terminating the process, also run "mongod -f mongod.conf --shutdown" to shut down the database.
 
-There are several independent runnable scripts in this project at present. A brief description of each is below. Run them by "node [filename]". Note that most of these require the database to be running.
-- db-init.js - initializes your local databases collections. Also deletes any existing data, so only run this once, or if you want a fresh start!
--db-NCWF.js - pulls Standard LO data from a file and pushes it to the database
-    NOTE: this WILL duplicate records
-- db-pull.js - pulls data from our existing MySQL database and puts it into your local MongoDB database.
-    NOTE: NOT FINISHED - DO NOT RUN
-- lo-suggestion.js - runs a service which listens for queries on a socket and sends back related standard learning outcomes. You can also run this by "npm start"
-- There is also one PERL script, for preparing accreditation data. You probably don't need to use it, but it has its own instructions in a comment at the top of the file.
+When developing:
+1) Run "npm start" when you start working. This ensures the database process is running, and watches for changes in any src/*.ts file to retranspile it.
+2) Run "npm stop" when you are finished working. This ensures the database process is shut down.
+3) If you elected to run "npm start" in the background, be sure to terminate the tsc process also!

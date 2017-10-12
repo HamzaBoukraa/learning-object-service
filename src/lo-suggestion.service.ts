@@ -1,24 +1,26 @@
-var app = require('express')()
-var http = require('http').Server(app);
+const app = require('express')()
+const http = require('http').Server(app);
 // TODO: ^- I don't know if we really need express to initialize http..?
-var io = require('socket.io')(http);
-var db = require('./db.driver');
+// var io = require('socket.io')(http);
+// I'm also not sure of the best TypeScript-y way to give the above imports
+
+import * as server from 'socket.io';
+const io = server(http);
+
+import * as db from './db.driver';
+import { Outcome } from './outcome';
 
 var threshold = 1.1;    // minimum text score to be suggested
 
-db.connect((err) => {
-    if(err) throw err;
-
+db.connect()
+  .then(() => {
 
     io.on('connection', function(socket) {
         // what to do when client sends learning outcome text
-        socket.on('outcome', function(msg) {
-            let cursor = db.find('standardLO',
-                    { $text: {$search: msg} },
-                    { score: {$meta: "textScore"} })
-                .sort( { score: {$meta: "textScore"} } ) ;
+        socket.on('outcome', function(text) {
+            let cursor = db.matchOutcomes(text);
             
-            let suggestions = [];
+            let suggestions: Outcome[] = [];
 
             cursor.forEach((doc) => {
                 if(doc.score < threshold) return false;
@@ -27,8 +29,9 @@ db.connect((err) => {
                 //  I think we need to use the cursor's "hasNext" and "next" operations,
                 //      but the documentation is sloppy and I'm not sure how to.
                 suggestions.push({
-                    outcome: doc.outcome,
-                    criterion: doc.criterion
+                    author: doc.author,
+                    name: doc.name_,
+                    text: doc.text
                 });
             }, (err) => {
                 if(err) throw err;
@@ -36,20 +39,26 @@ db.connect((err) => {
             });
         });
     });
-});
+  })
+  .catch((err) => {
+    console.log(err);
+    db.disconnect();
+  })
 
+
+import * as clientModule from 'socket.io-client';
 // TODO: not sure if this http.listen is really how we want this service to work
 http.listen(3000, ()=> {
     // TODO: replace this whole callback with an actual client program ;)
     // testing space
-    var client = require('socket.io-client')("http://localhost:3000");   // for testing purposes only
-    function testit(outcome) {
+    let client = clientModule("http://localhost:3000");   // for testing purposes only
+    function testit(outcome: string) {
         console.log("Client: sending "+outcome);
         client.emit('outcome', outcome);
     }
     testit("cryptography management");
 
-    client.on('suggestion', (suggestions) => {
+    client.on('suggestion', (suggestions: any) => {
         console.log(suggestions);
     });
     // So, the text search feature of mongo is certainly convenient,

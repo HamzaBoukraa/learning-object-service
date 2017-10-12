@@ -2,10 +2,10 @@
   "name": "learning-outcome-suggestion",
   "version": "1.0.0",
   "description": "Semantic search to recommend related learning outcomes in Bloomin Onion",
-  "main": "src/lo-suggestion.js",
+  "main": "src/lo-suggestion.service.ts",
   "scripts": {
-    "build": "tsc -p ts/",
-    "build:watch": "tsc -p ts/ -w",
+    "build": "tsc -p src/",
+    "build:watch": "tsc -p src/ -w",
     "prestart": "mongod -f mongod.conf",
     "start": "npm run build:watch",
     "stop": "mongod -f mongod.conf --shutdown",
@@ -37,6 +37,7 @@
     "@types/mongodb": "^2.2.13",
     "@types/mysql": "0.0.34",
     "@types/socket.io": "^1.4.31",
+    "@types/socket.io-client": "^1.4.31",
     "typescript": "^2.5.3"
   }
 }

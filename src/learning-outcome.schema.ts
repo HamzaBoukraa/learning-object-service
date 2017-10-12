@@ -10,6 +10,12 @@ export abstract class LearningOutcomeSchema {
     @fixed @foreign('objects', false, 'outcomes') @field
     static source: LearningObjectID;
 
+    @auto @fixed
+    static author: string;  // source's author's name
+
+    @auto @fixed
+    static name_: string;   // source's name
+
     @field
     static bloom: string;
     
@@ -39,13 +45,20 @@ export interface InstructionalStrategyInterface {
     text: string;
 }
 
+// for enforcing general Outcome contract
+export interface OutcomeRecord extends Record {
+    author: string;
+    name_: string;
+    text: string;
+}
+
 /*
  *  TODO: There has got to be a way to auto-generate the following interfaces
  *      from the above schema.
  */
 
 // all auto fields
-export interface LearningOutcomeRecord extends Record, LearningOutcomeInsert {
+export interface LearningOutcomeRecord extends OutcomeRecord, LearningOutcomeInsert {
     _id: string;
 }
 

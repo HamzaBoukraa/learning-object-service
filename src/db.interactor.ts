@@ -93,7 +93,7 @@ export async function editLearningOutcome(id: LearningOutcomeID, outcome: Learni
 export async function addStandardOutcome(outcome: StandardOutcome) {
     return db.insertStandardOutcome({
         author: outcome.author,
-        source: outcome.name,
+        name_: outcome.name,
         text: outcome.text
     });
 }

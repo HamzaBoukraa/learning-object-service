@@ -3,24 +3,24 @@
 //  treats the second column as the "outcome",
 //  and pushes each record to the Standard LO collection
 
-const lineReader = require('line-reader');
-const db = require('./db.driver');
+import * as lineReader from 'line-reader';
+import * as db from './db.driver';
 
-var file = "accreditation/NIST.SP.800-181.dat";   // the data file
+const file = "standard-outcome/NIST.SP.800-181.dat";   // the data file
 
-db.connect((err) => {
-    if(err) throw err;
-
+db.connect()
+  .then(async () => {
     let cnt = 0;    // track how many records we insert
 
     // what to do for each record
-    lineReader.eachLine(file, function(line, last) {
+    lineReader.eachLine(file, async function(line, last) {
         let dat = line.split('\t');
         if(dat.length == 2) {
             try {
-                db.insert('standardLO', {
-                    criterion: dat[0],
-                    outcome: dat[1]
+                await db.insertStandardOutcome({
+                    author: "NCWF",
+                    name_: dat[0],
+                    text: dat[1]
                 });
                 cnt += 1;
             } catch(err) {  // database error
@@ -36,4 +36,8 @@ db.connect((err) => {
             console.log("Added "+cnt+" records");
         }
     });
-});
+  })
+  .catch((err)=>{
+    console.log(err);
+    db.disconnect();
+  });

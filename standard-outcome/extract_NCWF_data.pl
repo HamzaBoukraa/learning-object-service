@@ -27,7 +27,7 @@
 #   5) there are unfortunately numerous other problems that we
 #       need to fix, but we'll run the script first to know where
 # To actually run the file, run
-#       "perl src/extract_NCWF_data.pl" from the LO Suggestion root directory
+#       "perl standard-lo/extract_NCWF_data.pl" from the LO Suggestion root directory
 #   It'll do most of the work, but it'll also note that it's missing
 #       some entries. That's because the extraction process depends
 #       on the descriptions ending with a period, and not all of them

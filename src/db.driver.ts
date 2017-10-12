@@ -1,7 +1,7 @@
 // module providing consistent interaction with database across all our services
 // code closely adapted from agm1984 @ https://stackoverflow.com/questions/24621940/how-to-properly-reuse-connection-to-mongodb-across-nodejs-application-and-module
 
-import { MongoClient, Db, ObjectID } from 'mongodb';
+import { MongoClient, Db, Cursor, ObjectID } from 'mongodb';
 
 import { RecordID, UserID, LearningObjectID, OutcomeID, LearningOutcomeID, StandardOutcomeID } from './db.schema';
 import { Record, Update, Insert, Edit } from './db.schema';
@@ -12,6 +12,7 @@ import { UserSchema, UserRecord, UserUpdate, UserInsert, UserEdit } from './user
 import { LearningObjectSchema, LearningObjectRecord, LearningObjectUpdate, LearningObjectInsert, LearningObjectEdit } from './learning-object.schema';
 import { LearningOutcomeSchema, LearningOutcomeRecord, LearningOutcomeUpdate, LearningOutcomeInsert, LearningOutcomeEdit } from './learning-outcome.schema';
 import { StandardOutcomeSchema, StandardOutcomeRecord, StandardOutcomeUpdate, StandardOutcomeInsert, StandardOutcomeEdit } from './standard-outcome.schema';
+import { OutcomeRecord } from './learning-outcome.schema';
 
 export { ObjectID };
 export const uri = "mongodb://localhost:27017/onion";
@@ -44,7 +45,18 @@ export async function insertLearningObject(record: LearningObjectInsert): Promis
 }
 
 export async function insertLearningOutcome(record: LearningOutcomeInsert): Promise<LearningOutcomeID> {
-    return insert(LearningOutcomeSchema, record);
+    try {
+        let source = await _db.collection(collectionFor(LearningObjectSchema)).findOne<LearningObjectRecord>({_id: record.source});
+        let author = await _db.collection(collectionFor(UserSchema)).findOne<UserRecord>({_id:source.author});
+        // technically the insertion process will unncecessarily re-find the above source in its validation
+        // if we really want, we could try to add contraint information to the auto decorator,
+        //  and use it in the generic insert function. I don't really think it's worth the effort...
+        record['author'] = author.name_;
+        record['name_'] = source.name_;
+        return insert(LearningOutcomeSchema, record);
+    } catch(e) {
+        return Promise.reject("Problem inserting a Learning Outcome:\n\t"+e);
+    }
 }
 
 export async function insertStandardOutcome(record: StandardOutcomeInsert): Promise<StandardOutcomeID> {
@@ -91,20 +103,30 @@ export async function editLearningOutcome(id: LearningOutcomeID, record: Learnin
 
 // deletions
 
-export async function deleteUser(id: UserID) {
+export async function deleteUser(id: UserID): Promise<void> {
     return remove(UserSchema, id);
 }
 
-export async function deleteLearningObject(id: LearningObjectID) {
+export async function deleteLearningObject(id: LearningObjectID): Promise<void> {
     return remove(LearningObjectSchema, id);
 }
 
-export async function deleteLearningOutcome(id: LearningOutcomeID) {
+export async function deleteLearningOutcome(id: LearningOutcomeID): Promise<void> {
     return remove(LearningOutcomeSchema, id);
 }
 
+export function matchOutcomes(text: string): Cursor<ProjectedOutcomeRecord> {
+    // TODO: no present reason to, but we may wish to generalize find functions below,
+    //      as done with all the others
+    return _db.collection(collectionFor(StandardOutcomeSchema)).find<ProjectedOutcomeRecord>(
+        { $text: {$search: text} },
+        { score: {$meta: "textScore"} })
+        .sort( { score: {$meta: "textScore"} } ) ;
+}
 
-
+interface ProjectedOutcomeRecord extends OutcomeRecord {
+    score: number
+}
 
 
 

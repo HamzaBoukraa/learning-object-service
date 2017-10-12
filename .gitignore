@@ -1,6 +1,6 @@
 /node_modules
 /db
 /dist
-/accreditation/NIST.SP.800-181.pdf
-/accreditation/NIST.SP.800-181.txt
-/ts/db.test.ts
+/standard-outcome/NIST.SP.800-181.pdf
+/standard-outcome/NIST.SP.800-181.txt
+/src/db.test.ts
