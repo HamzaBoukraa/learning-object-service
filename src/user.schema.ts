@@ -7,7 +7,7 @@ export abstract class UserSchema {
     @auto @fixed @field
     static _id: UserID;
 
-    @unique @text @field
+    @unique @field
     static id: string
 
     @field

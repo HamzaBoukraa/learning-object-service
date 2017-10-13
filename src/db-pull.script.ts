@@ -1,4 +1,6 @@
 // this script will pull data from BloominOnion app and insert it into our MongoDB
+// It's sort-of no longer needed since scripts exist to pull directly from dump .sql files
+// Leaving it here just in case, although please note that... TODO: test this file (it might not work)
 
 import { createConnection } from 'mysql';
 import * as config from 'config';
