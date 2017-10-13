@@ -118,6 +118,7 @@ export async function deleteLearningOutcome(id: LearningOutcomeID): Promise<void
     return remove(LearningOutcomeSchema, id);
 }
 
+/*// Using text index
 export function matchOutcomes(text: string): Cursor<ProjectedOutcomeRecord> {
     // TODO: no present reason to, but we may wish to generalize find functions below,
     //      as done with all the others
@@ -129,7 +130,21 @@ export function matchOutcomes(text: string): Cursor<ProjectedOutcomeRecord> {
 
 interface ProjectedOutcomeRecord extends OutcomeRecord {
     score: number
+}*/
+
+// Using prefix regex
+export function matchOutcomes(text: string): Cursor<OutcomeRecord> {
+    let tokens = text.split(/\s/);
+    let docs: any[] = [];
+    for ( let token of tokens ) {
+        docs.push({outcome: {$regex: token}});
+    }
+
+    return _db.collection(collectionFor(StandardOutcomeSchema)).find<OutcomeRecord>({
+        $and: docs
+    });
 }
+
 
 
 

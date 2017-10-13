@@ -10,7 +10,7 @@ const io = server(http);
 import * as db from './db.driver';
 import { Outcome } from './outcome';
 
-var threshold = 1.1;    // minimum text score to be suggested
+var threshold = 1;    // minimum text score to be suggested
 
 db.connect()
   .then(() => {
@@ -23,7 +23,7 @@ db.connect()
             let suggestions: Outcome[] = [];
 
             cursor.forEach((doc) => {
-                if(doc.score < threshold) return false;
+                // if(doc.score < threshold) return false;
                 // TODO: ^- this ensures weak results aren't communicated, but
                 //  I'd really like it to just terminate the iteration.
                 //  I think we need to use the cursor's "hasNext" and "next" operations,
@@ -56,7 +56,9 @@ http.listen(3000, ()=> {
         console.log("Client: sending "+outcome);
         client.emit('outcome', outcome);
     }
-    testit("cryptography management");
+    testit("risk");
+    testit("risk management");
+    testit("risk management mitigation");
 
     client.on('suggestion', (suggestions: any) => {
         console.log(suggestions);
