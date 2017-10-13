@@ -1,6 +1,5 @@
 /node_modules
 /db
 /dist
-/standard-outcome/NIST.SP.800-181.pdf
-/standard-outcome/NIST.SP.800-181.txt
+/dbcontent/rawdata
 /src/db.test.ts

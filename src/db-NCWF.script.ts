@@ -5,11 +5,13 @@
 
 import * as lineReader from 'line-reader';
 import * as db from './db.driver';
+import * as glue from './db.interactor';
+import { StandardOutcome } from './outcome';
 
-const file = "standard-outcome/NIST.SP.800-181.dat";   // the data file
+const file = "dbcontent/NIST.SP.800-181.dat";   // the data file
 
 db.connect()
-  .then(async () => {
+  .then( () => {
     let cnt = 0;    // track how many records we insert
 
     // what to do for each record
@@ -17,11 +19,8 @@ db.connect()
         let dat = line.split('\t');
         if(dat.length == 2) {
             try {
-                await db.insertStandardOutcome({
-                    author: "NCWF",
-                    name_: dat[0],
-                    outcome: dat[1]
-                });
+                let outcome = new StandardOutcome("NCWF 2017", dat[0], dat[1]);
+                await glue.addStandardOutcome(outcome);
                 cnt += 1;
             } catch(err) {  // database error
                 console.log("Failed to insert: "+err);

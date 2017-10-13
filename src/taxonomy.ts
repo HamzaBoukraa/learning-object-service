@@ -1,9 +1,9 @@
 export const lengths = new Set<string>([
-    "course",
-    "unit",
-    "module",
+    "nanomodule",
     "micromodule",
-    "nanomodule"
+    "module",
+    "unit",
+    "course",
 ]);
 
 export const levels = new Set<string>([
@@ -21,19 +21,19 @@ export const levels = new Set<string>([
 type taxonomy = {[level:string]: Set<string>}
 
 export const verbs: taxonomy = {
-    'Remember and Understand': new Set<string>(['define','repeat','record']),
-    'Apply and Analyze': new Set<string>(['interpret','apply','employ']),
-    'Evaluate and Synthesize': new Set<string>(['compose','plan','propose'])
+    'Remember and Understand': new Set<string>(['define','repeat','record','list','describe','explain','identify','recognize']),
+    'Apply and Analyze': new Set<string>(['interpret','apply','employ','demonstrate','criticize','analyze','inspect']),
+    'Evaluate and Synthesize': new Set<string>(['compose','plan','propose','manage','evaluate','appraise'])
 };
 
 export const assessments: taxonomy = {
-    'Remember and Understand': new Set<string>(['essay','research paper','presentation']),
-    'Apply and Analyze': new Set<string>(['essay','research paper','presentation']),
-    'Evaluate and Synthesize': new Set<string>(['essay','research paper','presentation'])
+    'Remember and Understand': new Set<string>(['essay','research paper','presentation','quiz/test','lab']),
+    'Apply and Analyze': new Set<string>(['essay','research paper','presentation','lab','case study']),
+    'Evaluate and Synthesize': new Set<string>(['essay','research paper','presentation','lab','case study'])
 };
 
 export const instructions: taxonomy = {
-    'Remember and Understand': new Set<string>(['lectures','visuals','videos']),
-    'Apply and Analyze': new Set<string>(['exercises','practice','demonstrations']),
-    'Evaluate and Synthesize': new Set<string>(['projects','problems','case studies'])
+    'Remember and Understand': new Set<string>(['lecture','visuals','videos']),
+    'Apply and Analyze': new Set<string>(['exercises','practice','demonstrations','problems']),
+    'Evaluate and Synthesize': new Set<string>(['projects','problems','case studies','simulations'])
 };
