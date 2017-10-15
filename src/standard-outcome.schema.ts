@@ -1,4 +1,9 @@
-import { collection, unique, text, auto, fixed, foreign, field } from './db.schema';
+/**
+ * Define the database schema for standard outcomes.
+ */
+import {
+    collection, unique, text, auto, fixed, foreign, field
+} from './db.schema';
 import { Edit, Update, Insert, Record } from './db.schema';
 import { StandardOutcomeID } from './db.schema';
 import { OutcomeRecord } from './learning-outcome.schema';
@@ -18,10 +23,8 @@ export abstract class StandardOutcomeSchema {
     static outcome: string;
 }
 
-/*
- *  TODO: There has got to be a way to auto-generate the following interfaces
- *      from the above schema.
- */
+/* TODO: There has got to be a way to auto-generate the
+         following interfaces from the above schema. */
 
 // all auto fields
 export interface StandardOutcomeRecord extends OutcomeRecord, StandardOutcomeInsert {

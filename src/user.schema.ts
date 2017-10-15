@@ -1,4 +1,10 @@
-import { collection, unique, text, auto, fixed, foreign, field } from './db.schema';
+/**
+ * Define the database schema for Bloomin' Onion users.
+ */
+
+import {
+    collection, unique, text, auto, fixed, foreign, field
+} from './db.schema';
 import { Edit, Update, Insert, Record } from './db.schema';
 import { UserID, LearningObjectID } from './db.schema';
 
@@ -17,10 +23,8 @@ export abstract class UserSchema {
     static objects: LearningObjectID[];
 }
 
-/*
- *  TODO: There has got to be a way to auto-generate the following interfaces
- *      from the above schema.
- */
+/* TODO: There has got to be a way to auto-generate the
+         following interfaces from the above schema. */
 
 // all auto fields
 export interface UserRecord extends Record, UserInsert {

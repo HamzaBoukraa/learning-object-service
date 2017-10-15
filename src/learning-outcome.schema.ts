@@ -1,4 +1,10 @@
-import { collection, unique, text, auto, fixed, foreign, field } from './db.schema';
+/**
+ * Define the database schema for learning outcomes.
+ */
+
+import {
+    collection, unique, text, auto, fixed, foreign, field
+} from './db.schema';
 import { Edit, Update, Insert, Record } from './db.schema';
 import { LearningObjectID, LearningOutcomeID, OutcomeID } from './db.schema';
 
@@ -38,27 +44,33 @@ export abstract class LearningOutcomeSchema {
     static mappings: OutcomeID[];
 }
 
+/**
+ * Defines assessment plan subdocument schema.
+ */
 export interface AssessmentPlanInterface {
     plan: string;
     text: string;
 }
 
+/**
+ * Defines instructional strategy subdocument schema.
+ */
 export interface InstructionalStrategyInterface {
     instruction: string;
     text: string;
 }
 
-// for enforcing general Outcome contract
+/**
+ * Defines generic outcome schema (both learning and standard).
+ */
 export interface OutcomeRecord extends Record {
     author: string;
     name_: string;
     outcome: string;
 }
 
-/*
- *  TODO: There has got to be a way to auto-generate the following interfaces
- *      from the above schema.
- */
+/* TODO: There has got to be a way to auto-generate the
+         following interfaces from the above schema. */
 
 // all auto fields
 export interface LearningOutcomeRecord extends OutcomeRecord, LearningOutcomeInsert {
