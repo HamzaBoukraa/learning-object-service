@@ -64,6 +64,8 @@ The second argument indicates whether the key(s) pointed to are 'children' of th
 
 The third, optional argument names a registry field of the referred-to document. Insert, update, and edit database driver functions ensure this registry contains the referring document's id. Usually, the registry would itself be a foreign field with the 'child' boolean true.
 
+NOTE: if the third argument is provided, the field must also be @fixed.
+
 ## Interface Consistency
 The 'Record', 'Insert', 'Update', and 'Edit' interfaces defined after each Schema class are used for compile-time validation for each database driver function. Maintaining them is an extra step, but a simple one.
 
