@@ -3,7 +3,7 @@
 //  treats the second column as the "outcome",
 //  and pushes each record to the Standard LO collection
 
-require('useme');
+require('../useme');
 
 import * as lineReader from 'line-reader';
 import * as db from '../db.driver';
@@ -40,7 +40,7 @@ if (require.main === module) {
     db.connect()
       .then(async () => {
         await NCWF();
-        db.disconnect();
+        setTimeout(db.disconnect, 2000);
       }).catch((err)=>{
         console.log(err);
         db.disconnect();

@@ -260,31 +260,31 @@ export async function deleteLearningOutcome(id: LearningOutcomeID):
 // TEXT SEARCH //
 /////////////////
 
-// /**
-//  * Find outcomes matching a text query.
-//  * This variant uses Mongo's fancy text query. Questionable results.
-//  * @param text 
-//  * 
-//  * @returns {Cursor<ProjectedOutcomeRecord>} cursor of positive matches
-//  */
-// export function matchOutcomes(text: string): Cursor<ProjectedOutcomeRecord> {
-//     return _db.collection(collectionFor(StandardOutcomeSchema))
-//               .find<ProjectedOutcomeRecord>(
-//         { $text: {$search: text} },
-//         { score: {$meta: "textScore"} })
-//         .sort( { score: {$meta: "textScore"} } ) ;
-// }
+/**
+ * Find outcomes matching a text query.
+ * This variant uses Mongo's fancy text query. Questionable results.
+ * @param text 
+ * 
+ * @returns {Cursor<ProjectedOutcomeRecord>} cursor of positive matches
+ */
+export function searchOutcomes(text: string): Cursor<ProjectedOutcomeRecord> {
+    return _db.collection(collectionFor(StandardOutcomeSchema))
+              .find<ProjectedOutcomeRecord>(
+        { $text: {$search: text} },
+        { score: {$meta: "textScore"} })
+        .sort( { score: {$meta: "textScore"} } ) ;
+}
 
-// /**
-//  * Enhanced OutcomeRecord that includes text score data.
-//  */
-// interface ProjectedOutcomeRecord extends OutcomeRecord {
-//     score: number
-// }
+/**
+ * Enhanced OutcomeRecord that includes text score data.
+ */
+interface ProjectedOutcomeRecord extends OutcomeRecord {
+    score: number
+}
 
 /**
  * Find outcomes matching a text query.
- * This variant finds all outcomes containing each word in the query.
+ * This variant finds all outcomes containing every word in the query.
  * @param text the words to match against
  * 
  * @returns {Cursor<OutcomeRecord>} cursor of positive matches
