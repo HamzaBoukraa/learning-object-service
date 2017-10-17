@@ -33,12 +33,11 @@ export async function fill() {
             let content = JSON.parse(row['content']);
             // force conformation to schema
             if (content.mClass === '') content.mClass = 'nanomodule';
-            if (content.mClass === 'Course (15 weeks)') content.mClass = 'course';
+            if (content.mClass === 'Course (15 weeks)') content.mClass = 'Course';
             
             let object = legacy.addObject();
             // fill in all simple properties
             object.name = content.mName;
-            object.length = content.mClass.toLowerCase();
 
             for ( let cGoal of content.goals ) {
                 let goal = object.addGoal();
@@ -52,16 +51,13 @@ export async function fill() {
                     for ( let cOutcome of content.outcomes ) {
                         let outcome = object.addOutcome();
                         outcome.bloom = cOutcome.class;
-                        outcome.verb = cOutcome.verb.toLowerCase();
                         outcome.text = cOutcome.text;
                         for ( let question of cOutcome.questions ) {
                             let assessment = outcome.addAssessment();
-                            assessment.plan = question.strategy.toLowerCase();
                             assessment.text = question.text;
                         }
                         for ( let instruction of cOutcome.instructionalstrategies ) {
                             let strategy = outcome.addStrategy();
-                            strategy.instruction = instruction.strategy.toLowerCase();
                             strategy.text = instruction.text;
                         }
                         // insert the outcome (also registers with object)

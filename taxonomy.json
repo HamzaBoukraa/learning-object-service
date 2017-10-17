@@ -1,0 +1,80 @@
+{
+    "lengths": [
+        "nanomodule",
+        "micromodule",
+        "module",
+        "unit",
+        "course"
+    ],
+    "taxons": {
+        "Remember and Understand": {
+            "verbs": [
+                "Define", "Describe", "Discuss", "Explain", "Express",
+                "Identify", "List", "Recognize", "Record", "Repeat",
+                "Restate", "Translate"
+            ],
+            "assessments": [
+                "Case Study", "Code Check", "Competition", "Essay",
+                "Group", "Lab", "Oral Presentation", "Project",
+                "Quiz/Test", "Research Paper"
+            ],
+            "quizzes": [
+                "Essay", "Fill in the Blank/Short Answer", "Matching",
+                "Multiple Choice", "Open-Response", "True/False Questions"
+            ],
+            "strategies": [
+                "Analogies", "Assessment", "Audio", "Discussion",
+                "Examples", "Illustrations", "Learner", "Lecture",
+                "Presentations", "Questions", "Reports", "Review",
+                "Test", "Video", "Visuals", "Writing"
+            ]
+        },
+        "Apply and Analyze": {
+            "verbs": [
+                "Analyze", "Apply", "Appraise", "Calculate", "Compare",
+                "Contrast", "Criticize", "Debate", "Demonstrate", "Diagram",
+                "Differentiate", "Distinguish", "Dramatize", "Employ",
+                "Experiment", "Illustrate", "Inspect", "Interpret",
+                "Inventory", "Operate", "Practice", "Question", "Relate",
+                "Schedule", "Shop", "Sketch", "Test", "Use"
+            ],
+            "assessments": [
+                "Case Study", "Code Check", "Competition", "Essay",
+                "Group", "Lab", "Oral Presentation", "Project",
+                "Quiz/Test", "Research Paper"
+            ],
+            "quizzes": [
+                "Essay", "Fill in the Blank/Short Answer",
+                "Multiple Choice", "Open-Response"
+            ],
+            "strategies": [
+                "Case Studies", "Critical Incidents", "Demonstrations",
+                "Discussion", "Exercises", "Exercises", "Microteach",
+                "Practice", "Problems", "Projects", "Questions", "Role Play",
+                "Simulations", "Sketches", "Test"
+            ]
+        },
+        "Evaluate and Synthesize": {
+            "verbs": [
+                "Appraise", "Arrange", "Assess", "Choose", "Collect",
+                "Compare", "Compose", "Construct", "Create", "Design",
+                "Estimate", "Evaluate", "Formulate", "Judge", "Manage",
+                "Measure", "Organize", "Plan", "Prepare", "Propose",
+                "Rate", "Revise", "Score", "Select", "Set up", "Value"
+            ],
+            "assessments": [
+                "Case Study", "Code Check", "Competition", "Essay",
+                "Group", "Lab", "Oral Presentation", "Project",
+                "Quiz/Test", "Research Paper"
+            ],
+            "quizzes": [
+                "Essay", "Open-Response"
+            ],
+            "strategies": [
+                "Appraisals", "Case Studies", "Constructs",
+                "Creative Exercises", "Critiques", "Develop Plans",
+                "Exercises", "Problems", "Projects", "Simulations"
+            ]
+        }
+    }
+}

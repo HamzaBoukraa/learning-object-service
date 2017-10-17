@@ -53,7 +53,7 @@ db.connect()
                     let object = userMap[row['userid']].addObject();
                     // fill in all simple properties
                     object.name = content.mName;
-                    object.length = content.mClass; // TODO: needs toLowerCase, or else change taxonomy
+                    object.length = content.mClass;
                     for ( let cGoal of content.goals ) {
                         let goal = object.addGoal();
                         goal.text = cGoal.text;
@@ -66,16 +66,16 @@ db.connect()
                     for ( let cOutcome of content.outcomes ) {
                         let outcome = object.addOutcome();
                         outcome.bloom = cOutcome.class;
-                        outcome.verb = cOutcome.verb;   // TODO: case concern
+                        outcome.verb = cOutcome.verb;
                         outcome.text = cOutcome.text;
                         for ( let question of cOutcome.questions ) {
                             let assessment = outcome.addAssessment();
-                            assessment.plan = question.strategy;   // TODO: case concern
+                            assessment.plan = question.strategy;
                             assessment.text = question.text;
                         }
                         for ( let instruction of cOutcome.instructionalstrategies ) {
                             let strategy = outcome.addStrategy();
-                            strategy.instruction = instruction.strategy;   // TODO: case concern
+                            strategy.instruction = instruction.strategy;
                             strategy.text = instruction.text;
                         }
                         // insert the outcome (also registers with object)
