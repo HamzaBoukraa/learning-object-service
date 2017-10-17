@@ -1,6 +1,8 @@
 // module providing consistent interaction with database across all our services
 // code closely adapted from agm1984 @ https://stackoverflow.com/questions/24621940/how-to-properly-reuse-connection-to-mongodb-across-nodejs-application-and-module
 
+import * as config from 'config';
+
 import { MongoClient, Db, Cursor, ObjectID } from 'mongodb';
 
 import { RecordID, UserID, LearningObjectID, OutcomeID, LearningOutcomeID, StandardOutcomeID } from './db.schema';
@@ -15,18 +17,18 @@ import { StandardOutcomeSchema, StandardOutcomeRecord, StandardOutcomeUpdate, St
 import { OutcomeRecord } from './learning-outcome.schema';
 
 export { ObjectID };
-export const uri = "mongodb://localhost:27017/onion";
 
+let dbconfig = config.get('database');
 let _db: Db;    // only created once, no matter how many times the module is required (or so I'm told)
 
 // each service should call this and do everything within the resolution
 //  TODO: test what happens when more than one service calls this
 export async function connect(): Promise<void> {
     try {
-        _db = await MongoClient.connect(uri);
+        _db = await MongoClient.connect(dbconfig["uri"]);
         return Promise.resolve();
     } catch(e) {
-        return Promise.reject("Problem connecting to database at "+uri+":\n\t"+e);
+        return Promise.reject("Problem connecting to database at "+dbconfig["uri"]+":\n\t"+e);
     }
 }
 

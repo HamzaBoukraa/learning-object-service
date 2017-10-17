@@ -16,6 +16,8 @@ This is a microservice project associated with Towson's CLARK platform for devel
 
 ## How to use
 
+NOTE: You may need to adjust the "database.uri" value in the config file. If you're using the below instructions, it should be set to "mongodb://localhost:27017/onion". If you're using a docker image, it'll be something else.
+
 To start the Learning Outcome Suggestion service:
 1) Run "mongod -f mongod.conf" to start the database.
 2) Run "node dist/lo-suggestion.service.js" to start listening for queries and relaying related outcomes.

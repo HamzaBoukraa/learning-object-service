@@ -7,11 +7,14 @@
 //
 //  when finished, stop with "mongod -f mongod.conf --shutdown"
 
+import * as config from 'config';
+
 import { MongoClient } from 'mongodb';
 import { collections, schemaFor, uniquesFor, textsFor } from './db.schema';
-import { uri } from './db.driver';
 
-MongoClient.connect(uri, async (err, db) => {
+let dbconfig = config.get('database');
+
+MongoClient.connect(dbconfig["uri"], async (err, db) => {
     if(err) throw err;
 
     // drop collections
