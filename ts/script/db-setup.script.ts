@@ -1,7 +1,7 @@
 // this script runs each subscript needed to get the database to its initial state,
 //  including collection initialization and initial data
 import { MongoClient } from 'mongodb';
-import * as db from './db.driver';
+import * as db from '../db.driver';
 
 import { init } from './db-init.script';
 import { NCWF } from './db-NCWF.script';

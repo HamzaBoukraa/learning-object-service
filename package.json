@@ -4,8 +4,8 @@
   "description": "Semantic search to recommend related learning outcomes in Bloomin Onion",
   "main": "src/lo-suggestion.service.ts",
   "scripts": {
-    "build": "tsc -p src/",
-    "build:watch": "tsc -p src/ -w",
+    "build": "tsc -p ts/",
+    "build:watch": "tsc -p ts/ -w",
     "setup": "node db-setup.script.js",
     "prestart": "mongod -f mongod.conf",
     "start": "npm run build:watch",

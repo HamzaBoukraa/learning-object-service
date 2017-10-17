@@ -7,8 +7,8 @@ const http = require('http').Server(app);
 import * as server from 'socket.io';
 const io = server(http);
 
-import * as db from './db.driver';
-import { Outcome } from './outcome';
+import * as db from '../db.driver';
+import { Outcome } from '../entity/outcome';
 
 var threshold = 1;    // minimum text score to be suggested
 

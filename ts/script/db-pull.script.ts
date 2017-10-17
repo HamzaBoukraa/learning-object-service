@@ -5,13 +5,13 @@
 import { createConnection } from 'mysql';
 import * as config from 'config';
 
-import * as db from './db.driver';
-import * as glue from './db.interactor';
-import { UserID } from './db.schema';
+import * as db from '../db.driver';
+import * as glue from '../db.interactor';
+import { UserID } from '../schema/db.schema';
 
-import { User } from './user';
-import { LearningObject } from './learning-object';
-import { LearningOutcome } from './outcome';
+import { User } from '../entity/user';
+import { LearningObject } from '../entity/learning-object';
+import { LearningOutcome } from '../entity/outcome';
 
 var heroku = createConnection(config.get('heroku'));
 

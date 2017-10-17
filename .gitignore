@@ -1,5 +1,5 @@
 /node_modules
 /db
-/dist
+/js
 /dbcontent/rawdata
-/src/db.test.ts
+/ts/script/db.test.ts

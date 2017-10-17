@@ -10,7 +10,9 @@
 import * as config from 'config';
 
 import { MongoClient, Db } from 'mongodb';
-import { collections, schemaFor, uniquesFor, textsFor } from './db.schema';
+import {
+    collections, schemaFor, uniquesFor, textsFor
+} from '../schema/db.schema';
 
 let dbconfig = config.get('database');
 

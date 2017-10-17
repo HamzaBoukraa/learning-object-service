@@ -2,7 +2,7 @@
  * Tools and universal script for defining database schemas.
  */
 
-import { ObjectID } from './db.driver';
+import { ObjectID } from '../db.driver';
 
 /**
  * Explicit type definitions for each id/foreign key.

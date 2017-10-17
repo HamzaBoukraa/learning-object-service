@@ -2,13 +2,13 @@
 
 import * as lineReader from 'line-reader';
 
-import * as db from './db.driver';
-import * as glue from './db.interactor';
-import { UserID } from './db.schema';
+import * as db from '../db.driver';
+import * as glue from '../db.interactor';
+import { UserID } from '../schema/db.schema';
 
-import { User } from './user';
-import { LearningObject } from './learning-object';
-import { LearningOutcome } from './outcome';
+import { User } from '../entity/user';
+import { LearningObject } from '../entity/learning-object';
+import { LearningOutcome } from '../entity/outcome';
 
 const file = "dbcontent/Dump20171010.dat";   // the data file
 

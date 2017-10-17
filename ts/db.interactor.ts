@@ -6,18 +6,18 @@ import * as db from './db.driver';
 
 import {
     UserID, LearningObjectID, LearningOutcomeID, StandardOutcomeID
-} from './db.schema';
-import { LearningGoalInterface } from './learning-object.schema';
+} from './schema/db.schema';
+import { LearningGoalInterface } from './schema/learning-object.schema';
 import {
     AssessmentPlanInterface, InstructionalStrategyInterface
-} from './learning-outcome.schema';
+} from './schema/learning-outcome.schema';
 
-import { User } from './user';
-import { LearningObject } from './learning-object';
-import { StandardOutcome, LearningOutcome } from './outcome';
-import { LearningGoal } from './learning-goal';
-import { AssessmentPlan } from './assessment-plan';
-import { InstructionalStrategy } from './instructional-strategy';
+import { User } from './entity/user';
+import { LearningObject } from './entity/learning-object';
+import { StandardOutcome, LearningOutcome } from './entity/outcome';
+import { LearningGoal } from './entity/learning-goal';
+import { AssessmentPlan } from './entity/assessment-plan';
+import { InstructionalStrategy } from './entity/instructional-strategy';
 
 /**
  * Add a new user to the database.

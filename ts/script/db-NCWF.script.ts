@@ -4,9 +4,9 @@
 //  and pushes each record to the Standard LO collection
 
 import * as lineReader from 'line-reader';
-import * as db from './db.driver';
-import * as glue from './db.interactor';
-import { StandardOutcome } from './outcome';
+import * as db from '../db.driver';
+import * as glue from '../db.interactor';
+import { StandardOutcome } from '../entity/outcome';
 
 const file = "dbcontent/NIST.SP.800-181.dat";   // the data file
 

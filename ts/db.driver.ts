@@ -8,32 +8,34 @@ import * as config from 'config';
 
 import { MongoClient, Db, Cursor, ObjectID } from 'mongodb';
 
-import { Record, Update, Insert, Edit } from './db.schema';
-import { autosFor, fixedsFor, foreignsFor, fieldsFor } from './db.schema';
+import { Record, Update, Insert, Edit } from './schema/db.schema';
+import {
+    autosFor, fixedsFor, foreignsFor, fieldsFor
+} from './schema/db.schema';
 import {
     collections, collectionFor, schemaFor, foreignData
-} from './db.schema';
+} from './schema/db.schema';
 import {
     RecordID, UserID, LearningObjectID, OutcomeID,
     LearningOutcomeID, StandardOutcomeID
-} from './db.schema';
+} from './schema/db.schema';
 
 import {
     UserSchema, UserRecord, UserUpdate, UserInsert, UserEdit
-} from './user.schema';
+} from './schema/user.schema';
 import {
     LearningObjectSchema, LearningObjectRecord, LearningObjectUpdate,
     LearningObjectInsert, LearningObjectEdit
-} from './learning-object.schema';
+} from './schema/learning-object.schema';
 import {
     LearningOutcomeSchema, LearningOutcomeRecord, LearningOutcomeUpdate,
     LearningOutcomeInsert, LearningOutcomeEdit
-} from './learning-outcome.schema';
+} from './schema/learning-outcome.schema';
 import {
     StandardOutcomeSchema, StandardOutcomeRecord, StandardOutcomeUpdate,
     StandardOutcomeInsert, StandardOutcomeEdit
-} from './standard-outcome.schema';
-import { OutcomeRecord } from './learning-outcome.schema';
+} from './schema/standard-outcome.schema';
+import { OutcomeRecord } from './schema/learning-outcome.schema';
 
 export { ObjectID };
 
