@@ -87,7 +87,7 @@ export class LearningOutcome implements Outcome {
      *       the verb this outcome text starts with (eg. define)
      *       values are resetricted according to the bloom taxon
      */
-    get verb(): string { return this._bloom; }
+    get verb(): string { return this._verb; }
     set verb(verb: string)  {
         if (verbs[this.bloom].has(verb)) { this._verb = verb; }
         else throw verb+" is not a valid verb for the "+this.bloom+" taxon";

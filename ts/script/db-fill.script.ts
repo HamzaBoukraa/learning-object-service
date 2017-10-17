@@ -53,13 +53,16 @@ export async function fill() {
                     for ( let cOutcome of content.outcomes ) {
                         let outcome = object.addOutcome();
                         outcome.bloom = cOutcome.class;
+                        outcome.verb = cOutcome.verb;
                         outcome.text = cOutcome.text;
                         for ( let question of cOutcome.questions ) {
                             let assessment = outcome.addAssessment();
+                            assessment.plan = question.strategy;
                             assessment.text = question.text;
                         }
                         for ( let instruction of cOutcome.instructionalstrategies ) {
                             let strategy = outcome.addStrategy();
+                            strategy.instruction = instruction.strategy;
                             strategy.text = instruction.text;
                         }
                         // insert the outcome (also registers with object)

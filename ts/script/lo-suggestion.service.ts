@@ -69,16 +69,16 @@ http.listen(3000, ()=> {
         client.emit('outcome', outcome);
     }
 
-    // testit("Describe risks, vulnerabilities, and possible solutions to cybersecurity issues in the area of human security ");
-    // testit("Identify risks, vulnerabilities, and possible solutions to cybersecurity issues in the area of enterprise security");
-    // testit("Define risks, vulnerabilities, and possible solutions to cybersecurity issues in the area of system security");
-    // testit("Identify risks, vulnerabilities, and possible solutions to cybersecurity issues in the area of software security");
-    // testit("Recognize risks, vulnerabilities, and possible solutions to cybersecurity issues in the area of societal security");
-    // testit("Describe integer errors and the risk associated with them");
-    // testit("Identify the techniques to avoid an integer error");
-    // testit("Evaluate mathematical operations that might lead to an overflow");
-    // testit("Inspect code for segments that might lead to vulnerabilities");
-    // testit("Appraise a problem and discuss the implications of integer overflow");
+    testit("Describe risks, vulnerabilities, and possible solutions to cybersecurity issues in the area of human security ");
+    testit("Identify risks, vulnerabilities, and possible solutions to cybersecurity issues in the area of enterprise security");
+    testit("Define risks, vulnerabilities, and possible solutions to cybersecurity issues in the area of system security");
+    testit("Identify risks, vulnerabilities, and possible solutions to cybersecurity issues in the area of software security");
+    testit("Recognize risks, vulnerabilities, and possible solutions to cybersecurity issues in the area of societal security");
+    testit("Describe integer errors and the risk associated with them");
+    testit("Identify the techniques to avoid an integer error");
+    testit("Evaluate mathematical operations that might lead to an overflow");
+    testit("Inspect code for segments that might lead to vulnerabilities");
+    testit("Appraise a problem and discuss the implications of integer overflow");
 
     // setTimeout(process.exit, 1500);
 
