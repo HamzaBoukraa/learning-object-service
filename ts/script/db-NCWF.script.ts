@@ -3,6 +3,8 @@
 //  treats the second column as the "outcome",
 //  and pushes each record to the Standard LO collection
 
+require('useme');
+
 import * as lineReader from 'line-reader';
 import * as db from '../db.driver';
 import * as glue from '../db.interactor';

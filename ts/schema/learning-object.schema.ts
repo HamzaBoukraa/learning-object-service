@@ -36,8 +36,8 @@ export interface LearningGoalInterface {
     text: string;
 }
 
-/* TODO: There has got to be a way to auto-generate the
-         following interfaces from the above schema. */
+/* FIXME: There has got to be a way to auto-generate the
+          following interfaces from the above schema. */
 
 // all auto fields
 export interface LearningObjectRecord extends Record, LearningObjectInsert {

@@ -23,8 +23,8 @@ export abstract class StandardOutcomeSchema {
     static outcome: string;
 }
 
-/* TODO: There has got to be a way to auto-generate the
-         following interfaces from the above schema. */
+/* FIXME: There has got to be a way to auto-generate the
+          following interfaces from the above schema. */
 
 // all auto fields
 export interface StandardOutcomeRecord extends OutcomeRecord, StandardOutcomeInsert {

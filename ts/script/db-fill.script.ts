@@ -1,5 +1,7 @@
 // this script will pull data from BloominOnion app and insert it into our MongoDB
 
+require('useme');
+
 import * as lineReader from 'line-reader';
 
 import * as db from '../db.driver';

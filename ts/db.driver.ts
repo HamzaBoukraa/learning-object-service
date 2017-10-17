@@ -176,22 +176,7 @@ export async function unmapOutcome(outcome: LearningOutcomeID,
 }
 
 /* TODO: add functions to reorder object and outcome registries */
-
-// updates
-/* TODO: I don't think there are any use cases to update
-         rather than edit. Delete these functions. */
-export async function updateUser(id: UserID, record: UserUpdate): Promise<void> {
-    return update(UserSchema, id, record);
-}
-
-export async function updateLearningObject(id: LearningObjectID, record: LearningObjectUpdate): Promise<void> {
-    return update(LearningObjectSchema, id, record);
-}
-
-export async function LearningOutcomeUser(id: LearningOutcomeID, record: LearningOutcomeUpdate): Promise<void> {
-    record['outcome'] = record.verb+" "+record.text;
-    return update(LearningOutcomeSchema, id, record);
-}
+/* TODO: add functions to fetch object given id */
 
 ///////////////////////////////////////////////////////////////////
 // EDITS - update without touching any foreign keys or documents //

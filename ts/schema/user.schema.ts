@@ -23,8 +23,8 @@ export abstract class UserSchema {
     static objects: LearningObjectID[];
 }
 
-/* TODO: There has got to be a way to auto-generate the
-         following interfaces from the above schema. */
+/* FIXME: There has got to be a way to auto-generate the
+          following interfaces from the above schema. */
 
 // all auto fields
 export interface UserRecord extends Record, UserInsert {

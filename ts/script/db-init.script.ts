@@ -7,6 +7,8 @@
 //
 //  when finished, stop with "mongod -f mongod.conf --shutdown"
 
+require('useme');
+
 import * as config from 'config';
 
 import { MongoClient, Db } from 'mongodb';

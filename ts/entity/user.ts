@@ -12,18 +12,16 @@ export class User {
     private _id: string;
     /**
      * @property {string} id (immutable) a user's unique log-in id
-     * 
-     * TODO: ehm, this shouldn't actually be immutable...
      */
     get id(): string { return this._id; }
+    set id(id: string) { this._id = id; }
 
     private _name: string;
     /**
      * @property {string} name (immutable) a user's real-life name
-     * 
-     * TODO: ehm, this shouldn't actually be immutable...
      */
     get name(): string { return this._name; }
+    set text(name: string) { this._name = name; }
     
     private _objects: LearningObject[];
     /**

@@ -1,5 +1,8 @@
 // this script runs each subscript needed to get the database to its initial state,
 //  including collection initialization and initial data
+
+require('useme');
+
 import { MongoClient } from 'mongodb';
 import * as db from '../db.driver';
 
