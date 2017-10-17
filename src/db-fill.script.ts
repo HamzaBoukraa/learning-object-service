@@ -12,13 +12,12 @@ import { LearningOutcome } from './outcome';
 
 const file = "dbcontent/Dump20171010.dat";   // the data file
 
-db.connect()
-  .then( async ()=> {
+export async function fill() {
     // first, add a 'legacy' user:
     let legacy = new User('legacy', 'Legacy User');
     let legacyid = await glue.addUser(legacy);
 
-    lineReader.eachLine(file, async (line, last) => {
+    lineReader.eachLine(file, (line, last) => {
         let dat = line.split('\t');
 
         if(dat.length == 5) {
@@ -31,58 +30,63 @@ db.connect()
                 createdate: dat[4]
             }
 
-            try {
-                let content = JSON.parse(row['content']);
-                // force conformation to schema
-                if (content.mClass === '') content.mClass = 'nanomodule';
-                if (content.mClass === 'Course (15 weeks)') content.mClass = 'course';
-                
-                let object = legacy.addObject();
-                // fill in all simple properties
-                object.name = content.mName;
-                object.length = content.mClass.toLowerCase();
+            let content = JSON.parse(row['content']);
+            // force conformation to schema
+            if (content.mClass === '') content.mClass = 'nanomodule';
+            if (content.mClass === 'Course (15 weeks)') content.mClass = 'course';
+            
+            let object = legacy.addObject();
+            // fill in all simple properties
+            object.name = content.mName;
+            object.length = content.mClass.toLowerCase();
 
-                for ( let cGoal of content.goals ) {
-                    let goal = object.addGoal();
-                    goal.text = cGoal.text;
-                }
-                
-                // insert into database (also registers with user)
-                let id = await glue.addLearningObject(legacyid, object);
-                
-                // add all its outcomes
-                for ( let cOutcome of content.outcomes ) {
-                    let outcome = object.addOutcome();
-                    outcome.bloom = cOutcome.class;
-                    outcome.verb = cOutcome.verb.toLowerCase();
-                    outcome.text = cOutcome.text;
-                    for ( let question of cOutcome.questions ) {
-                        let assessment = outcome.addAssessment();
-                        assessment.plan = question.strategy.toLowerCase();
-                        assessment.text = question.text;
-                    }
-                    for ( let instruction of cOutcome.instructionalstrategies ) {
-                        let strategy = outcome.addStrategy();
-                        strategy.instruction = instruction.strategy.toLowerCase();
-                        strategy.text = instruction.text;
-                    }
-                    // insert the outcome (also registers with object)
-                    await glue.addLearningOutcome(id, outcome);
-                }
-            } catch(err) {  // database error
-                console.log("Failed to insert: "+err);
+            for ( let cGoal of content.goals ) {
+                let goal = object.addGoal();
+                goal.text = cGoal.text;
             }
+            
+            // insert into database (also registers with user)
+            glue.addLearningObject(legacyid, object)    // asynchronous
+                .then((id) => {
+                    // add all its outcomes
+                    for ( let cOutcome of content.outcomes ) {
+                        let outcome = object.addOutcome();
+                        outcome.bloom = cOutcome.class;
+                        outcome.verb = cOutcome.verb.toLowerCase();
+                        outcome.text = cOutcome.text;
+                        for ( let question of cOutcome.questions ) {
+                            let assessment = outcome.addAssessment();
+                            assessment.plan = question.strategy.toLowerCase();
+                            assessment.text = question.text;
+                        }
+                        for ( let instruction of cOutcome.instructionalstrategies ) {
+                            let strategy = outcome.addStrategy();
+                            strategy.instruction = instruction.strategy.toLowerCase();
+                            strategy.text = instruction.text;
+                        }
+                        // insert the outcome (also registers with object)
+                        glue.addLearningOutcome(id, outcome)    // asynchronous
+                            .catch((err) => {
+                                console.log("Failed to insert outcome: "+err);
+                            });
+                    }
+                }).catch((err) => {
+                    console.log("Failed to insert object: "+err);
+                });
         } else {    // data formatting error
             console.log("Could not process line: "+line);
         }
-
-        // if we just processed the last line, exit gracefully
-        if(last) {
-            db.disconnect();
-        }
     });
-  })
-  .catch( (err) => {
-      console.log(err);
-      db.disconnect();
-  });
+    return Promise.resolve();   // FIXME: adding the outcomes isn't necessarily done yet!!!
+}
+
+if (require.main === module) {
+    db.connect()
+      .then(async () => {
+        await fill();
+        db.disconnect();
+      }).catch((err)=>{
+        console.log(err);
+        db.disconnect();
+      });
+}

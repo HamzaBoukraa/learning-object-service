@@ -9,14 +9,12 @@
 
 import * as config from 'config';
 
-import { MongoClient } from 'mongodb';
+import { MongoClient, Db } from 'mongodb';
 import { collections, schemaFor, uniquesFor, textsFor } from './db.schema';
 
 let dbconfig = config.get('database');
 
-MongoClient.connect(dbconfig["uri"], async (err, db) => {
-    if(err) throw err;
-
+export async function init(db: Db) {
     // drop collections
     for ( let collection of collections() ) {
         try {
@@ -63,9 +61,19 @@ MongoClient.connect(dbconfig["uri"], async (err, db) => {
                 }
             }
         }
-    } catch(e) {
-        console.log("Initialization failed: "+e);
-    }
 
-    db.close();
-});
+        return Promise.resolve();
+    } catch(e) {
+        return Promise.reject("Initialization failed: "+e);
+    }
+}
+
+if (require.main === module) {
+    MongoClient.connect(dbconfig["uri"])
+               .then( async (db) => {
+                   await init(db);
+                   db.close();
+               }).catch( (err) => {
+                   throw err;
+               });
+}

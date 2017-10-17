@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc -p src/",
     "build:watch": "tsc -p src/ -w",
+    "setup": "node db-setup.script.js",
     "prestart": "mongod -f mongod.conf",
     "start": "npm run build:watch",
     "stop": "mongod -f mongod.conf --shutdown",
