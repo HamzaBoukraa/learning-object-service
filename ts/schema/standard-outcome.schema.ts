@@ -28,7 +28,7 @@ export abstract class StandardOutcomeSchema {
 
 // all auto fields
 export interface StandardOutcomeRecord extends OutcomeRecord, StandardOutcomeInsert {
-    _id: string;
+    _id: StandardOutcomeID;
 }
 
 // add in fixed fields

@@ -74,7 +74,7 @@ export interface OutcomeRecord extends Record {
 
 // all auto fields
 export interface LearningOutcomeRecord extends OutcomeRecord, LearningOutcomeInsert {
-    _id: string;
+    _id: LearningOutcomeID;
 }
 
 // add in fixed fields

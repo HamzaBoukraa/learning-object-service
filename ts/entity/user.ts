@@ -11,17 +11,17 @@ import { LearningObject } from './learning-object';
 export class User {
     private _id: string;
     /**
-     * @property {string} id (immutable) a user's unique log-in id
+     * @property {string} id a user's unique log-in id
      */
     get id(): string { return this._id; }
     set id(id: string) { this._id = id; }
 
     private _name: string;
     /**
-     * @property {string} name (immutable) a user's real-life name
+     * @property {string} name a user's real-life name
      */
     get name(): string { return this._name; }
-    set text(name: string) { this._name = name; }
+    set name(name: string) { this._name = name; }
     
     private _objects: LearningObject[];
     /**

@@ -28,7 +28,7 @@ export abstract class UserSchema {
 
 // all auto fields
 export interface UserRecord extends Record, UserInsert {
-    _id: string
+    _id: UserID
 }
 
 // add in fixed fields
