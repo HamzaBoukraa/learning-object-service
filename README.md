@@ -9,9 +9,9 @@ This is a microservice project associated with Towson's CLARK platform for devel
 3) Run "mkdir db" to set up a directory for the database to use.
 4) Run "mongod -f mongod.conf" to start the database.
 5) Run "npm run build" to transpile all TypeScript files in 'src' to JavaScript files in 'dist'.
-5) Run "node dist/db-init.script.js" to initialize the database collections.
-6) Run "node dist/db-NCWF.script.js" to fill the database with NCWF Outcomes.
-7) Run "node dist/db-fill.script.js" to fill the database with legacy mysql learning objects, under a single 'legacy' user.
+5) Run "node js/script/db-init.script.js" to initialize the database collections.
+6) Run "node js/script/db-NCWF.script.js" to fill the database with NCWF Outcomes.
+7) Run "node js/script/db-fill.script.js" to fill the database with legacy mysql learning objects, under a single 'legacy' user.
 8) Run "mongod -f mongod.conf --shutdown" to shut down the database
 
 ## How to use
@@ -20,7 +20,7 @@ NOTE: You may need to adjust the "database.uri" value in the config file. If you
 
 To start the Learning Outcome Suggestion service:
 1) Run "mongod -f mongod.conf" to start the database.
-2) Run "node dist/lo-suggestion.service.js" to start listening for queries and relaying related outcomes.
+2) Run "node js/script/lo-suggestion.service.js" to start listening for queries and relaying related outcomes.
 3) When terminating the process, also run "mongod -f mongod.conf --shutdown" to shut down the database.
 
 When developing:

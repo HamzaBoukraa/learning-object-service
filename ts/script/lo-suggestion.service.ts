@@ -20,12 +20,13 @@ db.connect()
     io.on('connection', function(socket) {
         // what to do when client sends learning outcome text
         socket.on('outcome', function(text) {
-            let cursor = db.matchOutcomes(text);
+            let cursor = db.searchOutcomes(text);       // text search
+            // let cursor = db.matchOutcomes(text);     // regex match
             
             let suggestions: Outcome[] = [];
 
             cursor.forEach((doc) => {
-                // if(doc.score < threshold) return false;
+                if(doc.score < threshold) return false; // text search only
 
                 /* FIXME: ^- this ensures weak results aren't
                     communicated, but I'd really like it to just
@@ -52,7 +53,6 @@ db.connect()
 
 
 import * as clientModule from 'socket.io-client';
-import * as sleep from 'sleep';
 /* FIXME: not sure if this http.listen is really how we want this service to work */
 http.listen(3000, ()=> {
     // TODO: replace this whole callback with an actual client program ;)
@@ -70,15 +70,15 @@ http.listen(3000, ()=> {
     }
 
     testit("Describe risks, vulnerabilities, and possible solutions to cybersecurity issues in the area of human security ");
-    testit("Identify risks, vulnerabilities, and possible solutions to cybersecurity issues in the area of enterprise security");
-    testit("Define risks, vulnerabilities, and possible solutions to cybersecurity issues in the area of system security");
-    testit("Identify risks, vulnerabilities, and possible solutions to cybersecurity issues in the area of software security");
-    testit("Recognize risks, vulnerabilities, and possible solutions to cybersecurity issues in the area of societal security");
-    testit("Describe integer errors and the risk associated with them");
-    testit("Identify the techniques to avoid an integer error");
-    testit("Evaluate mathematical operations that might lead to an overflow");
-    testit("Inspect code for segments that might lead to vulnerabilities");
-    testit("Appraise a problem and discuss the implications of integer overflow");
+    // testit("Identify risks, vulnerabilities, and possible solutions to cybersecurity issues in the area of enterprise security");
+    // testit("Define risks, vulnerabilities, and possible solutions to cybersecurity issues in the area of system security");
+    // testit("Identify risks, vulnerabilities, and possible solutions to cybersecurity issues in the area of software security");
+    // testit("Recognize risks, vulnerabilities, and possible solutions to cybersecurity issues in the area of societal security");
+    // testit("Describe integer errors and the risk associated with them");
+    // testit("Identify the techniques to avoid an integer error");
+    // testit("Evaluate mathematical operations that might lead to an overflow");
+    // testit("Inspect code for segments that might lead to vulnerabilities");
+    // testit("Appraise a problem and discuss the implications of integer overflow");
 
     // setTimeout(process.exit, 1500);
 

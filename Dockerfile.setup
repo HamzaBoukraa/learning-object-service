@@ -7,7 +7,8 @@ WORKDIR /app
 # Copy the files needed for production into the container at /app
 ADD package.json .
 ADD config config
-ADD dist .
+ADD js .
+ADD taxonomy.json taxonomy.json
 ADD dbcontent/Dump20171010.dat dbcontent/
 ADD dbcontent/NIST.SP.800-181.dat dbcontent/
 

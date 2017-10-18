@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc -p ts/",
     "build:watch": "tsc -p ts/ -w",
-    "setup": "node js/script/db-setup.script.js",
+    "setup": "node script/db-setup.script.js",
     "prestart": "mongod -f mongod.conf",
     "start": "npm run build:watch",
     "stop": "mongod -f mongod.conf --shutdown",
@@ -30,7 +30,6 @@
     "mongodb": "^2.2.31",
     "mysql": "^2.15.0",
     "request": "^2.83.0",
-    "sleep": "^5.1.1",
     "socket.io": "^2.0.3"
   },
   "devDependencies": {
@@ -40,7 +39,6 @@
     "@types/line-reader": "0.0.28",
     "@types/mongodb": "^2.2.13",
     "@types/mysql": "0.0.34",
-    "@types/sleep": "0.0.7",
     "@types/socket.io": "^1.4.31",
     "@types/socket.io-client": "^1.4.31",
     "typescript": "^2.5.3"
