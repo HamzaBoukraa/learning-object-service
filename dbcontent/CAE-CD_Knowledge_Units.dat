@@ -1,0 +1,167 @@
+Basic Data Analysis	Students will be able to apply standard statistical inference procedures to draw conclusions from data.
+Basic Scripting	Students will be able to demonstrate their proficiency in the use of scripting languages to write simple scripts (e.g., to automate system administration tasks).
+Basic Scripting	Students will be able to write simple and compound conditions within a programming language or similar environment (e.g., scripts, macros, SQL).
+Basic Scripting	Students will be able to write simple linear and looping scripts.
+Cyber Defense	Students will be able to describe potential system attacks and the actors that might perform them.
+Cyber Defense	Students will be able to describe cyber defense tools, methods and components.
+Cyber Defense	Students will be able to apply cyber defense methods to prepare a system to repel attacks.
+Cyber Defense	Students will be able to describe appropriate measures to be taken should a system compromise occur.
+Cyber Threats	Students will be able to identify the bad actors in cyberspace and compare and contrast their resources, capabilities/techniques, motivations, aversion to risk.
+Cyber Threats	Students will be able to describe different types of attacks and their characteristics.
+Fundamental Security Design Principles	Students will be able to list the first principles of security.
+Fundamental Security Design Principles	Students will be able to describe why each principle is important to security and how it enables the development of security mechanisms that can implement desired security policies.
+Fundamental Security Design Principles	Students will be able to analyze common security failures and identify specific design principles that have been violated.
+Fundamental Security Design Principles	Given a specific scenario, students will be able to identify the needed design principle.
+Fundamental Security Design Principles	Students will be able to describe why good human machine interfaces are important to system use.
+Fundamental Security Design Principles	Students will understand the interaction between security and system usability and the importance for minimizing the affects of security mechanisms
+IA Fundamentals	Students shall be able to list the fundamental concepts of the Information Assurance / Cyber Defense discipline.
+IA Fundamentals	Students will be able to describe how the fundamental concepts of cyber defense can be used to provide system security.
+IA Fundamentals	Students will be able to examine the architecture of a typical, complex system and identify significant vulnerabilities, risks, and points at which specific security technologies/methods should be employed.
+Intro to Cryptography	Students will be able to identify the elements of a cryptographic system.
+Intro to Cryptography	Students will be able to describe the differences between symmetric and asymmetric algorithms.
+Intro to Cryptography	Students will be able to describe which cryptographic protocols, tools and techniques are appropriate for a given situation.
+Intro to Cryptography	Students will be able to describe how crypto can be used, strengths and weaknesses, modes, and issues that have to be addressed in an implementation (e.g., key management), etc.
+IT System Components	Students will be able to describe the hardware components of modern computing environments and their individual functions.
+Networking Concepts	Students will be able to describe the fundamental concepts, technologies, components and issues related to communications and data networks.
+Networking Concepts	Students will be able to describe a basic network architecture given a specific need and set of hosts/clients.
+Networking Concepts	Students will be able to track and identify the packets involved in a simple TCP connection (or a trace of such a connection).
+Networking Concepts	Students will be able to use a network monitoring tools (e.g., WireShark).
+Networking Concepts	Students will be able to use a network mapping tool (e.g., Nmap).
+Policy, Legal, Ethics and Compliance	Students shall be able to list the applicable laws and policies related to cyber defense and describe the major components of each pertaining to the storage and transmission of data.
+Policy, Legal, Ethics and Compliance	Students shall be able to describe their responsibilities related to the handling of information about vulnerabilities.
+Policy, Legal, Ethics and Compliance	Students will be able to describe how the type of legal dispute (civil, criminal, private) affects the evidence used to resolve it.
+Systems Administration	Students will be able to apply the knowledge gained to successfully install and securely configure, operate and maintain a commodity OS, to include: setting up user accounts, configuring appropriate authentication policies, configuring audit capabilities, performing back-ups, installing patches and updates, reviewing security logs, and restoring the system from a backup.
+Databases	Students will be able to describe common security models of database management systems.
+Databases	Students will be able to identify and describe common security concerns in database management systems.
+Databases	Students will be able to apply security principles to the design and development of database systems and database structures.
+Network Defense	Students will be able to describe the various concepts in network defense.
+Network Defense	Students will be able to apply their knowledge to implement network defense measures.
+Network Defense	Students will be able to use a network monitoring tools (e.g., WireShark).
+Network Defense	Students will be able to use a network mapping tool (e.g., Nmap).
+Network Technology and Protocols	Students will be able to apply their knowledge of network technologies to design and construct a working network.
+Network Technology and Protocols	Students will be able to analyze a trace of packets to identify the establishment of a TCP connection.
+Network Technology and Protocols	Students will be able to demonstrate the use of a network monitor to display packets.
+Operating Systems Concepts	Students will be able to identify the major concepts in modern operating systems and the basic security issues in OS design and implementation (how the first principles of security apply to operating systems).
+Probability and Statistics	Students will be able to evaluate probabilities to solve applied problems.
+Probability and Statistics	Students will be able to describe how basic statistics and statistical methods can be applied in a given situation.
+Programming	Students will be able to demonstrate proficiency in the use of a programming language to solve complex problems in a secure and robust manner.
+Programming	Students will be able to write simple and compound conditions within a programming language or similar environment (e.g., scripts, macros, SQL).
+Programming	Students will be able to demonstrate the ability to design and develop basic programs for modern computing platforms (e.g., PC, cloud, mobile, web).
+Advanced Cryptography	Students will be able to describe how various cryptographic algorithms and protocols work.
+Advanced Cryptography	Students will be able to evaluate security mechanisms based on cryptography.
+Advanced Cryptography	Students will be able to describe the application of cryptography in SSL, virtual private networks, secure storage, and other security applications.
+Advanced Cryptography	Students will be able to take a mode or protocol diagram and identify how an error propagates through the cryptosystem.
+Advanced Network Technology & Protocols	Students will be able to describe current networking technologies and trends.
+Advanced Network Technology & Protocols	Students will be able to describe and discuss data network architectures and protocols, to include their advantages and disadvantages, applications, and security issues.
+Algorithms	Students will be able to describe how to perform an analysis of algorithms to determine best and worst case behavior.
+Analog Telecommunications Systems	Students will be able to describe the basic concepts of modern analog communications systems, using block diagrams.
+Analog Telecommunications Systems	Students will be able to briefly describe concepts such as the different types of modulation and their advantages and applications, bandwidth, noise and the importance of the signal- to-noise ratio.
+Cloud Computing	Students will be able to describe each type of service/model of cloud computing
+Cloud Computing	Students will be able to compare and contrast: local resource requirements, local control, network requirements, and security (attacks, mitigations, overall vulnerability)
+Cybersecurity Planning and Management	Students will be able to examine the placement of security functions in a system and describe the strengths and weaknesses
+Cybersecurity Planning and Management	Students will be able to develop contingency plans for various size organizations to include: business continuity, disaster recovery and incident response.
+Cybersecurity Planning and Management	Students will be able to develop system specific plans for: o  The protection of intellectual property o  The implementation of access controls, and o  Patch and change management.
+Data Administration	Students will be able to identify relevant security issues given a system and data management structure
+Data Structures	Students will be able to list the most common structures and data formats for storing data in a computer system.
+Data Structures	Students will be able to discuss the advantages and disadvantages of different data structures/formats.
+Database Management Systems	Students will be able to list the most common structures for storing data in a database management system.
+Database Management Systems	Students will be able to configure a commodity DBMS for secure access.
+Database Management Systems	Students will be able to describe alternatives to relational DBMSs and their unique security issues.
+Database Management Systems	Students will be able to describe the role of a database, a DBMS, and a database server within a complex system supporting multiple applications.
+Database Management Systems	Students will be able to demonstrate basic SQL proficiency for table creation, data insertion and data query.
+Database Management Systems	Students will be able to describe DBMS access controls and privilege levels and apply them to a simple database.
+Database Management Systems	Students will be able to develop a DB structure for a specific system/problem.
+Digital Communications	Students will be able to describe digital communications systems in terms of subsystems and modulation techniques.
+Digital Communications	Students will be able to describe the current state of the art in digital communications.
+Digital Communications	Students will be able to compare and contrast different approaches to digital communications and describe the advantages and disadvantages of each.
+Digital Forensics	Students shall be able to discuss the rules, laws, policies, and procedures that affect digital forensics
+Digital Forensics	Students shall be able to use one or more common DF tools, such as EnCase, FTK, ProDiscover, Xways, SleuthKit.
+Digital Forensics	Students will be able to describe the steps in performing digital forensics from the initial recognition of an incident through the steps of evidence gathering, preservation and analysis, through the completion of legal proceedings.
+Host Forensics	Students will be able to describe what can/cannot be retrieved from various OSes.
+Host Forensics	Students will be able to describe the methodologies used in host forensics.
+Device Forensics	Students will be able to describe methods for the acquisition/analysis of mobile devices (e.g., device storage, system data, cell tower logs).
+Device Forensics	Students will be able to explain the legal issues related to mobile device forensic activities.
+Media Forensics	Students will be able to describe methods and approaches for forensic analysis on specified media.
+Network Forensics	Students will be able to describe the methodologies used in network forensics.
+Network Forensics	Students will be able to analyze and decipher network traffic, identify anomalous or malicious activity, and provide a summary of the effects on the system.
+Embedded Systems	Students will be able to discuss embedded system architectures, real time OS issues such as concurrency and synchronization, and real time resource management.
+Forensic Accounting	Students will be able to describe common forms of financial statement fraud and related detection techniques.
+Forensic Accounting	Students will be able to describe and implement methods of indirectly estimating concealed revenue and income.
+Forensic Accounting	Students will be able to describe common methods of money laundering and related methods of prevention and detection (including related laws and regulations).
+Forensic Accounting	Students will be able to compute loss, damages, and business value for occurrences of fraud, theft and fraudulent financial statements.
+Formal Methods	Students will be able to apply formal security policy models to real world scenarios.
+Fraud Prevention and Management	Students will be able to describe the components of the fraud triangle – necessary condition for fraud.
+Fraud Prevention and Management	Students will be able to describe the cost and effectiveness of common fraud detection and prevention methods.
+Fraud Prevention and Management	Students will be able to analyze record keeping and management procedures for assets and to identify/correct weaknesses.
+Fraud Prevention and Management	Students will be able to describe legal and ethical requirements for detecting, preventing and reporting fraud.
+Fraud Prevention and Management	Students will be able to describe investigative procedures for fraud.
+Fraud Prevention and Management	Students will be able to describe common methods of financial statement fraud.
+Hardware Reverse Engineering	Students will be able to perform basic procedures such as probing, measuring, and data collection to identify functionality and to affect modifications.
+Hardware/Firmware Security	Students will be able to describe how systems are initialized, how software is loaded, and how software and hardware interact.
+Hardware/Firmware Security	Students will be able to describe the role of intermediate software such as hardware abstraction layers or other forms of middleware.
+IA Architectures	Students will be able to examine a specific architecture and identify potential vulnerabilities.
+IA Architectures	Students will be able to design a secure architecture for a given application.
+IA Compliance	Students shall be able to list the applicable laws for compliance in a given situation.
+IA Compliance	Students shall be able to describe what the laws mandate and where they apply.
+IA Compliance	Students will be able to conduct audits to determine compliance with laws.
+IA Standards	Students will be able to describe the impact of legal/regulatory standards on a given system.
+IA Standards	Students will be able to describe how standards, such as the Orange Book, may be applied to the requirements for a sub-contractor or customer.
+Industrial Control Systems	Students will be able to describe the use and application of PLCs in automation.
+Industrial Control Systems	Students will be able to describe the components and applications of industrial control systems.
+Industrial Control Systems	Students will be able to explain various control schemes and their differences.
+Industrial Control Systems	Students shall be able to demonstrate the ability to understand, evaluate and implement security functionality across an industrial network
+Intro to Theory of Computation	Students will be able to describe the concepts of complexity and computability.
+Intrusion Detection / Prevention Systems	Students will be able to demonstrate the ability to detect, identify, resolve and document host or network intrusions.
+Intrusion Detection / Prevention Systems	Students will be able to demonstrate the ability to detect various types of malware (keyloggers, rootkits) and unauthorized devices (rogue wireless access points) on a live network.
+Intrusion Detection / Prevention Systems	Students will be able to demonstrate the ability to configure IDS/IPS systems to reduce false positives and false negatives.
+Life-Cycle Security	Students will be able to analyze a security failure and identify how decisions in other phases of the system life-cycle influenced the eventual failure.
+Life-Cycle Security	Students will be able to list and describe the phases of the system life-cycle.
+Life-Cycle Security	Students will be able to list and describe the elements of a maturity model.
+Low Level Programming	Students will be able to utilize low level programming languages to implement complex programs such as internal operating system components and drivers to interface with and control hardware devices.
+Mobile Technologies	Students will be able to describe how a mobile device maintains connectivity to the network while in motion, to include how infrastructure nodes handle passing the mobile device from one node to the next.
+Mobile Technologies	Students will be able to explain the weaknesses of WEP and which ones have been addressed and how.
+Network Security Administration	Students will be able to appropriate position network security components within a network architecture to implement a layered defense.
+Network Security Administration	Students will be able to securely configure network devices and services and establish secure communications between networks.
+Operating Systems Hardening	Students will be able to describe, for a given OS, the steps necessary for hardening the OS with respect to various applications.
+Operating Systems Hardening	Students will be able to securely install a given OS, remove or shut down unnecessary components and services, close unnecessary ports, and ensure that all patches and updates are applied.
+Operating Systems Theory	Students will have an understanding of operating systems theory and implementation. They will understand OS internals to the level that they can design and implement significant architectural changes to an existing OS.
+Overview of Cyber Operations	The student will be able to describe the laws that provide US entities the authority to perform cyber operations.
+Overview of Cyber Operations	The student will be able to list the phases of a well organized cyber operation and describe the goals and objectives of each phase.
+Overview of Cyber Operations	The student will be able to identify specific phases of a cyber operation in network traffic.
+Overview of Cyber Operations	The student will be able to describe potential motivations that might prompt an entity to perform a cyber operation.
+Penetration Testing	Students will be able to plan, organize and perform penetration testing on a simple network.
+QA / Functional Testing	Students will be able to develop effective tests in a structured, organized manner.
+QA / Functional Testing	Students will be able to perform security functional testing to demonstrate that security policies and mechanisms are completely and correctly implemented.
+RF Principles	Students should be able to identify methods for isolating RF emissions
+RF Principles	Students should be able to identify techniques for obfuscating RF transmissions
+RF Principles	Students should be able to discuss the tradeoffs associated with bandwidth data rate, modulation, complexity, acceptable BER, and signal spreading
+Secure Programming Practices	Students will be able to produce software components that satisfy their functional requirements without introducing vulnerabilities
+Secure Programming Practices	Students will be able to describe the characteristics of secure programming.
+Security Program Management	Students will be able to apply their knowledge to develop a security program, identifying goals, objectives and metrics.
+Security Program Management	Students will be able to apply their knowledge to effectively manage a security program.
+Security Program Management	Students will be able to assess the effectiveness of a security program.
+Security Risk Analysis	Students will be able to describe how risk relates to a system security policy.
+Security Risk Analysis	Students will be able to describe various risk analysis methodologies.
+Security Risk Analysis	Students will be able to evaluate and categorize risk 1) with respect to technology; 2) with respect to individuals, and 3) in the enterprise, and recommend appropriate responses.
+Security Risk Analysis	Students will be able to compare the advantages and disadvantages of various risk assessment methodologies
+Security Risk Analysis	Students will be able to select the optimal methodology based on needs, advantages and disadvantages.
+Software Security Analysis	Students will be able to describe software security analysis tools and techniques.
+Software Security Analysis	Students will be able to apply their knowledge to perform software security analysis, using common tools, against previously unknown software components.
+Software Assurance	Students will be able to describe the importance of secure software, and the programming practices and development processes and methodologies that lead to secure software.
+Software Reverse Engineering	Students will be able to use a common SW RE tool to safely perform static and dynamic analysis of software (or malware) of unknown origin for the purposes of recovering the original implementation and/or understanding the software functionality.
+Supply Chain Security	Students will be able to describe the issues related to outsourcing hardware and/or software development and/or integration.
+Supply Chain Security	Students will be able to describe methods to mitigate these issues, and the limitations of these methods.
+Systems Certification and Accreditation	Students will be able to describe the DoD system certification and accreditation processes.
+Systems Certification and Accreditation	Students will be able to define certification and accreditation.
+Systems Programming	Students shall be able to implement new functions in an OS kernel
+Systems Programming	Students will be able to develop complex and sophisticated programs, such as a device driver, that can be embedded into an OS kernel.
+Systems Programming	Students will be able to write a program that implements a network stack to manage network communications.
+Systems Programming	Students will be able to write a functional, stand-alone assembly language program of the complexity of a basic telnet client, with no help from external libraries.
+Systems Security Engineering	Students will be able to analyze system components and determine how they will interact in a composed system.
+Systems Security Engineering	Students will be able to analyze a system design and determine if the design will meet the system security requirements.
+Virtualization Technologies	Students will be able to describe the fundamental concepts of virtualization.
+Virtualization Technologies	Students will be able to compare and contrast the different virtualization architectures.
+Vulnerability Analysis	Students will be able to describe characteristics of malware.
+Vulnerability Analysis	Students will be able to identify malware.
+Vulnerability Analysis	Students will be able to apply tools and techniques for identifying vulnerabilities.
+Wireless Sensor Networks	Students will be able to describe the challenges associated with wireless sensor networks, including coordination, energy efficiency, self organization and security.

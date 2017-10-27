@@ -17,7 +17,7 @@
 #                   If a newer version does different things...good luck.
 #                 If you elect to use a different conversion,
 #                   you'll need to adapt this script to the new formatting.
-#   3) move the new .txt file to LO Suggestion's 'accreditation' directory
+#   3) move the new .txt file to LO Suggestion's 'dbcontent/rawdata' directory
 #   4) certain codes (K0098-K0128 andA0161-A0176) have an anomalous
 #       margin that throws this script off. Fix this by manually
 #       deleting two or three spaces before each of those codes,
