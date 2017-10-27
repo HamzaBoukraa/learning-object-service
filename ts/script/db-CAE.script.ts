@@ -10,7 +10,7 @@ import * as db from '../db.driver';
 import * as glue from '../db.interactor';
 import { StandardOutcome } from '../entity/outcome';
 
-const file = "dbcontent/2014 CAE Knowledge Units.dat";   // the data file
+const file = "dbcontent/CAE-CD_Knowledge_Units.dat";   // the data file
 
 export async function CAE() {
     let cnt = 0;    // track how many records we insert
