@@ -13,6 +13,7 @@ ADD dbcontent/Dump20171010.dat dbcontent/
 ADD dbcontent/NIST.SP.800-181.dat dbcontent/
 ADD dbcontent/NIST.SP.800-181.tasks.dat dbcontent/
 ADD dbcontent/CAE-CD_Knowledge_Units.dat dbcontent/
+ADD dbcontent/CS_2013_Learning_Outcomes.dat dbcontent/
 
 # Install any needed packages specified in package.json
 # TODO: It may be more 'correct' to leave off the --only flag

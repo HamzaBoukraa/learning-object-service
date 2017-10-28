@@ -6,7 +6,7 @@
 #
 # Before you can run this file, you need to
 #   1) get the document:
-#       http://www.cisse.info/pdf/2014/2014%20CAE%20Knowledge%20Units.pdf
+#       https://www.iad.gov/NIETP/documents/Requirements/CAE-CD_Knowledge_Units.pdf
 #   2) convert it into a text file:
 #       a - install "ghostscript", if you don't already have it (try "which gs")
 #       b - run this command from the directory with the pdf:

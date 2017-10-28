@@ -10,6 +10,7 @@ import { init } from './db-init.script';
 import { NCWF } from './db-NCWF.script';
 import { NCWFtasks } from './db-NCWF-tasks.script';
 import { CAE } from './db-CAE.script';
+import { CS2013 } from './db-CS2013.script';
 import { fill } from './db-fill.script';
 
 import * as config from 'config';
@@ -29,6 +30,7 @@ MongoClient.connect(dbconfig["uri"], async (err, dbase)=>{
             NCWF().catch((err)=>{console.log("Failed to add NCWF outcomes: "+err)});
             NCWFtasks().catch((err)=>{console.log("Failed to add NCWF tasks: "+err)});
             CAE().catch((err)=>{console.log("Failed to add CAE outcomes: "+err)});
+            CS2013().catch((err)=>{console.log("Failed to add CS2013 outcomes: "+err)});
 
             console.log("--- Adding Legacy Objects ---")
             fill().catch((err)=>{console.log("Failed to add legacies: "+err)});
