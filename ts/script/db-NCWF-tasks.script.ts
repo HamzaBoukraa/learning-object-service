@@ -10,16 +10,16 @@ import * as db from '../db.driver';
 import * as glue from '../db.interactor';
 import { StandardOutcome } from '../entity/outcome';
 
-const file = "dbcontent/NIST.SP.800-181.dat";   // the data file
+const file = "dbcontent/NIST.SP.800-181.tasks.dat";   // the data file
 
-export async function NCWF() {
+export async function NCWFtasks() {
     let cnt = 0;    // track how many records we insert
 
     // what to do for each record
     lineReader.eachLine(file, function(line, last) {
         let dat = line.split('\t');
         if(dat.length == 2) {
-            let outcome = new StandardOutcome("NCWF 2017", dat[0], dat[1]);
+            let outcome = new StandardOutcome("NCWF 2017 Tasks", dat[0], dat[1]);
             glue.addStandardOutcome(outcome)   // asynchronous
                 .catch((err)=>{console.log("Failed to insert: "+err)});
             cnt += 1;
@@ -29,7 +29,7 @@ export async function NCWF() {
 
         // if we just processed the last line, exit gracefully
         if(last) {
-            console.log("Added "+cnt+" NCWF KSA's as outcomes");
+            console.log("Added "+cnt+" NCWF tasks as outcomes");
         }
     });
 
@@ -39,7 +39,7 @@ export async function NCWF() {
 if (require.main === module) {
     db.connect()
       .then(async () => {
-        await NCWF();
+        await NCWFtasks();
         setTimeout(db.disconnect, 2000);
       }).catch((err)=>{
         console.log(err);

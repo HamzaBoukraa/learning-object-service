@@ -8,6 +8,7 @@ import * as db from '../db.driver';
 
 import { init } from './db-init.script';
 import { NCWF } from './db-NCWF.script';
+import { NCWFtasks } from './db-NCWF-tasks.script';
 import { CAE } from './db-CAE.script';
 import { fill } from './db-fill.script';
 
@@ -26,6 +27,7 @@ MongoClient.connect(dbconfig["uri"], async (err, dbase)=>{
           .then(()=>{
             console.log("--- Adding Standard Outcomes ---")
             NCWF().catch((err)=>{console.log("Failed to add NCWF outcomes: "+err)});
+            NCWFtasks().catch((err)=>{console.log("Failed to add NCWF tasks: "+err)});
             CAE().catch((err)=>{console.log("Failed to add CAE outcomes: "+err)});
 
             console.log("--- Adding Legacy Objects ---")

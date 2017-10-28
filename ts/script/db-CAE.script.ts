@@ -29,7 +29,7 @@ export async function CAE() {
 
         // if we just processed the last line, exit gracefully
         if(last) {
-            console.log("Added "+cnt+" records");
+            console.log("Added "+cnt+" CAE learning outcomes");
         }
     });
 
