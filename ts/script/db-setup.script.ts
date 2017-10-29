@@ -13,12 +13,12 @@ import { CAE } from './db-CAE.script';
 import { CS2013 } from './db-CS2013.script';
 import { fill } from './db-fill.script';
 
-import * as config from 'config';
-let dbconfig = config.get('database');
+if (!process.env["CLARK_DB"]) process.env["CLARK_DB"] = "localhost:27017";
+let dburi = "mongodb://"+process.env["CLARK_DB"]+"/onion";
 
 // run initialization script
 console.log("--- Initializing ---");
-MongoClient.connect(dbconfig["uri"], async (err, dbase)=>{
+MongoClient.connect(dburi, async (err, dbase)=>{
     if(err) throw err;
     else {
         await init(dbase);

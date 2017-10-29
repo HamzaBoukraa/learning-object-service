@@ -4,8 +4,6 @@
  * Code adapted from agm1984 @ https://stackoverflow.com/questions/24621940/how-to-properly-reuse-connection-to-mongodb-across-nodejs-application-and-module
  */
 
-import * as config from 'config';
-
 import { MongoClient, Db, Cursor, ObjectID } from 'mongodb';
 
 import { Record, Update, Insert, Edit } from './schema/db.schema';
@@ -39,7 +37,9 @@ import { OutcomeRecord } from './schema/learning-outcome.schema';
 
 export { ObjectID };
 
-let dbconfig = config.get('database');
+if (!process.env["CLARK_DB"]) process.env["CLARK_DB"] = "localhost:27017";
+let dburi = "mongodb://"+process.env["CLARK_DB"]+"/onion";
+
 // only created once, no matter how many times the module is required
 let _db: Db;
 
@@ -57,11 +57,11 @@ let _db: Db;
  */
 export async function connect(): Promise<void> {
     try {
-        _db = await MongoClient.connect(dbconfig["uri"]);
+        _db = await MongoClient.connect(dburi);
         return Promise.resolve();
     } catch(e) {
         return Promise.reject("Problem connecting to database at "
-                +dbconfig["uri"]+":\n\t"+e);
+                +dburi+":\n\t"+e);
     }
 }
 

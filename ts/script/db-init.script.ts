@@ -9,14 +9,13 @@
 
 require('../useme');
 
-import * as config from 'config';
-
 import { MongoClient, Db } from 'mongodb';
 import {
     collections, schemaFor, uniquesFor, textsFor
 } from '../schema/db.schema';
 
-let dbconfig = config.get('database');
+if (!process.env["CLARK_DB"]) process.env["CLARK_DB"] = "localhost:27017";
+let dburi = "mongodb://"+process.env["CLARK_DB"]+"/onion";
 
 export async function init(db: Db) {
     // drop collections
@@ -73,7 +72,7 @@ export async function init(db: Db) {
 }
 
 if (require.main === module) {
-    MongoClient.connect(dbconfig["uri"])
+    MongoClient.connect(dburi)
                .then( async (db) => {
                    await init(db);
                    db.close();

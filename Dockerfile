@@ -6,16 +6,17 @@ WORKDIR /app
 
 # Copy the files needed for production into the container at /app
 ADD package.json .
-ADD config config
 ADD taxonomy.json taxonomy.json
 ADD js .
 
 # Install any needed packages specified in package.json
-# TODO: It may be more 'correct' to leave off the --only flag
-#       and set NODE_ENV to 'production' (whatever *that* means)
-# I think it's something like this, but no guarantees:
-#   ENV NODE_ENV=production
 RUN npm install --only=prod
+
+# set default values for clark environment variables
+#   change at runtime with "-e key=value" options
+ENV CLARK_DB="172.17.0.2:27017"
+
+# NOTE: consider using "-e NODE_ENV=production" for live instances
 
 # Make port 3000 available to the world outside this container
 # TODO: decide which port lo-suggestion should use
