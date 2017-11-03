@@ -5,7 +5,7 @@ require('../useme');
 import * as lineReader from 'line-reader';
 
 import * as db from '../db.driver';
-import * as glue from '../db.interactor';
+import * as glue from '../db.gluer';
 import { UserID } from '../schema/db.schema';
 
 import { User } from '../entity/user';
