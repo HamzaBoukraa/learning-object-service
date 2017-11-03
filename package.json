@@ -7,6 +7,7 @@
     "build": "tsc -p ts/",
     "build:watch": "tsc -p ts/ -w",
     "setup": "node script/db-setup.script.js",
+    "compare": "node js/script/lo-suggestion.compare.js",
     "prestart": "mongod -f mongod.conf",
     "start": "npm run build:watch",
     "stop": "mongod -f mongod.conf --shutdown",

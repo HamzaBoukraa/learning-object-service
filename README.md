@@ -25,6 +25,11 @@ Using a remote database:
 1) Run "npm run build:watch" to watch for changes in any ts/*.ts file to retranspile it.
 2) Run programs with 'CLARK\_DB="[db address]" node js/[filename].js' to run the program with the environment variable CLARK\_DB set appropriately. Alternatively, you may set the environment variable permanently and omit the cumbersome expression.
 
+## How to compare suggestion strategies
+1) Put the suffix for your suggestion (the part before the .ts) in client/services.json along with a valid port.
+2) Run "npm run compare".
+3) Open a browser and navigate to "localhost:5000".
+
 ## How to build Docker images
 
 1) Run "npm run build" to ensure JavaScript files are up to date.
