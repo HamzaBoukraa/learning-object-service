@@ -14,9 +14,6 @@ import {
     collections, schemaFor, uniquesFor, textsFor
 } from '../schema/db.schema';
 
-if (!process.env["CLARK_DB"]) process.env["CLARK_DB"] = "localhost:27017";
-let dburi = "mongodb://"+process.env["CLARK_DB"]+"/onion";
-
 export async function init(db: Db) {
     // drop collections
     for ( let collection of collections() ) {
@@ -72,7 +69,8 @@ export async function init(db: Db) {
 }
 
 if (require.main === module) {
-    MongoClient.connect(dburi)
+    if (!process.env["CLARK_DB"]) process.env["CLARK_DB"] = "localhost:27017";
+    MongoClient.connect("mongodb://"+process.env["CLARK_DB"]+"/onion")
                .then( async (db) => {
                    await init(db);
                    db.close();

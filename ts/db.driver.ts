@@ -37,9 +37,6 @@ import { OutcomeRecord } from './schema/learning-outcome.schema';
 
 export { ObjectID };
 
-if (!process.env["CLARK_DB"]) process.env["CLARK_DB"] = "localhost:27017";
-let dburi = "mongodb://"+process.env["CLARK_DB"]+"/onion";
-
 // only created once, no matter how many times the module is required
 let _db: Db;
 
@@ -54,8 +51,12 @@ let _db: Db;
  * 
  * TODO: Verify that connections are automatically closed
  *       when they no longer have a reference.
+ * 
+ * @param {string} dbIP the host and port on which mongodb is running
  */
-export async function connect(): Promise<void> {
+export async function connect(dbIP: string): Promise<void> {
+    let dburi = "mongodb://"+dbIP+"/onion";
+    
     try {
         _db = await MongoClient.connect(dburi);
         return Promise.resolve();

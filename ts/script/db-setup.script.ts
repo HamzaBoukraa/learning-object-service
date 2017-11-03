@@ -13,18 +13,17 @@ import { CAE } from './db-CAE.script';
 import { CS2013 } from './db-CS2013.script';
 import { fill } from './db-fill.script';
 
-if (!process.env["CLARK_DB"]) process.env["CLARK_DB"] = "localhost:27017";
-let dburi = "mongodb://"+process.env["CLARK_DB"]+"/onion";
-
 // run initialization script
+if (!process.env["CLARK_DB"]) process.env["CLARK_DB"] = "localhost:27017";
+
 console.log("--- Initializing ---");
-MongoClient.connect(dburi, async (err, dbase)=>{
+MongoClient.connect("mongodb://"+process.env["CLARK_DB"]+"/onion", async (err, dbase)=>{
     if(err) throw err;
     else {
         await init(dbase);
         dbase.close();
 
-        db.connect()
+        db.connect(process.env["CLARK_DB"])
           .then(()=>{
             console.log("--- Adding Standard Outcomes ---")
             NCWF().catch((err)=>{console.log("Failed to add NCWF outcomes: "+err)});

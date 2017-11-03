@@ -37,7 +37,8 @@ export async function CS2013() {
 }
 
 if (require.main === module) {
-    db.connect()
+    if (!process.env["CLARK_DB"]) process.env["CLARK_DB"] = "localhost:27017";
+    db.connect(process.env["CLARK_DB"])
       .then(async () => {
         await CS2013();
         setTimeout(db.disconnect, 2000);

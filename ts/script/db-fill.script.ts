@@ -82,7 +82,8 @@ export async function fill() {
 }
 
 if (require.main === module) {
-    db.connect()
+    if (!process.env["CLARK_DB"]) process.env["CLARK_DB"] = "localhost:27017";
+    db.connect(process.env["CLARK_DB"])
       .then(async () => {
         await fill();
         db.disconnect();
