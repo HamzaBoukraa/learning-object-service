@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/Cyber4All/database-interaction#readme",
   "dependencies": {
+    "assert-never": "^1.0.0",
     "jsonfile": "^4.0.0",
     "line-reader": "^0.4.0",
     "mongodb": "^2.2.31",

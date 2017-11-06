@@ -2,6 +2,8 @@
  * Provide functions for interaction between entities and database.
  */
 
+import assertNever from 'assert-never';
+
 import * as db from './db.driver';
 
 import {
@@ -14,7 +16,7 @@ import {
 
 import { User } from './entity/user';
 import { LearningObject } from './entity/learning-object';
-import { StandardOutcome, LearningOutcome } from './entity/outcome';
+import { Outcome, StandardOutcome, LearningOutcome } from './entity/outcome';
 import { LearningGoal } from './entity/learning-goal';
 import { AssessmentPlan } from './entity/assessment-plan';
 import { InstructionalStrategy } from './entity/instructional-strategy';
@@ -256,6 +258,57 @@ export async function addStandardOutcome(standard: StandardOutcome):
         name_: standard.name,
         outcome: standard.outcome
     });
+}
+
+export type suggestMode = "text" | "regex";
+
+/**
+ * Search for outcomes related to a given text string.
+ * 
+ * FIXME: We may want to transform this into a streaming algorithm,
+ *       rather than waiting for schema -> entity conversion
+ *       for the entire list. I don't know if there's a good way
+ *       to do that, but the terms 'Buffer' and 'Readable' seem
+ *       vaguely promising.
+ * 
+ * @param {string} text the words to search for
+ * @param {suggestMode} mode which suggestion mode to use:
+ *      "text" - uses mongo's native text search query
+ *      "regex" - matches outcomes containing each word in text
+ * @param {number} threshold minimum score to include in results
+ *      (ignored if mode is "regex")
+ * 
+ * @returns {Outcome[]} list of outcome suggestions, ordered by score
+ */
+export async function suggestOutcomes(text: string, mode:suggestMode="text",
+        threshold=0): Promise<Outcome[]> {
+    try {
+        let suggestions: Outcome[] = [];
+        
+        let cursor;
+        switch(mode) {
+            case "text": cursor = db.searchOutcomes(text);break;
+            case "regex": cursor = db.matchOutcomes(text);break;
+            default: return assertNever(mode);
+        }
+
+        while (await cursor.hasNext()) {
+            let doc = await cursor.next();
+            
+            // terminate iteration once scores are lower than threshold
+            if (typeof doc.score !== undefined && doc.score < threshold) break;
+
+            suggestions.push({
+               author: doc.author,
+               name: doc.name_,
+               outcome: doc.outcome
+            });
+        }
+
+        return Promise.resolve(suggestions);
+    } catch(e) {
+        return Promise.reject(e);
+    }
 }
 
 //////////////////////////////////////////
