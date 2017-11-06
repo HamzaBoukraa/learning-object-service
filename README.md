@@ -1,47 +1,172 @@
-# Learning Outcome Suggestion
+# Database Interaction Service
 
-This is a microservice project associated with Towson's CLARK platform for developing a cybersecurity curriculum repository.
+This service acts as the interaction layer between the database and all other CLARK services.
 
-## How to install
+## Event API
 
-1) Run "git clone https://github.com/Cyber4All/learning-outcome-suggestion.git" to clone the Github repository to your local machine.
-2) Run "npm install" to install all node directories.
-3) Run "npm run build" to transpile all TypeScript files in 'ts' to JavaScript files in 'js'.
+Please see the jsdocs for `db.driver.ts` and `db.gluer.ts` for usage, parameters and response types.
 
-To set up a local database (requires mongo installation):
-4) Run "mkdir db" to set up a directory for the database to use.
-5) Run "mongod -f mongod.conf" to start the database.
-6) Run "node js/script/db-setup.script.js" to initialize the database collections.
-7) Run "mongod -f mongod.conf --shutdown" to shut down the database
+TODO: Generate and link to documentation for `db.driver.ts` and `db.gluer.ts`.
 
-## How to develop
+- `loadUser` (gluer)
+- `loadLearningObject` (gluer)
+- `addUser` (gluer)
+- `addLearningObject` (gluer)
+- `addLearningOutcome` (gluer)
+- `editUser` (gluer)
+- `editLearningObject` (gluer)
+- `editLearningOutcome` (gluer)
+- `reorderObject` (driver)
+- `reorderOutcome` (driver)
+- `unmapOutcome` (driver)
+- `mapOutcome` (driver)
+- `deleteUser` (driver)
+- `deleteLearningObject` (driver)
+- `deleteLearningOutcome` (driver)
+- `findUser` (driver)
+- `findLearningObject` (driver)
 
-Using a local database (requires mongo installation):
-1) Run "npm start" when you start working. This ensures the local database process is running, and watches for changes in any ts/*.ts file to retranspile it.
-2) Run programs with "node js/[filename].js". Note that you are running the transpiled JavaScript, not the TypeScript source.
-2) Run "npm stop" when you are finished working, to shutdown the database.
+Also please see `suggestOutcomes` in `db.gluer.ts` for the following events:
 
-Using a remote database:
-1) Run "npm run build:watch" to watch for changes in any ts/*.ts file to retranspile it.
-2) Run programs with 'CLARK\_DB="[db address]" node js/[filename].js' to run the program with the environment variable CLARK\_DB set appropriately. Alternatively, you may set the environment variable permanently and omit the cumbersome expression.
+- `suggestOutcomes` (`text` mode)
 
-## How to compare suggestion strategies
-1) Put the suffix for your suggestion (the part before the .ts) in client/services.json along with a valid port.
-2) Run "npm run compare".
-3) Open a browser and navigate to "localhost:5000".
+  Arguments:
+  - `string` text
+  - `number` threshold
 
-## How to build Docker images
+  Response: `entity.Outcome[]`
 
-1) Run "npm run build" to ensure JavaScript files are up to date.
-2) Run "docker build -t lo-suggestion ." to build the lo-suggestion service.
-3) Run "docker build -t db-setup -f Dockerfile.setup ." to build the database initialization task.
+- `suggestOutcomesREGEX` (`regex` mode)
 
-## How to run Docker images
+  Arguments:
+  - `string` text
+  
+  Response: `entity.Outcome[]`
 
-Using Docker database:
-1) Run "docker run -d mongo" to start a fresh database. This will pull the image "mongo" from DockerHub if necessary.
-2) Run "docker run db-setup" to initialize the database.
-3) Run "docker run -d lo-suggestion" to start up the lo-suggestion service.
+## Communicating with this service
+This service communicates via the socket-io protocol. Any scripts or services wishing to use it must act as a socket.io-client.
 
-Using remote database:
-1) Run 'docker run -d -e CLARK_DB="[db address]" lo-suggestion' to start up the lo-suggestion service.
+If you're using Node, your JS import should look something like this:
+```javascript
+var client = require('socket.io-client')(process.env["CLARK_DB_INTERACTOR"]);
+```
+Importing for TypeScript and browser-bound JS will be different.
+
+Clients "emit" events, which include arguments and an "ack" callback function.
+
+```javascript
+client.emit('event-name', arg1, arg2, ..., function(response) {
+    // do things with response
+});
+```
+See [https://socket.io/](https://socket.io/) and of course Google for more help.
+
+## Development Guide
+
+### Style Rules
+- Parameters for any scripts or services should use environment variables.
+- Scripts and services should start by checking if each required environment variable exists, and if not, giving it a default value.
+- Dockerfiles should initialize all environment variables, even when using the same default as in-code.
+- IP addresses should default in-code to `localhost`.
+- IP addresses should default in Dockerfiles to the Docker subnet, `172.17.0.2`.
+
+### Installing a local repository
+1) Clone the Github repository to your local machine.
+   ```
+   git clone https://github.com/Cyber4All/database-interaction.git
+   ```
+2) Install all node dependencies.
+   ```
+   npm install
+   ```
+3) Transpile all TypeScript files in 'ts' to JavaScript files in 'js'.
+   ```
+   npm run build
+   ```
+
+#### To set up a local database (requires mongo installation):
+4) Set up a directory for the database to use.
+   ```
+   mkdir db
+   ```
+5) Start the database.
+   ```
+   npm run localdb
+   ```
+6) Initialize the database collections.
+   ```
+   npm run setup
+   ```
+
+### How to develop
+
+1) Actively transpile any changes from TypeScript to JavaScript.
+   ```
+   run npm build:watch
+   ```
+   NOTE: The transpiler won't always notice new ts files. You might need to redo this step periodically.
+
+2) Running programs depends on what database you use. See your options below.
+
+#### To use your local database (requires mongo installation):
+1) Start the database.
+   ```
+   npm run localdb
+   ```
+2) Run programs simply by running the respective JavaScript.
+   ```
+   node js/<path/name>.js
+   ```
+
+#### To use Docker images (requires Docker installation):
+1) Start the database. This pulls a standard mongo image from DockerHub.
+   ```
+   docker run -p 27017:27017 -d mongo
+   ```
+2) Initialize the database.
+   ```
+   docker run ksherb1/ksherb1:db-setup
+   ```
+   TODO: We should have an organization DockerHub account. Command will probably look like `docker run clark/db-setup` or `docker run cyber4all/clark:db-setup`, depending on the expense we spare.
+
+3) Run programs simply by running the respective JavaScript.
+   ```
+   node js/<path/name>.js
+   ```
+
+#### To use a remote database (not recommended for testing):
+1) Prefix running any program by setting the `CLARK\_DB` path variable, or alternatively set up an environment with the variable permanently set.
+   ```
+   CLARK_DB="<IP>:<port>" node js/<path/name>.js
+   ```
+
+## Publishing Guide
+
+### How to publish Docker images
+
+1) Ensure JavaScript files are up to date. Run `npm run build` to transpile all TS code, and consider first deleting the entire JS folder if you've been deleting or moving files.
+2) Construct a Dockerfile, if it doesn't already exist. Ask Google for help.
+3) Build the Docker image.
+   ```
+   docker build -t <image-name> -f <Dockerfile name> .
+   ```
+   If you're rebuilding the `db-interaction` image, there's no need for the `-f` option.
+   
+4) Tag the image for publication.
+   ```
+   docker tag <image-name> ksherb1/ksherb1:<image-name>
+   ```
+   TODO: Once we have an organization DockerHub account, this and the below step will look more like `docker tag <image-name> cyber4all/clark:<image-name>`, or ideally `docker tag <image-name> clark/<image-name>:<version>`.
+
+5) Upload the image (if you're sure).
+   ```
+   docker push ksherb1/ksherb1:<image-name>
+   ```
+   You will be prompted for credentials. Obviously this will be more useful when there is an organization account.
+
+### How to run Docker images
+
+If you must manually start the database interaction service, here is the command:
+```
+docker run -d -e CLARK_DB="<IP>:<port>" ksherb1/ksherb1:db-interaction
+```

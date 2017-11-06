@@ -7,7 +7,7 @@ WORKDIR /app
 # Copy the files needed for production into the container at /app
 ADD package.json .
 ADD taxonomy.json taxonomy.json
-ADD js .
+ADD js js/
 
 # Install any needed packages specified in package.json
 RUN npm install --only=prod
@@ -26,4 +26,4 @@ EXPOSE 3000
 # TODO: ultimately this should be 'npm start' which package.json
 #       should configure to run 'node lo-suggestion.service.js'.
 #       But for now package.json is still targeted at development convenience.
-CMD ["node", "script/lo-suggestion.service.js"]
+CMD ["npm", "start"]

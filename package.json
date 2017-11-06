@@ -1,40 +1,40 @@
 {
-  "name": "database-interaction",
-  "version": "1.0.0",
-  "description": "Database interaction service to ensure consistent behavior over all services.",
-  "main": "src/db-interaction.service.ts",
-  "scripts": {
-    "build": "tsc -p ts/",
-    "build:watch": "tsc -p ts/ -w",
-    "setup": "node js/script/db-setup.script.js",
-    "prestart": "mongod -f mongod.conf",
-    "start": "npm run build:watch",
-    "stop": "mongod -f mongod.conf --shutdown",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Cyber4All/database-interaction.git"
-  },
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/Cyber4All/database-interaction/issues"
-  },
-  "homepage": "https://github.com/Cyber4All/database-interaction#readme",
-  "dependencies": {
-    "assert-never": "^1.0.0",
-    "jsonfile": "^4.0.0",
-    "line-reader": "^0.4.0",
-    "mongodb": "^2.2.31",
-    "socket.io": "^2.0.3"
-  },
-  "devDependencies": {
-    "@types/jsonfile": "^4.0.0",
-    "@types/line-reader": "0.0.28",
-    "@types/mongodb": "^2.2.13",
-    "@types/socket.io": "^1.4.31",
-    "@types/socket.io-client": "^1.4.31",
-    "typescript": "^2.5.3"
+    "name": "database-interaction",
+    "version": "1.0.0",
+    "description": "Database interaction service to ensure consistent behavior over all services.",
+    "main": "src/db-interaction.service.ts",
+    "scripts": {
+      "build": "tsc -p ts/",
+      "build:watch": "tsc -p ts/ -w",
+      "localdb": "mongod -f mongod.conf",
+      "setup": "node js/script/db-setup.script.js",
+      "start": "node js/script/db-interaction.service.js",
+      "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/Cyber4All/database-interaction.git"
+    },
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+      "url": "https://github.com/Cyber4All/database-interaction/issues"
+    },
+    "homepage": "https://github.com/Cyber4All/database-interaction#readme",
+    "dependencies": {
+      "assert-never": "^1.0.0",
+      "jsonfile": "^4.0.0",
+      "line-reader": "^0.4.0",
+      "mongodb": "^2.2.31",
+      "socket.io": "^2.0.3"
+    },
+    "devDependencies": {
+      "@types/jsonfile": "^4.0.0",
+      "@types/line-reader": "0.0.28",
+      "@types/mongodb": "^2.2.13",
+      "@types/socket.io": "^1.4.31",
+      "@types/socket.io-client": "^1.4.31",
+      "typescript": "^2.5.3"
+    }
   }
-}
+  
