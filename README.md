@@ -9,6 +9,7 @@ Please see the jsdocs for `db.driver.ts` and `db.gluer.ts` for usage, parameters
 TODO: Generate and link to documentation for `db.driver.ts` and `db.gluer.ts`.
 
 - `loadUser` (gluer)
+- `loadLearningObjectSummary` (gluer)
 - `loadLearningObject` (gluer)
 - `addUser` (gluer)
 - `addLearningObject` (gluer)

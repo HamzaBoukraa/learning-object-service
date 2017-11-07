@@ -22,7 +22,7 @@ import { AssessmentPlan } from './entity/assessment-plan';
 import { InstructionalStrategy } from './entity/instructional-strategy';
 
 /**
- * Load a user and the scalar fields of its objects.
+ * Load a user's scalar fields (ignore objects).
  * @async
  * 
  * @param {string} userid the user's login id
@@ -35,15 +35,38 @@ export async function loadUser(userid: string): Promise<User> {
         let record = await db.fetchUser(id);
         
         let user = new User(record.id, record.name_);
+        // not a deep operation - ignore objects
+
+        return Promise.resolve(user);
+    } catch(e) {
+        return Promise.reject(e);
+    }
+}
+
+/**
+ * Load the scalar fields of a user's objects (ignore goals and outcomes).
+ * @async
+ * 
+ * @param {string} userid the user's login id
+ * 
+ * @returns {User}
+ */
+export async function loadLearningObjectSummary(userid: string): Promise<LearningObject[]> {
+    try {
+        let id = await db.findUser(userid);
+        let record = await db.fetchUser(id);
+        
+        let summary: LearningObject[] = [];
         for ( let objectid of record.objects ) {
             let objectRecord = await db.fetchLearningObject(objectid);
-            let object = user.addObject();
+            let object = new LearningObject(null);
             object.name = objectRecord.name_;
             object.length = objectRecord.length_;
             // not a deep operation - ignore goals and outcomes
+            summary.push(object);
         }
 
-        return Promise.resolve(user);
+        return Promise.resolve(summary);
     } catch(e) {
         return Promise.reject(e);
     }

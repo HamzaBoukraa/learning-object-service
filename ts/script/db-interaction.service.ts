@@ -26,6 +26,11 @@ db.connect(process.env["CLARK_DB"])
             glue.loadUser(userid)
                 .then((res)=>{ack(res)});
         });
+
+        socket.on('loadLearningObjectSummary', (userid: string, ack: (res:LearningObject[])=>void) => {
+            glue.loadLearningObjectSummary(userid)
+                .then((res)=>{ack(res)});
+        });
         
         socket.on('loadLearningObject', (author: UserID, name: string, ack: (res:LearningObject)=>void) => {
             glue.loadLearningObject(author, name)
