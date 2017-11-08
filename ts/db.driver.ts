@@ -270,9 +270,9 @@ export async function editLearningOutcome(id: LearningOutcomeID,
     return edit(LearningOutcomeSchema, id, record);
 }
 
-///////////////////////////////////////////
-// DELETIIONS - will cascade to children //
-///////////////////////////////////////////
+//////////////////////////////////////////
+// DELETIONS - will cascade to children //
+//////////////////////////////////////////
 
 /**
  * Remove a user (and its objects) from the database.
@@ -645,7 +645,7 @@ async function update(schema: Function, id: RecordID, record: Update):
         await validateForeignKeys(schema, record, foreigns);
 
         // perform the actual update
-        await _db.collection(collection).updateOne({ _id:id }, record);
+        await _db.collection(collection).updateOne({ _id:id }, {$set: record});
 
         // registered fields must be fixed, nothing to change here
 
@@ -671,7 +671,7 @@ async function edit(schema: Function, id: RecordID, record: Edit):
         // no foreign fields, no need to validate
 
         // perform the actual update
-        await _db.collection(collection).updateOne({ _id:id }, record);
+        await _db.collection(collection).updateOne({ _id:id }, {$set: record});
 
         // registered fields must be fixed, nothing to change here
 
