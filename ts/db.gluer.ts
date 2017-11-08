@@ -18,7 +18,9 @@ import {
 
 import { User } from './entity/user';
 import { LearningObject } from './entity/learning-object';
-import { Outcome, StandardOutcome, LearningOutcome } from './entity/outcome';
+import {
+    Outcome, OutcomeSuggestion, StandardOutcome, LearningOutcome
+} from './entity/outcome';
 import { LearningGoal } from './entity/learning-goal';
 import { AssessmentPlan } from './entity/assessment-plan';
 import { InstructionalStrategy } from './entity/instructional-strategy';
@@ -329,10 +331,6 @@ export async function addStandardOutcome(standard: StandardOutcome):
 }
 
 export type suggestMode = "text" | "regex";
-export interface OutcomeSuggestion extends Outcome {
-    id: OutcomeID,
-    score: number
-}
 
 /**
  * Search for outcomes related to a given text string.
@@ -359,29 +357,41 @@ export async function suggestOutcomes(text: string, mode:suggestMode="text",
         
         let cursor;
         switch(mode) {
-            case "text": cursor = db.searchOutcomes(text);break;
+            case "text":
+                cursor = db.searchOutcomes(text)
+                           .sort( { score: {$meta: "textScore"} } );
+                break;
             case "regex": cursor = db.matchOutcomes(text);break;
             default: return assertNever(mode);
         }
 
         while (await cursor.hasNext()) {
             let doc = await cursor.next();
+            let suggestion = {
+                id: doc._id,
+                author: doc.author,
+                name: doc.name_,
+                date: doc.date,
+                outcome: doc.outcome
+             }
             
-            // terminate iteration once scores are lower than threshold
-            let score: number;
+            // if mode provides scoring information
             if (doc["score"] !== undefined) {
-                if (doc["score"] < threshold) break;
-                score = doc["score"];
+                let score = doc["score"];
+
+                // skip record if score is lower than threshold
+                if (score < threshold) break;
+
+                /*
+                 * TODO: Look into sorting options. An streaming insert
+                 *       sort here may be better than mongo's,
+                 *       if such a thing is possible
+                 * In that case, switch break above to continue.
+                 */
+
             }
 
-            suggestions.push({
-               id: doc._id,
-               author: doc.author,
-               name: doc.name_,
-               date: doc.date,
-               outcome: doc.outcome,
-               score: score
-            });
+            suggestions.push(suggestion);
         }
 
         return Promise.resolve(suggestions);

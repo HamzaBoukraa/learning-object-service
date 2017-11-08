@@ -21,6 +21,10 @@ export interface Outcome {
     outcome: string;
 }
 
+export interface OutcomeSuggestion extends Outcome {
+    id: any,    // do NOT have any database dependencies in entities
+}
+
 /**
  * A class to represent a standard outcome. Immutable.
  * @class

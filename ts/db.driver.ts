@@ -437,8 +437,7 @@ export function searchOutcomes(text: string): Cursor<OutcomeRecord> {
     return _db.collection(collectionFor(StandardOutcomeSchema))
               .find<OutcomeRecord>(
         { $text: {$search: text} },
-        { score: {$meta: "textScore"} })
-        .sort( { score: {$meta: "textScore"} } ) ;
+        { score: {$meta: "textScore"} });
 }
 
 /**
