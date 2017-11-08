@@ -144,6 +144,7 @@ export async function loadLearningObject(author: UserID, name: string):
                 outcome.mapTo({
                     author: rMapping.author,
                     name: rMapping.name_,
+                    date: rMapping.date,
                     outcome: rMapping.outcome
                 });
             }
@@ -236,6 +237,7 @@ export async function addLearningObject(author: UserID,
     return await db.insertLearningObject({
         author: author,
         name_: object.name,
+        date: object.date,
         length_: object.length,
         goals: documentGoals(object.goals),
         outcomes: []
@@ -259,6 +261,7 @@ export async function editLearningObject(id: LearningObjectID, object: LearningO
         Promise<void> {
     return db.editLearningObject(id, {
         name_: object.name,
+        date: object.date,
         length_: object.length,
         goals: documentGoals(object.goals),
     });
@@ -323,6 +326,7 @@ export async function addStandardOutcome(standard: StandardOutcome):
     return db.insertStandardOutcome({
         author: standard.author,
         name_: standard.name,
+        date: standard.date,
         outcome: standard.outcome
     });
 }
@@ -368,6 +372,7 @@ export async function suggestOutcomes(text: string, mode:suggestMode="text",
             suggestions.push({
                author: doc.author,
                name: doc.name_,
+               date: doc.date,
                outcome: doc.outcome
             });
         }

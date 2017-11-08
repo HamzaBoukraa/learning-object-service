@@ -26,6 +26,15 @@ export class LearningObject {
      */
     get name(): string { return this._name; }
     set name(name: string) { this._name = name; }
+    
+    private _date: string;
+    /**
+     * @property {string} length
+     *       the object's last-modified date
+     * FIXME: if there's a reason to use an actual Date class
+     */
+    get date(): string { return this._name; }
+    set date(name: string) { this._name = name; }
 
     private _length: string;
     /**
@@ -110,6 +119,7 @@ export class LearningObject {
     constructor(author: User) {
         this._author = author;
         this._name = "";
+        this._date = "";
         this._length = Array.from(lengths)[0];
         this._goals = [];
         this._outcomes = [];

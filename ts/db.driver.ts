@@ -125,6 +125,7 @@ export async function insertLearningOutcome(record: LearningOutcomeInsert):
                               .findOne<UserRecord>({_id:source.author});
         record['author'] = author.name_;
         record['name_'] = source.name_;
+        record['date'] = source.date;
         record['outcome'] = record.verb+" "+record.text;
         return insert(LearningOutcomeSchema, record);
     } catch(e) {
@@ -244,11 +245,15 @@ export async function editUser(id: UserID, record: UserEdit): Promise<void> {
 export async function editLearningObject(id: LearningObjectID,
         record: LearningObjectEdit): Promise<void> {
     try {
-        // ensure all outcomes have the right name_ tag
+        // ensure all outcomes have the right name_ and date tag
         await _db.collection(collectionFor(LearningOutcomeSchema))
                  .updateMany(
                      { source: id },
-                     { $set: { name_: record.name_ } }
+                     { $set: {
+                         name_: record.name_,
+                         date: record.date
+                       }
+                     }
                  );
         // perform the actual update
         return edit(LearningObjectSchema, id, record);

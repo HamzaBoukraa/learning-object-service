@@ -16,6 +16,7 @@ export interface Outcome {
     // properties of source
     author: string;    // standard outcome sources have 'authors' like 'NCWF' or 'CAE'
     name: string;      // standard outcome sources have 'names' like 'K0027' or 'Operating Systems Concepts'
+    date: string;   /* FIXME: if there's a reason to use an actual Date class */
     // specifics of outcome
     outcome: string;
 }
@@ -38,6 +39,12 @@ export class StandardOutcome implements Outcome {
      */
     get name(): string { return this._name; }
 
+    private _date: string;
+    /**
+     * @property {string} date the year this standard was established
+     */
+    get date(): string { return this._date; }
+
     private _outcome: string;
     /**
      * @property {string} outcome the text of the outcome
@@ -50,9 +57,10 @@ export class StandardOutcome implements Outcome {
      * @param {string} name the new outcome's label
      * @param {string} outcome the new outcome's text
      */
-    constructor(author: string, name: string, outcome: string) {
+    constructor(author: string, name: string, date: string, outcome: string) {
         this._author = author,
-        this._name = name
+        this._name = name;
+        this._date = date;
         this._outcome = outcome;
     }
 }
@@ -196,10 +204,12 @@ export class LearningOutcome implements Outcome {
      * properties for consistency with the Outcome interface
      * @property {string} author
      * @property {string} name
+     * @property {string} date
      * @property {string} outcome
      */
     get author(): string { return this._source.author.name; }
     get name(): string { return this._source.name; }
+    get date(): string { return this._source.date; }
     get outcome(): string { return this._verb+" "+this._text; }
 
     /**

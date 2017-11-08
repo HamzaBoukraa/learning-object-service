@@ -78,7 +78,8 @@ export async function fill() {
             console.log("Could not process line: "+line);
         }
     });
-    return Promise.resolve();   // FIXME: adding the outcomes isn't necessarily done yet!!!
+    /* FIXME: adding the outcomes isn't necessarily done yet!!! */
+    return Promise.resolve();
 }
 
 if (require.main === module) {

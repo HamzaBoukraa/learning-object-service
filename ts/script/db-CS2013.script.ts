@@ -19,7 +19,7 @@ export async function CS2013() {
     lineReader.eachLine(file, function(line, last) {
         let dat = line.split('\t');
         if(dat.length == 2) {
-            let outcome = new StandardOutcome("CS 2013", dat[0], dat[1]);
+            let outcome = new StandardOutcome("CS 2013", dat[0], "2013", dat[1]);
             glue.addStandardOutcome(outcome)   // asynchronous
                 .catch((err)=>{console.log("Failed to insert: "+err)});
             cnt += 1;

@@ -19,7 +19,7 @@ export async function CAE() {
     lineReader.eachLine(file, function(line, last) {
         let dat = line.split('\t');
         if(dat.length == 2) {
-            let outcome = new StandardOutcome("CAE 2014", dat[0], dat[1]);
+            let outcome = new StandardOutcome("CAE", dat[0], "2014", dat[1]);
             glue.addStandardOutcome(outcome)   // asynchronous
                 .catch((err)=>{console.log("Failed to insert: "+err)});
             cnt += 1;

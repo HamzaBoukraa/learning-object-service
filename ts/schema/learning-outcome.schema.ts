@@ -16,13 +16,16 @@ export abstract class LearningOutcomeSchema {
     @fixed @foreign('objects', false, 'outcomes') @field
     static source: LearningObjectID;
 
-    @auto @fixed
+    @auto @field
     static author: string;  // source's author's name
 
-    @auto @fixed
+    @auto @field
     static name_: string;   // source's name
 
-    @auto @text
+    @auto @field
+    static date: string;    // source's last-modified date
+
+    @auto @text @field
     static outcome: string; // verb + text together
 
     @field
@@ -66,6 +69,7 @@ export interface InstructionalStrategyInterface {
 export interface OutcomeRecord extends Record {
     author: string;
     name_: string;
+    date: string;
     outcome: string;
 }
 

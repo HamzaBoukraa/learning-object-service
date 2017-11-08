@@ -18,6 +18,10 @@ export abstract class LearningObjectSchema {
 
     @unique @field
     static name_: string;
+
+    /* FIXME: if there's a reason to use an actual Date class */
+    @field
+    static date: string;
     
     @field
     static length_: string;
@@ -57,6 +61,7 @@ export interface LearningObjectUpdate extends Update, LearningObjectEdit {
 // add in remaining fields
 export interface LearningObjectEdit extends Edit {
     name_: string;
+    date: string;
     length_: string;
     goals: LearningGoalInterface[];
 }

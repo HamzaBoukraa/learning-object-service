@@ -19,6 +19,9 @@ export abstract class StandardOutcomeSchema {
     @fixed @field
     static name_: string;
 
+    @fixed @field
+    static date: string;
+
     @auto @fixed @text @field
     static outcome: string;
 }
@@ -35,6 +38,7 @@ export interface StandardOutcomeRecord extends OutcomeRecord, StandardOutcomeIns
 export interface StandardOutcomeInsert extends Insert, StandardOutcomeUpdate {
     author: string;
     name_: string;
+    date: string;
     outcome: string;
 }
 
