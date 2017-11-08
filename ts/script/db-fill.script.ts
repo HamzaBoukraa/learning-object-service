@@ -16,7 +16,7 @@ const file = "dbcontent/Dump20171010.dat";   // the data file
 
 export async function fill() {
     // first, add a 'legacy' user:
-    let legacy = new User('legacy', 'Legacy User');
+    let legacy = new User('legacy', 'Legacy User', null, "legacy");
     let legacyid = await glue.addUser(legacy);
 
     lineReader.eachLine(file, (line, last) => {
