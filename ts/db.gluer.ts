@@ -52,9 +52,8 @@ export async function authenticate(userid: string, pwd: string): Promise<boolean
  * 
  * @returns {User}
  */
-export async function loadUser(userid: string): Promise<User> {
+export async function loadUser(id: UserID): Promise<User> {
     try {
-        let id = await db.findUser(userid);
         let record = await db.fetchUser(id);
         
         let user = new User(record.id, record.name_, record.email, null);
@@ -74,9 +73,8 @@ export async function loadUser(userid: string): Promise<User> {
  * 
  * @returns {User}
  */
-export async function loadLearningObjectSummary(userid: string): Promise<LearningObject[]> {
+export async function loadLearningObjectSummary(id: UserID): Promise<LearningObject[]> {
     try {
-        let id = await db.findUser(userid);
         let record = await db.fetchUser(id);
         
         let summary: LearningObject[] = [];
@@ -104,10 +102,9 @@ export async function loadLearningObjectSummary(userid: string): Promise<Learnin
  * 
  * @returns {LearningObject}
  */
-export async function loadLearningObject(author: UserID, name: string):
+export async function loadLearningObject(id: LearningObjectID):
         Promise<LearningObject> {
     try {
-        let id = await db.findLearningObject(author, name);
         let record = await db.fetchLearningObject(id);
 
         // no real need to link to User object, so pass null

@@ -30,19 +30,29 @@ db.connect(process.env["CLARK_DB"])
             glue.authenticate(userid, pwd)
                 .then((res)=>{ack(res)});
         });
-
-        socket.on('loadUser', (userid: string, ack: (res:User)=>void) => {
-            glue.loadUser(userid)
+        
+        socket.on('findUser', (userid: string, ack: (res:UserID)=>void ) => {
+            db.findUser(userid)
                 .then((res)=>{ack(res)});
         });
 
-        socket.on('loadLearningObjectSummary', (userid: string, ack: (res:LearningObject[])=>void) => {
-            glue.loadLearningObjectSummary(userid)
+        socket.on('findLearningObject', (author: UserID, name: string, ack: (res:LearningObjectID)=>void ) => {
+            db.findLearningObject(author, name)
+                .then((res)=>{ack(res)});
+        });
+
+        socket.on('loadUser', (id: UserID, ack: (res:User)=>void) => {
+            glue.loadUser(id)
+                .then((res)=>{ack(res)});
+        });
+
+        socket.on('loadLearningObjectSummary', (id: UserID, ack: (res:LearningObject[])=>void) => {
+            glue.loadLearningObjectSummary(id)
                 .then((res)=>{ack(res)});
         });
         
-        socket.on('loadLearningObject', (author: UserID, name: string, ack: (res:LearningObject)=>void) => {
-            glue.loadLearningObject(author, name)
+        socket.on('loadLearningObject', (id: LearningObjectID, ack: (res:LearningObject)=>void) => {
+            glue.loadLearningObject(id)
                 .then((res)=>{ack(res)});
         });
 
@@ -108,16 +118,6 @@ db.connect(process.env["CLARK_DB"])
 
         socket.on('deleteLearningOutcome', (id: LearningOutcomeID, ack: (res:void)=>void ) => {
             db.deleteLearningOutcome(id)
-                .then((res)=>{ack(res)});
-        });
-
-        socket.on('findUser', (id: string, ack: (res:UserID)=>void ) => {
-            db.findUser(id)
-                .then((res)=>{ack(res)});
-        });
-
-        socket.on('findLearningObject', (author: UserID, name: string, ack: (res:LearningObjectID)=>void ) => {
-            db.findLearningObject(author, name)
                 .then((res)=>{ack(res)});
         });
 
