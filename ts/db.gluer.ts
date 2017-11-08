@@ -4,6 +4,8 @@
 
 import assertNever from 'assert-never';
 
+import { hash, verify } from './hash.driver';
+
 import * as db from './db.driver';
 
 import {
@@ -147,7 +149,7 @@ export async function loadLearningObject(author: UserID, name: string):
  * @returns {UserID} the database id of the new record
  */
 export async function addUser(user: User): Promise<UserID> {
-    let pwdhash = /* TODO: do this! */ user.pwd;
+    let pwdhash = await hash(user.pwd);
     return db.insertUser({
         id: user.id,
         name_: user.name,
@@ -177,7 +179,7 @@ export async function editUser(id: UserID, user: User): Promise<void> {
         pwdhash: ""
     };
 
-    if (user.pwd) edit.pwdhash = /* TODO: do this! */ user.pwd;
+    if (user.pwd) edit.pwdhash = await hash(user.pwd);
     else { delete edit.pwdhash; }
     /*
      * FIXME: The UserEdit argument to db.editUser requires a pwdhash,
