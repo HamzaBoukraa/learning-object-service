@@ -9,11 +9,11 @@ import {
     LearningOutcomeID, StandardOutcomeID
 } from '../schema/db.schema';
 
-import { User } from '../entity/user';
-import { LearningObject } from '../entity/learning-object';
+import { User } from '../../entity/user';
+import { LearningObject } from '../../entity/learning-object';
 import {
     Outcome, OutcomeSuggestion, StandardOutcome, LearningOutcome
-} from '../entity/outcome';
+} from '../../entity/outcome';
 
 if (!process.env["CLARK_DB"]) process.env["CLARK_DB"] = "localhost:27017";
 

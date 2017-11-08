@@ -1,4 +1,6 @@
 /node_modules
+/entity
+/taxonomy
 /db
 /js
 /dbcontent/rawdata

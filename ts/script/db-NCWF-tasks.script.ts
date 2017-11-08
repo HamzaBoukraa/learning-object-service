@@ -8,7 +8,7 @@ require('../useme');
 import * as lineReader from 'line-reader';
 import * as db from '../db.driver';
 import * as glue from '../db.gluer';
-import { StandardOutcome } from '../entity/outcome';
+import { StandardOutcome } from '../../entity/outcome';
 
 const file = "dbcontent/NIST.SP.800-181.tasks.dat";   // the data file
 
