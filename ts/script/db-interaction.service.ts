@@ -15,12 +15,21 @@ import { Outcome, StandardOutcome, LearningOutcome } from '../entity/outcome';
 
 if (!process.env["CLARK_DB"]) process.env["CLARK_DB"] = "localhost:27017";
 
+/*
+ * TODO: catch errors gracefully, preferably with logging!
+ */
+
 db.connect(process.env["CLARK_DB"])
   .then(() => {
     let io = server.listen(27016);
     console.log("Listening on port "+27016);
 
     io.on('connection', function(socket) {
+
+        socket.on('authenticate', (userid: string, pwd: string, ack: (res:boolean)=>) => {
+            glue.authenticate(userid, pwd)
+                .then((res)=>{ack(res)});
+        });
 
         socket.on('loadUser', (userid: string, ack: (res:User)=>void) => {
             glue.loadUser(userid)

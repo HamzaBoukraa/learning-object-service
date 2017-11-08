@@ -23,6 +23,26 @@ import { LearningGoal } from './entity/learning-goal';
 import { AssessmentPlan } from './entity/assessment-plan';
 import { InstructionalStrategy } from './entity/instructional-strategy';
 
+
+/**
+ * Check if a user has provided the correct password.
+ * NOTE: Promise is rejected if user does not exist.
+ * 
+ * @param {string} userid the user's login id
+ * @param {string} pwd the user's login password
+ * 
+ * @returns {boolean} true iff userid/pwd pair is valid
+ */
+export async function authenticate(userid: string, pwd: string): Promise<boolean> {
+    try {
+        let id = await db.findUser(userid);
+        let record = await db.fetchUser(id);
+        return verify(pwd, record.pwdhash);
+    } catch(e) {
+        return Promise.reject(e);
+    }
+}
+
 /**
  * Load a user's scalar fields (ignore objects).
  * NOTE: this also ignores password
