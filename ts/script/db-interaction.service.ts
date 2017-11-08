@@ -26,7 +26,7 @@ db.connect(process.env["CLARK_DB"])
 
     io.on('connection', function(socket) {
 
-        socket.on('authenticate', (userid: string, pwd: string, ack: (res:boolean)=>) => {
+        socket.on('authenticate', (userid: string, pwd: string, ack: (res:boolean)=>void) => {
             glue.authenticate(userid, pwd)
                 .then((res)=>{ack(res)});
         });
