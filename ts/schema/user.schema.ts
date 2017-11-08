@@ -19,6 +19,12 @@ export abstract class UserSchema {
     @field
     static name_: string;
 
+    @field
+    static email: string;
+
+    @field
+    static pwdhash: string;
+
     @foreign('objects', true) @field
     static objects: LearningObjectID[];
 }
@@ -42,5 +48,7 @@ export interface UserUpdate extends Update, UserEdit {
 // add in remaining fields
 export interface UserEdit extends Edit {
     id: string,
-    name_: string
+    name_: string,
+    email: string,
+    pwdhash: string
 }

@@ -22,6 +22,20 @@ export class User {
      */
     get name(): string { return this._name; }
     set name(name: string) { this._name = name; }
+
+    private _email: string;
+    /**
+     * @property {string} email a user's email on file
+     */
+    get email(): string { return this._email; }
+    set email(email: string) { this._email = email; }
+
+    private _pwd: string;
+    /**
+     * @property {string} pwdhash a user's password authentication
+     */
+    get pwd(): string { return this._pwd; }
+    set pwd(pwd: string) { this._pwd = pwd; }
     
     private _objects: LearningObject[];
     /**
@@ -61,9 +75,11 @@ export class User {
      * 
      * @constructor
      */
-    constructor(id: string, name: string) {
+    constructor(id: string, name: string, email: string, pwd: string) {
         this._id = id;
         this._name = name;
+        this._email = email;
+        this._pwd = pwd;
         this._objects = [];
     }
 }

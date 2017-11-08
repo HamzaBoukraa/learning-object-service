@@ -23,6 +23,7 @@ import { InstructionalStrategy } from './entity/instructional-strategy';
 
 /**
  * Load a user's scalar fields (ignore objects).
+ * NOTE: this also ignores password
  * @async
  * 
  * @param {string} userid the user's login id
@@ -34,7 +35,7 @@ export async function loadUser(userid: string): Promise<User> {
         let id = await db.findUser(userid);
         let record = await db.fetchUser(id);
         
-        let user = new User(record.id, record.name_);
+        let user = new User(record.id, record.name_, record.email, null);
         // not a deep operation - ignore objects
 
         return Promise.resolve(user);
@@ -146,9 +147,12 @@ export async function loadLearningObject(author: UserID, name: string):
  * @returns {UserID} the database id of the new record
  */
 export async function addUser(user: User): Promise<UserID> {
+    let pwdhash = /* TODO: do this! */ user.pwd;
     return db.insertUser({
         id: user.id,
         name_: user.name,
+        email: user.email,
+        pwdhash: pwdhash,
         objects: []
     });
 }
@@ -166,10 +170,28 @@ export async function addUser(user: User): Promise<UserID> {
  * @param {User} user - entity with values to update to
  */
 export async function editUser(id: UserID, user: User): Promise<void> {
-    return db.editUser(id, {
+    let edit = {
         id: user.id,
-        name_: user.name
-    });
+        name_: user.name,
+        email: user.email,
+        pwdhash: ""
+    };
+
+    if (user.pwd) edit.pwdhash = /* TODO: do this! */ user.pwd;
+    else { delete edit.pwdhash; }
+    /*
+     * FIXME: The UserEdit argument to db.editUser requires a pwdhash,
+     *       but unless user is explicitly changing password, user
+     *       object won't have pwd set. The current solution tricks tsc
+     *       into THINKING edit implements UserEdit, but then deletes
+     *       pwdhash. The only reason this may be bad is that a more
+     *       sophisticated future tsc version may notice the trick, and
+     *       refuse to compile. The alternative is to look up the
+     *       current pwdhash via a call to db.fetchUser. That's extra
+     *       database strain, so we should only do that if tsc ever
+     *       gets wise to our trick.
+     */
+    return db.editUser(id, edit);
 }
 
 /**
