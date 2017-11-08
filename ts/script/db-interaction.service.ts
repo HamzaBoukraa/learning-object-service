@@ -121,12 +121,12 @@ db.connect(process.env["CLARK_DB"])
                 .then((res)=>{ack(res)});
         });
 
-        socket.on('suggestOutcomes', (text: string, threshold: number, ack: (res:Outcome[])=>void) => {
+        socket.on('suggestOutcomes', (text: string, threshold: number, ack: (res:glue.OutcomeSuggestion[])=>void) => {
             glue.suggestOutcomes(text, "text", threshold)
                 .then((res)=>{ack(res)});
         });
 
-        socket.on('suggestOutcomesREGEX', (text: string, ack: (res:Outcome[])=>void) => {
+        socket.on('suggestOutcomesREGEX', (text: string, ack: (res:glue.OutcomeSuggestion[])=>void) => {
             glue.suggestOutcomes(text, "regex")
                 .then((res)=>{ack(res)});
         });

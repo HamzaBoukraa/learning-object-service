@@ -67,6 +67,7 @@ export interface InstructionalStrategyInterface {
  * Defines generic outcome schema (both learning and standard).
  */
 export interface OutcomeRecord extends Record {
+    _id: OutcomeID;
     author: string;
     name_: string;
     date: string;

@@ -425,22 +425,17 @@ export async function fetchOutcome(id: UserID):
 /////////////////
 
 /**
- * Enhanced OutcomeRecord that includes text score data.
- */
-interface OutcomeSearchRecord extends OutcomeRecord {
-    score: number
-}
-
-/**
  * Find outcomes matching a text query.
  * This variant uses Mongo's fancy text query. Questionable results.
+ * NOTE: this function also projects a score onto the cursor documents
+ * 
  * @param {string} text the words to search for
  * 
- * @returns {Cursor<OutcomeSearchRecord>} cursor of positive matches
+ * @returns {Cursor<OutcomeRecord>} cursor of positive matches
  */
-export function searchOutcomes(text: string): Cursor<OutcomeSearchRecord> {
+export function searchOutcomes(text: string): Cursor<OutcomeRecord> {
     return _db.collection(collectionFor(StandardOutcomeSchema))
-              .find<OutcomeSearchRecord>(
+              .find<OutcomeRecord>(
         { $text: {$search: text} },
         { score: {$meta: "textScore"} })
         .sort( { score: {$meta: "textScore"} } ) ;
@@ -449,13 +444,11 @@ export function searchOutcomes(text: string): Cursor<OutcomeSearchRecord> {
 /**
  * Find outcomes matching a text query.
  * This variant finds all outcomes containing every word in the query.
- * NOTE: this function returns a cursor of OutcomeSearchRecords, but
- *       the documents will NOT have the score property.
  * @param {string} text the words to match against
  * 
- * @returns {Cursor<OutcomeSearchRecord>} cursor of positive matches
+ * @returns {Cursor<OutcomeRecord>} cursor of positive matches
  */
-export function matchOutcomes(text: string): Cursor<OutcomeSearchRecord> {
+export function matchOutcomes(text: string): Cursor<OutcomeRecord> {
     let tokens = text.split(/\s/);
     let docs: any[] = [];
     for ( let token of tokens ) {
@@ -464,7 +457,7 @@ export function matchOutcomes(text: string): Cursor<OutcomeSearchRecord> {
 
     // score property is not projected, will be undefined in documents
     return _db.collection(collectionFor(StandardOutcomeSchema))
-              .find<OutcomeSearchRecord>({
+              .find<OutcomeRecord>({
         $and: docs
     });
 }

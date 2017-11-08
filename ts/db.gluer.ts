@@ -9,7 +9,7 @@ import { hash, verify } from './hash.driver';
 import * as db from './db.driver';
 
 import {
-    UserID, LearningObjectID, LearningOutcomeID, StandardOutcomeID
+    UserID, LearningObjectID, OutcomeID, LearningOutcomeID, StandardOutcomeID
 } from './schema/db.schema';
 import { LearningGoalInterface } from './schema/learning-object.schema';
 import {
@@ -329,6 +329,10 @@ export async function addStandardOutcome(standard: StandardOutcome):
 }
 
 export type suggestMode = "text" | "regex";
+export interface OutcomeSuggestion extends Outcome {
+    id: OutcomeID,
+    score: number
+}
 
 /**
  * Search for outcomes related to a given text string.
@@ -349,9 +353,9 @@ export type suggestMode = "text" | "regex";
  * @returns {Outcome[]} list of outcome suggestions, ordered by score
  */
 export async function suggestOutcomes(text: string, mode:suggestMode="text",
-        threshold=0): Promise<Outcome[]> {
+        threshold=0): Promise<OutcomeSuggestion[]> {
     try {
-        let suggestions: Outcome[] = [];
+        let suggestions: OutcomeSuggestion[] = [];
         
         let cursor;
         switch(mode) {
@@ -364,13 +368,19 @@ export async function suggestOutcomes(text: string, mode:suggestMode="text",
             let doc = await cursor.next();
             
             // terminate iteration once scores are lower than threshold
-            if (typeof doc.score !== undefined && doc.score < threshold) break;
+            let score: number;
+            if (doc["score"] !== undefined) {
+                if (doc["score"] < threshold) break;
+                score = doc["score"];
+            }
 
             suggestions.push({
+               id: doc._id,
                author: doc.author,
                name: doc.name_,
                date: doc.date,
-               outcome: doc.outcome
+               outcome: doc.outcome,
+               score: score
             });
         }
 
