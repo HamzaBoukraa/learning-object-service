@@ -14,7 +14,6 @@ import { CS2013 } from './db-CS2013.script';
 import { fill } from './db-fill.script';
 
 // run initialization script
-if (!process.env["CLARK_DB"]) process.env["CLARK_DB"] = "localhost:27017";
 
 console.log("--- Initializing ---");
 MongoClient.connect("mongodb://"+process.env["CLARK_DB"]+"/onion", async (err, dbase)=>{

@@ -9,11 +9,11 @@ import {
     LearningOutcomeID, StandardOutcomeID
 } from '../schema/db.schema';
 
-import { User } from '../../entity/user';
-import { LearningObject } from '../../entity/learning-object';
+import { User } from '../entity/user';
+import { LearningObject } from '../entity/learning-object';
 import {
     Outcome, OutcomeSuggestion, StandardOutcome, LearningOutcome
-} from '../../entity/outcome';
+} from '../entity/outcome';
 
 if (!process.env["CLARK_DB"]) process.env["CLARK_DB"] = "localhost:27017";
 
@@ -120,17 +120,6 @@ db.connect(process.env["CLARK_DB"])
 
         socket.on('deleteLearningOutcome', (id: LearningOutcomeID, ack: (res:void)=>void ) => {
             db.deleteLearningOutcome(id)
-                .then((res)=>{ack(res)});
-        });
-
-        /* TODO: pull suggestion events into separate lo-suggestion service */
-        socket.on('suggestOutcomes', (text: string, threshold: number, ack: (res:OutcomeSuggestion[])=>void) => {
-            glue.suggestOutcomes(text, "text", threshold)
-                .then((res)=>{ack(res)});
-        });
-
-        socket.on('suggestOutcomesREGEX', (text: string, ack: (res:OutcomeSuggestion[])=>void) => {
-            glue.suggestOutcomes(text, "regex")
                 .then((res)=>{ack(res)});
         });
 

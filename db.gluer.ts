@@ -16,14 +16,14 @@ import {
     AssessmentPlanInterface, InstructionalStrategyInterface
 } from './schema/learning-outcome.schema';
 
-import { User } from '../entity/user';
-import { LearningObject } from '../entity/learning-object';
+import { User } from './entity/user';
+import { LearningObject } from './entity/learning-object';
 import {
     Outcome, OutcomeSuggestion, StandardOutcome, LearningOutcome
-} from '../entity/outcome';
-import { LearningGoal } from '../entity/learning-goal';
-import { AssessmentPlan } from '../entity/assessment-plan';
-import { InstructionalStrategy } from '../entity/instructional-strategy';
+} from './entity/outcome';
+import { LearningGoal } from './entity/learning-goal';
+import { AssessmentPlan } from './entity/assessment-plan';
+import { InstructionalStrategy } from './entity/instructional-strategy';
 
 
 /**

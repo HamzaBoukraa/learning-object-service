@@ -1,16 +1,14 @@
 // this script will pull data from BloominOnion app and insert it into our MongoDB
 
-require('../useme');
-
 import * as lineReader from 'line-reader';
 
 import * as db from '../db.driver';
 import * as glue from '../db.gluer';
 import { UserID } from '../schema/db.schema';
 
-import { User } from '../../entity/user';
-import { LearningObject } from '../../entity/learning-object';
-import { LearningOutcome } from '../../entity/outcome';
+import { User } from '../entity/user';
+import { LearningObject } from '../entity/learning-object';
+import { LearningOutcome } from '../entity/outcome';
 
 const file = "dbcontent/Dump20171010.dat";   // the data file
 
@@ -83,7 +81,8 @@ export async function fill() {
 }
 
 if (require.main === module) {
-    if (!process.env["CLARK_DB"]) process.env["CLARK_DB"] = "localhost:27017";
+    require('../useme');
+    
     db.connect(process.env["CLARK_DB"])
       .then(async () => {
         await fill();

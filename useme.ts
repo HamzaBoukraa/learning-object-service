@@ -42,3 +42,14 @@ Set.prototype.equals = function<T>(this:Set<T>, to:Set<T>): boolean {
 Set.prototype.toString = function<T>(this:Set<T>): string {
     return "{"+Array.from(this).toString()+"}";
 }
+
+// set any needed environment variables
+if (!process.env["CLARK_DB"]) {
+     process.env["CLARK_DB"] = "localhost:27017";
+}
+if (!process.env["CLARK_LO_SUGGESTION_PORT"]) {
+     process.env["CLARK_LO_SUGGESTION_PORT"] = "27015";
+}
+if (!process.env["CLARK_LO_SUGGESTION_THRESHOLD"]) {
+     process.env["CLARK_LO_SUGGESTION_THRESHOLD"] = "0";
+}

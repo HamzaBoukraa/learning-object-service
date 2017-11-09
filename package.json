@@ -4,11 +4,13 @@
   "description": "Database interaction service to ensure consistent behavior over all services.",
   "main": "src/db-interaction.service.ts",
   "scripts": {
-    "build": "tsc -p ts/",
-    "build:watch": "tsc -p ts/ -w",
+    "build": "tsc -p .",
+    "build:watch": "tsc -p . -w",
     "localdb": "mongod -f mongod.conf",
-    "setup": "node js/script/db-setup.script.js",
-    "start": "node js/script/db-interaction.service.js",
+    "db-setup": "node dist/db-setup/db-setup.script.js",
+    "db-interactor": "node dist/db-interactor/db-interaction.service.js",
+    "lo-suggestion": "node dist/lo-suggestion/lo-suggestion.service.js",
+    "start": "echo \"Error: no start specified\" && exit 1",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

@@ -7,8 +7,6 @@
 //
 //  when finished, stop with "mongod -f mongod.conf --shutdown"
 
-require('../useme');
-
 import { MongoClient, Db } from 'mongodb';
 import {
     collections, schemaFor, uniquesFor, textsFor
@@ -69,7 +67,8 @@ export async function init(db: Db) {
 }
 
 if (require.main === module) {
-    if (!process.env["CLARK_DB"]) process.env["CLARK_DB"] = "localhost:27017";
+    require('../useme');
+    
     MongoClient.connect("mongodb://"+process.env["CLARK_DB"]+"/onion")
                .then( async (db) => {
                    await init(db);
