@@ -44,8 +44,14 @@ Set.prototype.toString = function<T>(this:Set<T>): string {
 }
 
 // set any needed environment variables
-if (!process.env["CLARK_DB"]) {
-     process.env["CLARK_DB"] = "localhost:27017";
+if (!process.env["CLARK_DB_IP"]) {
+     process.env["CLARK_DB_IP"] = "localhost";
+}
+if (!process.env["CLARK_DB_PORT"]) {
+     process.env["CLARK_DB_PORT"] = "27017";
+}
+if (!process.env["CLARK_DB_INTERACTOR_PORT"]) {
+     process.env["CLARK_DB_INTERACTOR_PORT"] = "27016";
 }
 if (!process.env["CLARK_LO_SUGGESTION_PORT"]) {
      process.env["CLARK_LO_SUGGESTION_PORT"] = "27015";

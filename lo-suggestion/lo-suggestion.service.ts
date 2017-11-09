@@ -9,7 +9,7 @@ import { OutcomeSuggestion } from '../entity/outcome';
 
 const threshold = parseFloat(process.env["CLARK_LO_SUGGESTION_THRESHOLD"]);
 
-db.connect(process.env["CLARK_DB"])
+db.connect(process.env["CLARK_DB_IP"]+":"+process.env["CLARK_DB_PORT"])
   .then(() => {
     let io = server.listen(process.env["CLARK_LO_SUGGESTION_PORT"]);
     console.log("Listening on port "+process.env["CLARK_LO_SUGGESTION_PORT"]);

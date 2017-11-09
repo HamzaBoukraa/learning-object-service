@@ -37,7 +37,7 @@ export async function NCWF() {
 if (require.main === module) {
     require('../useme');
     
-    db.connect(process.env["CLARK_DB"])
+    db.connect(process.env["CLARK_DB_IP"]+":"+process.env["CLARK_DB_PORT"])
       .then(async () => {
         await NCWF();
         setTimeout(db.disconnect, 2000);

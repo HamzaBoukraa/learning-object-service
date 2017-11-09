@@ -15,16 +15,14 @@ import {
     Outcome, OutcomeSuggestion, StandardOutcome, LearningOutcome
 } from '../entity/outcome';
 
-if (!process.env["CLARK_DB"]) process.env["CLARK_DB"] = "localhost:27017";
-
 /*
  * TODO: catch errors gracefully, preferably with logging!
  */
 
-db.connect(process.env["CLARK_DB"])
+db.connect(process.env["CLARK_DB_IP"]+":"+process.env["CLARK_DB_PORT"])
   .then(() => {
-    let io = server.listen(27016);
-    console.log("Listening on port "+27016);
+    let io = server.listen(process.env["CLARK_DB_INTERACTOR_PORT"]);
+    console.log("Listening on port "+process.env["CLARK_DB_INTERACTOR_PORT"]);
 
     io.on('connection', function(socket) {
 
