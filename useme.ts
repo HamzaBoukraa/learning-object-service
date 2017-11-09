@@ -57,5 +57,5 @@ if (!process.env["CLARK_LO_SUGGESTION_PORT"]) {
      process.env["CLARK_LO_SUGGESTION_PORT"] = "27015";
 }
 if (!process.env["CLARK_LO_SUGGESTION_THRESHOLD"]) {
-     process.env["CLARK_LO_SUGGESTION_THRESHOLD"] = "0";
+     process.env["CLARK_LO_SUGGESTION_THRESHOLD"] = "1.25";
 }

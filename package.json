@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc -p .",
     "build:watch": "tsc -p . -w",
+    "build:docker": "sh docker_build.sh",
     "localdb": "mongod -f mongod.conf",
     "db-setup": "node dist/db-setup/db-setup.script.js",
     "db-interactor": "node dist/db-interactor/db-interaction.service.js",

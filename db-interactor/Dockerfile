@@ -6,13 +6,12 @@ WORKDIR /app
 
 # Copy all required JavaScript files from dist into root
 ADD dist/*.js* ./
-ADD dist/db-setup/ db-setup/
+ADD dist/db-interactor/ db-interactor/
 ADD dist/entity/ entity/
 ADD dist/schema/ schema/
 ADD dist/taxonomy/ taxonomy/
 # Copy any other required files
 ADD taxonomy/taxonomy.json taxonomy/
-ADD dbcontent/*.dat dbcontent/
 
 # Install any needed packages specified in package.json
 ENV NODE_ENV=production
@@ -24,9 +23,11 @@ RUN apk del .gyp
 
 # set default values for clark environment variables
 #   change at runtime with "-e key=value" options
-ENV CLARK_DB="172.17.0.2:27017"
+ENV CLARK_DB_IP="172.17.0.2"
+ENV CLARK_DB_PORT="27017"
+ENV CLARK_DB_INTERACTOR_PORT="27016"
 
 # NOTE: consider using "-e NODE_ENV=production" for live instances
 
 # run the scripts to setup the database
-CMD ["node", "db-setup/db-setup.script.js"]
+CMD ["node", "db-interactor/db-interaction.service.js"]
