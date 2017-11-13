@@ -44,11 +44,8 @@ Set.prototype.toString = function<T>(this:Set<T>): string {
 }
 
 // set any needed environment variables
-if (!process.env["CLARK_DB_IP"]) {
-     process.env["CLARK_DB_IP"] = "localhost";
-}
-if (!process.env["CLARK_DB_PORT"]) {
-     process.env["CLARK_DB_PORT"] = "27017";
+if (!process.env["CLARK_DB_URI"]) {
+     process.env["CLARK_DB_URI"] = "mongodb://localhost:27017/onion";
 }
 if (!process.env["CLARK_DB_INTERACTOR_PORT"]) {
      process.env["CLARK_DB_INTERACTOR_PORT"] = "27016";

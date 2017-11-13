@@ -37,7 +37,7 @@ export async function NCWFtasks() {
 if (require.main === module) {
     require('../useme');
     
-    db.connect(process.env["CLARK_DB"])
+    db.connect(process.env["CLARK_DB_URI"])
       .then(async () => {
         await NCWFtasks();
         setTimeout(db.disconnect, 2000);

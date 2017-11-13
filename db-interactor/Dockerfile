@@ -23,8 +23,7 @@ RUN apk del .gyp
 
 # set default values for clark environment variables
 #   change at runtime with "-e key=value" options
-ENV CLARK_DB_IP="172.17.0.2"
-ENV CLARK_DB_PORT="27017"
+ENV CLARK_DB_URI="mongodb://172.17.0.2:27017/onion"
 ENV CLARK_DB_INTERACTOR_PORT="27016"
 
 # NOTE: consider using "-e NODE_ENV=production" for live instances

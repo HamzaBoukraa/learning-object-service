@@ -54,9 +54,7 @@ let _db: Db;
  * 
  * @param {string} dbIP the host and port on which mongodb is running
  */
-export async function connect(dbIP: string): Promise<void> {
-    let dburi = "mongodb://"+dbIP+"/onion";
-    
+export async function connect(dburi: string): Promise<void> {
     try {
         _db = await MongoClient.connect(dburi);
         return Promise.resolve();

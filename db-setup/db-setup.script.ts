@@ -16,13 +16,13 @@ import { fill } from './db-fill.script';
 // run initialization script
 
 console.log("--- Initializing ---");
-MongoClient.connect("mongodb://"+process.env["CLARK_DB_IP"]+":"+process.env["CLARK_DB_PORT"]+"/onion", async (err, dbase)=>{
+MongoClient.connect(process.env["CLARK_DB_URI"], async (err, dbase)=>{
     if(err) throw err;
     else {
         await init(dbase);
         dbase.close();
 
-        db.connect(process.env["CLARK_DB_IP"]+":"+process.env["CLARK_DB_PORT"])
+        db.connect(process.env["CLARK_DB_URI"])
           .then(()=>{
             console.log("--- Adding Standard Outcomes ---")
             NCWF().catch((err)=>{console.log("Failed to add NCWF outcomes: "+err)});

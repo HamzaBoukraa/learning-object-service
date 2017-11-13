@@ -69,7 +69,7 @@ export async function init(db: Db) {
 if (require.main === module) {
     require('../useme');
     
-    MongoClient.connect("mongodb://"+process.env["CLARK_DB_IP"]+":"+process.env["CLARK_DB_PORT"]+"/onion")
+    MongoClient.connect(process.env["CLARK_DB_URI"])
                .then( async (db) => {
                    await init(db);
                    db.close();

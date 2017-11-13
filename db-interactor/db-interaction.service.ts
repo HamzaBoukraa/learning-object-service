@@ -19,7 +19,7 @@ import {
  * TODO: catch errors gracefully, preferably with logging!
  */
 
-db.connect(process.env["CLARK_DB_IP"]+":"+process.env["CLARK_DB_PORT"])
+db.connect(process.env["CLARK_DB_URI"])
   .then(() => {
     let io = server.listen(process.env["CLARK_DB_INTERACTOR_PORT"]);
     console.log("Listening on port "+process.env["CLARK_DB_INTERACTOR_PORT"]);

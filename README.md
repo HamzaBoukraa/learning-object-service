@@ -11,8 +11,7 @@ Name | Description
 ## Environment Variables Used
 Name|Default|Description
 ---|---|---
-`CLARK_DB_IP`|see style rules|IP address where CLARK database is running
-`CLARK_DB_PORT`|"27017"|port where CLARK database service is listening
+`CLARK_DB_URI`|see style rules|uri to connect to the database
 `CLARK_DB_INTERACTOR_PORT`|"27016"|port where `db-interactor` service listens
 `CLARK_LO_SUGGESTION_PORT`|"27015"|port where `lo-suggestion` service listens
 `CLARK_LO_SUGGESTION_THRESHOLD`|"1.25"|minimum score for outcome to be suggested (calculation is vague)
