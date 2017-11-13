@@ -16,6 +16,13 @@ export abstract class LearningOutcomeSchema {
     @fixed @foreign('objects', false, 'outcomes') @field
     static source: LearningObjectID;
 
+    /* FIXME: this and source should be @unique,
+        but then standard-outcome needs it too.
+        Those can be auto-generated dummy variables
+        based on author and outcome. */
+    @fixed @field
+    static tag: number;
+
     @auto @field
     static author: string;  // source's author's name
 
@@ -85,6 +92,7 @@ export interface LearningOutcomeRecord extends OutcomeRecord, LearningOutcomeIns
 // add in fixed fields
 export interface LearningOutcomeInsert extends Insert, LearningOutcomeUpdate {
     source: LearningObjectID;
+    tag: number;
 }
 
 // add in foreign fields

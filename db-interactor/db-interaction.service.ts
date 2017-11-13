@@ -86,6 +86,11 @@ db.connect(process.env["CLARK_DB_URI"])
                 .then((res)=>{ack(res)});
         });
         
+        socket.on('updateLearningObject', (id: LearningObjectID, object: LearningObject, ack: (res:void)=>void) => {
+            glue.updateLearningObject(id, object)
+                .then((res)=>{ack(res)});
+        });
+        
         socket.on('reorderObject', (user: UserID, object: LearningObjectID, index: number, ack: (res:void)=>void) => {
             db.reorderObject(user, object, index)
                 .then((res)=>{ack(res)});

@@ -24,6 +24,7 @@ import {
 import { LearningGoal } from './entity/learning-goal';
 import { AssessmentPlan } from './entity/assessment-plan';
 import { InstructionalStrategy } from './entity/instructional-strategy';
+import { findLearningOutcome, fetchLearningObject, deleteLearningOutcome } from './db.driver';
 
 
 /**
@@ -244,7 +245,7 @@ export async function addLearningObject(author: UserID,
 }
 
 /**
- * Update an existing user record.
+ * Update an existing learning object record.
  * NOTE: this function only updates basic fields;
  *       the object.outcomes fields is ignored
  * NOTE: promise rejected if another learning object
@@ -267,6 +268,48 @@ export async function editLearningObject(id: LearningObjectID, object: LearningO
 }
 
 /**
+ * Update an existing learning object record.
+ * NOTE: this is a deep update and as such somewhat expensive
+ * NOTE: promise rejected if another learning object
+ *       tied to the same author and with the same 'name' field
+ *       already exists
+ * 
+ * @async
+ * 
+ * @param {LearningObjectID} id - database id of the record to change
+ * @param {LearningObject} object - entity with values to update to
+ */
+export async function updateLearningObject(id: LearningObjectID, object: LearningObject):
+        Promise<void> {
+    try {
+        let toDelete = (await fetchLearningObject(id)).outcomes;
+        let doNotDelete = new Set<LearningOutcomeID>();
+
+        await editLearningObject(id, object);
+        for (let outcome of object.outcomes) {
+            try {
+                let outcomeId = await findLearningOutcome(id, outcome.tag);
+                doNotDelete.add(outcomeId)
+                await editLearningOutcome(outcomeId, outcome);
+            } catch (e) {
+                // find operation failed; add it
+                await addLearningOutcome(id, outcome);
+            }
+        }
+
+        // delete any learning outcomes not in the update object
+        for (let outcomeId of toDelete) {
+            if (!doNotDelete.has(outcomeId)) {
+                await deleteLearningOutcome(outcomeId);
+            }
+        }
+
+    } catch(e) {
+        return Promise.reject(e);
+    }
+}
+
+/**
  * Add a new user to the database.
  * NOTE: this function only adds basic fields;
  *       the outcome.mappings field is ignored
@@ -282,6 +325,7 @@ export async function addLearningOutcome(source: LearningObjectID,
         outcome: LearningOutcome): Promise<LearningOutcomeID> {
     return await db.insertLearningOutcome({
         source: source,
+        tag: outcome.tag,
         bloom: outcome.bloom,
         verb: outcome.verb,
         text: outcome.text,

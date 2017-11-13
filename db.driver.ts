@@ -332,7 +332,7 @@ export async function deleteLearningOutcome(id: LearningOutcomeID):
  * 
  * @param {string} id the user's login id
  * 
- * @returns {UserRecord}
+ * @returns {UserID}
  */
 export async function findUser(id: string) : Promise<UserID> {
     try {
@@ -348,9 +348,10 @@ export async function findUser(id: string) : Promise<UserID> {
  * Look up a learning object by its author and name.
  * @async
  * 
- * @param {string} id the user's login id
+ * @param {UserID} author the author's unique database id
+ * @param {string} name the object's name
  * 
- * @returns {UserRecord}
+ * @returns {LearningObjectID}
  */
 export async function findLearningObject(author: UserID, name: string):
         Promise<LearningObjectID> {
@@ -359,6 +360,29 @@ export async function findLearningObject(author: UserID, name: string):
                            .findOne<LearningObjectRecord>({
                                author: author,
                                name_: name
+                           });
+        return Promise.resolve(doc._id);
+    } catch(e) {
+        return Promise.reject(e);
+    }
+}
+
+/**
+ * Look up a learning outcome by its source and tag.
+ * @async
+ * 
+ * @param {LearningObjectID} source the object source's unique database id
+ * @param {number} tag the outcome's unique identifier
+ * 
+ * @returns {LearningOutcomeID}
+ */
+export async function findLearningOutcome(source: LearningObjectID, tag: number):
+        Promise<LearningOutcomeID> {
+    try {
+        let doc = await _db.collection(collectionFor(LearningObjectSchema))
+                           .findOne<LearningOutcomeRecord>({
+                               source: source,
+                               tag: tag
                            });
         return Promise.resolve(doc._id);
     } catch(e) {

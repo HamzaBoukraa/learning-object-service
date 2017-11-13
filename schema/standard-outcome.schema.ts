@@ -12,7 +12,7 @@ import { OutcomeRecord } from './learning-outcome.schema';
 export abstract class StandardOutcomeSchema {
     @auto @fixed @field
     static _id: StandardOutcomeID;
-    
+
     @fixed @field
     static author: string;
     
@@ -32,6 +32,7 @@ export abstract class StandardOutcomeSchema {
 // all auto fields
 export interface StandardOutcomeRecord extends OutcomeRecord, StandardOutcomeInsert {
     _id: StandardOutcomeID;
+    tag: number;
 }
 
 // add in fixed fields
