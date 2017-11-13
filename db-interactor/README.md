@@ -12,7 +12,9 @@ var client = require('socket.io-client')(uri);
 ## Event API
 
 #### authenticate
-`client.emit('authenticate', userid, pwd, (authorized)=>{...});`
+```javascript
+client.emit('authenticate', userid, pwd, (authorized)=>{...});
+```
 Name | Type | Description
 ---|---|---
 `userid`|`string`|user's login id
@@ -20,14 +22,18 @@ Name | Type | Description
 `authorized`|`boolean`|true iff user and pwd match
 
 #### findUser
-`client.emit('findUser', userid, (id)=>{...});`
+```javascript
+client.emit('findUser', userid, (id)=>{...});
+```
 Name | Type | Description
 ---|---|---
 `userid`|`string`|user's login id
 `id`||user's unique database id
 
 #### findLearningObject
-`client.emit('findLearningObject', author, name, (id)=>{...});`
+```javascript
+client.emit('findLearningObject', author, name, (id)=>{...});
+```
 Name | Type | Description
 ---|---|---
 `author`||object author's unique database id
@@ -35,35 +41,45 @@ Name | Type | Description
 `id`||learning object's unique database id
 
 #### loadUser
-`client.emit('loadUser', id, (user)=>{...});`
+```javascript
+client.emit('loadUser', id, (user)=>{...});
+```
 Name | Type | Description
 ---|---|---
 `id`||user's unique database id
 `user`|`User`|user entity, without any objects
 
 #### loadLearningObjectSummary
-`client.emit('loadLearningObjectSummary', id, (objects)=>{...});`
+```javascript
+client.emit('loadLearningObjectSummary', id, (objects)=>{...});
+```
 Name | Type | Description
 ---|---|---
 `id`||user's unique database id
 `objects`|`LearningObject[]`|array of learning object entities, without goals or outcomes
 
 #### loadLearningObject
-`client.emit('loadLearningObject', id, (object)=>{...});`
+```javascript
+client.emit('loadLearningObject', id, (object)=>{...});
+```
 Name | Type | Description
 ---|---|---
 `id`||object's unique database id
 `object`|`LearningObject`|learning object entity, completely loaded
 
 #### addUser
-`client.emit('addUser', user, (id)=>{...});`
+```javascript
+client.emit('addUser', user, (id)=>{...});
+```
 Name | Type | Description
 ---|---|---
 `user`|`User`|user entity (objects property is ignored)
 `id`||new user's unique database id
 
 #### addLearningObject
-`client.emit('addLearningObject', author, object, (id)=>{...});`
+```javascript
+client.emit('addLearningObject', author, object, (id)=>{...});
+```
 Name | Type | Description
 ---|---|---
 `author`||object author's unique database id
@@ -71,7 +87,9 @@ Name | Type | Description
 `id`||new object's unique database id
 
 #### addLearningOutcome
-`client.emit('addLearningOutcome', source, outcome, (id)=>{...});`
+```javascript
+client.emit('addLearningOutcome', source, outcome, (id)=>{...});
+```
 Name | Type | Description
 ---|---|---
 `source`||outcome object's unique database id
@@ -79,28 +97,36 @@ Name | Type | Description
 `id`||new outcome's unique database id
 
 #### editUser
-`client.emit('editUser', id, user, ()=>{...});`
+```javascript
+client.emit('editUser', id, user, ()=>{...});
+```
 Name | Type | Description
 ---|---|---
 `id`||user's unique database id
 `user`|`User`|new user entity (objects property is ignored)
 
 #### editLearningObject
-`client.emit('editLearningObject', id, object, ()=>{...});`
+```javascript
+client.emit('editLearningObject', id, object, ()=>{...});
+```
 Name | Type | Description
 ---|---|---
 `id`||object's unique database id
 `object`|`LearningObject`|new learning object entity (outcomes property is ignored)
 
 #### editLearningOutcome
-`client.emit('editLearningOutcome', id, outcome, ()=>{...});`
+```javascript
+client.emit('editLearningOutcome', id, outcome, ()=>{...});
+```
 Name | Type | Description
 ---|---|---
 `id`||object's unique database id
 `outcome`|`LearningOutcome`|new learning outcome entity
 
 #### reorderObject
-`client.emit('reorderObject', user, object, index, ()=>{...});`
+```javascript
+client.emit('reorderObject', user, object, index, ()=>{...});
+```
 Name | Type | Description
 ---|---|---
 `user`||user's unique database id
@@ -108,7 +134,9 @@ Name | Type | Description
 `index`|`number`|new index for `object` in `user`'s `objects`
 
 #### reorderOutcome
-`client.emit('reorderOutcome', object, outcome, index, ()=>{...});`
+```javascript
+client.emit('reorderOutcome', object, outcome, index, ()=>{...});
+```
 Name | Type | Description
 ---|---|---
 `object`||object's unique database id
@@ -116,33 +144,43 @@ Name | Type | Description
 `index`|`number`|new index for `outcome` in `object`'s `outcomes`
 
 #### mapOutcome
-`client.emit('mapOutcome', outcome, mapping, ()=>{...});`
+```javascript
+client.emit('mapOutcome', outcome, mapping, ()=>{...});
+```
 Name | Type | Description
 ---|---|---
 `outcome`||outcome's unique database id
 `mapping`||unique database id of outcome to map to
 
 #### unmapOutcome
-`client.emit('unmapOutcome', outcome, mapping, ()=>{...});`
+```javascript
+client.emit('unmapOutcome', outcome, mapping, ()=>{...});
+```
 Name | Type | Description
 ---|---|---
 `outcome`||outcome's unique database id
 `mapping`||unique database id of outcome to unmap
 
 #### deleteUser
-`client.emit('deleteUser', id, ()=>{...});`
+```javascript
+client.emit('deleteUser', id, ()=>{...});
+```
 Name | Type | Description
 ---|---|---
 `id`||user's unique database id
 
 #### deleteLearningObject
-`client.emit('deleteLearningObject', id, ()=>{...});`
+```javascript
+client.emit('deleteLearningObject', id, ()=>{...});
+```
 Name | Type | Description
 ---|---|---
 `id`||object's unique database id
 
 #### deleteLearningOutcome
-`client.emit('deleteLearningOutcome', id, ()=>{...});`
+```javascript
+client.emit('deleteLearningOutcome', id, ()=>{...});
+```
 Name | Type | Description
 ---|---|---
 `id`||outcome's unique database id

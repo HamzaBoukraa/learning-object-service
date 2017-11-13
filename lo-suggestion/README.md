@@ -13,6 +13,7 @@ var client = require('socket.io-client')(uri);
 
 #### suggestOutcomes
 `client.emit('suggestOutcomes', text, (outcomes)=>{...});`
+
 Name | Type | Description
 ---|---|---
 `text`|`string`|the text argument
