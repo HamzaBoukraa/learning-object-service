@@ -72,26 +72,8 @@ db.connect(process.env["CLARK_DB_URI"])
             .catch((err)=>{ res.send({error:err}); });
     });
     
-    server.get('/addLearningOutcome', (req, res) => {
-        glue.addLearningOutcome(req.body.source, req.body.outcome)
-            .then((id)=>{ res.send(id); })
-            .catch((err)=>{ res.send({error:err}); });
-    });
-    
     server.get('/editUser', (req, res) => {
         glue.editUser(req.body.id, req.body.user)
-            .then(()=>{ res.send(); })
-            .catch((err)=>{ res.send({error:err}); });
-    });
-
-    server.get('/editLearningObject', (req, res) => {
-        glue.editLearningObject(req.body.id, req.body.object)
-            .then(()=>{ res.send(); })
-            .catch((err)=>{ res.send({error:err}); });
-    });
-
-    server.get('/editLearningOutcome', (req, res) => {
-        glue.editLearningOutcome(req.body.id, req.body.outcome)
             .then(()=>{ res.send(); })
             .catch((err)=>{ res.send({error:err}); });
     });
@@ -104,12 +86,6 @@ db.connect(process.env["CLARK_DB_URI"])
     
     server.get('/reorderObject', (req, res) => {
         db.reorderObject(req.body.user, req.body.object, req.body.index)
-            .then(()=>{ res.send(); })
-            .catch((err)=>{ res.send({error:err}); });
-    });
-
-    server.get('/reorderOutcome', (req, res) => {
-        db.reorderOutcome(req.body.object, req.body.outcome, req.body.index)
             .then(()=>{ res.send(); })
             .catch((err)=>{ res.send({error:err}); });
     });
@@ -134,12 +110,6 @@ db.connect(process.env["CLARK_DB_URI"])
 
     server.get('/deleteLearningObject', (req, res) => {
         db.deleteLearningObject(req.body.id)
-            .then(()=>{ res.send(); })
-            .catch((err)=>{ res.send({error:err}); });
-    });
-
-    server.get('/deleteLearningOutcome', (req, res) => {
-        db.deleteLearningOutcome(req.body.id)
             .then(()=>{ res.send(); })
             .catch((err)=>{ res.send({error:err}); });
     });
