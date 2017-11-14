@@ -31,13 +31,13 @@ Name|Default|Description
 - Start local database (requires mongo installation): `npm run localdb`
 - Start docker database (requires docker installation): `docker run -p 27017:27017 mongo`
 - Run a process using a local database: `npm run <process>`
-- Run a process using a remote database: `CLARK_DB_IP=<IP> npm run <process>`
+- Run a process using a remote database: `CLARK_DB_URI=<uri> npm run <process>`
 
 ## Docker (requires docker installation)
 - Build a docker image: `npm run build:docker <process>`
 - Tag a docker image for publishing: `docker tag <process> <user>/<repo>:<process>`
 - Publish a docker image: `docker push <user>/<repo>:<process>`
-- Run a process through its docker image: `docker run -e CLARK_DB_IP=<IP> <user>/<repo>:<process>`
+- Run a process through its docker image: `docker run -e CLARK_DB_URI=<uri> <user>/<repo>:<process>`
 
 ## Development Style Rules
 - Parameters for any scripts or services should use environment variables.
