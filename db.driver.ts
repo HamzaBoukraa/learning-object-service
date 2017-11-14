@@ -75,6 +75,7 @@ export function disconnect(): void {
  * @returns {UserID} the database id of the new record
  */
 export async function insertUser(record: UserInsert): Promise<UserID> {
+    record['_id'] = (new ObjectID()).toHexString();
     return insert(UserSchema, record);
 }
 
@@ -88,6 +89,7 @@ export async function insertUser(record: UserInsert): Promise<UserID> {
  */
 export async function insertLearningObject(record: LearningObjectInsert):
         Promise<LearningObjectID> {
+    record['_id'] = (new ObjectID()).toHexString();
     return insert(LearningObjectSchema, record);
 }
 
@@ -102,6 +104,7 @@ export async function insertLearningObject(record: LearningObjectInsert):
 export async function insertLearningOutcome(record: LearningOutcomeInsert):
         Promise<LearningOutcomeID> {
     try {
+        record['_id'] = (new ObjectID()).toHexString();
         /* FIXME: In order to create auto-generated fields, we need to
                   query information for the foreign keys. But when we
                   perform the generic insert, we unnecessarily query
@@ -582,7 +585,7 @@ async function reorder(collection: string, owner: RecordID, registry: string,
 
         let pushdoc = {};
         pushdoc[registry] = {
-            $each: item,
+            $each: [item],
             $position: index
         };
 

@@ -78,6 +78,7 @@ export async function loadLearningObjectSummary(id: UserID): Promise<LearningObj
             let objectRecord = await db.fetchLearningObject(objectid);
             let object = new LearningObject(null);
             object.name = objectRecord.name_;
+            object.date = objectRecord.date;
             object.length = objectRecord.length_;
             // not a deep operation - ignore goals and outcomes
             summary.push(object);
@@ -106,6 +107,7 @@ export async function loadLearningObject(id: LearningObjectID):
         // no real need to link to User object, so pass null
         let object = new LearningObject(null);
         object.name = record.name_;
+        object.date = record.date;
         object.length = record.length_;
         for (let rGoal of record.goals ) {
             let goal = object.addGoal();

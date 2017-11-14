@@ -5,16 +5,15 @@ const bodyParser = require('body-parser');
 
 import * as db from '../db.driver';
 import * as glue from '../db.gluer';
+
 import {
     RecordID, UserID, LearningObjectID, OutcomeID,
     LearningOutcomeID, StandardOutcomeID
-} from '../schema/db.schema';
+} from '../schema/schema';
 
-import { User } from '../entity/user';
-import { LearningObject } from '../entity/learning-object';
 import {
-    Outcome, OutcomeSuggestion, StandardOutcome, LearningOutcome
-} from '../entity/outcome';
+    User, LearningObject, StandardOutcome, LearningOutcome
+} from '../entity/entities';
 
 /*
  * TODO: catch errors gracefully, preferably with logging!
@@ -25,93 +24,139 @@ server.use(bodyParser.json());
 db.connect(process.env["CLARK_DB_URI"])
   .then(() => {
     server.post('/authenticate', (req, res) => {
-        glue.authenticate(req.body.userid, req.body.pwd)
+        let userid = req.body.userid;
+        let pwd = req.body.pwd;
+
+        glue.authenticate(userid, pwd)
             .then((authorized)=>{ res.send(authorized); })
             .catch((err)=>{ res.send({error:err}); });
     });
     
     server.post('/findUser', (req, res) => {
-        db.findUser(req.body.userid)
+        let userid = req.body.userid;
+
+        db.findUser(userid)
             .then((id)=>{ res.send(id); })
             .catch((err)=>{ res.send({error:err}); });
     });
 
     server.post('/findLearningObject', (req, res) => {
-        db.findLearningObject(req.body.author, req.body.name)
+        let author = req.body.author;
+        let name = req.body.name;
+        
+        db.findLearningObject(author, name)
             .then((id)=>{ res.send(id); })
             .catch((err)=>{ res.send({error:err}); });
     });
 
     server.post('/loadUser', (req, res) => {
-        glue.loadUser(req.body.id)
-            .then((user)=>{ res.send(user); })
+        let id = req.body.id;
+
+        glue.loadUser(id)
+            .then((user)=>{
+                let msg = User.serialize(user)
+                res.send(msg);
+            })
             .catch((err)=>{ res.send({error:err}); });
     });
 
     server.post('/loadLearningObjectSummary', (req, res) => {
-        glue.loadLearningObjectSummary(req.body.id)
-            .then((objects)=>{ res.send(objects); })
+        let id = req.body.id;
+
+        glue.loadLearningObjectSummary(id)
+            .then((objects)=>{
+                let msgs = objects.map(LearningObject.serialize);
+                let msg = JSON.stringify(msgs);
+                res.send(msg);
+            })
             .catch((err)=>{ res.send({error:err}); });
     });
     
     server.post('/loadLearningObject', (req, res) => {
-        glue.loadLearningObject(req.body.id)
-            .then((object)=>{ res.send(object); })
+        let id = req.body.id;
+
+        glue.loadLearningObject(id)
+            .then((object)=>{
+                let msg = LearningObject.serialize(object);
+                res.send(msg);
+            })
             .catch((err)=>{ res.send({error:err}); });
     });
 
     server.post('/addUser', (req, res) => {
-        glue.addUser(req.body.user)
-            .then((id)=>{
-                console.log("finished"); res.send(id); })
-            .catch((err)=>{ 
-                console.log("errored: "+err);res.send({error:err}); });
+        let user = User.unserialize(req.body.user);
+        glue.addUser(user)
+            .then((id)=>{ res.send(id); })
+            .catch((err)=>{ res.send({error:err}); });
     });
 
     server.post('/addLearningObject', (req, res) => {
-        glue.addLearningObject(req.body.author, req.body.object)
+        let author = req.body.author;
+        let object = LearningObject.unserialize(req.body.object, null);
+
+        glue.addLearningObject(author, object)
             .then((id)=>{ res.send(id); })
             .catch((err)=>{ res.send({error:err}); });
     });
     
     server.post('/editUser', (req, res) => {
-        glue.editUser(req.body.id, req.body.user)
+        let id = req.body.id;
+        let user = User.unserialize(req.body.user);
+
+        glue.editUser(id, user)
             .then(()=>{ res.send(); })
             .catch((err)=>{ res.send({error:err}); });
     });
     
     server.post('/updateLearningObject', (req, res) => {
-        glue.updateLearningObject(req.body.id, req.body.object)
+        let id = req.body.id;
+        let object = LearningObject.unserialize(req.body.object, null);
+
+        glue.updateLearningObject(id, object)
             .then(()=>{ res.send(); })
             .catch((err)=>{ res.send({error:err}); });
     });
     
     server.post('/reorderObject', (req, res) => {
-        db.reorderObject(req.body.user, req.body.object, req.body.index)
+        let user = req.body.user;
+        let object = req.body.object;
+        let index = req.body.index;
+
+        db.reorderObject(user, object, index)
             .then(()=>{ res.send(); })
             .catch((err)=>{ res.send({error:err}); });
     });
 
     server.post('/unmapOutcome', (req, res) => {
-        db.unmapOutcome(req.body.outcome, req.body.mapping)
+        let outcome = req.body.outcome;
+        let mapping = req.body.mapping;
+
+        db.unmapOutcome(outcome, mapping)
             .then(()=>{ res.send(); })
             .catch((err)=>{ res.send({error:err}); });
     });
 
     server.post('/mapOutcome', (req, res) => {
-        db.mapOutcome(req.body.outcome, req.body.mapping)
+        let outcome = req.body.outcome;
+        let mapping = req.body.mapping;
+
+        db.mapOutcome(outcome, mapping)
             .then(()=>{ res.send(); })
             .catch((err)=>{ res.send({error:err}); });
     });
 
     server.post('/deleteUser', (req, res) => {
-        db.deleteUser(req.body.id)
+        let id = req.body.id;
+
+        db.deleteUser(id)
             .then(()=>{ res.send(); })
             .catch((err)=>{ res.send({error:err}); });
     });
 
     server.post('/deleteLearningObject', (req, res) => {
-        db.deleteLearningObject(req.body.id)
+        let id = req.body.id;
+
+        db.deleteLearningObject(id)
             .then(()=>{ res.send(); })
             .catch((err)=>{ res.send({error:err}); });
     });
