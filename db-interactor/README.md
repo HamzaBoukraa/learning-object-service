@@ -113,3 +113,12 @@ Name | Type | Description
 Name | Type | Description
 ---|---|---
 `id`||object's unique database id
+
+
+#### fetchAllObjects
+Name | Type | Description
+---|---|---
+||
+`objects`|`LearningObject[]`|array of learning object entities, without goals or outcomes
+
+NOTE: This event's return value is a JSON string representing an array of serialized LearningObjects. You'll need to parse the array before unserializing its elements.

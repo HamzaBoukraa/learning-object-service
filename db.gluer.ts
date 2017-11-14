@@ -369,6 +369,27 @@ export async function addStandardOutcome(standard: StandardOutcome):
     });
 }
 
+/**
+ * Return literally all objects. Very expensive.
+ * @returns {LearningObjectRecord[]} array of literally all objects
+ */
+export async function fetchAllObjects(): Promise<LearningObject[]> {
+    try {
+        let records = await db.fetchAllObjects().toArray();
+        let objects = records.map((doc) => {
+            let object = new LearningObject(null);
+            object.name = doc.name_;
+            object.date = doc.date;
+            object.length = doc.length_;
+            return object;
+        });
+
+        return Promise.resolve(objects);
+    } catch (e) {
+        return Promise.reject(e);
+    }
+}
+
 export type suggestMode = "text" | "regex";
 
 /**

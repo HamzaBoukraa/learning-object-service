@@ -161,6 +161,16 @@ db.connect(process.env["CLARK_DB_URI"])
             .catch((err)=>{ res.send({error:err}); });
     });
 
+    server.post('/fetchAllObjects', (req, res) => {
+        glue.fetchAllObjects()
+            .then((objects)=>{
+                let msgs = objects.map(LearningObject.serialize);
+                let msg = JSON.stringify(msgs);
+                res.send(msg);
+            })
+            .catch((err)=>{ res.send({error:err}); });
+    });
+
     server.listen(process.env["CLARK_DB_INTERACTOR_PORT"]);
     console.log("Listening on port "+process.env["CLARK_DB_INTERACTOR_PORT"]);
   })

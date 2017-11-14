@@ -439,6 +439,15 @@ export async function fetchOutcome(id: UserID):
 /////////////////
 
 /**
+ * Return literally all objects. Very expensive.
+ * @returns {Cursor<LearningObjectRecord[]} cursor of literally all objects
+ */
+export function fetchAllObjects(): Cursor<LearningObjectRecord> {
+    return _db.collection(collectionFor(LearningObjectSchema))
+              .find<LearningObjectRecord>();
+}
+
+/**
  * Find outcomes matching a text query.
  * This variant uses Mongo's fancy text query. Questionable results.
  * NOTE: this function also projects a score onto the cursor documents
