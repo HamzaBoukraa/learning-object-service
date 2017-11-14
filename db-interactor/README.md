@@ -71,14 +71,6 @@ Name | Type | Description
 ||
 `id`||new object's unique database id
 
-#### addLearningOutcome
-Name | Type | Description
----|---|---
-`source`||outcome object's unique database id
-`outcome`|`string`|learning outcome entity
-||
-`id`||new outcome's unique database id
-
 NOTE: This is the last event listed here with a return value.
 
 #### editUser
@@ -87,17 +79,11 @@ Name | Type | Description
 `id`||user's unique database id
 `user`|`User`|new user entity (objects property is ignored)
 
-#### editLearningObject
+#### updateLearningObject
 Name | Type | Description
 ---|---|---
 `id`||object's unique database id
 `object`|`LearningObject`|new learning object entity (outcomes property is ignored)
-
-#### editLearningOutcome
-Name | Type | Description
----|---|---
-`id`||object's unique database id
-`outcome`|`LearningOutcome`|new learning outcome entity
 
 #### reorderObject
 Name | Type | Description
@@ -105,13 +91,6 @@ Name | Type | Description
 `user`||user's unique database id
 `object`||object's unique database id
 `index`|`number`|new index for `object` in `user`'s `objects`
-
-#### reorderOutcome
-Name | Type | Description
----|---|---
-`object`||object's unique database id
-`outcome`||outcome's unique database id
-`index`|`number`|new index for `outcome` in `object`'s `outcomes`
 
 #### mapOutcome
 Name | Type | Description
@@ -134,8 +113,3 @@ Name | Type | Description
 Name | Type | Description
 ---|---|---
 `id`||object's unique database id
-
-#### deleteLearningOutcome
-Name | Type | Description
----|---|---
-`id`||outcome's unique database id
