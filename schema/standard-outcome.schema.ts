@@ -2,11 +2,14 @@
  * Define the database schema for standard outcomes.
  */
 import {
-    collection, unique, text, auto, fixed, foreign, field
+    collection, unique, text, auto, fixed, foreign, field,
+    Edit, Update, Insert, Record
 } from './db.schema';
-import { Edit, Update, Insert, Record } from './db.schema';
-import { StandardOutcomeID } from './db.schema';
-import { OutcomeRecord } from './learning-outcome.schema';
+
+import { OutcomeRecord } from './outcome.schema';
+
+import { DBID } from './db.schema';
+export type StandardOutcomeID = DBID;
 
 @collection('outcomes')
 export abstract class StandardOutcomeSchema {

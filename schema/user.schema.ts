@@ -3,10 +3,14 @@
  */
 
 import {
-    collection, unique, text, auto, fixed, foreign, field
+    collection, unique, text, auto, fixed, foreign, field,
+    Edit, Update, Insert, Record
 } from './db.schema';
-import { Edit, Update, Insert, Record } from './db.schema';
-import { UserID, LearningObjectID } from './db.schema';
+
+import { LearningObjectID } from './learning-object.schema';
+
+import { DBID } from './db.schema';
+export type UserID = DBID;
 
 @collection('users')
 export abstract class UserSchema {

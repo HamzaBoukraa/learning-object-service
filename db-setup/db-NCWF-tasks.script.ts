@@ -4,9 +4,11 @@
 //  and pushes each record to the outcome collection, author "NCWF 2017"
 
 import * as lineReader from 'line-reader';
+
 import * as db from '../db.driver';
 import * as glue from '../db.gluer';
-import { StandardOutcome } from '../entity/outcome';
+
+import { StandardOutcome } from '../entity/entities';
 
 const file = "dbcontent/NIST.SP.800-181.tasks.dat";   // the data file
 

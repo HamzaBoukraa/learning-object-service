@@ -6,36 +6,25 @@
 
 import { MongoClient, Db, Cursor, ObjectID } from 'mongodb';
 
-import { Record, Update, Insert, Edit } from './schema/db.schema';
 import {
-    autosFor, fixedsFor, foreignsFor, fieldsFor
-} from './schema/db.schema';
-import {
+    autosFor, fixedsFor, foreignsFor, fieldsFor,
     collections, collectionFor, schemaFor, foreignData
 } from './schema/db.schema';
 import {
+    Record, Update, Insert, Edit,
     RecordID, UserID, LearningObjectID, OutcomeID,
-    LearningOutcomeID, StandardOutcomeID
-} from './schema/db.schema';
-
-import {
-    UserSchema, UserRecord, UserUpdate, UserInsert, UserEdit
-} from './schema/user.schema';
-import {
+    LearningOutcomeID, StandardOutcomeID,
+    UserSchema, UserRecord, UserUpdate, UserInsert, UserEdit,
     LearningObjectSchema, LearningObjectRecord, LearningObjectUpdate,
-    LearningObjectInsert, LearningObjectEdit
-} from './schema/learning-object.schema';
-import {
+    LearningObjectInsert, LearningObjectEdit,
     LearningOutcomeSchema, LearningOutcomeRecord, LearningOutcomeUpdate,
-    LearningOutcomeInsert, LearningOutcomeEdit
-} from './schema/learning-outcome.schema';
-import {
+    LearningOutcomeInsert, LearningOutcomeEdit,
     StandardOutcomeSchema, StandardOutcomeRecord, StandardOutcomeUpdate,
-    StandardOutcomeInsert, StandardOutcomeEdit
-} from './schema/standard-outcome.schema';
-import { OutcomeRecord } from './schema/learning-outcome.schema';
+    StandardOutcomeInsert, StandardOutcomeEdit,
+    OutcomeRecord
+} from './schema/schema';
 
-export { ObjectID };
+export { ObjectID as DBID };
 
 // only created once, no matter how many times the module is required
 let _db: Db;

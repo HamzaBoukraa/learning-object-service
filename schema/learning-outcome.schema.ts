@@ -3,10 +3,18 @@
  */
 
 import {
-    collection, unique, text, auto, fixed, foreign, field
+    collection, unique, text, auto, fixed, foreign, field,
+    Edit, Update, Insert, Record
 } from './db.schema';
-import { Edit, Update, Insert, Record } from './db.schema';
-import { LearningObjectID, LearningOutcomeID, OutcomeID } from './db.schema';
+
+import { LearningObjectID } from './learning-object.schema';
+import {
+    OutcomeID, OutcomeRecord,
+    AssessmentPlanInterface, InstructionalStrategyInterface,
+} from './outcome.schema';
+
+import { DBID } from './db.schema';
+export type LearningOutcomeID = DBID;
 
 @collection('outcomes')
 export abstract class LearningOutcomeSchema {
@@ -52,33 +60,6 @@ export abstract class LearningOutcomeSchema {
     
     @foreign('outcomes', false) @field
     static mappings: OutcomeID[];
-}
-
-/**
- * Defines assessment plan subdocument schema.
- */
-export interface AssessmentPlanInterface {
-    plan: string;
-    text: string;
-}
-
-/**
- * Defines instructional strategy subdocument schema.
- */
-export interface InstructionalStrategyInterface {
-    instruction: string;
-    text: string;
-}
-
-/**
- * Defines generic outcome schema (both learning and standard).
- */
-export interface OutcomeRecord extends Record {
-    _id: OutcomeID;
-    author: string;
-    name_: string;
-    date: string;
-    outcome: string;
 }
 
 /* FIXME: There has got to be a way to auto-generate the

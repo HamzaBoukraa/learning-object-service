@@ -6,10 +6,9 @@
 
 require('source-map-support').install();
 
-import { UserSchema } from './schema/user.schema';
-import { LearningOutcomeSchema } from './schema/learning-outcome.schema';
-import { StandardOutcomeSchema } from './schema/standard-outcome.schema';
-import { LearningObjectSchema } from './schema/learning-object.schema';
+import {
+    UserSchema, LearningOutcomeSchema, StandardOutcomeSchema, LearningObjectSchema
+} from './schema/schema';
 
  /**
   * Just a simple expression to force javascript to declare the

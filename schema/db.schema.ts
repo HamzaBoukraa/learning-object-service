@@ -2,16 +2,12 @@
  * Tools and universal script for defining database schemas.
  */
 
-import { ObjectID } from '../db.driver';
+import { DBID } from '../db.driver';
+export { DBID };
 
-/**
- * Explicit type definitions for each id/foreign key.
- */
-export type UserID = ObjectID;
-export type LearningObjectID = ObjectID;
-export type LearningOutcomeID = ObjectID;
-export type StandardOutcomeID = ObjectID;
-export type OutcomeID = LearningOutcomeID|StandardOutcomeID;
+import { UserID } from './user.schema';
+import { LearningObjectID } from './learning-object.schema';
+import { OutcomeID } from './outcome.schema';
 export type RecordID = UserID|LearningObjectID|OutcomeID;
 
 /**

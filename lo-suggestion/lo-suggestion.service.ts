@@ -5,7 +5,7 @@ import * as server from 'socket.io';
 import * as db from '../db.driver';
 import * as glue from '../db.gluer';
 
-import { OutcomeSuggestion } from '../entity/outcome';
+import { OutcomeSuggestion } from '../entity/entities';
 
 const threshold = parseFloat(process.env["CLARK_LO_SUGGESTION_THRESHOLD"]);
 

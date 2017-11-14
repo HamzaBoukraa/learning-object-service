@@ -4,11 +4,9 @@ import * as lineReader from 'line-reader';
 
 import * as db from '../db.driver';
 import * as glue from '../db.gluer';
-import { UserID } from '../schema/db.schema';
 
-import { User } from '../entity/user';
-import { LearningObject } from '../entity/learning-object';
-import { LearningOutcome } from '../entity/outcome';
+import { UserID } from '../schema/schema';
+import { User, LearningOutcome, LearningObject } from '../entity/entities';
 
 const file = "dbcontent/Dump20171010.dat";   // the data file
 

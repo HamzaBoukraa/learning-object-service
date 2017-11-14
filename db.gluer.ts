@@ -9,22 +9,15 @@ import { hash, verify } from './hash.driver';
 import * as db from './db.driver';
 
 import {
-    UserID, LearningObjectID, OutcomeID, LearningOutcomeID, StandardOutcomeID
-} from './schema/db.schema';
-import { LearningGoalInterface } from './schema/learning-object.schema';
-import {
-    AssessmentPlanInterface, InstructionalStrategyInterface
-} from './schema/learning-outcome.schema';
+    UserID, LearningObjectID, OutcomeID, LearningOutcomeID, StandardOutcomeID,
+    AssessmentPlanInterface, InstructionalStrategyInterface, LearningGoalInterface
+} from './schema/schema';
 
-import { User } from './entity/user';
-import { LearningObject } from './entity/learning-object';
 import {
-    Outcome, OutcomeSuggestion, StandardOutcome, LearningOutcome
-} from './entity/outcome';
-import { LearningGoal } from './entity/learning-goal';
-import { AssessmentPlan } from './entity/assessment-plan';
-import { InstructionalStrategy } from './entity/instructional-strategy';
-import { findLearningOutcome, fetchLearningObject, deleteLearningOutcome } from './db.driver';
+    User, LearningObject,
+    Outcome, OutcomeSuggestion, StandardOutcome, LearningOutcome,
+    LearningGoal, AssessmentPlan, InstructionalStrategy
+} from './entity/entities';
 
 
 /**
@@ -282,13 +275,13 @@ export async function editLearningObject(id: LearningObjectID, object: LearningO
 export async function updateLearningObject(id: LearningObjectID, object: LearningObject):
         Promise<void> {
     try {
-        let toDelete = (await fetchLearningObject(id)).outcomes;
+        let toDelete = (await db.fetchLearningObject(id)).outcomes;
         let doNotDelete = new Set<LearningOutcomeID>();
 
         await editLearningObject(id, object);
         for (let outcome of object.outcomes) {
             try {
-                let outcomeId = await findLearningOutcome(id, outcome.tag);
+                let outcomeId = await db.findLearningOutcome(id, outcome.tag);
                 doNotDelete.add(outcomeId)
                 await editLearningOutcome(outcomeId, outcome);
             } catch (e) {
@@ -300,7 +293,7 @@ export async function updateLearningObject(id: LearningObjectID, object: Learnin
         // delete any learning outcomes not in the update object
         for (let outcomeId of toDelete) {
             if (!doNotDelete.has(outcomeId)) {
-                await deleteLearningOutcome(outcomeId);
+                await db.deleteLearningOutcome(outcomeId);
             }
         }
 

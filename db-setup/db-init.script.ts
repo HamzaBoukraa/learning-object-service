@@ -69,11 +69,11 @@ export async function init(db: Db) {
 if (require.main === module) {
     require('../useme');
     
-    MongoClient.connect(process.env["CLARK_DB_URI"])
-               .then( async (db) => {
-                   await init(db);
-                   db.close();
-               }).catch( (err) => {
-                   throw err;
-               });
+    MongoClient.connect(process.env["CLARK_DB_URI"], async (err, dbase)=>{
+        if(err) throw err;
+        else {
+            await init(dbase);
+            dbase.close();
+        }
+    });
 }

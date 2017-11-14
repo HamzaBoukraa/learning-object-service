@@ -4,9 +4,11 @@
 //  and pushes each record to the outcome collection, author "CAE 2014"
 
 import * as lineReader from 'line-reader';
+
 import * as db from '../db.driver';
 import * as glue from '../db.gluer';
-import { StandardOutcome } from '../entity/outcome';
+
+import { StandardOutcome } from '../entity/entities';
 
 const file = "dbcontent/CS_2013_Learning_Outcomes.dat";   // the data file
 
