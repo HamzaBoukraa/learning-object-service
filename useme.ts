@@ -4,6 +4,8 @@
  * be imported at the start of every script and service.
  */
 
+require('source-map-support').install();
+
 import { UserSchema } from './schema/user.schema';
 import { LearningOutcomeSchema } from './schema/learning-outcome.schema';
 import { StandardOutcomeSchema } from './schema/standard-outcome.schema';

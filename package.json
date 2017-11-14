@@ -31,7 +31,8 @@
     "jsonfile": "^4.0.0",
     "line-reader": "^0.4.0",
     "mongodb": "^2.2.31",
-    "socket.io": "^2.0.3"
+    "socket.io": "^2.0.3",
+    "source-map-support": "^0.5.0"
   },
   "devDependencies": {
     "@types/bcrypt": "^1.0.0",
