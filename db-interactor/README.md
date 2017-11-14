@@ -11,7 +11,7 @@ var client = require('socket.io-client')(uri);
 
 ## Event API
 
-We're now using http GET requests. Emitting an event is now actually requesting from `/<event name>`Send each parameter as a property in the request body. Expect the return value as the body of the response, unless it has an errror property in which case it's an error.
+We're now using http POST requests. Emitting an event is now actually requesting from `/<event name>`Send each parameter as a property in the request body. Expect the return value as the body of the response, unless it has an errror property in which case it's an error.
 
 #### authenticate
 ```javascript
