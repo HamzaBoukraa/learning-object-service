@@ -16,9 +16,18 @@ db.connect(process.env["CLARK_DB_URI"])
 
     io.on('connection', function(socket) {
 
-        socket.on('suggestOutcomes', (text: string, ack: (res:OutcomeSuggestion[])=>void) => {
+        socket.on('suggestOutcomes', (text: string, filter: {[prop:string]:string}, ack: (res:OutcomeSuggestion[])=>void) => {
             glue.suggestOutcomes(text, "text", threshold)
-                .then((res)=>{ack(res)});
+                .then((res)=>{
+                  ack(res.filter((suggestion) => {
+                    for (let prop in filter) {
+                      if (suggestion[prop] && suggestion[prop].indexOf(filter[prop]) < 0) {
+                        return false; // leave out suggestion if it doesn't contain filter text
+                      }
+                    }
+                    return true;
+                  }));
+                });
         });
 
         // socket.on('suggestOutcomes', (text: string, ack: (res:OutcomeSuggestion[])=>void) => {
