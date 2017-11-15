@@ -133,6 +133,9 @@ export async function insertLearningOutcome(record: LearningOutcomeInsert):
  */
 export async function insertStandardOutcome(record: StandardOutcomeInsert):
         Promise<StandardOutcomeID> {
+    record['_id'] = (new ObjectID()).toHexString();
+    record['source'] = record.author;
+    record['tag'] = [record.date, record.name_, record.outcome].join("$");
     return insert(StandardOutcomeSchema, record);
 }
 

@@ -27,6 +27,13 @@ export abstract class StandardOutcomeSchema {
 
     @auto @fixed @text @field
     static outcome: string;
+
+    // the following two fields are needed solely to facilitate unique index for learning outcomes
+    @auto @unique @fixed @field
+    static source: string;  // alias for author
+
+    @auto @unique @fixed @field
+    static tag: string; // alias for outcome
 }
 
 /* FIXME: There has got to be a way to auto-generate the
@@ -35,7 +42,8 @@ export abstract class StandardOutcomeSchema {
 // all auto fields
 export interface StandardOutcomeRecord extends OutcomeRecord, StandardOutcomeInsert {
     _id: StandardOutcomeID;
-    tag: number;
+    source: string;
+    tag: string;
 }
 
 // add in fixed fields

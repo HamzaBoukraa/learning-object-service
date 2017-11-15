@@ -21,14 +21,10 @@ export abstract class LearningOutcomeSchema {
     @auto @fixed @field
     static _id: LearningOutcomeID;
 
-    @fixed @foreign('objects', false, 'outcomes') @field
+    @unique @fixed @foreign('objects', false, 'outcomes') @field
     static source: LearningObjectID;
 
-    /* FIXME: this and source should be @unique,
-        but then standard-outcome needs it too.
-        Those can be auto-generated dummy variables
-        based on author and outcome. */
-    @fixed @field
+    @unique @fixed @field
     static tag: number;
 
     @auto @field
