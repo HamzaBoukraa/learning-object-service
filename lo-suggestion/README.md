@@ -12,13 +12,13 @@ var client = require('socket.io-client')(uri);
 ## Event API
 
 #### suggestOutcomes
-`client.emit('suggestOutcomes', text, (outcomes)=>{...}, filter);`
+`client.emit('suggestOutcomes', text, filter, (outcomes)=>{...});`
 
 Name | Type | Description
 ---|---|---
 `text`|`string`|the text argument
 `outcomes`|`OutcomeSuggestion[]`|an array of outcome suggestion documents
-`filter`|`{[prop:string]:string}`|OPTIONAL 
+`filter`|`{[prop:string]:string}`|object with string values to filter on
 
 ## Filter Behavior
 Say `filter` looks like this:
