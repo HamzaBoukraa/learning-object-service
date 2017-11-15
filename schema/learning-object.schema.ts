@@ -11,6 +11,7 @@ import { UserID } from './user.schema';
 import { LearningOutcomeID } from './learning-outcome.schema';
 
 import { DBID } from './db.schema';
+import { Repository } from '../entity/neutrino';
 export type LearningObjectID = DBID;
 
 @collection('objects')
@@ -36,6 +37,9 @@ export abstract class LearningObjectSchema {
 
     @foreign('outcomes', true) @field
     static outcomes: LearningOutcomeID[];
+
+    @field
+    static repository: Repository;
 }
 
 /**
@@ -43,6 +47,34 @@ export abstract class LearningObjectSchema {
  */
 export interface LearningGoalInterface {
     text: string;
+}
+
+/**
+ * Defines neutrino repository subdocument schema.
+ */
+export interface RepositoryInterface {
+    files: LearningObjectFileInterface[],
+    urls: LearningObjectUrlInterface[],
+    notes: string
+}
+
+/**
+ * Defines neutrino file subdocument schema.
+ */
+export interface LearningObjectFileInterface {
+    id: string,
+    name: string,
+    fileType: string,
+    url: string,
+    date: string
+}
+
+/**
+ * Defines neutrino url subdocument schema.
+ */
+export interface LearningObjectUrlInterface {
+    title: string,
+    url: string
 }
 
 /* FIXME: There has got to be a way to auto-generate the
@@ -69,4 +101,5 @@ export interface LearningObjectEdit extends Edit {
     date: string;
     length_: string;
     goals: LearningGoalInterface[];
+    repository: Repository;
 }

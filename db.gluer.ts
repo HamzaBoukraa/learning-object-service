@@ -145,6 +145,9 @@ export async function loadLearningObject(id: LearningObjectID):
             }
         }
 
+        // load the repository:
+        object.repository = record.repository;
+
         return Promise.resolve(object);
     } catch(e) {
         return Promise.reject(e);
@@ -235,7 +238,8 @@ export async function addLearningObject(author: UserID,
         date: object.date,
         length_: object.length,
         goals: documentGoals(object.goals),
-        outcomes: []
+        outcomes: [],
+        repository: object.repository
     });
 }
 
@@ -259,6 +263,7 @@ export async function editLearningObject(id: LearningObjectID, object: LearningO
         date: object.date,
         length_: object.length,
         goals: documentGoals(object.goals),
+        repository: object.repository
     });
 }
 
