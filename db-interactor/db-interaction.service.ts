@@ -28,16 +28,16 @@ db.connect(process.env["CLARK_DB_URI"])
         let pwd = req.body.pwd;
 
         glue.authenticate(userid, pwd)
-            .then((authorized)=>{ res.send(authorized); })
-            .catch((err)=>{ res.send({error:err}); });
+            .then((authorized)=>{ res.json(authorized); })
+            .catch((err)=>{ res.json({error:err}); });
     });
     
     server.post('/findUser', (req, res) => {
         let userid = req.body.userid;
 
         db.findUser(userid)
-            .then((id)=>{ res.send(id); })
-            .catch((err)=>{ res.send({error:err}); });
+            .then((id)=>{ res.json(id); })
+            .catch((err)=>{ res.json({error:err}); });
     });
 
     server.post('/findLearningObject', (req, res) => {
@@ -45,8 +45,8 @@ db.connect(process.env["CLARK_DB_URI"])
         let name = req.body.name;
         
         db.findLearningObject(author, name)
-            .then((id)=>{ res.send(id); })
-            .catch((err)=>{ res.send({error:err}); });
+            .then((id)=>{ res.json(id); })
+            .catch((err)=>{ res.json({error:err}); });
     });
 
     server.post('/loadUser', (req, res) => {
@@ -55,9 +55,9 @@ db.connect(process.env["CLARK_DB_URI"])
         glue.loadUser(id)
             .then((user)=>{
                 let msg = User.serialize(user)
-                res.send(msg);
+                res.json(msg);
             })
-            .catch((err)=>{ res.send({error:err}); });
+            .catch((err)=>{ res.json({error:err}); });
     });
 
     server.post('/loadLearningObjectSummary', (req, res) => {
@@ -66,10 +66,9 @@ db.connect(process.env["CLARK_DB_URI"])
         glue.loadLearningObjectSummary(id)
             .then((objects)=>{
                 let msgs = objects.map(LearningObject.serialize);
-                let msg = JSON.stringify(msgs);
-                res.send(msg);
+                res.json(msgs);
             })
-            .catch((err)=>{ res.send({error:err}); });
+            .catch((err)=>{ res.json({error:err}); });
     });
     
     server.post('/loadLearningObject', (req, res) => {
@@ -78,16 +77,16 @@ db.connect(process.env["CLARK_DB_URI"])
         glue.loadLearningObject(id)
             .then((object)=>{
                 let msg = LearningObject.serialize(object);
-                res.send(msg);
+                res.json(msg);
             })
-            .catch((err)=>{ res.send({error:err}); });
+            .catch((err)=>{ res.json({error:err}); });
     });
 
     server.post('/addUser', (req, res) => {
         let user = User.unserialize(req.body.user);
         glue.addUser(user)
-            .then((id)=>{ res.send(id); })
-            .catch((err)=>{ res.send({error:err}); });
+            .then((id)=>{ res.json(id); })
+            .catch((err)=>{ res.json({error:err}); });
     });
 
     server.post('/addLearningObject', (req, res) => {
@@ -95,8 +94,8 @@ db.connect(process.env["CLARK_DB_URI"])
         let object = LearningObject.unserialize(req.body.object, null);
 
         glue.addLearningObject(author, object)
-            .then((id)=>{ res.send(id); })
-            .catch((err)=>{ res.send({error:err}); });
+            .then((id)=>{ res.json(id); })
+            .catch((err)=>{ res.json({error:err}); });
     });
     
     server.post('/editUser', (req, res) => {
@@ -104,8 +103,8 @@ db.connect(process.env["CLARK_DB_URI"])
         let user = User.unserialize(req.body.user);
 
         glue.editUser(id, user)
-            .then(()=>{ res.send(); })
-            .catch((err)=>{ res.send({error:err}); });
+            .then(()=>{ res.json(); })
+            .catch((err)=>{ res.json({error:err}); });
     });
     
     server.post('/updateLearningObject', (req, res) => {
@@ -113,8 +112,8 @@ db.connect(process.env["CLARK_DB_URI"])
         let object = LearningObject.unserialize(req.body.object, null);
 
         glue.updateLearningObject(id, object)
-            .then(()=>{ res.send(); })
-            .catch((err)=>{ res.send({error:err}); });
+            .then(()=>{ res.json(); })
+            .catch((err)=>{ res.json({error:err}); });
     });
     
     server.post('/reorderObject', (req, res) => {
@@ -123,8 +122,8 @@ db.connect(process.env["CLARK_DB_URI"])
         let index = req.body.index;
 
         db.reorderObject(user, object, index)
-            .then(()=>{ res.send(); })
-            .catch((err)=>{ res.send({error:err}); });
+            .then(()=>{ res.json(); })
+            .catch((err)=>{ res.json({error:err}); });
     });
 
     server.post('/unmapOutcome', (req, res) => {
@@ -132,8 +131,8 @@ db.connect(process.env["CLARK_DB_URI"])
         let mapping = req.body.mapping;
 
         db.unmapOutcome(outcome, mapping)
-            .then(()=>{ res.send(); })
-            .catch((err)=>{ res.send({error:err}); });
+            .then(()=>{ res.json(); })
+            .catch((err)=>{ res.json({error:err}); });
     });
 
     server.post('/mapOutcome', (req, res) => {
@@ -141,34 +140,33 @@ db.connect(process.env["CLARK_DB_URI"])
         let mapping = req.body.mapping;
 
         db.mapOutcome(outcome, mapping)
-            .then(()=>{ res.send(); })
-            .catch((err)=>{ res.send({error:err}); });
+            .then(()=>{ res.json(); })
+            .catch((err)=>{ res.json({error:err}); });
     });
 
     server.post('/deleteUser', (req, res) => {
         let id = req.body.id;
 
         db.deleteUser(id)
-            .then(()=>{ res.send(); })
-            .catch((err)=>{ res.send({error:err}); });
+            .then(()=>{ res.json(); })
+            .catch((err)=>{ res.json({error:err}); });
     });
 
     server.post('/deleteLearningObject', (req, res) => {
         let id = req.body.id;
 
         db.deleteLearningObject(id)
-            .then(()=>{ res.send(); })
-            .catch((err)=>{ res.send({error:err}); });
+            .then(()=>{ res.json(); })
+            .catch((err)=>{ res.json({error:err}); });
     });
 
     server.post('/fetchAllObjects', (req, res) => {
         glue.fetchAllObjects()
             .then((objects)=>{
                 let msgs = objects.map(LearningObject.serialize);
-                let msg = JSON.stringify(msgs);
-                res.send(msg);
+                res.json(msgs);
             })
-            .catch((err)=>{ res.send({error:err}); });
+            .catch((err)=>{ res.json({error:err}); });
     });
 
     server.listen(process.env["CLARK_DB_INTERACTOR_PORT"]);
