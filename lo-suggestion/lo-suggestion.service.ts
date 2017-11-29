@@ -5,7 +5,7 @@ import * as server from 'socket.io';
 import * as db from '../db.driver';
 import * as glue from '../db.gluer';
 
-import { OutcomeSuggestion } from '../entity/entities';
+import { LearningObject, OutcomeSuggestion } from '../entity/entities';
 
 const threshold = parseFloat(process.env["CLARK_LO_SUGGESTION_THRESHOLD"]);
 
@@ -15,7 +15,6 @@ db.connect(process.env["CLARK_DB_URI"])
     console.log("Listening on port "+process.env["CLARK_LO_SUGGESTION_PORT"]);
 
     io.on('connection', function(socket) {
-
         socket.on('suggestOutcomes', (text: string, filter: {[prop:string]:string}, ack: (res:OutcomeSuggestion[])=>void) => {
             glue.suggestOutcomes(text, "text", threshold)
                 .then((res)=>{
@@ -28,6 +27,13 @@ db.connect(process.env["CLARK_DB_URI"])
                     return true;
                   }));
                 });
+        });
+
+        socket.on('fetchAllObjects', (ack: (res:string[])=>void) => {
+          glue.fetchAllObjects()
+              .then((objects)=>{
+                ack(objects.map(LearningObject.serialize));
+              });
         });
 
         // socket.on('suggestOutcomes', (text: string, ack: (res:OutcomeSuggestion[])=>void) => {
