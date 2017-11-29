@@ -220,20 +220,6 @@ Response| []() | []()
 #### Errors
 - If `id` is not an object database id. But your post-condition remains.
 
-### `/fetchAllObjects`
-Request | []() | []()
----|---|---
-
-Response| []() | []()
----|---|---
-[]()|`LearningObject[]*`|array of learning object entities, without goals or outcomes
-`error`|`string`|exists only if an error occurred
-
-`*` The array consists of serialized `LearningObject`s. Unserialize with the `map` function:
-```typescript
-let objects: LearningObject[] = response.body.map((a:string)=>{return LearningObject.unserialize(a,null)});
-```
-
 ## Error Guide
 Errors originating in the database-interaction service should be self-explanatory, but some originating in the database itself or its node driver are less so. Add to this list as needed.
 
