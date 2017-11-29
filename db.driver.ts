@@ -333,6 +333,7 @@ export async function findUser(id: string) : Promise<UserID> {
     try {
         let doc = await _db.collection(collectionFor(UserSchema))
                      .findOne<UserRecord>({ id: id });
+        if (!doc) return Promise.reject("No user with id "+id+" exists.");
         return Promise.resolve(doc._id);
     } catch(e) {
         return Promise.reject(e);
@@ -356,6 +357,7 @@ export async function findLearningObject(author: UserID, name: string):
                                author: author,
                                name_: name
                            });
+        if (!doc) return Promise.reject("No learning object \""+name+"\" for the given user");
         return Promise.resolve(doc._id);
     } catch(e) {
         return Promise.reject(e);
@@ -379,6 +381,7 @@ export async function findLearningOutcome(source: LearningObjectID, tag: number)
                                source: source,
                                tag: tag
                            });
+        if (!doc) return Promise.reject("No learning outcome \""+tag+"\" for the given learning object");
         return Promise.resolve(doc._id);
     } catch(e) {
         return Promise.reject(e);
@@ -760,5 +763,7 @@ async function remove(schema: Function, id: RecordID): Promise<void> {
  * @param {RecordID} id the document to fetch
  */
 async function fetch<T>(schema: Function, id: RecordID): Promise<T> {
-    return _db.collection(collectionFor(schema)).findOne<T>({ _id:id });
+    let record = await _db.collection(collectionFor(schema)).findOne<T>({ _id:id });
+    if (!record) return Promise.reject("Problem fetching a "+schema.name+":\n\tInvalid database id "+id);
+    return Promise.resolve(record);
 }
