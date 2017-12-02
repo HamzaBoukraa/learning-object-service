@@ -3,6 +3,11 @@
  * at the start of every script and service. Thus, it should
  * be imported at the start of every script and service.
  */
+
+// set any needed environment variables
+// tslint:disable-next-line: no-require-imports
+require('node-env-file')('./.env');
+
 // tslint:disable-next-line: no-require-imports
 require('source-map-support').install();
 
@@ -46,18 +51,3 @@ Set.prototype.equals = function<T>(this: Set<T>, to: Set<T>): boolean {
 Set.prototype.toString = function<T>(this: Set<T>): string {
     return '{' + Array.from(this).toString() + '}';
 };
-
-// set any needed environment variables
-// TODO: there is a right way to do this, in a different file
-if (!process.env['CLARK_DB_URI']) {
-     process.env['CLARK_DB_URI'] = 'mongodb://localhost:27017/onion';
-}
-if (!process.env['CLARK_DB_INTERACTOR_PORT']) {
-     process.env['CLARK_DB_INTERACTOR_PORT'] = '27016';
-}
-if (!process.env['CLARK_LO_SUGGESTION_PORT']) {
-     process.env['CLARK_LO_SUGGESTION_PORT'] = '27015';
-}
-if (!process.env['CLARK_LO_SUGGESTION_THRESHOLD']) {
-     process.env['CLARK_LO_SUGGESTION_THRESHOLD'] = '1.25';
-}

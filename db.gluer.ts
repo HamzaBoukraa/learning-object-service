@@ -2,6 +2,8 @@
  * Provide functions for interaction between entities and database.
  */
 
+// tslint:disable: no-string-literal
+
 import assertNever from 'assert-never';
 
 import { hash, verify } from './hash.driver';

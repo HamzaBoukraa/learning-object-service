@@ -5,6 +5,8 @@
  * https://stackoverflow.com/questions/24621940/how-to-properly-reuse-connection-to-mongodb-across-nodejs-application-and-module
  */
 
+// tslint:disable: no-string-literal
+
 import { MongoClient, Db, Cursor, ObjectID } from 'mongodb';
 
 import {

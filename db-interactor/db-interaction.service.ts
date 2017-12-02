@@ -30,7 +30,7 @@ import {
 const server = express();
 server.use(bodyParser.json());
 
-db.connect(process.env['CLARK_DB_URI'])
+db.connect(process.env.CLARK_DB_URI)
     .then(() => {
         server.post('/authenticate', (req, res) => {
             let userid = req.body.userid;
@@ -169,8 +169,8 @@ db.connect(process.env['CLARK_DB_URI'])
                 .catch((err) => { res.json({ error: err }); });
         });
 
-        server.listen(process.env['CLARK_DB_INTERACTOR_PORT']);
-        console.log('Listening on port ' + process.env['CLARK_DB_INTERACTOR_PORT']);
+        server.listen(process.env.CLARK_DB_INTERACTOR_PORT);
+        console.log('Listening on port ' + process.env.CLARK_DB_INTERACTOR_PORT);
     })
     .catch((err) => {
         console.log(err);

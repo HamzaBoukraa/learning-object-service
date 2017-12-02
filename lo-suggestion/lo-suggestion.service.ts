@@ -8,16 +8,16 @@ import * as glue from '../db.gluer';
 
 import { LearningObject, OutcomeSuggestion } from '../entity/entities';
 
-const threshold = parseFloat(process.env['CLARK_LO_SUGGESTION_THRESHOLD']);
+const threshold = parseFloat(process.env.CLARK_LO_SUGGESTION_THRESHOLD);
 
 /*
  * TODO: add logging, esp. for errors
  */
 
-db.connect(process.env['CLARK_DB_URI'])
+db.connect(process.env.CLARK_DB_URI)
   .then(() => {
-    let io = server.listen(process.env['CLARK_LO_SUGGESTION_PORT']);
-    console.log('Listening on port ' + process.env['CLARK_LO_SUGGESTION_PORT']);
+    let io = server.listen(process.env.CLARK_LO_SUGGESTION_PORT);
+    console.log('Listening on port ' + process.env.CLARK_LO_SUGGESTION_PORT);
 
     io.on('connection', function (socket) {
       socket.on('suggestOutcomes',

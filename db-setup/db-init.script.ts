@@ -70,7 +70,7 @@ if (require.main === module) {
     // tslint:disable-next-line: no-require-imports
     require('../useme');
 
-    MongoClient.connect(process.env['CLARK_DB_URI'], async (err, dbase) => {
+    MongoClient.connect(process.env.CLARK_DB_URI, async (err, dbase) => {
         if (err) throw err;
         else {
             await init(dbase);

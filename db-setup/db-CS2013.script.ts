@@ -40,7 +40,7 @@ if (require.main === module) {
     // tslint:disable-next-line: no-require-imports
     require('../useme');
 
-    db.connect(process.env['CLARK_DB_URI'])
+    db.connect(process.env.CLARK_DB_URI)
         .then(async () => {
             await CS2013();
             setTimeout(db.disconnect, 2000);
