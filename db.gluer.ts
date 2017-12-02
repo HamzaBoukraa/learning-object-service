@@ -9,24 +9,36 @@ import { hash, verify } from './hash.driver';
 import * as db from './db.driver';
 
 import {
-    UserID, LearningObjectID, OutcomeID, LearningOutcomeID, StandardOutcomeID,
-    AssessmentPlanInterface, InstructionalStrategyInterface, LearningGoalInterface
+    UserID,
+    LearningObjectID,
+    OutcomeID,
+    LearningOutcomeID,
+    StandardOutcomeID,
+    AssessmentPlanInterface,
+    InstructionalStrategyInterface,
+    LearningGoalInterface,
 } from './schema/schema';
 
 import {
-    User, LearningObject,
-    Outcome, OutcomeSuggestion, StandardOutcome, LearningOutcome,
-    LearningGoal, AssessmentPlan, InstructionalStrategy
+    User,
+    LearningObject,
+    Outcome,
+    OutcomeSuggestion,
+    StandardOutcome,
+    LearningOutcome,
+    LearningGoal,
+    AssessmentPlan,
+    InstructionalStrategy,
 } from './entity/entities';
 
 
 /**
  * Check if a user has provided the correct password.
  * NOTE: Promise is rejected if user does not exist.
- * 
+ *
  * @param {string} userid the user's login id
  * @param {string} pwd the user's login password
- * 
+ *
  * @returns {boolean} true iff userid/pwd pair is valid
  */
 export async function authenticate(userid: string, pwd: string): Promise<boolean> {
@@ -34,7 +46,7 @@ export async function authenticate(userid: string, pwd: string): Promise<boolean
         let id = await db.findUser(userid);
         let record = await db.fetchUser(id);
         return verify(pwd, record.pwdhash);
-    } catch(e) {
+    } catch (e) {
         return Promise.reject(e);
     }
 }
@@ -43,20 +55,20 @@ export async function authenticate(userid: string, pwd: string): Promise<boolean
  * Load a user's scalar fields (ignore objects).
  * NOTE: this also ignores password
  * @async
- * 
+ *
  * @param {string} userid the user's login id
- * 
+ *
  * @returns {User}
  */
 export async function loadUser(id: UserID): Promise<User> {
     try {
         let record = await db.fetchUser(id);
-        
+
         let user = new User(record.id, record.name_, record.email, null);
         // not a deep operation - ignore objects
 
         return Promise.resolve(user);
-    } catch(e) {
+    } catch (e) {
         return Promise.reject(e);
     }
 }
@@ -64,17 +76,17 @@ export async function loadUser(id: UserID): Promise<User> {
 /**
  * Load the scalar fields of a user's objects (ignore goals and outcomes).
  * @async
- * 
+ *
  * @param {string} userid the user's login id
- * 
+ *
  * @returns {User}
  */
 export async function loadLearningObjectSummary(id: UserID): Promise<LearningObject[]> {
     try {
         let record = await db.fetchUser(id);
-        
+
         let summary: LearningObject[] = [];
-        for ( let objectid of record.objects ) {
+        for (let objectid of record.objects) {
             let objectRecord = await db.fetchLearningObject(objectid);
             let object = new LearningObject(null);
             object.name = objectRecord.name_;
@@ -85,7 +97,7 @@ export async function loadLearningObjectSummary(id: UserID): Promise<LearningObj
         }
 
         return Promise.resolve(summary);
-    } catch(e) {
+    } catch (e) {
         return Promise.reject(e);
     }
 }
@@ -93,14 +105,13 @@ export async function loadLearningObjectSummary(id: UserID): Promise<LearningObj
 /**
  * Load a learning object and all its learning outcomes.
  * @async
- * 
+ *
  * @param {UserID} author the author's database id
  * @param {string} name the learning object's identifying string
- * 
+ *
  * @returns {LearningObject}
  */
-export async function loadLearningObject(id: LearningObjectID):
-        Promise<LearningObject> {
+export async function loadLearningObject(id: LearningObjectID): Promise<LearningObject> {
     try {
         let record = await db.fetchLearningObject(id);
 
@@ -109,38 +120,38 @@ export async function loadLearningObject(id: LearningObjectID):
         object.name = record.name_;
         object.date = record.date;
         object.length = record.length_;
-        for (let rGoal of record.goals ) {
+        for (let rGoal of record.goals) {
             let goal = object.addGoal();
             goal.text = rGoal.text;
         }
 
         // load each outcome
-        for ( let outcomeid of record.outcomes ) {
+        for (let outcomeid of record.outcomes) {
             let rOutcome = await db.fetchLearningOutcome(outcomeid);
 
             let outcome = object.addOutcome();
             outcome.bloom = rOutcome.bloom;
             outcome.verb = rOutcome.verb;
             outcome.text = rOutcome.text;
-            for ( let rAssessment of rOutcome.assessments ) {
+            for (let rAssessment of rOutcome.assessments) {
                 let assessment = outcome.addAssessment();
                 assessment.plan = rAssessment.plan;
                 assessment.text = rAssessment.text;
             }
-            for ( let rStrategy of rOutcome.strategies ) {
+            for (let rStrategy of rOutcome.strategies) {
                 let strategy = outcome.addStrategy();
                 strategy.instruction = rStrategy.instruction;
                 strategy.text = rStrategy.text;
             }
 
             // only extract the basic info for each mapped outcome
-            for ( let mapid of rOutcome.mappings ) {
+            for (let mapid of rOutcome.mappings) {
                 let rMapping = await db.fetchOutcome(mapid);
                 outcome.mapTo({
                     author: rMapping.author,
                     name: rMapping.name_,
                     date: rMapping.date,
-                    outcome: rMapping.outcome
+                    outcome: rMapping.outcome,
                 });
             }
         }
@@ -149,7 +160,7 @@ export async function loadLearningObject(id: LearningObjectID):
         object.repository = record.repository;
 
         return Promise.resolve(object);
-    } catch(e) {
+    } catch (e) {
         return Promise.reject(e);
     }
 }
@@ -160,11 +171,11 @@ export async function loadLearningObject(id: LearningObjectID):
  *       the user.objects field is ignored
  * NOTE: promise rejected if another user with
  *       the same 'id' field already exists
- * 
+ *
  * @async
- * 
+ *
  * @param {User} user - entity to add
- * 
+ *
  * @returns {UserID} the database id of the new record
  */
 export async function addUser(user: User): Promise<UserID> {
@@ -174,7 +185,7 @@ export async function addUser(user: User): Promise<UserID> {
         name_: user.name,
         email: user.email,
         pwdhash: pwdhash,
-        objects: []
+        objects: [],
     });
 }
 
@@ -184,9 +195,9 @@ export async function addUser(user: User): Promise<UserID> {
  *       the user.objects fields is ignored
  * NOTE: promise rejected if another user with
  *       the same 'id' field already exists
- * 
+ *
  * @async
- * 
+ *
  * @param {UserID} id - database id of the record to change
  * @param {User} user - entity with values to update to
  */
@@ -195,7 +206,7 @@ export async function editUser(id: UserID, user: User): Promise<void> {
         id: user.id,
         name_: user.name,
         email: user.email,
-        pwdhash: ""
+        pwdhash: '',
     };
 
     if (user.pwd) edit.pwdhash = await hash(user.pwd);
@@ -222,16 +233,15 @@ export async function editUser(id: UserID, user: User): Promise<void> {
  * NOTE: promise rejected if another learning object
  *       tied to the same author and with the same 'name' field
  *       already exists
- * 
+ *
  * @async
- * 
+ *
  * @param {UserID} author - database id of the parent
  * @param {LearningObject} object - entity to add
- * 
+ *
  * @returns {LearningObjectID} the database id of the new record
  */
-export async function addLearningObject(author: UserID,
-        object: LearningObject): Promise<LearningObjectID> {
+export async function addLearningObject(author: UserID, object: LearningObject): Promise<LearningObjectID> {
     return await db.insertLearningObject({
         author: author,
         name_: object.name,
@@ -239,7 +249,7 @@ export async function addLearningObject(author: UserID,
         length_: object.length,
         goals: documentGoals(object.goals),
         outcomes: [],
-        repository: object.repository
+        repository: object.repository,
     });
 }
 
@@ -250,20 +260,19 @@ export async function addLearningObject(author: UserID,
  * NOTE: promise rejected if another learning object
  *       tied to the same author and with the same 'name' field
  *       already exists
- * 
+ *
  * @async
- * 
+ *
  * @param {LearningObjectID} id - database id of the record to change
  * @param {LearningObject} object - entity with values to update to
  */
-export async function editLearningObject(id: LearningObjectID, object: LearningObject):
-        Promise<void> {
+export async function editLearningObject(id: LearningObjectID, object: LearningObject): Promise<void> {
     return db.editLearningObject(id, {
         name_: object.name,
         date: object.date,
         length_: object.length,
         goals: documentGoals(object.goals),
-        repository: object.repository
+        repository: object.repository,
     });
 }
 
@@ -273,14 +282,13 @@ export async function editLearningObject(id: LearningObjectID, object: LearningO
  * NOTE: promise rejected if another learning object
  *       tied to the same author and with the same 'name' field
  *       already exists
- * 
+ *
  * @async
- * 
+ *
  * @param {LearningObjectID} id - database id of the record to change
  * @param {LearningObject} object - entity with values to update to
  */
-export async function updateLearningObject(id: LearningObjectID, object: LearningObject):
-        Promise<void> {
+export async function updateLearningObject(id: LearningObjectID, object: LearningObject): Promise<void> {
     try {
         let toDelete = (await db.fetchLearningObject(id)).outcomes;
         let doNotDelete = new Set<LearningOutcomeID>();
@@ -289,8 +297,8 @@ export async function updateLearningObject(id: LearningObjectID, object: Learnin
         for (let outcome of object.outcomes) {
             try {
                 let outcomeId = await db.findLearningOutcome(id, outcome.tag);
-                doNotDelete.add(outcomeId)
-                await editLearningOutcome(outcomeId, outcome);
+                doNotDelete.add(outcomeId),
+                    await editLearningOutcome(outcomeId, outcome);
             } catch (e) {
                 // find operation failed; add it
                 await addLearningOutcome(id, outcome);
@@ -304,7 +312,7 @@ export async function updateLearningObject(id: LearningObjectID, object: Learnin
             }
         }
 
-    } catch(e) {
+    } catch (e) {
         return Promise.reject(e);
     }
 }
@@ -313,16 +321,15 @@ export async function updateLearningObject(id: LearningObjectID, object: Learnin
  * Add a new user to the database.
  * NOTE: this function only adds basic fields;
  *       the outcome.mappings field is ignored
- * 
+ *
  * @async
- * 
+ *
  * @param {LearningObjectID} source - database id of the parent
  * @param {LearningOutcome} outcome - entity to add
- * 
+ *
  * @returns {LearningOutcomeID} the database id of the new record
  */
-export async function addLearningOutcome(source: LearningObjectID,
-        outcome: LearningOutcome): Promise<LearningOutcomeID> {
+export async function addLearningOutcome(source: LearningObjectID, outcome: LearningOutcome): Promise<LearningOutcomeID> {
     return await db.insertLearningOutcome({
         source: source,
         tag: outcome.tag,
@@ -331,7 +338,7 @@ export async function addLearningOutcome(source: LearningObjectID,
         text: outcome.text,
         mappings: [],
         assessments: documentAssessments(outcome.assessments),
-        strategies: documentInstructions(outcome.strategies)
+        strategies: documentInstructions(outcome.strategies),
     });
 }
 
@@ -339,38 +346,36 @@ export async function addLearningOutcome(source: LearningObjectID,
  * Update an existing learning outcome.
  * NOTE: this function only updates basic fields;
  *       the outcome.mappings fields is ignored
- * 
+ *
  * @async
- * 
+ *
  * @param {LearningOutcomeID} id - database id of the record to change
  * @param {LearningOutcome} outcome - entity with values to update to
  */
-export async function editLearningOutcome(id: LearningOutcomeID,
-        outcome: LearningOutcome): Promise<void> {
+export async function editLearningOutcome(id: LearningOutcomeID, outcome: LearningOutcome): Promise<void> {
     return db.editLearningOutcome(id, {
         bloom: outcome.bloom,
         verb: outcome.verb,
         text: outcome.text,
         assessments: documentAssessments(outcome.assessments),
-        strategies: documentInstructions(outcome.strategies)
+        strategies: documentInstructions(outcome.strategies),
     });
 }
 
 /**
  * Add a new standard outcome to the database.
  * @async
- * 
+ *
  * @param {StandardOutcome} standard entity to add
- * 
+ *
  * @returns {StandardOutcomeID} the database id of the new record
  */
-export async function addStandardOutcome(standard: StandardOutcome):
-        Promise<StandardOutcomeID> {
+export async function addStandardOutcome(standard: StandardOutcome): Promise<StandardOutcomeID> {
     return db.insertStandardOutcome({
         author: standard.author,
         name_: standard.name,
         date: standard.date,
-        outcome: standard.outcome
+        outcome: standard.outcome,
     });
 }
 
@@ -395,38 +400,37 @@ export async function fetchAllObjects(): Promise<LearningObject[]> {
     }
 }
 
-export type suggestMode = "text" | "regex";
+export type suggestMode = 'text' | 'regex';
 
 /**
  * Search for outcomes related to a given text string.
- * 
+ *
  * FIXME: We may want to transform this into a streaming algorithm,
  *       rather than waiting for schema -> entity conversion
  *       for the entire list. I don't know if there's a good way
  *       to do that, but the terms 'Buffer' and 'Readable' seem
  *       vaguely promising.
- * 
+ *
  * @param {string} text the words to search for
  * @param {suggestMode} mode which suggestion mode to use:
- *      "text" - uses mongo's native text search query
- *      "regex" - matches outcomes containing each word in text
+ *      'text' - uses mongo's native text search query
+ *      'regex' - matches outcomes containing each word in text
  * @param {number} threshold minimum score to include in results
- *      (ignored if mode is "regex")
- * 
+ *      (ignored if mode is 'regex')
+ *
  * @returns {Outcome[]} list of outcome suggestions, ordered by score
  */
-export async function suggestOutcomes(text: string, mode:suggestMode="text",
-        threshold=0): Promise<OutcomeSuggestion[]> {
+export async function suggestOutcomes(text: string, mode: suggestMode = 'text', threshold = 0): Promise<OutcomeSuggestion[]> {
     try {
         let suggestions: OutcomeSuggestion[] = [];
-        
+
         let cursor;
-        switch(mode) {
-            case "text":
+        switch (mode) {
+            case 'text':
                 cursor = db.searchOutcomes(text)
-                           .sort( { score: {$meta: "textScore"} } );
+                    .sort({ score: { $meta: 'textScore' } });
                 break;
-            case "regex": cursor = db.matchOutcomes(text);break;
+            case 'regex': cursor = db.matchOutcomes(text); break;
             default: return assertNever(mode);
         }
 
@@ -437,12 +441,12 @@ export async function suggestOutcomes(text: string, mode:suggestMode="text",
                 author: doc.author,
                 name: doc.name_,
                 date: doc.date,
-                outcome: doc.outcome
-             }
-            
+                outcome: doc.outcome,
+            };
+
             // if mode provides scoring information
-            if (doc["score"] !== undefined) {
-                let score = doc["score"];
+            if (doc['score'] !== undefined) {
+                let score = doc['score'];
 
                 // skip record if score is lower than threshold
                 if (score < threshold) break;
@@ -460,7 +464,7 @@ export async function suggestOutcomes(text: string, mode:suggestMode="text",
         }
 
         return Promise.resolve(suggestions);
-    } catch(e) {
+    } catch (e) {
         return Promise.reject(e);
     }
 }
@@ -471,15 +475,15 @@ export async function suggestOutcomes(text: string, mode:suggestMode="text",
 
 /**
  * Convert a list of learning goals to an array of documents.
- * @param {LearningGoal[]} goals 
- * 
+ * @param {LearningGoal[]} goals
+ *
  * @returns {LearningGoalInterface[]}
  */
 function documentGoals(goals: LearningGoal[]): LearningGoalInterface[] {
     let array: LearningGoalInterface[] = [];
-    for(let i = 0; i < goals.length; i ++) {
+    for (let i = 0; i < goals.length; i++) {
         array.push({
-            text: goals[i].text
+            text: goals[i].text,
         });
     }
     return array;
@@ -487,17 +491,17 @@ function documentGoals(goals: LearningGoal[]): LearningGoalInterface[] {
 
 /**
  * Convert a list of assessment plans to an array of documents.
- * @param {AssessmentPlan[]} goals 
- * 
+ * @param {AssessmentPlan[]} goals
+ *
  * @returns {AssessmentPlanInterface[]}
  */
 function documentAssessments(assessments: AssessmentPlan[]):
-        AssessmentPlanInterface[] {
+    AssessmentPlanInterface[] {
     let array: AssessmentPlanInterface[] = [];
-    for(let i = 0; i < assessments.length; i ++) {
+    for (let i = 0; i < assessments.length; i++) {
         array.push({
             plan: assessments[i].plan,
-            text: assessments[i].text
+            text: assessments[i].text,
         });
     }
     return array;
@@ -505,17 +509,17 @@ function documentAssessments(assessments: AssessmentPlan[]):
 
 /**
  * Convert a list of instructional strategies to an array of documents.
- * @param {InstructionalStrategy[]} goals 
- * 
+ * @param {InstructionalStrategy[]} goals
+ *
  * @returns {InstructionalStrategyInterface[]}
  */
 function documentInstructions(strategies: InstructionalStrategy[]):
-        InstructionalStrategyInterface[] {
+    InstructionalStrategyInterface[] {
     let array: InstructionalStrategyInterface[] = [];
-    for(let i = 0; i < strategies.length; i ++) {
+    for (let i = 0; i < strategies.length; i++) {
         array.push({
             instruction: strategies[i].instruction,
-            text: strategies[i].text
+            text: strategies[i].text,
         });
     }
     return array;

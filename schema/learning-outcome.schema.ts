@@ -4,7 +4,7 @@
 
 import {
     collection, unique, text, auto, fixed, foreign, field,
-    Edit, Update, Insert, Record
+    Edit, Update, Insert, Record,
 } from './db.schema';
 
 import { LearningObjectID } from './learning-object.schema';
@@ -41,19 +41,19 @@ export abstract class LearningOutcomeSchema {
 
     @field
     static bloom: string;
-    
+
     @field
     static verb: string;
-    
+
     @field
     static text: string;
 
     @field
     static assessments: AssessmentPlanInterface[];
-    
+
     @field
     static strategies: InstructionalStrategyInterface[];
-    
+
     @foreign('outcomes', false) @field
     static mappings: OutcomeID[];
 }

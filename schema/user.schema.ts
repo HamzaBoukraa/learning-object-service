@@ -4,7 +4,7 @@
 
 import {
     collection, unique, text, auto, fixed, foreign, field,
-    Edit, Update, Insert, Record
+    Edit, Update, Insert, Record,
 } from './db.schema';
 
 import { LearningObjectID } from './learning-object.schema';
@@ -18,7 +18,7 @@ export abstract class UserSchema {
     static _id: UserID;
 
     @unique @field
-    static id: string
+    static id: string;
 
     @field
     static name_: string;
@@ -38,7 +38,7 @@ export abstract class UserSchema {
 
 // all auto fields
 export interface UserRecord extends Record, UserInsert {
-    _id: UserID
+    _id: UserID;
 }
 
 // add in fixed fields
@@ -46,13 +46,13 @@ export interface UserInsert extends Insert, UserUpdate {}
 
 // add in foreign fields
 export interface UserUpdate extends Update, UserEdit {
-    objects: LearningObjectID[]
+    objects: LearningObjectID[];
 }
 
 // add in remaining fields
 export interface UserEdit extends Edit {
-    id: string,
-    name_: string,
-    email: string,
-    pwdhash: string
+    id: string;
+    name_: string;
+    email: string;
+    pwdhash: string;
 }

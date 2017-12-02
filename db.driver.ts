@@ -1,14 +1,21 @@
 /**
  * Provide functions for consistent interaction with database
  * across all scripts and services.
- * Code adapted from agm1984 @ https://stackoverflow.com/questions/24621940/how-to-properly-reuse-connection-to-mongodb-across-nodejs-application-and-module
+ * Code adapted from agm1984 @
+ * https://stackoverflow.com/questions/24621940/how-to-properly-reuse-connection-to-mongodb-across-nodejs-application-and-module
  */
 
 import { MongoClient, Db, Cursor, ObjectID } from 'mongodb';
 
 import {
-    autosFor, fixedsFor, foreignsFor, fieldsFor,
-    collections, collectionFor, schemaFor, foreignData
+    autosFor,
+    fixedsFor,
+    foreignsFor,
+    fieldsFor,
+    collections,
+    collectionFor,
+    schemaFor,
+    foreignData,
 } from './schema/db.schema';
 import {
     Record, Update, Insert, Edit,
@@ -21,7 +28,7 @@ import {
     LearningOutcomeInsert, LearningOutcomeEdit,
     StandardOutcomeSchema, StandardOutcomeRecord, StandardOutcomeUpdate,
     StandardOutcomeInsert, StandardOutcomeEdit,
-    OutcomeRecord
+    OutcomeRecord,
 } from './schema/schema';
 
 export { ObjectID as DBID };
@@ -32,24 +39,23 @@ let _db: Db;
 /**
  * Connect to the database. Must be called before any other functions.
  * @async
- * 
+ *
  * NOTE: This function will attempt to connect to the database every
  *       time it is called, but since it assigns the result to a local
  *       variable which can only ever be created once, only one
  *       connection will ever be active at a time.
- * 
+ *
  * TODO: Verify that connections are automatically closed
  *       when they no longer have a reference.
- * 
+ *
  * @param {string} dbIP the host and port on which mongodb is running
  */
 export async function connect(dburi: string): Promise<void> {
     try {
         _db = await MongoClient.connect(dburi);
         return Promise.resolve();
-    } catch(e) {
-        return Promise.reject("Problem connecting to database at "
-                +dburi+":\n\t"+e);
+    } catch (e) {
+        return Promise.reject('Problem connecting to database at ' + dburi + ':\n\t' + e);
     }
 }
 
@@ -69,9 +75,9 @@ export function disconnect(): void {
 /**
  * Insert a user into the database.
  * @async
- * 
- * @param {UserInsert} record 
- * 
+ *
+ * @param {UserInsert} record
+ *
  * @returns {UserID} the database id of the new record
  */
 export async function insertUser(record: UserInsert): Promise<UserID> {
@@ -82,13 +88,13 @@ export async function insertUser(record: UserInsert): Promise<UserID> {
 /**
  * Insert a learning object into the database.
  * @async
- * 
- * @param {LearningObjectInsert} record 
- * 
+ *
+ * @param {LearningObjectInsert} record
+ *
  * @returns {LearningObjectID} the database id of the new record
  */
 export async function insertLearningObject(record: LearningObjectInsert):
-        Promise<LearningObjectID> {
+    Promise<LearningObjectID> {
     record['_id'] = (new ObjectID()).toHexString();
     return insert(LearningObjectSchema, record);
 }
@@ -96,13 +102,13 @@ export async function insertLearningObject(record: LearningObjectInsert):
 /**
  * Insert a learning outcome into the database.
  * @async
- * 
- * @param {LearningOutcomeInsert} record 
- * 
+ *
+ * @param {LearningOutcomeInsert} record
+ *
  * @returns {LearningOutcomeID} the database id of the new record
  */
 export async function insertLearningOutcome(record: LearningOutcomeInsert):
-        Promise<LearningOutcomeID> {
+    Promise<LearningOutcomeID> {
     try {
         record['_id'] = (new ObjectID()).toHexString();
         /* FIXME: In order to create auto-generated fields, we need to
@@ -110,32 +116,32 @@ export async function insertLearningOutcome(record: LearningOutcomeInsert):
                   perform the generic insert, we unnecessarily query
                   again to verify the foreign keys exist. Thoughts? */
         let source = await _db.collection(collectionFor(LearningObjectSchema))
-                          .findOne<LearningObjectRecord>({_id: record.source});
+            .findOne<LearningObjectRecord>({ _id: record.source });
         let author = await _db.collection(collectionFor(UserSchema))
-                              .findOne<UserRecord>({_id:source.author});
+            .findOne<UserRecord>({ _id: source.author });
         record['author'] = author.name_;
         record['name_'] = source.name_;
         record['date'] = source.date;
-        record['outcome'] = record.verb+" "+record.text;
+        record['outcome'] = record.verb + ' ' + record.text;
         return insert(LearningOutcomeSchema, record);
-    } catch(e) {
-        return Promise.reject("Problem inserting a Learning Outcome:\n\t"+e);
+    } catch (e) {
+        return Promise.reject('Problem inserting a Learning Outcome:\n\t' + e);
     }
 }
 
 /**
  * Insert a standard outcome into the database.
  * @async
- * 
- * @param {StandardOutcomeInsert} record 
- * 
+ *
+ * @param {StandardOutcomeInsert} record
+ *
  * @returns the database id of the new record
  */
 export async function insertStandardOutcome(record: StandardOutcomeInsert):
-        Promise<StandardOutcomeID> {
+    Promise<StandardOutcomeID> {
     record['_id'] = (new ObjectID()).toHexString();
     record['source'] = record.author;
-    record['tag'] = [record.date, record.name_, record.outcome].join("$");
+    record['tag'] = [record.date, record.name_, record.outcome].join('$');
     return insert(StandardOutcomeSchema, record);
 }
 
@@ -146,54 +152,47 @@ export async function insertStandardOutcome(record: StandardOutcomeInsert):
 /**
  * Add a mapping for an outcome.
  * @async
- * 
+ *
  * @param {OutcomeID} outcome the user's outcome
  * @param {OutcomeID} mapping the newly associated outcome's id
  */
-export async function mapOutcome(outcome: LearningOutcomeID,
-        mapping: OutcomeID):Promise<void> {
-    return register(collectionFor(LearningOutcomeSchema),
-                    outcome, 'mappings', mapping);
+export async function mapOutcome(outcome: LearningOutcomeID, mapping: OutcomeID): Promise<void> {
+    return register(collectionFor(LearningOutcomeSchema), outcome, 'mappings', mapping);
 }
 
 /**
  * Undo a mapping for an outcome.
  * @async
- * 
+ *
  * @param {OutcomeID} outcome the user's outcome
  * @param {OutcomeID} mapping the newly associated outcome's id
  */
-export async function unmapOutcome(outcome: LearningOutcomeID,
-        mapping: OutcomeID): Promise<void> {
-    return unregister(collectionFor(LearningOutcomeSchema),
-                      outcome, 'mappings', mapping);
+export async function unmapOutcome(outcome: LearningOutcomeID, mapping: OutcomeID): Promise<void> {
+    return unregister(collectionFor(LearningOutcomeSchema), outcome, 'mappings', mapping);
 }
 
 /**
  * Reorder an object in a user's objects list.
  * @async
- * 
+ *
  * @param {UserID} user the user
  * @param {LearningObjectID} object the object being reordered
  * @param {number} index the new index for the object
  */
-export async function reorderObject(user: UserID, object: LearningObjectID,
-        index: number): Promise<void> {
+export async function reorderObject(user: UserID, object: LearningObjectID, index: number): Promise<void> {
     return reorder(collectionFor(UserSchema), user, 'objects', object, index);
 }
 
 /**
  * Reorder an outcome in an object's outcomes list.
  * @async
- * 
+ *
  * @param {LearningObjectID} object the object
  * @param {LearningOutcomeID} outcome the outcome being reordered
  * @param {number} index the new index for the outcome
  */
-export async function reorderOutcome(object: LearningObjectID,
-        outcome: LearningOutcomeID, index: number): Promise<void> {
-    return reorder(collectionFor(LearningObjectSchema), object, 'outcomes',
-                   outcome, index);
+export async function reorderOutcome(object: LearningObjectID, outcome: LearningOutcomeID, index: number): Promise<void> {
+    return reorder(collectionFor(LearningObjectSchema), object, 'outcomes', outcome, index);
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -203,7 +202,7 @@ export async function reorderOutcome(object: LearningObjectID,
 /**
  * Edit a user.
  * @async
- * 
+ *
  * @param {UserID} id which document to change
  * @param {UserEdit} record the values to change to
  */
@@ -211,19 +210,19 @@ export async function editUser(id: UserID, record: UserEdit): Promise<void> {
     try {
         // ensure all outcomes have the right author tag
         let doc = await _db.collection(collectionFor(UserSchema))
-                     .findOne<UserRecord>({ _id: id } );
-        
-        for ( let objectid of doc.objects ) {
+            .findOne<UserRecord>({ _id: id });
+
+        for (let objectid of doc.objects) {
             await _db.collection(collectionFor(LearningOutcomeSchema))
-                     .updateMany(
-                         { source: objectid },
-                         { $set: { author: record.name_ } }
-                     );
+                .updateMany(
+                { source: objectid },
+                { $set: { author: record.name_ } },
+            );
         }
-        
+
         // perform the actual edit
         return edit(UserSchema, id, record);
-    } catch(e) {
+    } catch (e) {
         return Promise.reject(e);
     }
 }
@@ -231,26 +230,26 @@ export async function editUser(id: UserID, record: UserEdit): Promise<void> {
 /**
  * Edit a learning object.
  * @async
- * 
+ *
  * @param {LearningObjectID} id which document to change
  * @param {LearningObjectEdit} record the values to change to
  */
-export async function editLearningObject(id: LearningObjectID,
-        record: LearningObjectEdit): Promise<void> {
+export async function editLearningObject(id: LearningObjectID, record: LearningObjectEdit): Promise<void> {
     try {
         // ensure all outcomes have the right name_ and date tag
         await _db.collection(collectionFor(LearningOutcomeSchema))
-                 .updateMany(
-                     { source: id },
-                     { $set: {
-                         name_: record.name_,
-                         date: record.date
-                       }
-                     }
-                 );
+            .updateMany(
+            { source: id },
+            {
+                $set: {
+                    name_: record.name_,
+                    date: record.date,
+                },
+            },
+        );
         // perform the actual update
         return edit(LearningObjectSchema, id, record);
-    } catch(e) {
+    } catch (e) {
         return Promise.reject(e);
     }
 }
@@ -258,13 +257,12 @@ export async function editLearningObject(id: LearningObjectID,
 /**
  * Edit a learning outcome.
  * @async
- * 
+ *
  * @param {LearningOutcomeID} id which document to change
  * @param {LearningOutcomeEdit} record the values to change to
  */
-export async function editLearningOutcome(id: LearningOutcomeID,
-        record: LearningOutcomeEdit): Promise<void> {
-    record['outcome'] = record.verb+" "+record.text;
+export async function editLearningOutcome(id: LearningOutcomeID, record: LearningOutcomeEdit): Promise<void> {
+    record['outcome'] = record.verb + ' ' + record.text;
     return edit(LearningOutcomeSchema, id, record);
 }
 
@@ -275,7 +273,7 @@ export async function editLearningOutcome(id: LearningOutcomeID,
 /**
  * Remove a user (and its objects) from the database.
  * @async
- * 
+ *
  * @param {UserID} id which document to delete
  */
 export async function deleteUser(id: UserID): Promise<void> {
@@ -285,34 +283,34 @@ export async function deleteUser(id: UserID): Promise<void> {
 /**
  * Remove a learning object (and its outcomes) from the database.
  * @async
- * 
+ *
  * @param {LearningObjectID} id which document to delete
  */
 export async function deleteLearningObject(id: LearningObjectID):
-        Promise<void> {
+    Promise<void> {
     return remove(LearningObjectSchema, id);
 }
 
 /**
  * Remove a learning outcome from the database.
  * @async
- * 
+ *
  * @param {LearningOutcomeID} id which document to delete
  */
 export async function deleteLearningOutcome(id: LearningOutcomeID):
-        Promise<void> {
+    Promise<void> {
     try {
         // find any outcomes mapping to this one, and unmap them
         //  this data assurance step is in the general category of
-        //  "any other foreign keys pointing to this collection and id"
+        //  'any other foreign keys pointing to this collection and id'
         //  which is excessive enough to justify this specific solution
         await _db.collection(collectionFor(LearningOutcomeSchema)).updateMany(
             { mappings: id },
-            { $pull: {$mappings: id } }
+            { $pull: { $mappings: id } },
         );
         // remove this outcome
         return remove(LearningOutcomeSchema, id);
-    } catch(e) {
+    } catch (e) {
         return Promise.reject(e);
     }
 }
@@ -324,18 +322,18 @@ export async function deleteLearningOutcome(id: LearningOutcomeID):
 /**
  * Look up a user by its login id.
  * @async
- * 
+ *
  * @param {string} id the user's login id
- * 
+ *
  * @returns {UserID}
  */
-export async function findUser(id: string) : Promise<UserID> {
+export async function findUser(id: string): Promise<UserID> {
     try {
         let doc = await _db.collection(collectionFor(UserSchema))
-                     .findOne<UserRecord>({ id: id });
-        if (!doc) return Promise.reject("No user with id "+id+" exists.");
+            .findOne<UserRecord>({ id: id });
+        if (!doc) return Promise.reject('No user with id ' + id + ' exists.');
         return Promise.resolve(doc._id);
-    } catch(e) {
+    } catch (e) {
         return Promise.reject(e);
     }
 }
@@ -343,23 +341,23 @@ export async function findUser(id: string) : Promise<UserID> {
 /**
  * Look up a learning object by its author and name.
  * @async
- * 
+ *
  * @param {UserID} author the author's unique database id
  * @param {string} name the object's name
- * 
+ *
  * @returns {LearningObjectID}
  */
 export async function findLearningObject(author: UserID, name: string):
-        Promise<LearningObjectID> {
+    Promise<LearningObjectID> {
     try {
         let doc = await _db.collection(collectionFor(LearningObjectSchema))
-                           .findOne<LearningObjectRecord>({
-                               author: author,
-                               name_: name
-                           });
-        if (!doc) return Promise.reject("No learning object \""+name+"\" for the given user");
+            .findOne<LearningObjectRecord>({
+                author: author,
+                name_: name,
+            });
+        if (!doc) return Promise.reject('No learning object \'' + name + '\' for the given user');
         return Promise.resolve(doc._id);
-    } catch(e) {
+    } catch (e) {
         return Promise.reject(e);
     }
 }
@@ -367,23 +365,23 @@ export async function findLearningObject(author: UserID, name: string):
 /**
  * Look up a learning outcome by its source and tag.
  * @async
- * 
+ *
  * @param {LearningObjectID} source the object source's unique database id
  * @param {number} tag the outcome's unique identifier
- * 
+ *
  * @returns {LearningOutcomeID}
  */
 export async function findLearningOutcome(source: LearningObjectID, tag: number):
-        Promise<LearningOutcomeID> {
+    Promise<LearningOutcomeID> {
     try {
         let doc = await _db.collection(collectionFor(LearningObjectSchema))
-                           .findOne<LearningOutcomeRecord>({
-                               source: source,
-                               tag: tag
-                           });
-        if (!doc) return Promise.reject("No learning outcome \""+tag+"\" for the given learning object");
+            .findOne<LearningOutcomeRecord>({
+                source: source,
+                tag: tag,
+            });
+        if (!doc) return Promise.reject('No learning outcome \'' + tag + '\' for the given learning object');
         return Promise.resolve(doc._id);
-    } catch(e) {
+    } catch (e) {
         return Promise.reject(e);
     }
 }
@@ -391,9 +389,9 @@ export async function findLearningOutcome(source: LearningObjectID, tag: number)
 /**
  * Fetch the user document associated with the given id.
  * @async
- * 
+ *
  * @param id database id
- * 
+ *
  * @returns {UserRecord}
  */
 export async function fetchUser(id: UserID): Promise<UserRecord> {
@@ -404,39 +402,39 @@ export async function fetchUser(id: UserID): Promise<UserRecord> {
 /**
  * Fetch the learning object document associated with the given id.
  * @async
- * 
+ *
  * @param id database id
- * 
+ *
  * @returns {LearningObjectRecord}
  */
 export async function fetchLearningObject(id: UserID):
-        Promise<LearningObjectRecord> {
+    Promise<LearningObjectRecord> {
     return fetch<LearningObjectRecord>(LearningObjectSchema, id);
 }
 
 /**
  * Fetch the learning outcome document associated with the given id.
  * @async
- * 
+ *
  * @param id database id
- * 
+ *
  * @returns {LearningOutcomeRecord}
  */
 export async function fetchLearningOutcome(id: UserID):
-        Promise<LearningOutcomeRecord> {
+    Promise<LearningOutcomeRecord> {
     return fetch<LearningOutcomeRecord>(LearningOutcomeSchema, id);
 }
 
 /**
  * Fetch the generic outcome document associated with the given id.
  * @async
- * 
+ *
  * @param id database id
- * 
+ *
  * @returns {OutcomeRecord}
  */
 export async function fetchOutcome(id: UserID):
-        Promise<OutcomeRecord> {
+    Promise<OutcomeRecord> {
     return fetch<OutcomeRecord>(LearningOutcomeSchema, id);
 }
 
@@ -450,44 +448,44 @@ export async function fetchOutcome(id: UserID):
  */
 export function fetchAllObjects(): Cursor<LearningObjectRecord> {
     return _db.collection(collectionFor(LearningObjectSchema))
-              .find<LearningObjectRecord>();
+        .find<LearningObjectRecord>();
 }
 
 /**
  * Find outcomes matching a text query.
  * This variant uses Mongo's fancy text query. Questionable results.
  * NOTE: this function also projects a score onto the cursor documents
- * 
+ *
  * @param {string} text the words to search for
- * 
+ *
  * @returns {Cursor<OutcomeRecord>} cursor of positive matches
  */
 export function searchOutcomes(text: string): Cursor<OutcomeRecord> {
     return _db.collection(collectionFor(StandardOutcomeSchema))
-              .find<OutcomeRecord>(
-        { $text: {$search: text} },
-        { score: {$meta: "textScore"} });
+        .find<OutcomeRecord>(
+        { $text: { $search: text } },
+        { score: { $meta: 'textScore' } });
 }
 
 /**
  * Find outcomes matching a text query.
  * This variant finds all outcomes containing every word in the query.
  * @param {string} text the words to match against
- * 
+ *
  * @returns {Cursor<OutcomeRecord>} cursor of positive matches
  */
 export function matchOutcomes(text: string): Cursor<OutcomeRecord> {
     let tokens = text.split(/\s/);
     let docs: any[] = [];
-    for ( let token of tokens ) {
-        docs.push({outcome: {$regex: token}});
+    for (let token of tokens) {
+        docs.push({ outcome: { $regex: token } });
     }
 
     // score property is not projected, will be undefined in documents
     return _db.collection(collectionFor(StandardOutcomeSchema))
-              .find<OutcomeRecord>({
-        $and: docs
-    });
+        .find<OutcomeRecord>({
+            $and: docs,
+        });
 }
 
 ////////////////////////////////////////////////
@@ -497,120 +495,115 @@ export function matchOutcomes(text: string): Cursor<OutcomeRecord> {
 /**
  * Reject promise if any foreign keys in a record do not exist.
  * @async
- * 
+ *
  * @param {Function} schema provides information for each foreign key
  * @param {Record} record which record to validate
  * @param {Set<string>} foreigns which fields to check
- * 
+ *
  * @returns none, but promise will be rejected if there is a problem
  */
-async function validateForeignKeys(schema: Function, record: Record,
-        foreigns: Set<string>): Promise<void> {
+async function validateForeignKeys(schema: Function, record: Record, foreigns: Set<string>): Promise<void> {
     try {
-        if(foreigns) for ( let foreign of foreigns ) {
+        if (foreigns) for (let foreign of foreigns) {
             let data = foreignData(schema, foreign);
             // get id's to check, as an array
             let keys = record[foreign];
-            if ( ! (keys instanceof Array) ) keys = [keys];
+            if (!(keys instanceof Array)) keys = [keys];
             // fetch foreign document and reject if it doesn't exist
-            for (let key of keys ) {
+            for (let key of keys) {
                 let count = await _db.collection(data.target)
-                                     .count({_id: key});
-                if(count == 0) {
-                    return Promise.reject("Foreign key error for "+record+": "
-                          +key+" not in "+data.target+" collection");
+                    .count({ _id: key });
+                if (count === 0) {
+                    return Promise.reject('Foreign key error for ' + record + ': '
+                        + key + ' not in ' + data.target + ' collection');
                 }
             }
         }
         return Promise.resolve();
-    } catch(e) {
-        return Promise.reject("Problem validating key constraint for a "
-              +schema.name+":\n\t"+e);
+    } catch (e) {
+        return Promise.reject('Problem validating key constraint for a '
+            + schema.name + ':\n\t' + e);
     }
 }
 
 /**
  * Add an item's id to a foreign registry.
  * @async
- * 
+ *
  * @param {string} collection where to find the foreign registry owner
  * @param {RecordID} owner the foreign registry owner
  * @param {string} registry field name of the registry
  * @param {RecordID} item which item to add
  */
-async function register(collection: string, owner: RecordID, registry: string,
-        item: RecordID): Promise<void> {
+async function register(collection: string, owner: RecordID, registry: string, item: RecordID): Promise<void> {
     try {
         let pushdoc = {};
         pushdoc[registry] = item;
 
-        await _db.collection(collection).updateOne({
-            _id: owner
-        }, {
-            $push: pushdoc
-        });
+        await _db.collection(collection).updateOne(
+            { _id: owner },
+            { $push: pushdoc },
+        );
         return Promise.resolve();
-    } catch(e) {
-        return Promise.reject("Problem registering to a "+collections
-              +" "+registry+" field:\n\t"+e);
+    } catch (e) {
+        return Promise.reject('Problem registering to a ' + collections
+            + ' ' + registry + ' field:\n\t' + e);
     }
 }
 
 /**
  * Remove an item's id from a foreign registry.
  * @async
- * 
+ *
  * @param {string} collection where to find the foreign registry owner
  * @param {RecordID} owner the foreign registry owner
  * @param {string} registry field name of the registry
  * @param {RecordID} item which item to remove
  */
-async function unregister(collection: string, owner: RecordID,
-        registry: string, item: RecordID): Promise<void> {
+async function unregister(collection: string, owner: RecordID, registry: string, item: RecordID): Promise<void> {
     try {
         let pulldoc = {};
         pulldoc[registry] = item;
 
         await _db.collection(collection).updateOne(
             { _id: owner },
-            { $pull: pulldoc }
+            { $pull: pulldoc },
         );
 
         return Promise.resolve();
-    } catch(e) {
-        return Promise.reject("Problem unregistering from a "+collections
-              +" "+registry+" field:\n\t"+e);
+    } catch (e) {
+        return Promise.reject('Problem unregistering from a ' + collections
+            + ' ' + registry + ' field:\n\t' + e);
     }
 }
 
 /**
  * Reorder an item in a registry.
  * @async
- * 
+ *
  * @param {string} collection where to find the registry owner
  * @param {RecordID} owner the registry owner
  * @param {string} registry field name of the registry
  * @param {RecordID} item which item to move
  * @param {number} index the new index for item
  */
-async function reorder(collection: string, owner: RecordID, registry: string,
-        item: RecordID, index: number): Promise<void> {
+async function reorder(collection: string, owner: RecordID, registry: string, item: RecordID, index: number): Promise<void> {
     try {
         await unregister(collection, owner, registry, item);
 
         let pushdoc = {};
         pushdoc[registry] = {
             $each: [item],
-            $position: index
+            $position: index,
         };
 
         await _db.collection(collection).updateOne(
             { _id: owner },
-            { $push: pushdoc }
+            { $push: pushdoc },
         );
 
         return Promise.resolve();
-    } catch(e) {
+    } catch (e) {
         return Promise.reject(e);
     }
 }
@@ -618,99 +611,98 @@ async function reorder(collection: string, owner: RecordID, registry: string,
 /**
  * Insert a generic item to the database.
  * @async
- * 
+ *
  * @param {Function} schema provides collection/validation information
  * @param {Insert} record document to insert
- * 
+ *
  * @returns {RecordID} the database id of the new record
  */
 async function insert(schema: Function, record: Insert): Promise<RecordID> {
     try {
         let collection = collectionFor(schema);
-        let foreigns = foreignsFor(schema)
-        if(foreigns) foreigns.difference(autosFor(schema));
+        let foreigns = foreignsFor(schema);
+        if (foreigns) foreigns.difference(autosFor(schema));
 
         // check validity of all foreign keys
         await validateForeignKeys(schema, record, foreigns);
 
         // perform the actual insert
-        let insert = await _db.collection(collection).insertOne(record);
-        let id = insert.insertedId;
+        let insert_ = await _db.collection(collection).insertOne(record);
+        let id = insert_.insertedId;
 
         // register the new record as needed
-        if(foreigns) for ( let foreign of foreigns ) {
+        if (foreigns) for (let foreign of foreigns) {
             let data = foreignData(schema, foreign);
             if (data.registry) {
-                await register(data.target, record[foreign],
-                               data.registry, id);
+                await register(data.target, record[foreign], data.registry, id);
             }
         }
 
         return Promise.resolve(id);
-    } catch(e) {
-        return Promise.reject("Problem inserting a "+schema.name+":\n\t"+e);
+    } catch (e) {
+        return Promise.reject('Problem inserting a ' + schema.name + ':\n\t' + e);
     }
 }
 
 /**
  * Update a generic item in the database.
  * @async
- * 
+ *
  * @param {Function} schema provides collection/validation information
  * @param {RecordID} id which document to update
  * @param {Update} record the values to change to
  */
 async function update(schema: Function, id: RecordID, record: Update):
-        Promise<void> {
+    Promise<void> {
     try {
         let collection = collectionFor(schema);
         let foreigns = foreignsFor(schema);
-        if(foreigns) foreigns = foreigns.difference(autosFor(schema))
-                                        .difference(fixedsFor(schema));
+        if (foreigns) foreigns = foreigns.difference(autosFor(schema))
+            .difference(fixedsFor(schema));
         // check validity of all foreign keys
         await validateForeignKeys(schema, record, foreigns);
 
         // perform the actual update
-        await _db.collection(collection).updateOne({ _id:id }, {$set: record});
+        await _db.collection(collection).updateOne({ _id: id }, { $set: record });
 
         // registered fields must be fixed, nothing to change here
 
         return Promise.resolve();
-    } catch(e) {
-        return Promise.reject("Problem updating a "+schema.name+":\n\t"+e);
+    } catch (e) {
+        return Promise.reject('Problem updating a ' + schema.name + ':\n\t' + e);
     }
 }
 
 /**
  * Edit (update without foreigns) a generic item in the database.
  * @async
- * 
+ *
  * @param {Function} schema provides collection/validation information
  * @param {RecordID} id which document to edit
  * @param {Edit} record the values to change to
  */
 async function edit(schema: Function, id: RecordID, record: Edit):
-        Promise<void> {
+    Promise<void> {
     try {
         let collection = collectionFor(schema);
 
         // no foreign fields, no need to validate
 
         // perform the actual update
-        await _db.collection(collection).updateOne({ _id:id }, {$set: record});
+        await _db.collection(collection).updateOne({ _id: id }, { $set: record });
 
         // registered fields must be fixed, nothing to change here
 
         return Promise.resolve();
-    } catch(e) {
-        return Promise.reject("Problem editing a "+schema.name+":\n\t"+e);
+    } catch (e) {
+        return Promise.reject('Problem editing a ' + schema.name + ':\n\t' + e);
     }
 }
 
 /**
  * Cascade delete a record and its children.
  * @async
- * 
+ *
  * @param {Function} schema provides collection/hierarcy information
  * @param {RecordID} id the document to delete
  */
@@ -720,40 +712,40 @@ async function remove(schema: Function, id: RecordID): Promise<void> {
 
         // fetch data to be deleted ... for the last time :(
         let record = await _db.collection(collection)
-                              .findOne<Record>({_id: id});
-        
+            .findOne<Record>({ _id: id });
+
         // remove all children recursively, and unregister from parents
         let foreigns = foreignsFor(schema);
-        if(foreigns) for ( let foreign of foreigns ) {
+        if (foreigns) for (let foreign of foreigns) {
             let data = foreignData(schema, foreign);
 
-            if(data.child) {
+            if (data.child) {
                 // get children to remove, as an array
                 let keys = record[foreign];
-                if ( ! (keys instanceof Array) ) keys = [keys];
+                if (!(keys instanceof Array)) keys = [keys];
                 // remove each child
-                for ( let key of keys ) {
+                for (let key of keys) {
                     await remove(schemaFor(data.target), key);
                 }
             }
 
-            if(data.registry) {
+            if (data.registry) {
                 // get registries to edit, as an array
                 let keys = record[foreign];
-                if ( ! (keys instanceof Array) ) keys = [keys];
+                if (!(keys instanceof Array)) keys = [keys];
                 // unregister from each key
-                for ( let key of keys ) {
+                for (let key of keys) {
                     await unregister(data.target, key, data.registry, id);
                 }
             }
         }
 
         // perform actual deletion
-        await _db.collection(collection).deleteOne({_id: id});
+        await _db.collection(collection).deleteOne({ _id: id });
 
         return Promise.resolve();
-    } catch(e) {
-        return Promise.reject("Problem deleting a "+schema.name+":\n\t"+e);
+    } catch (e) {
+        return Promise.reject('Problem deleting a ' + schema.name + ':\n\t' + e);
     }
 }
 
@@ -763,7 +755,7 @@ async function remove(schema: Function, id: RecordID): Promise<void> {
  * @param {RecordID} id the document to fetch
  */
 async function fetch<T>(schema: Function, id: RecordID): Promise<T> {
-    let record = await _db.collection(collectionFor(schema)).findOne<T>({ _id:id });
-    if (!record) return Promise.reject("Problem fetching a "+schema.name+":\n\tInvalid database id "+id);
+    let record = await _db.collection(collectionFor(schema)).findOne<T>({ _id: id });
+    if (!record) return Promise.reject('Problem fetching a ' + schema.name + ':\n\tInvalid database id ' + id);
     return Promise.resolve(record);
 }

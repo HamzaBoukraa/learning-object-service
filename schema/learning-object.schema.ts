@@ -4,7 +4,7 @@
 
 import {
     collection, unique, text, auto, fixed, foreign, field,
-    Edit, Update, Insert, Record
+    Edit, Update, Insert, Record,
 } from './db.schema';
 
 import { UserID } from './user.schema';
@@ -28,7 +28,7 @@ export abstract class LearningObjectSchema {
     /* FIXME: if there's a reason to use an actual Date class */
     @field
     static date: string;
-    
+
     @field
     static length_: string;
 
@@ -53,28 +53,28 @@ export interface LearningGoalInterface {
  * Defines neutrino repository subdocument schema.
  */
 export interface RepositoryInterface {
-    files: LearningObjectFileInterface[],
-    urls: LearningObjectUrlInterface[],
-    notes: string
+    files: LearningObjectFileInterface[];
+    urls: LearningObjectUrlInterface[];
+    notes: string;
 }
 
 /**
  * Defines neutrino file subdocument schema.
  */
 export interface LearningObjectFileInterface {
-    id: string,
-    name: string,
-    fileType: string,
-    url: string,
-    date: string
+    id: string;
+    name: string;
+    fileType: string;
+    url: string;
+    date: string;
 }
 
 /**
  * Defines neutrino url subdocument schema.
  */
 export interface LearningObjectUrlInterface {
-    title: string,
-    url: string
+    title: string;
+    url: string;
 }
 
 /* FIXME: There has got to be a way to auto-generate the

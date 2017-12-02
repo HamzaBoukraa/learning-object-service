@@ -42,6 +42,7 @@
     "@types/mongodb": "^2.2.13",
     "@types/socket.io": "^1.4.31",
     "@types/socket.io-client": "^1.4.31",
+    "tslint": "^5.8.0",
     "typescript": "^2.5.3"
   }
 }

@@ -3,7 +3,7 @@
  */
 import {
     collection, unique, text, auto, fixed, foreign, field,
-    Edit, Update, Insert, Record
+    Edit, Update, Insert, Record,
 } from './db.schema';
 
 import { OutcomeRecord } from './outcome.schema';
@@ -18,7 +18,7 @@ export abstract class StandardOutcomeSchema {
 
     @fixed @field
     static author: string;
-    
+
     @fixed @field
     static name_: string;
 
@@ -55,8 +55,8 @@ export interface StandardOutcomeInsert extends Insert, StandardOutcomeUpdate {
 }
 
 // add in foreign fields
-export interface StandardOutcomeUpdate extends Update, StandardOutcomeEdit {}
+export interface StandardOutcomeUpdate extends Update, StandardOutcomeEdit { }
 
 // add in remaining fields
-export interface StandardOutcomeEdit extends Edit {}
+export interface StandardOutcomeEdit extends Edit { }
 
