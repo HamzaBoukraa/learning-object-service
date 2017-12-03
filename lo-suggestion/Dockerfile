@@ -6,6 +6,8 @@ WORKDIR /app
 
 # Copy all required JavaScript files from dist into root
 ADD dist/*.js* ./
+ADD dist/drivers/ drivers/
+ADD dist/interfaces/ interfaces/
 ADD dist/lo-suggestion/ lo-suggestion/
 ADD dist/entity/ entity/
 ADD dist/schema/ schema/

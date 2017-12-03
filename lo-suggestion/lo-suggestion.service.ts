@@ -3,9 +3,10 @@ require('../useme');
 
 import * as server from 'socket.io';
 
-import * as db from '../db.driver';
-import * as glue from '../db.gluer';
+import { DBInterface, HashInterface } from '../interfaces/interfaces';
+import { MongoDriver, BcryptDriver } from '../drivers/drivers';
 
+import { DBGluer } from '../db.gluer';
 import { LearningObject, OutcomeSuggestion } from '../entity/entities';
 
 const threshold = parseFloat(process.env.CLARK_LO_SUGGESTION_THRESHOLD);
@@ -13,6 +14,10 @@ const threshold = parseFloat(process.env.CLARK_LO_SUGGESTION_THRESHOLD);
 /*
  * TODO: add logging, esp. for errors
  */
+
+let db: DBInterface = new MongoDriver();
+let hash: HashInterface = new BcryptDriver(10);
+let glue = new DBGluer(db, hash);
 
 db.connect(process.env.CLARK_DB_URI)
   .then(() => {

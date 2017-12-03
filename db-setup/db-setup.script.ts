@@ -5,7 +5,11 @@
 require('../useme');
 
 import { MongoClient } from 'mongodb';
-import * as db from '../db.driver';
+
+import { DBInterface, HashInterface } from '../interfaces/interfaces';
+import { MongoDriver, BcryptDriver } from '../drivers/drivers';
+
+import { DBGluer } from '../db.gluer';
 
 import { init } from './db-init.script';
 import { NCWF } from './db-NCWF.script';
@@ -23,16 +27,20 @@ MongoClient.connect(process.env.CLARK_DB_URI, async (err, dbase) => {
     await init(dbase);
     dbase.close();
 
+    let db: DBInterface = new MongoDriver();
+    let hash: HashInterface = new BcryptDriver(10);
+    let glue = new DBGluer(db, hash);
+
     db.connect(process.env.CLARK_DB_URI)
       .then(() => {
         console.log('--- Adding Standard Outcomes ---');
-        NCWF().catch((e) => { console.log('Failed to add NCWF outcomes: ' + e); });
-        NCWFtasks().catch((e) => { console.log('Failed to add NCWF tasks: ' + e); });
-        CAE().catch((e) => { console.log('Failed to add CAE outcomes: ' + e); });
-        CS2013().catch((e) => { console.log('Failed to add CS2013 outcomes: ' + e); });
+        NCWF(glue).catch((e) => { console.log('Failed to add NCWF outcomes: ' + e); });
+        NCWFtasks(glue).catch((e) => { console.log('Failed to add NCWF tasks: ' + e); });
+        CAE(glue).catch((e) => { console.log('Failed to add CAE outcomes: ' + e); });
+        CS2013(glue).catch((e) => { console.log('Failed to add CS2013 outcomes: ' + e); });
 
         console.log('--- Adding Legacy Objects ---');
-        fill().catch((e) => { console.log('Failed to add legacies: ' + e); });
+        fill(glue).catch((e) => { console.log('Failed to add legacies: ' + e); });
       }).catch((e) => {
         console.log('Failed to connect: ' + e);
       });

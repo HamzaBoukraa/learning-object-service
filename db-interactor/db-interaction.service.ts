@@ -5,9 +5,10 @@ import * as express from 'express';
 // tslint:disable-next-line: no-require-imports
 const bodyParser = require('body-parser');
 
-import * as db from '../db.driver';
-import * as glue from '../db.gluer';
+import { DBInterface, HashInterface } from '../interfaces/interfaces';
+import { MongoDriver, BcryptDriver } from '../drivers/drivers';
 
+import { DBGluer } from '../db.gluer';
 import {
     RecordID,
     UserID,
@@ -27,6 +28,12 @@ import {
 /*
  * TODO: catch errors gracefully, preferably with logging!
  */
+
+
+let db: DBInterface = new MongoDriver();
+let hash: HashInterface = new BcryptDriver(10);
+let glue = new DBGluer(db, hash);
+
 const server = express();
 server.use(bodyParser.json());
 

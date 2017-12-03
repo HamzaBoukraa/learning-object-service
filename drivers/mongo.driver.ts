@@ -7,6 +7,8 @@
 
 // tslint:disable: no-string-literal
 
+import { DBInterface } from '../interfaces/interfaces';
+
 import { MongoClient, Db, Cursor, ObjectID } from 'mongodb';
 
 import {
@@ -18,7 +20,7 @@ import {
     collectionFor,
     schemaFor,
     foreignData,
-} from './schema/db.schema';
+} from '../schema/db.schema';
 import {
     Record, Update, Insert, Edit,
     RecordID, UserID, LearningObjectID, OutcomeID,
@@ -31,12 +33,16 @@ import {
     StandardOutcomeSchema, StandardOutcomeRecord, StandardOutcomeUpdate,
     StandardOutcomeInsert, StandardOutcomeEdit,
     OutcomeRecord,
-} from './schema/schema';
+} from '../schema/schema';
 
 export { ObjectID as DBID };
 
 // only created once, no matter how many times the module is required
 let _db: Db;
+
+export class MongoDriver implements DBInterface {
+
+
 
 /**
  * Connect to the database. Must be called before any other functions.
@@ -52,23 +58,23 @@ let _db: Db;
  *
  * @param {string} dbIP the host and port on which mongodb is running
  */
-export async function connect(dburi: string): Promise<void> {
+connect= async function (dburi: string): Promise<void> {
     try {
         _db = await MongoClient.connect(dburi);
         return Promise.resolve();
     } catch (e) {
         return Promise.reject('Problem connecting to database at ' + dburi + ':\n\t' + e);
     }
-}
+};
 
 /**
  * Close the database. Note that this will affect all services
  * and scripts using the database, so only do this if it's very
  * important or if you are sure that *everything* is finished.
  */
-export function disconnect(): void {
+disconnect= function (): void {
     _db.close();
-}
+};
 
 /////////////
 // INSERTS //
@@ -82,10 +88,10 @@ export function disconnect(): void {
  *
  * @returns {UserID} the database id of the new record
  */
-export async function insertUser(record: UserInsert): Promise<UserID> {
+insertUser= async function (record: UserInsert): Promise<UserID> {
     record['_id'] = (new ObjectID()).toHexString();
     return insert(UserSchema, record);
-}
+};
 
 /**
  * Insert a learning object into the database.
@@ -95,11 +101,11 @@ export async function insertUser(record: UserInsert): Promise<UserID> {
  *
  * @returns {LearningObjectID} the database id of the new record
  */
-export async function insertLearningObject(record: LearningObjectInsert):
+insertLearningObject= async function (record: LearningObjectInsert):
     Promise<LearningObjectID> {
     record['_id'] = (new ObjectID()).toHexString();
     return insert(LearningObjectSchema, record);
-}
+};
 
 /**
  * Insert a learning outcome into the database.
@@ -109,7 +115,7 @@ export async function insertLearningObject(record: LearningObjectInsert):
  *
  * @returns {LearningOutcomeID} the database id of the new record
  */
-export async function insertLearningOutcome(record: LearningOutcomeInsert):
+insertLearningOutcome= async function (record: LearningOutcomeInsert):
     Promise<LearningOutcomeID> {
     try {
         record['_id'] = (new ObjectID()).toHexString();
@@ -129,7 +135,7 @@ export async function insertLearningOutcome(record: LearningOutcomeInsert):
     } catch (e) {
         return Promise.reject('Problem inserting a Learning Outcome:\n\t' + e);
     }
-}
+};
 
 /**
  * Insert a standard outcome into the database.
@@ -139,13 +145,13 @@ export async function insertLearningOutcome(record: LearningOutcomeInsert):
  *
  * @returns the database id of the new record
  */
-export async function insertStandardOutcome(record: StandardOutcomeInsert):
+insertStandardOutcome= async function (record: StandardOutcomeInsert):
     Promise<StandardOutcomeID> {
     record['_id'] = (new ObjectID()).toHexString();
     record['source'] = record.author;
     record['tag'] = [record.date, record.name_, record.outcome].join('$');
     return insert(StandardOutcomeSchema, record);
-}
+};
 
 ////////////////////////////
 // MAPPING AND REGISTRIES //
@@ -158,9 +164,9 @@ export async function insertStandardOutcome(record: StandardOutcomeInsert):
  * @param {OutcomeID} outcome the user's outcome
  * @param {OutcomeID} mapping the newly associated outcome's id
  */
-export async function mapOutcome(outcome: LearningOutcomeID, mapping: OutcomeID): Promise<void> {
+mapOutcome= async function (outcome: LearningOutcomeID, mapping: OutcomeID): Promise<void> {
     return register(collectionFor(LearningOutcomeSchema), outcome, 'mappings', mapping);
-}
+};
 
 /**
  * Undo a mapping for an outcome.
@@ -169,9 +175,9 @@ export async function mapOutcome(outcome: LearningOutcomeID, mapping: OutcomeID)
  * @param {OutcomeID} outcome the user's outcome
  * @param {OutcomeID} mapping the newly associated outcome's id
  */
-export async function unmapOutcome(outcome: LearningOutcomeID, mapping: OutcomeID): Promise<void> {
+unmapOutcome= async function (outcome: LearningOutcomeID, mapping: OutcomeID): Promise<void> {
     return unregister(collectionFor(LearningOutcomeSchema), outcome, 'mappings', mapping);
-}
+};
 
 /**
  * Reorder an object in a user's objects list.
@@ -181,9 +187,9 @@ export async function unmapOutcome(outcome: LearningOutcomeID, mapping: OutcomeI
  * @param {LearningObjectID} object the object being reordered
  * @param {number} index the new index for the object
  */
-export async function reorderObject(user: UserID, object: LearningObjectID, index: number): Promise<void> {
+reorderObject= async function reorderObject(user: UserID, object: LearningObjectID, index: number): Promise<void> {
     return reorder(collectionFor(UserSchema), user, 'objects', object, index);
-}
+};
 
 /**
  * Reorder an outcome in an object's outcomes list.
@@ -193,9 +199,9 @@ export async function reorderObject(user: UserID, object: LearningObjectID, inde
  * @param {LearningOutcomeID} outcome the outcome being reordered
  * @param {number} index the new index for the outcome
  */
-export async function reorderOutcome(object: LearningObjectID, outcome: LearningOutcomeID, index: number): Promise<void> {
+reorderOutcome= async function (object: LearningObjectID, outcome: LearningOutcomeID, index: number): Promise<void> {
     return reorder(collectionFor(LearningObjectSchema), object, 'outcomes', outcome, index);
-}
+};
 
 ///////////////////////////////////////////////////////////////////
 // EDITS - update without touching any foreign keys or documents //
@@ -208,7 +214,7 @@ export async function reorderOutcome(object: LearningObjectID, outcome: Learning
  * @param {UserID} id which document to change
  * @param {UserEdit} record the values to change to
  */
-export async function editUser(id: UserID, record: UserEdit): Promise<void> {
+editUser= async function (id: UserID, record: UserEdit): Promise<void> {
     try {
         // ensure all outcomes have the right author tag
         let doc = await _db.collection(collectionFor(UserSchema))
@@ -227,7 +233,7 @@ export async function editUser(id: UserID, record: UserEdit): Promise<void> {
     } catch (e) {
         return Promise.reject(e);
     }
-}
+};
 
 /**
  * Edit a learning object.
@@ -236,7 +242,7 @@ export async function editUser(id: UserID, record: UserEdit): Promise<void> {
  * @param {LearningObjectID} id which document to change
  * @param {LearningObjectEdit} record the values to change to
  */
-export async function editLearningObject(id: LearningObjectID, record: LearningObjectEdit): Promise<void> {
+editLearningObject= async function (id: LearningObjectID, record: LearningObjectEdit): Promise<void> {
     try {
         // ensure all outcomes have the right name_ and date tag
         await _db.collection(collectionFor(LearningOutcomeSchema))
@@ -254,7 +260,7 @@ export async function editLearningObject(id: LearningObjectID, record: LearningO
     } catch (e) {
         return Promise.reject(e);
     }
-}
+};
 
 /**
  * Edit a learning outcome.
@@ -263,10 +269,10 @@ export async function editLearningObject(id: LearningObjectID, record: LearningO
  * @param {LearningOutcomeID} id which document to change
  * @param {LearningOutcomeEdit} record the values to change to
  */
-export async function editLearningOutcome(id: LearningOutcomeID, record: LearningOutcomeEdit): Promise<void> {
+editLearningOutcome= async function (id: LearningOutcomeID, record: LearningOutcomeEdit): Promise<void> {
     record['outcome'] = record.verb + ' ' + record.text;
     return edit(LearningOutcomeSchema, id, record);
-}
+};
 
 //////////////////////////////////////////
 // DELETIONS - will cascade to children //
@@ -278,9 +284,9 @@ export async function editLearningOutcome(id: LearningOutcomeID, record: Learnin
  *
  * @param {UserID} id which document to delete
  */
-export async function deleteUser(id: UserID): Promise<void> {
+deleteUser= async function (id: UserID): Promise<void> {
     return remove(UserSchema, id);
-}
+};
 
 /**
  * Remove a learning object (and its outcomes) from the database.
@@ -288,10 +294,10 @@ export async function deleteUser(id: UserID): Promise<void> {
  *
  * @param {LearningObjectID} id which document to delete
  */
-export async function deleteLearningObject(id: LearningObjectID):
+deleteLearningObject= async function (id: LearningObjectID):
     Promise<void> {
     return remove(LearningObjectSchema, id);
-}
+};
 
 /**
  * Remove a learning outcome from the database.
@@ -299,7 +305,7 @@ export async function deleteLearningObject(id: LearningObjectID):
  *
  * @param {LearningOutcomeID} id which document to delete
  */
-export async function deleteLearningOutcome(id: LearningOutcomeID):
+deleteLearningOutcome= async function (id: LearningOutcomeID):
     Promise<void> {
     try {
         // find any outcomes mapping to this one, and unmap them
@@ -315,7 +321,7 @@ export async function deleteLearningOutcome(id: LearningOutcomeID):
     } catch (e) {
         return Promise.reject(e);
     }
-}
+};
 
 ///////////////////////////
 // INFORMATION RETRIEVAL //
@@ -329,7 +335,7 @@ export async function deleteLearningOutcome(id: LearningOutcomeID):
  *
  * @returns {UserID}
  */
-export async function findUser(id: string): Promise<UserID> {
+findUser= async function (id: string): Promise<UserID> {
     try {
         let doc = await _db.collection(collectionFor(UserSchema))
             .findOne<UserRecord>({ id: id });
@@ -338,7 +344,7 @@ export async function findUser(id: string): Promise<UserID> {
     } catch (e) {
         return Promise.reject(e);
     }
-}
+};
 
 /**
  * Look up a learning object by its author and name.
@@ -349,7 +355,7 @@ export async function findUser(id: string): Promise<UserID> {
  *
  * @returns {LearningObjectID}
  */
-export async function findLearningObject(author: UserID, name: string):
+findLearningObject= async function (author: UserID, name: string):
     Promise<LearningObjectID> {
     try {
         let doc = await _db.collection(collectionFor(LearningObjectSchema))
@@ -362,7 +368,7 @@ export async function findLearningObject(author: UserID, name: string):
     } catch (e) {
         return Promise.reject(e);
     }
-}
+};
 
 /**
  * Look up a learning outcome by its source and tag.
@@ -373,7 +379,7 @@ export async function findLearningObject(author: UserID, name: string):
  *
  * @returns {LearningOutcomeID}
  */
-export async function findLearningOutcome(source: LearningObjectID, tag: number):
+findLearningOutcome= async function (source: LearningObjectID, tag: number):
     Promise<LearningOutcomeID> {
     try {
         let doc = await _db.collection(collectionFor(LearningObjectSchema))
@@ -386,7 +392,7 @@ export async function findLearningOutcome(source: LearningObjectID, tag: number)
     } catch (e) {
         return Promise.reject(e);
     }
-}
+};
 
 /**
  * Fetch the user document associated with the given id.
@@ -396,9 +402,9 @@ export async function findLearningOutcome(source: LearningObjectID, tag: number)
  *
  * @returns {UserRecord}
  */
-export async function fetchUser(id: UserID): Promise<UserRecord> {
+fetchUser= async function (id: UserID): Promise<UserRecord> {
     return fetch<UserRecord>(UserSchema, id);
-}
+};
 
 
 /**
@@ -409,10 +415,10 @@ export async function fetchUser(id: UserID): Promise<UserRecord> {
  *
  * @returns {LearningObjectRecord}
  */
-export async function fetchLearningObject(id: UserID):
+fetchLearningObject= async function (id: UserID):
     Promise<LearningObjectRecord> {
     return fetch<LearningObjectRecord>(LearningObjectSchema, id);
-}
+};
 
 /**
  * Fetch the learning outcome document associated with the given id.
@@ -422,10 +428,10 @@ export async function fetchLearningObject(id: UserID):
  *
  * @returns {LearningOutcomeRecord}
  */
-export async function fetchLearningOutcome(id: UserID):
+fetchLearningOutcome= async function (id: UserID):
     Promise<LearningOutcomeRecord> {
     return fetch<LearningOutcomeRecord>(LearningOutcomeSchema, id);
-}
+};
 
 /**
  * Fetch the generic outcome document associated with the given id.
@@ -435,10 +441,10 @@ export async function fetchLearningOutcome(id: UserID):
  *
  * @returns {OutcomeRecord}
  */
-export async function fetchOutcome(id: UserID):
+fetchOutcome= async function (id: UserID):
     Promise<OutcomeRecord> {
     return fetch<OutcomeRecord>(LearningOutcomeSchema, id);
-}
+};
 
 /////////////////
 // TEXT SEARCH //
@@ -448,10 +454,10 @@ export async function fetchOutcome(id: UserID):
  * Return literally all objects. Very expensive.
  * @returns {Cursor<LearningObjectRecord[]} cursor of literally all objects
  */
-export function fetchAllObjects(): Cursor<LearningObjectRecord> {
+fetchAllObjects= function (): Cursor<LearningObjectRecord> {
     return _db.collection(collectionFor(LearningObjectSchema))
         .find<LearningObjectRecord>();
-}
+};
 
 /**
  * Find outcomes matching a text query.
@@ -462,12 +468,12 @@ export function fetchAllObjects(): Cursor<LearningObjectRecord> {
  *
  * @returns {Cursor<OutcomeRecord>} cursor of positive matches
  */
-export function searchOutcomes(text: string): Cursor<OutcomeRecord> {
+searchOutcomes= function (text: string): Cursor<OutcomeRecord> {
     return _db.collection(collectionFor(StandardOutcomeSchema))
         .find<OutcomeRecord>(
         { $text: { $search: text } },
         { score: { $meta: 'textScore' } });
-}
+};
 
 /**
  * Find outcomes matching a text query.
@@ -476,7 +482,7 @@ export function searchOutcomes(text: string): Cursor<OutcomeRecord> {
  *
  * @returns {Cursor<OutcomeRecord>} cursor of positive matches
  */
-export function matchOutcomes(text: string): Cursor<OutcomeRecord> {
+matchOutcomes= function (text: string): Cursor<OutcomeRecord> {
     let tokens = text.split(/\s/);
     let docs: any[] = [];
     for (let token of tokens) {
@@ -488,6 +494,7 @@ export function matchOutcomes(text: string): Cursor<OutcomeRecord> {
         .find<OutcomeRecord>({
             $and: docs,
         });
+};
 }
 
 ////////////////////////////////////////////////

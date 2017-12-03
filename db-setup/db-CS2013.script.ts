@@ -5,14 +5,15 @@
 
 import * as lineReader from 'line-reader';
 
-import * as db from '../db.driver';
-import * as glue from '../db.gluer';
+import { DBInterface, HashInterface } from '../interfaces/interfaces';
+import { MongoDriver, BcryptDriver } from '../drivers/drivers';
 
+import { DBGluer } from '../db.gluer';
 import { StandardOutcome } from '../entity/entities';
 
 const file = 'dbcontent/CS_2013_Learning_Outcomes.dat';   // the data file
 
-export async function CS2013() {
+export async function CS2013(glue: DBGluer) {
     let cnt = 0;    // track how many records we insert
 
     // what to do for each record
@@ -40,9 +41,13 @@ if (require.main === module) {
     // tslint:disable-next-line: no-require-imports
     require('../useme');
 
+    let db: DBInterface = new MongoDriver();
+    let hash: HashInterface = new BcryptDriver(10);
+    let glue = new DBGluer(db, hash);
+
     db.connect(process.env.CLARK_DB_URI)
         .then(async () => {
-            await CS2013();
+            await CS2013(glue);
             setTimeout(db.disconnect, 2000);
         }).catch((err) => {
             console.log(err);

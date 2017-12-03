@@ -2,7 +2,7 @@
  * Tools and universal script for defining database schemas.
  */
 
-import { DBID } from '../db.driver';
+import { DBID } from '../drivers/mongo.driver';
 export { DBID };
 
 import { UserID } from './user.schema';

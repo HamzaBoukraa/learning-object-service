@@ -2,15 +2,16 @@
 
 import * as lineReader from 'line-reader';
 
-import * as db from '../db.driver';
-import * as glue from '../db.gluer';
+import { DBInterface, HashInterface } from '../interfaces/interfaces';
+import { MongoDriver, BcryptDriver } from '../drivers/drivers';
 
+import { DBGluer } from '../db.gluer';
 import { UserID } from '../schema/schema';
 import { User, LearningOutcome, LearningObject } from '../entity/entities';
 
 const file = 'dbcontent/Dump20171010.dat';   // the data file
 
-export async function fill() {
+export async function fill(glue: DBGluer) {
     // first, add a 'legacy' user:
     let legacy = new User('legacy', 'Legacy User', null, 'legacy');
     let legacyid = await glue.addUser(legacy);
@@ -28,7 +29,7 @@ export async function fill() {
                 createdate: dat[4],
             };
 
-            let content = JSON.parse(row['content']);
+            let content = JSON.parse(row.content);
             // force conformation to schema
             if (content.mClass === '') content.mClass = 'nanomodule';
             if (content.mClass === 'Course (15 weeks)') content.mClass = 'Course';
@@ -82,9 +83,13 @@ if (require.main === module) {
     // tslint:disable-next-line: no-require-imports
     require('../useme');
 
+    let db: DBInterface = new MongoDriver();
+    let hash: HashInterface = new BcryptDriver(10);
+    let glue = new DBGluer(db, hash);
+
     db.connect(process.env.CLARK_DB_URI)
         .then(async () => {
-            await fill();
+            await fill(glue);
             db.disconnect();
         }).catch((err) => {
             console.log(err);
