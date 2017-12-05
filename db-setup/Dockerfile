@@ -15,6 +15,7 @@ ADD dist/taxonomy/ taxonomy/
 # Copy any other required files
 ADD taxonomy/taxonomy.json taxonomy/
 ADD dbcontent/*.dat dbcontent/
+ADD .env ./
 
 # Install any needed packages specified in package.json
 ENV NODE_ENV=production

@@ -41,7 +41,8 @@ Name|Default|Description
 
 ## Development Style Rules
 - Parameters for any scripts or services should use environment variables.
-- Start every script and service with `require('useme');`, and in `useme.ts`, give any unassigned environment variables a default value.
+- Assign default environment variables in the `.env` file.
+- Start every script and service with `require('useme');`, and in `useme.ts`, run any code that ALWAYS needs to happen (ex. extending Set prototype arithmetic).
 - Dockerfiles should initialize all required environment variables, even when using the same default as in-code.
 - IP addresses should default in-code to `localhost`.
 - IP addresses should default in Dockerfiles to the Docker subnet, `172.17.0.2`.
