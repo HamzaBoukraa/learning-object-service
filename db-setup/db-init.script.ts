@@ -7,6 +7,9 @@
 //
 //  when finished, stop with 'mongod -f mongod.conf --shutdown'
 
+// tslint:disable-next-line: no-require-imports
+require('../useme');
+
 import { MongoClient, Db } from 'mongodb';
 import {
     collections, schemaFor, uniquesFor, textsFor,
@@ -67,8 +70,6 @@ export async function init(db: Db) {
 }
 
 if (require.main === module) {
-    // tslint:disable-next-line: no-require-imports
-    require('../useme');
 
     MongoClient.connect(process.env.CLARK_DB_URI, async (err, dbase) => {
         if (err) throw err;

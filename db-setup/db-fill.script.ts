@@ -1,5 +1,8 @@
 // this script will pull data from BloominOnion app and insert it into our MongoDB
 
+// tslint:disable-next-line: no-require-imports
+require('../useme');
+
 import * as lineReader from 'line-reader';
 
 import { DBInterface, HashInterface } from '../interfaces/interfaces';
@@ -80,8 +83,6 @@ export async function fill(glue: DBGluer) {
 }
 
 if (require.main === module) {
-    // tslint:disable-next-line: no-require-imports
-    require('../useme');
 
     let db: DBInterface = new MongoDriver();
     let hash: HashInterface = new BcryptDriver(10);

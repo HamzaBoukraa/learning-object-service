@@ -3,6 +3,9 @@
 //  treats the second column as the 'outcome',
 //  and pushes each record to the outcome collection, author 'NCWF 2017'
 
+// tslint:disable-next-line: no-require-imports
+require('../useme');
+
 import * as lineReader from 'line-reader';
 
 import { DBInterface, HashInterface } from '../interfaces/interfaces';
@@ -38,8 +41,6 @@ export async function NCWFtasks(glue: DBGluer) {
 }
 
 if (require.main === module) {
-    // tslint:disable-next-line: no-require-imports
-    require('../useme');
 
     let db: DBInterface = new MongoDriver();
     let hash: HashInterface = new BcryptDriver(10);
