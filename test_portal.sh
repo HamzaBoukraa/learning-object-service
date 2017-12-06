@@ -1,0 +1,48 @@
+echo "Starting local database"
+mongod -f mongod.conf &
+mongo_pid=$!
+sleep 1
+echo ""
+
+echo "Initializing database"
+echo "---------------------"
+node dist/db-setup/db-init.script.js
+node dist/test/setup.script.js
+echo ""
+
+echo "Starting micro-services"
+echo "-----------------------"
+node dist/db-interactor/db-interaction.service.js &
+dbi_pid=$!
+node dist/lo-suggestion/lo-suggestion.service.js &
+los_pid=$!
+
+sleep 1
+echo ""
+
+if [ "$1" ]
+then script=$1
+else script="*"
+fi
+
+echo "Running tests"
+echo "-------------"
+for file in dist/test/$script.tape.js
+do
+    if ! node $file
+    then fail="darn"
+    fi
+done
+
+#if node dist/test/$script.test.js
+#then success="yay"
+#fi
+
+echo "Cleaning up..."
+kill $los_pid
+kill $dbi_pid
+kill $mongo_pid
+
+if [ "$fail" ]
+then exit 1
+fi

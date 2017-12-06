@@ -32,6 +32,8 @@ Name|Default|Description
 - Start docker database (requires docker installation): `docker run -p 27017:27017 mongo`
 - Run a process using a local database: `npm run <process>`
 - Run a process using a remote database: `CLARK_DB_URI=<uri> npm run <process>`
+- Run a specific `test/<file>.tape.ts` test: `npm test <file>`
+- Run all `test/<file>.tape.ts` tests: `npm test`
 
 ## Docker (requires docker installation)
 - Build a docker image: `npm run build:docker <process>`

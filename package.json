@@ -12,7 +12,7 @@
     "db-interactor": "node dist/db-interactor/db-interaction.service.js",
     "lo-suggestion": "node dist/lo-suggestion/lo-suggestion.service.js",
     "start": "echo \"Error: no start specified\" && exit 1",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "sh test_portal.sh"
   },
   "repository": {
     "type": "git",
@@ -43,6 +43,8 @@
     "@types/mongodb": "^2.2.13",
     "@types/socket.io": "^1.4.31",
     "@types/socket.io-client": "^1.4.31",
+    "@types/tape": "^4.2.31",
+    "tape": "^4.8.0",
     "tslint": "^5.8.0",
     "typescript": "^2.5.3"
   }
