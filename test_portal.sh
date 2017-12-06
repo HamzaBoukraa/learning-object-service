@@ -1,7 +1,7 @@
 echo "Starting local database"
 mongod -f mongod.conf &
 mongo_pid=$!
-sleep 1
+sleep 1.5
 echo ""
 
 echo "Initializing database"
@@ -17,7 +17,7 @@ dbi_pid=$!
 node dist/lo-suggestion/lo-suggestion.service.js &
 los_pid=$!
 
-sleep 1
+sleep 1.5
 echo ""
 
 if [ "$1" ]
@@ -33,10 +33,6 @@ do
     then fail="darn"
     fi
 done
-
-#if node dist/test/$script.test.js
-#then success="yay"
-#fi
 
 echo "Cleaning up..."
 kill $los_pid
