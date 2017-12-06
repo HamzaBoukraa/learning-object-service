@@ -44,457 +44,453 @@ export class MongoDriver implements DBInterface {
 
 
 
-/**
- * Connect to the database. Must be called before any other functions.
- * @async
- *
- * NOTE: This function will attempt to connect to the database every
- *       time it is called, but since it assigns the result to a local
- *       variable which can only ever be created once, only one
- *       connection will ever be active at a time.
- *
- * TODO: Verify that connections are automatically closed
- *       when they no longer have a reference.
- *
- * @param {string} dbIP the host and port on which mongodb is running
- */
-connect= async function (dburi: string): Promise<void> {
-    try {
-        _db = await MongoClient.connect(dburi);
-        return Promise.resolve();
-    } catch (e) {
-        return Promise.reject('Problem connecting to database at ' + dburi + ':\n\t' + e);
-    }
-};
+    /**
+     * Connect to the database. Must be called before any other functions.
+     * @async
+     *
+     * NOTE: This function will attempt to connect to the database every
+     *       time it is called, but since it assigns the result to a local
+     *       variable which can only ever be created once, only one
+     *       connection will ever be active at a time.
+     *
+     * TODO: Verify that connections are automatically closed
+     *       when they no longer have a reference.
+     *
+     * @param {string} dbIP the host and port on which mongodb is running
+     */
+    connect = async function (dburi: string): Promise<void> {
+        try {
+            _db = await MongoClient.connect(dburi);
+            return Promise.resolve();
+        } catch (e) {
+            return Promise.reject('Problem connecting to database at ' + dburi + ':\n\t' + e);
+        }
+    };
 
-/**
- * Close the database. Note that this will affect all services
- * and scripts using the database, so only do this if it's very
- * important or if you are sure that *everything* is finished.
- */
-disconnect= function (): void {
-    _db.close();
-};
+    /**
+     * Close the database. Note that this will affect all services
+     * and scripts using the database, so only do this if it's very
+     * important or if you are sure that *everything* is finished.
+     */
+    disconnect = function (): void {
+        _db.close();
+    };
 
-/////////////
-// INSERTS //
-/////////////
+    /////////////
+    // INSERTS //
+    /////////////
 
-/**
- * Insert a user into the database.
- * @async
- *
- * @param {UserInsert} record
- *
- * @returns {UserID} the database id of the new record
- */
-insertUser= async function (record: UserInsert): Promise<UserID> {
-    record['_id'] = (new ObjectID()).toHexString();
-    return insert(UserSchema, record);
-};
-
-/**
- * Insert a learning object into the database.
- * @async
- *
- * @param {LearningObjectInsert} record
- *
- * @returns {LearningObjectID} the database id of the new record
- */
-insertLearningObject= async function (record: LearningObjectInsert):
-    Promise<LearningObjectID> {
-    record['_id'] = (new ObjectID()).toHexString();
-    return insert(LearningObjectSchema, record);
-};
-
-/**
- * Insert a learning outcome into the database.
- * @async
- *
- * @param {LearningOutcomeInsert} record
- *
- * @returns {LearningOutcomeID} the database id of the new record
- */
-insertLearningOutcome= async function (record: LearningOutcomeInsert):
-    Promise<LearningOutcomeID> {
-    try {
+    /**
+     * Insert a user into the database.
+     * @async
+     *
+     * @param {UserInsert} record
+     *
+     * @returns {UserID} the database id of the new record
+     */
+    insertUser = async function (record: UserInsert): Promise<UserID> {
         record['_id'] = (new ObjectID()).toHexString();
-        /* FIXME: In order to create auto-generated fields, we need to
-                  query information for the foreign keys. But when we
-                  perform the generic insert, we unnecessarily query
-                  again to verify the foreign keys exist. Thoughts? */
-        let source = await _db.collection(collectionFor(LearningObjectSchema))
-            .findOne<LearningObjectRecord>({ _id: record.source });
-        let author = await _db.collection(collectionFor(UserSchema))
-            .findOne<UserRecord>({ _id: source.author });
-        record['author'] = author.name_;
-        record['name_'] = source.name_;
-        record['date'] = source.date;
-        record['outcome'] = record.verb + ' ' + record.text;
-        return insert(LearningOutcomeSchema, record);
-    } catch (e) {
-        return Promise.reject('Problem inserting a Learning Outcome:\n\t' + e);
-    }
-};
+        return insert(UserSchema, record);
+    };
 
-/**
- * Insert a standard outcome into the database.
- * @async
- *
- * @param {StandardOutcomeInsert} record
- *
- * @returns the database id of the new record
- */
-insertStandardOutcome= async function (record: StandardOutcomeInsert):
-    Promise<StandardOutcomeID> {
-    record['_id'] = (new ObjectID()).toHexString();
-    record['source'] = record.author;
-    record['tag'] = [record.date, record.name_, record.outcome].join('$');
-    return insert(StandardOutcomeSchema, record);
-};
+    /**
+     * Insert a learning object into the database.
+     * @async
+     *
+     * @param {LearningObjectInsert} record
+     *
+     * @returns {LearningObjectID} the database id of the new record
+     */
+    insertLearningObject = async function (record: LearningObjectInsert): Promise<LearningObjectID> {
+        record['_id'] = (new ObjectID()).toHexString();
+        return insert(LearningObjectSchema, record);
+    };
 
-////////////////////////////
-// MAPPING AND REGISTRIES //
-////////////////////////////
+    /**
+     * Insert a learning outcome into the database.
+     * @async
+     *
+     * @param {LearningOutcomeInsert} record
+     *
+     * @returns {LearningOutcomeID} the database id of the new record
+     */
+    insertLearningOutcome = async function (record: LearningOutcomeInsert): Promise<LearningOutcomeID> {
+        try {
+            record['_id'] = (new ObjectID()).toHexString();
+            /* FIXME: In order to create auto-generated fields, we need to
+                      query information for the foreign keys. But when we
+                      perform the generic insert, we unnecessarily query
+                      again to verify the foreign keys exist. Thoughts? */
+            let source = await _db.collection(collectionFor(LearningObjectSchema))
+                .findOne<LearningObjectRecord>({ _id: record.source });
+            let author = await _db.collection(collectionFor(UserSchema))
+                .findOne<UserRecord>({ _id: source.author });
+            record['author'] = author.name_;
+            record['name_'] = source.name_;
+            record['date'] = source.date;
+            record['outcome'] = record.verb + ' ' + record.text;
+            return insert(LearningOutcomeSchema, record);
+        } catch (e) {
+            return Promise.reject('Problem inserting a Learning Outcome:\n\t' + e);
+        }
+    };
 
-/**
- * Add a mapping for an outcome.
- * @async
- *
- * @param {OutcomeID} outcome the user's outcome
- * @param {OutcomeID} mapping the newly associated outcome's id
- */
-mapOutcome= async function (outcome: LearningOutcomeID, mapping: OutcomeID): Promise<void> {
-    return register(collectionFor(LearningOutcomeSchema), outcome, 'mappings', mapping);
-};
+    /**
+     * Insert a standard outcome into the database.
+     * @async
+     *
+     * @param {StandardOutcomeInsert} record
+     *
+     * @returns the database id of the new record
+     */
+    insertStandardOutcome = async function (record: StandardOutcomeInsert): Promise<StandardOutcomeID> {
+        record['_id'] = (new ObjectID()).toHexString();
+        record['source'] = record.author;
+        record['tag'] = [record.date, record.name_, record.outcome].join('$');
+        return insert(StandardOutcomeSchema, record);
+    };
 
-/**
- * Undo a mapping for an outcome.
- * @async
- *
- * @param {OutcomeID} outcome the user's outcome
- * @param {OutcomeID} mapping the newly associated outcome's id
- */
-unmapOutcome= async function (outcome: LearningOutcomeID, mapping: OutcomeID): Promise<void> {
-    return unregister(collectionFor(LearningOutcomeSchema), outcome, 'mappings', mapping);
-};
+    ////////////////////////////
+    // MAPPING AND REGISTRIES //
+    ////////////////////////////
 
-/**
- * Reorder an object in a user's objects list.
- * @async
- *
- * @param {UserID} user the user
- * @param {LearningObjectID} object the object being reordered
- * @param {number} index the new index for the object
- */
-reorderObject= async function reorderObject(user: UserID, object: LearningObjectID, index: number): Promise<void> {
-    return reorder(collectionFor(UserSchema), user, 'objects', object, index);
-};
+    /**
+     * Add a mapping for an outcome.
+     * @async
+     *
+     * @param {OutcomeID} outcome the user's outcome
+     * @param {OutcomeID} mapping the newly associated outcome's id
+     */
+    mapOutcome = async function (outcome: LearningOutcomeID, mapping: OutcomeID): Promise<void> {
+        return register(collectionFor(LearningOutcomeSchema), outcome, 'mappings', mapping);
+    };
 
-/**
- * Reorder an outcome in an object's outcomes list.
- * @async
- *
- * @param {LearningObjectID} object the object
- * @param {LearningOutcomeID} outcome the outcome being reordered
- * @param {number} index the new index for the outcome
- */
-reorderOutcome= async function (object: LearningObjectID, outcome: LearningOutcomeID, index: number): Promise<void> {
-    return reorder(collectionFor(LearningObjectSchema), object, 'outcomes', outcome, index);
-};
+    /**
+     * Undo a mapping for an outcome.
+     * @async
+     *
+     * @param {OutcomeID} outcome the user's outcome
+     * @param {OutcomeID} mapping the newly associated outcome's id
+     */
+    unmapOutcome = async function (outcome: LearningOutcomeID, mapping: OutcomeID): Promise<void> {
+        return unregister(collectionFor(LearningOutcomeSchema), outcome, 'mappings', mapping);
+    };
 
-///////////////////////////////////////////////////////////////////
-// EDITS - update without touching any foreign keys or documents //
-///////////////////////////////////////////////////////////////////
+    /**
+     * Reorder an object in a user's objects list.
+     * @async
+     *
+     * @param {UserID} user the user
+     * @param {LearningObjectID} object the object being reordered
+     * @param {number} index the new index for the object
+     */
+    reorderObject = async function reorderObject(user: UserID, object: LearningObjectID, index: number): Promise<void> {
+        return reorder(collectionFor(UserSchema), user, 'objects', object, index);
+    };
 
-/**
- * Edit a user.
- * @async
- *
- * @param {UserID} id which document to change
- * @param {UserEdit} record the values to change to
- */
-editUser= async function (id: UserID, record: UserEdit): Promise<void> {
-    try {
-        // ensure all outcomes have the right author tag
-        let doc = await _db.collection(collectionFor(UserSchema))
-            .findOne<UserRecord>({ _id: id });
+    /**
+     * Reorder an outcome in an object's outcomes list.
+     * @async
+     *
+     * @param {LearningObjectID} object the object
+     * @param {LearningOutcomeID} outcome the outcome being reordered
+     * @param {number} index the new index for the outcome
+     */
+    reorderOutcome = async function (object: LearningObjectID, outcome: LearningOutcomeID, index: number): Promise<void> {
+        return reorder(collectionFor(LearningObjectSchema), object, 'outcomes', outcome, index);
+    };
 
-        for (let objectid of doc.objects) {
+    ///////////////////////////////////////////////////////////////////
+    // EDITS - update without touching any foreign keys or documents //
+    ///////////////////////////////////////////////////////////////////
+
+    /**
+     * Edit a user.
+     * @async
+     *
+     * @param {UserID} id which document to change
+     * @param {UserEdit} record the values to change to
+     */
+    editUser = async function (id: UserID, record: UserEdit): Promise<void> {
+        try {
+            // perform edit first, so uniqueness problems get caught BEFORE we edit outcomes
+            await edit(UserSchema, id, record);
+
+            // ensure all outcomes have the right author tag
+            let doc = await _db.collection(collectionFor(UserSchema))
+                .findOne<UserRecord>({ _id: id });
+
+            for (let objectid of doc.objects) {
+                await _db.collection(collectionFor(LearningOutcomeSchema))
+                    .updateMany(
+                    { source: objectid },
+                    { $set: { author: record.name_ } },
+                );
+            }
+
+            // perform the actual edit
+            return Promise.resolve();
+        } catch (e) {
+            return Promise.reject(e);
+        }
+    };
+
+    /**
+     * Edit a learning object.
+     * @async
+     *
+     * @param {LearningObjectID} id which document to change
+     * @param {LearningObjectEdit} record the values to change to
+     */
+    editLearningObject = async function (id: LearningObjectID, record: LearningObjectEdit): Promise<void> {
+        try {
+            // perform edit first, so uniqueness problems get caught BEFORE we edit outcomes
+            await edit(LearningObjectSchema, id, record);
+
+            // ensure all outcomes have the right name_ and date tag
             await _db.collection(collectionFor(LearningOutcomeSchema))
                 .updateMany(
-                { source: objectid },
-                { $set: { author: record.name_ } },
+                { source: id },
+                {
+                    $set: {
+                        name_: record.name_,
+                        date: record.date,
+                    },
+                },
             );
+
+            return Promise.resolve();
+        } catch (e) {
+            return Promise.reject(e);
+        }
+    };
+
+    /**
+     * Edit a learning outcome.
+     * @async
+     *
+     * @param {LearningOutcomeID} id which document to change
+     * @param {LearningOutcomeEdit} record the values to change to
+     */
+    editLearningOutcome = async function (id: LearningOutcomeID, record: LearningOutcomeEdit): Promise<void> {
+        record['outcome'] = record.verb + ' ' + record.text;
+        return edit(LearningOutcomeSchema, id, record);
+    };
+
+    //////////////////////////////////////////
+    // DELETIONS - will cascade to children //
+    //////////////////////////////////////////
+
+    /**
+     * Remove a user (and its objects) from the database.
+     * @async
+     *
+     * @param {UserID} id which document to delete
+     */
+    deleteUser = async function (id: UserID): Promise<void> {
+        return remove(UserSchema, id);
+    };
+
+    /**
+     * Remove a learning object (and its outcomes) from the database.
+     * @async
+     *
+     * @param {LearningObjectID} id which document to delete
+     */
+    deleteLearningObject = async function (id: LearningObjectID): Promise<void> {
+        return remove(LearningObjectSchema, id);
+    };
+
+    /**
+     * Remove a learning outcome from the database.
+     * @async
+     *
+     * @param {LearningOutcomeID} id which document to delete
+     */
+    deleteLearningOutcome = async function (id: LearningOutcomeID): Promise<void> {
+        try {
+            // find any outcomes mapping to this one, and unmap them
+            //  this data assurance step is in the general category of
+            //  'any other foreign keys pointing to this collection and id'
+            //  which is excessive enough to justify this specific solution
+            await _db.collection(collectionFor(LearningOutcomeSchema)).updateMany(
+                { mappings: id },
+                { $pull: { $mappings: id } },
+            );
+            // remove this outcome
+            return remove(LearningOutcomeSchema, id);
+        } catch (e) {
+            return Promise.reject(e);
+        }
+    };
+
+    ///////////////////////////
+    // INFORMATION RETRIEVAL //
+    ///////////////////////////
+
+    /**
+     * Look up a user by its login id.
+     * @async
+     *
+     * @param {string} id the user's login id
+     *
+     * @returns {UserID}
+     */
+    findUser = async function (id: string): Promise<UserID> {
+        try {
+            let doc = await _db.collection(collectionFor(UserSchema))
+                .findOne<UserRecord>({ id: id });
+            if (!doc) return Promise.reject('No user with id ' + id + ' exists.');
+            return Promise.resolve(doc._id);
+        } catch (e) {
+            return Promise.reject(e);
+        }
+    };
+
+    /**
+     * Look up a learning object by its author and name.
+     * @async
+     *
+     * @param {UserID} author the author's unique database id
+     * @param {string} name the object's name
+     *
+     * @returns {LearningObjectID}
+     */
+    findLearningObject = async function (author: UserID, name: string): Promise<LearningObjectID> {
+        try {
+            let doc = await _db.collection(collectionFor(LearningObjectSchema))
+                .findOne<LearningObjectRecord>({
+                    author: author,
+                    name_: name,
+                });
+            if (!doc) return Promise.reject('No learning object \'' + name + '\' for the given user');
+            return Promise.resolve(doc._id);
+        } catch (e) {
+            return Promise.reject(e);
+        }
+    };
+
+    /**
+     * Look up a learning outcome by its source and tag.
+     * @async
+     *
+     * @param {LearningObjectID} source the object source's unique database id
+     * @param {number} tag the outcome's unique identifier
+     *
+     * @returns {LearningOutcomeID}
+     */
+    findLearningOutcome = async function (source: LearningObjectID, tag: number): Promise<LearningOutcomeID> {
+        try {
+            let doc = await _db.collection(collectionFor(LearningOutcomeSchema))
+                .findOne<LearningOutcomeRecord>({
+                    source: source,
+                    tag: tag,
+                });
+            if (!doc) return Promise.reject('No learning outcome \'' + tag + '\' for the given learning object');
+            return Promise.resolve(doc._id);
+        } catch (e) {
+            return Promise.reject(e);
+        }
+    };
+
+    /**
+     * Fetch the user document associated with the given id.
+     * @async
+     *
+     * @param id database id
+     *
+     * @returns {UserRecord}
+     */
+    fetchUser = async function (id: UserID): Promise<UserRecord> {
+        return fetch<UserRecord>(UserSchema, id);
+    };
+
+
+    /**
+     * Fetch the learning object document associated with the given id.
+     * @async
+     *
+     * @param id database id
+     *
+     * @returns {LearningObjectRecord}
+     */
+    fetchLearningObject = async function (id: UserID): Promise<LearningObjectRecord> {
+        return fetch<LearningObjectRecord>(LearningObjectSchema, id);
+    };
+
+    /**
+     * Fetch the learning outcome document associated with the given id.
+     * @async
+     *
+     * @param id database id
+     *
+     * @returns {LearningOutcomeRecord}
+     */
+    fetchLearningOutcome = async function (id: UserID): Promise<LearningOutcomeRecord> {
+        return fetch<LearningOutcomeRecord>(LearningOutcomeSchema, id);
+    };
+
+    /**
+     * Fetch the generic outcome document associated with the given id.
+     * @async
+     *
+     * @param id database id
+     *
+     * @returns {OutcomeRecord}
+     */
+    fetchOutcome = async function (id: UserID): Promise<OutcomeRecord> {
+        return fetch<OutcomeRecord>(LearningOutcomeSchema, id);
+    };
+
+    /////////////////
+    // TEXT SEARCH //
+    /////////////////
+
+    /**
+     * Return literally all objects. Very expensive.
+     * @returns {Cursor<LearningObjectRecord[]} cursor of literally all objects
+     */
+    fetchAllObjects = function (): Cursor<LearningObjectRecord> {
+        return _db.collection(collectionFor(LearningObjectSchema))
+            .find<LearningObjectRecord>();
+    };
+
+    /**
+     * Find outcomes matching a text query.
+     * This variant uses Mongo's fancy text query. Questionable results.
+     * NOTE: this function also projects a score onto the cursor documents
+     *
+     * @param {string} text the words to search for
+     *
+     * @returns {Cursor<OutcomeRecord>} cursor of positive matches
+     */
+    searchOutcomes = function (text: string): Cursor<OutcomeRecord> {
+        return _db.collection(collectionFor(StandardOutcomeSchema))
+            .find<OutcomeRecord>(
+            { $text: { $search: text } },
+            { score: { $meta: 'textScore' } });
+    };
+
+    /**
+     * Find outcomes matching a text query.
+     * This variant finds all outcomes containing every word in the query.
+     * @param {string} text the words to match against
+     *
+     * @returns {Cursor<OutcomeRecord>} cursor of positive matches
+     */
+    matchOutcomes = function (text: string): Cursor<OutcomeRecord> {
+        let tokens = text.split(/\s/);
+        let docs: any[] = [];
+        for (let token of tokens) {
+            docs.push({ outcome: { $regex: token } });
         }
 
-        // perform the actual edit
-        return edit(UserSchema, id, record);
-    } catch (e) {
-        return Promise.reject(e);
-    }
-};
-
-/**
- * Edit a learning object.
- * @async
- *
- * @param {LearningObjectID} id which document to change
- * @param {LearningObjectEdit} record the values to change to
- */
-editLearningObject= async function (id: LearningObjectID, record: LearningObjectEdit): Promise<void> {
-    try {
-        // ensure all outcomes have the right name_ and date tag
-        await _db.collection(collectionFor(LearningOutcomeSchema))
-            .updateMany(
-            { source: id },
-            {
-                $set: {
-                    name_: record.name_,
-                    date: record.date,
-                },
-            },
-        );
-        // perform the actual update
-        return edit(LearningObjectSchema, id, record);
-    } catch (e) {
-        return Promise.reject(e);
-    }
-};
-
-/**
- * Edit a learning outcome.
- * @async
- *
- * @param {LearningOutcomeID} id which document to change
- * @param {LearningOutcomeEdit} record the values to change to
- */
-editLearningOutcome= async function (id: LearningOutcomeID, record: LearningOutcomeEdit): Promise<void> {
-    record['outcome'] = record.verb + ' ' + record.text;
-    return edit(LearningOutcomeSchema, id, record);
-};
-
-//////////////////////////////////////////
-// DELETIONS - will cascade to children //
-//////////////////////////////////////////
-
-/**
- * Remove a user (and its objects) from the database.
- * @async
- *
- * @param {UserID} id which document to delete
- */
-deleteUser= async function (id: UserID): Promise<void> {
-    return remove(UserSchema, id);
-};
-
-/**
- * Remove a learning object (and its outcomes) from the database.
- * @async
- *
- * @param {LearningObjectID} id which document to delete
- */
-deleteLearningObject= async function (id: LearningObjectID):
-    Promise<void> {
-    return remove(LearningObjectSchema, id);
-};
-
-/**
- * Remove a learning outcome from the database.
- * @async
- *
- * @param {LearningOutcomeID} id which document to delete
- */
-deleteLearningOutcome= async function (id: LearningOutcomeID):
-    Promise<void> {
-    try {
-        // find any outcomes mapping to this one, and unmap them
-        //  this data assurance step is in the general category of
-        //  'any other foreign keys pointing to this collection and id'
-        //  which is excessive enough to justify this specific solution
-        await _db.collection(collectionFor(LearningOutcomeSchema)).updateMany(
-            { mappings: id },
-            { $pull: { $mappings: id } },
-        );
-        // remove this outcome
-        return remove(LearningOutcomeSchema, id);
-    } catch (e) {
-        return Promise.reject(e);
-    }
-};
-
-///////////////////////////
-// INFORMATION RETRIEVAL //
-///////////////////////////
-
-/**
- * Look up a user by its login id.
- * @async
- *
- * @param {string} id the user's login id
- *
- * @returns {UserID}
- */
-findUser= async function (id: string): Promise<UserID> {
-    try {
-        let doc = await _db.collection(collectionFor(UserSchema))
-            .findOne<UserRecord>({ id: id });
-        if (!doc) return Promise.reject('No user with id ' + id + ' exists.');
-        return Promise.resolve(doc._id);
-    } catch (e) {
-        return Promise.reject(e);
-    }
-};
-
-/**
- * Look up a learning object by its author and name.
- * @async
- *
- * @param {UserID} author the author's unique database id
- * @param {string} name the object's name
- *
- * @returns {LearningObjectID}
- */
-findLearningObject= async function (author: UserID, name: string):
-    Promise<LearningObjectID> {
-    try {
-        let doc = await _db.collection(collectionFor(LearningObjectSchema))
-            .findOne<LearningObjectRecord>({
-                author: author,
-                name_: name,
+        // score property is not projected, will be undefined in documents
+        return _db.collection(collectionFor(StandardOutcomeSchema))
+            .find<OutcomeRecord>({
+                $and: docs,
             });
-        if (!doc) return Promise.reject('No learning object \'' + name + '\' for the given user');
-        return Promise.resolve(doc._id);
-    } catch (e) {
-        return Promise.reject(e);
-    }
-};
-
-/**
- * Look up a learning outcome by its source and tag.
- * @async
- *
- * @param {LearningObjectID} source the object source's unique database id
- * @param {number} tag the outcome's unique identifier
- *
- * @returns {LearningOutcomeID}
- */
-findLearningOutcome= async function (source: LearningObjectID, tag: number):
-    Promise<LearningOutcomeID> {
-    try {
-        let doc = await _db.collection(collectionFor(LearningObjectSchema))
-            .findOne<LearningOutcomeRecord>({
-                source: source,
-                tag: tag,
-            });
-        if (!doc) return Promise.reject('No learning outcome \'' + tag + '\' for the given learning object');
-        return Promise.resolve(doc._id);
-    } catch (e) {
-        return Promise.reject(e);
-    }
-};
-
-/**
- * Fetch the user document associated with the given id.
- * @async
- *
- * @param id database id
- *
- * @returns {UserRecord}
- */
-fetchUser= async function (id: UserID): Promise<UserRecord> {
-    return fetch<UserRecord>(UserSchema, id);
-};
-
-
-/**
- * Fetch the learning object document associated with the given id.
- * @async
- *
- * @param id database id
- *
- * @returns {LearningObjectRecord}
- */
-fetchLearningObject= async function (id: UserID):
-    Promise<LearningObjectRecord> {
-    return fetch<LearningObjectRecord>(LearningObjectSchema, id);
-};
-
-/**
- * Fetch the learning outcome document associated with the given id.
- * @async
- *
- * @param id database id
- *
- * @returns {LearningOutcomeRecord}
- */
-fetchLearningOutcome= async function (id: UserID):
-    Promise<LearningOutcomeRecord> {
-    return fetch<LearningOutcomeRecord>(LearningOutcomeSchema, id);
-};
-
-/**
- * Fetch the generic outcome document associated with the given id.
- * @async
- *
- * @param id database id
- *
- * @returns {OutcomeRecord}
- */
-fetchOutcome= async function (id: UserID):
-    Promise<OutcomeRecord> {
-    return fetch<OutcomeRecord>(LearningOutcomeSchema, id);
-};
-
-/////////////////
-// TEXT SEARCH //
-/////////////////
-
-/**
- * Return literally all objects. Very expensive.
- * @returns {Cursor<LearningObjectRecord[]} cursor of literally all objects
- */
-fetchAllObjects= function (): Cursor<LearningObjectRecord> {
-    return _db.collection(collectionFor(LearningObjectSchema))
-        .find<LearningObjectRecord>();
-};
-
-/**
- * Find outcomes matching a text query.
- * This variant uses Mongo's fancy text query. Questionable results.
- * NOTE: this function also projects a score onto the cursor documents
- *
- * @param {string} text the words to search for
- *
- * @returns {Cursor<OutcomeRecord>} cursor of positive matches
- */
-searchOutcomes= function (text: string): Cursor<OutcomeRecord> {
-    return _db.collection(collectionFor(StandardOutcomeSchema))
-        .find<OutcomeRecord>(
-        { $text: { $search: text } },
-        { score: { $meta: 'textScore' } });
-};
-
-/**
- * Find outcomes matching a text query.
- * This variant finds all outcomes containing every word in the query.
- * @param {string} text the words to match against
- *
- * @returns {Cursor<OutcomeRecord>} cursor of positive matches
- */
-matchOutcomes= function (text: string): Cursor<OutcomeRecord> {
-    let tokens = text.split(/\s/);
-    let docs: any[] = [];
-    for (let token of tokens) {
-        docs.push({ outcome: { $regex: token } });
-    }
-
-    // score property is not projected, will be undefined in documents
-    return _db.collection(collectionFor(StandardOutcomeSchema))
-        .find<OutcomeRecord>({
-            $and: docs,
-        });
-};
+    };
 }
 
 ////////////////////////////////////////////////
@@ -765,6 +761,6 @@ async function remove(schema: Function, id: RecordID): Promise<void> {
  */
 async function fetch<T>(schema: Function, id: RecordID): Promise<T> {
     let record = await _db.collection(collectionFor(schema)).findOne<T>({ _id: id });
-    if (!record) return Promise.reject('Problem fetching a ' + schema.name + ':\n\tInvalid database id ' + id);
+    if (!record) return Promise.reject('Problem fetching a ' + schema.name + ':\n\tInvalid database id ' + JSON.stringify(id));
     return Promise.resolve(record);
 }

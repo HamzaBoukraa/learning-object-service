@@ -307,8 +307,8 @@ export class DBGluer {
             for (let outcome of object.outcomes) {
                 try {
                     let outcomeId = await this.db.findLearningOutcome(id, outcome.tag);
-                    doNotDelete.add(outcomeId),
-                        await this.editLearningOutcome(outcomeId, outcome);
+                    doNotDelete.add(outcomeId);
+                    await this.editLearningOutcome(outcomeId, outcome);
                 } catch (e) {
                     // find operation failed; add it
                     await this.addLearningOutcome(id, outcome);
