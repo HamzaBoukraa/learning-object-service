@@ -51,6 +51,27 @@ db.connect(process.env.CLARK_DB_URI).then(async () => {
             'burnthemall',
         );
 
+        let melID = await addUser(
+            'lisa',
+            'Melisandre',
+            'lisa@got.org',
+            'thenightisdarkandfullofterrors',
+        );
+
+        await addUser(
+            'will',
+            'Will',
+            'will@got.org',
+            'pleasedontki',
+        );
+
+        let hoqID = await addUser(
+            'tyrion',
+            'Tyrion Lannister',
+            'tyrion@got.org',
+            'alwayspaydebts',
+        );
+
         console.log('Added test users');
 
         // now add objects
@@ -81,6 +102,29 @@ db.connect(process.env.CLARK_DB_URI).then(async () => {
             'King of the Andals',
             [
                 `Good question`,
+            ],
+        );
+        let lordID = await addLearningObject(
+            melID,
+            'Red Priestess',
+            [
+                `Serve the Lord of Light`,
+                `Serve the Prince who was Promised`,
+            ],
+        );
+        let witchID = await addLearningObject(
+            melID,
+            'Shadowbinder',
+            [
+                `Um...this one was an accident, I'm pretty sure...`,
+            ],
+        );
+
+        addLearningObject(
+            hoqID,
+            'Lecher',
+            [
+                'Drown your sorrows in wine and women',
             ],
         );
 
@@ -163,15 +207,47 @@ db.connect(process.env.CLARK_DB_URI).then(async () => {
             [],
         );
 
+        let fireID = await addLearningOutcome(
+            lordID, 0,
+            `Light infidels on fire`,
+            [],
+            [],
+        );
+        let preachID = await addLearningOutcome(
+            lordID, 1,
+            `Remind everyone the night is dark and full of terrors`,
+            [],
+            [],
+        );
+        let serveID = await addLearningOutcome(
+            lordID, 2,
+            `...pick a prince, any prince. You'll get it one of these times.`,
+            [],
+            [],
+        );
+
+        let demonID = await addLearningOutcome(
+            witchID, 0,
+            `Sleep with all the kings`,
+            [],
+            [],
+        );
+        let liveID = await addLearningOutcome(
+            witchID, 1,
+            `Live forever`,
+            [],
+            [],
+        );
+
         console.log('Added test learning outcomes');
 
         // now map outcomes
-        mapOutcome(farmID, gotID);
-        mapOutcome(trainID, gotID);
-        mapOutcome(drinkID, gotID);
-        mapOutcome(farmID, provisionID);
-        mapOutcome(provisionID, garrisonID);
-        mapOutcome(wallID, garrisonID);
+        await mapOutcome(farmID, gotID);
+        await mapOutcome(trainID, gotID);
+        await mapOutcome(drinkID, gotID);
+        await mapOutcome(farmID, provisionID);
+        await mapOutcome(provisionID, garrisonID);
+        await mapOutcome(wallID, garrisonID);
 
         console.log('Mapped test outcomes');
 

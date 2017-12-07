@@ -302,7 +302,7 @@ test('editUser', async (t) => {
         )),
     });
 
-    t.ok(badresponse.error, `- There is an error editing an invalid user id`);
+    t.ok(badresponse && badresponse.error, `- There is an error editing an invalid user id`);
 
     let dupresponse = await request('editUser', {
         id: testid,
@@ -314,7 +314,7 @@ test('editUser', async (t) => {
         )),
     });
 
-    t.ok(dupresponse.error, `- There is an error editing a user to an already-existing id`);
+    t.ok(dupresponse && dupresponse.error, `- There is an error editing a user to an already-existing id`);
 
     let editid = await request('findUser', { userid: 'jsnow' });
 
@@ -373,7 +373,7 @@ test('updateLearningObject', async (t) => {
         object: LearningObject.serialize(testobject),
     });
 
-    t.ok(badresponse.error, `- There is an error updating an invalid object id`);
+    t.ok(badresponse && badresponse.error, `- There is an error updating an invalid object id`);
 
     testobject.name = 'Warden of the North';
 
@@ -382,7 +382,7 @@ test('updateLearningObject', async (t) => {
         object: LearningObject.serialize(testobject),
     });
 
-    t.ok(dupresponse.error, `- There is an error editing a user to an already-existing id`);
+    t.ok(dupresponse && dupresponse.error, `- There is an error editing a user to an already-existing id`);
 
     // verify we CAN update things we ought
     let edituid = await request('findUser', { userid: 'jsnow' });
@@ -401,7 +401,7 @@ test('updateLearningObject', async (t) => {
         object: LearningObject.serialize(editobject),
     });
 
-    t.notok(response, `- No errors editing a user correctly`);
+    t.notok(response, `- No errors updating an object correctly`);
 
     // check database state
     try {
@@ -434,4 +434,275 @@ test('updateLearningObject', async (t) => {
 
 
 
+test('reorderObject', async(t) => {
+    // verify we CAN'T reorder things we oughtn't
+    let testuid = await request('findUser', { userid: 'ned' });
+    let testobid = await request('findLearningObject', { author: testuid, name: 'Hand of the King' });
 
+    let baduserresponse = await request('reorderObject', {
+        user: testuid + 'womp',
+        object: testobid,
+        index: 0,
+    });
+
+    t.ok(baduserresponse && baduserresponse.error, `- There is an error reordering with an invalid user id`);
+
+    let badobjectresponse = await request('reorderObject', {
+        user: testuid,
+        object: testobid + 'womp',
+        index: 0,
+    });
+
+    t.ok(badobjectresponse && badobjectresponse.error, `- There is an error reordering with an invalid object id`);
+
+    let lowindexresponse = await request('reorderObject', {
+        user: testuid,
+        object: testobid,
+        index: -1,
+    });
+
+    t.ok(lowindexresponse && lowindexresponse.error, `- There is an error reordering to a negative index`);
+
+    let hiindexresponse = await request('reorderObject', {
+        user: testuid,
+        object: testobid,
+        index: 2,
+    });
+
+    t.ok(hiindexresponse && hiindexresponse.error, `- There is an error reordering to an index exceeding number of objects`);
+
+    // verify we CAN reorder things we ought
+    let edituid = await request('findUser', { userid: 'lisa' });
+    let editobid = await request('findLearningObject', { author: edituid, name: 'Shadowbinder' });
+
+    let response = await request('reorderObject', {
+        user: edituid,
+        object: editobid,
+        index: 0,
+    });
+
+    t.notok(response, `- No errors reordering an object correctly`);
+
+    // check database state
+    try {
+        await db.connect(process.env.CLARK_DB_URI);
+
+        // verify we DIDN'T reorder things we oughtn't have
+        let objects = await glue.loadLearningObjectSummary(testuid);
+
+        t.equal(objects.length, 2, `- Number of learning objects remains unedited after failed reorders`);
+        t.equal(objects[0].name, 'Warden of the North', `- First learning object is still first after failed reorders`);
+        t.equal(objects[1].name, 'Hand of the King', `- Second learning object is still second after failed reorders`);
+
+        // verify we DID reorder things we ought have
+        objects = await glue.loadLearningObjectSummary(edituid);
+
+        t.equal(objects.length, 2, `- Number of learning objects remains unedited after successful reorder`);
+        t.equal(objects[0].name, 'Shadowbinder', `- Reconstruction from database gives correct first outcome`);
+        t.equal(objects[1].name, 'Red Priestess', `- Reconstruction from database gives correct second outcome`);
+
+
+    } catch (e) {
+        t.fail('Error thrown: ' + e);
+    } finally {
+        db.disconnect();
+        t.end();
+    }
+});
+
+
+
+test('mapOutcome', async (t) => {
+    try {
+        await db.connect(process.env.CLARK_DB_URI);
+
+        // pick the outcomes to play with
+        let uid = await db.findUser('lisa');
+        let obid1 = await db.findLearningObject(uid, 'Red Priestess');
+        let obid2 = await db.findLearningObject(uid, 'Shadowbinder');
+        let testfrom = await db.findLearningOutcome(obid1, 0);    // should allude to fire
+        let testto = await db.findLearningOutcome(obid1, 1);      // should allude to terrifying nights
+        let editfrom = await db.findLearningOutcome(obid1, 2);    // should allude to princes
+        let editto = await db.findLearningOutcome(obid2, 0);      // should allude to regisex
+
+        // verify we CAN'T map things we oughtn't
+
+        let badfromresponse = await request('mapOutcome', {
+            outcome: testfrom + 'womp',
+            mapping: testto,
+        });
+
+        t.ok(badfromresponse && badfromresponse.error, `- There is an error mapping from a bad outcome id`);
+
+        let badtoresponse = await request('mapOutcome', {
+            outcome: testfrom,
+            mapping: testto + 'womp',
+        });
+
+        t.ok(badtoresponse && badtoresponse.error, `- There is an error mapping to a bad outcome id`);
+
+        // verify we CAN map things we ought
+
+        let response = await request('mapOutcome', {
+            outcome: editfrom,
+            mapping: editto,
+        });
+
+        t.notok(response, `- No errors mapping outcomes correctly`);
+
+        // check database state
+        let object = await glue.loadLearningObject(obid1);
+        let testoutcome = object.outcomes[0];
+        let editoutcome = object.outcomes[2];
+
+        // verify we DIDN'T map things we oughtn't have
+        t.equal(testoutcome.mappings.length, 0, `- Number of mappings remains unedited after failed mappings`);
+
+        // verify we DID map things we ought have
+        t.equal(editoutcome.mappings.length, 1, `- Reconstruction from database gives correct new number of mappings`);
+        t.equal(
+            editoutcome.mappings[0].outcome,
+            `Define Sleep with all the kings`,
+            `- Reconstruction from database gives correct new mappings`,
+        );
+
+    } catch (e) {
+        t.fail('Error thrown: ' + e);
+    } finally {
+        db.disconnect();
+        t.end();
+    }
+});
+
+
+
+
+test('mapOutcome', async (t) => {
+    try {
+        await db.connect(process.env.CLARK_DB_URI);
+
+        // pick the outcomes to play with
+        let uid = await db.findUser('ned');
+        let obid = await db.findLearningObject(uid, 'Warden of the North');
+        let editfrom = await db.findLearningOutcome(obid, 0);    // should allude to food
+        let editto = await db.findLearningOutcome(obid, 1);      // should allude to provisions
+        let testfrom = await db.findLearningOutcome(obid, 1);    // should allude to provisions
+
+        // verify we CAN'T unmap things we oughtn't
+
+        // ok so technically this is a bad 'to' also... I don't want to have to find the outcomeid for garrisoning the wall
+        let badfromresponse = await request('unmapOutcome', {
+            outcome: testfrom + 'womp',
+            mapping: 'womp',
+        });
+
+        t.ok(badfromresponse && badfromresponse.error, `- There is an error unmapping from a bad outcome id`);
+
+        let badtoresponse = await request('unmapOutcome', {
+            outcome: testfrom,
+            mapping: 'womp',
+        });
+
+        t.ok(badtoresponse && badtoresponse.error, `- There is an error unmapping an id that isn't mapped to`);
+
+        // verify we CAN map things we ought
+
+        let response = await request('unmapOutcome', {
+            outcome: editfrom,
+            mapping: editto,
+        });
+
+        t.notok(response, `- No errors unmapping outcomes correctly`);
+
+        // check database state
+        let object = await glue.loadLearningObject(obid);
+        let editoutcome = object.outcomes[0];
+        let testoutcome = object.outcomes[1];
+
+        // verify we DIDN'T unmap things we oughtn't have
+        t.equal(testoutcome.mappings.length, 1, `- Number of mappings remains unedited after failed unmappings`);
+        t.equal(
+            testoutcome.mappings[0].outcome,
+            `Define Garrison the castles along the wall`,
+            `- Mappings remain unedited after failed unmappings`,
+        );
+
+        // verify we DID unmap things we ought have
+        t.equal(editoutcome.mappings.length, 1, `- Reconstruction from database gives correct new number of mappings`);
+        t.equal(
+            editoutcome.mappings[0].outcome,
+            `Don't die.`,
+            `- Other mappings remain unedited after successful unmappings`,
+        );
+
+    } catch (e) {
+        t.fail('Error thrown: ' + e);
+    } finally {
+        db.disconnect();
+        t.end();
+    }
+});
+
+test('deleteUser', async (t) => {
+    let uid = await request('findUser', { userid: 'will' });
+
+    let badresponse = await request('deleteUser', { id: uid + 'womp' });
+
+    t.ok(badresponse && badresponse.error, `There is an error deleting an invalid user id`);
+
+    let response = await request('deleteUser', { id: uid });
+
+    t.notok(response, `No errors correctly deleting a user`);
+
+    // check database state
+    try {
+        await db.connect(process.env.CLARK_DB_URI);
+
+        db.findUser('will').then((res) => {
+            t.fail('Deleted user still found in database!');
+        }).catch((err) => {
+            t.pass('Deleted user not found in database');
+        });
+    } catch (e) {
+        t.fail('Error thrown: ' + e);
+    } finally {
+        db.disconnect();
+        t.end();
+    }
+});
+
+
+
+test('deleteLearningObject', async (t) => {
+    let uid = await request('findUser', { userid: 'tyrion' });
+    let obid = await request('findLearningObject', { author: uid, name: 'Lecher' });
+
+    let badresponse = await request('deleteLearningObject', { id: obid + 'womp' });
+
+    t.ok(badresponse && badresponse.error, `There is an error deleting an invalid object id`);
+
+    let response = await request('deleteLearningObject', { id: obid });
+
+    t.notok(response, `No errors correctly deleting a learning object`);
+
+    // check database state
+    try {
+        await db.connect(process.env.CLARK_DB_URI);
+
+        let testid = await db.findUser('tyrion');
+
+        t.ok(testid, `Deleted object's owner still found in database`);
+
+        db.findLearningObject(testid, 'Lecher').then((res) => {
+            t.fail('Deleted object still found in database!');
+        }).catch((err) => {
+            t.pass('Deleted object not found in database');
+        });
+
+    } catch (e) {
+        t.fail('Error thrown: ' + e);
+    } finally {
+        db.disconnect();
+        t.end();
+    }
+});

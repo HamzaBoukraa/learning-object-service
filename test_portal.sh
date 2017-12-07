@@ -1,9 +1,3 @@
-echo "Starting local database"
-mongod -f mongod.conf &
-mongo_pid=$!
-sleep 1.5
-echo ""
-
 echo "Initializing database"
 echo "---------------------"
 node dist/db-setup/db-init.script.js
@@ -35,9 +29,8 @@ do
 done
 
 echo "Cleaning up..."
-kill $los_pid
-kill $dbi_pid
-kill $mongo_pid
+kill $los_pid # lo-suggestion
+kill $dbi_pid # db-interactor
 
 if [ "$fail" ]
 then exit 1
