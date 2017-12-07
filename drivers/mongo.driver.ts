@@ -162,6 +162,14 @@ export class MongoDriver implements DBInterface {
      * @param {OutcomeID} mapping the newly associated outcome's id
      */
     mapOutcome = async function (outcome: LearningOutcomeID, mapping: OutcomeID): Promise<void> {
+        /*
+         * TODO: alter register (and others) to take schema, not collection
+         *       perform validation in register (code is already written in comment down there)
+         */
+        // validate mapping, since it can't (currently) happen in generic register function
+        // NOTE: this is a temporary fix. Do TODO above!
+        let target = await _db.collection('outcomes').findOne({ _id: mapping });
+        if (!target) return Promise.reject('Registration failed: no mapping ' + mapping + 'found in outcomes');
         return register(collectionFor(LearningOutcomeSchema), outcome, 'mappings', mapping);
     };
 
@@ -542,6 +550,15 @@ async function validateForeignKeys(schema: Function, record: Record, foreigns: S
  */
 async function register(collection: string, owner: RecordID, registry: string, item: RecordID): Promise<void> {
     try {
+        // check validity of values before making any changes
+        let record = await _db.collection(collection).findOne({ _id: owner });
+        if (!record) return Promise.reject('Registration failed: no owner ' + owner + 'found in ' + collection);
+        // NOTE: below line is no good because schemaFor(outcomes) is arbitrary
+        // let mapping = await _db.collection(foreignData(schemaFor(collection), registry).target).findOne({ _id: item });
+        // TODO: switch register and unregister and probably all thse to use schema instead of collection, so the next line works
+        // let mapping = await _db.collection(foreignData(schema, registry).target).findOne({ _id: item });
+        // if (!mapping) return Promise.reject('Registration failed: no mapping ' + mapping + 'found in ' + collection);
+
         let pushdoc = {};
         pushdoc[registry] = item;
 
@@ -567,6 +584,13 @@ async function register(collection: string, owner: RecordID, registry: string, i
  */
 async function unregister(collection: string, owner: RecordID, registry: string, item: RecordID): Promise<void> {
     try {
+        // check validity of values before making any changes
+        let record = await _db.collection(collection).findOne({ _id: owner });
+        if (!record) return Promise.reject('Unregistration failed: no record ' + owner + 'found in ' + collection);
+        if (!record[registry].includes(item)) {
+            return Promise.reject('Unregistration failed: record ' + owner + '\'s ' + registry + ' field has no element ' + item);
+        }
+
         let pulldoc = {};
         pulldoc[registry] = item;
 
@@ -594,6 +618,18 @@ async function unregister(collection: string, owner: RecordID, registry: string,
  */
 async function reorder(collection: string, owner: RecordID, registry: string, item: RecordID, index: number): Promise<void> {
     try {
+        // check validity of values before making any changes
+        let record = await _db.collection(collection).findOne({ _id: owner });
+        if (!record) return Promise.reject('Reorder failed: no record ' + owner + 'found in ' + collection);
+        if (!record[registry].includes(item)) {
+            return Promise.reject('Reorder failed: record ' + owner + '\'s ' + registry + ' field has no element ' + item);
+        }
+        if (index < 0) return Promise.reject('Reorder failed: index cannot be negative');
+        if (index >= record[registry].length) {
+            return Promise.reject('Reorder failed: index exceeds length of ' + registry + ' field');
+        }
+
+        // perform the necessary operations
         await unregister(collection, owner, registry, item);
 
         let pushdoc = {};

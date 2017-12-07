@@ -168,7 +168,9 @@ Response| []() | []()
 `error`|`string`|exists only if an error occurred
 
 #### Errors
-- TODO: I'm not certain of error behavior here. Must be tested thoroughly. It SHOULD error if `user` doesn't exist, `object` isn't in that user's objects list, or if `index` is negative or exceeds that user's number of objects.
+- If `user` is not a user database id. Perhaps it was deleted by another request?
+- If `object` isn't in that user's objects list. Perhaps it was deleted by another request?
+- If `index` is negative or exceeds that user's number of objects.
 
 ### `/mapOutcome`
 Request | []() | []()
@@ -181,7 +183,8 @@ Response| []() | []()
 `error`|`string`|exists only if an error occurred
 
 #### Errors
-- TODO: I'm not certain of error behavior here. Must be tested thoroughly. It SHOULD error if either `outcome` or `mapping` aren't outcome database ids.
+- If `outcome` is not an outcome database id. Perhaps it was deleted by another request?
+- If `mapping` is not an outcome database id. Perhaps it was deleted by another request?
 
 ### `/unmapOutcome`
 Request | []() | []()
@@ -194,7 +197,8 @@ Response| []() | []()
 `error`|`string`|exists only if an error occurred
 
 #### Errors
-- TODO: I'm not certain of error behavior here. Must be tested thoroughly. It SHOULD error if `outcome` isn't an outcome database id, or if `mapping` isn't one of that outcome's mappings.
+- If `outcome` is not an outcome database id. Perhaps it was deleted by another request?
+- If `mapping` is not in that outcome's mappings list. Perhaps it was deleted or unmapped by another request?
 
 ### `/deleteUser`
 Request | []() | []()
