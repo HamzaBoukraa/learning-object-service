@@ -1,166 +1,99 @@
 # Javascript Node CircleCI 2.0 configuration file
 #
-# Check https://circleci.com/docs/2.0/language-javascript/ for more details
+# Do everything in the one machine (FOR DUBUG)
 #
 version: 2
 jobs:
+  build:
+    docker:
+      - image: circleci/node
+      
+      # Specify service dependencies here if necessary
+      # CircleCI maintains a library of pre-built images
+      # documented at https://circleci.com/docs/2.0/circleci-images/
+      # - image: circleci/mongo:3.4.4
 
- setup:
-  machine: true
-  working_directory: ~/database-interaction
-  steps:
-   - checkout
-   # Download and cache dependencies
-   - restore_cache:
-      keys:
-      - v1-dependencies-{{ checksum "package.json" }}
-      # fallback to using the latest cache if no exact match is found
-      - v1-dependencies-
-   - run: npm install
-   - save_cache:
-      paths:
-        - node_modules
-      key: v1-dependencies-{{ checksum "package.json" }}
-   - run: npm build
+    working_directory: ~/repo
 
- build-db-interactor:
-  machine: true
-  working_directory: ~/database-interaction
-  steps:
-     - checkout
-     - run: docker build -t cyber4all/db-interactor:$CIRCLE_BRANCH -t cyber4all/db-interactor:latest -f "db-interactor/Dockerfile" .
- build-lo-suggestion:
-   machine: true
-   working_directory: ~/database-interaction
-   steps:
-     - checkout
-     - run: docker build -t cyber4all/lo-suggestion:$CIRCLE_BRANCH -t cyber4all/lo-suggestion:latest -f "lo-suggestion/Dockerfile" .
+    steps:
+      - checkout
 
- setup-test:
-  machine: true
-  working_directory: ~/database-interaction
-  steps:
-     - checkout
-     # start local database via Docker image
-     - run: docker run -d -p 27017:27017 mongo
-     # initialize database
-     - run: node dist/db-setup/db-init.script.js
-     - run: node dist/test/setup.script.js
-     # start microservices
-     - run: docker run -d -p 27016:27016 cyber4all/db-interactor:$CIRCLE_BRANCH
-     - run: docker run -d -p 27015:27015 cyber4all/lo-suggestion:$CIRCLE_BRANCH
+      #
+      # BUILD
+      #
 
- test-db-interactor:
-   machine: true
-   working_directory: ~/database-interaction
-   steps:
-     - checkout
-     - run: node dist/test/db-interactor
- test-lo-suggestion:
-   machine: true
-   working_directory: ~/database-interaction
-   steps:
-     - checkout
-     - run: node dist/test/lo-suggestion
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "package.json" }}
+          # fallback to using the latest cache if no exact match is found
+          - v1-dependencies-
+      - run: npm install
+      - save_cache:
+          paths:
+            - node_modules
+          key: v1-dependencies-{{ checksum "package.json" }}
+      
+      # build docker images
+      - run: docker build -t cyber4all/db-interactor:$CIRCLE_BRANCH -t cyber4all/db-interactor:latest -f "db-interactor/Dockerfile" .
+      - run: docker build -t cyber4all/lo-suggestion:$CIRCLE_BRANCH -t cyber4all/lo-suggestion:latest -f "lo-suggestion/Dockerfile" .
 
- push-db-interactor:
-   machine: true
-   steps:
-     # deploy images to Docker Hub
-     # TODO: set CI env variables with secinj account creds
-     # TODO: what is $CIRCLE_BRANCH? version?
-     - run: |
-         docker login -u $DOCKER_USER -p $DOCKER_PASS
-         docker push cyber4all/db-interactor:$CIRCLE_BRANCH
-         docker push cyber4all/db-interactor:latest
-         # second push should be fast because repo already has all layers
- push-lo-suggestion:
-   machine: true
-   steps:
-     # deploy images to Docker Hub
-     - run: |
-         docker login -u $DOCKER_USER -p $DOCKER_PASS
-         docker push cyber4all/lo-suggestion:$CIRCLE_BRANCH
-         docker push cyber4all/lo-suggestion:latest
-         # second push should be fast because repo already has all layers
+      #
+      # TEST
+      #
 
- deploy-db-interactor:
-   machine: true
-   steps:
-     # set up ssh key file
-     - run: echo "$PEM_CONTENTS" > database-interaction.pem
-     - run: chmod 600 database-interaction.pem
+      # start local database via Docker image
+      - run: docker run -d -p 27017:27017 mongo
+      # initialize database
+      - run: node dist/db-setup/db-init.script.js
+      - run: node dist/test/setup.script.js
+      # start microservices
+      - run: docker run -d -p 27016:27016 cyber4all/db-interactor:$CIRCLE_BRANCH
+      - run: docker run -d -p 27015:27015 cyber4all/lo-suggestion:$CIRCLE_BRANCH
+      # run tests
+      # TODO: circleci has some sort of test association
+      - run: node dist/test/db-interactor
+      - run: node dist/test/lo-suggestion
 
-     # ssh into AWS instance and run necessary reboot commands
-     - run: |
-        ssh -i database-interaction.pem ec2-user@ec2-52-206-44-129.compute-1.amazonaws.com \
-        "
+      #
+      # DEPLOY
+      #
+
+      docker login -u $DOCKER_USER -p $DOCKER_PASS
+      # TODO: set CI env variables with secinj account creds
+      # TODO: what is $CIRCLE_BRANCH? version?
+      # push images to DockerHub
+      docker push cyber4all/db-interactor:$CIRCLE_BRANCH
+      docker push cyber4all/db-interactor:latest
+      # second push should be fast because repo already has all layers
+      docker push cyber4all/lo-suggestion:$CIRCLE_BRANCH
+      docker push cyber4all/lo-suggestion:latest
+      # second push should be fast because repo already has all layers
+
+      # set up ssh key file
+      - run: echo "$PEM_CONTENTS" > database-interaction.pem
+      - run: chmod 600 database-interaction.pem
+      # ssh into AWS instances and run necessary reboot commands
+      - run: |
+          ssh -i database-interaction.pem ec2-user@ec2-52-206-44-129.compute-1.amazonaws.com \
+          "
             echo 'Pulling updated image from Docker Hub:';
             docker pull cyber4all/db-interactor:latest;
             echo 'Stopping old service:';
             docker stop \$(docker ps -a -q --filter ancestor=cyber4all/db-interactor:latest --format='{{.ID}}');
             echo 'Starting new service:'
             docker run -d -p 27016:27016 -e CLARK_DB_URI='$CLARK_DB_URI' cyber4all/db-interactor:latest;
-        "
-     # delete ssh key file (totally unnecessary but a good reminder it's not quite safe)
-     - run: rm database-interaction.pem
- deploy-lo-suggestion:
-   machine: true
-   steps:
-     # set up ssh key file
-     - run: echo "$PEM_CONTENTS" > database-interaction.pem
-     - run: chmod 600 database-interaction.pem
-
-     # ssh into AWS instance and run necessary reboot commands
-     - run: |
-        ssh -i database-interaction.pem ec2-user@ec2-54-92-208-221.compute-1.amazonaws.com \
-        "
+          "
+      - run: |
+          ssh -i database-interaction.pem ec2-user@ec2-54-92-208-221.compute-1.amazonaws.com \
+          "
             echo 'Pulling updated image from Docker Hub:';
             docker pull cyber4all/lo-suggestion:latest;
             echo 'Stopping old service:';
             docker stop \$(docker ps -a -q --filter ancestor=cyber4all/lo-suggestion:latest --format='{{.ID}}');
             echo 'Starting new service:'
             docker run -d -p 27015:27015 -e CLARK_DB_URI='$CLARK_DB_URI' cyber4all/lo-suggestion:latest;
-        "
-     # delete ssh key file (totally unnecessary but a good reminder it's not quite safe)
-     - run: rm database-interaction.pem
+          "
+      # delete ssh key file (totally unnecessary but a good reminder it's not quite safe)
+      - run: rm database-interaction.pem
 
-
-
-workflows:
-  version: 2
-  on_commit:
-    jobs:
-      - setup
-      - build-db-interactor:
-          requires:
-            - setup
-      - build-lo-suggestion:
-          requires:
-            - setup
-      - setup-test:
-          requires:
-            - build-db-interactor
-            - build-lo-suggestion
-      - test-db-interactor:
-          requires:
-            - setup-test
-      - test-db-interactor:
-          requires:
-            - setup-test
-      - push-db-interactor:
-          requires:
-            - test-db-interactor
-            - test-lo-suggestion
-      - push-lo-suggestion:
-          requires:
-            - test-db-interactor
-            - test-lo-suggestion
-      - deploy-db-interactor:
-          requires:
-            - push-db-interactor
-            - push-lo-suggestion
-      - deploy-lo-suggestion:
-          requires:
-            - push-db-interactor
-            - push-lo-suggestion
