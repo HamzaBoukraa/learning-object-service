@@ -18,8 +18,6 @@ jobs:
 
     steps:
       #- setup_remote_docker # for docker executor only
-      #- run: npm install npm@latest -g
-      #- run: npm install -g n; n stable
       - checkout
       # Throw in the other required packages
       - run: git clone https://github.com/Cyber4All/taxonomy.git
@@ -30,11 +28,11 @@ jobs:
       #
 
       # Download and cache dependencies
-      #- restore_cache:
-      #    keys:
-      #    - v1-dependencies-{{ checksum "package.json" }}
-      #    # fallback to using the latest cache if no exact match is found
-      #    - v1-dependencies-
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "package.json" }}
+          # fallback to using the latest cache if no exact match is found
+          - v1-dependencies-
       - run: npm install
       - save_cache:
           paths:
@@ -68,8 +66,7 @@ jobs:
       # DEPLOY
       #
 
-      - run: docker login -u $DOCKER_USER -p $DOCKER_PASS
-      # TODO: set CI env variables with secinj account creds
+      - run: echo $DOCKER_PASS | docker login --username $DOCKER_USER --password-stdin
       # push images to DockerHub
       - run: docker push cyber4all/db-interactor:$VERSION_NUM.$CIRCLE_BUILD_NUM
       - run: docker push cyber4all/db-interactor:latest
