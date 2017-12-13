@@ -1,6 +1,8 @@
 # Javascript Node CircleCI 2.0 configuration file
 #
-# Do everything in the one machine (FOR DUBUG)
+# Do everything in the one machine for now, because it works
+# TODO: split build into build, test, deploy (if possible)
+# TODO: splinter further into distributable tasks, with workflow (if possible)
 #
 version: 2
 jobs:

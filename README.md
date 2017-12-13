@@ -42,7 +42,10 @@ Name|Default|Description
   - **The test will destroy all data currently stored in the database.**
   - Do **NOT** run the test on the production database!
 
-## Docker (requires docker installation)
+## Deployment
+Deployment is automatic via Circle CI when changes are pushed to the remote repository's master branch. See the `.circleci/config.yml` file for workflow.
+
+## Docker (requires docker installation) (should not be necessary, if CI works)
 - Build a docker image: `npm run build:docker <process>`
 - Tag a docker image for publishing: `docker tag <process> <user>/<repo>:<process>`
 - Publish a docker image: `docker push <user>/<repo>:<process>`
