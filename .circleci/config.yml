@@ -34,6 +34,10 @@ jobs:
           paths:
             - node_modules
           key: v1-dependencies-{{ checksum "package.json" }}
+      # Throw in the other required packages
+      - run: git clone https://github.com/Cyber4All/taxonomy.git
+      - run: git clone https://github.com/Cyber4All/entity.git
+      # Transpile to typescript
       - run: npm run build
       
       # build docker images
