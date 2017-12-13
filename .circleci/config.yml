@@ -59,15 +59,15 @@ jobs:
       # DEPLOY
       #
 
-      docker login -u $DOCKER_USER -p $DOCKER_PASS
+      -run: docker login -u $DOCKER_USER -p $DOCKER_PASS
       # TODO: set CI env variables with secinj account creds
       # TODO: what is $CIRCLE_BRANCH? version?
       # push images to DockerHub
-      docker push cyber4all/db-interactor:$CIRCLE_BRANCH
-      docker push cyber4all/db-interactor:latest
+      -run: docker push cyber4all/db-interactor:$CIRCLE_BRANCH
+      -run: docker push cyber4all/db-interactor:latest
       # second push should be fast because repo already has all layers
-      docker push cyber4all/lo-suggestion:$CIRCLE_BRANCH
-      docker push cyber4all/lo-suggestion:latest
+      -run: docker push cyber4all/lo-suggestion:$CIRCLE_BRANCH
+      -run: docker push cyber4all/lo-suggestion:latest
       # second push should be fast because repo already has all layers
 
       # set up ssh key file
