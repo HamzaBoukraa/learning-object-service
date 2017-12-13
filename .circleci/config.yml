@@ -66,9 +66,11 @@ jobs:
       # DEPLOY
       #
 
-      # - run: echo $DOCKER_PASS | docker login --username $DOCKER_USER --password-stdin
+      - run: echo "$DOCKER_USER"
+      - run: echo "$DOCKER_PASS"
+
       - run: |
-          docker login -u $DOCKER_USER -p $DOCKER_PASS
+          echo $DOCKER_PASS | docker login --username $DOCKER_USER --password-stdin
           docker push cyber4all/db-interactor:$VERSION_NUM.$CIRCLE_BUILD_NUM
           docker push cyber4all/db-interactor:latest
           docker push cyber4all/lo-suggestion:$VERSION_NUM.$CIRCLE_BUILD_NUM
