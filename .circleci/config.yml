@@ -77,23 +77,28 @@ jobs:
       - run: echo -e "$PEM_CONTENTS" > database-interaction.pem
       - run: chmod 600 database-interaction.pem
       # ssh into AWS instances and run necessary reboot commands
+      # FIXME: we ought to pull new image BEFORE stopping current service to minimize downtime
+      #        unfortunately Docker is smart enough to rename the old image which is still in use...
+      #        so the running process's ancestor is no longer predictable
+      #       Presumably you can get image id for our tag, then pull new image, then stop container whose ancestor has the image id
+      #        I leave it as an exercise to my successor...
       - run: |
           ssh -i database-interaction.pem ec2-user@ec2-52-206-44-129.compute-1.amazonaws.com \
           "
-            echo 'Pulling updated image from Docker Hub:';
-            docker pull cyber4all/db-interactor:latest;
             echo 'Stopping old service:';
             docker stop \$(docker ps -a -q --filter ancestor=cyber4all/db-interactor:latest --format='{{.ID}}');
+            echo 'Pulling updated image from Docker Hub:';
+            docker pull cyber4all/db-interactor:latest;
             echo 'Starting new service:'
             docker run -d -p 27016:27016 -e CLARK_DB_URI='$ATLAS_URI' cyber4all/db-interactor:latest;
           "
       - run: |
           ssh -i database-interaction.pem ec2-user@ec2-54-92-208-221.compute-1.amazonaws.com \
           "
-            echo 'Pulling updated image from Docker Hub:';
-            docker pull cyber4all/lo-suggestion:latest;
             echo 'Stopping old service:';
             docker stop \$(docker ps -a -q --filter ancestor=cyber4all/lo-suggestion:latest --format='{{.ID}}');
+            echo 'Pulling updated image from Docker Hub:';
+            docker pull cyber4all/lo-suggestion:latest;
             echo 'Starting new service:'
             docker run -d -p 27015:27015 -e CLARK_DB_URI='$ATLAS_URI' cyber4all/lo-suggestion:latest;
           "
