@@ -66,14 +66,13 @@ jobs:
       # DEPLOY
       #
 
-      - run: echo $DOCKER_PASS | docker login --username $DOCKER_USER --password-stdin
-      # push images to DockerHub
-      - run: docker push cyber4all/db-interactor:$VERSION_NUM.$CIRCLE_BUILD_NUM
-      - run: docker push cyber4all/db-interactor:latest
-      # second push should be fast because repo already has all layers
-      - run: docker push cyber4all/lo-suggestion:$VERSION_NUM.$CIRCLE_BUILD_NUM
-      - run: docker push cyber4all/lo-suggestion:latest
-      # second push should be fast because repo already has all layers
+      # - run: echo $DOCKER_PASS | docker login --username $DOCKER_USER --password-stdin
+      - run: |
+          docker login -u $DOCKER_USER -p $DOCKER_PASS
+          docker push cyber4all/db-interactor:$VERSION_NUM.$CIRCLE_BUILD_NUM
+          docker push cyber4all/db-interactor:latest
+          docker push cyber4all/lo-suggestion:$VERSION_NUM.$CIRCLE_BUILD_NUM
+          docker push cyber4all/lo-suggestion:latest
 
       # set up ssh key file
       - run: echo "$PEM_CONTENTS" > database-interaction.pem
