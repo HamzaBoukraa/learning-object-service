@@ -36,9 +36,8 @@ jobs:
           key: v1-dependencies-{{ checksum "package.json" }}
       
       # build docker images
-      - run: echo $CIRCLE_BUILD_NUM
-      - run: docker build -t cyber4all/db-interactor:$VERSION_NUM -t cyber4all/db-interactor:latest -f "db-interactor/Dockerfile" .
-      - run: docker build -t cyber4all/lo-suggestion:$VERSION_NUM -t cyber4all/lo-suggestion:latest -f "lo-suggestion/Dockerfile" .
+      - run: docker build -t cyber4all/db-interactor:$VERSION_NUM.$CIRCLE_BUILD_NUM -t cyber4all/db-interactor:latest -f "db-interactor/Dockerfile" .
+      - run: docker build -t cyber4all/lo-suggestion:$VERSION_NUM.$CIRCLE_BUILD_NUM -t cyber4all/lo-suggestion:latest -f "lo-suggestion/Dockerfile" .
 
       #
       # TEST
@@ -64,10 +63,10 @@ jobs:
       - run: docker login -u $DOCKER_USER -p $DOCKER_PASS
       # TODO: set CI env variables with secinj account creds
       # push images to DockerHub
-      - run: docker push cyber4all/db-interactor:$VERSION_NUM
+      - run: docker push cyber4all/db-interactor:$VERSION_NUM.$CIRCLE_BUILD_NUM
       - run: docker push cyber4all/db-interactor:latest
       # second push should be fast because repo already has all layers
-      - run: docker push cyber4all/lo-suggestion:$VERSION_NUM
+      - run: docker push cyber4all/lo-suggestion:$VERSION_NUM.$CIRCLE_BUILD_NUM
       - run: docker push cyber4all/lo-suggestion:latest
       # second push should be fast because repo already has all layers
 
