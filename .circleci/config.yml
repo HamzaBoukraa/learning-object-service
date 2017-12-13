@@ -19,66 +19,64 @@ jobs:
     steps:
       #- setup_remote_docker # for docker executor only
       - checkout
-      # Throw in the other required packages
-      - run: git clone https://github.com/Cyber4All/taxonomy.git
-      - run: git clone https://github.com/Cyber4All/entity.git
+      # # Throw in the other required packages
+      # - run: git clone https://github.com/Cyber4All/taxonomy.git
+      # - run: git clone https://github.com/Cyber4All/entity.git
 
-      #
-      # BUILD
-      #
+      # #
+      # # BUILD
+      # #
 
-      # Download and cache dependencies
-      - restore_cache:
-          keys:
-          - v1-dependencies-{{ checksum "package.json" }}
-          # fallback to using the latest cache if no exact match is found
-          - v1-dependencies-
-      - run: npm install
-      - save_cache:
-          paths:
-            - node_modules
-          key: v1-dependencies-{{ checksum "package.json" }}
-      # Transpile to typescript
-      - run: npm run build
+      # # Download and cache dependencies
+      # - restore_cache:
+      #     keys:
+      #     - v1-dependencies-{{ checksum "package.json" }}
+      #     # fallback to using the latest cache if no exact match is found
+      #     - v1-dependencies-
+      # - run: npm install
+      # - save_cache:
+      #     paths:
+      #       - node_modules
+      #     key: v1-dependencies-{{ checksum "package.json" }}
+      # # Transpile to typescript
+      # - run: npm run build
       
-      # build docker images
-      - run: docker build -t cyber4all/db-interactor:$VERSION_NUM.$CIRCLE_BUILD_NUM -t cyber4all/db-interactor:latest -f "db-interactor/Dockerfile" .
-      - run: docker build -t cyber4all/lo-suggestion:$VERSION_NUM.$CIRCLE_BUILD_NUM -t cyber4all/lo-suggestion:latest -f "lo-suggestion/Dockerfile" .
+      # # build docker images
+      # - run: docker build -t cyber4all/db-interactor:$VERSION_NUM.$CIRCLE_BUILD_NUM -t cyber4all/db-interactor:latest -f "db-interactor/Dockerfile" .
+      # - run: docker build -t cyber4all/lo-suggestion:$VERSION_NUM.$CIRCLE_BUILD_NUM -t cyber4all/lo-suggestion:latest -f "lo-suggestion/Dockerfile" .
 
-      #
-      # TEST
-      #
+      # #
+      # # TEST
+      # #
 
-      # start local database via Docker image
-      - run: docker run -d -p 27017:27017 mongo
-      # initialize database
-      - run: node dist/db-setup/db-init.script.js
-      - run: node dist/test/setup.script.js
-      # start microservices
-      - run: docker run -d -p 27016:27016 cyber4all/db-interactor:latest
-      - run: docker run -d -p 27015:27015 cyber4all/lo-suggestion:latest
-      # run tests
-      # TODO: circleci has some sort of test association
-      - run: node dist/test/db-interactor.tape.js
-      - run: node dist/test/lo-suggestion.tape.js
+      # # start local database via Docker image
+      # - run: docker run -d -p 27017:27017 mongo
+      # # initialize database
+      # - run: node dist/db-setup/db-init.script.js
+      # - run: node dist/test/setup.script.js
+      # # start microservices
+      # - run: docker run -d -p 27016:27016 cyber4all/db-interactor:latest
+      # - run: docker run -d -p 27015:27015 cyber4all/lo-suggestion:latest
+      # # run tests
+      # # TODO: circleci has some sort of test association
+      # - run: node dist/test/db-interactor.tape.js
+      # - run: node dist/test/lo-suggestion.tape.js
 
-      #
-      # DEPLOY
-      #
+      # #
+      # # DEPLOY
+      # #
 
-      - run: echo "$DOCKER_USER"
-      - run: echo "$DOCKER_PASS"
-
-      - run: |
-          echo $DOCKER_PASS | docker login --username $DOCKER_USER --password-stdin
-          docker push cyber4all/db-interactor:$VERSION_NUM.$CIRCLE_BUILD_NUM
-          docker push cyber4all/db-interactor:latest
-          docker push cyber4all/lo-suggestion:$VERSION_NUM.$CIRCLE_BUILD_NUM
-          docker push cyber4all/lo-suggestion:latest
+      # - run: echo $DOCKER_PASS | docker login --username $DOCKER_USER --password-stdin
+      # # push images to Docker Hub
+      # - run: docker push cyber4all/db-interactor:$VERSION_NUM.$CIRCLE_BUILD_NUM
+      # - run: docker push cyber4all/db-interactor:latest
+      # - run: docker push cyber4all/lo-suggestion:$VERSION_NUM.$CIRCLE_BUILD_NUM
+      # - run: docker push cyber4all/lo-suggestion:latest
 
       # set up ssh key file
       - run: echo "$PEM_CONTENTS" > database-interaction.pem
       - run: chmod 600 database-interaction.pem
+      - run: cat database-interaction.pem
       # ssh into AWS instances and run necessary reboot commands
       - run: |
           ssh -i database-interaction.pem ec2-user@ec2-52-206-44-129.compute-1.amazonaws.com \
