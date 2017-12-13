@@ -16,6 +16,7 @@ jobs:
     working_directory: ~/repo
 
     steps:
+      - setup_remote_docker
       - checkout
 
       #
@@ -35,8 +36,8 @@ jobs:
           key: v1-dependencies-{{ checksum "package.json" }}
       
       # build docker images
-      - run: docker build -t cyber4all/db-interactor:$CIRCLE_BRANCH -t cyber4all/db-interactor:latest -f "db-interactor/Dockerfile" .
-      - run: docker build -t cyber4all/lo-suggestion:$CIRCLE_BRANCH -t cyber4all/lo-suggestion:latest -f "lo-suggestion/Dockerfile" .
+      - run: docker build -t cyber4all/db-interactor:$VERSION_NUM -t cyber4all/db-interactor:latest -f "db-interactor/Dockerfile" .
+      - run: docker build -t cyber4all/lo-suggestion:$VERSION_NUM -t cyber4all/lo-suggestion:latest -f "lo-suggestion/Dockerfile" .
 
       #
       # TEST
@@ -48,8 +49,8 @@ jobs:
       - run: node dist/db-setup/db-init.script.js
       - run: node dist/test/setup.script.js
       # start microservices
-      - run: docker run -d -p 27016:27016 cyber4all/db-interactor:$CIRCLE_BRANCH
-      - run: docker run -d -p 27015:27015 cyber4all/lo-suggestion:$CIRCLE_BRANCH
+      - run: docker run -d -p 27016:27016 cyber4all/db-interactor:latest
+      - run: docker run -d -p 27015:27015 cyber4all/lo-suggestion:latest
       # run tests
       # TODO: circleci has some sort of test association
       - run: node dist/test/db-interactor
@@ -61,12 +62,11 @@ jobs:
 
       - run: docker login -u $DOCKER_USER -p $DOCKER_PASS
       # TODO: set CI env variables with secinj account creds
-      # TODO: what is $CIRCLE_BRANCH? version?
       # push images to DockerHub
-      - run: docker push cyber4all/db-interactor:$CIRCLE_BRANCH
+      - run: docker push cyber4all/db-interactor:$VERSION_NUM
       - run: docker push cyber4all/db-interactor:latest
       # second push should be fast because repo already has all layers
-      - run: docker push cyber4all/lo-suggestion:$CIRCLE_BRANCH
+      - run: docker push cyber4all/lo-suggestion:$VERSION_NUM
       - run: docker push cyber4all/lo-suggestion:latest
       # second push should be fast because repo already has all layers
 
