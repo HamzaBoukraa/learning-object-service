@@ -74,12 +74,8 @@ jobs:
       # - run: docker push cyber4all/lo-suggestion:latest
 
       # set up ssh key file
-      - run: echo "$PEM_CONTENTS" > database-interaction.pem
+      - run: echo -e "$PEM_CONTENTS" > database-interaction.pem
       - run: chmod 600 database-interaction.pem
-      - run: echo $PEM_CONTENTS
-      - run: echo "$PEM_CONTENTS"
-      - run: echo -e $PEM_CONTENTS
-      - run: echo -e "$PEM_CONTENTS"
       - run: cat database-interaction.pem
       # ssh into AWS instances and run necessary reboot commands
       - run: |
