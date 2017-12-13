@@ -36,6 +36,7 @@ jobs:
           key: v1-dependencies-{{ checksum "package.json" }}
       
       # build docker images
+      - run: echo $CIRCLE_BUILD_NUM
       - run: docker build -t cyber4all/db-interactor:$VERSION_NUM -t cyber4all/db-interactor:latest -f "db-interactor/Dockerfile" .
       - run: docker build -t cyber4all/lo-suggestion:$VERSION_NUM -t cyber4all/lo-suggestion:latest -f "lo-suggestion/Dockerfile" .
 
