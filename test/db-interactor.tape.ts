@@ -184,6 +184,34 @@ test('loadLearningObject', async (t) => {
 
 
 
+test('readLearningObject', async (t) => {
+    let uid = await request('findUser', { userid: 'ned' });
+
+    let baduser = await request('readLearningObject', { author: uid + 'womp', name: 'Hand of the King' });
+
+    t.ok(baduser.error, `- There is an error when author is wrong`);
+
+    let badname = await request('readLearningObject', { author: uid, name: 'King of the Andals' });
+
+    t.ok(badname.error, `- There is an error when name is wrong`);
+
+    let objectstring = await request('readLearningObject', { author: uid, name: 'Hand of the King' });
+
+    t.notok(objectstring.error, `- No error when author and name are valid`);
+
+    let object = LearningObject.unserialize(objectstring, null);
+
+    t.equal(object.name, 'Hand of the King', `- Reconstruction from database gives correct name`);
+    t.equal(object.goals.length, 2, `- Reconstruction from database gives correct number of goals`);
+    t.equal(object.goals[1].text, `Keep the King from embarrassing himself`, `- Reconstruction from database gives the correct goals`);
+    t.equal(object.outcomes.length, 3, `- Reconstruction from database gives correct number of outcomes`);
+    t.equal(object.outcomes[2].text, `Advise the King`, `- Reconstruction from database gives the correct outcomes`);
+
+    t.end();
+});
+
+
+
 
 test('addUser', async (t) => {
     let baduserID = await request('addUser', {
@@ -434,7 +462,7 @@ test('updateLearningObject', async (t) => {
 
 
 
-test('reorderObject', async(t) => {
+test('reorderObject', async (t) => {
     // verify we CAN'T reorder things we oughtn't
     let testuid = await request('findUser', { userid: 'ned' });
     let testobid = await request('findLearningObject', { author: testuid, name: 'Hand of the King' });

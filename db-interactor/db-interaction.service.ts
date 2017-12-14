@@ -98,6 +98,22 @@ db.connect(process.env.CLARK_DB_URI)
                 .catch((err) => { res.json({ error: err }); });
         });
 
+        server.post('/readLearningObject', (req, res) => {
+            let author = req.body.author;
+            let name = req.body.name;
+
+            db.findLearningObject(author, name)
+                .then((id) => {
+                    glue.loadLearningObject(id)
+                    .then((object) => {
+                        let msg = LearningObject.serialize(object);
+                        res.json(msg);
+                    })
+                    .catch((err) => { res.json({ error: err }); });
+                })
+                .catch((err) => { res.json({ error: err }); });
+        });
+
         server.post('/addUser', (req, res) => {
             let user = User.unserialize(req.body.user);
             glue.addUser(user)
