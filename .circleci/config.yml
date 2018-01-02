@@ -58,7 +58,8 @@ jobs:
       - run: node dist/test/setup.script.js
       # start microservices
       - run: docker run -d -p 27016:27016 cyber4all/db-interactor:latest
-      - run: docker run -d -p 27015:27015 cyber4all/lo-suggestion:latest
+      - run: docker run -d -p 27015:27015 -p 27014:27014 cyber4all/lo-suggestion:latest
+      # TODO: port 27014 is only temporarily required
       # run tests
       # TODO: circleci has some sort of test association
       - run: node dist/test/db-interactor.tape.js
