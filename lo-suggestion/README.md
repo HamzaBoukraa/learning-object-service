@@ -9,6 +9,35 @@ var uri = "http://"+process.env["CLARK_LO_SUGGESTION_IP"]+":"+process.env["CLARK
 var client = require('socket.io-client')(uri);
 ```
 
+## (temporary) POST request API
+
+### `/suggestOutcomes`
+Request | []() | []()
+---|---|---
+`text`|`string`|the text argument
+`filter`|`{[prop:string]:string}`|object with string values to filter on
+
+Response| []() | []()
+---|---|---
+[]()|`OutcomeSuggestion[]`|an array of outcome suggestion documents
+`error`|`string`|exists only if an error occurred
+
+### `/authenticate`
+Request | []() | []()
+---|---|---
+`text`|`string`|the text argument
+`filter`|`{[prop:string]:string}`|object with string values to filter on
+
+Response| []() | []()
+---|---|---
+[]()|`LearningObject[]*`|an array of outcome suggestion documents
+`error`|`string`|exists only if an error occurred
+
+`*` The array consists of serialized `LearningObject`s. Unserialize with the `map` function:
+```javascript
+let objects: LearningObject[] = response.body.map((a:string)=>{return LearningObject.unserialize(a,null)});
+```
+
 ## Event API
 
 #### fetchAllObjects
@@ -16,10 +45,10 @@ var client = require('socket.io-client')(uri);
 
 Name | Type | Description
 ---|---|---
-`objects`|'string[]`|an array of serialized learning objects
+`objects`|`LearningObject[]*`|an array of serialized learning objects
 `err`|`string`|an error message, or null if everything worked
 
-Unserialize `objects` with map function:
+`*` Unserialize `objects` with map function:
 ```javascript
 objects = objects.map((a)=>{return LearningObject.unserialize(a,null)});
 ```
