@@ -99,6 +99,22 @@ Response| []() | []()
 #### Errors
 - If `id` is not an object database id. Perhaps it was deleted by another request?
 
+### `/readLearningObject`
+Request | []() | []()
+---|---|---
+`author`||object author's unique database id
+`name`|`string`|learning object's name
+
+Response| []() | []()
+---|---|---
+[]()|`LearningObject*`|learning object entity, completely loaded
+`error`|`string`|exists only if an error occurred
+
+#### Errors
+- If the `author`-`name` pair is invalid.
+
+NOTE: The 'intended' flow is to get the id via `findLearningObject`, then use that id to `loadLearningObject`. This route is provided for convenience, but note that you _will not have the id afterwards_, meaning you won't be able to update or delete it (unless you use `findLearningObject` after all...).
+
 ### `/addUser`
 Request | []() | []()
 ---|---|---

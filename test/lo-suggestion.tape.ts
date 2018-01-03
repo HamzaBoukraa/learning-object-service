@@ -2,6 +2,7 @@
 require('../useme');
 
 import * as test from 'tape';
+import * as rp from 'request-promise';
 
 import { LearningObject, OutcomeSuggestion } from '../entity/entities';
 
@@ -36,7 +37,15 @@ async function fetchAllObjects(): Promise<string[]> {
         });
         setTimeout(() => { reject('No response from lo-suggestion service.'); }, 2000);
     });
+}
 
+async function request(event: string, params: {}): Promise<any> {
+    return rp({
+        method: 'POST',
+        uri: 'http://localhost:27014/' + event,
+        body: params,
+        json: true,
+    });
 }
 
 
@@ -71,6 +80,35 @@ test('fetch all objects', async (t) => {
     try {
         client.open();
         let raw_objects = await fetchAllObjects();
+        let l = raw_objects.length; // depending on where this test falls in others, length may change
+
+        t.assert(Math.abs(l - 7) <= 1, 'Received roughly the correct number of objects');
+        t.ok(LearningObject.unserialize(raw_objects[0], null), 'Results look like learning objects');
+    } catch (e) {
+        t.fail('Error thrown: ' + e);
+    } finally {
+        client.close();
+        t.end();
+    }
+});
+
+
+/*
+ * TODO: below test simply verifies existence of http service; nothing fancy
+ *  when http vs websocket decision is made, simply adapt/refine above tests
+ *  delete this one
+ */
+test('check http service', async (t) => {
+    try {
+        let outcomes = await request('suggestOutcomes', { text: 'risk management', filter: {} });
+        if (outcomes.length > 0) {
+            let x = outcomes[0];
+            t.ok(x.id && x.author && x.date && x.name && x.outcome, 'Results look like outcome suggestions');
+        } else {
+            t.skip('Can\'t verify shape of results.');
+        }
+
+        let raw_objects = await request('fetchAllObjects', {});
         let l = raw_objects.length; // depending on where this test falls in others, length may change
 
         t.assert(Math.abs(l - 7) <= 1, 'Received roughly the correct number of objects');
