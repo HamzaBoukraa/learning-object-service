@@ -24,6 +24,7 @@ import {
     StandardOutcome,
     LearningOutcome,
 } from '../entity/entities';
+import { Outcome } from '../entity/outcome';
 
 /*
  * TODO: catch errors gracefully, preferably with logging!
@@ -136,6 +137,16 @@ db.connect(process.env.CLARK_DB_URI)
             glue.addLearningObject(author, object)
                 .then((id) => { res.json(id); })
                 .catch((err) => { res.json({ error: err }); });
+        });
+
+        server.post('/addLearningOutcomes', (req, res) => {
+            let learningObjectID = req.body.LearningObjectID;
+            let outcomes = <Array<any>>req.body.outcomes;
+
+            res.json(Promise.all(outcomes.map((outcome) => {
+                return glue.addLearningOutcome(learningObjectID, outcome);
+            })));
+
         });
 
         server.post('/editUser', (req, res) => {
