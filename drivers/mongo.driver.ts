@@ -337,6 +337,24 @@ export class MongoDriver implements DBInterface {
     ///////////////////////////
 
     /**
+     * Check if an email is registered to a user in the database.
+     *
+     * @param {string} email the user's email
+     *
+     * @returns {boolean} true iff userid/pwd pair is valid
+     */
+    emailRegistered = async function (email: string): Promise<boolean> {
+        try {
+            let doc = await _db.collection(collectionFor(UserSchema))
+                .findOne<UserRecord>({ email: email });
+            if (!doc) return Promise.resolve(false);
+            return Promise.resolve(true);
+        } catch (e) {
+            return Promise.reject(e);
+        }
+    };
+
+    /**
      * Look up a user by its login id.
      * @async
      *
