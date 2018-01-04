@@ -106,11 +106,11 @@ db.connect(process.env.CLARK_DB_URI)
             db.findLearningObject(author, name)
                 .then((id) => {
                     glue.loadLearningObject(id)
-                    .then((object) => {
-                        let msg = LearningObject.serialize(object);
-                        res.json(msg);
-                    })
-                    .catch((err) => { res.json({ error: err }); });
+                        .then((object) => {
+                            let msg = LearningObject.serialize(object);
+                            res.json(msg);
+                        })
+                        .catch((err) => { res.json({ error: err }); });
                 })
                 .catch((err) => { res.json({ error: err }); });
         });
@@ -129,16 +129,6 @@ db.connect(process.env.CLARK_DB_URI)
             glue.addLearningObject(author, object)
                 .then((id) => { res.json(id); })
                 .catch((err) => { res.json({ error: err }); });
-        });
-
-        server.post('/addLearningOutcomes', (req, res) => {
-            let learningObjectID = req.body.LearningObjectID;
-            let outcomes = <Array<any>>req.body.outcomes;
-
-            res.json(Promise.all(outcomes.map((outcome) => {
-                return glue.addLearningOutcome(learningObjectID, outcome);
-            })));
-
         });
 
         server.post('/editUser', (req, res) => {

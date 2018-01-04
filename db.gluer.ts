@@ -252,7 +252,7 @@ export class DBGluer {
      * @returns {LearningObjectID} the database id of the new record
      */
     addLearningObject = async function (author: UserID, object: LearningObject): Promise<LearningObjectID> {
-        return await this.db.insertLearningObject({
+        let learningObjectID = await this.db.insertLearningObject({
             author: author,
             name_: object.name,
             date: object.date,
@@ -261,6 +261,13 @@ export class DBGluer {
             outcomes: [],
             repository: object.repository,
         });
+
+
+        await Promise.all(object.outcomes.map((outcome) => {
+            return this.addLearningOutcome(learningObjectID, outcome);
+        }));
+
+        return learningObjectID;
     };
 
     /**
