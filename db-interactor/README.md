@@ -28,6 +28,16 @@ Response| []() | []()
 #### Errors
 - If `userid` is invalid. This allows distinction between a wrong `userid` and a wrong `pwd` by whether or not `body.error` exists.
 
+### `/emailRegistered`
+Request | []() | []()
+---|---|---
+`email`|`string`|email to check
+
+Response| []() | []()
+---|---|---
+[]()|`boolean`|true iff email is registered to a user
+`error`|`string`|exists only if an error occurred
+
 ### `/findUser`
 Request | []() | []()
 ---|---|---

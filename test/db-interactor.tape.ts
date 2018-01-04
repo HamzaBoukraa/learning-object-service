@@ -49,6 +49,21 @@ test('authenticate', async (t) => {
 });
 
 
+test('emailRegistered', async (t) => {
+    let bademail = await request('emailRegistered', { email: 'eddard@got.org' });
+
+    t.notok(bademail.error, `- No error when email is wrong`);
+    t.equals(bademail, false, `- Response is false when email is wrong`);
+
+    let right = await request('emailRegistered', { email: 'ned@got.org' });
+
+    t.notok(right.error, `- No error when email is good`);
+    t.equals(right, true, `- Response is true when email is good`);
+
+    t.end();
+});
+
+
 
 test('findUser', async (t) => {
     t.plan(3);

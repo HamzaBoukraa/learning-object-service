@@ -49,6 +49,14 @@ db.connect(process.env.CLARK_DB_URI)
                 .catch((err) => { res.json({ error: err }); });
         });
 
+        server.post('/emailRegistered', (req, res) => {
+            let email = req.body.email;
+
+            db.emailRegistered(email)
+                .then((registered) => { res.json(registered); })
+                .catch((err) => { res.json({ error: err }); });
+        });
+
         server.post('/findUser', (req, res) => {
             let userid = req.body.userid;
 

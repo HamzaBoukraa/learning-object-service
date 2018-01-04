@@ -31,6 +31,7 @@ export interface DBInterface {
     deleteUser: (id: UserID) => Promise<void>;
     deleteLearningObject: (id: LearningObjectID) => Promise<void>;
     deleteLearningOutcome: (id: LearningOutcomeID) => Promise<void>;
+    emailRegistered: (email: string) => Promise<boolean>;
     findUser: (id: string) => Promise<UserID>;
     findLearningObject: (author: UserID, name: string) => Promise<LearningObjectID>;
     findLearningOutcome: (source: LearningObjectID, tag: number) => Promise<LearningOutcomeID>;
