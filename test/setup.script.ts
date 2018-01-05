@@ -1,6 +1,9 @@
 // tslint:disable-next-line: no-require-imports
 require('../useme');
 
+import { MongoClient } from 'mongodb';
+import { init } from '../db-setup/db-setup.script';
+
 import { DBInterface, HashInterface } from '../interfaces/interfaces';
 import { MongoDriver, BcryptDriver } from '../drivers/drivers';
 import { DBGluer } from '../db.gluer';
@@ -18,7 +21,9 @@ let db: DBInterface = new MongoDriver();
 let hash: HashInterface = new BcryptDriver(10);
 let glue = new DBGluer(db, hash);
 
-db.connect(process.env.CLARK_DB_URI).then(async () => {
+MongoClient.connect(process.env.CLARK_DB_URI)
+.then( (rawdb) => init(rawdb) )
+.then(async () => {
     try {
         // add standard outcomes
         let gotID = await addStandardOutcome(
