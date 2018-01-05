@@ -33,7 +33,6 @@
     "mongodb": "^2.2.31",
     "node-env-file": "^0.1.8",
     "request-promise": "^4.2.2",
-    "socket.io": "^2.0.3",
     "source-map-support": "^0.5.0"
   },
   "devDependencies": {
@@ -43,8 +42,6 @@
     "@types/line-reader": "0.0.28",
     "@types/mongodb": "^2.2.13",
     "@types/request-promise": "^4.1.39",
-    "@types/socket.io": "^1.4.31",
-    "@types/socket.io-client": "^1.4.31",
     "@types/tape": "^4.2.31",
     "tape": "^4.8.0",
     "tslint": "^5.8.0",
