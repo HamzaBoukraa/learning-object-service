@@ -22,11 +22,8 @@ Response| []() | []()
 []()|`OutcomeSuggestion[]`|an array of outcome suggestion documents
 `error`|`string`|exists only if an error occurred
 
-### `/authenticate`
-Request | []() | []()
----|---|---
-`text`|`string`|the text argument
-`filter`|`{[prop:string]:string}`|object with string values to filter on
+### `/fetchAllObjects`
+Request - no parameters
 
 Response| []() | []()
 ---|---|---
