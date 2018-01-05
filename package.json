@@ -8,7 +8,7 @@
     "build:watch": "tsc -p . -w",
     "build:docker": "sh docker_build.sh",
     "localdb": "mongod -f mongod.conf",
-    "db-setup": "node dist/db-setup/db-setup.script.js",
+    "db-setup": "sh db-setup_portal.sh",
     "db-interactor": "node dist/db-interactor/db-interaction.service.js",
     "lo-suggestion": "node dist/lo-suggestion/lo-suggestion.service.js",
     "start": "echo \"Error: no start specified\" && exit 1",
