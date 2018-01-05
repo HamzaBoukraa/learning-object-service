@@ -22,9 +22,18 @@ let hash: HashInterface = new BcryptDriver(10);
 let glue = new DBGluer(db, hash);
 
 MongoClient.connect(process.env.CLARK_DB_URI)
-.then( (rawdb) => init(rawdb) )
+.then( async (rawdb) => {
+    try {
+        await init(rawdb);
+        await rawdb.close();
+        return Promise.resolve();
+    } catch (e) {
+        return Promise.reject(e);
+    }
+})
 .then(async () => {
     try {
+        await db.connect(process.env.CLARK_DB_URI);
         // add standard outcomes
         let gotID = await addStandardOutcome(
             'got.org',
@@ -258,9 +267,13 @@ MongoClient.connect(process.env.CLARK_DB_URI)
 
 
         db.disconnect();
+        return Promise.resolve();
     } catch (e) {
-        console.log('SETUP FAILED: ' + e);
+        return Promise.reject(e);
     }
+})
+.catch( (e) => {
+    console.log('SETUP FAILED: ' + e);
 });
 
 

@@ -57,7 +57,6 @@ jobs:
       # start local database via Docker image
       - run: docker run -d -p 27017:27017 mongo
       # initialize database
-      - run: node dist/db-setup/db-init.script.js
       - run: node dist/test/setup.script.js
       # start microservices
       - run: docker run -d -p 27016:27016 cyber4all/db-interactor:latest

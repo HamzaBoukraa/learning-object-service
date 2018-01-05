@@ -1,6 +1,5 @@
 echo "Initializing database"
 echo "---------------------"
-node dist/db-setup/db-init.script.js
 node dist/test/setup.script.js
 echo ""
 
