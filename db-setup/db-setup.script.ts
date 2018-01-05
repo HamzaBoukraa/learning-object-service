@@ -12,7 +12,7 @@ import { DBInterface, HashInterface } from '../interfaces/interfaces';
 import { MongoDriver, BcryptDriver } from '../drivers/drivers';
 
 import { DBGluer } from '../db.gluer';
-import { StandardOutcome } from '../entity/entities';
+import { StandardOutcome } from 'clark-entity';
 import {
     collections, schemaFor, collectionFor, uniquesFor, textsFor,
 } from '../schema/db.schema';

@@ -9,7 +9,7 @@ import { DBInterface, HashInterface } from '../interfaces/interfaces';
 import { MongoDriver, BcryptDriver } from '../drivers/drivers';
 
 import { DBGluer } from '../db.gluer';
-import { LearningObject, OutcomeSuggestion } from '../entity/entities';
+import { LearningObject, OutcomeSuggestion } from 'clark-entity';
 
 const threshold = parseFloat(process.env.CLARK_LO_SUGGESTION_THRESHOLD);
 

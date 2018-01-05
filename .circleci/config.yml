@@ -21,25 +21,28 @@ jobs:
     steps:
       #- setup_remote_docker # for docker executor only
       - checkout
-      # Throw in the other required packages
-      - run: git clone https://github.com/Cyber4All/taxonomy.git
-      - run: git clone https://github.com/Cyber4All/entity.git
 
       #
       # BUILD
       #
 
       # Download and cache dependencies
-      - restore_cache:
-          keys:
-          - v1-dependencies-{{ checksum "package.json" }}
-          # fallback to using the latest cache if no exact match is found
-          - v1-dependencies-
+
+      # TODO: fix caching
+      #   (start by removing comments from -restore and -save below;
+      #       removing them might've reset it)
+
+      # - restore_cache:
+      #     keys:
+      #     - v1-dependencies-{{ checksum "package.json" }}
+      #     # fallback to using the latest cache if no exact match is found
+      #     - v1-dependencies-
       - run: npm install
-      - save_cache:
-          paths:
-            - node_modules
-          key: v1-dependencies-{{ checksum "package.json" }}
+      # - save_cache:
+      #     paths:
+      #       - node_modules
+      #     key: v1-dependencies-{{ checksum "package.json" }}
+      
       # Transpile to typescript
       - run: npm run build
       

@@ -27,6 +27,7 @@
   "dependencies": {
     "assert-never": "^1.0.0",
     "bcrypt": "^1.0.3",
+    "clark-entity": "^1.0.13",
     "express": "^4.16.2",
     "jsonfile": "^4.0.0",
     "line-reader": "^0.4.0",

@@ -12,7 +12,7 @@ import {
     LearningOutcome,
     AssessmentPlan,
     InstructionalStrategy,
-} from '../entity/entities';
+} from 'clark-entity';
 
 let db: DBInterface = new MongoDriver();
 let hash: HashInterface = new BcryptDriver(10);

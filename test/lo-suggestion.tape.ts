@@ -4,7 +4,7 @@ require('../useme');
 import * as test from 'tape';
 import * as rp from 'request-promise';
 
-import { LearningObject, OutcomeSuggestion } from '../entity/entities';
+import { LearningObject, OutcomeSuggestion } from 'clark-entity';
 
 async function request(event: string, params: {}): Promise<any> {
     return rp({

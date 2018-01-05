@@ -11,7 +11,10 @@ import { UserID } from './user.schema';
 import { LearningOutcomeID } from './learning-outcome.schema';
 
 import { DBID } from './db.schema';
-import { Repository } from '../entity/neutrino';
+
+
+import { Repository } from 'clark-entity';
+
 export type LearningObjectID = DBID;
 
 @collection('objects')
