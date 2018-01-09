@@ -23,7 +23,7 @@ then
     if [ "$HOST" ]
     then # setting up database on private machine
         echo "*** Running setup script (no backup) ***"
-        SKIP_MERGE=1 CLARK_DB_URI="mongodb://$HOST/$DB" node dist/db-setup/db-restart.script.js
+        SKIP_MERGE=1 CLARK_DB_URI="mongodb://$HOST/$DB" node dist/db-setup/db-setup.script.js
     else
         echo "Please prefix script with 'PASS=<atlas-pwd> '"
     fi
@@ -46,9 +46,9 @@ else
     echo "*** Running setup script ***"
     if [ "$HOST" ]
     then # setting up database on private machine
-        CLARK_DB_URI="mongodb://$HOST/$DB" node dist/db-setup/db-restart.script.js
+        CLARK_DB_URI="mongodb://$HOST/$DB" node dist/db-setup/db-setup.script.js
     else
-        CLARK_DB_URI="mongodb://$USER:$PASS@$LIVE/$DB?ssl=true&replicaSet=$REPLICA&authSource=admin" node dist/db-setup/db-restart.script.js
+        CLARK_DB_URI="mongodb://$USER:$PASS@$LIVE/$DB?ssl=true&replicaSet=$REPLICA&authSource=admin" node dist/db-setup/db-setup.script.js
     fi
 
     echo "*** Cleaning up temporary data ***"
