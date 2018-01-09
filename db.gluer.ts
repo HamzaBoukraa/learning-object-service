@@ -30,7 +30,7 @@ import {
     LearningGoal,
     AssessmentPlan,
     InstructionalStrategy,
-} from './entity/entities';
+} from 'clark-entity';
 export type suggestMode = 'text' | 'regex';
 
 export class DBGluer {

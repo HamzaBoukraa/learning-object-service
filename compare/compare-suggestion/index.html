@@ -1,0 +1,45 @@
+<head>
+    <title>LO Suggestion Test Client</title>
+    <meta charset="UTF-8">
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="angular.js"></script>
+</head>
+<body ng-app="app" ng-controller="ctrl">
+    <h2>My Learning Outcome</h2>
+    <form ng-submit="suggest(myLO)">
+        <input type="text" ng-model="myLO">
+        <input type="submit">
+        <h4>Filter</h4>
+        <label>Author<input type="text" ng-model="filter.author"></label>
+        <label>Date<input type="text" ng-model="filter.date"></label>
+        <label>Name<input type="text" ng-model="filter.name"></label>
+        <label>Outcome<input type="text" ng-model="filter.outcome"></label>
+    </form>
+    <div>
+        <label ng-repeat="service in services">
+            <input type="checkbox" ng-model="service.visible">
+            {{ service.event }}
+        </label>
+    </div>
+    <h2>Suggestions</h2>
+    <div ng-repeat="service in services">
+        <div ng-if="service.visible">
+            <h3>{{ service.event }}: {{ service.time }} </h3>
+            <table>
+                <tr>
+                    <th>Author</th>
+                    <th>Date</th>
+                    <th>Name</th>
+                    <th>Outcome</th>
+                </tr>
+                <tr ng-repeat="outcome in service.outcomes">
+                    <td>{{ outcome.author }}</td>
+                    <td>{{ outcome.date }}</td>
+                    <td>{{ outcome.name }}</td>
+                    <td>{{ outcome.outcome }}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</body>

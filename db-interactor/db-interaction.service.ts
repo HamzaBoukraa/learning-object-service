@@ -23,8 +23,8 @@ import {
     LearningObject,
     StandardOutcome,
     LearningOutcome,
-} from '../entity/entities';
-import { Outcome } from '../entity/outcome';
+    Outcome,
+} from 'clark-entity';
 
 /*
  * TODO: catch errors gracefully, preferably with logging!

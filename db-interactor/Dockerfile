@@ -9,11 +9,8 @@ ADD dist/*.js* ./
 ADD dist/drivers/ drivers/
 ADD dist/interfaces/ interfaces/
 ADD dist/db-interactor/ db-interactor/
-ADD dist/entity/ entity/
 ADD dist/schema/ schema/
-ADD dist/taxonomy/ taxonomy/
 # Copy any other required files
-ADD taxonomy/taxonomy.json taxonomy/
 ADD .env ./
 
 # Install any needed packages specified in package.json

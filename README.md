@@ -20,11 +20,9 @@ Name|Default|Description
 1) Clone the Github repository to your local machine:
    `git clone https://github.com/Cyber4All/database-interaction.git`
 2) Switch to workspace: `cd database-interaction`
-2) Install the taxonomy package: https://github.com/Cyber4All/taxonomy.git
-3) Install the entity package: https://github.com/Cyber4All/entity.git
-4) Install all node dependencies: `npm install`
-5) Transpile TypeScript source: `npm run build`
-6) Set up local database (requires mongo installation): `mkdir db`
+3) Install all node dependencies: `npm install`
+4) Transpile TypeScript source: `npm run build`
+5) Set up local database (requires mongo installation): `mkdir db`
 
 ## Usage
 - Actively transpile TypeScript source: `npm run build:watch`

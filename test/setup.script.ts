@@ -1,6 +1,9 @@
 // tslint:disable-next-line: no-require-imports
 require('../useme');
 
+import { MongoClient } from 'mongodb';
+import { init } from '../db-setup/db-setup.script';
+
 import { DBInterface, HashInterface } from '../interfaces/interfaces';
 import { MongoDriver, BcryptDriver } from '../drivers/drivers';
 import { DBGluer } from '../db.gluer';
@@ -12,14 +15,25 @@ import {
     LearningOutcome,
     AssessmentPlan,
     InstructionalStrategy,
-} from '../entity/entities';
+} from 'clark-entity';
 
 let db: DBInterface = new MongoDriver();
 let hash: HashInterface = new BcryptDriver(10);
 let glue = new DBGluer(db, hash);
 
-db.connect(process.env.CLARK_DB_URI).then(async () => {
+MongoClient.connect(process.env.CLARK_DB_URI)
+.then( async (rawdb) => {
     try {
+        await init(rawdb);
+        await rawdb.close();
+        return Promise.resolve();
+    } catch (e) {
+        return Promise.reject(e);
+    }
+})
+.then(async () => {
+    try {
+        await db.connect(process.env.CLARK_DB_URI);
         // add standard outcomes
         let gotID = await addStandardOutcome(
             'got.org',
@@ -253,9 +267,13 @@ db.connect(process.env.CLARK_DB_URI).then(async () => {
 
 
         db.disconnect();
+        return Promise.resolve();
     } catch (e) {
-        console.log('SETUP FAILED: ' + e);
+        return Promise.reject(e);
     }
+})
+.catch( (e) => {
+    console.log('SETUP FAILED: ' + e);
 });
 
 

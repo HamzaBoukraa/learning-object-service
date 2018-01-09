@@ -1,7 +1,4 @@
 /node_modules
-/entity
-/taxonomy
 /dist
 /db
 /dbcontent/rawdata
-/misc

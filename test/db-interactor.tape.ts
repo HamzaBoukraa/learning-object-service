@@ -13,7 +13,7 @@ import {
     LearningObject,
     StandardOutcome,
     OutcomeSuggestion,
-} from '../entity/entities';
+} from 'clark-entity';
 
 let db: DBInterface = new MongoDriver();
 let hash: HashInterface = new BcryptDriver(10);
@@ -317,7 +317,7 @@ test('addLearningObject', async (t) => {
         t.equal(object.name, 'Protector of the Realm', `- Reconstruction from database gives correct name`);
         t.equal(object.goals.length, 1, `- Reconstruction from database gives correct number of goals`);
         t.equal(object.goals[0].text, `Um...eat more?`, `- Reconstruction from database gives the correct goals`);
-        //t.equal(object.outcomes.length, 0, `- Reconstruction from database omits outcomes`);
+        // t.equal(object.outcomes.length, 0, `- Reconstruction from database omits outcomes`);
 
     } catch (e) {
         t.fail('Error thrown: ' + e);
@@ -437,6 +437,8 @@ test('updateLearningObject', async (t) => {
     editobject.date = '1996';
     editobject.addGoal().text = `Save the world`;
     editobject.outcomes[0].text = `Hunt the living dead`;
+    let newoutcome = editobject.addOutcome();
+    newoutcome.text = `Don't get stabbed in the heart`;
 
 
     let response = await request('updateLearningObject', {
@@ -463,9 +465,10 @@ test('updateLearningObject', async (t) => {
         t.equal(object.date, '1996', `- Reconstruction from database gives updated date`);
         t.equal(object.goals.length, 2, `- Reconstruction from database gives correct number of goals`);
         t.equal(object.goals[1].text, `Save the world`, `- Reconstruction from database gives the updated goals`);
-        t.equal(object.outcomes.length, 3, `- Reconstruction from database gives correct number of outcomes`);
+        t.equal(object.outcomes.length, 4, `- Reconstruction from database gives correct number of outcomes`);
         t.equal(object.outcomes[0].text, `Hunt the living dead`, `- Reconstruction from database gives the updated outcomes`);
-
+        t.ok(object.outcomes[3].text, `- Reconstruction from database has new outcome`);
+        t.equal(object.outcomes[3].text, `Don't get stabbed in the heart`, `- New outcome has correct text`);
 
     } catch (e) {
         t.fail('Error thrown: ' + e);
