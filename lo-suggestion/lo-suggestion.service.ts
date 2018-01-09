@@ -49,8 +49,14 @@ db.connect(process.env.CLARK_DB_URI)
       glue.fetchAllObjects()
         .then((objects) => {
           res.json(objects.map((object) => {
+            // Serialize
             let learningObject = LearningObject.serialize(object);
+            // Convert back to object
+            learningObject = JSON.parse(learningObject);
+            // Attach ID
             learningObject['id'] = object['id'];
+            // Convert back to string
+            learningObject = JSON.stringify(learningObject);
             return learningObject
           }));
         })
