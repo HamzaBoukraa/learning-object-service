@@ -30,7 +30,7 @@ db.connect(process.env.CLARK_DB_URI)
       let text = req.body.text;
       let filter = req.body.filter;
 
-      glue.suggestOutcomes(text, 'regex', threshold)
+      glue.suggestOutcomes(text, 'text', threshold)
         .then((outcomes) => {
           res.json(
             outcomes.filter((suggestion) => {
