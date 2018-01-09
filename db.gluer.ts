@@ -408,6 +408,7 @@ export class DBGluer {
                 object.name = doc.name_;
                 object.date = doc.date;
                 object.length = doc.length_;
+                object['id'] = doc._id;
                 return object;
             });
 
