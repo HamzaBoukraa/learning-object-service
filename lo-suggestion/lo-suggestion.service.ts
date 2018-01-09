@@ -47,7 +47,13 @@ db.connect(process.env.CLARK_DB_URI)
 
     server.post('/fetchAllObjects', (req, res) => {
       glue.fetchAllObjects()
-        .then((objects) => { res.json(objects.map(LearningObject.serialize)); })
+        .then((objects) => {
+          res.json(objects.map((object) => {
+            let learningObject = LearningObject.serialize(object);
+            learningObject['id'] = object['id'];
+            return learningObject
+          }));
+        })
         .catch((err) => { res.json({ error: err }); });
     });
 
