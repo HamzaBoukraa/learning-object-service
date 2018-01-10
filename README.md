@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/Cyber4All/database-interaction/tree/master.svg?style=svg)](https://circleci.com/gh/Cyber4All/database-interaction/tree/master)
+
 # Database Interaction
 Code for all CLARK scripts and services needing direct contact with the database. Each service has usage instructions in its own README file.
 
