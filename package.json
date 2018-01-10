@@ -27,7 +27,8 @@
   "dependencies": {
     "assert-never": "^1.0.0",
     "bcrypt": "^1.0.3",
-    "clark-entity": "^1.0.13",
+    "clark-entity": "^1.0.14",
+    "clark-taxonomy": "^1.0.14",
     "express": "^4.16.2",
     "mongodb": "^2.2.31",
     "node-env-file": "^0.1.8",
