@@ -19,6 +19,9 @@ server.use(bodyParser.json());
 server.use((req, res, next) => {
   // Website you wish to allow to connect
   res.header('Access-Control-Allow-Origin', '*');
+
+  // Request headers you wish to allow
+  res.header('Access-Control-Allow-Headers', 'X-Requested-With,content-type,enctype,Cache-Control, Authorization');
   next();
 })
 
