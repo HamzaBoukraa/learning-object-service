@@ -16,6 +16,12 @@ const threshold = parseFloat(process.env.CLARK_LO_SUGGESTION_THRESHOLD);
 const server = express();
 server.use(bodyParser.json());
 
+server.use((req, res, next) => {
+  // Website you wish to allow to connect
+  res.header('Access-Control-Allow-Origin', '*');
+  next();
+})
+
 /*
  * TODO: add logging, esp. for errors
  */
