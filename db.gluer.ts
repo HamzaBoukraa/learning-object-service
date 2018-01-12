@@ -399,7 +399,7 @@ export class DBGluer {
 
     /**
      * Return literally all objects. Very expensive.
-     * @returns {LearningObjectRecord[]} array of literally all objects
+     * @returns {LearningObject[]} array of literally all objects
      */
     fetchAllObjects = async function (): Promise<LearningObject[]> {
         try {
