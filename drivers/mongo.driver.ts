@@ -484,7 +484,11 @@ export class MongoDriver implements DBInterface {
     /**
      * Search for objects on CuBE criteria.
      *
-     * TODO: Efficiency very questionable. Needs improvement. Error handling also bad.
+     * TODO: Efficiency very questionable.
+     *      Convert to streaming algorithm if possible.
+     *
+     * TODO: behavior is currently very strict (ex. name, author must exactly match)
+     *       Consider text-indexing these fields to exploit mongo $text querying.
      */
     searchObjects = async function (
         name: string,
@@ -513,18 +517,26 @@ export class MongoDriver implements DBInterface {
                     for (let token of tokens) {
                         docs.push({ outcome: { $regex: token } });
                     }
+                    /**
+                     * TODO: perhaps not all tokens should be needed for a single outcome?
+                     *      That is, if one outcome has half the tokens and another
+                     *      has the other half, the object should still match?
+                     */
                     let count = await _db.collection(collectionFor(StandardOutcomeSchema))
                         .count({
-                            _id: object._id,
+                            source: object._id,
                             $and: docs,
                         });
+                    /**
+                     * TODO: objects should also match if any outcomes' mappings match desired content
+                     */
                     if (count === 0) continue;
                 }
                 results.push(object);
             }
             return Promise.resolve(results);
         } catch (e) {
-            return Promise.reject(e);
+            return Promise.reject('Error suggesting objects' + e);
         }
     };
 

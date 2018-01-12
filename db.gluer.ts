@@ -23,6 +23,7 @@ import {
 import {
     User,
     LearningObject,
+    ObjectSuggestion,
     Outcome,
     OutcomeSuggestion,
     StandardOutcome,
@@ -488,7 +489,7 @@ export class DBGluer {
 
     /**
      * Search for objects by name, author, length, level, and content.
-     * TODO: this is highly klingon-ese. Implement better
+     * FIXME: implementation is rough and probably not as efficient as it could be
      *
      * @param {string} name the objects' names should closely relate
      * @param {string} author the objects' authors' names` should closely relate
@@ -523,17 +524,6 @@ export class DBGluer {
             return Promise.reject(e);
         }
     };
-}
-
-/**
- * TODO: move this interface to the clark-entity repository
- */
-interface ObjectSuggestion {
-    id: any;
-    author: string;
-    length: string;
-    name: string;
-    date: string;
 }
 
 //////////////////////////////////////////
