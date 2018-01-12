@@ -482,6 +482,53 @@ export class MongoDriver implements DBInterface {
     };
 
     /**
+     * Search for objects on CuBE criteria.
+     *
+     * TODO: Efficiency very questionable. Needs improvement. Error handling also bad.
+     */
+    searchObjects = async function (
+        name: string,
+        author: string,
+        length: string,
+        level: string,
+        content: string,
+    ): Promise<LearningObjectRecord[]> {
+        try {
+            let all: LearningObjectRecord[] = await this.fetchAllObjects().toArray();
+            let results: LearningObjectRecord[] = [];
+            for (let object of all) {
+                if (name && object.name_ !== name) continue;
+                if (author) {
+                    let record = await _db.collection(collectionFor(UserSchema))
+                        .findOne<UserRecord>({ _id: object.author });
+                    if (record.name_ !== author) continue;
+                }
+                if (length && object.length_ !== length) continue;
+                /**
+                 * TODO: implement level
+                 */
+                if (content) {
+                    let tokens = content.split(/\s/);
+                    let docs: any[] = [];
+                    for (let token of tokens) {
+                        docs.push({ outcome: { $regex: token } });
+                    }
+                    let count = await _db.collection(collectionFor(StandardOutcomeSchema))
+                        .count({
+                            _id: object._id,
+                            $and: docs,
+                        });
+                    if (count === 0) continue;
+                }
+                results.push(object);
+            }
+            return Promise.resolve(results);
+        } catch (e) {
+            return Promise.reject(e);
+        }
+    };
+
+    /**
      * Find outcomes matching a text query.
      * This variant uses Mongo's fancy text query. Questionable results.
      * NOTE: this function also projects a score onto the cursor documents

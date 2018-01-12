@@ -1,0 +1,49 @@
+<head>
+    <title>Learning Object Suggestion Test Client</title>
+    <meta charset="UTF-8">
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="angular.js"></script>
+</head>
+<body ng-app="app" ng-controller="ctrl">
+    <h2>My Learning Object</h2>
+    <form ng-submit="suggest()">
+        <input type="submit">
+        <h4>Filter</h4>
+        <label>Name<input type="text" ng-model="filter.name"></label>
+        <label>Author<input type="text" ng-model="filter.author"></label>
+        <label>Length<input type="text" ng-model="filter.length"></label>
+        <!-- TODO: implement level -->
+        <label>Content<input type="text" ng-model="filter.content"></label>
+    </form>
+    <div>
+        <label ng-repeat="service in services">
+            <input type="checkbox" ng-model="service.visible">
+            {{ service.event }}
+        </label>
+    </div>
+    <h2>Suggestions</h2>
+    <div ng-repeat="service in services">
+        <div ng-if="service.visible">
+            <h3>{{ service.event }}: {{ service.time }} </h3>
+            <table>
+                <tr>
+                    <th>DBID</th>
+                    <th>Author</th>
+                    <th>Length</th>
+                    <th>Name</th>
+                    <th>Date</th>
+                    <!-- TODO: implement level -->
+                </tr>
+                <tr ng-repeat="object in service.objects">
+                    <td>{{ object.id }}</td>
+                    <td>{{ object.author }}</td>
+                    <td>{{ object.length }}</td>
+                    <td>{{ object.name }}</td>
+                    <td>{{ object.date }}</td>
+                    <!-- TODO: implement level -->
+                </tr>
+            </table>
+        </div>
+    </div>
+</body>

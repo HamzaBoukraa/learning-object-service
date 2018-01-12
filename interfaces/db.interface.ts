@@ -43,6 +43,7 @@ export interface DBInterface {
      * TODO: interface shouldn't have mongo-specific Cursor
      */
     fetchAllObjects: () => Cursor<LearningObjectRecord>;
+    searchObjects: (name: string, author: string, length: string, level: string, content: string) => Promise<LearningObjectRecord[]>;
     searchOutcomes: (text: string) => Cursor<OutcomeRecord>;
     matchOutcomes: (text: string) => Cursor<OutcomeRecord>;
 }

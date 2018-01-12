@@ -485,6 +485,55 @@ export class DBGluer {
             return Promise.reject(e);
         }
     };
+
+    /**
+     * Search for objects by name, author, length, level, and content.
+     * TODO: this is highly klingon-ese. Implement better
+     *
+     * @param {string} name the objects' names should closely relate
+     * @param {string} author the objects' authors' names` should closely relate
+     * @param {string} length the objects' lengths should match exactly
+     * @param {string} level the objects' levels should match exactly TODO: implement
+     * @param {string} content the objects' outcomes' outcomes should closely relate
+     *
+     * @returns {Outcome[]} list of outcome suggestions, ordered by score
+     */
+    suggestObjects = async function (
+        name: string,
+        author: string,
+        length: string,
+        level: string,
+        content: string,
+    ): Promise<ObjectSuggestion[]> {
+        try {
+            let objects: LearningObjectRecord[] = await this.db.searchObjects(name, author, length, level, content);
+            let suggestions: ObjectSuggestion[] = [];
+            for (let object of objects) {
+                let owner = await this.db.fetchUser(object.author);
+                suggestions.push({
+                    id: object._id,
+                    author: owner.name_,
+                    length: object.length_,
+                    name: object.name_,
+                    date: object.date,
+                });
+            }
+            return Promise.resolve(suggestions);
+        } catch (e) {
+            return Promise.reject(e);
+        }
+    };
+}
+
+/**
+ * TODO: move this interface to the clark-entity repository
+ */
+interface ObjectSuggestion {
+    id: any;
+    author: string;
+    length: string;
+    name: string;
+    date: string;
 }
 
 //////////////////////////////////////////
