@@ -32,11 +32,11 @@ jobs:
       #   (start by removing comments from -restore and -save below;
       #       removing them might've reset it)
 
-      # - restore_cache:
-      #     keys:
-      #     - v1-dependencies-{{ checksum "package.json" }}
-      #     # fallback to using the latest cache if no exact match is found
-      #     - v1-dependencies-
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "package.json" }}
+          # fallback to using the latest cache if no exact match is found
+          # - v1-dependencies-
       - run: npm install
       - save_cache:
           paths:
