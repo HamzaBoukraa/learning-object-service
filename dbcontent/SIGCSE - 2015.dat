@@ -1,0 +1,66 @@
+Cyber Operations	Categorize classes of attacks
+Cyber Operations	Categorize classes of defenses
+Cyber Operations	Identify specific vulnerabilities on a computer using software tools, such as vulnerability scanners
+Cyber Operations	Devise a plan to mitigate an existing vulnerability
+Cyber Operations	Analyze network traffic
+Cyber Operations	Prioritize usage of resources in securing corporate information/systems
+Cyber Operations	Identify mission critical assets
+Cyber Operations	Identify the nature of threats to a given asset
+Cyber Operations	Identify the extent of threats against a given asset
+Foundational Concepts	Analyze the tradeoffs of balancing the key security properties of confidentiality, integrity, and availability
+Cryptography	Explain the importance and use of prime numbers in cryptography
+Human Factors	Detect and mitigate social-engineering-based cyber attacks
+Security and Privacy	Analyze the tradeoff between cyber security and user privacy
+Human Factors	Apply different foundamental techniques of cybersecurity, such as cryptography, intrusion detection, and forensics.
+Human Factors	Analyze the local and global impacts of cybersecurity to related fields, such as economy, social issues, policy and laws
+Human Factors	Explain the importance of ethcial code and locate opportunities of continuous professional development in the cybersecurity practice
+Foundational Concepts	Articulate appropriate cybersecurity terms to people in different disciplines for effective communication
+Crimonology	Apply criminology and crime prevention concepts in cyber security scenarios
+Cyber Attack	Design a cyberattack based on (publicly) discovered vulnerabilities of a target organization
+Digital Forensics	Carve a hexadecimal file into an application file.
+Digital Forensics	Reconstruct application files from raw hexadecimal data.
+Digital Forensics	Determine torrent traffic on a network.
+Digital Forensics	Compare and contrast anomalous network traffic to baseline network traffic.
+Digital Forensics	Identify characteristics of smtp network traffic.
+Digital Forensics	Operate a network forensic tool such as Wireshark.
+Digital Forensics	Generate an after action report from a network integrity breach.
+Cryptography	Implement a hashing scheme to understand file manipulation.
+Network Defense	List the pillars of information assurance.
+Network Defense	Characterize a scenario in which one or more of these pillars have been violated.
+Data Integrity	Determine if a file has been changed from its original state.
+Network Defense	Construct an access control list.
+Secure Software/Engineering	Determine successful program execution from the data integrity of memory registers.
+Secure Software/Engineering	Design object-oriented code with structured modules, comments, and descriptive variable names.
+Threat-modeling	Design a viable information disaster recovery plan for an organization.
+Business Continuity	Explain the purpose of a data redundancy system.
+Business Continuity	Justify given RAID levels for a variety of organizations based on data availability needs.
+Penetration Testing	Conduct an authorized evaluation to determine vulnerability of an IT infrastructure.
+Human Factors	Describe social engineering and its relevance to information assurance.
+Software Engineering	Compose user narratives in preparation for building a piece of software.
+Software Engineering	Generate use cases
+Information Assurance	Analyze the tradeoffs of balancing the key security properties of confidentiality, integrity, and availability
+SCADA/ICS	Sketch an simple industrial control system network
+Software Engineering	Diagram the software lifecycle
+Software Engineering	Assess the vulnerabilities in a given development process to an insider inserting undetected backdoor insertion.
+Software Engineering	Analyze a retired system for actionable attack information.
+Software Engineering	Perform an attack on an operational system that exploits a coding vulnerability
+Foundational Concepts	Be tasked with protecting the confidentiality, integrity, and availabiltiy of the information housed on the system
+Foundational Concepts	Express the importance of drawing knowledge from other disciplines to address cybersecurity concerns
+Foundational Concepts	Apply cybersecurity principles to a changing landscape
+Human Factors	Demonstate the ability to effectively work in team
+Human Factors	Demonstrate the abiltiy to think critically
+Human Factors	Demonstate the ability to communicate effectively
+Security Risk Management	Understand that an attack is a risk with detrimental consequences to critical services and every sector
+Cyber Operations	Imitate the various actions of an adversary
+Cyber Operations	Predict the various actions of an adversary
+Digital Forensics	Use the variety of operating systems
+Digital Forensics	Compare and contrast variety of forensics tools
+Digital Forensics	Use variety of forensics tools
+Secure Programming	Compare software frameworks with respect to their weaknesses and security
+Secure Programming	Design software with security in mind
+Secure Programming	Understand common attack vectors
+Secure Programming	Understand emerging attack vectors
+Secure Programming	Apply fundamentals security principle and strategies to software development to inhibit attack
+Secure Programming	Use various software vulnerability analysis tools
+Secure Programming	Understand the limitation of various software vulnerability analysis tools
+Secure Programming	Express the importance of writing secure and robust programs

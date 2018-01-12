@@ -36,7 +36,7 @@
 
 # PARAMETERS
 my $fmwk = "dbcontent/rawdata/NIST.SP.800-181.txt";     # input file
-my $dat = "dbcontent/NIST.SP.800-181.tasks.dat";        # output file
+my $dat = "dbcontent/NCWF Tasks - 2017.dat";            # output file
 # length of margin and code for desired section:    K  S  A1 A2
 my $margin = 10;                                #   10 11 10 13
 my $column = 6;                                 #   6  6  6  7

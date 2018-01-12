@@ -1,0 +1,21 @@
+Secure Coding	Identify and  define common terms relating to secure coding
+Secure Coding	State and discuss principles and techniques relating to secure coding
+Secure Coding	Differentiate between secure coding and patching and explain the advantage of using secure coding techniques
+Secure Coding	Identify common security defects in software and describe their potential impact
+Secure Coding	Explain the role secure coding plays in the secure software development process
+Secure Coding	Analyze the relationship between secure coding and confidentiality, integrity and availability (CIA)
+Secure Coding	Explain authorization, authentication and verification as they relate to secure coding
+Secure Coding	Identify and explain common programming techniques for data protection
+Secure Coding	Design and code programs that offer a high level of data protection
+Secure Coding	Design and code programs that use file access controls
+Secure Coding	Identify and explain techniques for preventing input and output vulnerabilities
+Secure Coding	Design and code programs that use encryption and decryption algorithms
+Secure Coding	Analyze and design the parameters in known encryption and decryption algorithms
+Secure Coding	Design and code programs that check/validate input and output
+Secure Coding	Design and code programs that include dynamic memory management
+Secure Coding	Design and code programs that include error and exception handling
+Secure Coding	Design and code programs that use inter-process communication
+Secure Coding	Design and code programs that use inter-device networking and communication protocols
+Secure Coding	Describe race conditions and their impact on programs
+Secure Coding	Design and code programs that use concurrency securely
+Secure Coding	Describe the results of errors identified by software security tools

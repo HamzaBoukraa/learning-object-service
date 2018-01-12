@@ -1,0 +1,55 @@
+Low Level Programming Languages	Using the C lanuage, write a program that implements a network stack to manage network communications
+Low Level Programming Languages	Write a functional, stand-alone assembly language program implementing a basic telnet client with no help from external libraries
+Software Reverse Engineering	Use the tools , such as disassemblers, debuggers, virtualization-based sandbox environments, process and file activity monitors, and network activity monitors, to safely perform static and dynamic analysis of software (or malware) of potentially unknown origin, including obfuscated malware, to fully understand the software's functionality
+Operating System Theory	Understand operating system internals to the level that they could design and implement significant architectural changes to an existing OS
+Networking	Thorough understanding of how networks work at the infrastructure, network and applications layers; how they transfer data; how network protocols work to enable communication; and how the lower-level network layers support the upper ones. They will have a thorough knowledge of the major network protocols that enable communications and data transfer.
+Cellular and Mobile Technologies	Describe user associations and routing in a cellular/mobile network, interaction of elements within the cellular/mobile core, and end-to-end delivery of a packet and/or signal and what happens with the hand-off at each step along the communications path
+Cellular and Mobile Technologies	Explain differences in core architecture between different generations of cellular and mobile network technologies
+Discrete Math	Given an algorithm determine the complexity of the algorithm and cases in which the algorithm would/would not provide a reasonable approach for solving a problem
+Discrete Math	Understand how variability affects outcomes, how to identify anomalous events, and how to identify the meaning of anomalous events. They will be able to integrate and differentiate continuous functions of multiple variables
+Discrete Math	Understand how automata are used to describe computing machines and computation, and the notion that some things are computable and some are not. They will understand the connection between automata and computer languages and describe the hierarchy of language from regular expression to context file
+Overview of Cyber Defense	Describe, evaluate, and operate a defensive network architecture employing multiple layers of protection using technologies appropriate to meet mission security goals
+Security Fundamental Principles	Possess a thorough understanding of the fundamental principles underlying cyber security, how these principles interrelate and are typically employed to achieve assured solutions, the mechanisms that may be built from—or due to—these principles
+Security Fundamental Principles	Given a particular scenario identify which fundamental security design principles are in play, how they interrelate and methods in which they should be applied to develop systems worthy of trust
+Security Fundamental Principles	Understand how failures in fundamental security design principles can lead to system vulnerabilities that can be exploited as part of an offensive cyber operation
+Vulnerabilities	Possess a thorough understanding of the various types of vulnerabilities (design and/or implementation weaknesses), their underlying causes, their identifying characteristics, the ways in which they are exploited, and potential mitigation strategies. They will also know how to apply fundamental security design principles during system design, development and implementation to minimize vulnerabilities
+Vulnerabilities	Understand how a vulnerability in a given context may be applied to alternative contexts and to adapt vulnerabilities so that lessons from them can be applied to alternative contexts
+Legal	Given a cyber operations scenario explain the authorities applicable to the scenario
+Legal	Provide a high-level explanation of the legal issues governing the authorized conduct of cyber operations and the use of related tools, techniques, technology and data
+Programmable Logic Languages	Specify digital device behavior using a programmable logic language
+FPGA Design	Synthesize, simulate, and implement a programmable logic program on a programmable logic device
+Wireless Security	Describe the unique security and operational attributes in the wireless environment and their effects on network communications
+Wireless Security	Identify the unique security implications of these effects and how to mitigate security issues associated with them
+Virtualization	Discuss the advantages and disadvantages of virtualization
+Virtualization	Identify the different approaches for virtualizing computer systems
+Virtualization	List the security implications of each of the different approaches
+Large Scale Distributed Systems	Describe different kinds of Cloud architecture models, services, security issues, and components (logical and physical)
+Large Scale Distributed Systems	Identify all associated data paths within a given cloud design
+Risk Management of Information Systems	Identify classes of possible threats, what are the consequences associated with each threat, and what actions can be taken to mitigate the threat
+Computer Architecture	Define devices of electronic digital circuits and describe how these components are interconnected
+Computer Architecture	Integrate individual components into a more complex digital system and understand the data path through a CPU
+Microcontroller Design	Integrate discrete components into a single processor element and describe ways of achieving performance efficiencies through combining components
+Software Security Analysis	identify trade-offs associated with microcontroller optimization
+Software Security Analysis	Perform analysis of existing source code for functional correctness
+Software Security Analysis	Apply industry standard tools that analyze software for security vulnerabilities
+Software Security Analysis	Through the application of testing methodologies build test cases that demonstrate the existence of vulnerabilities
+Secure Software Development	Demonstrate that they understand the techniques specifying program behavior, the classes of well known defects, how they manifest themselves in various languages
+Secure Software Development	Show that they are capable of authoring programs that are free from defects
+Embedded Systems	Define requirements which lead to the design and fabrication of an embedded system
+Embedded Systems	Program the microcontrollers to achieve an application-specific design and identify the security concerns associated with resource constrained devices
+Forensics	Develop a profile of an individual user’s activity, determine the manner in which an operating system or application has been subverted, recover “deleted” and/or intentionally hidden information from various types of media
+Forensics	Demonstrate proficiency with handling a large number of different kinds of components
+Systems Programming	Build and integrate kernel modules, understand the system call mechanism and how malicious software subverts system calls
+Systems Programming	Demonstrate sufficient knowledge of the networking stack to be able to construct network filter components
+Systems Programming	Discuss strengths and weaknesses of alternative processors and demonstrate familiarity of tool sets for making use of alternative processors (e.g., GPUs)
+Applied Cryptography	Identify the appropriate uses of symmetric and asymmetric encryption
+Applied Cryptography	Assign some measure of strength to cryptographic algorithms and the associated keys
+Applied Cryptography	Identify what level of algorithm strength is needed for particular applications and the implementation factors related to its suitability for use
+Applied Cryptography	Understand the challenges and limitations of various key management systems
+SCADA Systems	Describe how embedded systems are employed in industrial infrastructures and control systems
+SCADA Systems	Identify means for capturing instrument telemetry and identifying feedback controls
+SCADA Systems	Describe methods for managing distributed nodes and identify potential security vulnerabilities associated with the use of such systems and means for mitigating these vulnerabilities
+HCI/Usable Security	Understand user interface issues that will affect the implementation of and perception of security mechanisms and the behavioral impacts of various security “policies.”
+HCI/Usable Security	Understand the tension between user security and convenience
+Offensive Cyber Operations	Understand the phases of a cyber operation, what each phase entails, who has authorities to conduct each phase, and how operations are assessed
+Hardware Reverse Engineering	Understand basic fundamental procedures such as probing, measuring, and data collection to identify functionality and to affect modifications to the hardware functionality

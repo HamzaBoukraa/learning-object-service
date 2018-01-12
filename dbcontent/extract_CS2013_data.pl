@@ -18,7 +18,7 @@
 
 # PARAMETERS
 my $fmwk = "dbcontent/rawdata/CS_2013_Learning_Outcomes.csv"; # input file
-my $dat = "dbcontent/CS_2013_Learning_Outcomes.dat";          # output file
+my $dat = "dbcontent/CS2013 - 2013.dat";          # output file
 
 # PROGRAM
 use strict;
