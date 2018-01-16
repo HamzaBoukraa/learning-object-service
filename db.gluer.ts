@@ -409,6 +409,7 @@ export class DBGluer {
                 object.name = doc.name_;
                 object.date = doc.date;
                 object.length = doc.length_;
+                object['author_'] = doc.author;
                 object['id'] = doc._id;
                 return object;
             });
@@ -431,6 +432,8 @@ export class DBGluer {
                 object.name = doc.name_;
                 object.date = doc.date;
                 object.length = doc.length_;
+                object['author_'] = doc.author;
+                object['id'] = doc._id;
                 return object;
             });
 

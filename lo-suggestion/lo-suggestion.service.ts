@@ -74,8 +74,9 @@ db.connect(process.env.CLARK_DB_URI)
             let learningObject = LearningObject.serialize(object);
             // Convert back to object
             learningObject = JSON.parse(learningObject);
-            // Attach ID
+            // Attach Author & ID
             // tslint:disable-next-line: no-string-literal
+            learningObject['author'] = object['author_'];
             learningObject['id'] = object['id'];
             // Convert back to string
             learningObject = JSON.stringify(learningObject);
@@ -92,7 +93,15 @@ db.connect(process.env.CLARK_DB_URI)
           res.json(objects.map((object) => {
             // Serialize
             let learningObject = LearningObject.serialize(object);
-            return learningObject
+            // Convert back to object
+            learningObject = JSON.parse(learningObject);
+            // Attach Author & ID
+            // tslint:disable-next-line: no-string-literal
+            learningObject['author'] = object['author_'];
+            learningObject['id'] = object['id'];
+            // Convert back to string
+            learningObject = JSON.stringify(learningObject);
+            return learningObject;
           }));
         })
         .catch((err) => { res.json({ error: err }); });
