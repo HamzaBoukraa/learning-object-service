@@ -474,11 +474,23 @@ export class MongoDriver implements DBInterface {
 
     /**
      * Return literally all objects. Very expensive.
-     * @returns {Cursor<LearningObjectRecord[]} cursor of literally all objects
+     * @returns {Cursor<LearningObjectRecord>[]} cursor of literally all objects
      */
     fetchAllObjects = function (): Cursor<LearningObjectRecord> {
         return _db.collection(collectionFor(LearningObjectSchema))
             .find<LearningObjectRecord>();
+    };
+
+    /**
+     * Fetchs the learning object documents associated with the given ids.
+     *
+     * @param ids array of database ids
+     *
+     * @returns {Cursor<LearningObjectRecord>[]}
+     */
+    fetchMultipleObjects = function (ids: LearningObjectID[]): Cursor<LearningObjectRecord[]> {
+        return _db.collection(collectionFor(LearningObjectSchema))
+            .find<LearningObjectRecord[]>({ _id: { $in: ids } });
     };
 
     /**

@@ -418,6 +418,27 @@ export class DBGluer {
         }
     };
 
+    /**
+     * Returns array of learning objects associated with the given ids.
+     * @returns {LearningObjectRecord[]}
+     */
+    fetchMultipleObjects = async function (ids: LearningObjectID[]): Promise<LearningObject[]> {
+        try {
+            let records = await this.db.fetchMultipleObjects(ids).toArray();
+            let objects = records.map((doc: LearningObjectRecord) => {
+                let object = new LearningObject(null);
+                object.name = doc.name_;
+                object.date = doc.date;
+                object.length = doc.length_;
+                return object;
+            });
+
+            return Promise.resolve(objects);
+        } catch (e) {
+            return Promise.reject(e);
+        }
+    };
+
 
     /**
      * Search for outcomes related to a given text string.

@@ -72,6 +72,19 @@ db.connect(process.env.CLARK_DB_URI)
         .catch((err) => { res.json({ error: err }); });
     });
 
+    server.post('/fetchMultipleObjects', (req, res) => {
+      let ids = req.body.ids;
+      glue.fetchMultipleObjects(ids)
+        .then((objects) => {
+          res.json(objects.map((object) => {
+            // Serialize
+            let learningObject = LearningObject.serialize(object);
+            return learningObject
+          }));
+        })
+        .catch((err) => { res.json({ error: err }); });
+    });
+
     server.listen(process.env.CLARK_LO_SUGGESTION_PORT);
     console.log('Listening on port ' + process.env.CLARK_LO_SUGGESTION_PORT);
   })
