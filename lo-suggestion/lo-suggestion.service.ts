@@ -23,7 +23,7 @@ server.use((req, res, next) => {
   // Request headers you wish to allow
   res.header('Access-Control-Allow-Headers', 'X-Requested-With,content-type,enctype,Cache-Control, Authorization');
   next();
-})
+});
 
 /*
  * TODO: add logging, esp. for errors
@@ -54,6 +54,18 @@ db.connect(process.env.CLARK_DB_URI)
         .catch((err) => { res.json({ error: err }); });
     });
 
+    server.post('/suggestObjects', (req, res) => {
+      let name = req.body.name;
+      let author = req.body.author;
+      let length = req.body.length;
+      let level = req.body.level;
+      let content = req.body.content;
+
+      glue.suggestObjects(name, author, length, level, content)
+        .then((objects) => { res.json(objects); })
+        .catch((err) => { res.json({ error: err }); });
+    });
+
     server.post('/fetchAllObjects', (req, res) => {
       glue.fetchAllObjects()
         .then((objects) => {
@@ -63,10 +75,11 @@ db.connect(process.env.CLARK_DB_URI)
             // Convert back to object
             learningObject = JSON.parse(learningObject);
             // Attach ID
+            // tslint:disable-next-line: no-string-literal
             learningObject['id'] = object['id'];
             // Convert back to string
             learningObject = JSON.stringify(learningObject);
-            return learningObject
+            return learningObject;
           }));
         })
         .catch((err) => { res.json({ error: err }); });

@@ -23,6 +23,7 @@ import {
 import {
     User,
     LearningObject,
+    ObjectSuggestion,
     Outcome,
     OutcomeSuggestion,
     StandardOutcome,
@@ -398,7 +399,7 @@ export class DBGluer {
 
     /**
      * Return literally all objects. Very expensive.
-     * @returns {LearningObjectRecord[]} array of literally all objects
+     * @returns {LearningObject[]} array of literally all objects
      */
     fetchAllObjects = async function (): Promise<LearningObject[]> {
         try {
@@ -501,6 +502,44 @@ export class DBGluer {
                 suggestions.push(suggestion);
             }
 
+            return Promise.resolve(suggestions);
+        } catch (e) {
+            return Promise.reject(e);
+        }
+    };
+
+    /**
+     * Search for objects by name, author, length, level, and content.
+     * FIXME: implementation is rough and probably not as efficient as it could be
+     *
+     * @param {string} name the objects' names should closely relate
+     * @param {string} author the objects' authors' names` should closely relate
+     * @param {string} length the objects' lengths should match exactly
+     * @param {string} level the objects' levels should match exactly TODO: implement
+     * @param {string} content the objects' outcomes' outcomes should closely relate
+     *
+     * @returns {Outcome[]} list of outcome suggestions, ordered by score
+     */
+    suggestObjects = async function (
+        name: string,
+        author: string,
+        length: string,
+        level: string,
+        content: string,
+    ): Promise<ObjectSuggestion[]> {
+        try {
+            let objects: LearningObjectRecord[] = await this.db.searchObjects(name, author, length, level, content);
+            let suggestions: ObjectSuggestion[] = [];
+            for (let object of objects) {
+                let owner = await this.db.fetchUser(object.author);
+                suggestions.push({
+                    id: object._id,
+                    author: owner.name_,
+                    length: object.length_,
+                    name: object.name_,
+                    date: object.date,
+                });
+            }
             return Promise.resolve(suggestions);
         } catch (e) {
             return Promise.reject(e);

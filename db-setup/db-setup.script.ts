@@ -82,15 +82,16 @@ export async function init(db: Db) {
 
 /**
  * Add standard outcomes from data file
+ * NOTE: data file must exist in dbcontent directory, named "[source] - [year].dat"
  *
  * Data file has two columns: [ name | outcome ] separated by tab
  *
- * @param {string} author author-label for all outcomes in the file
- * @param {string} date date-label for all outcomes in the file
- * @param {string} file file path/name of data file
+ * @param {string} source author-label for all outcomes in the file
+ * @param {string} year date-label for all outcomes in the file
  * @param {DBGluer} glue gluer connected to db being filled
  */
-export async function addStandards(author: string, date: string, file: string, glue: DBGluer) {
+export async function addStandards(source: string, year: string, glue: DBGluer) {
+    let file =  'dbcontent/' + source + ' - ' + year + '.dat';
     return new Promise<void>((resolve, reject) => {
         let promises: Promise<any>[] = [];
         let cnt = 0;    // count successful adds
@@ -99,14 +100,14 @@ export async function addStandards(author: string, date: string, file: string, g
         lineReader.eachLine(file, function (line, last) {
             let dat = line.split('\t');
             if (dat.length === 2) {
-                let outcome = new StandardOutcome(author, dat[0], date, dat[1]);
+                let outcome = new StandardOutcome(source, dat[0], year, dat[1]);
                 promises.push(
                     glue.addStandardOutcome(outcome)
                         .then(() => {
                             cnt += 1;
                             return Promise.resolve();
                         })
-                        .catch((err) => { console.log(author + 'insertion error: ' + err); }),
+                        .catch((err) => { console.log(source + ' insertion error: ' + err); }),
                 );
             } else {    // data formatting error
                 console.log('Could not process line: ' + line);
@@ -116,7 +117,7 @@ export async function addStandards(author: string, date: string, file: string, g
             if (last) {
                 Promise.all(promises)
                        .then(() => {
-                            console.log(cnt + ' ' + author + ' standard outcomes added');
+                            console.log(cnt + ' ' + source + ' standard outcomes added');
                             resolve();
                         })
                        .catch((e) => { reject(e); });
@@ -229,10 +230,16 @@ if (require.main === module) {
             await db.connect(process.env.CLARK_DB_URI);
             console.log('--- Adding Standard Outcomes ---');
             await Promise.all([
-                addStandards('NCWF', '2017', 'dbcontent/NIST.SP.800-181.dat', glue),
-                addStandards('NCWF Tasks', '2017', 'dbcontent/NIST.SP.800-181.tasks.dat', glue),
-                addStandards('CAE', '2014', 'dbcontent/CAE-CD_Knowledge_Units.dat', glue),
-                addStandards('CS 2013', '2013', 'dbcontent/CS_2013_Learning_Outcomes.dat', glue),
+                addStandards('CAE Cyber Defense', '2014', glue),
+                addStandards('CAE Cyber Ops', '2014', glue),
+                addStandards('CCECC IT2014', '2014', glue),
+                addStandards('CS2013', '2013', glue),
+                addStandards('IT2008', '2008', glue),
+                addStandards('ITiCSE', '2010', glue),
+                addStandards('Military Academy', '2015', glue),
+                addStandards('NCWF KSAs', '2017', glue),
+                addStandards('NCWF Tasks', '2017', glue),
+                addStandards('SIGCSE', '2015', glue),
             ]);
             db.disconnect();
 

@@ -24,7 +24,7 @@ app.use(
     '/angular.js',
     '/\.*.json',
     ],
-    express.static('compare/compare-suggestion'),
+    express.static('compare/compare-objects'),
 );
 
 app.post('/*', (req, res) => {
@@ -35,12 +35,14 @@ app.post('/*', (req, res) => {
         uri: 'http://' + host + req.url,
         body: req.body,
         json: true,
-    }).then((outcomes) => {
+    }).then((objects) => {
+        if (objects.error) console.log(objects.error);
+
         let time = Date.now() - start;
         console.log('Resolving request: ' + req.url + ' (took ' + time + ' ms)');
         res.json({
             time: time,
-            outcomes: outcomes,
+            objects: objects,
         });
     }).catch((err) => {
         console.log('Error: ' + err);

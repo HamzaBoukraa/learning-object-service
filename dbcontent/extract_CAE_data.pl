@@ -23,7 +23,7 @@
 
 # PARAMETERS
 my $fmwk = "dbcontent/rawdata/CAE-CD_Knowledge_Units.txt"; # input file
-my $dat = "dbcontent/CAE-CD_Knowledge_Units.dat";          # output file
+my $dat = "dbcontent/CAE Cyber Defense - 2014.dat";        # output file
 
 # PROGRAM
 use strict;

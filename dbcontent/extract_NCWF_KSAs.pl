@@ -27,7 +27,7 @@
 #   5) there are unfortunately numerous other problems that we
 #       need to fix, but we'll run the script first to know where
 # To actually run the file, run
-#       "perl dbcontent/extract_NCWF_data.pl" from the LO Suggestion root directory
+#       "perl dbcontent/extract_NCWF_KSAs.pl" from the root directory
 #   It'll do most of the work, but it'll also note that it's missing
 #       some entries. That's because the extraction process depends
 #       on the descriptions ending with a period, and not all of them
@@ -45,7 +45,7 @@
 
 # PARAMETERS
 my $fmwk = "dbcontent/rawdata/NIST.SP.800-181.txt";     # input file
-my $dat = "dbcontent/NIST.SP.800-181.dat";              # output file
+my $dat = "dbcontent/NCWF KSAs - 2017.dat";             # output file
 # patterns to match - depends on whether you want knowledge, skills, and/or abilities
 my $letters = "KSA";              # subset of "KSA"
 my $pattern = "Knowledge of|Knowledge and understanding of|Skill in|Skill to|Ability to";   # subset of "Knowledge of|Skill in|Skill to|Ability to"

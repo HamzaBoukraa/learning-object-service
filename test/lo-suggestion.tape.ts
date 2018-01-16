@@ -41,6 +41,10 @@ test('suggest outcomes', async (t) => {
     }
 });
 
+/**
+ * TODO: implement testing for suggestObjects route
+ */
+
 test('fetch all objects', async (t) => {
     try {
         let raw_objects = await request('fetchAllObjects', {});

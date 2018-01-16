@@ -44,6 +44,7 @@ export interface DBInterface {
      */
     fetchAllObjects: () => Cursor<LearningObjectRecord>;
     fetchMultipleObjects: (ids: LearningObjectID[]) => Cursor<LearningObjectRecord[]>;
+    searchObjects: (name: string, author: string, length: string, level: string, content: string) => Promise<LearningObjectRecord[]>;
     searchOutcomes: (text: string) => Cursor<OutcomeRecord>;
     matchOutcomes: (text: string) => Cursor<OutcomeRecord>;
 }

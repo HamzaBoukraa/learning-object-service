@@ -491,6 +491,64 @@ export class MongoDriver implements DBInterface {
     fetchMultipleObjects = function (ids: LearningObjectID[]): Cursor<LearningObjectRecord[]> {
         return _db.collection(collectionFor(LearningObjectSchema))
             .find<LearningObjectRecord[]>({ _id: { $in: ids } });
+    }
+
+    /* Search for objects on CuBE criteria.
+    *
+    * TODO: Efficiency very questionable.
+    *      Convert to streaming algorithm if possible.
+    *
+    * TODO: behavior is currently very strict (ex. name, author must exactly match)
+    *       Consider text-indexing these fields to exploit mongo $text querying.
+    */
+    searchObjects = async function (
+        name: string,
+        author: string,
+        length: string,
+        level: string,
+        content: string,
+    ): Promise<LearningObjectRecord[]> {
+        try {
+            let all: LearningObjectRecord[] = await this.fetchAllObjects().toArray();
+            let results: LearningObjectRecord[] = [];
+            for (let object of all) {
+                if (name && object.name_ !== name) continue;
+                if (author) {
+                    let record = await _db.collection(collectionFor(UserSchema))
+                        .findOne<UserRecord>({ _id: object.author });
+                    if (record.name_ !== author) continue;
+                }
+                if (length && object.length_ !== length) continue;
+                /**
+                 * TODO: implement level
+                 */
+                if (content) {
+                    let tokens = content.split(/\s/);
+                    let docs: any[] = [];
+                    for (let token of tokens) {
+                        docs.push({ outcome: { $regex: token } });
+                    }
+                    /**
+                     * TODO: perhaps not all tokens should be needed for a single outcome?
+                     *      That is, if one outcome has half the tokens and another
+                     *      has the other half, the object should still match?
+                     */
+                    let count = await _db.collection(collectionFor(StandardOutcomeSchema))
+                        .count({
+                            source: object._id,
+                            $and: docs,
+                        });
+                    /**
+                     * TODO: objects should also match if any outcomes' mappings match desired content
+                     */
+                    if (count === 0) continue;
+                }
+                results.push(object);
+            }
+            return Promise.resolve(results);
+        } catch (e) {
+            return Promise.reject('Error suggesting objects' + e);
+        }
     };
 
     /**
