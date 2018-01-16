@@ -404,16 +404,17 @@ export class DBGluer {
     fetchAllObjects = async function (): Promise<LearningObject[]> {
         try {
             let records = await this.db.fetchAllObjects().toArray();
-            let objects = records.map((doc: LearningObjectRecord) => {
+            let objects: LearningObject[] = [];
+            for (let doc of records) {
                 let object = new LearningObject(null);
                 object.name = doc.name_;
                 object.date = doc.date;
                 object.length = doc.length_;
-                object['author_'] = doc.author;
+                let author = await this.loadUser(doc.author);
+                object['author_'] = author;
                 object['id'] = doc._id;
-                return object;
-            });
-
+                objects.push(object);
+            }
             return Promise.resolve(objects);
         } catch (e) {
             return Promise.reject(e);
@@ -421,22 +422,24 @@ export class DBGluer {
     };
 
     /**
+     * TODO: Refactor into fetchAllObjects. DRY
      * Returns array of learning objects associated with the given ids.
      * @returns {LearningObjectRecord[]}
      */
     fetchMultipleObjects = async function (ids: LearningObjectID[]): Promise<LearningObject[]> {
         try {
-            let records = await this.db.fetchMultipleObjects(ids).toArray();
-            let objects = records.map((doc: LearningObjectRecord) => {
+            let records: LearningObjectRecord[] = await this.db.fetchMultipleObjects(ids).toArray();
+            let objects: LearningObject[] = [];
+            for (let doc of records) {
                 let object = new LearningObject(null);
                 object.name = doc.name_;
                 object.date = doc.date;
                 object.length = doc.length_;
-                object['author_'] = doc.author;
+                let author = await this.loadUser(doc.author);
+                object['author_'] = author;
                 object['id'] = doc._id;
-                return object;
-            });
-
+                objects.push(object);
+            }
             return Promise.resolve(objects);
         } catch (e) {
             return Promise.reject(e);
