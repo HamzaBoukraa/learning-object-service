@@ -406,12 +406,11 @@ export class DBGluer {
             let records = await this.db.fetchAllObjects().toArray();
             let objects: LearningObject[] = [];
             for (let doc of records) {
-                let object = new LearningObject(null);
+                let author = await this.loadUser(doc.author);
+                let object = new LearningObject(author);
                 object.name = doc.name_;
                 object.date = doc.date;
                 object.length = doc.length_;
-                let author = await this.loadUser(doc.author);
-                object['author_'] = author;
                 object['id'] = doc._id;
                 objects.push(object);
             }
@@ -431,12 +430,11 @@ export class DBGluer {
             let records: LearningObjectRecord[] = await this.db.fetchMultipleObjects(ids).toArray();
             let objects: LearningObject[] = [];
             for (let doc of records) {
-                let object = new LearningObject(null);
+                let author = await this.loadUser(doc.author);
+                let object = new LearningObject(author);
                 object.name = doc.name_;
                 object.date = doc.date;
                 object.length = doc.length_;
-                let author = await this.loadUser(doc.author);
-                object['author_'] = author;
                 object['id'] = doc._id;
                 objects.push(object);
             }

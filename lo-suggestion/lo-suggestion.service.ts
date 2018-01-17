@@ -76,7 +76,7 @@ db.connect(process.env.CLARK_DB_URI)
             learningObject = JSON.parse(learningObject);
             // Attach Author & ID
             // tslint:disable-next-line: no-string-literal
-            learningObject['author'] = object['author_'];
+            learningObject['author'] = object['author'];
             learningObject['id'] = object['id'];
             // Convert back to string
             learningObject = JSON.stringify(learningObject);
@@ -97,7 +97,7 @@ db.connect(process.env.CLARK_DB_URI)
             learningObject = JSON.parse(learningObject);
             // Attach Author & ID
             // tslint:disable-next-line: no-string-literal
-            learningObject['author'] = object['author_'];
+            learningObject['author'] = object['author'];
             learningObject['id'] = object['id'];
             // Convert back to string
             learningObject = JSON.stringify(learningObject);
