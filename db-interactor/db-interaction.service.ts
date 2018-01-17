@@ -102,7 +102,10 @@ db.connect(process.env.CLARK_DB_URI)
             glue.loadLearningObject(id)
                 .then((object) => {
                     let msg = LearningObject.serialize(object);
-                    res.json(msg);
+                    let learningObject = JSON.parse(msg);
+                    learningObject['author'] = object['author'];
+                    learningObject = JSON.stringify(learningObject);
+                    res.json(learningObject);
                 })
                 .catch((err) => { res.json({ error: err }); });
         });

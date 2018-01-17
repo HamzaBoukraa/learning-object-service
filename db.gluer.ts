@@ -126,8 +126,8 @@ export class DBGluer {
         try {
             let record = await this.db.fetchLearningObject(id);
 
-            // no real need to link to User object, so pass null
-            let object = new LearningObject(null);
+            let author = await this.loadUser(record.author);
+            let object = new LearningObject(author);
             object.name = record.name_;
             object.date = record.date;
             object.length = record.length_;
