@@ -22,6 +22,7 @@ import {
     AssessmentPlan,
     InstructionalStrategy,
 } from 'clark-entity';
+
 import { ObjectId } from 'bson';
 
 
@@ -121,7 +122,7 @@ export class LearningObjectInteractor {
         } catch (e) {
             responder.sendOperationError(e);
         }
-    };
+    }
 
     /**
      * Add a new learning object to the database.
@@ -138,10 +139,10 @@ export class LearningObjectInteractor {
      *
      * @returns {LearningObjectID} the database id of the new record
      */
-    async addLearningObject(dataStore: DataStore, responder: Responder, author: UserID, object: LearningObject): Promise<void> {
+    async addLearningObject(dataStore: DataStore, responder: Responder, authorID: UserID, object: LearningObject): Promise<void> {
         try{
             let learningObjectID = await dataStore.insertLearningObject({
-            author: author,
+            authorID: authorID,
             name_: object.name,
             date: object.date,
             length_: object.length,
@@ -151,7 +152,7 @@ export class LearningObjectInteractor {
         });
 
 
-        await Promise.all(object.outcomes.map((outcome) => {
+        await Promise.all(object.outcomes.map((outcome: LearningOutcome) => {
             return this.addLearningOutcome(dataStore, learningObjectID, outcome);
         }));
 
@@ -161,7 +162,7 @@ export class LearningObjectInteractor {
     }
 
 
-    };
+    }
 
     /**
      * Look up a learning outcome by its source and tag.
@@ -179,7 +180,7 @@ export class LearningObjectInteractor {
         } catch (e) {
             responder.sendOperationError(e);
         }
-    };
+    }
 
     /**
      * Update an existing learning object record.
@@ -202,7 +203,7 @@ export class LearningObjectInteractor {
             goals: this.documentGoals(object.goals),
             repository: object.repository,
         });
-    };
+    }
 
     /**
      * Update an existing learning object record.
@@ -243,7 +244,7 @@ export class LearningObjectInteractor {
         } catch (e) {
             responder.sendOperationError(e);
         }
-    };
+    }
 
     /**
      * Add a new user to the database.
@@ -268,7 +269,7 @@ export class LearningObjectInteractor {
             assessments: this.documentAssessments(outcome.assessments),
             strategies: this.documentInstructions(outcome.strategies),
         });
-    };
+    }
 
     /**
      * Update an existing learning outcome.
@@ -288,7 +289,7 @@ export class LearningObjectInteractor {
             assessments: this.documentAssessments(outcome.assessments),
             strategies: this.documentInstructions(outcome.strategies),
         });
-    };
+    }
     async reorderOutcome(dataStore: DataStore, responder: Responder, object: ObjectId, outcome: OutcomeID, index:number){
         try {
             await dataStore.reorderOutcome(object,outcome,index)
@@ -322,7 +323,7 @@ export class LearningObjectInteractor {
             date: standard.date,
             outcome: standard.outcome,
         });
-    };
+    }
 
     /**
      * Return literally all objects. Very expensive.
@@ -334,21 +335,19 @@ export class LearningObjectInteractor {
             let objects: LearningObject[] = [];
             for (let doc of records) {
                 // FIXME: Add User to serialization of Learning Object
-                //let author = await this.loadUser(record.author);
-                //let object = new LearningObject(author);
-
-                let object = new LearningObject(null);
+                let authorRecord = await dataStore.fetchUser(doc.authorID);
+                let author = new User(authorRecord.username, authorRecord.name_, null, null);
+                let object = new LearningObject(author);
                 object.name = doc.name_;
                 object.date = doc.date;
                 object.length = doc.length_;
-                object['id'] = doc._id;
                 objects.push(object);
             }
             return Promise.resolve(objects);
         } catch (e) {
             return Promise.reject(e);
         }
-    };
+    }
 
     /**
      * TODO: Refactor into fetchAllObjects. DRY
@@ -360,22 +359,20 @@ export class LearningObjectInteractor {
             let records: LearningObjectRecord[] = await dataStore.fetchMultipleObjects(ids).toArray();
             let objects: LearningObject[] = [];
             for (let doc of records) {
-                // FIXME: Add User to serialization of Learning Object
-                //let author = await this.loadUser(record.author);
-                //let object = new LearningObject(author);
+                let authorRecord = await dataStore.fetchUser(doc.authorID);
+                let author = new User(authorRecord.username, authorRecord.name_, null, null);
 
-                let object = new LearningObject(null);
+                let object = new LearningObject(author);
                 object.name = doc.name_;
                 object.date = doc.date;
                 object.length = doc.length_;
-                object['id'] = doc._id;
                 objects.push(object);
             }
             return Promise.resolve(objects);
         } catch (e) {
             return Promise.reject(e);
         }
-    };
+    }
 
 
     //////////////////////////////////////////

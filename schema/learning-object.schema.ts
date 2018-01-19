@@ -23,7 +23,7 @@ export abstract class LearningObjectSchema {
     static _id: LearningObjectID;
 
     @fixed @foreign('users', false, 'objects') @unique @field
-    static author: UserID;
+    static authorID: UserID;
 
     @unique @field
     static name_: string;
@@ -90,7 +90,7 @@ export interface LearningObjectRecord extends Record, LearningObjectInsert {
 
 // add in fixed fields
 export interface LearningObjectInsert extends Insert, LearningObjectUpdate {
-    author: UserID;
+    authorID: UserID;
 }
 
 // add in foreign fields

@@ -51,7 +51,7 @@ export interface UserUpdate extends Update, UserEdit {
 
 // add in remaining fields
 export interface UserEdit extends Edit {
-    id: string;
+    username: string;
     name_: string;
     email: string;
     pwdhash: string;

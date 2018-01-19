@@ -23,7 +23,6 @@ export interface DataStore {
     insertStandardOutcome(record: StandardOutcomeInsert): Promise<StandardOutcomeID>;
     mapOutcome(outcome: LearningOutcomeID, mapping: OutcomeID): Promise<void>;
     unmapOutcome(outcome: LearningOutcomeID, mapping: OutcomeID): Promise<void>;
-    reorderObject(user: UserID, object: LearningObjectID, index: number): Promise<void>;
     reorderOutcome(object: LearningObjectID, outcome: LearningOutcomeID, index: number): Promise<void>;
     editUser(id: UserID, record: UserEdit): Promise<void>;
     editLearningObject(id: LearningObjectID, record: LearningObjectEdit): Promise<void>;
@@ -40,7 +39,7 @@ export interface DataStore {
     fetchLearningOutcome(id: UserID): Promise<LearningOutcomeRecord>;
     fetchOutcome(id: UserID): Promise<OutcomeRecord>;
     /*
-     * TODOinterface shouldn't have mongo-specific Cursor
+     * TODO: interface shouldn't have mongo-specific Cursor
      */
     fetchAllObjects(): Cursor<LearningObjectRecord>;
     fetchMultipleObjects(ids: LearningObjectID[]): Cursor<LearningObjectRecord>;

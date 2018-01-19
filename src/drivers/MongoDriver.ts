@@ -109,7 +109,7 @@ export class MongoDriver implements DataStore {
             let source = await this.db.collection(collectionFor(LearningObjectSchema))
                 .findOne<LearningObjectRecord>({ _id: record.source });
             let author = await this.db.collection(collectionFor(UserSchema))
-                .findOne<UserRecord>({ _id: source.author });
+                .findOne<UserRecord>({ _id: source.authorID });
             record['author'] = author.name_;
             record['name_'] = source.name_;
             record['date'] = source.date;
@@ -488,7 +488,7 @@ export class MongoDriver implements DataStore {
                 if (name && object.name_ !== name) continue;
                 if (author) {
                     let record = await this.db.collection(collectionFor(UserSchema))
-                        .findOne<UserRecord>({ _id: object.author });
+                        .findOne<UserRecord>({ _id: object.authorID });
                     if (record.name_ !== author) continue;
                 }
                 if (length && object.length_ !== length) continue;
