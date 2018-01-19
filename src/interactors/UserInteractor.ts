@@ -1,18 +1,25 @@
-import { HashInterface, DataStore, Responder } from '../interfaces/interfaces';
+import { HashInterface, DataStore, Responder, Interactor } from '../interfaces/interfaces';
 
-import { UserID } from '../../schema/schema';
+import { UserID } from 'clark-schema';
 
 import { User } from 'clark-entity';
-export class UserInteractor {
+export class UserInteractor implements Interactor {
 
-    constructor() { }
+    private _responder: Responder;
 
-    async findUser(dataStore: DataStore, responder: Responder, username: string): Promise<void> {
+    public set responder(responder: Responder) {
+        this._responder = responder;
+    }
+
+    constructor(private dataStore: DataStore, private hasher: HashInterface) { }
+
+
+    async findUser( username: string): Promise<void> {
         try {
-            let id = await dataStore.findUser(username);
-            responder.sendObject(id);
+            let id = await this.dataStore.findUser(username);
+            this.responder.sendObject(id);
         } catch (e) {
-            responder.sendOperationError(e);
+            this.responder.sendOperationError(e);
         }
     };
 
@@ -25,16 +32,16 @@ export class UserInteractor {
      *
      * @returns {User}
      */
-    async loadUser(dataStore: DataStore, responder: Responder, id: UserID): Promise<void> {
+    async loadUser(id: UserID): Promise<void> {
         try {
-            let record = await dataStore.fetchUser(id);
+            let record = await this.dataStore.fetchUser(id);
 
-            let user = new User(record.id, record.name_, record.email, null);
+            let user = new User(record.username, record.name_, record.email, null);
             // not a deep operation - ignore objects
 
-            responder.sendObject(user);
+            this.responder.sendObject(user);
         } catch (e) {
-            responder.sendOperationError(e);
+            this.responder.sendOperationError(e);
         }
     };
 
@@ -50,16 +57,16 @@ export class UserInteractor {
      * @param {UserID} id - database id of the record to change
      * @param {User} user - entity with values to update to
      */
-    async editUser(dataStore: DataStore, responder: Responder, hash: HashInterface, id: UserID, user: User): Promise<void> {
+    async editUser(id: UserID, user: User): Promise<void> {
 
         try {
             let edit = {
-                id: user.id,
+                username: user.id,
                 name_: user.name,
                 email: user.email,
                 pwdhash: '',
             };
-            if (user.pwd) edit.pwdhash = await hash.hash(user.pwd);
+            if (user.pwd) edit.pwdhash = await this.hasher.hash(user.pwd);
             else { delete edit.pwdhash; }
             /*
              * FIXME: The UserEdit argument to db.editUser requires a pwdhash,
@@ -73,18 +80,18 @@ export class UserInteractor {
              *       database strain, so we should only do that if tsc ever
              *       gets wise to our trick.
              */
-            await dataStore.editUser(id, edit);
-            responder.sendOperationSuccess();
+            await this.dataStore.editUser(id, edit);
+            this.responder.sendOperationSuccess();
         } catch (e) {
-            responder.sendOperationError(e);
+            this.responder.sendOperationError(e);
         }
     };
-    async deleteUser(dataStore: DataStore, responder: Responder, id: UserID): Promise<void> {
+    async deleteUser(id: UserID): Promise<void> {
         try {
-            await dataStore.deleteUser(id);
-            responder.sendOperationSuccess();
+            await this.dataStore.deleteUser(id);
+            this.responder.sendOperationSuccess();
         } catch (e) {
-            responder.sendOperationError(e);           
+            this.responder.sendOperationError(e);           
         }
     }
 }

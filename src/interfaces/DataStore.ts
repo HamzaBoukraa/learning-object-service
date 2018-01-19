@@ -10,7 +10,7 @@ import {
     StandardOutcomeSchema, StandardOutcomeRecord, StandardOutcomeUpdate,
     StandardOutcomeInsert, StandardOutcomeEdit,
     OutcomeRecord,
-} from '../../schema/schema';
+} from 'clark-schema';
 
 import { Cursor } from 'mongodb';
 
@@ -39,4 +39,8 @@ export interface DataStore {
     fetchLearningObject(id: UserID): Promise<LearningObjectRecord>;
     fetchLearningOutcome(id: UserID): Promise<LearningOutcomeRecord>;
     fetchOutcome(id: UserID): Promise<OutcomeRecord>;
+    fetchMultipleObjects(ids: LearningObjectID[]): Cursor<LearningObjectRecord> ;
+    fetchAllObjects(): Cursor<LearningObjectRecord> ;
+    searchObjects( name: string, author: string, length: string, level: string, content: string): Promise<LearningObjectRecord[]>;
+
 }

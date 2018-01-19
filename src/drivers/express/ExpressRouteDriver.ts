@@ -7,7 +7,16 @@ import { User, LearningObject } from "clark-entity";
 
 export class ExpressRouteDriver {
 
-    constructor(private dataStore: DataStore, private hasher: HashInterface) { }
+    private _LearningObjectInteractor: LearningObjectInteractor;
+    private _AuthInteractor: AuthInteractor;
+    private _UserInteractor: UserInteractor;
+
+    constructor(private dataStore: DataStore, private hasher: HashInterface) {
+        this._LearningObjectInteractor = new LearningObjectInteractor(dataStore);
+        this._UserInteractor = new UserInteractor(dataStore,hasher);
+        this._AuthInteractor = new AuthInteractor(dataStore,hasher);
+
+     }
 
     public static buildRouter(dataStore: DataStore, hasher: HashInterface): Router {
         let e = new ExpressRouteDriver(dataStore, hasher);
@@ -26,75 +35,76 @@ export class ExpressRouteDriver {
         router.post('/authenticate', async (req, res) => {
             let username = req.body.username;
             let pwd = req.body.pwd;
+            this._AuthInteractor.responder = this.getResponder(res);
 
-            let auth = new AuthInteractor();
-            await auth.authenticate(this.dataStore, this.getResponder(res), this.hasher, username, pwd);
+            await this._AuthInteractor.authenticate(username, pwd);
         });
         router.post('/register', async (req, res) => {
-            let auth = new AuthInteractor();
             let user = User.unserialize(req.body.user);
-            await auth.registerUser(this.dataStore, this.getResponder(res), this.hasher, user);
+            this._AuthInteractor.responder = this.getResponder(res);
+            await this._AuthInteractor.registerUser(user);
         });
         // TODO: Combine into one route.
         router.post('/emailRegistered', async (req, res) => {
             let email = req.body.email;
-            let auth = new AuthInteractor();
-            await auth.emailRegisterd(this.dataStore, this.getResponder(res), email);
+            this._AuthInteractor.responder = this.getResponder(res);
+
+            await this._AuthInteractor.emailRegisterd(email);
         });
 
         // USER ROUTES
         router.post('/findUser', async (req, res) => {
             let username = req.body.username;
+            this._UserInteractor.responder = this.getResponder(res);
 
-            let user = new UserInteractor();
-            await user.findUser(this.dataStore, this.getResponder(res), username);
+            await this._UserInteractor.findUser(username);
         });
         router.post('/loadUser', async (req, res) => {
             let id = req.body.id;
+            this._UserInteractor.responder = this.getResponder(res);
 
-            let user = new UserInteractor();
-            await user.loadUser(this.dataStore, this.getResponder(res), id);
+            await this._UserInteractor.loadUser(id);
         });
         router.post('/editUser', async (req, res) => {
             let id = req.body.id;
             let user = User.unserialize(req.body.user);
-            let userInteractor = new UserInteractor();
-            await userInteractor.editUser(this.dataStore, this.getResponder(res), this.hasher, id, user);
+            this._UserInteractor.responder = this.getResponder(res);
+
+            await this._UserInteractor.editUser(id, user);
         });
         router.post('/deleteUser', async (req, res) => {
             let id = req.body.id;
-            let userInteractor = new UserInteractor();
-            await userInteractor.deleteUser(this.dataStore, this.getResponder(res), id);
+            this._UserInteractor.responder = this.getResponder(res);
+            await this._UserInteractor.deleteUser(id);
         });
 
         // LEARNING OBJECT ROUTES
         router.post('/findLearningObject', async (req, res) => {
             let author = req.body.author;
             let name = req.body.name;
-
-            let learningObjectInteractor = new LearningObjectInteractor();
-            await learningObjectInteractor.findLearningObject(this.dataStore, this.getResponder(res), author, name);
+            this._LearningObjectInteractor.responder = this.getResponder(res);
+            await this._LearningObjectInteractor.findLearningObject(author, name);
         });
 
 
 
         router.post('/loadLearningObjectSummary', async (req, res) => {
             let id = req.body.id;
-            let learningObjectInteractor = new LearningObjectInteractor();
-            await learningObjectInteractor.loadLearningObjectSummary(this.dataStore, this.getResponder(res), id)
+            this._LearningObjectInteractor.responder = this.getResponder(res);
+            await this._LearningObjectInteractor.loadLearningObjectSummary(id)
         });
 
         router.post('/loadLearningObject', async (req, res) => {
             let id = req.body.id;
-            let learningObjectInteractor = new LearningObjectInteractor();
-            await learningObjectInteractor.loadLearningObject(this.dataStore, this.getResponder(res), id)
+            this._LearningObjectInteractor.responder = this.getResponder(res);
+            await this._LearningObjectInteractor.loadLearningObject(id)
         });
 
         router.post('/addLearningObject', async (req, res) => {
             let author = req.body.author;
             let object = LearningObject.unserialize(req.body.object, null);
-            let learningObjectInteractor = new LearningObjectInteractor();
-            await learningObjectInteractor.addLearningObject(this.dataStore, this.getResponder(res), author, object);
+            this._LearningObjectInteractor.responder = this.getResponder(res);
+            await this._LearningObjectInteractor.addLearningObject(author, object);
         });
 
 
@@ -102,25 +112,48 @@ export class ExpressRouteDriver {
         router.post('/updateLearningObject', async (req, res) => {
             let id = req.body.id;
             let object = LearningObject.unserialize(req.body.object, null);
-            let learningObjectInteractor = new LearningObjectInteractor();
-            await learningObjectInteractor.updateLearningObject(this.dataStore, this.getResponder(res), id, object);
+            this._LearningObjectInteractor.responder = this.getResponder(res);
+            await this._LearningObjectInteractor.updateLearningObject(id, object);
 
         });
 
 
         router.post('/deleteLearningObject', async (req, res) => {
             let id = req.body.id;
-            let learningObjectInteractor = new LearningObjectInteractor();
-            await learningObjectInteractor.deleteLearningObject(this.dataStore, this.getResponder(res), id)
+            this._LearningObjectInteractor.responder = this.getResponder(res);
+            await this._LearningObjectInteractor.deleteLearningObject(id)
         });
 
         router.post('/reorderOutcome', async (req, res) => {
             let outcome = req.body.outcome;
             let object = req.body.object;
             let index = req.body.index;
-            let learningObjectInteractor = new LearningObjectInteractor();
-            await learningObjectInteractor.reorderOutcome(this.dataStore, this.getResponder(res), object, outcome, index);
+            this._LearningObjectInteractor.responder = this.getResponder(res);
+            await this._LearningObjectInteractor.reorderOutcome(object, outcome, index);
         });
+
+        router.post('/suggestObjects', async (req, res) => {
+            let name = req.body.name;
+            let author = req.body.author;
+            let length = req.body.length;
+            let level = req.body.level;
+            let content = req.body.content;
+            this._LearningObjectInteractor.responder = this.getResponder(res);
+            await this._LearningObjectInteractor.suggestObjects(name, author, length, level, content);
+        });
+
+        router.post('/fetchAllObjects', async (req, res) => {
+            //Set Responder
+            this._LearningObjectInteractor.responder = this.getResponder(res);
+            await this._LearningObjectInteractor.fetchAllObjects();
+        });
+
+        router.post('/fetchMultipleObjects', async (req, res) => {
+            let ids = req.body.ids;
+            this._LearningObjectInteractor.responder = this.getResponder(res);
+            await this._LearningObjectInteractor.fetchMultipleObjects(ids);
+        });
+        
 
     }
 

@@ -1,11 +1,18 @@
-import { HashInterface, DataStore, Responder } from '../interfaces/interfaces';
+import { HashInterface, DataStore, Responder, Interactor } from '../interfaces/interfaces';
 
-import { UserID } from '../../schema/schema';
+import { UserID } from 'clark-schema';
 
 import { User } from 'clark-entity';
 
-export class AuthInteractor {
-    constructor() { }
+export class AuthInteractor implements Interactor {
+
+    private _responder: Responder;
+
+    public set responder(responder: Responder) {
+        this._responder = responder;
+    }
+
+    constructor(private dataStore: DataStore, private hasher: HashInterface) { }
     /**
             * Check if a user has provided the correct password.
             * NOTE: Promise is rejected if user does not exist.
@@ -15,14 +22,14 @@ export class AuthInteractor {
             *
             * @returns {boolean} true iff userid/pwd pair is valid
             */
-    async authenticate(dataStore: DataStore, responder: Responder, hash: HashInterface, username: string, pwd: string): Promise<void> {
+    async authenticate(username: string, pwd: string): Promise<void> {
         try {
-            let id = await dataStore.findUser(username);
-            let user = await dataStore.fetchUser(id);
-            let authenticated = await hash.verify(pwd, user.pwdhash);
-            responder.sendObject(authenticated);
+            let id = await this.dataStore.findUser(username);
+            let user = await this.dataStore.fetchUser(id);
+            let authenticated = await this.hasher.verify(pwd, user.pwdhash);
+            this.responder.sendObject(authenticated);
         } catch (e) {
-            responder.sendOperationError(e);
+            this.responder.sendOperationError(e);
         }
     }
 
@@ -39,20 +46,20 @@ export class AuthInteractor {
      *
      * @returns {UserID} the database id of the new record
      */
-    async registerUser(dataStore: DataStore, responder: Responder, hash: HashInterface, _user: User): Promise<void> {
+    async registerUser(_user: User): Promise<void> {
         try {
-            let pwdhash = await hash.hash(_user.pwd);
-            let user = await dataStore.insertUser({
-                id: _user.id,
+            let pwdhash = await this.hasher.hash(_user.pwd);
+            let user = await this.dataStore.insertUser({
+                username: _user.id,
                 name_: _user.name,
                 email: _user.email,
                 pwdhash: pwdhash,
                 objects: [],
             });
-            responder.sendObject(user);
+            this.responder.sendObject(user);
 
         } catch (e) {
-            responder.sendObject(e);
+            this.responder.sendObject(e);
         }
     }
 
@@ -65,12 +72,12 @@ export class AuthInteractor {
            *
            * @returns {boolean} true iff userid/pwd pair is valid
            */
-    async emailRegisterd(dataStore: DataStore, responder: Responder, email: string): Promise<void> {
+    async emailRegisterd(email: string): Promise<void> {
         try {
-            let emailRegistered = await dataStore.emailRegistered(email);
-            responder.sendObject(emailRegistered);
+            let emailRegistered = await this.dataStore.emailRegistered(email);
+            this.responder.sendObject(emailRegistered);
         } catch (e) {
-            responder.sendOperationError(e);
+            this.responder.sendOperationError(e);
         }
     }
 

@@ -1,4 +1,4 @@
-import { DataStore, Responder } from '../interfaces/interfaces';
+import { DataStore, Responder, Interactor } from '../interfaces/interfaces';
 
 import {
     UserID,
@@ -26,8 +26,14 @@ import {
 import { ObjectId } from 'bson';
 
 
-export class LearningObjectInteractor {
-    constructor() { }
+export class LearningObjectInteractor implements Interactor{
+    private _responder: Responder;
+
+    public set responder(responder: Responder) {
+        this._responder = responder;
+    }
+
+    constructor(private dataStore: DataStore) { }
 
     /**
         * Load the scalar fields of a user's objects (ignore goals and outcomes).
@@ -37,13 +43,13 @@ export class LearningObjectInteractor {
         *
         * @returns {User}
         */
-    async loadLearningObjectSummary(dataStore: DataStore, responder: Responder, id: UserID): Promise<void> {
+    async loadLearningObjectSummary(id: UserID): Promise<void> {
         try {
-            let record = await dataStore.fetchUser(id);
+            let record = await this.dataStore.fetchUser(id);
 
             let summary: LearningObject[] = [];
             for (let objectid of record.objects) {
-                let objectRecord = await dataStore.fetchLearningObject(objectid);
+                let objectRecord = await this.dataStore.fetchLearningObject(objectid);
                 let object = new LearningObject(null);
                 object.name = objectRecord.name_;
                 object.date = objectRecord.date;
@@ -52,9 +58,9 @@ export class LearningObjectInteractor {
                 summary.push(object);
             }
 
-            responder.sendObject(summary);
+            this.responder.sendObject(summary);
         } catch (e) {
-            responder.sendOperationError(e);
+            this.responder.sendOperationError(e);
         }
     };
 
@@ -67,9 +73,9 @@ export class LearningObjectInteractor {
      *
      * @returns {LearningObject}
      */
-    async loadLearningObject(dataStore: DataStore, responder: Responder, id: LearningObjectID): Promise<void> {
+    async loadLearningObject(id: LearningObjectID): Promise<void> {
         try {
-            let record = await dataStore.fetchLearningObject(id);
+            let record = await this.dataStore.fetchLearningObject(id);
 
             // FIXME: Add User to serialization of Learning Object
             //let author = await this.loadUser(record.author);`
@@ -86,7 +92,7 @@ export class LearningObjectInteractor {
 
             // load each outcome
             for (let outcomeid of record.outcomes) {
-                let rOutcome = await dataStore.fetchLearningOutcome(outcomeid);
+                let rOutcome = await this.dataStore.fetchLearningOutcome(outcomeid);
 
                 let outcome = object.addOutcome();
                 outcome.bloom = rOutcome.bloom;
@@ -105,7 +111,7 @@ export class LearningObjectInteractor {
 
                 // only extract the basic info for each mapped outcome
                 for (let mapid of rOutcome.mappings) {
-                    let rMapping = await dataStore.fetchOutcome(mapid);
+                    let rMapping = await this.dataStore.fetchOutcome(mapid);
                     outcome.mapTo({
                         author: rMapping.author,
                         name: rMapping.name_,
@@ -118,9 +124,9 @@ export class LearningObjectInteractor {
             // load the repository:
             object.repository = record.repository;
 
-            responder.sendObject(object);
+            this.responder.sendObject(object);
         } catch (e) {
-            responder.sendOperationError(e);
+            this.responder.sendOperationError(e);
         }
     }
 
@@ -139,9 +145,9 @@ export class LearningObjectInteractor {
      *
      * @returns {LearningObjectID} the database id of the new record
      */
-    async addLearningObject(dataStore: DataStore, responder: Responder, authorID: UserID, object: LearningObject): Promise<void> {
+    async addLearningObject(authorID: UserID, object: LearningObject): Promise<void> {
         try{
-            let learningObjectID = await dataStore.insertLearningObject({
+            let learningObjectID = await this.dataStore.insertLearningObject({
             authorID: authorID,
             name_: object.name,
             date: object.date,
@@ -153,12 +159,12 @@ export class LearningObjectInteractor {
 
 
         await Promise.all(object.outcomes.map((outcome: LearningOutcome) => {
-            return this.addLearningOutcome(dataStore, learningObjectID, outcome);
+            return this.addLearningOutcome(learningObjectID, outcome);
         }));
 
-        responder.sendObject(learningObjectID);
+        this.responder.sendObject(learningObjectID);
     } catch (e){
-        responder.sendOperationError(e);
+        this.responder.sendOperationError(e);
     }
 
 
@@ -173,12 +179,12 @@ export class LearningObjectInteractor {
      *
      * @returns {LearningOutcomeID}
      */
-    async findLearningObject(dataStore: DataStore, responder: Responder, userID: UserID, learningObjectName: string): Promise<void> {
+    async findLearningObject(userID: UserID, learningObjectName: string): Promise<void> {
         try {
-            let learningObject = dataStore.findLearningObject(userID, learningObjectName);
-            responder.sendObject(learningObject);
+            let learningObject = this.dataStore.findLearningObject(userID, learningObjectName);
+            this.responder.sendObject(learningObject);
         } catch (e) {
-            responder.sendOperationError(e);
+            this.responder.sendOperationError(e);
         }
     }
 
@@ -195,8 +201,8 @@ export class LearningObjectInteractor {
      * @param {LearningObjectID} id - database id of the record to change
      * @param {LearningObject} object - entity with values to update to
      */
-    async editLearningObject(dataStore: DataStore, id: LearningObjectID, object: LearningObject): Promise<void> {
-        return dataStore.editLearningObject(id, {
+    async editLearningObject(id: LearningObjectID, object: LearningObject): Promise<void> {
+        return this.dataStore.editLearningObject(id, {
             name_: object.name,
             date: object.date,
             length_: object.length,
@@ -217,32 +223,32 @@ export class LearningObjectInteractor {
      * @param {LearningObjectID} id - database id of the record to change
      * @param {LearningObject} object - entity with values to update to
      */
-    async updateLearningObject(dataStore: DataStore, responder: Responder, id: LearningObjectID, object: LearningObject): Promise<void> {
+    async updateLearningObject(id: LearningObjectID, object: LearningObject): Promise<void> {
         try {
-            let toDelete = (await dataStore.fetchLearningObject(id)).outcomes;
+            let toDelete = (await this.dataStore.fetchLearningObject(id)).outcomes;
             let doNotDelete = new Set<LearningOutcomeID>();
 
-            await this.editLearningObject(dataStore, id, object);
+            await this.editLearningObject(id, object);
             for (let outcome of object.outcomes) {
                 try {
-                    let outcomeId = await dataStore.findLearningOutcome(id, outcome.tag);
+                    let outcomeId = await this.dataStore.findLearningOutcome(id, outcome.tag);
                     doNotDelete.add(outcomeId);
-                    await this.editLearningOutcome(dataStore, outcomeId, outcome);
+                    await this.editLearningOutcome(outcomeId, outcome);
                 } catch (e) {
                     // find operation failed; add it
-                    await this.addLearningOutcome(dataStore, id, outcome);
+                    await this.addLearningOutcome(id, outcome);
                 }
             }
 
             // delete any learning outcomes not in the update object
             for (let outcomeId of toDelete) {
                 if (!doNotDelete.has(outcomeId)) {
-                    await dataStore.deleteLearningOutcome(outcomeId);
+                    await this.dataStore.deleteLearningOutcome(outcomeId);
                 }
             }
-            responder.sendOperationSuccess();
+            this.responder.sendOperationSuccess();
         } catch (e) {
-            responder.sendOperationError(e);
+            this.responder.sendOperationError(e);
         }
     }
 
@@ -258,8 +264,8 @@ export class LearningObjectInteractor {
      *
      * @returns {LearningOutcomeID} the database id of the new record
      */
-    async addLearningOutcome(dataStore: DataStore, source: LearningObjectID, outcome: LearningOutcome): Promise<LearningOutcomeID> {
-        return await dataStore.insertLearningOutcome({
+    async addLearningOutcome(source: LearningObjectID, outcome: LearningOutcome): Promise<LearningOutcomeID> {
+        return await this.dataStore.insertLearningOutcome({
             source: source,
             tag: outcome.tag,
             bloom: outcome.bloom,
@@ -281,8 +287,8 @@ export class LearningObjectInteractor {
      * @param {LearningOutcomeID} id - database id of the record to change
      * @param {LearningOutcome} outcome - entity with values to update to
      */
-    async editLearningOutcome(dataStore: DataStore, id: LearningOutcomeID, outcome: LearningOutcome): Promise<void> {
-        return dataStore.editLearningOutcome(id, {
+    async editLearningOutcome(id: LearningOutcomeID, outcome: LearningOutcome): Promise<void> {
+        return this.dataStore.editLearningOutcome(id, {
             bloom: outcome.bloom,
             verb: outcome.verb,
             text: outcome.text,
@@ -290,21 +296,21 @@ export class LearningObjectInteractor {
             strategies: this.documentInstructions(outcome.strategies),
         });
     }
-    async reorderOutcome(dataStore: DataStore, responder: Responder, object: ObjectId, outcome: OutcomeID, index:number){
+    async reorderOutcome(object: ObjectId, outcome: OutcomeID, index:number){
         try {
-            await dataStore.reorderOutcome(object,outcome,index)
-            responder.sendOperationSuccess();
+            await this.dataStore.reorderOutcome(object,outcome,index)
+            this.responder.sendOperationSuccess();
         } catch (error) {
-            responder.sendOperationError();
+            this.responder.sendOperationError();
         }
     }
     
-    async deleteLearningObject(dataStore: DataStore,responder: Responder, id: LearningObjectID) : Promise<void>{
+    async deleteLearningObject(id: LearningObjectID) : Promise<void>{
         try {
-            await dataStore.deleteLearningObject(id);
-            responder.sendOperationSuccess();
+            await this.dataStore.deleteLearningObject(id);
+            this.responder.sendOperationSuccess();
         } catch (error) {
-            responder.sendOperationError(error);
+            this.responder.sendOperationError(error);
         }
     }
 
@@ -316,8 +322,8 @@ export class LearningObjectInteractor {
      *
      * @returns {StandardOutcomeID} the database id of the new record
      */
-    async addStandardOutcome(dataStore: DataStore, responder: Responder, standard: StandardOutcome): Promise<StandardOutcomeID> {
-        return dataStore.insertStandardOutcome({
+    async addStandardOutcome(standard: StandardOutcome): Promise<StandardOutcomeID> {
+        return this.dataStore.insertStandardOutcome({
             author: standard.author,
             name_: standard.name,
             date: standard.date,
@@ -329,13 +335,13 @@ export class LearningObjectInteractor {
      * Return literally all objects. Very expensive.
      * @returns {LearningObject[]} array of literally all objects
      */
-    async fetchAllObjects(dataStore: DataStore, responder: Responder): Promise<LearningObject[]> {
+    async fetchAllObjects(): Promise<LearningObject[]> {
         try {
-            let records = await dataStore.fetchAllObjects().toArray();
+            let records = await this.dataStore.fetchAllObjects().toArray();
             let objects: LearningObject[] = [];
             for (let doc of records) {
                 // FIXME: Add User to serialization of Learning Object
-                let authorRecord = await dataStore.fetchUser(doc.authorID);
+                let authorRecord = await this.dataStore.fetchUser(doc.authorID);
                 let author = new User(authorRecord.username, authorRecord.name_, null, null);
                 let object = new LearningObject(author);
                 object.name = doc.name_;
@@ -354,12 +360,12 @@ export class LearningObjectInteractor {
      * Returns array of learning objects associated with the given ids.
      * @returns {LearningObjectRecord[]}
      */
-    async fetchMultipleObjects(dataStore: DataStore, responder: Responder, ids: LearningObjectID[]): Promise<LearningObject[]> {
+    async fetchMultipleObjects(ids: LearningObjectID[]): Promise<LearningObject[]> {
         try {
-            let records: LearningObjectRecord[] = await dataStore.fetchMultipleObjects(ids).toArray();
+            let records: LearningObjectRecord[] = await this.dataStore.fetchMultipleObjects(ids).toArray();
             let objects: LearningObject[] = [];
             for (let doc of records) {
-                let authorRecord = await dataStore.fetchUser(doc.authorID);
+                let authorRecord = await this.dataStore.fetchUser(doc.authorID);
                 let author = new User(authorRecord.username, authorRecord.name_, null, null);
 
                 let object = new LearningObject(author);
@@ -371,6 +377,39 @@ export class LearningObjectInteractor {
             return Promise.resolve(objects);
         } catch (e) {
             return Promise.reject(e);
+        }
+    }
+
+    /**
+     * Search for objects by name, author, length, level, and content.
+     * FIXME: implementation is rough and probably not as efficient as it could be
+     *
+     * @param {string} name the objects' names should closely relate
+     * @param {string} author the objects' authors' names` should closely relate
+     * @param {string} length the objects' lengths should match exactly
+     * @param {string} level the objects' levels should match exactly TODO: implement
+     * @param {string} content the objects' outcomes' outcomes should closely relate
+     *
+     * @returns {Outcome[]} list of outcome suggestions, ordered by score
+     */
+    async suggestObjects(name: string, author: string, length: string, level: string, content: string): Promise<void> {
+        try {
+            let objects: LearningObjectRecord[] = await this.dataStore.searchObjects(name, author, length, level, content);
+            //FIXME: Suggestions should be typed as something like "ObjectSuggestion"
+            let suggestions: any[] = [];
+            for (let object of objects) {
+                let owner = await this.dataStore.fetchUser(object.authorID);
+                suggestions.push({
+                    id: object._id,
+                    author: owner.name_,
+                    length: object.length_,
+                    name: object.name_,
+                    date: object.date,
+                });
+            }
+            this.responder.sendObject(suggestions);
+        } catch (e) {
+            this.responder.sendOperationError(e);
         }
     }
 
