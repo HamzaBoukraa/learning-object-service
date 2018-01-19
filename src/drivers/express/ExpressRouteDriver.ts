@@ -122,9 +122,6 @@ export class ExpressRouteDriver {
             await learningObjectInteractor.reorderOutcome(this.dataStore, this.getResponder(res), object, outcome, index);
         });
 
-
-
-
     }
 
 }
