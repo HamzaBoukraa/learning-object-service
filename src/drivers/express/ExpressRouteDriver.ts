@@ -2,7 +2,7 @@ import { ExpressResponder } from "../drivers";
 import { DataStore, Responder } from "../../interfaces/interfaces";
 import { Router, Response } from 'express';
 import { AuthInteractor, UserInteractor, LearningObjectInteractor } from '../../interactors/interactors'
-import { HashInterface } from "../../../interfaces/interfaces";
+import { HashInterface } from "../../interfaces/interfaces";
 import { User, LearningObject } from "clark-entity";
 
 export class ExpressRouteDriver {
@@ -59,12 +59,12 @@ export class ExpressRouteDriver {
             let id = req.body.id;
             let user = User.unserialize(req.body.user);
             let userInteractor = new UserInteractor();
-            await userInteractor.editUser(this.dataStore,this.getResponder(res),this.hasher,id,user);
+            await userInteractor.editUser(this.dataStore, this.getResponder(res), this.hasher, id, user);
         });
         router.post('/deleteUser', async (req, res) => {
             let id = req.body.id;
             let userInteractor = new UserInteractor();
-            await userInteractor.deleteUser(this.dataStore,this.getResponder(res), id);
+            await userInteractor.deleteUser(this.dataStore, this.getResponder(res), id);
         });
 
         // LEARNING OBJECT ROUTES
@@ -94,16 +94,16 @@ export class ExpressRouteDriver {
             let author = req.body.author;
             let object = LearningObject.unserialize(req.body.object, null);
             let learningObjectInteractor = new LearningObjectInteractor();
-            await learningObjectInteractor.addLearningObject(this.dataStore,this.getResponder(res),author,object);
+            await learningObjectInteractor.addLearningObject(this.dataStore, this.getResponder(res), author, object);
         });
 
-        
+
 
         router.post('/updateLearningObject', async (req, res) => {
             let id = req.body.id;
             let object = LearningObject.unserialize(req.body.object, null);
             let learningObjectInteractor = new LearningObjectInteractor();
-            await learningObjectInteractor.updateLearningObject(this.dataStore,this.getResponder(res),id,object);
+            await learningObjectInteractor.updateLearningObject(this.dataStore, this.getResponder(res), id, object);
 
         });
 
@@ -111,7 +111,7 @@ export class ExpressRouteDriver {
         router.post('/deleteLearningObject', async (req, res) => {
             let id = req.body.id;
             let learningObjectInteractor = new LearningObjectInteractor();
-            await learningObjectInteractor.deleteLearningObject(this.dataStore,this.getResponder(res),id)
+            await learningObjectInteractor.deleteLearningObject(this.dataStore, this.getResponder(res), id)
         });
 
         router.post('/reorderOutcome', async (req, res) => {
@@ -119,7 +119,7 @@ export class ExpressRouteDriver {
             let object = req.body.object;
             let index = req.body.index;
             let learningObjectInteractor = new LearningObjectInteractor();
-            await learningObjectInteractor.reorderOutcome(this.dataStore,this.getResponder(res),object,outcome,index);
+            await learningObjectInteractor.reorderOutcome(this.dataStore, this.getResponder(res), object, outcome, index);
         });
 
 

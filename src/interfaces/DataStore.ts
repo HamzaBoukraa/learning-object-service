@@ -14,6 +14,7 @@ import {
 
 import { Cursor } from 'mongodb';
 
+// FIXME: References to LearningObject's ID should be replaced with User's username and LearningObject's name
 export interface DataStore {
     connect(dburistring: string): Promise<void>;
     disconnect(): void;
@@ -23,7 +24,6 @@ export interface DataStore {
     insertStandardOutcome(record: StandardOutcomeInsert): Promise<StandardOutcomeID>;
     mapOutcome(outcome: LearningOutcomeID, mapping: OutcomeID): Promise<void>;
     unmapOutcome(outcome: LearningOutcomeID, mapping: OutcomeID): Promise<void>;
-    reorderObject(user: UserID, object: LearningObjectID, index: number): Promise<void>;
     reorderOutcome(object: LearningObjectID, outcome: LearningOutcomeID, index: number): Promise<void>;
     editUser(id: UserID, record: UserEdit): Promise<void>;
     editLearningObject(id: LearningObjectID, record: LearningObjectEdit): Promise<void>;
@@ -39,12 +39,4 @@ export interface DataStore {
     fetchLearningObject(id: UserID): Promise<LearningObjectRecord>;
     fetchLearningOutcome(id: UserID): Promise<LearningOutcomeRecord>;
     fetchOutcome(id: UserID): Promise<OutcomeRecord>;
-    /*
-     * TODOinterface shouldn't have mongo-specific Cursor
-     */
-    fetchAllObjects(): Cursor<LearningObjectRecord>;
-    fetchMultipleObjects(ids: LearningObjectID[]): Cursor<LearningObjectRecord>;
-    searchObjects(name: string, author: string, length: string, level: string, content: string): Promise<LearningObjectRecord[]>;
-    searchOutcomes(text: string): Cursor<OutcomeRecord>;
-    matchOutcomes(text: string): Cursor<OutcomeRecord>;
 }
