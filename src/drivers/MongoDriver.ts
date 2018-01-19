@@ -9,7 +9,7 @@ import {
     collectionFor,
     schemaFor,
     foreignData,
-} from '../../schema/db.schema';
+} from 'clark-schema';
 
 import {
     Record, Update, Insert, Edit,
@@ -23,9 +23,8 @@ import {
     StandardOutcomeSchema, StandardOutcomeRecord, StandardOutcomeUpdate,
     StandardOutcomeInsert, StandardOutcomeEdit,
     OutcomeRecord,
-} from '../../schema/schema';
+} from 'clark-schema';
 export { ObjectID as DBID };
-
 import { DataStore } from "../interfaces/interfaces";
 
 export class MongoDriver implements DataStore {
@@ -440,6 +439,86 @@ export class MongoDriver implements DataStore {
     async fetchOutcome(id: UserID): Promise<OutcomeRecord> {
         return this.fetch<OutcomeRecord>(LearningOutcomeSchema, id);
     }
+
+    /**
+    * Return literally all objects. Very expensive.
+    * @returns {Cursor<LearningObjectRecord>[]} cursor of literally all objects
+    */
+    fetchAllObjects(): Cursor<LearningObjectRecord> {
+        return this.db.collection(collectionFor(LearningObjectSchema))
+            .find<LearningObjectRecord>();
+    }
+
+    /**
+     * Fetchs the learning object documents associated with the given ids.
+     *
+     * @param ids array of database ids
+     *
+     * @returns {Cursor<LearningObjectRecord>[]}
+     */
+    fetchMultipleObjects(ids: LearningObjectID[]): Cursor<LearningObjectRecord> {
+        return this.db.collection(collectionFor(LearningObjectSchema))
+            .find<LearningObjectRecord>({ _id: { $in: ids } });
+    }
+
+    /* Search for objects on CuBE criteria.
+    *
+    * TODO: Efficiency very questionable.
+    *      Convert to streaming algorithm if possible.
+    *
+    * TODO: behavior is currently very strict (ex. name, author must exactly match)
+    *       Consider text-indexing these fields to exploit mongo $text querying.
+    */
+    async searchObjects(
+        name: string,
+        author: string,
+        length: string,
+        level: string,
+        content: string,
+    ): Promise<LearningObjectRecord[]> {
+        try {
+            let all: LearningObjectRecord[] = await this.fetchAllObjects().toArray();
+            let results: LearningObjectRecord[] = [];
+            for (let object of all) {
+                if (name && object.name_ !== name) continue;
+                if (author) {
+                    let record = await this.db.collection(collectionFor(UserSchema))
+                        .findOne<UserRecord>({ _id: object.authorID });
+                    if (record.name_ !== author) continue;
+                }
+                if (length && object.length_ !== length) continue;
+                /**
+                 * TODO: implement level
+                 */
+                if (content) {
+                    let tokens = content.split(/\s/);
+                    let docs: any[] = [];
+                    for (let token of tokens) {
+                        docs.push({ outcome: { $regex: token } });
+                    }
+                    /**
+                     * TODO: perhaps not all tokens should be needed for a single outcome?
+                     *      That is, if one outcome has half the tokens and another
+                     *      has the other half, the object should still match?
+                     */
+                    let count = await this.db.collection(collectionFor(StandardOutcomeSchema))
+                        .count({
+                            source: object._id,
+                            $and: docs,
+                        });
+                    /**
+                     * TODO: objects should also match if any outcomes' mappings match desired content
+                     */
+                    if (count === 0) continue;
+                }
+                results.push(object);
+            }
+            return Promise.resolve(results);
+        } catch (e) {
+            return Promise.reject('Error suggesting objects' + e);
+        }
+    }
+
 
     ////////////////////////////////////////////////
     // GENERIC HELPER METHODS - not in public API //

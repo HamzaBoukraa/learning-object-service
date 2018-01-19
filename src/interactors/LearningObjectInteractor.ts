@@ -10,7 +10,7 @@ import {
     InstructionalStrategyInterface,
     LearningGoalInterface,
     LearningObjectRecord,
-} from '../../schema/schema';
+} from 'clark-schema';
 
 import {
     User,
@@ -76,12 +76,9 @@ export class LearningObjectInteractor implements Interactor{
     async loadLearningObject(id: LearningObjectID): Promise<void> {
         try {
             let record = await this.dataStore.fetchLearningObject(id);
-
-            // FIXME: Add User to serialization of Learning Object
-            //let author = await this.loadUser(record.author);`
-            //let object = new LearningObject(author);
-
-            let object = new LearningObject(null);
+            let authorRecord = await this.dataStore.fetchUser(record.authorID);
+            let author = new User(authorRecord.username, authorRecord.name_, null, null);
+            let object = new LearningObject(author);
             object.name = record.name_;
             object.date = record.date;
             object.length = record.length_;
@@ -340,7 +337,6 @@ export class LearningObjectInteractor implements Interactor{
             let records = await this.dataStore.fetchAllObjects().toArray();
             let objects: LearningObject[] = [];
             for (let doc of records) {
-                // FIXME: Add User to serialization of Learning Object
                 let authorRecord = await this.dataStore.fetchUser(doc.authorID);
                 let author = new User(authorRecord.username, authorRecord.name_, null, null);
                 let object = new LearningObject(author);
