@@ -1,1 +1,0 @@
-docker build -t $1 -f "$1/Dockerfile" .

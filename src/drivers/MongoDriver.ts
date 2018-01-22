@@ -29,7 +29,9 @@ import { DataStore } from "../interfaces/interfaces";
 
 export class MongoDriver implements DataStore {
 
-    constructor(private db: Db) { }
+    private db: Db;
+
+    constructor() { }
 
     /**
          * Connect to the database. Must be called before any other functions.

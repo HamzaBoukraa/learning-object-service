@@ -8,17 +8,21 @@ import * as lineReader from 'line-reader';
 
 import { MongoClient, Db } from 'mongodb';
 
-import { DBInterface, HashInterface } from '../interfaces/interfaces';
-import { MongoDriver, BcryptDriver } from '../drivers/drivers';
+import { DataStore } from '../interfaces/interfaces';
+import { MongoDriver } from '../drivers/drivers';
 
-import { DBGluer } from '../db.gluer';
 import { StandardOutcome } from 'clark-entity';
 import {
-    collections, schemaFor, collectionFor, uniquesFor, textsFor,
-} from '../schema/db.schema';
-import {
-    UserSchema, LearningObjectSchema, LearningOutcomeSchema,
-} from '../schema/schema';
+    collections,
+    schemaFor,
+    collectionFor,
+    uniquesFor,
+    textsFor,
+    UserSchema,
+    LearningObjectSchema,
+    LearningOutcomeSchema,
+    StandardOutcomeInsert
+} from 'clark-schema';
 
 /**
  * Initialize database with collections and indexes as defined by schema
@@ -26,7 +30,7 @@ import {
  *
  * @param {Db} prod mongo Db object connected to db being initialized
  */
-export async function init(db: Db) {
+async function init(db: Db) {
     // drop collections
     for (let collection of collections()) {
         try {
@@ -88,10 +92,10 @@ export async function init(db: Db) {
  *
  * @param {string} source author-label for all outcomes in the file
  * @param {string} year date-label for all outcomes in the file
- * @param {DBGluer} glue gluer connected to db being filled
+ * @param {DataStore} dataStore dataStore connected to db being filled
  */
-export async function addStandards(source: string, year: string, glue: DBGluer) {
-    let file =  'dbcontent/' + source + ' - ' + year + '.dat';
+async function addStandards(source: string, year: string, dataStore: DataStore) {
+    let file = 'dbcontent/' + source + ' - ' + year + '.dat';
     return new Promise<void>((resolve, reject) => {
         let promises: Promise<any>[] = [];
         let cnt = 0;    // count successful adds
@@ -100,14 +104,19 @@ export async function addStandards(source: string, year: string, glue: DBGluer) 
         lineReader.eachLine(file, function (line, last) {
             let dat = line.split('\t');
             if (dat.length === 2) {
-                let outcome = new StandardOutcome(source, dat[0], year, dat[1]);
+                let standard = new StandardOutcome(source, dat[0], year, dat[1]);
+                let record: StandardOutcomeInsert = {
+                    author: standard.author,
+                    name_: standard.name,
+                    date: standard.date,
+                    outcome: standard.outcome,
+                };
                 promises.push(
-                    glue.addStandardOutcome(outcome)
+                    dataStore.insertStandardOutcome(record)
                         .then(() => {
-                            cnt += 1;
+                            cnt++;
                             return Promise.resolve();
-                        })
-                        .catch((err) => { console.log(source + ' insertion error: ' + err); }),
+                        }, (err) => { console.log(source + ' insertion error: ' + err); })
                 );
             } else {    // data formatting error
                 console.log('Could not process line: ' + line);
@@ -116,11 +125,11 @@ export async function addStandards(source: string, year: string, glue: DBGluer) 
             // if we just processed the last line, wait to resolve all promises
             if (last) {
                 Promise.all(promises)
-                       .then(() => {
-                            console.log(cnt + ' ' + source + ' standard outcomes added');
-                            resolve();
-                        })
-                       .catch((e) => { reject(e); });
+                    .then(() => {
+                        console.log(cnt + ' ' + source + ' standard outcomes added');
+                        resolve();
+                    })
+                    .catch((e) => { reject(e); });
             }
         });
     });
@@ -138,28 +147,28 @@ async function copyCollection(collection: string, tmp: Db, prod: Db) {
             (err) => {
                 if (err) reject(err);
                 else Promise.all(promises)
-                            .then(() => { resolve(); })
-                            .catch((e) => { reject(e); });
+                    .then(() => { resolve(); })
+                    .catch((e) => { reject(e); });
             },
         );
     });
 }
 
-async function copyOutcome(outcome: any, tmp: Db, prod: Db, glue: DBGluer) {
+async function copyOutcome(outcome: any, tmp: Db, prod: Db) {
     try {
         let collection = collectionFor(LearningOutcomeSchema);
-        if ( !outcome.mappings ) return Promise.resolve();    // skip standard outcomes
+        if (!outcome.mappings) return Promise.resolve();    // skip standard outcomes
 
         let index = 0;
         while (index < outcome.mappings.length) {
             let mapping = await tmp.collection(collection)
-                                .findOne({ _id: outcome.mappings[index] });
-            if ( !outcome.mappings ) {   // now skip non-standard outcomes
+                .findOne({ _id: outcome.mappings[index] });
+            if (!outcome.mappings) {   // now skip non-standard outcomes
                 let analog = await prod.collection(collection)
-                                    .findOne({ tag: mapping.tag });
+                    .findOne({ tag: mapping.tag });
 
                 // if mapped standard outcome is not in production, splice it out
-                if ( !analog ) outcome.mappings.splice(index, 1);   // length decrements
+                if (!analog) outcome.mappings.splice(index, 1);   // length decrements
                 // otherwise, replace with the new objectid
                 else {
                     outcome.mappings[index] = analog._id;
@@ -175,20 +184,20 @@ async function copyOutcome(outcome: any, tmp: Db, prod: Db, glue: DBGluer) {
     }
 }
 
-async function copyOutcomes(tmp: Db, prod: Db, glue: DBGluer) {
+async function copyOutcomes(tmp: Db, prod: Db) {
     let collection = collectionFor(LearningOutcomeSchema);
     return new Promise<void>((resolve, reject) => {
         let outcomes = tmp.collection(collection).find();
         let promises: Promise<void>[] = [];
         outcomes.forEach(
             (doc) => {
-                promises.push(copyOutcome(doc, tmp, prod, glue));
+                promises.push(copyOutcome(doc, tmp, prod));
             },
             (err) => {
                 if (err) reject(err);
                 else Promise.all(promises)
-                            .then(() => { resolve(); })
-                            .catch((e) => { reject(e); });
+                    .then(() => { resolve(); })
+                    .catch((e) => { reject(e); });
             });
     });
 }
@@ -202,14 +211,13 @@ async function copyOutcomes(tmp: Db, prod: Db, glue: DBGluer) {
  *
  * @param {Db} tmp mongo Db object connected to temporary dump db for live data
  * @param {Db} prod mongo Db object connected to db being filled
- * @param {DBGluer} glue gluer connected to db being filled
  */
-export async function merge(tmp: Db, prod: Db, glue: DBGluer) {
+async function merge(tmp: Db, prod: Db) {
     return Promise.all([
-            copyCollection(collectionFor(UserSchema), tmp, prod),
-            copyCollection(collectionFor(LearningObjectSchema), tmp, prod),
-            copyOutcomes(tmp, prod, glue),
-        ]);
+        copyCollection(collectionFor(UserSchema), tmp, prod),
+        copyCollection(collectionFor(LearningObjectSchema), tmp, prod),
+        copyOutcomes(tmp, prod),
+    ]);
 }
 
 
@@ -223,32 +231,30 @@ if (require.main === module) {
             await init(dbase);
             dbase.close();
 
-            let db: DBInterface = new MongoDriver();
-            let hash: HashInterface = new BcryptDriver(10);
-            let glue = new DBGluer(db, hash);
+            let dataStore: DataStore = new MongoDriver();
 
-            await db.connect(process.env.CLARK_DB_URI);
+            await dataStore.connect(process.env.CLARK_DB_URI);
             console.log('--- Adding Standard Outcomes ---');
             await Promise.all([
-                addStandards('CAE Cyber Defense', '2014', glue),
-                addStandards('CAE Cyber Ops', '2014', glue),
-                addStandards('CCECC IT2014', '2014', glue),
-                addStandards('CS2013', '2013', glue),
-                addStandards('IT2008', '2008', glue),
-                addStandards('ITiCSE', '2010', glue),
-                addStandards('Military Academy', '2015', glue),
-                addStandards('NCWF KSAs', '2017', glue),
-                addStandards('NCWF Tasks', '2017', glue),
-                addStandards('SIGCSE', '2015', glue),
+                addStandards('CAE Cyber Defense', '2014', dataStore),
+                addStandards('CAE Cyber Ops', '2014', dataStore),
+                addStandards('CCECC IT2014', '2014', dataStore),
+                addStandards('CS2013', '2013', dataStore),
+                addStandards('IT2008', '2008', dataStore),
+                addStandards('ITiCSE', '2010', dataStore),
+                addStandards('Military Academy', '2015', dataStore),
+                addStandards('NCWF KSAs', '2017', dataStore),
+                addStandards('NCWF Tasks', '2017', dataStore),
+                addStandards('SIGCSE', '2015', dataStore),
             ]);
-            db.disconnect();
+            dataStore.disconnect();
 
             // if env variable 'SKIP_MERGE' exists, do not merge from tmp db
             if (!process.env.SKIP_MERGE) {
                 let production = await MongoClient.connect(process.env.CLARK_DB_URI);
                 let backup = await MongoClient.connect(process.env.CLARK_DB_URI.replace('onion', 'tmp'));
                 console.log('--- Merging previous data ---');
-                await merge(backup, production, glue);
+                await merge(backup, production);
 
                 production.close();
                 backup.close();
