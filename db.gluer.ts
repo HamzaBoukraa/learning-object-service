@@ -354,6 +354,7 @@ export class DBGluer {
             bloom: outcome.bloom,
             verb: outcome.verb,
             text: outcome.text,
+            mappings:[],
             assessments: documentAssessments(outcome.assessments),
             strategies: documentInstructions(outcome.strategies),
         });
