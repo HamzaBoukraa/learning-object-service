@@ -26,6 +26,8 @@ import {
 } from 'clark-schema';
 export { ObjectID as DBID };
 import { DataStore } from "../interfaces/interfaces";
+import * as dotenv from 'dotenv';
+dotenv.config();
 
 export class MongoDriver implements DataStore {
 

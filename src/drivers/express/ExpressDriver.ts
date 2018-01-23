@@ -3,6 +3,7 @@ import * as bodyParser from 'body-parser';
 import { DataStore, HashInterface } from '../../interfaces/interfaces';
 import { ExpressRouteDriver } from '../drivers'
 import * as http from 'http';
+import * as logger from 'morgan';
 
 export class ExpressDriver {
     static app = express();
@@ -13,7 +14,7 @@ export class ExpressDriver {
         this.app.use(bodyParser.json());
 
         //Setup route logger
-        // this.app.use(logger('dev'));
+        this.app.use(logger('dev'));
 
         // set header to allow connection by given url
         this.app.use(function (req, res, next) {

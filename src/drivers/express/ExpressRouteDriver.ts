@@ -13,10 +13,10 @@ export class ExpressRouteDriver {
 
     constructor(private dataStore: DataStore, private hasher: HashInterface) {
         this._LearningObjectInteractor = new LearningObjectInteractor(dataStore);
-        this._UserInteractor = new UserInteractor(dataStore,hasher);
-        this._AuthInteractor = new AuthInteractor(dataStore,hasher);
+        this._UserInteractor = new UserInteractor(dataStore, hasher);
+        this._AuthInteractor = new AuthInteractor(dataStore, hasher);
 
-     }
+    }
 
     public static buildRouter(dataStore: DataStore, hasher: HashInterface): Router {
         let e = new ExpressRouteDriver(dataStore, hasher);
@@ -142,8 +142,8 @@ export class ExpressRouteDriver {
             await this._LearningObjectInteractor.suggestObjects(name, author, length, level, content);
         });
 
-        router.post('/fetchAllObjects', async (req, res) => {
-            //Set Responder
+        router.get('/fetchAllObjects', async (req, res) => {
+
             this._LearningObjectInteractor.responder = this.getResponder(res);
             await this._LearningObjectInteractor.fetchAllObjects();
         });
@@ -153,7 +153,7 @@ export class ExpressRouteDriver {
             this._LearningObjectInteractor.responder = this.getResponder(res);
             await this._LearningObjectInteractor.fetchMultipleObjects(ids);
         });
-        
+
 
     }
 

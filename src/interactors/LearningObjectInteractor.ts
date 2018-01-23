@@ -58,9 +58,9 @@ export class LearningObjectInteractor implements Interactor {
                 summary.push(object);
             }
 
-            this.responder.sendObject(summary);
+            this._responder.sendObject(summary);
         } catch (e) {
-            this.responder.sendOperationError(e);
+            this._responder.sendOperationError(e);
         }
     };
 
@@ -121,9 +121,9 @@ export class LearningObjectInteractor implements Interactor {
             // load the repository:
             object.repository = record.repository;
 
-            this.responder.sendObject(object);
+            this._responder.sendObject(object);
         } catch (e) {
-            this.responder.sendOperationError(e);
+            this._responder.sendOperationError(e);
         }
     }
 
@@ -159,9 +159,9 @@ export class LearningObjectInteractor implements Interactor {
                 return this.addLearningOutcome(learningObjectID, outcome);
             }));
 
-            this.responder.sendObject(learningObjectID);
+            this._responder.sendObject(learningObjectID);
         } catch (e) {
-            this.responder.sendOperationError(e);
+            this._responder.sendOperationError(e);
         }
 
 
@@ -179,9 +179,9 @@ export class LearningObjectInteractor implements Interactor {
     async findLearningObject(userID: UserID, learningObjectName: string): Promise<void> {
         try {
             let learningObject = this.dataStore.findLearningObject(userID, learningObjectName);
-            this.responder.sendObject(learningObject);
+            this._responder.sendObject(learningObject);
         } catch (e) {
-            this.responder.sendOperationError(e);
+            this._responder.sendOperationError(e);
         }
     }
 
@@ -243,9 +243,9 @@ export class LearningObjectInteractor implements Interactor {
                     await this.dataStore.deleteLearningOutcome(outcomeId);
                 }
             }
-            this.responder.sendOperationSuccess();
+            this._responder.sendOperationSuccess();
         } catch (e) {
-            this.responder.sendOperationError(e);
+            this._responder.sendOperationError(e);
         }
     }
 
@@ -296,18 +296,18 @@ export class LearningObjectInteractor implements Interactor {
     async reorderOutcome(object: ObjectId, outcome: OutcomeID, index: number) {
         try {
             await this.dataStore.reorderOutcome(object, outcome, index)
-            this.responder.sendOperationSuccess();
+            this._responder.sendOperationSuccess();
         } catch (error) {
-            this.responder.sendOperationError();
+            this._responder.sendOperationError();
         }
     }
 
     async deleteLearningObject(id: LearningObjectID): Promise<void> {
         try {
             await this.dataStore.deleteLearningObject(id);
-            this.responder.sendOperationSuccess();
+            this._responder.sendOperationSuccess();
         } catch (error) {
-            this.responder.sendOperationError(error);
+            this._responder.sendOperationError(error);
         }
     }
 
@@ -332,22 +332,23 @@ export class LearningObjectInteractor implements Interactor {
      * Return literally all objects. Very expensive.
      * @returns {LearningObject[]} array of literally all objects
      */
-    async fetchAllObjects(): Promise<LearningObject[]> {
+    async fetchAllObjects(): Promise<void> {
         try {
             let records = await this.dataStore.fetchAllObjects().toArray();
             let objects: LearningObject[] = [];
             for (let doc of records) {
-                let authorRecord = await this.dataStore.fetchUser(doc.authorID);
-                let author = new User(authorRecord.username, authorRecord.name_, null, null);
+                let authorRecord = await this.dataStore.fetchUser(doc.authorID ? doc.authorID : doc['author']);
+                let author = new User(authorRecord.username ? authorRecord.username : authorRecord['id'], authorRecord.name_, null, null);
                 let object = new LearningObject(author);
                 object.name = doc.name_;
                 object.date = doc.date;
                 object.length = doc.length_;
                 objects.push(object);
             }
-            return Promise.resolve(objects);
+            this._responder.sendObject(objects);
         } catch (e) {
-            return Promise.reject(e);
+            console.log(e);
+            this._responder.sendOperationError(e);
         }
     }
 
@@ -356,13 +357,13 @@ export class LearningObjectInteractor implements Interactor {
      * Returns array of learning objects associated with the given ids.
      * @returns {LearningObjectRecord[]}
      */
-    async fetchMultipleObjects(ids: LearningObjectID[]): Promise<LearningObject[]> {
+    async fetchMultipleObjects(ids: LearningObjectID[]): Promise<void> {
         try {
             let records: LearningObjectRecord[] = await this.dataStore.fetchMultipleObjects(ids).toArray();
             let objects: LearningObject[] = [];
             for (let doc of records) {
-                let authorRecord = await this.dataStore.fetchUser(doc.authorID);
-                let author = new User(authorRecord.username, authorRecord.name_, null, null);
+                let authorRecord = await this.dataStore.fetchUser(doc.authorID ? doc.authorID : doc['author']);
+                let author = new User(authorRecord.username ? authorRecord.username : authorRecord['id'], authorRecord.name_, null, null);
 
                 let object = new LearningObject(author);
                 object.name = doc.name_;
@@ -370,9 +371,9 @@ export class LearningObjectInteractor implements Interactor {
                 object.length = doc.length_;
                 objects.push(object);
             }
-            return Promise.resolve(objects);
+            this._responder.sendObject(objects);
         } catch (e) {
-            return Promise.reject(e);
+            this._responder.sendOperationError(e);
         }
     }
 
@@ -403,9 +404,9 @@ export class LearningObjectInteractor implements Interactor {
                     date: object.date,
                 });
             }
-            this.responder.sendObject(suggestions);
+            this._responder.sendObject(suggestions);
         } catch (e) {
-            this.responder.sendOperationError(e);
+            this._responder.sendOperationError(e);
         }
     }
 
