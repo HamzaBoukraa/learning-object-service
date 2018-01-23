@@ -24,6 +24,7 @@ import {
 
 export { ObjectID as DBID };
 import { DataStore } from "../interfaces/interfaces";
+require('../useme');
 import * as dotenv from 'dotenv';
 dotenv.config();
 
@@ -107,6 +108,7 @@ export class MongoDriver implements DataStore {
      */
     async insertLearningOutcome(record: LearningOutcomeInsert): Promise<LearningOutcomeID> {
         try {
+            console.log(record);
             record['_id'] = (new ObjectID()).toHexString();
             /* FIXME: In order to create auto-generated fields, we need to
                       query information for the foreign keys. But when we
@@ -114,6 +116,7 @@ export class MongoDriver implements DataStore {
                       again to verify the foreign keys exist. Thoughts? */
             let source = await this.db.collection(collectionFor(LearningObjectSchema))
                 .findOne<LearningObjectRecord>({ _id: record.source });
+            console.log(source);
             let author = await this.db.collection(collectionFor(UserSchema))
                 .findOne<UserRecord>({ _id: source.authorID });
             record['author'] = author.name_;
@@ -726,7 +729,6 @@ export class MongoDriver implements DataStore {
                     await this.register(data.target, record[foreign], data.registry, id);
                 }
             }
-
             return Promise.resolve(id);
         } catch (e) {
             return Promise.reject('Problem inserting a ' + schema.name + ':\n\t' + e);

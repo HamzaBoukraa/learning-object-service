@@ -33,126 +33,208 @@ export class ExpressRouteDriver {
 
         // AUTHENTICATION ROUTES
         router.post('/authenticate', async (req, res) => {
-            let username = req.body.username;
-            let pwd = req.body.pwd;
-            this._AuthInteractor.responder = this.getResponder(res);
 
-            await this._AuthInteractor.authenticate(username, pwd);
+            try {
+                let username = req.body.username;
+                let pwd = req.body.pwd;
+                this._AuthInteractor.responder = this.getResponder(res);
+
+                await this._AuthInteractor.authenticate(username, pwd);
+
+            } catch (e) {
+                console.log(e);
+            }
+
         });
         router.post('/register', async (req, res) => {
-            let user = User.unserialize(req.body.user);
-            this._AuthInteractor.responder = this.getResponder(res);
-            await this._AuthInteractor.registerUser(user);
+            try {
+                let user = User.unserialize(req.body.user);
+                this._AuthInteractor.responder = this.getResponder(res);
+                await this._AuthInteractor.registerUser(user);
+            } catch (e) {
+                console.log(e);
+            }
+
         });
         // TODO: Combine into one route.
         router.post('/emailRegistered', async (req, res) => {
-            let email = req.body.email;
-            this._AuthInteractor.responder = this.getResponder(res);
+            try {
+                let email = req.body.email;
+                this._AuthInteractor.responder = this.getResponder(res);
 
-            await this._AuthInteractor.emailRegisterd(email);
+                await this._AuthInteractor.emailRegisterd(email);
+            } catch (e) {
+                console.log(e);
+            }
+
         });
 
         // USER ROUTES
         router.post('/findUser', async (req, res) => {
-            let username = req.body.username;
-            this._UserInteractor.responder = this.getResponder(res);
+            try {
+                let username = req.body.username;
+                this._UserInteractor.responder = this.getResponder(res);
 
-            await this._UserInteractor.findUser(username);
+                await this._UserInteractor.findUser(username);
+            } catch (e) {
+                console.log(e);
+            }
+
         });
         router.post('/loadUser', async (req, res) => {
-            let id = req.body.id;
-            this._UserInteractor.responder = this.getResponder(res);
+            try {
+                let id = req.body.id;
+                this._UserInteractor.responder = this.getResponder(res);
 
-            await this._UserInteractor.loadUser(id);
+                await this._UserInteractor.loadUser(id);
+
+            } catch (e) {
+                console.log(e);
+            }
+
         });
         router.post('/editUser', async (req, res) => {
-            let id = req.body.id;
-            let user = User.unserialize(req.body.user);
-            this._UserInteractor.responder = this.getResponder(res);
+            try {
+                let id = req.body.id;
+                let user = User.unserialize(req.body.user);
+                this._UserInteractor.responder = this.getResponder(res);
 
-            await this._UserInteractor.editUser(id, user);
+                await this._UserInteractor.editUser(id, user);
+            } catch (e) {
+                console.log(e);
+            }
+
         });
         router.post('/deleteUser', async (req, res) => {
-            let id = req.body.id;
-            this._UserInteractor.responder = this.getResponder(res);
-            await this._UserInteractor.deleteUser(id);
+            try {
+                let id = req.body.id;
+                this._UserInteractor.responder = this.getResponder(res);
+                await this._UserInteractor.deleteUser(id);
+            } catch (e) {
+                console.log(e);
+            }
+
         });
 
         // LEARNING OBJECT ROUTES
         router.post('/findLearningObject', async (req, res) => {
-            let author = req.body.author;
-            let name = req.body.name;
-            this._LearningObjectInteractor.responder = this.getResponder(res);
-            await this._LearningObjectInteractor.findLearningObject(author, name);
+            try {
+                let author = req.body.author;
+                let name = req.body.name;
+                this._LearningObjectInteractor.responder = this.getResponder(res);
+                await this._LearningObjectInteractor.findLearningObject(author, name);
+            } catch (e) {
+                console.log(e);
+            }
         });
 
 
 
         router.post('/loadLearningObjectSummary', async (req, res) => {
-            let id = req.body.id;
-            this._LearningObjectInteractor.responder = this.getResponder(res);
-            await this._LearningObjectInteractor.loadLearningObjectSummary(id)
+            try {
+                let id = req.body.id;
+                this._LearningObjectInteractor.responder = this.getResponder(res);
+                await this._LearningObjectInteractor.loadLearningObjectSummary(id)
+            } catch (e) {
+                console.log(e);
+            }
+
         });
 
         router.get('/loadLearningObject/:username/:learningObjectName', async (req, res) => {
-            this._LearningObjectInteractor.responder = this.getResponder(res);
-            await this._LearningObjectInteractor.loadLearningObject(req.params.username, req.params.learningObjectName)
+            try {
+                this._LearningObjectInteractor.responder = this.getResponder(res);
+                await this._LearningObjectInteractor.loadLearningObject(req.params.username, req.params.learningObjectName)
+            } catch (e) {
+                console.log(e);
+            }
+
         });
 
         router.post('/addLearningObject', async (req, res) => {
-            let author = req.body.author;
-            let object = LearningObject.unserialize(req.body.object);
-            this._LearningObjectInteractor.responder = this.getResponder(res);
-            await this._LearningObjectInteractor.addLearningObject(author, object);
+            try {
+                let author = req.body.author;
+                let object = LearningObject.unserialize(req.body.object);
+                this._LearningObjectInteractor.responder = this.getResponder(res);
+                await this._LearningObjectInteractor.addLearningObject(author, object);
+            } catch (e) {
+                console.log(e);
+            }
+
         });
 
 
 
         router.post('/updateLearningObject', async (req, res) => {
-            let id = req.body.id;
-            let object = LearningObject.unserialize(req.body.object);
-            this._LearningObjectInteractor.responder = this.getResponder(res);
-            await this._LearningObjectInteractor.updateLearningObject(id, object);
-
+            try {
+                let id = req.body.id;
+                let object = LearningObject.unserialize(req.body.object);
+                this._LearningObjectInteractor.responder = this.getResponder(res);
+                await this._LearningObjectInteractor.updateLearningObject(id, object);
+            } catch (e) {
+                console.log(e);
+            }
         });
 
 
         router.post('/deleteLearningObject', async (req, res) => {
-            let id = req.body.id;
-            this._LearningObjectInteractor.responder = this.getResponder(res);
-            await this._LearningObjectInteractor.deleteLearningObject(id)
+            try {
+                let id = req.body.id;
+                this._LearningObjectInteractor.responder = this.getResponder(res);
+                await this._LearningObjectInteractor.deleteLearningObject(id)
+
+            } catch (e) {
+                console.log(e);
+            }
+
         });
 
         router.post('/reorderOutcome', async (req, res) => {
-            let outcome = req.body.outcome;
-            let object = req.body.object;
-            let index = req.body.index;
-            this._LearningObjectInteractor.responder = this.getResponder(res);
-            await this._LearningObjectInteractor.reorderOutcome(object, outcome, index);
+            try {
+                let outcome = req.body.outcome;
+                let object = req.body.object;
+                let index = req.body.index;
+                this._LearningObjectInteractor.responder = this.getResponder(res);
+                await this._LearningObjectInteractor.reorderOutcome(object, outcome, index);
+            } catch (e) {
+                console.log(e);
+            }
+
         });
 
         router.post('/suggestObjects', async (req, res) => {
-            let name = req.body.name;
-            let author = req.body.author;
-            let length = req.body.length;
-            let level = req.body.level;
-            let content = req.body.content;
-            this._LearningObjectInteractor.responder = this.getResponder(res);
-            await this._LearningObjectInteractor.suggestObjects(name, author, length, level, content);
+            try {
+                let name = req.body.name;
+                let author = req.body.author;
+                let length = req.body.length;
+                let level = req.body.level;
+                let content = req.body.content;
+                this._LearningObjectInteractor.responder = this.getResponder(res);
+                await this._LearningObjectInteractor.suggestObjects(name, author, length, level, content);
+            } catch (e) {
+                console.log(e);
+            }
+
         });
 
         router.get('/fetchAllObjects', async (req, res) => {
-
-            this._LearningObjectInteractor.responder = this.getResponder(res);
-            await this._LearningObjectInteractor.fetchAllObjects();
+            try {
+                this._LearningObjectInteractor.responder = this.getResponder(res);
+                await this._LearningObjectInteractor.fetchAllObjects();
+            } catch (e) {
+                console.log(e);
+            }
         });
 
         router.post('/fetchMultipleObjects', async (req, res) => {
-            let ids = req.body.ids;
-            this._LearningObjectInteractor.responder = this.getResponder(res);
-            await this._LearningObjectInteractor.fetchMultipleObjects(ids);
+            try {
+                let ids = req.body.ids;
+                this._LearningObjectInteractor.responder = this.getResponder(res);
+                await this._LearningObjectInteractor.fetchMultipleObjects(ids);
+            } catch (e) {
+                console.log(e);
+            }
         });
-
 
     }
 

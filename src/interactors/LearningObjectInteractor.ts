@@ -159,11 +159,15 @@ export class LearningObjectInteractor implements Interactor {
             });
 
 
+
             let outcomeIDs = await Promise.all(object.outcomes.map((outcome: LearningOutcome) => {
                 return this.addLearningOutcome(learningObjectID, outcome);
             }));
+            console.log(outcomeIDs);
+
             this._responder.sendObject(learningObjectID);
         } catch (e) {
+            console.log(e);
             this._responder.sendOperationError(e);
         }
 
@@ -264,10 +268,8 @@ export class LearningObjectInteractor implements Interactor {
      *
      * @returns {LearningOutcomeID} the database id of the new record
      */
-    async addLearningOutcome(source: LearningObjectID, outcome: LearningOutcome): Promise<LearningOutcomeID> {
-        let outcomeID: OutcomeID;
-        let mappingID: OutcomeID;
-        let learningOutcome = await this.dataStore.insertLearningOutcome({
+    async addLearningOutcome(source: LearningObjectID, outcome: LearningOutcome): Promise<any> {
+        let learningOutcomeID = await this.dataStore.insertLearningOutcome({
             source: source,
             tag: outcome.tag,
             bloom: outcome.bloom,
@@ -279,16 +281,11 @@ export class LearningObjectInteractor implements Interactor {
         });
 
         await Promise.all(outcome.mappings.map((mapping: StandardOutcome) => {
-            return this.dataStore.findLearningOutcome(source, outcome.tag)
-                .then((outcomeID) => {
-                    return this.dataStore.findMappingID(mapping.date, mapping.name, mapping.outcome)
-                        .then((mappingID) => {
-                            return this.dataStore.mapOutcome(outcomeID, mappingID)
-                        });
-                });
+            console.log(mapping);
+            return this.dataStore.mapOutcome(learningOutcomeID, mapping['id']);
         }));
 
-        return learningOutcome;
+        return learningOutcomeID;
 
     }
 
@@ -493,7 +490,7 @@ export class LearningObjectInteractor implements Interactor {
      *
      * @returns {AssessmentPlanInterface[]}
      */
-    private documentAssessments(assessments: AssessmentPlan[]):
+    private documentAssessments(assessments: AssessmentPlan[] = []):
         AssessmentPlanInterface[] {
         let array: AssessmentPlanInterface[] = [];
         for (let i = 0; i < assessments.length; i++) {
@@ -511,7 +508,7 @@ export class LearningObjectInteractor implements Interactor {
      *
      * @returns {InstructionalStrategyInterface[]}
      */
-    private documentInstructions(strategies: InstructionalStrategy[]):
+    private documentInstructions(strategies: InstructionalStrategy[] = []):
         InstructionalStrategyInterface[] {
         let array: InstructionalStrategyInterface[] = [];
         for (let i = 0; i < strategies.length; i++) {
