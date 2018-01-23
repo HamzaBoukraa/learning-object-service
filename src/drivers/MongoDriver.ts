@@ -31,7 +31,12 @@ export class MongoDriver implements DataStore {
 
     private db: Db;
 
-    constructor() { }
+    constructor() {
+        let dburi = process.env.NODE_ENV === 'production' ?
+            process.env.CLARK_DB_URI.replace(/<DB_PASSWORD>/g, process.env.CLARK_DB_PWD).replace(/<DB_PORT>/g, process.env.CLARK_DB_PORT).replace(/<DB_NAME>/g, process.env.CLARK_DB_NAME)
+            : process.env.CLARK_DB_URI_DEV.replace(/<DB_PASSWORD>/g, process.env.CLARK_DB_PWD).replace(/<DB_PORT>/g, process.env.CLARK_DB_PORT).replace(/<DB_NAME>/g, process.env.CLARK_DB_NAME);
+        this.connect(dburi);
+    }
 
     /**
          * Connect to the database. Must be called before any other functions.

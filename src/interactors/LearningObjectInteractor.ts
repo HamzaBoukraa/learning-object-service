@@ -26,7 +26,7 @@ import {
 import { ObjectId } from 'bson';
 
 
-export class LearningObjectInteractor implements Interactor{
+export class LearningObjectInteractor implements Interactor {
     private _responder: Responder;
 
     public set responder(responder: Responder) {
@@ -143,26 +143,26 @@ export class LearningObjectInteractor implements Interactor{
      * @returns {LearningObjectID} the database id of the new record
      */
     async addLearningObject(authorID: UserID, object: LearningObject): Promise<void> {
-        try{
+        try {
             let learningObjectID = await this.dataStore.insertLearningObject({
-            authorID: authorID,
-            name_: object.name,
-            date: object.date,
-            length_: object.length,
-            goals: this.documentGoals(object.goals),
-            outcomes: [],
-            repository: object.repository,
-        });
+                authorID: authorID,
+                name_: object.name,
+                date: object.date,
+                length_: object.length,
+                goals: this.documentGoals(object.goals),
+                outcomes: [],
+                repository: object.repository,
+            });
 
 
-        await Promise.all(object.outcomes.map((outcome: LearningOutcome) => {
-            return this.addLearningOutcome(learningObjectID, outcome);
-        }));
+            let outcomeIDs = await Promise.all(object.outcomes.map((outcome: LearningOutcome) => {
+                return this.addLearningOutcome(learningObjectID, outcome);
+            }));
 
-        this.responder.sendObject(learningObjectID);
-    } catch (e){
-        this.responder.sendOperationError(e);
-    }
+            this.responder.sendObject(learningObjectID);
+        } catch (e) {
+            this.responder.sendOperationError(e);
+        }
 
 
     }
@@ -293,16 +293,16 @@ export class LearningObjectInteractor implements Interactor{
             strategies: this.documentInstructions(outcome.strategies),
         });
     }
-    async reorderOutcome(object: ObjectId, outcome: OutcomeID, index:number){
+    async reorderOutcome(object: ObjectId, outcome: OutcomeID, index: number) {
         try {
-            await this.dataStore.reorderOutcome(object,outcome,index)
+            await this.dataStore.reorderOutcome(object, outcome, index)
             this.responder.sendOperationSuccess();
         } catch (error) {
             this.responder.sendOperationError();
         }
     }
-    
-    async deleteLearningObject(id: LearningObjectID) : Promise<void>{
+
+    async deleteLearningObject(id: LearningObjectID): Promise<void> {
         try {
             await this.dataStore.deleteLearningObject(id);
             this.responder.sendOperationSuccess();

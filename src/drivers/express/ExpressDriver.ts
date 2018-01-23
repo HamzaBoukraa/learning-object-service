@@ -7,6 +7,7 @@ import * as http from 'http';
 export class ExpressDriver {
     static app = express();
     static start(dataStore: DataStore, hasher: HashInterface) {
+
         // configure app to use bodyParser()
         this.app.use(bodyParser.urlencoded({ extended: true }));
         this.app.use(bodyParser.json());
