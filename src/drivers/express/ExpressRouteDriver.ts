@@ -101,7 +101,7 @@ export class ExpressRouteDriver {
 
         router.post('/addLearningObject', async (req, res) => {
             let author = req.body.author;
-            let object = LearningObject.unserialize(req.body.object, null);
+            let object = LearningObject.unserialize(req.body.object);
             this._LearningObjectInteractor.responder = this.getResponder(res);
             await this._LearningObjectInteractor.addLearningObject(author, object);
         });
@@ -110,7 +110,7 @@ export class ExpressRouteDriver {
 
         router.post('/updateLearningObject', async (req, res) => {
             let id = req.body.id;
-            let object = LearningObject.unserialize(req.body.object, null);
+            let object = LearningObject.unserialize(req.body.object);
             this._LearningObjectInteractor.responder = this.getResponder(res);
             await this._LearningObjectInteractor.updateLearningObject(id, object);
 
