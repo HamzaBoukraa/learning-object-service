@@ -94,10 +94,9 @@ export class ExpressRouteDriver {
             await this._LearningObjectInteractor.loadLearningObjectSummary(id)
         });
 
-        router.post('/loadLearningObject', async (req, res) => {
-            let id = req.body.id;
+        router.get('/loadLearningObject/:username/:learningObjectName', async (req, res) => {
             this._LearningObjectInteractor.responder = this.getResponder(res);
-            await this._LearningObjectInteractor.loadLearningObject(id)
+            await this._LearningObjectInteractor.loadLearningObject(req.params.username, req.params.learningObjectName)
         });
 
         router.post('/addLearningObject', async (req, res) => {

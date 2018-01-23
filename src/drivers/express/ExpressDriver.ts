@@ -4,6 +4,8 @@ import { DataStore, HashInterface } from '../../interfaces/interfaces';
 import { ExpressRouteDriver } from '../drivers'
 import * as http from 'http';
 import * as logger from 'morgan';
+import { enforceTokenAccess } from '../../middleware/jwt.config';
+
 
 export class ExpressDriver {
     static app = express();
@@ -36,6 +38,8 @@ export class ExpressDriver {
             next();
         });
 
+        //Set Validation Middleware
+        //this.app.use(enforceTokenAccess);
 
 
         // Set our api routes

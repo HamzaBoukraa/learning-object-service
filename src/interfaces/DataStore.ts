@@ -16,7 +16,7 @@ import { Cursor } from 'mongodb';
 
 // FIXME: References to LearningObject's ID should be replaced with User's username and LearningObject's name
 export interface DataStore {
-    connect(dburistring: string): Promise<void>;
+    connect(dburi: string): Promise<void>;
     disconnect(): void;
     insertUser(record: UserInsert): Promise<UserID>;
     insertLearningObject(record: LearningObjectInsert): Promise<LearningObjectID>;
