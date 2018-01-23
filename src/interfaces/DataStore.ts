@@ -42,5 +42,6 @@ export interface DataStore {
     fetchMultipleObjects(ids: LearningObjectID[]): Cursor<LearningObjectRecord> ;
     fetchAllObjects(): Cursor<LearningObjectRecord> ;
     searchObjects( name: string, author: string, length: string, level: string, content: string): Promise<LearningObjectRecord[]>;
+    findMappingID(date: string, name:string, outcome: string): Promise<StandardOutcomeID>;
 
 }

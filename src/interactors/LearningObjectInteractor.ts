@@ -162,7 +162,6 @@ export class LearningObjectInteractor implements Interactor {
             let outcomeIDs = await Promise.all(object.outcomes.map((outcome: LearningOutcome) => {
                 return this.addLearningOutcome(learningObjectID, outcome);
             }));
-
             this._responder.sendObject(learningObjectID);
         } catch (e) {
             this._responder.sendOperationError(e);
@@ -266,16 +265,26 @@ export class LearningObjectInteractor implements Interactor {
      * @returns {LearningOutcomeID} the database id of the new record
      */
     async addLearningOutcome(source: LearningObjectID, outcome: LearningOutcome): Promise<LearningOutcomeID> {
-        return await this.dataStore.insertLearningOutcome({
-            source: source,
-            tag: outcome.tag,
-            bloom: outcome.bloom,
-            verb: outcome.verb,
-            text: outcome.text,
-            mappings: [],
-            assessments: this.documentAssessments(outcome.assessments),
-            strategies: this.documentInstructions(outcome.strategies),
+        let outcomeID: OutcomeID;
+        let mappingID: OutcomeID; 
+        let learningOutcome =  await this.dataStore.insertLearningOutcome({
+                source: source,
+                tag: outcome.tag,
+                bloom: outcome.bloom,
+                verb: outcome.verb,
+                text: outcome.text,
+                mappings: [],
+                assessments: this.documentAssessments(outcome.assessments),
+                strategies: this.documentInstructions(outcome.strategies),
         });
+        
+        await Promise.all(outcome.mappings.map((mapping: StandardOutcome) => {
+            outcomeID = this.dataStore.findLearningOutcome(source, outcome.tag);
+            mappingID = this.dataStore.findMappingID(mapping.date, mapping.name, mapping.outcome);
+            this.dataStore.mapOutcome(outcomeID, mappingID)
+        }));
+        return learningOutcome;
+
     }
 
     /**
@@ -289,13 +298,26 @@ export class LearningObjectInteractor implements Interactor {
      * @param {LearningOutcome} outcome - entity with values to update to
      */
     async editLearningOutcome(id: LearningOutcomeID, outcome: LearningOutcome): Promise<void> {
-        return this.dataStore.editLearningOutcome(id, {
+        let toDelete = (await this.dataStore.fetchLearningOutcome(id)).mappings;
+        let doNotDelete = new Set<StandardOutcomeID>();
+        for (let mapping of outcome.mappings) {
+            let mappingID = await this.dataStore.findMappingID(mapping.date,mapping.name,mapping.outcome);
+            doNotDelete.add(mappingID);
+        }
+
+        this.dataStore.editLearningOutcome(id, {
             bloom: outcome.bloom,
             verb: outcome.verb,
             text: outcome.text,
             assessments: this.documentAssessments(outcome.assessments),
             strategies: this.documentInstructions(outcome.strategies),
         });
+        // delete any mappings not in the update object
+        for (let mappingId of toDelete) {
+            if (!doNotDelete.has(mappingId)) {
+                await this.dataStore.unmapOutcome(id, mappingId);
+            }
+        }
     }
     async reorderOutcome(object: ObjectId, outcome: OutcomeID, index: number) {
         try {
@@ -314,6 +336,8 @@ export class LearningObjectInteractor implements Interactor {
             this._responder.sendOperationError(error);
         }
     }
+
+
 
     /**
      * Add a new standard outcome to the database.
@@ -495,5 +519,4 @@ export class LearningObjectInteractor implements Interactor {
         }
         return array;
     }
-
 }

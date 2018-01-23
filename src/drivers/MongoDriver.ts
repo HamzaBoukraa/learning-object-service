@@ -399,6 +399,27 @@ export class MongoDriver implements DataStore {
             return Promise.reject(e);
         }
     }
+    /**
+     * Look up a standard outcome by its tag.
+     * @async
+     *
+     * @param {string} tag the outcome's unique identifier
+     *
+     * @returns {StandardOutcomeID}
+     */
+    async findMappingID(date: string, name: string, outcome: string): Promise<StandardOutcomeID> {
+        try {
+            let tag = date+'$'+name+'$'+outcome;
+            let doc = await this.db.collection(collectionFor(StandardOutcomeSchema))
+                .findOne<StandardOutcomeRecord>({
+                    tag: tag,
+                });
+            if (!doc) return Promise.reject('No mappings found with tag: \'' + tag + '\' in the database');
+            return Promise.resolve(doc._id);
+        } catch (e) {
+            return Promise.reject(e);
+        }
+    }
 
     /**
      * Fetch the user document associated with the given id.
