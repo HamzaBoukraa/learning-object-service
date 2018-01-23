@@ -35,7 +35,6 @@
     "gulp-typescript": "^3.1.7",
     "mongodb": "^2.2.31",
     "morgan": "^1.9.0",
-    "node-env-file": "^0.1.8",
     "source-map-support": "^0.5.0"
   },
   "devDependencies": {
