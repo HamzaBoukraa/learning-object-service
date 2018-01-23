@@ -61,7 +61,7 @@ export class UserInteractor implements Interactor {
 
         try {
             let edit = {
-                username: user.id,
+                username: user.username,
                 name_: user.name,
                 email: user.email,
                 pwdhash: '',

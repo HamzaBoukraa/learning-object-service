@@ -50,7 +50,7 @@ export class AuthInteractor implements Interactor {
         try {
             let pwdhash = await this.hasher.hash(_user.pwd);
             let user = await this.dataStore.insertUser({
-                username: _user.id,
+                username: _user.username,
                 name_: _user.name,
                 email: _user.email,
                 pwdhash: pwdhash,

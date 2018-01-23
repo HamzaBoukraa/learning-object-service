@@ -51,7 +51,7 @@ export class LearningObjectInteractor implements Interactor {
             let summary: LearningObject[] = [];
             for (let objectid of record.objects) {
                 let objectRecord = await this.dataStore.fetchLearningObject(objectid);
-                let object = new LearningObject(null);
+                let object = new LearningObject(null, '');
                 object.name = objectRecord.name_;
                 object.date = objectRecord.date;
                 object.length = objectRecord.length_;
@@ -81,8 +81,7 @@ export class LearningObjectInteractor implements Interactor {
             let record = await this.dataStore.fetchLearningObject(learningObjectID);
             let authorRecord = await this.dataStore.fetchUser(record.authorID ? record.authorID : record['author']);
             let author = new User(authorRecord.username ? authorRecord.username : authorRecord['id'], authorRecord.name_, null, null);
-            let object = new LearningObject(author);
-            object.name = record.name_;
+            let object = new LearningObject(author, record.name_);
             object.date = record.date;
             object.length = record.length_;
             for (let rGoal of record.goals) {
@@ -373,8 +372,7 @@ export class LearningObjectInteractor implements Interactor {
             for (let doc of records) {
                 let authorRecord = await this.dataStore.fetchUser(doc.authorID ? doc.authorID : doc['author']);
                 let author = new User(authorRecord.username ? authorRecord.username : authorRecord['id'], authorRecord.name_, null, null);
-                let object = new LearningObject(author);
-                object.name = doc.name_;
+                let object = new LearningObject(author, doc.name_);
                 object.date = doc.date;
                 object.length = doc.length_;
                 objects.push(object);
@@ -424,8 +422,7 @@ export class LearningObjectInteractor implements Interactor {
                 let authorRecord = await this.dataStore.fetchUser(doc.authorID ? doc.authorID : doc['author']);
                 let author = new User(authorRecord.username ? authorRecord.username : authorRecord['id'], authorRecord.name_, null, null);
 
-                let object = new LearningObject(author);
-                object.name = doc.name_;
+                let object = new LearningObject(author, doc.name_);
                 object.date = doc.date;
                 object.length = doc.length_;
                 objects.push(object);
