@@ -2,3 +2,9 @@
 /dist
 /db
 /dbcontent/rawdata
+compare/
+db-setup/
+dbcontent/
+index.d.ts
+useme.ts
+.env
