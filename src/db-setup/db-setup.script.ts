@@ -3,7 +3,6 @@
 
 // tslint:disable-next-line: no-require-imports
 require('../useme');
-
 import * as lineReader from 'line-reader';
 
 import { MongoClient, Db } from 'mongodb';
@@ -23,6 +22,9 @@ import {
     LearningOutcomeSchema,
     StandardOutcomeInsert
 } from 'clark-schema';
+
+import * as dotenv from 'dotenv';
+dotenv.config();
 
 /**
  * Initialize database with collections and indexes as defined by schema
@@ -96,6 +98,7 @@ async function init(db: Db) {
  */
 async function addStandards(source: string, year: string, dataStore: DataStore) {
     let file = 'dbcontent/' + source + ' - ' + year + '.dat';
+    console.log(file);
     return new Promise<void>((resolve, reject) => {
         let promises: Promise<any>[] = [];
         let cnt = 0;    // count successful adds
@@ -111,6 +114,7 @@ async function addStandards(source: string, year: string, dataStore: DataStore) 
                     date: standard.date,
                     outcome: standard.outcome,
                 };
+                console.log(record);
                 promises.push(
                     dataStore.insertStandardOutcome(record)
                         .then(() => {

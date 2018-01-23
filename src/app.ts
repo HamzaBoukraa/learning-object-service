@@ -1,4 +1,4 @@
-\import { ExpressDriver, MongoDriver} from './drivers/drivers';
+import { ExpressDriver, MongoDriver} from './drivers/drivers';
 import { DataStore, HashInterface} from './interfaces/interfaces';
 import { BcryptDriver } from './drivers/BcryptDriver';
 import { Db } from 'mongodb';
