@@ -266,23 +266,28 @@ export class LearningObjectInteractor implements Interactor {
      */
     async addLearningOutcome(source: LearningObjectID, outcome: LearningOutcome): Promise<LearningOutcomeID> {
         let outcomeID: OutcomeID;
-        let mappingID: OutcomeID; 
-        let learningOutcome =  await this.dataStore.insertLearningOutcome({
-                source: source,
-                tag: outcome.tag,
-                bloom: outcome.bloom,
-                verb: outcome.verb,
-                text: outcome.text,
-                mappings: [],
-                assessments: this.documentAssessments(outcome.assessments),
-                strategies: this.documentInstructions(outcome.strategies),
+        let mappingID: OutcomeID;
+        let learningOutcome = await this.dataStore.insertLearningOutcome({
+            source: source,
+            tag: outcome.tag,
+            bloom: outcome.bloom,
+            verb: outcome.verb,
+            text: outcome.text,
+            mappings: [],
+            assessments: this.documentAssessments(outcome.assessments),
+            strategies: this.documentInstructions(outcome.strategies),
         });
-        
+
         await Promise.all(outcome.mappings.map((mapping: StandardOutcome) => {
-            outcomeID = this.dataStore.findLearningOutcome(source, outcome.tag);
-            mappingID = this.dataStore.findMappingID(mapping.date, mapping.name, mapping.outcome);
-            this.dataStore.mapOutcome(outcomeID, mappingID)
+            return this.dataStore.findLearningOutcome(source, outcome.tag)
+                .then((outcomeID) => {
+                    return this.dataStore.findMappingID(mapping.date, mapping.name, mapping.outcome)
+                        .then((mappingID) => {
+                            return this.dataStore.mapOutcome(outcomeID, mappingID)
+                        });
+                });
         }));
+
         return learningOutcome;
 
     }
@@ -301,7 +306,7 @@ export class LearningObjectInteractor implements Interactor {
         let toDelete = (await this.dataStore.fetchLearningOutcome(id)).mappings;
         let doNotDelete = new Set<StandardOutcomeID>();
         for (let mapping of outcome.mappings) {
-            let mappingID = await this.dataStore.findMappingID(mapping.date,mapping.name,mapping.outcome);
+            let mappingID = await this.dataStore.findMappingID(mapping.date, mapping.name, mapping.outcome);
             doNotDelete.add(mappingID);
         }
 
