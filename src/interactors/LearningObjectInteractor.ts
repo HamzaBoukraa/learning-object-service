@@ -10,7 +10,7 @@ import {
     InstructionalStrategyInterface,
     LearningGoalInterface,
     LearningObjectRecord,
-} from 'clark-schema';
+} from '@cyber4all/clark-schema';
 
 import {
     User,
@@ -21,7 +21,7 @@ import {
     LearningGoal,
     AssessmentPlan,
     InstructionalStrategy,
-} from 'clark-entity';
+} from '@cyber4all/clark-entity';
 
 import { ObjectId } from 'bson';
 
@@ -124,8 +124,9 @@ export class LearningObjectInteractor implements Interactor {
             // load the repository:
             object.repository = record.repository;
 
-            this._responder.sendObject(object);
+            this._responder.sendObject(LearningObject.serialize(object));
         } catch (e) {
+            console.log(e);
             this._responder.sendOperationError(e);
         }
     }

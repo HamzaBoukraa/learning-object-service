@@ -9,9 +9,6 @@ import {
     collectionFor,
     schemaFor,
     foreignData,
-} from 'clark-schema';
-
-import {
     Record, Update, Insert, Edit,
     RecordID, UserID, LearningObjectID, OutcomeID,
     LearningOutcomeID, StandardOutcomeID,
@@ -22,8 +19,9 @@ import {
     LearningOutcomeInsert, LearningOutcomeEdit,
     StandardOutcomeSchema, StandardOutcomeRecord, StandardOutcomeUpdate,
     StandardOutcomeInsert, StandardOutcomeEdit,
-    OutcomeRecord,
-} from 'clark-schema';
+    OutcomeRecord
+} from '@cyber4all/clark-schema';
+
 export { ObjectID as DBID };
 import { DataStore } from "../interfaces/interfaces";
 import * as dotenv from 'dotenv';
@@ -409,7 +407,7 @@ export class MongoDriver implements DataStore {
      */
     async findMappingID(date: string, name: string, outcome: string): Promise<StandardOutcomeID> {
         try {
-            let tag = date+'$'+name+'$'+outcome;
+            let tag = date + '$' + name + '$' + outcome;
             let doc = await this.db.collection(collectionFor(StandardOutcomeSchema))
                 .findOne<StandardOutcomeRecord>({
                     tag: tag,

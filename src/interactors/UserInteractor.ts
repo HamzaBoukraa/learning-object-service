@@ -1,8 +1,8 @@
 import { HashInterface, DataStore, Responder, Interactor } from '../interfaces/interfaces';
 
-import { UserID } from 'clark-schema';
+import { UserID } from '@cyber4all/clark-schema';
 
-import { User } from 'clark-entity';
+import { User } from '@cyber4all/clark-entity';
 export class UserInteractor implements Interactor {
 
     private _responder: Responder;
@@ -14,7 +14,7 @@ export class UserInteractor implements Interactor {
     constructor(private dataStore: DataStore, private hasher: HashInterface) { }
 
 
-    async findUser( username: string): Promise<void> {
+    async findUser(username: string): Promise<void> {
         try {
             let id = await this.dataStore.findUser(username);
             this.responder.sendObject(id);
@@ -91,7 +91,7 @@ export class UserInteractor implements Interactor {
             await this.dataStore.deleteUser(id);
             this.responder.sendOperationSuccess();
         } catch (e) {
-            this.responder.sendOperationError(e);           
+            this.responder.sendOperationError(e);
         }
     }
 }

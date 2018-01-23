@@ -3,7 +3,7 @@ import { DataStore, Responder } from "../../interfaces/interfaces";
 import { Router, Response } from 'express';
 import { AuthInteractor, UserInteractor, LearningObjectInteractor } from '../../interactors/interactors'
 import { HashInterface } from "../../interfaces/interfaces";
-import { User, LearningObject } from "clark-entity";
+import { User, LearningObject } from "@cyber4all/clark-entity";
 
 export class ExpressRouteDriver {
 

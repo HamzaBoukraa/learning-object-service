@@ -1,8 +1,8 @@
 import { HashInterface, DataStore, Responder, Interactor } from '../interfaces/interfaces';
 
-import { UserID } from 'clark-schema';
+import { UserID } from '@cyber4all/clark-schema';
 
-import { User } from 'clark-entity';
+import { User } from '@cyber4all/clark-entity';
 
 export class AuthInteractor implements Interactor {
 
