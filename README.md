@@ -2,59 +2,261 @@
 
 # Database Interaction
 Code for all CLARK scripts and services needing direct contact with the database. Each service has usage instructions in its own README file.
+# Database Interaction Service
 
-## Processes
-Name | Description
----|---
-`db-setup`|script to initialize database collections and fill with standard outcomes/legacy objects
-`db-interactor`|service to provide an interaction layer for core CLARK database functions
-`lo-suggestion`|service to suggest CLARK learning outcomes which relate to a text argument you provide
+Provide an interaction layer for core CLARK database functions.
 
-## Environment Variables Used
-Name|Default|Description
+The service listens for requests at `/api/<request-name>`.
+
+`*` All *entities* (`User`, `LearningObject`, `LearningOutcome`, etc.) must be serialized for network communication. Entities in a response must be unserialized.
+```typescript
+request.body.user = User.serialize(user);           // request example
+let user: User = User.unserialize(response.body);   // response example
+```
+
+### `/authenticate`
+| | Request                     | []()                       | []() | |
+| -----------| ------------ -------- |  ---------------------- ----- | - --- |- |
+| | `userid`|`string`  |  user's login id | |
+| `pwd`|`string`    | user's password |
+
+| Response         | []()                             | []()                        |
+| ---------------- | -------------------------------- | --------------------------- |
+| []()             | `boolean`                        | true iff user and pwd match |
+| `error`|`string` | exists only if an error occurred |
+
+#### Errors
+- If `userid` is invalid. This allows distinction between a wrong `userid` and a wrong `pwd` by whether or not `body.error` exists.
+
+### `/emailRegistered`
+| Request          | []()           | []() |
+| ---------------- | -------------- | ---- |
+| `email`|`string` | email to check |
+
+| Response         | []()                             | []()                                   |
+| ---------------- | -------------------------------- | -------------------------------------- |
+| []()             | `boolean`                        | true iff email is registered to a user |
+| `error`|`string` | exists only if an error occurred |
+
+### `/findUser`
+Request | []() | []()
 ---|---|---
-`CLARK_DB_URI`|see style rules|uri to connect to the database
-`CLARK_DB_INTERACTOR_PORT`|"27016"|port where `db-interactor` service listens
-`CLARK_LO_SUGGESTION_PORT`|"27015"|port where `lo-suggestion` service listens
-`CLARK_LO_SUGGESTION_THRESHOLD`|"1.25"|minimum score for outcome to be suggested (calculation is vague)
+`userid`|`string`|user's login id
 
-## Installation
-1) Clone the Github repository to your local machine:
-   `git clone https://github.com/Cyber4All/database-interaction.git`
-2) Switch to workspace: `cd database-interaction`
-3) Install all node dependencies: `npm install`
-4) Transpile TypeScript source: `npm run build`
-5) Set up local database (requires mongo installation): `mkdir db`
+| Response         | []()                             | []()                      |
+| ---------------- | -------------------------------- | ------------------------- |
+| []()             |                                  | user's unique database id |
+| `error`|`string` | exists only if an error occurred |
 
-## Usage
-- Actively transpile TypeScript source: `npm run build:watch`
-- Start local database (requires mongo installation): `npm run localdb`
-- Start docker database (requires docker installation): `docker run -p 27017:27017 mongo`
-- Run a process using a local database: `npm run <process>`
-- Run a process using a remote database: `CLARK_DB_URI=<uri> npm run <process>`
+#### Errors
+- If `userid` is invalid.
 
-## Testing
-- Run a specific `test/<file>.tape.ts` test: `npm test <file>`
-- Run all `test/<file>.tape.ts` tests: `npm test`
+### `/findLearningObject`
+| | Request                 | []()                                     | []()                               |                               |
+| ------------| ---------------  | ----------- ---------------------- -------- |  ---------------------------------- |------------------------------- |
+| | `author`                |                                                |  object author's unique database id | |
+| | `name`|`string`  |  learning object's name | |
 
-  NOTES:
-  - tests require an active database, given by the `CLARK_DB_URI` environment variable.
-  - **The test will destroy all data currently stored in the database.**
-  - Do **NOT** run the test on the production database!
+| Response         | []()                             | []()                                 |
+| ---------------- | -------------------------------- | ------------------------------------ |
+| []()             |                                  | learning object's unique database id |
+| `error`|`string` | exists only if an error occurred |
 
-## Deployment
-Deployment is automatic via Circle CI when changes are pushed to the remote repository's master branch. See the `.circleci/config.yml` file for workflow.
+#### Errors
+- If the `author`-`name` pair is invalid.
 
-## Docker (requires docker installation) (should not be necessary, if CI works)
-- Build a docker image: `npm run build:docker <process>`
-- Tag a docker image for publishing: `docker tag <process> <user>/<repo>:<process>`
-- Publish a docker image: `docker push <user>/<repo>:<process>`
-- Run a process through its docker image: `docker run -e CLARK_DB_URI=<uri> <user>/<repo>:<process>`
+### `/loadUser`
+| | | Request | []() | []()                      |                      |                      |
+| ----| ----| -------   | - - ----   | -- -- ------------------------- |-------------------- |-------------------- |
+| | | `id`            |                  |   user's unique database id | | |
 
-## Development Style Rules
-- Parameters for any scripts or services should use environment variables.
-- Assign default environment variables in the `.env` file.
-- Start every script and service with `require('useme');`, and in `useme.ts`, run any code that ALWAYS needs to happen (ex. extending Set prototype arithmetic).
-- Dockerfiles should initialize all required environment variables, even when using the same default as in-code.
-- IP addresses should default in-code to `localhost`.
-- IP addresses should default in Dockerfiles to the Docker subnet, `172.17.0.2`.
+| Response         | []()                             | []()                             |
+| ---------------- | -------------------------------- | -------------------------------- |
+| []()             | `User*`                          | user entity, without any objects |
+| `error`|`string` | exists only if an error occurred |
+
+#### Errors
+- If `id` is not a user database id. Perhaps it was deleted by another request?
+
+### `/loadLearningObjectSummary`
+Request | []() | []()
+---|---|---
+`id`||user's unique database id
+
+| Response         | []()                             | []()                                                         |
+| ---------------- | -------------------------------- | ------------------------------------------------------------ |
+| []()             | `LearningObject[]*`              | array of learning object entities, without goals or outcomes |
+| `error`|`string` | exists only if an error occurred |
+
+#### Errors
+- If `id` is not a user database id. Perhaps it was deleted by another request?
+
+`*` The array consists of serialized `LearningObject`s. Unserialize with the `map` function:
+```javascript
+let objects: LearningObject[] = response.body.map((a:string)=>{return LearningObject.unserialize(a,null)});
+```
+
+### `/loadLearningObject`
+| | Request | []() | []()                        |                        |
+| ----| -------  | - ----  | -- --------------------------- |---------------------- |
+| | `id`        |            |  object's unique database id | |
+
+| | Response                  | []()                                                         | []()                                      |                                      |
+| -------------| ----------------  | --------- -------------------------------- -------------------- | ------------------------------ ----------------------------------------- |-------- |
+| | []()                          |  `LearningObject*`                                |  learning object entity, completely loaded | |
+| | `error`|`string`  |  exists only if an error occurred | |
+
+#### Errors
+- If `id` is not an object database id. Perhaps it was deleted by another request?
+
+### `/readLearningObject`
+Request | []() | []()
+---|---|---
+`author`||object author's unique database id
+`name`|`string`|learning object's name
+
+Response| []() | []()
+---|---|---
+[]()|`LearningObject*`|learning object entity, completely loaded
+`error`|`string`|exists only if an error occurred
+
+#### Errors
+- If the `author`-`name` pair is invalid.
+
+NOTE: The 'intended' flow is to get the id via `findLearningObject`, then use that id to `loadLearningObject`. This route is provided for convenience, but note that you _will not have the id afterwards_, meaning you won't be able to update or delete it (unless you use `findLearningObject` after all...).
+
+### `/addUser`
+| Request        | []()                                      | []() |
+| -------------- | ----------------------------------------- | ---- |
+| `user`|`User*` | user entity (objects property is ignored) |
+
+| Response         | []()                             | []()                          |
+| ---------------- | -------------------------------- | ----------------------------- |
+| []()             |                                  | new user's unique database id |
+| `error`|`string` | exists only if an error occurred |
+
+#### Errors
+- If a user with the same `userid` already exists.
+
+### `/addLearningObject`
+| Request           | []()                                                  | []()                               |
+| ----------------- | ----------------------------------------------------- | ---------------------------------- |
+| `author`          |                                                       | object author's unique database id |
+| `object`|`string` | learning object entity (outcomes property is ignored) |
+
+| Response         | []()                             | []()                            |
+| ---------------- | -------------------------------- | ------------------------------- |
+| []()             |                                  | new object's unique database id |
+| `error`|`string` | exists only if an error occurred |
+
+#### Errors
+- If `author` is not a user database id. Perhaps it was deleted by another request?
+- If `author` already has a learning object with the same `name`.
+
+### `/editUser`
+| Request        | []()                                          | []()                      |
+| -------------- | --------------------------------------------- | ------------------------- |
+| `id`           |                                               | user's unique database id |
+| `user`|`User*` | new user entity (objects property is ignored) |
+
+| | | | | | | Response                                                               | []()                                                                                                                                                                                                     | []() | | | | | | |
+| ------| ------| ------| ------| ------| ------| ---------------- ------- ------- ------- ------- ------- ------- | ---------------- ---------------- ---------------- ---------------- ---------------- ---------------- -------------------------------- ------------- ------------- ------------- ------------- ------------- ------------- | - - - - - - ---- | | | | | | |
+| | | | | | | `error`|`string`       |       exists only if an error occurred | | | | | | |
+
+#### Errors
+- If `author` is not a user database id. Perhaps it was deleted by another request?
+- If a user with the same `userid` already exists.
+
+### `/updateLearningObject`
+| Request                    | []()                                                            | []()                        |
+| -------------------------- | --------------------------------------------------------------- | --------------------------- |
+| `id`                       |                                                                 | object's unique database id |
+| `object`|`LearningObject*` | new learning object entity (its outcomes' mappings are ignored) |
+
+Response| []() | []()
+---|---|---
+`error`|`string`|exists only if an error occurred
+
+#### Errors
+- If `id` is not an object database id. Perhaps it was deleted by another request?
+- If the object's `author` already has a learning object with the new `name`.
+- If any outcomes have the same `tag`.
+
+### `/reorderObject`
+| Request          | []()                                         | []()                        |
+| ---------------- | -------------------------------------------- | --------------------------- |
+| `user`           |                                              | user's unique database id   |
+| `object`         |                                              | object's unique database id |
+| `index`|`number` | new index for `object` in `user`'s `objects` |
+
+Response| []() | []()
+---|---|---
+`error`|`string`|exists only if an error occurred
+
+#### Errors
+- If `user` is not a user database id. Perhaps it was deleted by another request?
+- If `object` isn't in that user's objects list. Perhaps it was deleted by another request?
+- If `index` is negative or exceeds that user's number of objects.
+
+### `/mapOutcome`
+| Request   | []() | []()                                    |
+| --------- | ---- | --------------------------------------- |
+| `outcome` |      | outcome's unique database id            |
+| `mapping` |      | unique database id of outcome to map to |
+
+Response| []() | []()
+---|---|---
+`error`|`string`|exists only if an error occurred
+
+#### Errors
+- If `outcome` is not an outcome database id. Perhaps it was deleted by another request?
+- If `mapping` is not an outcome database id. Perhaps it was deleted by another request?
+
+### `/unmapOutcome`
+| Request   | []() | []()                                   |
+| --------- | ---- | -------------------------------------- |
+| `outcome` |      | outcome's unique database id           |
+| `mapping` |      | unique database id of outcome to unmap |
+
+Response| []() | []()
+---|---|---
+`error`|`string`|exists only if an error occurred
+
+#### Errors
+- If `outcome` is not an outcome database id. Perhaps it was deleted by another request?
+- If `mapping` is not in that outcome's mappings list. Perhaps it was deleted or unmapped by another request?
+
+### `/deleteUser`
+Request | []() | []()
+---|---|---
+`id`||user's unique database id
+
+Response| []() | []()
+---|---|---
+`error`|`string`|exists only if an error occurred
+
+#### Errors
+- If `id` is not a user database id. But your post-condition remains.
+
+### `/deleteLearningObject`
+Request | []() | []()
+---|---|---
+`id`||object's unique database id
+
+Response| []() | []()
+---|---|---
+`error`|`string`|exists only if an error occurred
+
+#### Errors
+- If `id` is not an object database id. But your post-condition remains.
+
+## Error Guide
+Errors originating in the database-interaction service should be self-explanatory, but some originating in the database itself or its node driver are less so. Add to this list as needed.
+
+* `MongoError: connection lost`
+
+    The db-interaction service's connection to the database was lost. This is either a network error, or the database process you are using has been terminated.
+
+* `MongoError: topology was destroyed`
+  
+    Somehow the db-interaction service's connection to the database was explicitly closed, with outstanding requests.

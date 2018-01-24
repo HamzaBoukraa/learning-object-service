@@ -344,11 +344,11 @@ export class MongoDriver implements DataStore {
      *
      * @returns {UserID}
      */
-    async findUser(id: string): Promise<UserID> {
+    async findUser(username: string): Promise<UserID> {
         try {
             let doc = await this.db.collection(collectionFor(UserSchema))
-                .findOne<UserRecord>({ id: id });
-            if (!doc) return Promise.reject('No user with id ' + id + ' exists.');
+                .findOne<UserRecord>({ username: username });
+            if (!doc) return Promise.reject('No user with username ' + username + ' exists.');
             return Promise.resolve(doc._id);
         } catch (e) {
             return Promise.reject(e);
