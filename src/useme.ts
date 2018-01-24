@@ -12,7 +12,7 @@ import {
     LearningOutcomeSchema,
     StandardOutcomeSchema,
     LearningObjectSchema,
-} from './schema/schema';
+} from '@cyber4all/clark-schema';
 
 /**
  * Just a simple expression to force javascript to declare the
