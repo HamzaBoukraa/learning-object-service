@@ -47,7 +47,6 @@ export class LearningObjectInteractor implements Interactor {
         try {
             let id = await this.dataStore.findUser(username);
             let record = await this.dataStore.fetchUser(id);
-
             let summary: LearningObject[] = [];
             for (let objectid of record.objects) {
                 let objectRecord = await this.dataStore.fetchLearningObject(objectid);
@@ -58,8 +57,7 @@ export class LearningObjectInteractor implements Interactor {
                 // not a deep operation - ignore goals and outcomes
                 summary.push(object);
             }
-
-            this._responder.sendObject(summary.map(object => LearningObject.serialize));
+            this._responder.sendObject(summary.map(object => LearningObject.serialize(object)));
         } catch (e) {
             this._responder.sendOperationError(e);
         }
@@ -374,7 +372,7 @@ export class LearningObjectInteractor implements Interactor {
                 object.length = doc.length_;
                 objects.push(object);
             }
-            this._responder.sendObject(objects.map(object => LearningObject.serialize));
+            this._responder.sendObject(objects.map(object => LearningObject.serialize(object)));
         } catch (e) {
             console.log(e);
             this._responder.sendOperationError(e);
@@ -413,7 +411,7 @@ export class LearningObjectInteractor implements Interactor {
                 object.length = doc.length_;
                 objects.push(object);
             }
-            this._responder.sendObject(objects.map(object => LearningObject.serialize));
+            this._responder.sendObject(objects.map(object => LearningObject.serialize(object)));
         } catch (e) {
             this._responder.sendOperationError(e);
         }
@@ -431,7 +429,7 @@ export class LearningObjectInteractor implements Interactor {
                 object.length = doc.length_;
                 objects.push(object);
             }
-            this._responder.sendObject(objects.map(object => LearningObject.serialize));
+            this._responder.sendObject(objects.map(object => LearningObject.serialize(object)));
         } catch (e) {
             this._responder.sendOperationError(e);
         }

@@ -39,7 +39,7 @@ export class UserInteractor implements Interactor {
             let user = new User(record.username, record.name_, record.email, null);
             // not a deep operation - ignore objects
 
-            this._responder.sendObject(user);
+            this._responder.sendObject(User.serialize(user));
         } catch (e) {
             this._responder.sendOperationError(e);
         }

@@ -136,7 +136,7 @@ export class ExpressRouteDriver {
             try {
                 let username = req.params.username;
                 this._LearningObjectInteractor.responder = this.getResponder(res);
-                await this._LearningObjectInteractor.loadLearningObjectSummary(username)
+                await this._LearningObjectInteractor.loadLearningObjectSummary(username);
             } catch (e) {
                 console.log(e);
             }
