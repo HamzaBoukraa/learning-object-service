@@ -329,9 +329,10 @@ export class LearningObjectInteractor implements Interactor {
         }
     }
 
-    async deleteLearningObject(id: LearningObjectID): Promise<void> {
+    async deleteLearningObject(username: string, learningObjectName: string): Promise<void> {
         try {
-            await this.dataStore.deleteLearningObject(id);
+            let learningObjectID = await this.dataStore.findLearningObject(username, learningObjectName);
+            await this.dataStore.deleteLearningObject(learningObjectID);
             this._responder.sendOperationSuccess();
         } catch (error) {
             this._responder.sendOperationError(error);

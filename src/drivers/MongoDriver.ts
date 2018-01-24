@@ -366,10 +366,10 @@ export class MongoDriver implements DataStore {
      */
     async findLearningObject(username: string, name: string): Promise<LearningObjectID> {
         try {
-            let author = await this.findUser(username);
+            let authorID = await this.findUser(username);
             let doc = await this.db.collection(collectionFor(LearningObjectSchema))
                 .findOne<LearningObjectRecord>({
-                    author: author,
+                    authorID: authorID,
                     name_: name,
                 });
             if (!doc) return Promise.reject('No learning object \'' + name + '\' for the given user');

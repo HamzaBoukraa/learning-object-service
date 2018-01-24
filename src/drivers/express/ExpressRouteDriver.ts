@@ -4,6 +4,7 @@ import { Router, Response } from 'express';
 import { AuthInteractor, UserInteractor, LearningObjectInteractor } from '../../interactors/interactors'
 import { HashInterface } from "../../interfaces/interfaces";
 import { User, LearningObject } from "@cyber4all/clark-entity";
+import { ObjectID } from "bson";
 
 export class ExpressRouteDriver {
 
@@ -117,28 +118,28 @@ export class ExpressRouteDriver {
         });
 
         // LEARNING OBJECT ROUTES
-        router.post('/findLearningObject', async (req, res) => {
+        // FIXME: Convert to get and get author's username from token
+        router.get('/findLearningObject/:author/:learningObjectName', async (req, res) => {
             try {
-                let author = req.body.author;
-                let name = req.body.name;
+                let username = req.params.author;
+                let learningObjectName = req.params.learningObjectName;
                 this._LearningObjectInteractor.responder = this.getResponder(res);
-                await this._LearningObjectInteractor.findLearningObject(author, name);
+                await this._LearningObjectInteractor.findLearningObject(username, learningObjectName);
             } catch (e) {
                 console.log(e);
             }
         });
 
 
-
-        router.post('/loadLearningObjectSummary', async (req, res) => {
+        // FIXME: Remove username from route and get username from token
+        router.get('/loadLearningObjectSummary/:username', async (req, res) => {
             try {
-                let id = req.body.id;
+                let username = req.params.username;
                 this._LearningObjectInteractor.responder = this.getResponder(res);
-                await this._LearningObjectInteractor.loadLearningObjectSummary(id)
+                await this._LearningObjectInteractor.loadLearningObjectSummary(username)
             } catch (e) {
                 console.log(e);
             }
-
         });
 
         router.get('/loadLearningObject/:username/:learningObjectName', async (req, res) => {
@@ -152,10 +153,11 @@ export class ExpressRouteDriver {
 
         router.post('/addLearningObject', async (req, res) => {
             try {
-                let author = req.body.author;
+                // FIXME: Get username from token
+                let username = req.body.author;
                 let object = LearningObject.unserialize(req.body.object);
                 this._LearningObjectInteractor.responder = this.getResponder(res);
-                await this._LearningObjectInteractor.addLearningObject(author, object);
+                await this._LearningObjectInteractor.addLearningObject(username, object);
             } catch (e) {
                 console.log(e);
             }
@@ -164,7 +166,7 @@ export class ExpressRouteDriver {
 
 
 
-        router.post('/updateLearningObject', async (req, res) => {
+        router.patch('/updateLearningObject', async (req, res) => {
             try {
                 let id = req.body.id;
                 let object = LearningObject.unserialize(req.body.object);
@@ -175,12 +177,14 @@ export class ExpressRouteDriver {
             }
         });
 
-
-        router.post('/deleteLearningObject', async (req, res) => {
+        // FIXME: Take username out of route, get from token
+        router.delete('/deleteLearningObject/:username/:learningObjectName', async (req, res) => {
             try {
-                let id = req.body.id;
+                let username = req.params.username;
+                let learningObjectName = req.params.learningObjectName;
+
                 this._LearningObjectInteractor.responder = this.getResponder(res);
-                await this._LearningObjectInteractor.deleteLearningObject(id)
+                await this._LearningObjectInteractor.deleteLearningObject(username, learningObjectName)
 
             } catch (e) {
                 console.log(e);
@@ -200,7 +204,7 @@ export class ExpressRouteDriver {
             }
 
         });
-
+        // FIXME: IMPLEMENT
         router.post('/suggestObjects', async (req, res) => {
             try {
                 let name = req.body.name;
@@ -225,9 +229,10 @@ export class ExpressRouteDriver {
             }
         });
 
-        router.post('/fetchMultipleObjects', async (req, res) => {
+        //Fetches Learing Objects By Username and LearningObject name
+        router.get('/fetchMultipleObjects/:ids', async (req, res) => {
             try {
-                let ids = req.body.ids;
+                let ids: { username: string, learningObjectName: string }[] = req.params.ids.split(',');
                 this._LearningObjectInteractor.responder = this.getResponder(res);
                 await this._LearningObjectInteractor.fetchMultipleObjects(ids);
             } catch (e) {
@@ -235,9 +240,11 @@ export class ExpressRouteDriver {
             }
         });
 
+        //Fetches Learning Objects by IDs
+        //FIXME: Need to validate token and that it is coming from cart service
         router.get('/fetchObjects/:ids', async (req, res) => {
             try {
-                let ids = req.params.ids.split(',');
+                let ids: ObjectID[] = req.params.ids.split(',');
                 this._LearningObjectInteractor.responder = this.getResponder(res);
                 await this._LearningObjectInteractor.fetchObjectsByIDs(ids);
             } catch (e) {
