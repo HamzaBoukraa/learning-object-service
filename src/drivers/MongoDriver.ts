@@ -364,8 +364,9 @@ export class MongoDriver implements DataStore {
      *
      * @returns {LearningObjectID}
      */
-    async findLearningObject(author: UserID, name: string): Promise<LearningObjectID> {
+    async findLearningObject(username: string, name: string): Promise<LearningObjectID> {
         try {
+            let author = await this.findUser(username);
             let doc = await this.db.collection(collectionFor(LearningObjectSchema))
                 .findOne<LearningObjectRecord>({
                     author: author,

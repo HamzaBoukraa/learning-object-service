@@ -185,8 +185,8 @@ export class LearningObjectInteractor implements Interactor {
      */
     async findLearningObject(userID: UserID, learningObjectName: string): Promise<void> {
         try {
-            let learningObject = this.dataStore.findLearningObject(userID, learningObjectName);
-            this._responder.sendObject(learningObject);
+            let learningObjectID = await this.dataStore.findLearningObject(userID, learningObjectName);
+            this._responder.sendObject(learningObjectID);
         } catch (e) {
             this._responder.sendOperationError(e);
         }
