@@ -17,9 +17,9 @@ export class UserInteractor implements Interactor {
     async findUser(username: string): Promise<void> {
         try {
             let id = await this.dataStore.findUser(username);
-            this.responder.sendObject(id);
+            this._responder.sendObject(id);
         } catch (e) {
-            this.responder.sendOperationError(e);
+            this._responder.sendOperationError(e);
         }
     };
 
@@ -39,9 +39,9 @@ export class UserInteractor implements Interactor {
             let user = new User(record.username, record.name_, record.email, null);
             // not a deep operation - ignore objects
 
-            this.responder.sendObject(user);
+            this._responder.sendObject(user);
         } catch (e) {
-            this.responder.sendOperationError(e);
+            this._responder.sendOperationError(e);
         }
     };
 
@@ -81,17 +81,17 @@ export class UserInteractor implements Interactor {
              *       gets wise to our trick.
              */
             await this.dataStore.editUser(id, edit);
-            this.responder.sendOperationSuccess();
+            this._responder.sendOperationSuccess();
         } catch (e) {
-            this.responder.sendOperationError(e);
+            this._responder.sendOperationError(e);
         }
     };
     async deleteUser(id: UserID): Promise<void> {
         try {
             await this.dataStore.deleteUser(id);
-            this.responder.sendOperationSuccess();
+            this._responder.sendOperationSuccess();
         } catch (e) {
-            this.responder.sendOperationError(e);
+            this._responder.sendOperationError(e);
         }
     }
 }

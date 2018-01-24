@@ -70,9 +70,9 @@ export class ExpressRouteDriver {
         });
 
         // USER ROUTES
-        router.post('/findUser', async (req, res) => {
+        router.get('/findUser/:username', async (req, res) => {
             try {
-                let username = req.body.username;
+                let username = req.params.username;
                 this._UserInteractor.responder = this.getResponder(res);
 
                 await this._UserInteractor.findUser(username);
@@ -81,9 +81,9 @@ export class ExpressRouteDriver {
             }
 
         });
-        router.post('/loadUser', async (req, res) => {
+        router.get('/loadUser/:id', async (req, res) => {
             try {
-                let id = req.body.id;
+                let id = req.params.id;
                 this._UserInteractor.responder = this.getResponder(res);
 
                 await this._UserInteractor.loadUser(id);
@@ -93,7 +93,7 @@ export class ExpressRouteDriver {
             }
 
         });
-        router.post('/editUser', async (req, res) => {
+        router.patch('/editUser', async (req, res) => {
             try {
                 let id = req.body.id;
                 let user = User.unserialize(req.body.user);
@@ -105,7 +105,7 @@ export class ExpressRouteDriver {
             }
 
         });
-        router.post('/deleteUser', async (req, res) => {
+        router.delete('/deleteUser/:id', async (req, res) => {
             try {
                 let id = req.body.id;
                 this._UserInteractor.responder = this.getResponder(res);

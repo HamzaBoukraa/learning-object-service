@@ -28,9 +28,9 @@ export class AuthInteractor implements Interactor {
             let record = await this.dataStore.fetchUser(id);
             let user = new User(record.username ? record.username : record['id'], record.name_, record.email, null);
             let authenticated = await this.hasher.verify(pwd, record.pwdhash);
-            authenticated ? this.responder.sendObject(User.serialize(user)) : this.responder.sendOperationErrorJSON({ error: "Authentication error. Username or password is invalid" });
+            authenticated ? this._responder.sendObject(User.serialize(user)) : this._responder.sendOperationErrorJSON({ error: "Authentication error. Username or password is invalid" });
         } catch (e) {
-            this.responder.sendOperationError(e);
+            this._responder.sendOperationError(e);
         }
     }
 
@@ -60,10 +60,10 @@ export class AuthInteractor implements Interactor {
             let user = new User(_user.username, _user.name, _user.email, null);
 
 
-            this.responder.sendObject(User.serialize(user));
+            this._responder.sendObject(User.serialize(user));
 
         } catch (e) {
-            this.responder.sendObject(e);
+            this._responder.sendObject(e);
         }
     }
 
@@ -79,9 +79,9 @@ export class AuthInteractor implements Interactor {
     async emailRegisterd(email: string): Promise<void> {
         try {
             let emailRegistered = await this.dataStore.emailRegistered(email);
-            this.responder.sendObject(emailRegistered);
+            this._responder.sendObject(emailRegistered);
         } catch (e) {
-            this.responder.sendOperationError(e);
+            this._responder.sendOperationError(e);
         }
     }
 
