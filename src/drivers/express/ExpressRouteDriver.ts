@@ -148,7 +148,6 @@ export class ExpressRouteDriver {
             } catch (e) {
                 console.log(e);
             }
-
         });
 
         router.post('/addLearningObject', async (req, res) => {
@@ -231,6 +230,16 @@ export class ExpressRouteDriver {
                 let ids = req.body.ids;
                 this._LearningObjectInteractor.responder = this.getResponder(res);
                 await this._LearningObjectInteractor.fetchMultipleObjects(ids);
+            } catch (e) {
+                console.log(e);
+            }
+        });
+
+        router.get('/fetchObjects/:ids', async (req, res) => {
+            try {
+                let ids = req.params.ids.split(',');
+                this._LearningObjectInteractor.responder = this.getResponder(res);
+                await this._LearningObjectInteractor.fetchObjectsByIDs(ids);
             } catch (e) {
                 console.log(e);
             }

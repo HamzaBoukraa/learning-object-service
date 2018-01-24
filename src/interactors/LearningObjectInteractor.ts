@@ -380,6 +380,8 @@ export class LearningObjectInteractor implements Interactor {
         }
     }
 
+
+
     /**
      * TODO: Refactor into fetchAllObjects. DRY
      * Returns array of learning objects associated with the given ids.
@@ -405,6 +407,24 @@ export class LearningObjectInteractor implements Interactor {
                 let authorRecord = await this.dataStore.fetchUser(doc.authorID ? doc.authorID : doc['author']);
                 let author = new User(authorRecord.username ? authorRecord.username : authorRecord['id'], authorRecord.name_, null, null);
 
+                let object = new LearningObject(author, doc.name_);
+                object.date = doc.date;
+                object.length = doc.length_;
+                objects.push(object);
+            }
+            this._responder.sendObject(objects);
+        } catch (e) {
+            this._responder.sendOperationError(e);
+        }
+    }
+
+    async fetchObjectsByIDs(ids: LearningObjectID[]) {
+        try {
+            let records = await this.dataStore.fetchMultipleObjects(ids).toArray();
+            let objects: LearningObject[] = [];
+            for (let doc of records) {
+                let authorRecord = await this.dataStore.fetchUser(doc.authorID ? doc.authorID : doc['author']);
+                let author = new User(authorRecord.username ? authorRecord.username : authorRecord['id'], authorRecord.name_, null, null);
                 let object = new LearningObject(author, doc.name_);
                 object.date = doc.date;
                 object.length = doc.length_;
