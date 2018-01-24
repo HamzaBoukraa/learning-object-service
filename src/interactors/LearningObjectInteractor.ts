@@ -76,8 +76,7 @@ export class LearningObjectInteractor implements Interactor {
      */
     async loadLearningObject(username: string, learningObjectName: string): Promise<void> {
         try {
-            let authorID = await this.dataStore.findUser(username);
-            let learningObjectID = await this.dataStore.findLearningObject(authorID, learningObjectName);
+            let learningObjectID = await this.dataStore.findLearningObject(username, learningObjectName);
             let record = await this.dataStore.fetchLearningObject(learningObjectID);
             let authorRecord = await this.dataStore.fetchUser(record.authorID ? record.authorID : record['author']);
             let author = new User(authorRecord.username ? authorRecord.username : authorRecord['id'], authorRecord.name_, null, null);
@@ -183,10 +182,10 @@ export class LearningObjectInteractor implements Interactor {
      *
      * @returns {LearningOutcomeID}
      */
-    async findLearningObject(userID: UserID, learningObjectName: string): Promise<void> {
+    async findLearningObject(username: string, learningObjectName: string): Promise<void> {
         try {
-            let learningObject = this.dataStore.findLearningObject(userID, learningObjectName);
-            this._responder.sendObject(learningObject);
+            let learningObjectID = await this.dataStore.findLearningObject(username, learningObjectName);
+            this._responder.sendObject(learningObjectID);
         } catch (e) {
             this._responder.sendOperationError(e);
         }
@@ -381,6 +380,8 @@ export class LearningObjectInteractor implements Interactor {
         }
     }
 
+
+
     /**
      * TODO: Refactor into fetchAllObjects. DRY
      * Returns array of learning objects associated with the given ids.
@@ -389,25 +390,12 @@ export class LearningObjectInteractor implements Interactor {
     async fetchMultipleObjects(ids: { username: string, learningObjectName: string }[]): Promise<void> {
         try {
 
-            //Get IDs associated with usernames
-            let userids = await Promise.all(
-                ids.map((id) => {
-                    return new Promise<{ authorID: UserID, learningObjectName: string }>((resolve, reject) => {
-                        this.dataStore.findUser(id.username)
-                            .then((authorID) => {
-                                resolve({
-                                    authorID: authorID,
-                                    learningObjectName: id.learningObjectName
-                                });
-                            }, (err) => reject(err));
-                    });
-                }));
 
             //Get IDs associated with LearningObjects
             let learningObjectIDs = await Promise.all(
-                userids.map((id) => {
+                ids.map((id) => {
                     return new Promise<LearningObjectID>((resolve, reject) => {
-                        this.dataStore.findLearningObject(id.authorID, id.learningObjectName)
+                        this.dataStore.findLearningObject(id.username, id.learningObjectName)
                             .then((learningObjectID) => resolve(learningObjectID)
                             , (err) => reject(err));
                     });
@@ -419,6 +407,24 @@ export class LearningObjectInteractor implements Interactor {
                 let authorRecord = await this.dataStore.fetchUser(doc.authorID ? doc.authorID : doc['author']);
                 let author = new User(authorRecord.username ? authorRecord.username : authorRecord['id'], authorRecord.name_, null, null);
 
+                let object = new LearningObject(author, doc.name_);
+                object.date = doc.date;
+                object.length = doc.length_;
+                objects.push(object);
+            }
+            this._responder.sendObject(objects);
+        } catch (e) {
+            this._responder.sendOperationError(e);
+        }
+    }
+
+    async fetchObjectsByIDs(ids: LearningObjectID[]) {
+        try {
+            let records = await this.dataStore.fetchMultipleObjects(ids).toArray();
+            let objects: LearningObject[] = [];
+            for (let doc of records) {
+                let authorRecord = await this.dataStore.fetchUser(doc.authorID ? doc.authorID : doc['author']);
+                let author = new User(authorRecord.username ? authorRecord.username : authorRecord['id'], authorRecord.name_, null, null);
                 let object = new LearningObject(author, doc.name_);
                 object.date = doc.date;
                 object.length = doc.length_;
