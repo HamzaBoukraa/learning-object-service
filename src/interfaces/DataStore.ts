@@ -33,7 +33,7 @@ export interface DataStore {
     deleteLearningOutcome(id: LearningOutcomeID): Promise<void>;
     emailRegistered(email: string): Promise<boolean>;
     findUser(id: string): Promise<UserID>;
-    findLearningObject(author: UserID, name: string): Promise<LearningObjectID>;
+    findLearningObject(username: string, name: string): Promise<LearningObjectID>;
     findLearningOutcome(source: LearningObjectID, tag: number): Promise<LearningOutcomeID>;
     fetchUser(id: UserID): Promise<UserRecord>;
     fetchLearningObject(id: UserID): Promise<LearningObjectRecord>;
