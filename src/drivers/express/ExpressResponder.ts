@@ -20,7 +20,7 @@ export class ExpressResponder implements Responder {
                     : this.res.status(400).send("Server error encounter.");
     }
     sendObject(object: any): void {
-        this.res.status(200).send(object);
+        this.res.json(object);
     }
 
 }
