@@ -59,7 +59,7 @@ export class LearningObjectInteractor implements Interactor {
                 summary.push(object);
             }
 
-            this._responder.sendObject(summary);
+            this._responder.sendObject(summary.map(object => LearningObject.serialize(object)));
         } catch (e) {
             this._responder.sendOperationError(e);
         }
@@ -373,7 +373,7 @@ export class LearningObjectInteractor implements Interactor {
                 object.length = doc.length_;
                 objects.push(object);
             }
-            this._responder.sendObject(objects);
+            this._responder.sendObject(objects.map(object => LearningObject.serialize(object)));
         } catch (e) {
             console.log(e);
             this._responder.sendOperationError(e);
@@ -412,7 +412,7 @@ export class LearningObjectInteractor implements Interactor {
                 object.length = doc.length_;
                 objects.push(object);
             }
-            this._responder.sendObject(objects);
+            this._responder.sendObject(objects.map(object => LearningObject.serialize(object)));
         } catch (e) {
             this._responder.sendOperationError(e);
         }
@@ -430,7 +430,7 @@ export class LearningObjectInteractor implements Interactor {
                 object.length = doc.length_;
                 objects.push(object);
             }
-            this._responder.sendObject(objects);
+            this._responder.sendObject(objects.map(object => LearningObject.serialize(object)));
         } catch (e) {
             this._responder.sendOperationError(e);
         }
