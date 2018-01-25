@@ -155,6 +155,7 @@ export class ExpressRouteDriver {
             try {
                 // FIXME: Get username from token
                 let username = req.body.author;
+                console.log(req.body)
                 let object = LearningObject.unserialize(req.body.object);
                 this._LearningObjectInteractor.responder = this.getResponder(res);
                 await this._LearningObjectInteractor.addLearningObject(username, object);
@@ -185,6 +186,20 @@ export class ExpressRouteDriver {
 
                 this._LearningObjectInteractor.responder = this.getResponder(res);
                 await this._LearningObjectInteractor.deleteLearningObject(username, learningObjectName)
+
+            } catch (e) {
+                console.log(e);
+            }
+
+        });
+
+        router.delete('/deleteMultipleLearningObjects/:username/:learningObjectNames', async (req, res) => {
+            try {
+                let username = req.params.username;
+                let learningObjectNames = req.params.learningObjectNames.split(',');
+
+                this._LearningObjectInteractor.responder = this.getResponder(res);
+                await this._LearningObjectInteractor.deleteMultipleLearningObjects(username, learningObjectNames);
 
             } catch (e) {
                 console.log(e);

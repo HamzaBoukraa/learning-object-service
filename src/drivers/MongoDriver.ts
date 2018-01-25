@@ -292,6 +292,18 @@ export class MongoDriver implements DataStore {
     }
 
     /**
+    * Remove a learning object (and its outcomes) from the database.
+    * @async
+    *
+    * @param {LearningObjectID} id which document to delete
+    */
+    async deleteMultipleLearningObjects(ids: LearningObjectID[]): Promise<any> {
+        return Promise.all(ids.map((id) => {
+            return this.remove(LearningObjectSchema, id);
+        }));
+    }
+
+    /**
      * Remove a learning outcome from the database.
      * @async
      *

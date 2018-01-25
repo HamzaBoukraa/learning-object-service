@@ -337,6 +337,19 @@ export class LearningObjectInteractor implements Interactor {
         }
     }
 
+    async deleteMultipleLearningObjects(username: string, learningObjectNames: string[]): Promise<void> {
+        try {
+            let learningObjectIDs = await Promise.all(learningObjectNames.map((learningObjectName => {
+                return this.dataStore.findLearningObject(username, learningObjectName);
+            })));
+
+            await this.dataStore.deleteMultipleLearningObjects(learningObjectIDs);
+            this._responder.sendOperationSuccess();
+        } catch (error) {
+            this._responder.sendOperationError(error);
+        }
+    }
+
 
 
     /**
