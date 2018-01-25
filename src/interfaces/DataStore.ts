@@ -18,7 +18,7 @@ import { Cursor } from 'mongodb';
 export interface DataStore {
     connect(dburi: string): Promise<void>;
     disconnect(): void;
-    insertUser(record: UserInsert): Promise<UserID>;
+    insertUser(record: UserInsert): Promise<boolean | UserID>;
     insertLearningObject(record: LearningObjectInsert): Promise<LearningObjectID>;
     insertLearningOutcome(record: LearningOutcomeInsert): Promise<LearningOutcomeID>;
     insertStandardOutcome(record: StandardOutcomeInsert): Promise<StandardOutcomeID>;
