@@ -257,7 +257,7 @@ export class ExpressRouteDriver {
 
         //Fetches Learning Objects by IDs
         //FIXME: Need to validate token and that it is coming from cart service
-        router.get('/fetchObjects/:ids', async (req, res) => {
+        router.get('/fetchObjectsSummary/:ids', async (req, res) => {
             try {
                 let ids: ObjectID[] = req.params.ids.split(',');
                 this._LearningObjectInteractor.responder = this.getResponder(res);
@@ -266,6 +266,18 @@ export class ExpressRouteDriver {
                 console.log(e);
             }
         });
+
+        //Fetches Learning Objects by IDs
+        //FIXME: Need to validate token and that it is coming from cart service
+        router.get('/fecthFullObjects/:ids', async (req, res) => {
+            try {
+                let ids: ObjectID[] = req.params.ids.split(',');
+                this._LearningObjectInteractor.responder = this.getResponder(res);
+                await this._LearningObjectInteractor.loadFullLearningObjectByIDs(ids);
+            } catch (e) {
+                console.log(e);
+            }
+        })
 
     }
 

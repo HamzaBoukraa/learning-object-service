@@ -23,7 +23,7 @@ import {
     InstructionalStrategy,
 } from '@cyber4all/clark-entity';
 
-import { ObjectId } from 'bson';
+import { ObjectId, ObjectID } from 'bson';
 
 
 export class LearningObjectInteractor implements Interactor {
@@ -122,6 +122,65 @@ export class LearningObjectInteractor implements Interactor {
 
             //FIXME: Only send id if Object is owned by user
             this._responder.sendObject({ id: learningObjectID, object: LearningObject.serialize(object) });
+        } catch (e) {
+            console.log(e);
+            this._responder.sendOperationError(e);
+        }
+    }
+
+
+    async loadFullLearningObjectByIDs(ids: ObjectID[]): Promise<void> {
+        try {
+            let records = await this.dataStore.fetchMultipleObjects(ids).toArray();
+            let objects: LearningObject[] = [];
+            for (let doc of records) {
+                let authorRecord = await this.dataStore.fetchUser(doc.authorID ? doc.authorID : doc['author']);
+                let author = new User(authorRecord.username ? authorRecord.username : authorRecord['id'], authorRecord.name_, null, null);
+                let object = new LearningObject(author, doc.name_);
+                object.date = doc.date;
+                object.length = doc.length_;
+                for (let rGoal of doc.goals) {
+                    let goal = object.addGoal();
+                    goal.text = rGoal.text;
+                }
+                // load each outcome
+                for (let outcomeid of doc.outcomes) {
+                    let rOutcome = await this.dataStore.fetchLearningOutcome(outcomeid);
+
+                    let outcome = object.addOutcome();
+                    outcome.bloom = rOutcome.bloom;
+                    outcome.verb = rOutcome.verb;
+                    outcome.text = rOutcome.text;
+                    for (let rAssessment of rOutcome.assessments) {
+                        let assessment = outcome.addAssessment();
+                        assessment.plan = rAssessment.plan;
+                        assessment.text = rAssessment.text;
+                    }
+                    for (let rStrategy of rOutcome.strategies) {
+                        let strategy = outcome.addStrategy();
+                        strategy.instruction = rStrategy.instruction;
+                        strategy.text = rStrategy.text;
+                    }
+
+                    // only extract the basic info for each mapped outcome
+                    for (let mapid of rOutcome.mappings) {
+                        let rMapping = await this.dataStore.fetchOutcome(mapid);
+                        outcome.mapTo({
+                            author: rMapping.author,
+                            name: rMapping.name_,
+                            date: rMapping.date,
+                            outcome: rMapping.outcome,
+                        });
+                    }
+                }
+
+                // load the repository:
+                object.repository = doc.repository;
+
+                objects.push(object);
+            }
+
+            this._responder.sendObject(objects.map((object) => { return LearningObject.serialize(object) }));
         } catch (e) {
             console.log(e);
             this._responder.sendOperationError(e);
