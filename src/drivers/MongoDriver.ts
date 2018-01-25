@@ -81,9 +81,16 @@ export class MongoDriver implements DataStore {
      *
      * @returns {UserID} the database id of the new record
      */
-    insertUser(record: UserInsert): Promise<ObjectID> {
-        record['_id'] = (new ObjectID()).toHexString();
-        return this.insert(UserSchema, record);
+    async insertUser(record: UserInsert): Promise<boolean | ObjectID> {
+        try {
+            let doc = await this.db.collection(collectionFor(UserSchema))
+                .findOne<UserRecord>({ email: record.email });
+            if (doc) return Promise.reject({ error: 'Email is already in use.' });
+            record['_id'] = (new ObjectID()).toHexString();
+            return this.insert(UserSchema, record);
+        } catch (e) {
+            return Promise.reject(e);
+        }
     }
     /**
    * Insert a learning object into the database.

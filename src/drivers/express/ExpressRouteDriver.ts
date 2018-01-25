@@ -129,6 +129,7 @@ export class ExpressRouteDriver {
                 console.log(e);
             }
         });
+        
 
 
         // FIXME: Remove username from route and get username from token
