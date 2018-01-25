@@ -120,7 +120,8 @@ export class LearningObjectInteractor implements Interactor {
             // load the repository:
             object.repository = record.repository;
 
-            this._responder.sendObject(LearningObject.serialize(object));
+            //FIXME: Only send id if Object is owned by user
+            this._responder.sendObject({ id: learningObjectID, object: LearningObject.serialize(object) });
         } catch (e) {
             console.log(e);
             this._responder.sendOperationError(e);
