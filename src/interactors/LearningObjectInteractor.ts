@@ -364,6 +364,9 @@ export class LearningObjectInteractor implements Interactor {
         for (let mapping of outcome.mappings) {
             let mappingID = await this.dataStore.findMappingID(mapping.date, mapping.name, mapping.outcome);
             doNotDelete.add(mappingID);
+            if(toDelete.indexOf(mappingID) == -1){
+                this.dataStore.mapOutcome(id, mappingID);
+            }
         }
 
         this.dataStore.editLearningOutcome(id, {
