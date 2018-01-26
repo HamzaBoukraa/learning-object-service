@@ -109,6 +109,7 @@ export class LearningObjectInteractor implements Interactor {
                 for (let mapid of rOutcome.mappings) {
                     let rMapping = await this.dataStore.fetchOutcome(mapid);
                     outcome.mapTo({
+                        id: `${mapid}`,
                         author: rMapping.author,
                         name: rMapping.name_,
                         date: rMapping.date,
@@ -166,6 +167,7 @@ export class LearningObjectInteractor implements Interactor {
                     for (let mapid of rOutcome.mappings) {
                         let rMapping = await this.dataStore.fetchOutcome(mapid);
                         outcome.mapTo({
+                            id: `${mapid}`,
                             author: rMapping.author,
                             name: rMapping.name_,
                             date: rMapping.date,
