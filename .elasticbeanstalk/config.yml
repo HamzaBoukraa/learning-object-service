@@ -1,11 +1,12 @@
 branch-defaults:
   master:
-    environment: Learning-Object-Service-Production
+    environment: LearningObject-Service-Production
 global:
-  application_name: Learning Object Service
+  application_name: CLARK
   default_ec2_keyname: null
-  default_platform: arn:aws:elasticbeanstalk:us-east-1::platform/Node.js running on
-    64bit Amazon Linux/4.3.0
+  default_platform: >-
+    arn:aws:elasticbeanstalk:us-east-1::platform/Node.js running on 64bit Amazon
+    Linux/4.3.0
   default_region: us-east-1
   include_git_submodules: true
   instance_profile: null
