@@ -50,6 +50,7 @@ export class AuthInteractor implements Interactor {
     async registerUser(_user: User): Promise<void> {
         try {
             let pwdhash = await this.hasher.hash(_user.pwd);
+
             let userID = await this.dataStore.insertUser({
                 username: _user.username,
                 name_: _user.name,
@@ -57,13 +58,13 @@ export class AuthInteractor implements Interactor {
                 pwdhash: pwdhash,
                 objects: [],
             });
-            let user = new User(_user.username, _user.name, _user.email, null);
 
+            let user = new User(_user.username, _user.name, _user.email, null);
 
             this._responder.sendObject(User.serialize(user));
 
         } catch (e) {
-            this._responder.sendObject(e);
+            this._responder.sendOperationError(e);
         }
     }
 
