@@ -82,8 +82,7 @@ export class LearningObjectInteractor implements Interactor {
             object.date = record.date;
             object.length = record.length_;
             for (let rGoal of record.goals) {
-                let goal = object.addGoal();
-                goal.text = rGoal.text;
+                object.addGoal(rGoal.text);
             }
 
             // load each outcome
@@ -141,8 +140,7 @@ export class LearningObjectInteractor implements Interactor {
                 object.date = doc.date;
                 object.length = doc.length_;
                 for (let rGoal of doc.goals) {
-                    let goal = object.addGoal();
-                    goal.text = rGoal.text;
+                    object.addGoal(rGoal.text);
                 }
                 // load each outcome
                 for (let outcomeid of doc.outcomes) {
@@ -364,7 +362,7 @@ export class LearningObjectInteractor implements Interactor {
         for (let mapping of outcome.mappings) {
             let mappingID = await this.dataStore.findMappingID(mapping.date, mapping.name, mapping.outcome);
             doNotDelete.add(mappingID);
-            if(toDelete.indexOf(mappingID) == -1){
+            if (toDelete.indexOf(mappingID) == -1) {
                 this.dataStore.mapOutcome(id, mappingID);
             }
         }
@@ -521,13 +519,13 @@ export class LearningObjectInteractor implements Interactor {
      * @param {string} author the objects' authors' names` should closely relate
      * @param {string} length the objects' lengths should match exactly
      * @param {string} level the objects' levels should match exactly TODO: implement
-     * @param {string} content the objects' outcomes' outcomes should closely relate
+     * @param {boolean} ascending whether or not result should be in ascending order
      *
      * @returns {Outcome[]} list of outcome suggestions, ordered by score
      */
-    async suggestObjects(name: string, author: string, length: string, level: string, content: string): Promise<void> {
+    async suggestObjects(name: string, author: string, length: string, level: string, ascending: boolean): Promise<void> {
         try {
-            let objects: LearningObjectRecord[] = await this.dataStore.searchObjects(name, author, length, level, content);
+            let objects: LearningObjectRecord[] = await this.dataStore.searchObjects(name, author, length, level, ascending);
             //FIXME: Suggestions should be typed as something like "ObjectSuggestion"
             let suggestions: any[] = [];
             for (let object of objects) {

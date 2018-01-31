@@ -129,7 +129,7 @@ export class ExpressRouteDriver {
                 console.log(e);
             }
         });
-        
+
 
 
         // FIXME: Remove username from route and get username from token
@@ -221,15 +221,16 @@ export class ExpressRouteDriver {
 
         });
         // FIXME: IMPLEMENT
-        router.post('/suggestObjects', async (req, res) => {
+        router.get('/suggestObjects', async (req, res) => {
             try {
-                let name = req.body.name;
-                let author = req.body.author;
-                let length = req.body.length;
-                let level = req.body.level;
-                let content = req.body.content;
+                let ascending = req.query.ascending;
+                let name = req.query.name;
+                let author = req.query.author;
+                let length = req.query.length;
+                let level = req.query.level;
+                // let content = req.query.content;
                 this._LearningObjectInteractor.responder = this.getResponder(res);
-                await this._LearningObjectInteractor.suggestObjects(name, author, length, level, content);
+                await this._LearningObjectInteractor.suggestObjects(name, author, length, level, ascending);
             } catch (e) {
                 console.log(e);
             }

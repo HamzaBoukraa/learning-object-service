@@ -525,45 +525,9 @@ export class MongoDriver implements DataStore {
         author: string,
         length: string,
         level: string,
-        content: string,
+        ascending: boolean,
     ): Promise<LearningObjectRecord[]> {
         try {
-            let all: LearningObjectRecord[] = await this.fetchAllObjects().toArray();
-            let results: LearningObjectRecord[] = [];
-            for (let object of all) {
-                if (name && object.name_ !== name) continue;
-                if (author) {
-                    let record = await this.db.collection(collectionFor(UserSchema))
-                        .findOne<UserRecord>({ _id: object.authorID });
-                    if (record.name_ !== author) continue;
-                }
-                if (length && object.length_ !== length) continue;
-                /**
-                 * TODO: implement level
-                 */
-                if (content) {
-                    let tokens = content.split(/\s/);
-                    let docs: any[] = [];
-                    for (let token of tokens) {
-                        docs.push({ outcome: { $regex: token } });
-                    }
-                    /**
-                     * TODO: perhaps not all tokens should be needed for a single outcome?
-                     *      That is, if one outcome has half the tokens and another
-                     *      has the other half, the object should still match?
-                     */
-                    let count = await this.db.collection(collectionFor(StandardOutcomeSchema))
-                        .count({
-                            source: object._id,
-                            $and: docs,
-                        });
-                    /**
-                     * TODO: objects should also match if any outcomes' mappings match desired content
-                     */
-                    if (count === 0) continue;
-                }
-                results.push(object);
-            }
             return Promise.resolve(results);
         } catch (e) {
             return Promise.reject('Error suggesting objects' + e);
