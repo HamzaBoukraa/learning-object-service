@@ -46,12 +46,12 @@ export class LearningObjectInteractor implements Interactor {
     async loadLearningObjectSummary(username: string): Promise<void> {
         try {
             let id = await this.dataStore.findUser(username);
-            let record = await this.dataStore.fetchUser(id);
+            let authorRecord = await this.dataStore.fetchUser(id);
             let summary: LearningObject[] = [];
-            for (let objectid of record.objects) {
+            for (let objectid of authorRecord.objects) {
                 let objectRecord = await this.dataStore.fetchLearningObject(objectid);
-                let object = new LearningObject(null, '');
-                object.name = objectRecord.name_;
+                let author = new User(authorRecord.username, authorRecord.name_, null, null);
+                let object = new LearningObject(author, objectRecord.name_);
                 object.date = objectRecord.date;
                 object.length = objectRecord.length_;
                 // not a deep operation - ignore goals and outcomes
