@@ -131,7 +131,7 @@ export class LearningObjectInteractor implements Interactor {
 
     async loadFullLearningObjectByIDs(ids: ObjectID[]): Promise<void> {
         try {
-            let records = await this.dataStore.fetchMultipleObjects(ids).toArray();
+            let records = await this.dataStore.fetchMultipleObjects(ids);
             let objects: LearningObject[] = [];
             for (let doc of records) {
                 let authorRecord = await this.dataStore.fetchUser(doc.authorID ? doc.authorID : doc['author']);
@@ -438,7 +438,7 @@ export class LearningObjectInteractor implements Interactor {
      */
     async fetchAllObjects(): Promise<void> {
         try {
-            let records = await this.dataStore.fetchAllObjects().toArray();
+            let records = await this.dataStore.fetchAllObjects();
             let objects: LearningObject[] = [];
             for (let doc of records) {
                 let authorRecord = await this.dataStore.fetchUser(doc.authorID ? doc.authorID : doc['author']);
@@ -476,7 +476,7 @@ export class LearningObjectInteractor implements Interactor {
                     });
                 }));
 
-            let records: LearningObjectRecord[] = await this.dataStore.fetchMultipleObjects(learningObjectIDs).toArray();
+            let records: LearningObjectRecord[] = await this.dataStore.fetchMultipleObjects(learningObjectIDs);
             let objects: LearningObject[] = [];
             for (let doc of records) {
                 let authorRecord = await this.dataStore.fetchUser(doc.authorID ? doc.authorID : doc['author']);
@@ -495,7 +495,7 @@ export class LearningObjectInteractor implements Interactor {
 
     async fetchObjectsByIDs(ids: LearningObjectID[]) {
         try {
-            let records = await this.dataStore.fetchMultipleObjects(ids).toArray();
+            let records = await this.dataStore.fetchMultipleObjects(ids);
             let objects: LearningObject[] = [];
             for (let doc of records) {
                 let authorRecord = await this.dataStore.fetchUser(doc.authorID ? doc.authorID : doc['author']);

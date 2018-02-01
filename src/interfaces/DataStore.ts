@@ -12,9 +12,6 @@ import {
     OutcomeRecord,
 } from '@cyber4all/clark-schema';
 
-import { Cursor } from 'mongodb';
-
-// FIXME: References to LearningObject's ID should be replaced with User's username and LearningObject's name
 export interface DataStore {
     connect(dburi: string): Promise<void>;
     disconnect(): void;
@@ -40,9 +37,9 @@ export interface DataStore {
     fetchLearningObject(id: UserID): Promise<LearningObjectRecord>;
     fetchLearningOutcome(id: UserID): Promise<LearningOutcomeRecord>;
     fetchOutcome(id: UserID): Promise<OutcomeRecord>;
-    fetchMultipleObjects(ids: LearningObjectID[]): Cursor<LearningObjectRecord>;
-    fetchAllObjects(): Cursor<LearningObjectRecord>;
-    searchObjects(name: string, author: string, length: string, level: string, ascending: boolean): Promise<LearningObjectRecord[]>;
+    fetchMultipleObjects(ids: LearningObjectID[]): Promise<LearningObjectRecord[]>;
+    fetchAllObjects(currPage?: number, limit?: number): Promise<LearningObjectRecord[]>;
+    searchObjects(name: string, author: string, length: string, level: string, ascending: boolean, currPage?: number, limit?: number): Promise<LearningObjectRecord[]>;
     findMappingID(date: string, name: string, outcome: string): Promise<StandardOutcomeID>;
 
 }

@@ -223,11 +223,13 @@ export class ExpressRouteDriver {
         // FIXME: IMPLEMENT
         router.get('/suggestObjects', async (req, res) => {
             try {
+                // FIXME: Conver to number
                 let ascending = req.query.ascending;
                 let name = req.query.name;
                 let author = req.query.author;
                 let length = req.query.length;
                 let level = req.query.level;
+
                 // let content = req.query.content;
                 this._LearningObjectInteractor.responder = this.getResponder(res);
                 await this._LearningObjectInteractor.suggestObjects(name, author, length, level, ascending);

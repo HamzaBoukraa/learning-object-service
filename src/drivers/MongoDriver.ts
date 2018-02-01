@@ -4,7 +4,6 @@ import {
     autosFor,
     fixedsFor,
     foreignsFor,
-    fieldsFor,
     collections,
     collectionFor,
     schemaFor,
@@ -495,9 +494,13 @@ export class MongoDriver implements DataStore {
     * Return literally all objects. Very expensive.
     * @returns {Cursor<LearningObjectRecord>[]} cursor of literally all objects
     */
-    fetchAllObjects(): Cursor<LearningObjectRecord> {
-        return this.db.collection(collectionFor(LearningObjectSchema))
-            .find<LearningObjectRecord>();
+    fetchAllObjects(currPage?: number, limit?: number): Promise<LearningObjectRecord[]> {
+        let skip = currPage && limit ? ((currPage - 1) * limit) : undefined;
+        return skip ?
+            this.db.collection(collectionFor(LearningObjectSchema))
+                .find<LearningObjectRecord>().skip(skip).limit(limit).toArray()
+            : this.db.collection(collectionFor(LearningObjectSchema))
+                .find<LearningObjectRecord>().toArray();
     }
 
     /**
@@ -507,9 +510,9 @@ export class MongoDriver implements DataStore {
      *
      * @returns {Cursor<LearningObjectRecord>[]}
      */
-    fetchMultipleObjects(ids: LearningObjectID[]): Cursor<LearningObjectRecord> {
+    fetchMultipleObjects(ids: LearningObjectID[]): Promise<LearningObjectRecord[]> {
         return this.db.collection(collectionFor(LearningObjectSchema))
-            .find<LearningObjectRecord>({ _id: { $in: ids } });
+            .find<LearningObjectRecord>({ _id: { $in: ids } }).toArray();
     }
 
     /* Search for objects on CuBE criteria.
@@ -526,9 +529,30 @@ export class MongoDriver implements DataStore {
         length: string,
         level: string,
         ascending: boolean,
+        currPage?: number,
+        limit?: number
     ): Promise<LearningObjectRecord[]> {
+        let skip = currPage && limit ? ((currPage - 1) * limit) : undefined;
         try {
-            return Promise.resolve(results);
+            let authorRecords: UserRecord[] = author ?
+                await this.db.collection(collectionFor(UserSchema))
+                    .find<UserRecord>({ name_: { $regex: new RegExp(author, 'ig') } }).toArray()
+                : null;
+            let authorIDs = authorRecords.length >= 0 ? authorRecords.map(doc => doc._id) : null;
+
+            let objectCursor = await this.db.collection(collectionFor(LearningObjectSchema))
+                .find<LearningObjectRecord>(
+                {
+                    authorID: authorIDs ? { $in: authorIDs } : { $regex: /./ig },
+                    name_: { $regex: name ? new RegExp(name, 'ig') : /./ig },
+                    length_: length ? length : { $regex: /./ig },
+                    // FIXME: Uncomment when entities have level property
+                    // level: level ? level : { $regex: /./ig }
+                }
+                );
+            objectCursor = skip ? objectCursor.skip(skip).limit(limit) : objectCursor;
+
+            return objectCursor.toArray();
         } catch (e) {
             return Promise.reject('Error suggesting objects' + e);
         }
