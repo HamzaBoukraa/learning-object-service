@@ -537,9 +537,9 @@ export class LearningObjectInteractor implements Interactor {
      *
      * @returns {Outcome[]} list of outcome suggestions, ordered by score
      */
-    async suggestObjects(name: string, author: string, length: string, level: string, ascending: boolean): Promise<void> {
+    async suggestObjects(name: string, author: string, length: string, source: string, level: string, ascending: boolean): Promise<void> {
         try {
-            let objects: LearningObjectRecord[] = await this.dataStore.searchObjects(name, author, length, level, ascending);
+            let objects: LearningObjectRecord[] = await this.dataStore.searchObjects(name, author, length, level, source, ascending);
             //FIXME: Suggestions should be typed as something like "ObjectSuggestion"
             let suggestions: any[] = [];
             for (let object of objects) {

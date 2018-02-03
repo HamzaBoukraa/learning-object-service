@@ -229,10 +229,11 @@ export class ExpressRouteDriver {
                 let author = req.query.author;
                 let length = req.query.length;
                 let level = req.query.level;
+                let source = req.query.source;
 
                 // let content = req.query.content;
                 this._LearningObjectInteractor.responder = this.getResponder(res);
-                await this._LearningObjectInteractor.suggestObjects(name, author, length, level, ascending);
+                await this._LearningObjectInteractor.suggestObjects(name, author, length, level, source, ascending);
             } catch (e) {
                 console.log(e);
             }

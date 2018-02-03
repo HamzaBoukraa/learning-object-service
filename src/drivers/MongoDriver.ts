@@ -25,6 +25,7 @@ export { ObjectID as DBID };
 import { DataStore } from "../interfaces/interfaces";
 require('../useme');
 import * as dotenv from 'dotenv';
+import { LearningOutcome } from '@cyber4all/clark-entity';
 dotenv.config();
 
 export class MongoDriver implements DataStore {
@@ -528,6 +529,7 @@ export class MongoDriver implements DataStore {
         author: string,
         length: string,
         level: string,
+        source: string,
         ascending: boolean,
         currPage?: number,
         limit?: number
@@ -540,13 +542,26 @@ export class MongoDriver implements DataStore {
                 : null;
             let authorIDs = authorRecords.length >= 0 ? authorRecords.map(doc => doc._id) : null;
 
+            let sourceRecords: OutcomeRecord[] = source ?
+                await this.db.collection(collectionFor(StandardOutcomeSchema))
+                    .find<OutcomeRecord>({ source: { $regex: new RegExp(source, 'ig') } }).toArray()
+                : null;
+            let sourceIDs = sourceRecords.length >= 0 ? sourceRecords.map(doc => doc._id) : null;
+
+            let outcomeRecords: LearningOutcomeRecord[] = sourceIDs ?
+                await this.db.collection(collectionFor(LearningOutcomeSchema))
+                    .find<LearningOutcomeRecord>({ mappings: { $in: sourceIDs } }).toArray()
+                : null;
+            let outcomeIDs = outcomeRecords.length >= 0 ? outcomeRecords.map(doc => doc._id) : null;
+
             let objectCursor = await this.db.collection(collectionFor(LearningObjectSchema))
                 .find<LearningObjectRecord>(
                 {
                     authorID: authorIDs ? { $in: authorIDs } : { $regex: /./ig },
                     name_: { $regex: name ? new RegExp(name, 'ig') : /./ig },
                     length_: length ? length : { $regex: /./ig },
-                    level: level ? level : { $regex: /./ig }
+                    level: level ? level : { $regex: /./ig },
+                    outcomes: outcomeIDs ? { $in: outcomeIDs } : { $regex: /./ig }
                 }
                 );
             objectCursor = skip ? objectCursor.skip(skip).limit(limit) : objectCursor;
