@@ -15,6 +15,7 @@ import {
 import {
     User,
     LearningObject,
+    AcademicLevel,
     Outcome,
     StandardOutcome,
     LearningOutcome,
@@ -50,10 +51,12 @@ export class LearningObjectInteractor implements Interactor {
             let summary: LearningObject[] = [];
             for (let objectid of authorRecord.objects) {
                 let objectRecord = await this.dataStore.fetchLearningObject(objectid);
-                let author = new User(authorRecord.username, authorRecord.name_, null, null);
+                // FIXME: Add organization to authorRecord Schema and pass to User entity
+                let author = new User(authorRecord.username, authorRecord.name_, null, null, null);
                 let object = new LearningObject(author, objectRecord.name_);
                 object.date = objectRecord.date;
                 object.length = objectRecord.length_;
+                object.level = object.level ? object.level : AcademicLevel.Undergraduate;
                 // not a deep operation - ignore goals and outcomes
                 summary.push(object);
             }
@@ -77,10 +80,12 @@ export class LearningObjectInteractor implements Interactor {
             let learningObjectID = await this.dataStore.findLearningObject(username, learningObjectName);
             let record = await this.dataStore.fetchLearningObject(learningObjectID);
             let authorRecord = await this.dataStore.fetchUser(record.authorID ? record.authorID : record['author']);
-            let author = new User(authorRecord.username ? authorRecord.username : authorRecord['id'], authorRecord.name_, null, null);
+            // FIXME: Add organization to authorRecord Schema and pass to User entity
+            let author = new User(authorRecord.username ? authorRecord.username : authorRecord['id'], authorRecord.name_, null, null, null);
             let object = new LearningObject(author, record.name_);
             object.date = record.date;
             object.length = record.length_;
+            object.level = object.level ? object.level : AcademicLevel.Undergraduate;
             for (let rGoal of record.goals) {
                 object.addGoal(rGoal.text);
             }
@@ -135,10 +140,12 @@ export class LearningObjectInteractor implements Interactor {
             let objects: LearningObject[] = [];
             for (let doc of records) {
                 let authorRecord = await this.dataStore.fetchUser(doc.authorID ? doc.authorID : doc['author']);
-                let author = new User(authorRecord.username ? authorRecord.username : authorRecord['id'], authorRecord.name_, null, null);
+                // FIXME: Add organization to authorRecord Schema and pass to User entity
+                let author = new User(authorRecord.username ? authorRecord.username : authorRecord['id'], authorRecord.name_, null, null, null);
                 let object = new LearningObject(author, doc.name_);
                 object.date = doc.date;
                 object.length = doc.length_;
+                object.level = object.level ? object.level : AcademicLevel.Undergraduate;
                 for (let rGoal of doc.goals) {
                     object.addGoal(rGoal.text);
                 }
@@ -210,6 +217,7 @@ export class LearningObjectInteractor implements Interactor {
                 name_: object.name,
                 date: object.date,
                 length_: object.length,
+                level: object.level ? object.level : AcademicLevel.Undergraduate,
                 goals: this.documentGoals(object.goals),
                 outcomes: [],
                 repository: object.repository,
@@ -267,6 +275,7 @@ export class LearningObjectInteractor implements Interactor {
             name_: object.name,
             date: object.date,
             length_: object.length,
+            level: object.level ? object.length : AcademicLevel.Undergraduate,
             goals: this.documentGoals(object.goals),
             repository: object.repository,
         });
@@ -442,10 +451,12 @@ export class LearningObjectInteractor implements Interactor {
             let objects: LearningObject[] = [];
             for (let doc of records) {
                 let authorRecord = await this.dataStore.fetchUser(doc.authorID ? doc.authorID : doc['author']);
-                let author = new User(authorRecord.username ? authorRecord.username : authorRecord['id'], authorRecord.name_, null, null);
+                // FIXME: Add organization to authorRecord Schema and pass to User entity
+                let author = new User(authorRecord.username ? authorRecord.username : authorRecord['id'], authorRecord.name_, null, null, null);
                 let object = new LearningObject(author, doc.name_);
                 object.date = doc.date;
                 object.length = doc.length_;
+                object.level = object.level ? object.level : AcademicLevel.Undergraduate;
                 objects.push(object);
             }
             this._responder.sendObject(objects.map(object => LearningObject.serialize(object)));
@@ -480,11 +491,13 @@ export class LearningObjectInteractor implements Interactor {
             let objects: LearningObject[] = [];
             for (let doc of records) {
                 let authorRecord = await this.dataStore.fetchUser(doc.authorID ? doc.authorID : doc['author']);
-                let author = new User(authorRecord.username ? authorRecord.username : authorRecord['id'], authorRecord.name_, null, null);
+                // FIXME: Add organization to authorRecord Schema and pass to User entity
+                let author = new User(authorRecord.username ? authorRecord.username : authorRecord['id'], authorRecord.name_, null, null, null);
 
                 let object = new LearningObject(author, doc.name_);
                 object.date = doc.date;
                 object.length = doc.length_;
+                object.level = object.level ? object.level : AcademicLevel.Undergraduate;
                 objects.push(object);
             }
             this._responder.sendObject(objects.map(object => LearningObject.serialize(object)));
@@ -499,7 +512,8 @@ export class LearningObjectInteractor implements Interactor {
             let objects: LearningObject[] = [];
             for (let doc of records) {
                 let authorRecord = await this.dataStore.fetchUser(doc.authorID ? doc.authorID : doc['author']);
-                let author = new User(authorRecord.username ? authorRecord.username : authorRecord['id'], authorRecord.name_, null, null);
+                // FIXME: Add organization to authorRecord Schema and pass to User entity
+                let author = new User(authorRecord.username ? authorRecord.username : authorRecord['id'], authorRecord.name_, null, null, null);
                 let object = new LearningObject(author, doc.name_);
                 object.date = doc.date;
                 object.length = doc.length_;
@@ -534,6 +548,7 @@ export class LearningObjectInteractor implements Interactor {
                     id: object._id,
                     author: owner.name_,
                     length: object.length_,
+                    level: object.level ? object.level : AcademicLevel.Undergraduate;
                     name: object.name_,
                     date: object.date,
                 });

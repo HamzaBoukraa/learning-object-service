@@ -546,8 +546,7 @@ export class MongoDriver implements DataStore {
                     authorID: authorIDs ? { $in: authorIDs } : { $regex: /./ig },
                     name_: { $regex: name ? new RegExp(name, 'ig') : /./ig },
                     length_: length ? length : { $regex: /./ig },
-                    // FIXME: Uncomment when entities have level property
-                    // level: level ? level : { $regex: /./ig }
+                    level: level ? level : { $regex: /./ig }
                 }
                 );
             objectCursor = skip ? objectCursor.skip(skip).limit(limit) : objectCursor;
