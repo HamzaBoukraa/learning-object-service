@@ -230,9 +230,12 @@ export class ExpressRouteDriver {
                 let length = req.query.length;
                 let level = req.query.level;
                 let source = req.query.source;
+
+                //For broad searching | Search all fields to match inputed text
+                let text = req.query.text;
                 // let content = req.query.content;
                 this._LearningObjectInteractor.responder = this.getResponder(res);
-                await this._LearningObjectInteractor.suggestObjects(name, author, length, level, source, ascending);
+                await this._LearningObjectInteractor.suggestObjects(name, author, length, level, source, text, ascending);
             } catch (e) {
                 console.log(e);
             }

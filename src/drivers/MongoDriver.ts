@@ -25,7 +25,7 @@ export { ObjectID as DBID };
 import { DataStore } from "../interfaces/interfaces";
 require('../useme');
 import * as dotenv from 'dotenv';
-import { LearningOutcome } from '@cyber4all/clark-entity';
+import { LearningOutcome, LearningObject } from '@cyber4all/clark-entity';
 dotenv.config();
 
 export class MongoDriver implements DataStore {
@@ -530,23 +530,24 @@ export class MongoDriver implements DataStore {
         length: string,
         level: string,
         source: string,
+        text: string,
         ascending: boolean,
         currPage?: number,
         limit?: number
     ): Promise<LearningObjectRecord[]> {
         let skip = currPage && limit ? ((currPage - 1) * limit) : undefined;
         try {
-            let authorRecords: UserRecord[] = author ?
+            let authorRecords: UserRecord[] = (author || text) ?
                 await this.db.collection(collectionFor(UserSchema))
-                    .find<UserRecord>({ name_: { $regex: new RegExp(author, 'ig') } }).toArray()
+                    .find<UserRecord>({ name_: { $regex: new RegExp((author ? author : text), 'ig') } }).toArray()
                 : null;
             let authorIDs = authorRecords ? authorRecords.map(doc => doc._id) : null;
 
-            let sourceRecords: OutcomeRecord[] = source ?
+            let sourceRecords: OutcomeRecord[] = (source || text) ?
                 await this.db.collection(collectionFor(StandardOutcomeSchema))
-                    .find<OutcomeRecord>({ source: { $regex: new RegExp(source, 'ig') } }).toArray()
+                    .find<OutcomeRecord>({ source: { $regex: new RegExp((source ? source : text), 'ig') } }).toArray()
                 : null;
-            let sourceIDs = sourceRecords.length ? sourceRecords.map(doc => doc._id) : null;
+            let sourceIDs = sourceRecords ? sourceRecords.map(doc => doc._id) : null;
 
             let outcomeRecords: LearningOutcomeRecord[] = sourceIDs ?
                 await this.db.collection(collectionFor(LearningOutcomeSchema))
@@ -554,16 +555,30 @@ export class MongoDriver implements DataStore {
                 : null;
             let outcomeIDs = outcomeRecords ? outcomeRecords.map(doc => doc._id) : null;
 
-            let objectCursor = await this.db.collection(collectionFor(LearningObjectSchema))
-                .find<LearningObjectRecord>(
-                {
-                    authorID: authorIDs ? { $in: authorIDs } : { $regex: /./ig },
-                    name_: { $regex: name ? new RegExp(name, 'ig') : /./ig },
-                    length_: length ? length : { $regex: /./ig },
-                    level: level ? level : { $regex: /./ig },
-                    outcomes: outcomeIDs ? { $in: outcomeIDs } : { $regex: /./ig }
-                }
-                );
+            let objectCursor = text ?
+                //If text use or operator for Query to search through all fields
+                await this.db.collection(collectionFor(LearningObjectSchema))
+                    .find<LearningObjectRecord>({
+                        $or: [
+                            { authorID: { $in: authorIDs } },
+                            { name_: { $regex: new RegExp(text, 'ig') } },
+                            { length_: { $regex: new RegExp(text, 'ig') } },
+                            { level: { $regex: new RegExp(text, 'ig') } },
+                            { outcomes: { $in: outcomeIDs } }
+                        ]
+                    })
+                // Else use and operator 
+                : await this.db.collection(collectionFor(LearningObjectSchema))
+                    .find<LearningObjectRecord>(
+                    {
+                        authorID: authorIDs ? { $in: authorIDs } : { $regex: /./ig },
+                        name_: { $regex: name ? new RegExp(name, 'ig') : /./ig },
+                        length_: length ? length : { $regex: /./ig },
+                        level: level ? level : { $regex: /./ig },
+                        outcomes: outcomeIDs ? { $in: outcomeIDs } : { $regex: /./ig }
+                    }
+                    );
+
             objectCursor = skip ? objectCursor.skip(skip).limit(limit) : objectCursor;
 
             return objectCursor.toArray();
