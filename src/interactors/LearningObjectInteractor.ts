@@ -53,15 +53,7 @@ export class LearningObjectInteractor implements Interactor {
                 let objectRecord = await this.dataStore.fetchLearningObject(objectid);
                 // FIXME: Add organization to authorRecord Schema and pass to User entity
                 let author = new User(authorRecord.username, authorRecord.name_, null, null, null);
-                let object = new LearningObject(author, objectRecord.name_);
-                object.date = objectRecord.date;
-                object.length = objectRecord.length_;
-                object.level = object.level ? object.level : AcademicLevel.Undergraduate;
-                for (let goal of objectRecord.goals) {
-                    object.addGoal(goal.text);
-                }
-                // not a deep operation - ignore outcomes
-                summary.push(object);
+                summary.push(await this.generateLearningObject(author, objectRecord));
             }
             this._responder.sendObject(summary.map(object => LearningObject.serialize(object)));
         } catch (e) {
@@ -85,51 +77,9 @@ export class LearningObjectInteractor implements Interactor {
             let authorRecord = await this.dataStore.fetchUser(record.authorID ? record.authorID : record['author']);
             // FIXME: Add organization to authorRecord Schema and pass to User entity
             let author = new User(authorRecord.username ? authorRecord.username : authorRecord['id'], authorRecord.name_, null, null, null);
-            let object = new LearningObject(author, record.name_);
-            object.date = record.date;
-            object.length = record.length_;
-            object.level = object.level ? object.level : AcademicLevel.Undergraduate;
-            for (let rGoal of record.goals) {
-                object.addGoal(rGoal.text);
-            }
-
-            // load each outcome
-            for (let outcomeid of record.outcomes) {
-                let rOutcome = await this.dataStore.fetchLearningOutcome(outcomeid);
-
-                let outcome = object.addOutcome();
-                outcome.bloom = rOutcome.bloom;
-                outcome.verb = rOutcome.verb;
-                outcome.text = rOutcome.text;
-                for (let rAssessment of rOutcome.assessments) {
-                    let assessment = outcome.addAssessment();
-                    assessment.plan = rAssessment.plan;
-                    assessment.text = rAssessment.text;
-                }
-                for (let rStrategy of rOutcome.strategies) {
-                    let strategy = outcome.addStrategy();
-                    strategy.instruction = rStrategy.instruction;
-                    strategy.text = rStrategy.text;
-                }
-
-                // only extract the basic info for each mapped outcome
-                for (let mapid of rOutcome.mappings) {
-                    let rMapping = await this.dataStore.fetchOutcome(mapid);
-                    outcome.mapTo({
-                        id: `${mapid}`,
-                        author: rMapping.author,
-                        name: rMapping.name_,
-                        date: rMapping.date,
-                        outcome: rMapping.outcome,
-                    });
-                }
-            }
-
-            // load the repository:
-            object.repository = record.repository;
-
-            //FIXME: Only send id if Object is owned by user
+            let object = await this.generateLearningObject(author, record, true)
             this._responder.sendObject({ id: learningObjectID, object: LearningObject.serialize(object) });
+
         } catch (e) {
             console.log(e);
             this._responder.sendOperationError(e);
@@ -145,48 +95,7 @@ export class LearningObjectInteractor implements Interactor {
                 let authorRecord = await this.dataStore.fetchUser(doc.authorID ? doc.authorID : doc['author']);
                 // FIXME: Add organization to authorRecord Schema and pass to User entity
                 let author = new User(authorRecord.username ? authorRecord.username : authorRecord['id'], authorRecord.name_, null, null, null);
-                let object = new LearningObject(author, doc.name_);
-                object.date = doc.date;
-                object.length = doc.length_;
-                object.level = object.level ? object.level : AcademicLevel.Undergraduate;
-                for (let rGoal of doc.goals) {
-                    object.addGoal(rGoal.text);
-                }
-                // load each outcome
-                for (let outcomeid of doc.outcomes) {
-                    let rOutcome = await this.dataStore.fetchLearningOutcome(outcomeid);
-
-                    let outcome = object.addOutcome();
-                    outcome.bloom = rOutcome.bloom;
-                    outcome.verb = rOutcome.verb;
-                    outcome.text = rOutcome.text;
-                    for (let rAssessment of rOutcome.assessments) {
-                        let assessment = outcome.addAssessment();
-                        assessment.plan = rAssessment.plan;
-                        assessment.text = rAssessment.text;
-                    }
-                    for (let rStrategy of rOutcome.strategies) {
-                        let strategy = outcome.addStrategy();
-                        strategy.instruction = rStrategy.instruction;
-                        strategy.text = rStrategy.text;
-                    }
-
-                    // only extract the basic info for each mapped outcome
-                    for (let mapid of rOutcome.mappings) {
-                        let rMapping = await this.dataStore.fetchOutcome(mapid);
-                        outcome.mapTo({
-                            id: `${mapid}`,
-                            author: rMapping.author,
-                            name: rMapping.name_,
-                            date: rMapping.date,
-                            outcome: rMapping.outcome,
-                        });
-                    }
-                }
-
-                // load the repository:
-                object.repository = doc.repository;
-
+                let object = await this.generateLearningObject(author, doc, true);
                 objects.push(object);
             }
 
@@ -224,6 +133,7 @@ export class LearningObjectInteractor implements Interactor {
                 goals: this.documentGoals(object.goals),
                 outcomes: [],
                 repository: object.repository,
+                published: (object.published === (undefined || null)) ? false : object.published
             });
 
 
@@ -281,12 +191,14 @@ export class LearningObjectInteractor implements Interactor {
             level: object.level ? object.length : AcademicLevel.Undergraduate,
             goals: this.documentGoals(object.goals),
             repository: object.repository,
+            published: (object.published === (undefined || null)) ? false : object.published
         });
     }
 
     /**
      * Update an existing learning object record.
-     * NOTE: this is a deep update and as such somewhat expensive
+     * NOTE: this is a deep update and as such somewhat exp                doc.published ? object.publish() : object.unpublish();
+ensive
      * NOTE: promise rejected if another learning object
      *       tied to the same author and with the same 'name' field
      *       already exists
@@ -456,13 +368,7 @@ export class LearningObjectInteractor implements Interactor {
                 let authorRecord = await this.dataStore.fetchUser(doc.authorID ? doc.authorID : doc['author']);
                 // FIXME: Add organization to authorRecord Schema and pass to User entity
                 let author = new User(authorRecord.username ? authorRecord.username : authorRecord['id'], authorRecord.name_, null, null, null);
-                let object = new LearningObject(author, doc.name_);
-                object.date = doc.date;
-                object.length = doc.length_;
-                object.level = object.level ? object.level : AcademicLevel.Undergraduate;
-                for (let goal of doc.goals) {
-                    object.addGoal(goal.text);
-                }
+                let object = await this.generateLearningObject(author, doc);
                 objects.push(object);
             }
             this._responder.sendObject(objects.map(object => LearningObject.serialize(object)));
@@ -499,14 +405,7 @@ export class LearningObjectInteractor implements Interactor {
                 let authorRecord = await this.dataStore.fetchUser(doc.authorID ? doc.authorID : doc['author']);
                 // FIXME: Add organization to authorRecord Schema and pass to User entity
                 let author = new User(authorRecord.username ? authorRecord.username : authorRecord['id'], authorRecord.name_, null, null, null);
-
-                let object = new LearningObject(author, doc.name_);
-                object.date = doc.date;
-                object.length = doc.length_;
-                object.level = object.level ? object.level : AcademicLevel.Undergraduate;
-                for (let goal of doc.goals) {
-                    object.addGoal(goal.text);
-                }
+                let object = await this.generateLearningObject(author, doc, true)
                 objects.push(object);
             }
             this._responder.sendObject(objects.map(object => LearningObject.serialize(object)));
@@ -523,13 +422,7 @@ export class LearningObjectInteractor implements Interactor {
                 let authorRecord = await this.dataStore.fetchUser(doc.authorID ? doc.authorID : doc['author']);
                 // FIXME: Add organization to authorRecord Schema and pass to User entity
                 let author = new User(authorRecord.username ? authorRecord.username : authorRecord['id'], authorRecord.name_, null, null, null);
-                let object = new LearningObject(author, doc.name_);
-                object.date = doc.date;
-                object.length = doc.length_;
-                object.level = object.level ? object.level : AcademicLevel.Undergraduate;
-                for (let goal of doc.goals) {
-                    object.addGoal(goal.text);
-                }
+                let object = await this.generateLearningObject(author, doc, true);
                 objects.push(object);
             }
             this._responder.sendObject(objects.map(object => LearningObject.serialize(object)));
@@ -558,13 +451,7 @@ export class LearningObjectInteractor implements Interactor {
             for (let doc of objectRecords) {
                 let authorRecord = await this.dataStore.fetchUser(doc.authorID);
                 let author = new User(authorRecord.username, authorRecord.name_, null, null, null);
-                let object = new LearningObject(author, doc.name_);
-                object.date = doc.date;
-                object.length = doc.length_;
-                object.level = object.level ? object.level : AcademicLevel.Undergraduate;
-                for (let goal of doc.goals) {
-                    object.addGoal(goal.text);
-                }
+                let object = await this.generateLearningObject(author, doc);
                 objects.push(object);
             }
             this._responder.sendObject(objects.map((object) => LearningObject.serialize(object)));
@@ -577,6 +464,55 @@ export class LearningObjectInteractor implements Interactor {
     //////////////////////////////////////////
     // HELPER FUNCTIONS - not in public API //
     //////////////////////////////////////////
+
+    private async generateLearningObject(author: User, record: LearningObjectRecord, full?: boolean): Promise<LearningObject> {
+        let learningObject = new LearningObject(author, record.name_);
+        learningObject.date = record.date;
+        learningObject.length = record.length_;
+        learningObject.level = learningObject.level ? learningObject.level : AcademicLevel.Undergraduate;
+        learningObject.repository = record.repository;
+
+        record.published ? learningObject.publish() : learningObject.unpublish();
+        for (let goal of record.goals) {
+            learningObject.addGoal(goal.text);
+        }
+        if (!full) {
+            return learningObject;
+        }
+
+        // load each outcome
+        for (let outcomeid of record.outcomes) {
+            let rOutcome = await this.dataStore.fetchLearningOutcome(outcomeid);
+
+            let outcome = learningObject.addOutcome();
+            outcome.bloom = rOutcome.bloom;
+            outcome.verb = rOutcome.verb;
+            outcome.text = rOutcome.text;
+            for (let rAssessment of rOutcome.assessments) {
+                let assessment = outcome.addAssessment();
+                assessment.plan = rAssessment.plan;
+                assessment.text = rAssessment.text;
+            }
+            for (let rStrategy of rOutcome.strategies) {
+                let strategy = outcome.addStrategy();
+                strategy.instruction = rStrategy.instruction;
+                strategy.text = rStrategy.text;
+            }
+
+            // only extract the basic info for each mapped outcome
+            for (let mapid of rOutcome.mappings) {
+                let rMapping = await this.dataStore.fetchOutcome(mapid);
+                outcome.mapTo({
+                    id: `${mapid}`,
+                    author: rMapping.author,
+                    name: rMapping.name_,
+                    date: rMapping.date,
+                    outcome: rMapping.outcome,
+                });
+            }
+        }
+        return learningObject;
+    }
 
     /**
      * Convert a list of learning goals to an array of documents.
