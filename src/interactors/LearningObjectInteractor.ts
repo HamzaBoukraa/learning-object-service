@@ -57,7 +57,10 @@ export class LearningObjectInteractor implements Interactor {
                 object.date = objectRecord.date;
                 object.length = objectRecord.length_;
                 object.level = object.level ? object.level : AcademicLevel.Undergraduate;
-                // not a deep operation - ignore goals and outcomes
+                for (let goal of objectRecord.goals) {
+                    object.addGoal(goal.text);
+                }
+                // not a deep operation - ignore outcomes
                 summary.push(object);
             }
             this._responder.sendObject(summary.map(object => LearningObject.serialize(object)));
@@ -457,6 +460,9 @@ export class LearningObjectInteractor implements Interactor {
                 object.date = doc.date;
                 object.length = doc.length_;
                 object.level = object.level ? object.level : AcademicLevel.Undergraduate;
+                for (let goal of doc.goals) {
+                    object.addGoal(goal.text);
+                }
                 objects.push(object);
             }
             this._responder.sendObject(objects.map(object => LearningObject.serialize(object)));
@@ -498,6 +504,9 @@ export class LearningObjectInteractor implements Interactor {
                 object.date = doc.date;
                 object.length = doc.length_;
                 object.level = object.level ? object.level : AcademicLevel.Undergraduate;
+                for (let goal of doc.goals) {
+                    object.addGoal(goal.text);
+                }
                 objects.push(object);
             }
             this._responder.sendObject(objects.map(object => LearningObject.serialize(object)));
@@ -518,6 +527,9 @@ export class LearningObjectInteractor implements Interactor {
                 object.date = doc.date;
                 object.length = doc.length_;
                 object.level = object.level ? object.level : AcademicLevel.Undergraduate;
+                for (let goal of doc.goals) {
+                    object.addGoal(goal.text);
+                }
                 objects.push(object);
             }
             this._responder.sendObject(objects.map(object => LearningObject.serialize(object)));
@@ -550,6 +562,9 @@ export class LearningObjectInteractor implements Interactor {
                 object.date = doc.date;
                 object.length = doc.length_;
                 object.level = object.level ? object.level : AcademicLevel.Undergraduate;
+                for (let goal of doc.goals) {
+                    object.addGoal(goal.text);
+                }
                 objects.push(object);
             }
             this._responder.sendObject(objects.map((object) => LearningObject.serialize(object)));
