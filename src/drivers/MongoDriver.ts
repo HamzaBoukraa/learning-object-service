@@ -540,19 +540,19 @@ export class MongoDriver implements DataStore {
                 await this.db.collection(collectionFor(UserSchema))
                     .find<UserRecord>({ name_: { $regex: new RegExp(author, 'ig') } }).toArray()
                 : null;
-            let authorIDs = authorRecords.length >= 0 ? authorRecords.map(doc => doc._id) : null;
+            let authorIDs = authorRecords ? authorRecords.map(doc => doc._id) : null;
 
             let sourceRecords: OutcomeRecord[] = source ?
                 await this.db.collection(collectionFor(StandardOutcomeSchema))
                     .find<OutcomeRecord>({ source: { $regex: new RegExp(source, 'ig') } }).toArray()
                 : null;
-            let sourceIDs = sourceRecords.length >= 0 ? sourceRecords.map(doc => doc._id) : null;
+            let sourceIDs = sourceRecords.length ? sourceRecords.map(doc => doc._id) : null;
 
             let outcomeRecords: LearningOutcomeRecord[] = sourceIDs ?
                 await this.db.collection(collectionFor(LearningOutcomeSchema))
                     .find<LearningOutcomeRecord>({ mappings: { $in: sourceIDs } }).toArray()
                 : null;
-            let outcomeIDs = outcomeRecords.length >= 0 ? outcomeRecords.map(doc => doc._id) : null;
+            let outcomeIDs = outcomeRecords ? outcomeRecords.map(doc => doc._id) : null;
 
             let objectCursor = await this.db.collection(collectionFor(LearningObjectSchema))
                 .find<LearningObjectRecord>(

@@ -517,6 +517,7 @@ export class LearningObjectInteractor implements Interactor {
                 let object = new LearningObject(author, doc.name_);
                 object.date = doc.date;
                 object.length = doc.length_;
+                object.level = object.level ? object.level : AcademicLevel.Undergraduate;
                 objects.push(object);
             }
             this._responder.sendObject(objects.map(object => LearningObject.serialize(object)));
@@ -537,23 +538,21 @@ export class LearningObjectInteractor implements Interactor {
      *
      * @returns {Outcome[]} list of outcome suggestions, ordered by score
      */
-    async suggestObjects(name: string, author: string, length: string, source: string, level: string, ascending: boolean): Promise<void> {
+    async suggestObjects(name: string, author: string, length: string, level: string, source: string, ascending: boolean): Promise<void> {
         try {
-            let objects: LearningObjectRecord[] = await this.dataStore.searchObjects(name, author, length, level, source, ascending);
+            let objectRecords: LearningObjectRecord[] = await this.dataStore.searchObjects(name, author, length, level, source, ascending);
             //FIXME: Suggestions should be typed as something like "ObjectSuggestion"
-            let suggestions: any[] = [];
-            for (let object of objects) {
-                let owner = await this.dataStore.fetchUser(object.authorID);
-                suggestions.push({
-                    id: object._id,
-                    author: owner.name_,
-                    length: object.length_,
-                    level: object.level ? object.level : AcademicLevel.Undergraduate;
-                    name: object.name_,
-                    date: object.date,
-                });
+            let objects: LearningObject[] = [];
+            for (let doc of objectRecords) {
+                let authorRecord = await this.dataStore.fetchUser(doc.authorID);
+                let author = new User(authorRecord.username, authorRecord.name_, null, null, null);
+                let object = new LearningObject(author, doc.name_);
+                object.date = doc.date;
+                object.length = doc.length_;
+                object.level = object.level ? object.level : AcademicLevel.Undergraduate;
+                objects.push(object);
             }
-            this._responder.sendObject(suggestions);
+            this._responder.sendObject(objects.map((object) => LearningObject.serialize(object)));
         } catch (e) {
             this._responder.sendOperationError(e);
         }
