@@ -360,9 +360,9 @@ ensive
      * Return literally all objects. Very expensive.
      * @returns {LearningObject[]} array of literally all objects
      */
-    async fetchAllObjects(): Promise<void> {
+    async fetchAllObjects(currPage: number, limit: number): Promise<void> {
         try {
-            let records = await this.dataStore.fetchAllObjects();
+            let records = await this.dataStore.fetchAllObjects(currPage, limit);
             let objects: LearningObject[] = [];
             for (let doc of records) {
                 let authorRecord = await this.dataStore.fetchUser(doc.authorID ? doc.authorID : doc['author']);
@@ -443,9 +443,9 @@ ensive
      *
      * @returns {Outcome[]} list of outcome suggestions, ordered by score
      */
-    async suggestObjects(name: string, author: string, length: string, level: string, source: string, text: string, ascending: boolean): Promise<void> {
+    async suggestObjects(name: string, author: string, length: string, level: string, source: string, text: string, ascending: boolean, currPage?: number, limit?: number): Promise<void> {
         try {
-            let objectRecords: LearningObjectRecord[] = await this.dataStore.searchObjects(name, author, length, level, source, text, ascending);
+            let objectRecords: LearningObjectRecord[] = await this.dataStore.searchObjects(name, author, length, level, source, text, ascending, currPage, limit);
             //FIXME: Suggestions should be typed as something like "ObjectSuggestion"
             let objects: LearningObject[] = [];
             for (let doc of objectRecords) {

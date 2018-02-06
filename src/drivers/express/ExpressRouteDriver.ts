@@ -234,8 +234,12 @@ export class ExpressRouteDriver {
                 //For broad searching | Search all fields to match inputed text
                 let text = req.query.text;
                 // let content = req.query.content;
+
+                let currPage = req.query.currPage ? +req.query.currPage : null;
+                let limit = req.query.limit ? +req.query.limit : null;
+
                 this._LearningObjectInteractor.responder = this.getResponder(res);
-                await this._LearningObjectInteractor.suggestObjects(name, author, length, level, source, text, ascending);
+                await this._LearningObjectInteractor.suggestObjects(name, author, length, level, source, text, ascending, currPage, limit);
             } catch (e) {
                 console.log(e);
             }
@@ -244,8 +248,11 @@ export class ExpressRouteDriver {
 
         router.get('/fetchAllObjects', async (req, res) => {
             try {
+                let currPage = req.query.currPage ? +req.query.currPage : null;
+                let limit = req.query.limit ? +req.query.limit : null;
+
                 this._LearningObjectInteractor.responder = this.getResponder(res);
-                await this._LearningObjectInteractor.fetchAllObjects();
+                await this._LearningObjectInteractor.fetchAllObjects(currPage, limit);
             } catch (e) {
                 console.log(e);
             }
