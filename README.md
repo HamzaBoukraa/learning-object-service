@@ -134,7 +134,7 @@ GET| | |
 
 | Response         | Type                             | Description                                                        |
 | ---------------- | -------------------------------- | ------------------------------------------------------------ |
-| []()             | `LearningObject[]*`              | Array of Serialized LearningObject entities, without goals or outcomes |
+| []()             | `{objects: LearningObject[]*, total: number}`              | Object containing Array of Serialized LearningObject entities, without goals or outcomes & total number of LearningObjects  |
 | `error`|`string` | exists only if an error occurred |
 
 #### Errors
@@ -166,7 +166,7 @@ GET|`ids` |`string[]` | Array of LearningObjects' unique database `ids`
 #### Errors
 - If the `id` is invalid.
 
-### `/fecthFullObjects/:ids`
+### `/fetchFullObjects/:ids`
 Request Type | Request Params | Type | Description
 ---|---|---|---
 GET|`ids` |`string[]` | Array of LearningObjects' unique database `ids`
@@ -229,16 +229,20 @@ GET|`username`|`string`| user's username
 
 ### `/suggestObjects`
 
-| Request  Type        | Request Body|  Type         | Description |
+| Request  Type        | Request Query Params|  Type         | Description |
 | ---------------- | -------------- | ---| ---- |
-| POST|`name` | `string` | `LearningObject`'s name property being queried for
+| GET|`name` | `string` | `LearningObject`'s name property being queried for
 | |`author` | `string` | `LearningObject`'s `author`'s `username` property being queried for
 | |`length` | `string` | `LearningObject`'s `length` property being queried for
-| |`content` | `string` | `LearningObject`'s content being queried for
+| |`level` | `string` | `LearningObject`'s `level` property being queried for
+| |`source` | `string` | `LearningObject`'s `Outcomes`' `mapping` `source` property being queried for
+| |`text` | `string` | Broad text match search over all searchable `LearningObject` properties. To be used independently of other Query Params pertaining to `LearningObject` properties.
+| |`currPage` | `number` | If using pagination, the current page the client is displaying
+| |`limit` | `number` | Maximum amount of Learning Objects to return
 
 | Response Body       | Type                            | Description                                   |
 | ---------------- | -------------------------------- | -------------------------------------- |
-| []()             | `success`                        | Sends status code `200` with no body if `user` was successfully edited  |
+| []()             | `{objects: LearningObject[]*, total: number}`                      | Object containing Array of Serialized LearningObject entities, without goals or outcomes & total number of LearningObjects |
 | `error`|`string` | exists only if an error occurred |
 
 #### Errors

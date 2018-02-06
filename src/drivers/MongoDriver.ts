@@ -495,14 +495,19 @@ export class MongoDriver implements DataStore {
     * Return literally all objects. Very expensive.
     * @returns {Cursor<LearningObjectRecord>[]} cursor of literally all objects
     */
-    fetchAllObjects(currPage?: number, limit?: number): Promise<LearningObjectRecord[]> {
+    async fetchAllObjects(currPage?: number, limit?: number): Promise<{ objects: LearningObjectRecord[], total: number }> {
         if (currPage !== undefined && currPage <= 0) currPage = 1;
         let skip = currPage && limit ? ((currPage - 1) * limit) : undefined;
-        return skip !== undefined ?
-            this.db.collection(collectionFor(LearningObjectSchema))
-                .find<LearningObjectRecord>().skip(skip).limit(limit).toArray()
-            : this.db.collection(collectionFor(LearningObjectSchema))
-                .find<LearningObjectRecord>().toArray();
+        try {
+            let objectCursor = await this.db.collection(collectionFor(LearningObjectSchema))
+                .find<LearningObjectRecord>()
+            let totalRecords = await objectCursor.count();
+            objectCursor = skip !== undefined ? objectCursor.skip(skip).limit(limit) : objectCursor;
+            let objects = await objectCursor.toArray();
+            return Promise.resolve({ objects: objects, total: totalRecords });
+        } catch (e) {
+            return Promise.reject(`Error fetching all learning objects. Error: ${e}`);
+        }
     }
 
     /**
@@ -535,7 +540,7 @@ export class MongoDriver implements DataStore {
         ascending: boolean,
         currPage?: number,
         limit?: number
-    ): Promise<LearningObjectRecord[]> {
+    ): Promise<{ objects: LearningObjectRecord[], total: number }> {
         if (currPage !== undefined && currPage <= 0) currPage = 1;
         let skip = currPage && limit ? ((currPage - 1) * limit) : undefined;
         try {
@@ -551,23 +556,24 @@ export class MongoDriver implements DataStore {
                 : null;
             let sourceIDs = sourceRecords ? sourceRecords.map(doc => doc._id) : null;
 
+
             let outcomeRecords: LearningOutcomeRecord[] = sourceIDs ?
                 await this.db.collection(collectionFor(LearningOutcomeSchema))
                     .find<LearningOutcomeRecord>({ mappings: { $in: sourceIDs } }).toArray()
                 : null;
             let outcomeIDs = outcomeRecords ? outcomeRecords.map(doc => doc._id) : null;
 
-            let objectCursor = text ?
+            let objectCursor = (text || text === '') ?
                 //If text use or operator for Query to search through all fields
                 await this.db.collection(collectionFor(LearningObjectSchema))
                     .find<LearningObjectRecord>({
                         $or: [
-                            { authorID: { $in: authorIDs } },
+                            { authorID: { $in: authorIDs ? authorIDs : [] } },
                             { name_: { $regex: new RegExp(text, 'ig') } },
                             { length_: { $regex: new RegExp(text, 'ig') } },
                             { level: { $regex: new RegExp(text, 'ig') } },
                             { goals: { $elemMatch: { text: { $regex: new RegExp(text, 'ig') } } } },
-                            { outcomes: { $in: outcomeIDs } }
+                            { outcomes: { $in: outcomeIDs ? outcomeIDs : [] } }
                         ]
                     })
                 // Else use and operator 
@@ -582,9 +588,11 @@ export class MongoDriver implements DataStore {
                     }
                     );
 
+            let totalRecords = await objectCursor.count();
             objectCursor = skip !== undefined ? objectCursor.skip(skip).limit(limit) : objectCursor;
+            let objects = await objectCursor.toArray();
 
-            return objectCursor.toArray();
+            return Promise.resolve({ objects: objects, total: totalRecords });
         } catch (e) {
             return Promise.reject('Error suggesting objects' + e);
         }

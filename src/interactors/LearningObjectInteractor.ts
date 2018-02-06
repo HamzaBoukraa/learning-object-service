@@ -362,16 +362,17 @@ ensive
      */
     async fetchAllObjects(currPage: number, limit: number): Promise<void> {
         try {
-            let records = await this.dataStore.fetchAllObjects(currPage, limit);
+            let response = await this.dataStore.fetchAllObjects(currPage, limit);
+            let objectRecords = response.objects;
             let objects: LearningObject[] = [];
-            for (let doc of records) {
+            for (let doc of objectRecords) {
                 let authorRecord = await this.dataStore.fetchUser(doc.authorID ? doc.authorID : doc['author']);
                 // FIXME: Add organization to authorRecord Schema and pass to User entity
                 let author = new User(authorRecord.username ? authorRecord.username : authorRecord['id'], authorRecord.name_, null, null, null);
                 let object = await this.generateLearningObject(author, doc);
                 objects.push(object);
             }
-            this._responder.sendObject(objects.map(object => LearningObject.serialize(object)));
+            this._responder.sendObject({ objects: objects.map(object => LearningObject.serialize(object)), total: response.total });
         } catch (e) {
             console.log(e);
             this._responder.sendOperationError(e);
@@ -445,8 +446,8 @@ ensive
      */
     async suggestObjects(name: string, author: string, length: string, level: string, source: string, text: string, ascending: boolean, currPage?: number, limit?: number): Promise<void> {
         try {
-            let objectRecords: LearningObjectRecord[] = await this.dataStore.searchObjects(name, author, length, level, source, text, ascending, currPage, limit);
-            //FIXME: Suggestions should be typed as something like "ObjectSuggestion"
+            let response = await this.dataStore.searchObjects(name, author, length, level, source, text, ascending, currPage, limit);
+            let objectRecords = response.objects;
             let objects: LearningObject[] = [];
             for (let doc of objectRecords) {
                 let authorRecord = await this.dataStore.fetchUser(doc.authorID);
@@ -454,7 +455,7 @@ ensive
                 let object = await this.generateLearningObject(author, doc);
                 objects.push(object);
             }
-            this._responder.sendObject(objects.map((object) => LearningObject.serialize(object)));
+            this._responder.sendObject({ objects: objects.map((object) => LearningObject.serialize(object)), total: response.total });
         } catch (e) {
             this._responder.sendOperationError(e);
         }
