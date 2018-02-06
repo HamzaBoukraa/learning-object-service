@@ -140,10 +140,10 @@ GET| | |
 #### Errors
 - NONE
 
-### `/fetchMultipleObjects/:ids`
-Request Type | Request Params | Type | Description
+### `/fetchMultipleObjects`
+Request Type | Request Body | Type | Description
 ---|---|---|---
-GET|`ids` |`{username: string, learningObjectName: string}[]` | Array of objects containing `username`-`learningObjectName` pairs
+POST|`ids` |`{username: string, learningObjectName: string}[]` | Array of objects containing `username`-`learningObjectName` pairs
 
 | Response         | Type                             | Description                                                        |
 | ---------------- | -------------------------------- | ------------------------------------------------------------ |
