@@ -566,7 +566,7 @@ export class MongoDriver implements DataStore {
                             { name_: { $regex: new RegExp(text, 'ig') } },
                             { length_: { $regex: new RegExp(text, 'ig') } },
                             { level: { $regex: new RegExp(text, 'ig') } },
-                            { goals: { $in: { $regex: new RegExp(text, 'ig') } } },
+                            { goals: { $elemMatch: { text: { $regex: new RegExp(text, 'ig') } } } },
                             { outcomes: { $in: outcomeIDs } }
                         ]
                     })
