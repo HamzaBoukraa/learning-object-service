@@ -496,6 +496,7 @@ export class MongoDriver implements DataStore {
     * @returns {Cursor<LearningObjectRecord>[]} cursor of literally all objects
     */
     fetchAllObjects(currPage?: number, limit?: number): Promise<LearningObjectRecord[]> {
+        if (currPage !== undefined && currPage <= 0) currPage = 1;
         let skip = currPage && limit ? ((currPage - 1) * limit) : undefined;
         return skip !== undefined ?
             this.db.collection(collectionFor(LearningObjectSchema))
@@ -535,6 +536,7 @@ export class MongoDriver implements DataStore {
         currPage?: number,
         limit?: number
     ): Promise<LearningObjectRecord[]> {
+        if (currPage !== undefined && currPage <= 0) currPage = 1;
         let skip = currPage && limit ? ((currPage - 1) * limit) : undefined;
         try {
             let authorRecords: UserRecord[] = (author || text) ?

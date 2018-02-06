@@ -259,9 +259,9 @@ export class ExpressRouteDriver {
         });
 
         //Fetches Learing Objects By Username and LearningObject name
-        router.get('/fetchMultipleObjects/:ids', async (req, res) => {
+        router.post('/fetchMultipleObjects', async (req, res) => {
             try {
-                let ids: { username: string, learningObjectName: string }[] = req.params.ids.split(',');
+                let ids: { username: string, learningObjectName: string }[] = req.body.ids;
                 this._LearningObjectInteractor.responder = this.getResponder(res);
                 await this._LearningObjectInteractor.fetchMultipleObjects(ids);
             } catch (e) {
