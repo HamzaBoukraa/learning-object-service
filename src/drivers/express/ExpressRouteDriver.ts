@@ -250,7 +250,7 @@ export class ExpressRouteDriver {
             try {
                 let currPage = req.query.currPage ? +req.query.currPage : null;
                 let limit = req.query.limit ? +req.query.limit : null;
-                console.log(currPage, limit)
+
                 this._LearningObjectInteractor.responder = this.getResponder(res);
                 await this._LearningObjectInteractor.fetchAllObjects(currPage, limit);
             } catch (e) {

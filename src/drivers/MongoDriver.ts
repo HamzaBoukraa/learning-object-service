@@ -502,7 +502,10 @@ export class MongoDriver implements DataStore {
             let objectCursor = await this.db.collection(collectionFor(LearningObjectSchema))
                 .find<LearningObjectRecord>()
             let totalRecords = await objectCursor.count();
-            objectCursor = skip !== undefined ? objectCursor.skip(skip).limit(limit) : objectCursor;
+            objectCursor = (skip !== undefined) ?
+                objectCursor.skip(skip).limit(limit)
+                : limit ? objectCursor.limit(limit)
+                    : objectCursor;
             let objects = await objectCursor.toArray();
             return Promise.resolve({ objects: objects, total: totalRecords });
         } catch (e) {
@@ -589,7 +592,10 @@ export class MongoDriver implements DataStore {
                     );
 
             let totalRecords = await objectCursor.count();
-            objectCursor = skip !== undefined ? objectCursor.skip(skip).limit(limit) : objectCursor;
+            objectCursor = (skip !== undefined) ?
+                objectCursor.skip(skip).limit(limit)
+                : limit ? objectCursor.limit(limit)
+                    : objectCursor;
             let objects = await objectCursor.toArray();
 
             return Promise.resolve({ objects: objects, total: totalRecords });
