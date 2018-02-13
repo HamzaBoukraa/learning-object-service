@@ -78,7 +78,6 @@ export class LearningObjectInteractor implements Interactor {
             // FIXME: Add organization to authorRecord Schema and pass to User entity
             let author = new User(authorRecord.username ? authorRecord.username : authorRecord['id'], authorRecord.name_, null, null, null);
             let object = await this.generateLearningObject(author, record, true)
-            console.log(object)
             this._responder.sendObject({ id: learningObjectID, object: LearningObject.serialize(object) });
 
         } catch (e) {
