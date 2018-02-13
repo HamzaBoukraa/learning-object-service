@@ -228,7 +228,9 @@ export class ExpressRouteDriver {
                 let name = req.query.name;
                 let author = req.query.author;
                 let length = req.query.length;
+                length = (length && !Array.isArray(length)) ? [length] : length;
                 let level = req.query.level;
+                level = (level && !Array.isArray(level)) ? [level] : level;
                 let source = req.query.source;
 
                 //For broad searching | Search all fields to match inputed text

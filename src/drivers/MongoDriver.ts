@@ -582,7 +582,9 @@ export class MongoDriver implements DataStore {
                             { name_: { $regex: new RegExp(text, 'ig') } },
                             { goals: { $elemMatch: { text: { $regex: new RegExp(text, 'ig') } } } },
                             { outcomes: { $in: outcomeIDs ? outcomeIDs : [] } }
-                        ]
+                        ],
+                        length_: length ? { $in: length } : { $regex: /./ig },
+                        level: level ? { $in: level } : { $regex: /./ig },
                     })
                 // Else use and operator 
                 : await this.db.collection(collectionFor(LearningObjectSchema))
