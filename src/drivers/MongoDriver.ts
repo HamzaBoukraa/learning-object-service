@@ -546,6 +546,10 @@ export class MongoDriver implements DataStore {
     ): Promise<{ objects: LearningObjectRecord[], total: number }> {
         if (currPage !== undefined && currPage <= 0) currPage = 1;
         let skip = currPage && limit ? ((currPage - 1) * limit) : undefined;
+
+        //TODO: Pass another property for sourceContains that isn't name. 
+        //Name should be reserved for querying LearningObjects' names. This is just a hotfix
+        let sourceContains = source ? name : undefined;
         try {
             let authorRecords: UserRecord[] = (author || text) ?
                 await this.db.collection(collectionFor(UserSchema))
@@ -555,7 +559,10 @@ export class MongoDriver implements DataStore {
 
             let sourceRecords: OutcomeRecord[] = (source || text) ?
                 await this.db.collection(collectionFor(StandardOutcomeSchema))
-                    .find<OutcomeRecord>({ source: { $regex: new RegExp((source ? source : text), 'ig') } }).toArray()
+                    .find<OutcomeRecord>({
+                        source: { $regex: new RegExp((source ? source : text), 'ig') },
+                        outcome: { $regex: new RegExp((sourceContains ? sourceContains : text), 'ig') }
+                    }).toArray()
                 : null;
             let sourceIDs = sourceRecords ? sourceRecords.map(doc => doc._id) : null;
 
@@ -582,8 +589,9 @@ export class MongoDriver implements DataStore {
                     .find<LearningObjectRecord>(
                         {
                             authorID: authorIDs ? { $in: authorIDs } : { $regex: /./ig },
-                            name_: { $regex: name ? new RegExp(name, 'ig') : /./ig },
-                            length_: length ? { $in: level } : { $regex: /./ig },
+                            //FIXME: Another janky hotfix for not having sourceContains
+                            name_: { $regex: (name && !sourceContains) ? new RegExp(name, 'ig') : /./ig },
+                            length_: length ? { $in: length } : { $regex: /./ig },
                             level: level ? { $in: level } : { $regex: /./ig },
                             outcomes: outcomeIDs ? { $in: outcomeIDs } : { $regex: /./ig }
                         }
