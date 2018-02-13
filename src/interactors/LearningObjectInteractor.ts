@@ -188,7 +188,7 @@ export class LearningObjectInteractor implements Interactor {
             name_: object.name,
             date: object.date,
             length_: object.length,
-            level: object.level ? object.length : AcademicLevel.Undergraduate,
+            level: object.level ? object.level : AcademicLevel.Undergraduate,
             goals: this.documentGoals(object.goals),
             repository: object.repository,
             published: (object.published === (undefined || null)) ? false : object.published
