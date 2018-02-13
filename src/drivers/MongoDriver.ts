@@ -220,8 +220,8 @@ export class MongoDriver implements DataStore {
             for (let objectid of doc.objects) {
                 await this.db.collection(collectionFor(LearningOutcomeSchema))
                     .updateMany(
-                    { source: objectid },
-                    { $set: { author: record.name_ } },
+                        { source: objectid },
+                        { $set: { author: record.name_ } },
                 );
             }
 
@@ -247,13 +247,13 @@ export class MongoDriver implements DataStore {
             // ensure all outcomes have the right name_ and date tag
             await this.db.collection(collectionFor(LearningOutcomeSchema))
                 .updateMany(
-                { source: id },
-                {
-                    $set: {
-                        name_: record.name_,
-                        date: record.date,
+                    { source: id },
+                    {
+                        $set: {
+                            name_: record.name_,
+                            date: record.date,
+                        },
                     },
-                },
             );
 
             return Promise.resolve();
@@ -536,8 +536,8 @@ export class MongoDriver implements DataStore {
     async searchObjects(
         name: string,
         author: string,
-        length: string,
-        level: string,
+        length: string[],
+        level: string[],
         source: string,
         text: string,
         ascending: boolean,
@@ -573,8 +573,6 @@ export class MongoDriver implements DataStore {
                         $or: [
                             { authorID: { $in: authorIDs ? authorIDs : [] } },
                             { name_: { $regex: new RegExp(text, 'ig') } },
-                            { length_: { $regex: new RegExp(text, 'ig') } },
-                            { level: { $regex: new RegExp(text, 'ig') } },
                             { goals: { $elemMatch: { text: { $regex: new RegExp(text, 'ig') } } } },
                             { outcomes: { $in: outcomeIDs ? outcomeIDs : [] } }
                         ]
@@ -582,13 +580,13 @@ export class MongoDriver implements DataStore {
                 // Else use and operator 
                 : await this.db.collection(collectionFor(LearningObjectSchema))
                     .find<LearningObjectRecord>(
-                    {
-                        authorID: authorIDs ? { $in: authorIDs } : { $regex: /./ig },
-                        name_: { $regex: name ? new RegExp(name, 'ig') : /./ig },
-                        length_: length ? length : { $regex: /./ig },
-                        level: level ? level : { $regex: /./ig },
-                        outcomes: outcomeIDs ? { $in: outcomeIDs } : { $regex: /./ig }
-                    }
+                        {
+                            authorID: authorIDs ? { $in: authorIDs } : { $regex: /./ig },
+                            name_: { $regex: name ? new RegExp(name, 'ig') : /./ig },
+                            length_: length ? { $in: level } : { $regex: /./ig },
+                            level: level ? { $in: level } : { $regex: /./ig },
+                            outcomes: outcomeIDs ? { $in: outcomeIDs } : { $regex: /./ig }
+                        }
                     );
 
             let totalRecords = await objectCursor.count();

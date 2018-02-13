@@ -39,6 +39,6 @@ export interface DataStore {
     fetchOutcome(id: UserID): Promise<OutcomeRecord>;
     fetchMultipleObjects(ids: LearningObjectID[]): Promise<LearningObjectRecord[]>;
     fetchAllObjects(currPage?: number, limit?: number): Promise<{ objects: LearningObjectRecord[], total: number }>;
-    searchObjects(name: string, author: string, length: string, level: string, source: string, text: string, ascending: boolean, currPage?: number, limit?: number): Promise<{ objects: LearningObjectRecord[], total: number }>;
+    searchObjects(name: string, author: string, length: string[], level: string[], source: string, text: string, ascending: boolean, currPage?: number, limit?: number): Promise<{ objects: LearningObjectRecord[], total: number }>;
     findMappingID(date: string, name: string, outcome: string): Promise<StandardOutcomeID>;
 }

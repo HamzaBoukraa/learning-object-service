@@ -396,7 +396,7 @@ ensive
                     return new Promise<LearningObjectID>((resolve, reject) => {
                         this.dataStore.findLearningObject(id.username, id.learningObjectName)
                             .then((learningObjectID) => resolve(learningObjectID)
-                            , (err) => reject(err));
+                                , (err) => reject(err));
                     });
                 }));
 
@@ -444,7 +444,7 @@ ensive
      *
      * @returns {Outcome[]} list of outcome suggestions, ordered by score
      */
-    async suggestObjects(name: string, author: string, length: string, level: string, source: string, text: string, ascending: boolean, currPage?: number, limit?: number): Promise<void> {
+    async suggestObjects(name: string, author: string, length: string[], level: string[], source: string, text: string, ascending: boolean, currPage?: number, limit?: number): Promise<void> {
         try {
             let response = await this.dataStore.searchObjects(name, author, length, level, source, text, ascending, currPage, limit);
             let objectRecords = response.objects;
