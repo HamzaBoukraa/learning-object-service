@@ -38,10 +38,7 @@ export class ExpressRouteDriver {
             try {
                 let username = req.body.username;
                 let pwd = req.body.pwd;
-                this._AuthInteractor.responder = this.getResponder(res);
-
-                await this._AuthInteractor.authenticate(username, pwd);
-
+                await this._AuthInteractor.authenticate(this.getResponder(res), username, pwd);
             } catch (e) {
                 console.log(e);
             }
@@ -50,8 +47,7 @@ export class ExpressRouteDriver {
         router.post('/register', async (req, res) => {
             try {
                 let user = User.unserialize(req.body.user);
-                this._AuthInteractor.responder = this.getResponder(res);
-                await this._AuthInteractor.registerUser(user);
+                await this._AuthInteractor.registerUser(this.getResponder(res), user);
             } catch (e) {
                 console.log(e);
             }
@@ -61,9 +57,8 @@ export class ExpressRouteDriver {
         router.post('/emailRegistered', async (req, res) => {
             try {
                 let email = req.body.email;
-                this._AuthInteractor.responder = this.getResponder(res);
 
-                await this._AuthInteractor.emailRegisterd(email);
+                await this._AuthInteractor.emailRegisterd(this.getResponder(res), email);
             } catch (e) {
                 console.log(e);
             }
@@ -74,9 +69,7 @@ export class ExpressRouteDriver {
         router.get('/findUser/:username', async (req, res) => {
             try {
                 let username = req.params.username;
-                this._UserInteractor.responder = this.getResponder(res);
-
-                await this._UserInteractor.findUser(username);
+                await this._UserInteractor.findUser(this.getResponder(res), username);
             } catch (e) {
                 console.log(e);
             }
@@ -85,9 +78,7 @@ export class ExpressRouteDriver {
         router.get('/loadUser/:id', async (req, res) => {
             try {
                 let id = req.params.id;
-                this._UserInteractor.responder = this.getResponder(res);
-
-                await this._UserInteractor.loadUser(id);
+                await this._UserInteractor.loadUser(this.getResponder(res), id);
 
             } catch (e) {
                 console.log(e);
@@ -98,9 +89,7 @@ export class ExpressRouteDriver {
             try {
                 let id = req.body.id;
                 let user = User.unserialize(req.body.user);
-                this._UserInteractor.responder = this.getResponder(res);
-
-                await this._UserInteractor.editUser(id, user);
+                await this._UserInteractor.editUser(this.getResponder(res), id, user);
             } catch (e) {
                 console.log(e);
             }
@@ -109,8 +98,7 @@ export class ExpressRouteDriver {
         router.delete('/deleteUser/:id', async (req, res) => {
             try {
                 let id = req.body.id;
-                this._UserInteractor.responder = this.getResponder(res);
-                await this._UserInteractor.deleteUser(id);
+                await this._UserInteractor.deleteUser(this.getResponder(res), id);
             } catch (e) {
                 console.log(e);
             }
@@ -123,8 +111,7 @@ export class ExpressRouteDriver {
             try {
                 let username = req.params.author;
                 let learningObjectName = req.params.learningObjectName;
-                this._LearningObjectInteractor.responder = this.getResponder(res);
-                await this._LearningObjectInteractor.findLearningObject(username, learningObjectName);
+                await this._LearningObjectInteractor.findLearningObject(this.getResponder(res), username, learningObjectName);
             } catch (e) {
                 console.log(e);
             }
@@ -136,8 +123,7 @@ export class ExpressRouteDriver {
         router.get('/loadLearningObjectSummary/:username', async (req, res) => {
             try {
                 let username = req.params.username;
-                this._LearningObjectInteractor.responder = this.getResponder(res);
-                await this._LearningObjectInteractor.loadLearningObjectSummary(username);
+                await this._LearningObjectInteractor.loadLearningObjectSummary(this.getResponder(res), username);
             } catch (e) {
                 console.log(e);
             }
@@ -145,8 +131,7 @@ export class ExpressRouteDriver {
 
         router.get('/loadLearningObject/:username/:learningObjectName', async (req, res) => {
             try {
-                this._LearningObjectInteractor.responder = this.getResponder(res);
-                await this._LearningObjectInteractor.loadLearningObject(req.params.username, req.params.learningObjectName)
+                await this._LearningObjectInteractor.loadLearningObject(this.getResponder(res), req.params.username, req.params.learningObjectName)
             } catch (e) {
                 console.log(e);
             }
@@ -158,8 +143,7 @@ export class ExpressRouteDriver {
                 let username = req.body.author;
                 console.log(req.body)
                 let object = LearningObject.unserialize(req.body.object);
-                this._LearningObjectInteractor.responder = this.getResponder(res);
-                await this._LearningObjectInteractor.addLearningObject(username, object);
+                await this._LearningObjectInteractor.addLearningObject(this.getResponder(res), username, object);
             } catch (e) {
                 console.log(e);
             }
@@ -172,8 +156,7 @@ export class ExpressRouteDriver {
             try {
                 let id = req.body.id;
                 let object = LearningObject.unserialize(req.body.object);
-                this._LearningObjectInteractor.responder = this.getResponder(res);
-                await this._LearningObjectInteractor.updateLearningObject(id, object);
+                await this._LearningObjectInteractor.updateLearningObject(this.getResponder(res), id, object);
             } catch (e) {
                 console.log(e);
             }
@@ -184,9 +167,7 @@ export class ExpressRouteDriver {
             try {
                 let username = req.params.username;
                 let learningObjectName = req.params.learningObjectName;
-
-                this._LearningObjectInteractor.responder = this.getResponder(res);
-                await this._LearningObjectInteractor.deleteLearningObject(username, learningObjectName)
+                await this._LearningObjectInteractor.deleteLearningObject(this.getResponder(res), username, learningObjectName)
 
             } catch (e) {
                 console.log(e);
@@ -199,8 +180,7 @@ export class ExpressRouteDriver {
                 let username = req.params.username;
                 let learningObjectNames = req.params.learningObjectNames.split(',');
 
-                this._LearningObjectInteractor.responder = this.getResponder(res);
-                await this._LearningObjectInteractor.deleteMultipleLearningObjects(username, learningObjectNames);
+                await this._LearningObjectInteractor.deleteMultipleLearningObjects(this.getResponder(res), username, learningObjectNames);
 
             } catch (e) {
                 console.log(e);
@@ -213,8 +193,7 @@ export class ExpressRouteDriver {
                 let outcome = req.body.outcome;
                 let object = req.body.object;
                 let index = req.body.index;
-                this._LearningObjectInteractor.responder = this.getResponder(res);
-                await this._LearningObjectInteractor.reorderOutcome(object, outcome, index);
+                await this._LearningObjectInteractor.reorderOutcome(this.getResponder(res), object, outcome, index);
             } catch (e) {
                 console.log(e);
             }
@@ -240,8 +219,7 @@ export class ExpressRouteDriver {
                 let currPage = req.query.currPage ? +req.query.currPage : null;
                 let limit = req.query.limit ? +req.query.limit : null;
 
-                this._LearningObjectInteractor.responder = this.getResponder(res);
-                await this._LearningObjectInteractor.suggestObjects(name, author, length, level, source, text, ascending, currPage, limit);
+                await this._LearningObjectInteractor.suggestObjects(this.getResponder(res), name, author, length, level, source, text, ascending, currPage, limit);
             } catch (e) {
                 console.log(e);
             }
@@ -253,8 +231,7 @@ export class ExpressRouteDriver {
                 let currPage = req.query.currPage ? +req.query.currPage : null;
                 let limit = req.query.limit ? +req.query.limit : null;
 
-                this._LearningObjectInteractor.responder = this.getResponder(res);
-                await this._LearningObjectInteractor.fetchAllObjects(currPage, limit);
+                await this._LearningObjectInteractor.fetchAllObjects(this.getResponder(res), currPage, limit);
             } catch (e) {
                 console.log(e);
             }
@@ -264,8 +241,7 @@ export class ExpressRouteDriver {
         router.post('/fetchMultipleObjects', async (req, res) => {
             try {
                 let ids: { username: string, learningObjectName: string }[] = req.body.ids;
-                this._LearningObjectInteractor.responder = this.getResponder(res);
-                await this._LearningObjectInteractor.fetchMultipleObjects(ids);
+                await this._LearningObjectInteractor.fetchMultipleObjects(this.getResponder(res), ids);
             } catch (e) {
                 console.log(e);
             }
@@ -276,8 +252,7 @@ export class ExpressRouteDriver {
         router.get('/fetchObjectsSummary/:ids', async (req, res) => {
             try {
                 let ids: ObjectID[] = req.params.ids.split(',');
-                this._LearningObjectInteractor.responder = this.getResponder(res);
-                await this._LearningObjectInteractor.fetchObjectsByIDs(ids);
+                await this._LearningObjectInteractor.fetchObjectsByIDs(this.getResponder(res), ids);
             } catch (e) {
                 console.log(e);
             }
@@ -288,8 +263,7 @@ export class ExpressRouteDriver {
         router.get('/fecthFullObjects/:ids', async (req, res) => {
             try {
                 let ids: ObjectID[] = req.params.ids.split(',');
-                this._LearningObjectInteractor.responder = this.getResponder(res);
-                await this._LearningObjectInteractor.loadFullLearningObjectByIDs(ids);
+                await this._LearningObjectInteractor.loadFullLearningObjectByIDs(this.getResponder(res), ids);
             } catch (e) {
                 console.log(e);
             }

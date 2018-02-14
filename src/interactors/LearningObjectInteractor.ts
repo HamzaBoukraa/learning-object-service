@@ -27,12 +27,7 @@ import {
 import { ObjectId, ObjectID } from 'bson';
 
 
-export class LearningObjectInteractor implements Interactor {
-    private _responder: Responder;
-
-    public set responder(responder: Responder) {
-        this._responder = responder;
-    }
+export class LearningObjectInteractor {
 
     constructor(private dataStore: DataStore) { }
 
@@ -44,7 +39,7 @@ export class LearningObjectInteractor implements Interactor {
         *
         * @returns {User}
         */
-    async loadLearningObjectSummary(username: string): Promise<void> {
+    async loadLearningObjectSummary(responder: Responder, username: string): Promise<void> {
         try {
             let id = await this.dataStore.findUser(username);
             let authorRecord = await this.dataStore.fetchUser(id);
@@ -55,9 +50,9 @@ export class LearningObjectInteractor implements Interactor {
                 let author = new User(authorRecord.username, authorRecord.name_, null, null, null);
                 summary.push(await this.generateLearningObject(author, objectRecord));
             }
-            this._responder.sendObject(summary.map(object => LearningObject.serialize(object)));
+            responder.sendObject(summary.map(object => LearningObject.serialize(object)));
         } catch (e) {
-            this._responder.sendOperationError(e);
+            responder.sendOperationError(e);
         }
     };
 
@@ -70,7 +65,7 @@ export class LearningObjectInteractor implements Interactor {
      *
      * @returns {LearningObject}
      */
-    async loadLearningObject(username: string, learningObjectName: string): Promise<void> {
+    async loadLearningObject(responder: Responder, username: string, learningObjectName: string): Promise<void> {
         try {
             let learningObjectID = await this.dataStore.findLearningObject(username, learningObjectName);
             let record = await this.dataStore.fetchLearningObject(learningObjectID);
@@ -78,16 +73,16 @@ export class LearningObjectInteractor implements Interactor {
             // FIXME: Add organization to authorRecord Schema and pass to User entity
             let author = new User(authorRecord.username ? authorRecord.username : authorRecord['id'], authorRecord.name_, null, null, null);
             let object = await this.generateLearningObject(author, record, true)
-            this._responder.sendObject({ id: learningObjectID, object: LearningObject.serialize(object) });
+            responder.sendObject({ id: learningObjectID, object: LearningObject.serialize(object) });
 
         } catch (e) {
             console.log(e);
-            this._responder.sendOperationError(e);
+            responder.sendOperationError(e);
         }
     }
 
 
-    async loadFullLearningObjectByIDs(ids: ObjectID[]): Promise<void> {
+    async loadFullLearningObjectByIDs(responder: Responder, ids: ObjectID[]): Promise<void> {
         try {
             let records = await this.dataStore.fetchMultipleObjects(ids);
             let objects: LearningObject[] = [];
@@ -99,10 +94,10 @@ export class LearningObjectInteractor implements Interactor {
                 objects.push(object);
             }
 
-            this._responder.sendObject(objects.map((object) => { return LearningObject.serialize(object) }));
+            responder.sendObject(objects.map((object) => { return LearningObject.serialize(object) }));
         } catch (e) {
             console.log(e);
-            this._responder.sendOperationError(e);
+            responder.sendOperationError(e);
         }
     }
 
@@ -121,7 +116,7 @@ export class LearningObjectInteractor implements Interactor {
      *
      * @returns {LearningObjectID} the database id of the new record
      */
-    async addLearningObject(username: string, object: LearningObject): Promise<void> {
+    async addLearningObject(responder: Responder, username: string, object: LearningObject): Promise<void> {
         try {
             let authorID = await this.dataStore.findUser(username);
             let learningObjectID = await this.dataStore.insertLearningObject({
@@ -143,10 +138,10 @@ export class LearningObjectInteractor implements Interactor {
             }));
             console.log(outcomeIDs);
 
-            this._responder.sendObject(learningObjectID);
+            responder.sendObject(learningObjectID);
         } catch (e) {
             console.log(e);
-            this._responder.sendOperationError(e);
+            responder.sendOperationError(e);
         }
 
 
@@ -161,12 +156,12 @@ export class LearningObjectInteractor implements Interactor {
      *
      * @returns {LearningOutcomeID}
      */
-    async findLearningObject(username: string, learningObjectName: string): Promise<void> {
+    async findLearningObject(responder: Responder, username: string, learningObjectName: string): Promise<void> {
         try {
             let learningObjectID = await this.dataStore.findLearningObject(username, learningObjectName);
-            this._responder.sendObject(learningObjectID);
+            responder.sendObject(learningObjectID);
         } catch (e) {
-            this._responder.sendOperationError(e);
+            responder.sendOperationError(e);
         }
     }
 
@@ -208,7 +203,7 @@ ensive
      * @param {LearningObjectID} id - database id of the record to change
      * @param {LearningObject} object - entity with values to update to
      */
-    async updateLearningObject(id: LearningObjectID, object: LearningObject): Promise<void> {
+    async updateLearningObject(responder: Responder, id: LearningObjectID, object: LearningObject): Promise<void> {
         try {
             let toDelete = (await this.dataStore.fetchLearningObject(id)).outcomes;
             let doNotDelete = new Set<LearningOutcomeID>();
@@ -231,9 +226,9 @@ ensive
                     await this.dataStore.deleteLearningOutcome(outcomeId);
                 }
             }
-            this._responder.sendOperationSuccess();
+            responder.sendOperationSuccess();
         } catch (e) {
-            this._responder.sendOperationError(e);
+            responder.sendOperationError(e);
         }
     }
 
@@ -305,35 +300,35 @@ ensive
             }
         }
     }
-    async reorderOutcome(object: ObjectId, outcome: OutcomeID, index: number) {
+    async reorderOutcome(responder: Responder, object: ObjectId, outcome: OutcomeID, index: number) {
         try {
             await this.dataStore.reorderOutcome(object, outcome, index)
-            this._responder.sendOperationSuccess();
+            responder.sendOperationSuccess();
         } catch (error) {
-            this._responder.sendOperationError();
+            responder.sendOperationError();
         }
     }
 
-    async deleteLearningObject(username: string, learningObjectName: string): Promise<void> {
+    async deleteLearningObject(responder: Responder, username: string, learningObjectName: string): Promise<void> {
         try {
             let learningObjectID = await this.dataStore.findLearningObject(username, learningObjectName);
             await this.dataStore.deleteLearningObject(learningObjectID);
-            this._responder.sendOperationSuccess();
+            responder.sendOperationSuccess();
         } catch (error) {
-            this._responder.sendOperationError(error);
+            responder.sendOperationError(error);
         }
     }
 
-    async deleteMultipleLearningObjects(username: string, learningObjectNames: string[]): Promise<void> {
+    async deleteMultipleLearningObjects(responder: Responder, username: string, learningObjectNames: string[]): Promise<void> {
         try {
             let learningObjectIDs = await Promise.all(learningObjectNames.map((learningObjectName => {
                 return this.dataStore.findLearningObject(username, learningObjectName);
             })));
 
             await this.dataStore.deleteMultipleLearningObjects(learningObjectIDs);
-            this._responder.sendOperationSuccess();
+            responder.sendOperationSuccess();
         } catch (error) {
-            this._responder.sendOperationError(error);
+            responder.sendOperationError(error);
         }
     }
 
@@ -347,7 +342,7 @@ ensive
      *
      * @returns {StandardOutcomeID} the database id of the new record
      */
-    async addStandardOutcome(standard: StandardOutcome): Promise<StandardOutcomeID> {
+    async addStandardOutcome(responder: Responder, standard: StandardOutcome): Promise<StandardOutcomeID> {
         return this.dataStore.insertStandardOutcome({
             author: standard.author,
             name_: standard.name,
@@ -360,7 +355,7 @@ ensive
      * Return literally all objects. Very expensive.
      * @returns {LearningObject[]} array of literally all objects
      */
-    async fetchAllObjects(currPage: number, limit: number): Promise<void> {
+    async fetchAllObjects(responder: Responder, currPage: number, limit: number): Promise<void> {
         try {
             let response = await this.dataStore.fetchAllObjects(currPage, limit);
             let objectRecords = response.objects;
@@ -372,10 +367,10 @@ ensive
                 let object = await this.generateLearningObject(author, doc);
                 objects.push(object);
             }
-            this._responder.sendObject({ objects: objects.map(object => LearningObject.serialize(object)), total: response.total });
+            responder.sendObject({ objects: objects.map(object => LearningObject.serialize(object)), total: response.total });
         } catch (e) {
             console.log(e);
-            this._responder.sendOperationError(e);
+            responder.sendOperationError(e);
         }
     }
 
@@ -386,7 +381,7 @@ ensive
      * Returns array of learning objects associated with the given ids.
      * @returns {LearningObjectRecord[]}
      */
-    async fetchMultipleObjects(ids: { username: string, learningObjectName: string }[]): Promise<void> {
+    async fetchMultipleObjects(responder: Responder, ids: { username: string, learningObjectName: string }[]): Promise<void> {
         try {
 
 
@@ -409,13 +404,13 @@ ensive
                 let object = await this.generateLearningObject(author, doc, true)
                 objects.push(object);
             }
-            this._responder.sendObject(objects.map(object => LearningObject.serialize(object)));
+            responder.sendObject(objects.map(object => LearningObject.serialize(object)));
         } catch (e) {
-            this._responder.sendOperationError(e);
+            responder.sendOperationError(e);
         }
     }
 
-    async fetchObjectsByIDs(ids: LearningObjectID[]) {
+    async fetchObjectsByIDs(responder: Responder, ids: LearningObjectID[]) {
         try {
             let records = await this.dataStore.fetchMultipleObjects(ids);
             let objects: LearningObject[] = [];
@@ -426,9 +421,9 @@ ensive
                 let object = await this.generateLearningObject(author, doc, true);
                 objects.push(object);
             }
-            this._responder.sendObject(objects.map(object => LearningObject.serialize(object)));
+            responder.sendObject(objects.map(object => LearningObject.serialize(object)));
         } catch (e) {
-            this._responder.sendOperationError(e);
+            responder.sendOperationError(e);
         }
     }
 
@@ -444,7 +439,7 @@ ensive
      *
      * @returns {Outcome[]} list of outcome suggestions, ordered by score
      */
-    async suggestObjects(name: string, author: string, length: string[], level: string[], source: string, text: string, ascending: boolean, currPage?: number, limit?: number): Promise<void> {
+    async suggestObjects(responder: Responder, name: string, author: string, length: string[], level: string[], source: string, text: string, ascending: boolean, currPage?: number, limit?: number): Promise<void> {
         try {
             let response = await this.dataStore.searchObjects(name, author, length, level, source, text, ascending, currPage, limit);
             let objectRecords = response.objects;
@@ -455,9 +450,9 @@ ensive
                 let object = await this.generateLearningObject(author, doc);
                 objects.push(object);
             }
-            this._responder.sendObject({ objects: objects.map((object) => LearningObject.serialize(object)), total: response.total });
+            responder.sendObject({ objects: objects.map((object) => LearningObject.serialize(object)), total: response.total });
         } catch (e) {
-            this._responder.sendOperationError(e);
+            responder.sendOperationError(e);
         }
     }
 

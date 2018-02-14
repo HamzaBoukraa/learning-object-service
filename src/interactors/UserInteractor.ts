@@ -3,23 +3,17 @@ import { HashInterface, DataStore, Responder, Interactor } from '../interfaces/i
 import { UserID } from '@cyber4all/clark-schema';
 
 import { User } from '@cyber4all/clark-entity';
-export class UserInteractor implements Interactor {
-
-    private _responder: Responder;
-
-    public set responder(responder: Responder) {
-        this._responder = responder;
-    }
+export class UserInteractor {
 
     constructor(private dataStore: DataStore, private hasher: HashInterface) { }
 
 
-    async findUser(username: string): Promise<void> {
+    async findUser(responder: Responder, username: string): Promise<void> {
         try {
             let id = await this.dataStore.findUser(username);
-            this._responder.sendObject(id);
+            responder.sendObject(id);
         } catch (e) {
-            this._responder.sendOperationError(e);
+            responder.sendOperationError(e);
         }
     };
 
@@ -32,16 +26,16 @@ export class UserInteractor implements Interactor {
      *
      * @returns {User}
      */
-    async loadUser(id: UserID): Promise<void> {
+    async loadUser(responder: Responder, id: UserID): Promise<void> {
         try {
             let record = await this.dataStore.fetchUser(id);
 
-            let user = new User(record.username, record.name_, record.email, null);
+            let user = new User(record.username, record.name_, record.email, null, null);
             // not a deep operation - ignore objects
 
-            this._responder.sendObject(User.serialize(user));
+            responder.sendObject(User.serialize(user));
         } catch (e) {
-            this._responder.sendOperationError(e);
+            responder.sendOperationError(e);
         }
     };
 
@@ -57,7 +51,7 @@ export class UserInteractor implements Interactor {
      * @param {UserID} id - database id of the record to change
      * @param {User} user - entity with values to update to
      */
-    async editUser(id: UserID, user: User): Promise<void> {
+    async editUser(responder: Responder, id: UserID, user: User): Promise<void> {
 
         try {
             let edit = {
@@ -81,17 +75,17 @@ export class UserInteractor implements Interactor {
              *       gets wise to our trick.
              */
             await this.dataStore.editUser(id, edit);
-            this._responder.sendOperationSuccess();
+            responder.sendOperationSuccess();
         } catch (e) {
-            this._responder.sendOperationError(e);
+            responder.sendOperationError(e);
         }
     };
-    async deleteUser(id: UserID): Promise<void> {
+    async deleteUser(responder: Responder, id: UserID): Promise<void> {
         try {
             await this.dataStore.deleteUser(id);
-            this._responder.sendOperationSuccess();
+            responder.sendOperationSuccess();
         } catch (e) {
-            this._responder.sendOperationError(e);
+            responder.sendOperationError(e);
         }
     }
 }
