@@ -118,6 +118,10 @@ export class LearningObjectInteractor {
      */
     async addLearningObject(responder: Responder, username: string, object: LearningObject): Promise<void> {
         try {
+            if (object.name.trim() == '') {
+                responder.sendOperationError('Learning Object name cannot be empty.');
+                return;
+            }
             let authorID = await this.dataStore.findUser(username);
             let learningObjectID = await this.dataStore.insertLearningObject({
                 authorID: authorID,

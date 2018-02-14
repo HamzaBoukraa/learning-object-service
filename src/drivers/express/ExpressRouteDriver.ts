@@ -141,7 +141,6 @@ export class ExpressRouteDriver {
             try {
                 // FIXME: Get username from token
                 let username = req.body.author;
-                console.log(req.body)
                 let object = LearningObject.unserialize(req.body.object);
                 await this._LearningObjectInteractor.addLearningObject(this.getResponder(res), username, object);
             } catch (e) {
