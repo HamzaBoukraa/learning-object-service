@@ -443,9 +443,9 @@ ensive
      *
      * @returns {Outcome[]} list of outcome suggestions, ordered by score
      */
-    async suggestObjects(responder: Responder, name: string, author: string, length: string[], level: string[], source: string, text: string, ascending: boolean, currPage?: number, limit?: number): Promise<void> {
+    async suggestObjects(responder: Responder, name: string, author: string, length: string[], level: string[], source: string, text: string, orderBy?: string, sortType?: number, currPage?: number, limit?: number): Promise<void> {
         try {
-            let response = await this.dataStore.searchObjects(name, author, length, level, source, text, ascending, currPage, limit);
+            let response = await this.dataStore.searchObjects(name, author, length, level, source, text, orderBy, sortType, currPage, limit);
             let objectRecords = response.objects;
             let objects: LearningObject[] = [];
             for (let doc of objectRecords) {

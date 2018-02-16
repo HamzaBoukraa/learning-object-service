@@ -540,7 +540,8 @@ export class MongoDriver implements DataStore {
         level: string[],
         source: string,
         text: string,
-        ascending: boolean,
+        orderBy?: string,
+        sortType?: number,
         currPage?: number,
         limit?: number
     ): Promise<{ objects: LearningObjectRecord[], total: number }> {
@@ -604,6 +605,8 @@ export class MongoDriver implements DataStore {
                 objectCursor.skip(skip).limit(limit)
                 : limit ? objectCursor.limit(limit)
                     : objectCursor;
+
+            objectCursor = orderBy ? objectCursor.sort(orderBy, sortType ? sortType : 1) : objectCursor;
             let objects = await objectCursor.toArray();
 
             return Promise.resolve({ objects: objects, total: totalRecords });

@@ -201,8 +201,6 @@ export class ExpressRouteDriver {
         // FIXME: IMPLEMENT
         router.get('/suggestObjects', async (req, res) => {
             try {
-                // FIXME: Conver to number
-                let ascending = req.query.ascending;
                 let name = req.query.name;
                 let author = req.query.author;
                 let length = req.query.length;
@@ -215,10 +213,12 @@ export class ExpressRouteDriver {
                 let text = req.query.text;
                 // let content = req.query.content;
 
+                let orderBy = req.query.orderBy;
+                let sortType = req.query.sortType ? +req.query.sortType : null
                 let currPage = req.query.currPage ? +req.query.currPage : null;
                 let limit = req.query.limit ? +req.query.limit : null;
 
-                await this._LearningObjectInteractor.suggestObjects(this.getResponder(res), name, author, length, level, source, text, ascending, currPage, limit);
+                await this._LearningObjectInteractor.suggestObjects(this.getResponder(res), name, author, length, level, source, text, orderBy, sortType, currPage, limit);
             } catch (e) {
                 console.log(e);
             }
