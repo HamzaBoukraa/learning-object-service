@@ -576,7 +576,7 @@ export class MongoDriver implements DataStore {
             }
 
             if (outcomeIDs) {
-                textQuery['outcomes'] = { $in: outcomeIDs };
+                textQuery['outcomes'] = outcomeIDs;
             }
 
             let objectCursor = (text || text === '') ?
