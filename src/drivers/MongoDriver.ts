@@ -563,6 +563,8 @@ export class MongoDriver implements DataStore {
                 : null;
             let outcomeIDs = outcomeRecords ? outcomeRecords.map(doc => doc._id) : null;
 
+            console.log('outcome ids:', outcomeIDs)
+
             let objectCursor = (text || text === '') ?
                 //If text use or operator for Query to search through all fields
                 await this.db.collection(collectionFor(LearningObjectSchema))
@@ -571,10 +573,10 @@ export class MongoDriver implements DataStore {
                             { authorID: { $in: authorIDs ? authorIDs : [] } },
                             { name_: { $regex: new RegExp(text, 'ig') } },
                             { goals: { $elemMatch: { text: { $regex: new RegExp(text, 'ig') } } } },
-                            { outcomes: { $in: outcomeIDs ? outcomeIDs : [] } }
                         ],
                         length_: length ? { $in: length } : { $regex: /./ig },
                         level: level ? { $in: level } : { $regex: /./ig },
+                        outcomes: outcomeIDs ? { $in: outcomeIDs } : { $regex: /./ig }
                     })
                 // Else use and operator 
                 : await this.db.collection(collectionFor(LearningObjectSchema))
