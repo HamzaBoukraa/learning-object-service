@@ -207,7 +207,9 @@ export class ExpressRouteDriver {
                 length = (length && !Array.isArray(length)) ? [length] : length;
                 let level = req.query.level;
                 level = (level && !Array.isArray(level)) ? [level] : level;
-                let source = req.query.source;
+                let standardOutcomes = req.query.standardOutcomes;
+                standardOutcomes = (standardOutcomes && !Array.isArray(standardOutcomes)) ? [standardOutcomes] : standardOutcomes;
+
 
                 //For broad searching | Search all fields to match inputed text
                 let text = req.query.text;
@@ -218,7 +220,7 @@ export class ExpressRouteDriver {
                 let currPage = req.query.currPage ? +req.query.currPage : null;
                 let limit = req.query.limit ? +req.query.limit : null;
 
-                await this._LearningObjectInteractor.suggestObjects(this.getResponder(res), name, author, length, level, source, text, orderBy, sortType, currPage, limit);
+                await this._LearningObjectInteractor.suggestObjects(this.getResponder(res), name, author, length, level, standardOutcomes, text, orderBy, sortType, currPage, limit);
             } catch (e) {
                 console.log(e);
             }

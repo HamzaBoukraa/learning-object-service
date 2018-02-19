@@ -26,6 +26,7 @@ import { DataStore } from "../interfaces/interfaces";
 require('../useme');
 import * as dotenv from 'dotenv';
 import { LearningOutcome, LearningObject } from '@cyber4all/clark-entity';
+import { StandardOutcomeQuery } from '../interfaces/DataStore';
 dotenv.config();
 
 export class MongoDriver implements DataStore {
@@ -538,7 +539,7 @@ export class MongoDriver implements DataStore {
         author: string,
         length: string[],
         level: string[],
-        standardOutcomes: { name: string, source: string, date: string, outcome: string }[],
+        standardOutcomes: StandardOutcomeQuery[],
         text: string,
         orderBy?: string,
         sortType?: number,
@@ -555,8 +556,8 @@ export class MongoDriver implements DataStore {
                 : null;
             let authorIDs = authorRecords ? authorRecords.map(doc => doc._id) : null;
 
-            let sources = standardOutcomes ? standardOutcomes.map((object) => object.source) : null;
-            console.log('sources', sources);
+            // let sources = standardOutcomes ? standardOutcomes.map((object) => object.source) : null;
+            // console.log('sources', sources);
             let tags = standardOutcomes ? standardOutcomes.map((object) => {
                 let tag = `${object.date}$${object.name}$${object.outcome}`;
                 return tag;
@@ -565,7 +566,7 @@ export class MongoDriver implements DataStore {
             let sourceRecords: OutcomeRecord[] = standardOutcomes ?
                 await this.db.collection(collectionFor(StandardOutcomeSchema))
                     .find<OutcomeRecord>({
-                        source: { $in: sources },
+                        // source: { $in: sources },
                         tag: { $in: tags },
                     }).toArray()
                 : null;
