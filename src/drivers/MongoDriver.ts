@@ -555,11 +555,9 @@ export class MongoDriver implements DataStore {
                 : null;
             let authorIDs = authorRecords ? authorRecords.map(doc => doc._id) : null;
 
-            console.log('source ids: ', standardOutcomeIDs);
-
             let outcomeRecords: LearningOutcomeRecord[] = standardOutcomeIDs ?
                 await this.db.collection(collectionFor(LearningOutcomeSchema))
-                    .find<LearningOutcomeRecord>({ mappings: { $in: standardOutcomeIDs } }).toArray()
+                    .find<LearningOutcomeRecord>({ mappings: standardOutcomeIDs }).toArray()
                 : null;
             let outcomeIDs = outcomeRecords ? outcomeRecords.map(doc => doc._id) : null;
 
@@ -576,7 +574,7 @@ export class MongoDriver implements DataStore {
             }
 
             if (outcomeIDs) {
-                textQuery['outcomes'] = outcomeIDs;
+                textQuery['outcomes'] = outcomeIDs.length > 0 ? outcomeIDs : ['DONT MATCH ME'];
             }
 
             let objectCursor = (text || text === '') ?
