@@ -209,6 +209,7 @@ export class ExpressRouteDriver {
                 level = (level && !Array.isArray(level)) ? [level] : level;
                 let standardOutcomes = req.query.standardOutcomes;
                 standardOutcomes = (standardOutcomes && !Array.isArray(standardOutcomes)) ? [standardOutcomes] : standardOutcomes;
+                console.log('standard outcome ids: ', standardOutcomes)
 
 
                 //For broad searching | Search all fields to match inputed text

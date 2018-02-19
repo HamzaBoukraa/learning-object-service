@@ -26,7 +26,6 @@ import { DataStore } from "../interfaces/interfaces";
 require('../useme');
 import * as dotenv from 'dotenv';
 import { LearningOutcome, LearningObject } from '@cyber4all/clark-entity';
-import { StandardOutcomeQuery } from '../interfaces/DataStore';
 dotenv.config();
 
 export class MongoDriver implements DataStore {
@@ -539,7 +538,7 @@ export class MongoDriver implements DataStore {
         author: string,
         length: string[],
         level: string[],
-        standardOutcomes: StandardOutcomeQuery[],
+        standardOutcomeIDs: string[],
         text: string,
         orderBy?: string,
         sortType?: number,
@@ -556,28 +555,11 @@ export class MongoDriver implements DataStore {
                 : null;
             let authorIDs = authorRecords ? authorRecords.map(doc => doc._id) : null;
 
-            // let sources = standardOutcomes ? standardOutcomes.map((object) => object.source) : null;
-            // console.log('sources', sources);
-            let tags = standardOutcomes ? standardOutcomes.map((object) => {
-                let tag = `${object.date}$${object.name}$${object.outcome}`;
-                return tag;
-            }) : null
-            console.log('tags', tags);
-            let sourceRecords: OutcomeRecord[] = standardOutcomes ?
-                await this.db.collection(collectionFor(StandardOutcomeSchema))
-                    .find<OutcomeRecord>({
-                        // source: { $in: sources },
-                        tag: { $in: tags },
-                    }).toArray()
-                : null;
-            let sourceIDs = sourceRecords ? sourceRecords.map(doc => doc._id) : null;
+            console.log('source ids: ', standardOutcomeIDs);
 
-            console.log('source ids: ', sourceIDs);
-
-
-            let outcomeRecords: LearningOutcomeRecord[] = sourceIDs ?
+            let outcomeRecords: LearningOutcomeRecord[] = standardOutcomeIDs ?
                 await this.db.collection(collectionFor(LearningOutcomeSchema))
-                    .find<LearningOutcomeRecord>({ mappings: { $in: sourceIDs } }).toArray()
+                    .find<LearningOutcomeRecord>({ mappings: { $in: standardOutcomeIDs } }).toArray()
                 : null;
             let outcomeIDs = outcomeRecords ? outcomeRecords.map(doc => doc._id) : null;
 

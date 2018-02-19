@@ -25,7 +25,6 @@ import {
 } from '@cyber4all/clark-entity';
 
 import { ObjectId, ObjectID } from 'bson';
-import { StandardOutcomeQuery } from '../interfaces/DataStore';
 
 
 export class LearningObjectInteractor {
@@ -450,7 +449,7 @@ ensive
         author: string,
         length: string[],
         level: string[],
-        standardOutcomes: StandardOutcomeQuery[],
+        standardOutcomeIDs: string[],
         text: string,
         orderBy?: string,
         sortType?: number,
@@ -458,7 +457,7 @@ ensive
         limit?: number
     ): Promise<void> {
         try {
-            let response = await this.dataStore.searchObjects(name, author, length, level, standardOutcomes, text, orderBy, sortType, currPage, limit);
+            let response = await this.dataStore.searchObjects(name, author, length, level, standardOutcomeIDs, text, orderBy, sortType, currPage, limit);
             let objectRecords = response.objects;
             let objects: LearningObject[] = [];
             for (let doc of objectRecords) {
