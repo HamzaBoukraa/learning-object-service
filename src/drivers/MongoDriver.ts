@@ -557,7 +557,7 @@ export class MongoDriver implements DataStore {
 
             let outcomeRecords: LearningOutcomeRecord[] = standardOutcomeIDs ?
                 await this.db.collection(collectionFor(LearningOutcomeSchema))
-                    .find<LearningOutcomeRecord>({ mappings: { $in: standardOutcomeIDs } }).toArray()
+                    .find<LearningOutcomeRecord>({ mappings: { $all: standardOutcomeIDs } }).toArray()
                 : null;
             let outcomeIDs = outcomeRecords ? outcomeRecords.map(doc => doc._id) : null;
 
