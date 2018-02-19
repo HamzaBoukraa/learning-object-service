@@ -565,19 +565,24 @@ export class MongoDriver implements DataStore {
 
             console.log('outcome ids:', outcomeIDs)
 
+            let textQuery = {
+                $or: [
+                    { authorID: { $in: authorIDs ? authorIDs : [] } },
+                    { name_: { $regex: new RegExp(text, 'ig') } },
+                    { goals: { $elemMatch: { text: { $regex: new RegExp(text, 'ig') } } } },
+                ],
+                length_: length ? { $in: length } : { $regex: /./ig },
+                level: level ? { $in: level } : { $regex: /./ig },
+            }
+
+            if (outcomeIDs) {
+                textQuery['outcomes'] = { $in: outcomeIDs };
+            }
+
             let objectCursor = (text || text === '') ?
                 //If text use or operator for Query to search through all fields
                 await this.db.collection(collectionFor(LearningObjectSchema))
-                    .find<LearningObjectRecord>({
-                        $or: [
-                            { authorID: { $in: authorIDs ? authorIDs : [] } },
-                            { name_: { $regex: new RegExp(text, 'ig') } },
-                            { goals: { $elemMatch: { text: { $regex: new RegExp(text, 'ig') } } } },
-                        ],
-                        length_: length ? { $in: length } : { $regex: /./ig },
-                        level: level ? { $in: level } : { $regex: /./ig },
-                        outcomes: outcomeIDs ? { $in: outcomeIDs } : { $regex: /./ig }
-                    })
+                    .find<LearningObjectRecord>(textQuery)
                 // Else use and operator 
                 : await this.db.collection(collectionFor(LearningObjectSchema))
                     .find<LearningObjectRecord>(
