@@ -538,7 +538,7 @@ export class MongoDriver implements DataStore {
         author: string,
         length: string[],
         level: string[],
-        source: string,
+        standardOutcomes: { name: string, source: string, date: string, outcome: string }[],
         text: string,
         orderBy?: string,
         sortType?: number,
@@ -548,9 +548,6 @@ export class MongoDriver implements DataStore {
         if (currPage !== undefined && currPage <= 0) currPage = 1;
         let skip = currPage && limit ? ((currPage - 1) * limit) : undefined;
 
-        //TODO: Pass another property for sourceContains that isn't name. 
-        //Name should be reserved for querying LearningObjects' names. This is just a hotfix
-        let sourceContains = source ? name : undefined;
         try {
             let authorRecords: UserRecord[] = (author || text) ?
                 await this.db.collection(collectionFor(UserSchema))
@@ -558,14 +555,23 @@ export class MongoDriver implements DataStore {
                 : null;
             let authorIDs = authorRecords ? authorRecords.map(doc => doc._id) : null;
 
-            let sourceRecords: OutcomeRecord[] = (source || text) ?
+            let sources = standardOutcomes ? standardOutcomes.map((object) => object.source) : null;
+            console.log('sources', sources);
+            let tags = standardOutcomes ? standardOutcomes.map((object) => {
+                let tag = `${object.date}$${object.name}$${object.outcome}`;
+                return tag;
+            }) : null
+            console.log('tags', tags);
+            let sourceRecords: OutcomeRecord[] = standardOutcomes ?
                 await this.db.collection(collectionFor(StandardOutcomeSchema))
                     .find<OutcomeRecord>({
-                        source: { $regex: new RegExp((source ? source : text), 'ig') },
-                        outcome: { $regex: new RegExp((sourceContains ? sourceContains : text), 'ig') }
+                        source: { $in: sources },
+                        tag: { $in: tags },
                     }).toArray()
                 : null;
             let sourceIDs = sourceRecords ? sourceRecords.map(doc => doc._id) : null;
+
+            console.log('source ids: ', sourceIDs);
 
 
             let outcomeRecords: LearningOutcomeRecord[] = sourceIDs ?
@@ -592,8 +598,7 @@ export class MongoDriver implements DataStore {
                     .find<LearningObjectRecord>(
                         {
                             authorID: authorIDs ? { $in: authorIDs } : { $regex: /./ig },
-                            //FIXME: Another janky hotfix for not having sourceContains
-                            name_: { $regex: (name && !sourceContains) ? new RegExp(name, 'ig') : /./ig },
+                            name_: { $regex: name ? new RegExp(name, 'ig') : /./ig },
                             length_: length ? { $in: length } : { $regex: /./ig },
                             level: level ? { $in: level } : { $regex: /./ig },
                             outcomes: outcomeIDs ? { $in: outcomeIDs } : { $regex: /./ig }
