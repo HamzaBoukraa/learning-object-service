@@ -561,37 +561,38 @@ export class MongoDriver implements DataStore {
                 : null;
             let outcomeIDs = outcomeRecords ? outcomeRecords.map(doc => doc._id) : null;
 
-            console.log('outcome ids:', outcomeIDs)
+            let objectCursor;
+            if (text || text === '') {
+                let textQuery = {
+                    $or: [
+                        { name_: { $regex: new RegExp(text, 'ig') } },
+                        { goals: { $elemMatch: { text: { $regex: new RegExp(text, 'ig') } } } },
+                    ],
+                }
 
-            let textQuery = {
-                $or: [
-                    { authorID: { $in: authorIDs ? authorIDs : [] } },
-                    { name_: { $regex: new RegExp(text, 'ig') } },
-                    { goals: { $elemMatch: { text: { $regex: new RegExp(text, 'ig') } } } },
-                ],
-                length_: length ? { $in: length } : { $regex: /./ig },
-                level: level ? { $in: level } : { $regex: /./ig },
+                authorIDs ? textQuery.$or.push(<any>{ authorID: { $in: authorIDs } }) : 'NOT MATCHING AUTHORS';
+
+                length ? textQuery['length_'] = { $in: length } : 'NOT MATCHING LENGTHS';
+
+                level ? textQuery['level'] = { $in: level } : 'NOT MATCHING LEVELS';
+
+                outcomeIDs ?
+                    textQuery['outcomes'] = outcomeIDs.length > 0 ? { $in: outcomeIDs } : ['DONT MATCH ME']
+                    : 'NOT MATCHINF OUTCOMES';
+
+                objectCursor = await this.db.collection(collectionFor(LearningObjectSchema))
+                    .find<LearningObjectRecord>(textQuery);
+            } else {
+                let fieldQuery = {};
+                authorIDs ? fieldQuery['authorID'] = { $in: authorIDs } : 'NOT MATCHING AUTHORS';
+                name ? fieldQuery['name_'] = { $regex: new RegExp(name, 'ig') } : 'NOT MATCHING LEARNING OBJECT NAME';
+                length ? fieldQuery['length_'] = { $in: length } : 'NOT MATCHING LENGTHS';
+                level ? fieldQuery['level'] = { $in: level } : 'NOT MATCHING LEVELS';
+                outcomeIDs ? fieldQuery['outcomes'] = { $in: outcomeIDs } : 'NOT MATCHING OUTCOMES';
+
+                objectCursor = await this.db.collection(collectionFor(LearningObjectSchema))
+                    .find<LearningObjectRecord>(fieldQuery);
             }
-
-            if (outcomeIDs) {
-                textQuery['outcomes'] = outcomeIDs.length > 0 ? outcomeIDs : ['DONT MATCH ME'];
-            }
-
-            let objectCursor = (text || text === '') ?
-                //If text use or operator for Query to search through all fields
-                await this.db.collection(collectionFor(LearningObjectSchema))
-                    .find<LearningObjectRecord>(textQuery)
-                // Else use and operator 
-                : await this.db.collection(collectionFor(LearningObjectSchema))
-                    .find<LearningObjectRecord>(
-                        {
-                            authorID: authorIDs ? { $in: authorIDs } : { $regex: /./ig },
-                            name_: { $regex: name ? new RegExp(name, 'ig') : /./ig },
-                            length_: length ? { $in: length } : { $regex: /./ig },
-                            level: level ? { $in: level } : { $regex: /./ig },
-                            outcomes: outcomeIDs ? { $in: outcomeIDs } : { $regex: /./ig }
-                        }
-                    );
 
             let totalRecords = await objectCursor.count();
             objectCursor = (skip !== undefined) ?
