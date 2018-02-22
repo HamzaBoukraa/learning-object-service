@@ -1,8 +1,5 @@
-# Database Interaction
-Code for all CLARK scripts and services needing direct contact with the database. Each service has usage instructions in its own README file.
-# Database Interaction Service
-
-Provide an interaction layer for core CLARK database functions.
+# Learning Object Service
+Service that handles business logic for interacting with Learning Objects.
 
 The service listens for requests at `/api/<request-name>`.
 
