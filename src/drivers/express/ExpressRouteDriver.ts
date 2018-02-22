@@ -1,7 +1,7 @@
 import { ExpressResponder } from "../drivers";
 import { DataStore, Responder } from "../../interfaces/interfaces";
 import { Router, Response } from 'express';
-import { AuthInteractor, UserInteractor, LearningObjectInteractor } from '../../interactors/interactors'
+import { LearningObjectInteractor } from '../../interactors/interactors'
 import { HashInterface } from "../../interfaces/interfaces";
 import { User, LearningObject } from "@cyber4all/clark-entity";
 import { ObjectID } from "bson";
@@ -9,14 +9,9 @@ import { ObjectID } from "bson";
 export class ExpressRouteDriver {
 
     private _LearningObjectInteractor: LearningObjectInteractor;
-    private _AuthInteractor: AuthInteractor;
-    private _UserInteractor: UserInteractor;
 
     constructor(private dataStore: DataStore, private hasher: HashInterface) {
         this._LearningObjectInteractor = new LearningObjectInteractor(dataStore);
-        this._UserInteractor = new UserInteractor(dataStore, hasher);
-        this._AuthInteractor = new AuthInteractor(dataStore, hasher);
-
     }
 
     public static buildRouter(dataStore: DataStore, hasher: HashInterface): Router {
@@ -31,79 +26,6 @@ export class ExpressRouteDriver {
     }
 
     private setRoutes(router: Router): void {
-
-        // AUTHENTICATION ROUTES
-        router.post('/authenticate', async (req, res) => {
-
-            try {
-                let username = req.body.username;
-                let pwd = req.body.pwd;
-                await this._AuthInteractor.authenticate(this.getResponder(res), username, pwd);
-            } catch (e) {
-                console.log(e);
-            }
-
-        });
-        router.post('/register', async (req, res) => {
-            try {
-                let user = User.unserialize(req.body.user);
-                await this._AuthInteractor.registerUser(this.getResponder(res), user);
-            } catch (e) {
-                console.log(e);
-            }
-
-        });
-        // TODO: Combine into one route.
-        router.post('/emailRegistered', async (req, res) => {
-            try {
-                let email = req.body.email;
-
-                await this._AuthInteractor.emailRegisterd(this.getResponder(res), email);
-            } catch (e) {
-                console.log(e);
-            }
-
-        });
-
-        // USER ROUTES
-        router.get('/findUser/:username', async (req, res) => {
-            try {
-                let username = req.params.username;
-                await this._UserInteractor.findUser(this.getResponder(res), username);
-            } catch (e) {
-                console.log(e);
-            }
-
-        });
-        router.get('/loadUser/:id', async (req, res) => {
-            try {
-                let id = req.params.id;
-                await this._UserInteractor.loadUser(this.getResponder(res), id);
-
-            } catch (e) {
-                console.log(e);
-            }
-
-        });
-        router.patch('/editUser', async (req, res) => {
-            try {
-                let id = req.body.id;
-                let user = User.unserialize(req.body.user);
-                await this._UserInteractor.editUser(this.getResponder(res), id, user);
-            } catch (e) {
-                console.log(e);
-            }
-
-        });
-        router.delete('/deleteUser/:id', async (req, res) => {
-            try {
-                let id = req.body.id;
-                await this._UserInteractor.deleteUser(this.getResponder(res), id);
-            } catch (e) {
-                console.log(e);
-            }
-
-        });
 
         // LEARNING OBJECT ROUTES
         // FIXME: Convert to get and get author's username from token

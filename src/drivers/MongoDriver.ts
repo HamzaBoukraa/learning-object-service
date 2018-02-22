@@ -73,25 +73,7 @@ export class MongoDriver implements DataStore {
     // INSERTS //
     /////////////
 
-    /**
-     * Insert a user into the database.
-     * @async
-     *
-     * @param {UserInsert} record
-     *
-     * @returns {UserID} the database id of the new record
-     */
-    async insertUser(record: UserInsert): Promise<boolean | ObjectID> {
-        try {
-            let doc = await this.db.collection(collectionFor(UserSchema))
-                .findOne<UserRecord>({ email: record.email });
-            if (doc) return Promise.reject({ error: 'Email is already in use.' });
-            record['_id'] = (new ObjectID()).toHexString();
-            return this.insert(UserSchema, record);
-        } catch (e) {
-            return Promise.reject(e);
-        }
-    }
+
     /**
    * Insert a learning object into the database.
    * @async
@@ -202,37 +184,6 @@ export class MongoDriver implements DataStore {
     ///////////////////////////////////////////////////////////////////
 
     /**
-     * Edit a user.
-     * @async
-     *
-     * @param {UserID} id which document to change
-     * @param {UserEdit} record the values to change to
-     */
-    async editUser(id: UserID, record: UserEdit): Promise<void> {
-        try {
-            // perform edit first, so uniqueness problems get caught BEFORE we edit outcomes
-            await this.edit(UserSchema, id, record);
-
-            // ensure all outcomes have the right author tag
-            let doc = await this.db.collection(collectionFor(UserSchema))
-                .findOne<UserRecord>({ _id: id });
-
-            for (let objectid of doc.objects) {
-                await this.db.collection(collectionFor(LearningOutcomeSchema))
-                    .updateMany(
-                        { source: objectid },
-                        { $set: { author: record.name_ } },
-                );
-            }
-
-            // perform the actual edit
-            return Promise.resolve();
-        } catch (e) {
-            return Promise.reject(e);
-        }
-    }
-
-    /**
      * Edit a learning object.
      * @async
      *
@@ -277,16 +228,6 @@ export class MongoDriver implements DataStore {
     //////////////////////////////////////////
     // DELETIONS - will cascade to children //
     //////////////////////////////////////////
-
-    /**
-     * Remove a user (and its objects) from the database.
-     * @async
-     *
-     * @param {UserID} id which document to delete
-     */
-    async deleteUser(id: UserID): Promise<void> {
-        return this.remove(UserSchema, id);
-    }
 
     /**
      * Remove a learning object (and its outcomes) from the database.
@@ -336,24 +277,6 @@ export class MongoDriver implements DataStore {
     ///////////////////////////
     // INFORMATION RETRIEVAL //
     ///////////////////////////
-
-    /**
-     * Check if an email is registered to a user in the database.
-     *
-     * @param {string} email the user's email
-     *
-     * @returns {boolean} true iff userid/pwd pair is valid
-     */
-    async emailRegistered(email: string): Promise<boolean> {
-        try {
-            let doc = await this.db.collection(collectionFor(UserSchema))
-                .findOne<UserRecord>({ email: email });
-            if (!doc) return Promise.resolve(false);
-            return Promise.resolve(true);
-        } catch (e) {
-            return Promise.reject(e);
-        }
-    }
 
     /**
      * Look up a user by its login id.
