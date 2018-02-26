@@ -1,6 +1,6 @@
 {
   "name": "database-interaction",
-  "version": "1.0.0",
+  "version": "1.0.0-alpha.1.0",
   "description": "Database interaction service to ensure consistent behavior over all services.",
   "main": "app.ts",
   "scripts": {
