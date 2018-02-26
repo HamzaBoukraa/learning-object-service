@@ -5,6 +5,7 @@ import { ExpressRouteDriver } from '../drivers'
 import * as http from 'http';
 import * as logger from 'morgan';
 import { enforceTokenAccess } from '../../middleware/jwt.config';
+import * as cookieParser from 'cookie-parser';
 
 
 export class ExpressDriver {
@@ -38,6 +39,8 @@ export class ExpressDriver {
             next();
         });
 
+        this.app.use(cookieParser());
+
         //Set Validation Middleware
         //this.app.use(enforceTokenAccess);
 
@@ -59,7 +62,7 @@ export class ExpressDriver {
         /**
          * Listen on provided port, on all network interfaces.
          */
-        server.listen(port, () => console.log(`API running on localhost:${port}`));
+        server.listen(port, () => console.log(`API running on localhost:${port} ${process.env.VAR}`));
 
 
         return this.app;

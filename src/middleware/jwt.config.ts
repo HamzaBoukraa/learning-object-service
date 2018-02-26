@@ -9,6 +9,9 @@ import { key, issuer } from '../config/config';
 export const enforceTokenAccess = jwt({
     secret: key,
     issuer: issuer,
+    getToken: (req) => {
+        return req.cookies.presence;
+    },
 }).unless({
     // Routes that don't require authorization
     path: ['/', '/api', '/api/authenticate', '/api/register'],
