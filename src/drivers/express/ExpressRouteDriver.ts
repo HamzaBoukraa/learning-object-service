@@ -4,7 +4,7 @@ import { Router, Response } from 'express';
 import { LearningObjectInteractor } from '../../interactors/interactors';
 import { HashInterface } from '../../interfaces/interfaces';
 import { User, LearningObject } from '@cyber4all/clark-entity';
-const version = require('../package.json').version;
+const version = require('../../package.json').version;
 
 export class ExpressRouteDriver {
   private _LearningObjectInteractor: LearningObjectInteractor;
@@ -280,8 +280,9 @@ export class ExpressRouteDriver {
     });
     router.get('/collections/:name/learning-objects', async (req, res) => {
       try {
+        let name = req.params.name;
         let responder = this.getResponder(res);
-        await this._LearningObjectInteractor;
+        await this._LearningObjectInteractor.fetchCollection(responder, name);
       } catch (e) {
         console.log(e);
       }

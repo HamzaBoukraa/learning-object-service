@@ -633,31 +633,32 @@ ensive
         collections = collections.map(collection => collection['name']);
         responder.sendObject(collections);
       } else {
-        let objectIDs: ObjectId[] = [];
+        let collections_objects = [];
         for (let collection of collections) {
-          for (let id of collection['learningObjects']) {
-            objectIDs.push(id);
-          }
-        }
-        let objects: LearningObject[] = [];
-        let objectRecords = await this.dataStore.fetchMultipleObjects(
-          objectIDs
-        );
-        for (let doc of objectRecords) {
-          let authorRecord = await this.dataStore.fetchUser(doc.authorID);
-          let author = new User(
-            authorRecord.username,
-            authorRecord.name_,
-            null,
-            null,
-            null
+          let objects: LearningObject[] = [];
+          let objectRecords = await this.dataStore.fetchMultipleObjects(
+            collection['learningObjects']
           );
-          let object = await this.generateLearningObject(author, doc);
-          objects.push(object);
+          for (let doc of objectRecords) {
+            let authorRecord = await this.dataStore.fetchUser(doc.authorID);
+            let author = new User(
+              authorRecord.username,
+              authorRecord.name_,
+              null,
+              null,
+              null
+            );
+            let object = await this.generateLearningObject(author, doc);
+            objects.push(object);
+          }
+          collections_objects.push({
+            name: collection['name'],
+            learningObjects: objects.map(object =>
+              LearningObject.serialize(object)
+            )
+          });
         }
-        responder.sendObject(
-          objects.map(object => LearningObject.serialize(object))
-        );
+        responder.sendObject(collections_objects);
       }
     } catch (e) {
       responder.sendOperationError(e);

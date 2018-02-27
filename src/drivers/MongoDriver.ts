@@ -693,10 +693,10 @@ export class MongoDriver implements DataStore {
   }
   async fetchCollection(name: string): Promise<{}> {
     try {
-      let collectionCursor = await this.db
+      let collection = await this.db
         .collection(LearningObjectCollections)
         .findOne({ name: name });
-      return collectionCursor.toArray();
+      return collection;
     } catch (e) {
       return Promise.reject(e);
     }
