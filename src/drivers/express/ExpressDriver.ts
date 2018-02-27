@@ -1,72 +1,68 @@
-import * as express from 'express';
-import * as bodyParser from 'body-parser';
-import { DataStore, HashInterface } from '../../interfaces/interfaces';
-import { ExpressRouteDriver } from '../drivers'
-import * as http from 'http';
-import * as logger from 'morgan';
-import { enforceTokenAccess } from '../../middleware/jwt.config';
-import * as cookieParser from 'cookie-parser';
-
+import * as express from "express";
+import * as bodyParser from "body-parser";
+import { DataStore, HashInterface } from "../../interfaces/interfaces";
+import { ExpressRouteDriver } from "../drivers";
+import * as http from "http";
+import * as logger from "morgan";
+import { enforceTokenAccess } from "../../middleware/jwt.config";
 
 export class ExpressDriver {
-    static app = express();
-    static start(dataStore: DataStore, hasher: HashInterface) {
+  static app = express();
+  static start(dataStore: DataStore, hasher: HashInterface) {
+    // configure app to use bodyParser()
+    this.app.use(bodyParser.urlencoded({ extended: true }));
+    this.app.use(bodyParser.json());
 
-        // configure app to use bodyParser()
-        this.app.use(bodyParser.urlencoded({ extended: true }));
-        this.app.use(bodyParser.json());
+    //Setup route logger
+    this.app.use(logger("dev"));
 
-        //Setup route logger
-        this.app.use(logger('dev'));
+    // set header to allow connection by given url
+    this.app.use(function(req, res, next) {
+      // Website you wish to allow to connect
+      res.header("Access-Control-Allow-Origin", "*");
 
-        // set header to allow connection by given url
-        this.app.use(function (req, res, next) {
+      // Request methods you wish to allow
+      res.header(
+        "Access-Control-Allow-Methods",
+        "GET, POST, OPTIONS, PUT, PATCH, DELETE"
+      );
 
-            // Website you wish to allow to connect
-            res.header('Access-Control-Allow-Origin', '*');
+      // Request headers you wish to allow
+      res.header(
+        "Access-Control-Allow-Headers",
+        "X-Requested-With,content-type"
+      );
 
-            // Request methods you wish to allow
-            res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
+      // Set to true if you need the website to include cookies in the requests sent
+      // to the API (e.g. in case you use sessions)
+      res.header("Access-Control-Allow-Credentials", "true");
 
-            // Request headers you wish to allow
-            res.header('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
+      // Pass to next layer of middleware
+      next();
+    });
 
-            // Set to true if you need the website to include cookies in the requests sent
-            // to the API (e.g. in case you use sessions)
-            res.header('Access-Control-Allow-Credentials', 'true');
+    //Set Validation Middleware
+    //this.app.use(enforceTokenAccess);
 
-            // Pass to next layer of middleware
-            next();
-        });
+    // Set our api routes
+    this.app.use("/", ExpressRouteDriver.buildRouter(dataStore, hasher));
 
-        this.app.use(cookieParser());
+    /**
+     * Get port from environment and store in Express.
+     */
+    const port = process.env.PORT || "3000";
+    this.app.set("port", port);
 
-        //Set Validation Middleware
-        //this.app.use(enforceTokenAccess);
+    /**
+     * Create HTTP server.
+     */
+    const server = http.createServer(this.app);
 
+    /**
+     * Listen on provided port, on all network interfaces.
+     */
+    server.listen(port, () => console.log(`API running on localhost:${port}`));
 
-        // Set our api routes
-        this.app.use('/api', ExpressRouteDriver.buildRouter(dataStore, hasher));
-
-        /**
-         * Get port from environment and store in Express.
-         */
-        const port = process.env.PORT || '3000';
-        this.app.set('port', port);
-
-        /**
-         * Create HTTP server.
-         */
-        const server = http.createServer(this.app);
-
-        /**
-         * Listen on provided port, on all network interfaces.
-         */
-        server.listen(port, () => console.log(`API running on localhost:${port} ${process.env.VAR}`));
-
-
-        return this.app;
-    }
-
-
+    return this.app;
+  }
 }
