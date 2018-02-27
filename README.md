@@ -147,6 +147,45 @@ GET|`username`|`string`| user's username
 #### Errors
 If `id` is invalid.
 
+### `/collections`
+Request Type | Request Params | Type | Description
+---|---|---|---
+GET| | | 
+
+| Response         | Type                             | Description                                                        |
+| ---------------- | -------------------------------- | ------------------------------------------------------------ |
+| []()             | `{name: string}[]`              | Array of objects containing name of collection  |
+| `error`|`string` | exists only if an error occurred |
+
+#### Errors
+MongoDB error?
+
+### `/collections/learning-objects`
+Request Type | Request Params | Type | Description
+---|---|---|---
+GET| | | 
+
+| Response         | Type                             | Description                                                        |
+| ---------------- | -------------------------------- | ------------------------------------------------------------ |
+| []()             | `{name: string, learningObjects: LearningObject[]}[]`              | Array of objects containing name of collection and array of Serialized LearningObject entities  |
+| `error`|`string` | exists only if an error occurred |
+
+#### Errors
+MongoDB error?
+
+### `/collections/:name/learning-objects`
+Request Type | Request Params | Type | Description
+---|---|---|---
+GET| name | string | Collection's name
+
+| Response         | Type                             | Description                                                        |
+| ---------------- | -------------------------------- | ------------------------------------------------------------ |
+| []()             | `{name: string, learningObjects: LearningObject[]}`              | Object containing name of collection and array of Serialized LearningObject entities  |
+| `error`|`string` | exists only if an error occurred |
+
+#### Errors
+If `collection` with `name` does not exist
+
 ### `/updateLearningObject`
 
 | Request  Type        | Request Body|  Type         | Description |
