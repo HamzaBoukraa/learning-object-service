@@ -4,7 +4,7 @@ import { Router, Response } from 'express';
 import { LearningObjectInteractor } from '../../interactors/interactors';
 import { HashInterface } from '../../interfaces/interfaces';
 import { User, LearningObject } from '@cyber4all/clark-entity';
-const version = require('../../package.json').version;
+const version = require('../../../package.json').version;
 
 export class ExpressRouteDriver {
   private _LearningObjectInteractor: LearningObjectInteractor;
