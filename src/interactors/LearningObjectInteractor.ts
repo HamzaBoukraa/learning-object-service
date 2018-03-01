@@ -9,7 +9,8 @@ import {
   AssessmentPlanInterface,
   InstructionalStrategyInterface,
   LearningGoalInterface,
-  LearningObjectRecord
+  LearningObjectRecord,
+  UserRecord
 } from '@cyber4all/clark-schema';
 
 import {
@@ -48,18 +49,10 @@ export class LearningObjectInteractor {
       for (let objectid of authorRecord.objects) {
         let objectRecord = await this.dataStore.fetchLearningObject(objectid);
         // FIXME: Add organization to authorRecord Schema and pass to User entity
-        let author = new User(
-          authorRecord.username,
-          authorRecord.name_,
-          null,
-          null,
-          null
-        );
+        let author = this.generateUser(authorRecord);
         summary.push(await this.generateLearningObject(author, objectRecord));
       }
-      responder.sendObject(
-        summary.map(object => LearningObject.serialize(object))
-      );
+      responder.sendObject(summary);
     } catch (e) {
       responder.sendOperationError(e);
     }
@@ -77,7 +70,8 @@ export class LearningObjectInteractor {
   async loadLearningObject(
     responder: Responder,
     username: string,
-    learningObjectName: string
+    learningObjectName: string,
+    accessUnpublished?: boolean
   ): Promise<void> {
     try {
       let learningObjectID = await this.dataStore.findLearningObject(
@@ -88,18 +82,11 @@ export class LearningObjectInteractor {
       let authorRecord = await this.dataStore.fetchUser(
         record.authorID ? record.authorID : record['author']
       );
-      // FIXME: Add organization to authorRecord Schema and pass to User entity
-      let author = new User(
-        authorRecord.username ? authorRecord.username : authorRecord['id'],
-        authorRecord.name_,
-        null,
-        null,
-        null
-      );
+      let author = this.generateUser(authorRecord);
       let object = await this.generateLearningObject(author, record, true);
       responder.sendObject({
         id: learningObjectID,
-        object: LearningObject.serialize(object)
+        object: object
       });
     } catch (e) {
       console.log(e);
@@ -118,23 +105,12 @@ export class LearningObjectInteractor {
         let authorRecord = await this.dataStore.fetchUser(
           doc.authorID ? doc.authorID : doc['author']
         );
-        // FIXME: Add organization to authorRecord Schema and pass to User entity
-        let author = new User(
-          authorRecord.username ? authorRecord.username : authorRecord['id'],
-          authorRecord.name_,
-          null,
-          null,
-          null
-        );
+        let author = this.generateUser(authorRecord);
         let object = await this.generateLearningObject(author, doc, true);
         objects.push(object);
       }
 
-      responder.sendObject(
-        objects.map(object => {
-          return LearningObject.serialize(object);
-        })
-      );
+      responder.sendObject(objects);
     } catch (e) {
       console.log(e);
       responder.sendOperationError(e);
@@ -172,10 +148,10 @@ export class LearningObjectInteractor {
         name_: object.name,
         date: object.date,
         length_: object.length,
-        level: object.level ? object.level : AcademicLevel.Undergraduate,
+        levels: object.levels,
         goals: this.documentGoals(object.goals),
         outcomes: [],
-        repository: object.repository,
+        materials: object.materials,
         published:
           object.published === (undefined || null) ? false : object.published
       });
@@ -240,9 +216,9 @@ export class LearningObjectInteractor {
       name_: object.name,
       date: object.date,
       length_: object.length,
-      level: object.level ? object.level : AcademicLevel.Undergraduate,
+      levels: object.levels,
       goals: this.documentGoals(object.goals),
-      repository: object.repository,
+      materials: object.materials,
       published:
         object.published === (undefined || null) ? false : object.published
     });
@@ -466,19 +442,12 @@ ensive
         let authorRecord = await this.dataStore.fetchUser(
           doc.authorID ? doc.authorID : doc['author']
         );
-        // FIXME: Add organization to authorRecord Schema and pass to User entity
-        let author = new User(
-          authorRecord.username ? authorRecord.username : authorRecord['id'],
-          authorRecord.name_,
-          null,
-          null,
-          null
-        );
+        let author = this.generateUser(authorRecord);
         let object = await this.generateLearningObject(author, doc);
         objects.push(object);
       }
       responder.sendObject({
-        objects: objects.map(object => LearningObject.serialize(object)),
+        objects: objects,
         total: response.total
       });
     } catch (e) {
@@ -519,20 +488,11 @@ ensive
         let authorRecord = await this.dataStore.fetchUser(
           doc.authorID ? doc.authorID : doc['author']
         );
-        // FIXME: Add organization to authorRecord Schema and pass to User entity
-        let author = new User(
-          authorRecord.username ? authorRecord.username : authorRecord['id'],
-          authorRecord.name_,
-          null,
-          null,
-          null
-        );
+        let author = this.generateUser(authorRecord);
         let object = await this.generateLearningObject(author, doc, true);
         objects.push(object);
       }
-      responder.sendObject(
-        objects.map(object => LearningObject.serialize(object))
-      );
+      responder.sendObject(objects);
     } catch (e) {
       responder.sendOperationError(e);
     }
@@ -546,20 +506,11 @@ ensive
         let authorRecord = await this.dataStore.fetchUser(
           doc.authorID ? doc.authorID : doc['author']
         );
-        // FIXME: Add organization to authorRecord Schema and pass to User entity
-        let author = new User(
-          authorRecord.username ? authorRecord.username : authorRecord['id'],
-          authorRecord.name_,
-          null,
-          null,
-          null
-        );
+        let author = this.generateUser(authorRecord);
         let object = await this.generateLearningObject(author, doc, true);
         objects.push(object);
       }
-      responder.sendObject(
-        objects.map(object => LearningObject.serialize(object))
-      );
+      responder.sendObject(objects);
     } catch (e) {
       responder.sendOperationError(e);
     }
@@ -607,18 +558,12 @@ ensive
       let objects: LearningObject[] = [];
       for (let doc of objectRecords) {
         let authorRecord = await this.dataStore.fetchUser(doc.authorID);
-        let author = new User(
-          authorRecord.username,
-          authorRecord.name_,
-          null,
-          null,
-          null
-        );
+        let author = this.generateUser(authorRecord);
         let object = await this.generateLearningObject(author, doc);
         objects.push(object);
       }
       responder.sendObject({
-        objects: objects.map(object => LearningObject.serialize(object)),
+        objects: objects,
         total: response.total
       });
     } catch (e) {
@@ -641,21 +586,13 @@ ensive
           );
           for (let doc of objectRecords) {
             let authorRecord = await this.dataStore.fetchUser(doc.authorID);
-            let author = new User(
-              authorRecord.username,
-              authorRecord.name_,
-              null,
-              null,
-              null
-            );
+            let author = this.generateUser(authorRecord);
             let object = await this.generateLearningObject(author, doc);
             objects.push(object);
           }
           collections_objects.push({
             name: collection['name'],
-            learningObjects: objects.map(object =>
-              LearningObject.serialize(object)
-            )
+            learningObjects: objects
           });
         }
         responder.sendObject(collections_objects);
@@ -674,19 +611,11 @@ ensive
       let objects: LearningObject[] = [];
       for (let doc of objectRecords) {
         let authorRecord = await this.dataStore.fetchUser(doc.authorID);
-        let author = new User(
-          authorRecord.username,
-          authorRecord.name_,
-          null,
-          null,
-          null
-        );
+        let author = this.generateUser(authorRecord);
         let object = await this.generateLearningObject(author, doc);
         objects.push(object);
       }
-      responder.sendObject(
-        objects.map(object => LearningObject.serialize(object))
-      );
+      responder.sendObject(objects);
     } catch (e) {
       responder.sendOperationError(e);
     }
@@ -696,6 +625,17 @@ ensive
   // HELPER FUNCTIONS - not in public API //
   //////////////////////////////////////////
 
+  private generateUser(userRecord: UserRecord): User {
+    let user = new User(
+      userRecord.username,
+      userRecord.name_,
+      null,
+      userRecord['organization'] ? userRecord['organization'] : null,
+      null
+    );
+    return user;
+  }
+
   private async generateLearningObject(
     author: User,
     record: LearningObjectRecord,
@@ -704,10 +644,14 @@ ensive
     let learningObject = new LearningObject(author, record.name_);
     learningObject.date = record.date;
     learningObject.length = record.length_;
-    learningObject.level = record.level
-      ? record.level
-      : AcademicLevel.Undergraduate;
-    learningObject.repository = record.repository;
+    if (Array.isArray(record['levels']) && record['levels'].length > 0) {
+      learningObject.levels = record['levels'];
+    } else {
+      record.level
+        ? (learningObject.levels = [<AcademicLevel>record.level])
+        : learningObject.addLevel(AcademicLevel.Undergraduate);
+    }
+    learningObject.materials = record.repository;
 
     record.published ? learningObject.publish() : learningObject.unpublish();
     for (let goal of record.goals) {

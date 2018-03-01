@@ -1,10 +1,10 @@
-import * as express from "express";
-import * as bodyParser from "body-parser";
-import { DataStore, HashInterface } from "../../interfaces/interfaces";
-import { ExpressRouteDriver } from "../drivers";
-import * as http from "http";
-import * as logger from "morgan";
-import { enforceTokenAccess } from "../../middleware/jwt.config";
+import * as express from 'express';
+import * as bodyParser from 'body-parser';
+import { DataStore, HashInterface } from '../../interfaces/interfaces';
+import { ExpressRouteDriver } from '../drivers';
+import * as http from 'http';
+import * as logger from 'morgan';
+import { enforceTokenAccess } from '../../middleware/jwt.config';
 
 export class ExpressDriver {
   static app = express();
@@ -14,28 +14,28 @@ export class ExpressDriver {
     this.app.use(bodyParser.json());
 
     //Setup route logger
-    this.app.use(logger("dev"));
+    this.app.use(logger('dev'));
 
     // set header to allow connection by given url
     this.app.use(function(req, res, next) {
       // Website you wish to allow to connect
-      res.header("Access-Control-Allow-Origin", "*");
+      res.header('Access-Control-Allow-Origin', '*');
 
       // Request methods you wish to allow
       res.header(
-        "Access-Control-Allow-Methods",
-        "GET, POST, OPTIONS, PUT, PATCH, DELETE"
+        'Access-Control-Allow-Methods',
+        'GET, POST, OPTIONS, PUT, PATCH, DELETE'
       );
 
       // Request headers you wish to allow
       res.header(
-        "Access-Control-Allow-Headers",
-        "X-Requested-With,content-type"
+        'Access-Control-Allow-Headers',
+        'X-Requested-With,content-type'
       );
 
       // Set to true if you need the website to include cookies in the requests sent
       // to the API (e.g. in case you use sessions)
-      res.header("Access-Control-Allow-Credentials", "true");
+      res.header('Access-Control-Allow-Credentials', 'true');
 
       // Pass to next layer of middleware
       next();
@@ -45,13 +45,16 @@ export class ExpressDriver {
     //this.app.use(enforceTokenAccess);
 
     // Set our api routes
-    this.app.use("/", ExpressRouteDriver.buildRouter(dataStore, hasher));
+    this.app.use('/', ExpressRouteDriver.buildRouter(dataStore, hasher));
 
     /**
      * Get port from environment and store in Express.
      */
-    const port = process.env.PORT || "3000";
-    this.app.set("port", port);
+    const port = process.env.PORT || '3000';
+    this.app.set('port', port);
+
+    // Allow Proxy
+    this.app.set('trust proxy', true);
 
     /**
      * Create HTTP server.

@@ -1,54 +1,45 @@
 import { MongoClient, Db, Cursor, ObjectID } from 'mongodb';
-
-import {
-  autosFor,
-  fixedsFor,
-  foreignsFor,
-  collections,
-  collectionFor,
-  schemaFor,
-  foreignData,
-  Record,
-  Update,
-  Insert,
-  Edit,
-  RecordID,
-  UserID,
-  LearningObjectID,
-  OutcomeID,
-  LearningOutcomeID,
-  StandardOutcomeID,
-  UserSchema,
-  UserRecord,
-  UserUpdate,
-  UserInsert,
-  UserEdit,
-  LearningObjectSchema,
-  LearningObjectRecord,
-  LearningObjectUpdate,
-  LearningObjectInsert,
-  LearningObjectEdit,
-  LearningOutcomeSchema,
-  LearningOutcomeRecord,
-  LearningOutcomeUpdate,
-  LearningOutcomeInsert,
-  LearningOutcomeEdit,
-  StandardOutcomeSchema,
-  StandardOutcomeRecord,
-  StandardOutcomeUpdate,
-  StandardOutcomeInsert,
-  StandardOutcomeEdit,
-  OutcomeRecord
-} from '@cyber4all/clark-schema';
-
-export { ObjectID as DBID };
 import { DataStore } from '../interfaces/interfaces';
-require('../useme');
 import * as dotenv from 'dotenv';
-import { LearningOutcome, LearningObject } from '@cyber4all/clark-entity';
+import { LearningObject, LearningOutcome, StandardOutcome, User } from '@cyber4all/clark-entity';
+import { LearningObjectDocument, LearningOutcomeDocument, UserDocument, StandardOutcomeDocument } from '@cyber4all/clark-schema';
+import { LearningObjectCollection } from '../interfaces/DataStore';
 dotenv.config();
 
-export const LearningObjectCollections = 'collections';
+
+export interface Collection {
+  name: string;
+  foreigns?: Foriegn[];
+  uniques?: string[];
+  text?: string[];
+}
+export interface Foriegn {
+  name: string;
+  data: ForiegnData;
+}
+
+export interface ForiegnData {
+  target: Collection;
+  child: boolean;
+  registry?: string;
+}
+export class COLLECTIONS {
+  public static User: Collection = {
+    name: 'users', foreigns: [
+      {
+        name: 'objects',
+        data: {
+          target: LearningObject,
+          child: true,
+        }
+      }], uniques: ['username']
+  };
+  public static LearningObject: Collection = { name: 'objects' };
+  public static LearningOutcome: Collection = { name: 'learning-outcomes' };
+  public static StandardOutcome: Collection = { name: 'outcomes' };
+  public static LearningObjectCollection: Collection = { name: 'collections' };
+}
+
 
 export class MongoDriver implements DataStore {
   private db: Db;
@@ -57,17 +48,17 @@ export class MongoDriver implements DataStore {
     let dburi =
       process.env.NODE_ENV === 'production'
         ? process.env.CLARK_DB_URI.replace(
-            /<DB_PASSWORD>/g,
-            process.env.CLARK_DB_PWD
-          )
-            .replace(/<DB_PORT>/g, process.env.CLARK_DB_PORT)
-            .replace(/<DB_NAME>/g, process.env.CLARK_DB_NAME)
+          /<DB_PASSWORD>/g,
+          process.env.CLARK_DB_PWD
+        )
+          .replace(/<DB_PORT>/g, process.env.CLARK_DB_PORT)
+          .replace(/<DB_NAME>/g, process.env.CLARK_DB_NAME)
         : process.env.CLARK_DB_URI_DEV.replace(
-            /<DB_PASSWORD>/g,
-            process.env.CLARK_DB_PWD
-          )
-            .replace(/<DB_PORT>/g, process.env.CLARK_DB_PORT)
-            .replace(/<DB_NAME>/g, process.env.CLARK_DB_NAME);
+          /<DB_PASSWORD>/g,
+          process.env.CLARK_DB_PWD
+        )
+          .replace(/<DB_PORT>/g, process.env.CLARK_DB_PORT)
+          .replace(/<DB_NAME>/g, process.env.CLARK_DB_NAME);
     this.connect(dburi);
   }
 
@@ -85,13 +76,13 @@ export class MongoDriver implements DataStore {
    *
    * @param {string} dbIP the host and port on which mongodb is running
    */
-  async connect(dburistring: string): Promise<void> {
+  async connect(dburi: string): Promise<void> {
     try {
-      this.db = await MongoClient.connect(dburistring);
+      this.db = await MongoClient.connect(dburi);
       return Promise.resolve();
     } catch (e) {
       return Promise.reject(
-        'Problem connecting to database at ' + dburistring + ':\n\t' + e
+        'Problem connecting to database at ' + dburi + ':\n\t' + e
       );
     }
   }
@@ -111,15 +102,16 @@ export class MongoDriver implements DataStore {
    * Insert a learning object into the database.
    * @async
    *
-   * @param {LearningObjectInsert} record
+   * @param {LearningObjectInsert} object
    *
    * @returns {LearningObjectID} the database id of the new record
    */
   async insertLearningObject(
-    record: LearningObjectInsert
-  ): Promise<LearningObjectID> {
-    record['_id'] = new ObjectID().toHexString();
-    return this.insert(LearningObjectSchema, record);
+    object: LearningObject
+  ): Promise<string> {
+    let doc: LearningObjectDocument;
+    doc['_id'] = new ObjectID().toHexString();
+    return this.insert(COLLECTIONS.LearningObject, doc);
   }
 
   /**
@@ -131,27 +123,25 @@ export class MongoDriver implements DataStore {
    * @returns {LearningOutcomeID} the database id of the new record
    */
   async insertLearningOutcome(
-    record: LearningOutcomeInsert
-  ): Promise<LearningOutcomeID> {
+    outcome: LearningOutcome
+  ): Promise<string> {
     try {
-      console.log(record);
-      record['_id'] = new ObjectID().toHexString();
-      /* FIXME: In order to create auto-generated fields, we need to
-                      query information for the foreign keys. But when we
-                      perform the generic insert, we unnecessarily query
-                      again to verify the foreign keys exist. Thoughts? */
+      console.log(outcome);
+      let doc: LearningOutcomeDocument;
+      doc['_id'] = new ObjectID().toHexString();
+
       let source = await this.db
-        .collection(collectionFor(LearningObjectSchema))
-        .findOne<LearningObjectRecord>({ _id: record.source });
+        .collection(COLLECTIONS.LearningObject.name)
+        .findOne<LearningObjectDocument>({ _id: record.source });
       console.log(source);
       let author = await this.db
-        .collection(collectionFor(UserSchema))
-        .findOne<UserRecord>({ _id: source.authorID });
-      record['author'] = author.name_;
-      record['name_'] = source.name_;
-      record['date'] = source.date;
-      record['outcome'] = record.verb + ' ' + record.text;
-      return this.insert(LearningOutcomeSchema, record);
+        .collection(COLLECTIONS.User.name)
+        .findOne<UserDocument>({ _id: source.authorID });
+      doc['author'] = author.name_;
+      doc['name_'] = source.name_;
+      doc['date'] = source.date;
+      doc['outcome'] = outcome.verb + ' ' + outcome.text;
+      return this.insert(COLLECTIONS.LearningOutcome, doc);
     } catch (e) {
       return Promise.reject('Problem inserting a Learning Outcome:\n\t' + e);
     }
@@ -166,12 +156,13 @@ export class MongoDriver implements DataStore {
    * @returns the database id of the new record
    */
   async insertStandardOutcome(
-    record: StandardOutcomeInsert
-  ): Promise<StandardOutcomeID> {
-    record['_id'] = new ObjectID().toHexString();
-    record['source'] = record.author;
-    record['tag'] = [record.date, record.name_, record.outcome].join('$');
-    return this.insert(StandardOutcomeSchema, record);
+    outcome: StandardOutcome
+  ): Promise<string> {
+    let doc: StandardOutcomeDocument;
+    doc['_id'] = new ObjectID().toHexString();
+    doc['source'] = outcome.author;
+    doc['tag'] = [outcome.date, outcome.name, outcome.outcome].join('$');
+    return this.insert(COLLECTIONS.StandardOutcome, doc);
   }
 
   ////////////////////////////
@@ -186,8 +177,8 @@ export class MongoDriver implements DataStore {
    * @param {OutcomeID} mapping the newly associated outcome's id
    */
   async mapOutcome(
-    outcome: LearningOutcomeID,
-    mapping: OutcomeID
+    outcome: string,
+    mapping: string
   ): Promise<void> {
     /*
          * TODO: alter register (and others) to take schema, not collection
@@ -201,7 +192,7 @@ export class MongoDriver implements DataStore {
         'Registration failed: no mapping ' + mapping + 'found in outcomes'
       );
     return this.register(
-      collectionFor(LearningOutcomeSchema),
+      COLLECTIONS.LearningOutcome,
       outcome,
       'mappings',
       mapping
@@ -216,11 +207,11 @@ export class MongoDriver implements DataStore {
    * @param {OutcomeID} mapping the newly associated outcome's id
    */
   async unmapOutcome(
-    outcome: LearningOutcomeID,
-    mapping: OutcomeID
+    outcome: string,
+    mapping: string
   ): Promise<void> {
     return this.unregister(
-      collectionFor(LearningOutcomeSchema),
+      COLLECTIONS.LearningOutcome,
       outcome,
       'mappings',
       mapping
@@ -236,12 +227,12 @@ export class MongoDriver implements DataStore {
    * @param {number} index the new index for the outcome
    */
   async reorderOutcome(
-    object: LearningObjectID,
-    outcome: LearningOutcomeID,
+    object: string,
+    outcome: string,
     index: number
   ): Promise<void> {
     return this.reorder(
-      collectionFor(LearningObjectSchema),
+      COLLECTIONS.LearningObject,
       object,
       'outcomes',
       outcome,
@@ -261,20 +252,21 @@ export class MongoDriver implements DataStore {
    * @param {LearningObjectEdit} record the values to change to
    */
   async editLearningObject(
-    id: LearningObjectID,
-    record: LearningObjectEdit
+    id: string,
+    object: LearningObject
   ): Promise<void> {
     try {
+      let doc: LearningObjectDocument;
       // perform edit first, so uniqueness problems get caught BEFORE we edit outcomes
-      await this.edit(LearningObjectSchema, id, record);
+      await this.edit(COLLECTIONS.LearningObject, id, doc);
 
       // ensure all outcomes have the right name_ and date tag
-      await this.db.collection(collectionFor(LearningOutcomeSchema)).updateMany(
+      await this.db.collection(COLLECTIONS.LearningOutcome.name).updateMany(
         { source: id },
         {
           $set: {
-            name_: record.name_,
-            date: record.date
+            name_: object.name,
+            date: object.date
           }
         }
       );
@@ -293,11 +285,11 @@ export class MongoDriver implements DataStore {
    * @param {LearningOutcomeEdit} record the values to change to
    */
   async editLearningOutcome(
-    id: LearningOutcomeID,
-    record: LearningOutcomeEdit
+    id: string,
+    outcome: LearningOutcome
   ): Promise<void> {
-    record['outcome'] = record.verb + ' ' + record.text;
-    return this.edit(LearningOutcomeSchema, id, record);
+    let doc: LearningOutcomeDocument;
+    return this.edit(COLLECTIONS.LearningOutcome, id, doc);
   }
 
   //////////////////////////////////////////
@@ -310,8 +302,8 @@ export class MongoDriver implements DataStore {
    *
    * @param {LearningObjectID} id which document to delete
    */
-  async deleteLearningObject(id: LearningObjectID): Promise<void> {
-    return this.remove(LearningObjectSchema, id);
+  async deleteLearningObject(id: string): Promise<void> {
+    return this.remove(COLLECTIONS.LearningObject, id);
   }
 
   /**
@@ -320,10 +312,10 @@ export class MongoDriver implements DataStore {
    *
    * @param {LearningObjectID} id which document to delete
    */
-  async deleteMultipleLearningObjects(ids: LearningObjectID[]): Promise<any> {
+  async deleteMultipleLearningObjects(ids: string[]): Promise<any> {
     return Promise.all(
       ids.map(id => {
-        return this.remove(LearningObjectSchema, id);
+        return this.remove(COLLECTIONS.LearningObject, id);
       })
     );
   }
@@ -334,17 +326,17 @@ export class MongoDriver implements DataStore {
    *
    * @param {LearningOutcomeID} id which document to delete
    */
-  async deleteLearningOutcome(id: LearningOutcomeID): Promise<void> {
+  async deleteLearningOutcome(id: string): Promise<void> {
     try {
       // find any outcomes mapping to this one, and unmap them
       //  this data assurance step is in the general category of
       //  'any other foreign keys pointing to this collection and id'
       //  which is excessive enough to justify this specific solution
       await this.db
-        .collection(collectionFor(LearningOutcomeSchema))
+        .collection(COLLECTIONS.LearningOutcome.name)
         .updateMany({ mappings: id }, { $pull: { $mappings: id } });
       // remove this outcome
-      return this.remove(LearningOutcomeSchema, id);
+      return this.remove(COLLECTIONS.LearningOutcome, id);
     } catch (e) {
       return Promise.reject(e);
     }
@@ -362,11 +354,11 @@ export class MongoDriver implements DataStore {
    *
    * @returns {UserID}
    */
-  async findUser(username: string): Promise<UserID> {
+  async findUser(username: string): Promise<string> {
     try {
       let doc = await this.db
-        .collection(collectionFor(UserSchema))
-        .findOne<UserRecord>({ username: username });
+        .collection(COLLECTIONS.User.name)
+        .findOne<UserDocument>({ username: username });
       if (!doc)
         return Promise.reject('No user with username ' + username + ' exists.');
       return Promise.resolve(doc._id);
@@ -387,12 +379,12 @@ export class MongoDriver implements DataStore {
   async findLearningObject(
     username: string,
     name: string
-  ): Promise<LearningObjectID> {
+  ): Promise<string> {
     try {
       let authorID = await this.findUser(username);
       let doc = await this.db
-        .collection(collectionFor(LearningObjectSchema))
-        .findOne<LearningObjectRecord>({
+        .collection(COLLECTIONS.LearningObject.name)
+        .findOne<LearningObjectDocument>({
           authorID: authorID,
           name_: name
         });
@@ -416,13 +408,13 @@ export class MongoDriver implements DataStore {
    * @returns {LearningOutcomeID}
    */
   async findLearningOutcome(
-    source: LearningObjectID,
+    source: string,
     tag: number
-  ): Promise<LearningOutcomeID> {
+  ): Promise<string> {
     try {
       let doc = await this.db
-        .collection(collectionFor(LearningOutcomeSchema))
-        .findOne<LearningOutcomeRecord>({
+        .collection(COLLECTIONS.LearningOutcome.name)
+        .findOne<LearningOutcomeDocument>({
           source: source,
           tag: tag
         });
@@ -447,12 +439,12 @@ export class MongoDriver implements DataStore {
     date: string,
     name: string,
     outcome: string
-  ): Promise<StandardOutcomeID> {
+  ): Promise<string> {
     try {
       let tag = date + '$' + name + '$' + outcome;
       let doc = await this.db
-        .collection(collectionFor(StandardOutcomeSchema))
-        .findOne<StandardOutcomeRecord>({
+        .collection(COLLECTIONS.StandardOutcome.name)
+        .findOne<StandardOutcomeDocument>({
           tag: tag
         });
       if (!doc)
@@ -473,8 +465,8 @@ export class MongoDriver implements DataStore {
    *
    * @returns {UserRecord}
    */
-  async fetchUser(id: UserID): Promise<UserRecord> {
-    return this.fetch<UserRecord>(UserSchema, id);
+  async fetchUser(id: string): Promise<User> {
+    return this.fetch<UserDocument>(COLLECTIONS.User, id);
   }
 
   /**
@@ -485,8 +477,8 @@ export class MongoDriver implements DataStore {
    *
    * @returns {LearningObjectRecord}
    */
-  async fetchLearningObject(id: UserID): Promise<LearningObjectRecord> {
-    return this.fetch<LearningObjectRecord>(LearningObjectSchema, id);
+  async fetchLearningObject(id: string): Promise<LearningObject> {
+    return this.fetch<LearningObjectDocument>(COLLECTIONS.LearningObject, id);
   }
 
   /**
@@ -497,8 +489,8 @@ export class MongoDriver implements DataStore {
    *
    * @returns {LearningOutcomeRecord}
    */
-  async fetchLearningOutcome(id: UserID): Promise<LearningOutcomeRecord> {
-    return this.fetch<LearningOutcomeRecord>(LearningOutcomeSchema, id);
+  async fetchLearningOutcome(id: string): Promise<LearningOutcome> {
+    return this.fetch<LearningOutcomeDocument>(COLLECTIONS.LearningOutcome, id);
   }
 
   /**
@@ -509,8 +501,8 @@ export class MongoDriver implements DataStore {
    *
    * @returns {OutcomeRecord}
    */
-  async fetchOutcome(id: UserID): Promise<OutcomeRecord> {
-    return this.fetch<OutcomeRecord>(LearningOutcomeSchema, id);
+  async fetchOutcome(id: string): Promise<StandardOutcome> {
+    return this.fetch<StandardOutcomeDocument>(COLLECTIONS.StandardOutcome, id);
   }
 
   /**
@@ -520,13 +512,13 @@ export class MongoDriver implements DataStore {
   async fetchAllObjects(
     currPage?: number,
     limit?: number
-  ): Promise<{ objects: LearningObjectRecord[]; total: number }> {
+  ): Promise<{ objects: LearningObject[]; total: number }> {
     if (currPage !== undefined && currPage <= 0) currPage = 1;
     let skip = currPage && limit ? (currPage - 1) * limit : undefined;
     try {
       let objectCursor = await this.db
-        .collection(collectionFor(LearningObjectSchema))
-        .find<LearningObjectRecord>();
+        .collection(COLLECTIONS.LearningObject.name)
+        .find<LearningObjectDocument>();
       let totalRecords = await objectCursor.count();
       objectCursor =
         skip !== undefined
@@ -550,11 +542,11 @@ export class MongoDriver implements DataStore {
    * @returns {Cursor<LearningObjectRecord>[]}
    */
   fetchMultipleObjects(
-    ids: LearningObjectID[]
-  ): Promise<LearningObjectRecord[]> {
+    ids: string[]
+  ): Promise<LearningObject[]> {
     return this.db
-      .collection(collectionFor(LearningObjectSchema))
-      .find<LearningObjectRecord>({ _id: { $in: ids } })
+      .collection(COLLECTIONS.LearningObject.name)
+      .find<LearningObjectDocument>({ _id: { $in: ids } })
       .toArray();
   }
 
@@ -577,31 +569,31 @@ export class MongoDriver implements DataStore {
     sortType?: number,
     currPage?: number,
     limit?: number
-  ): Promise<{ objects: LearningObjectRecord[]; total: number }> {
+  ): Promise<{ objects: LearningObject[]; total: number }> {
     if (currPage !== undefined && currPage <= 0) currPage = 1;
     let skip = currPage && limit ? (currPage - 1) * limit : undefined;
 
     try {
-      let authorRecords: UserRecord[] =
+      let authorRecords: UserDocument[] =
         author || text
           ? await this.db
-              .collection(collectionFor(UserSchema))
-              .find<UserRecord>({
-                name_: {
-                  $regex: new RegExp(author ? author : text, 'ig')
-                }
-              })
-              .toArray()
+            .collection(COLLECTIONS.User.name)
+            .find<UserDocument>({
+              name_: {
+                $regex: new RegExp(author ? author : text, 'ig')
+              }
+            })
+            .toArray()
           : null;
       let authorIDs = authorRecords ? authorRecords.map(doc => doc._id) : null;
 
-      let outcomeRecords: LearningOutcomeRecord[] = standardOutcomeIDs
+      let outcomeRecords: LearningOutcomeDocument[] = standardOutcomeIDs
         ? await this.db
-            .collection(collectionFor(LearningOutcomeSchema))
-            .find<LearningOutcomeRecord>({
-              mappings: { $all: standardOutcomeIDs }
-            })
-            .toArray()
+          .collection(COLLECTIONS.LearningObject.name)
+          .find<LearningOutcomeDocument>({
+            mappings: { $all: standardOutcomeIDs }
+          })
+          .toArray()
         : null;
       let outcomeIDs = outcomeRecords
         ? outcomeRecords.map(doc => doc._id)
@@ -622,8 +614,8 @@ export class MongoDriver implements DataStore {
 
         authorIDs
           ? textQuery.$or.push(<any>{
-              authorID: { $in: authorIDs }
-            })
+            authorID: { $in: authorIDs }
+          })
           : 'NOT MATCHING AUTHORS';
 
         length
@@ -634,12 +626,12 @@ export class MongoDriver implements DataStore {
 
         outcomeIDs
           ? (textQuery['outcomes'] =
-              outcomeIDs.length > 0 ? { $in: outcomeIDs } : ['DONT MATCH ME'])
+            outcomeIDs.length > 0 ? { $in: outcomeIDs } : ['DONT MATCH ME'])
           : 'NOT MATCHINF OUTCOMES';
 
         objectCursor = await this.db
-          .collection(collectionFor(LearningObjectSchema))
-          .find<LearningObjectRecord>(textQuery);
+          .collection(COLLECTIONS.LearningObject.name)
+          .find<LearningObjectDocument>(textQuery);
       } else {
         let fieldQuery = {};
         authorIDs
@@ -657,8 +649,8 @@ export class MongoDriver implements DataStore {
           : 'NOT MATCHING OUTCOMES';
 
         objectCursor = await this.db
-          .collection(collectionFor(LearningObjectSchema))
-          .find<LearningObjectRecord>(fieldQuery);
+          .collection(COLLECTIONS.LearningObject.name)
+          .find<LearningObjectDocument>(fieldQuery);
       }
 
       let totalRecords = await objectCursor.count();
@@ -681,20 +673,20 @@ export class MongoDriver implements DataStore {
     }
   }
 
-  async fetchCollections(): Promise<{}[]> {
+  async fetchCollections(): Promise<LearningObjectCollection[]> {
     try {
       let collectionsCursor = await this.db
-        .collection(LearningObjectCollections)
+        .collection(COLLECTIONS.LearningObjectCollection.name)
         .find();
       return collectionsCursor.toArray();
     } catch (e) {
       return Promise.reject(e);
     }
   }
-  async fetchCollection(name: string): Promise<{}> {
+  async fetchCollection(name: string): Promise<LearningObjectCollection> {
     try {
       let collection = await this.db
-        .collection(LearningObjectCollections)
+        .collection(COLLECTIONS.LearningObjectCollection.name)
         .findOne({ name: name });
       return collection;
     } catch (e) {
@@ -716,32 +708,31 @@ export class MongoDriver implements DataStore {
    *
    * @returns none, but promise will be rejected if there is a problem
    */
-  async validateForeignKeys(
-    schema: Function,
-    record: Record,
-    foreigns: Set<string>
+  async validateForeignKeys<T>(
+    record: T,
+    foreigns: Foriegn[]
   ): Promise<void> {
     try {
       if (foreigns)
         for (let foreign of foreigns) {
-          let data = foreignData(schema, foreign);
+          let data = foreign.data;
           // get id's to check, as an array
-          let keys = record[foreign];
+          let keys = record[foreign.name];
           if (!(keys instanceof Array)) keys = [keys];
           // fetch foreign document and reject if it doesn't exist
           for (let key of keys) {
             let count = await this.db
-              .collection(data.target)
+              .collection(data.target.name)
               .count({ _id: key });
             if (count === 0) {
               return Promise.reject(
                 'Foreign key error for ' +
-                  record +
-                  ': ' +
-                  key +
-                  ' not in ' +
-                  data.target +
-                  ' collection'
+                record +
+                ': ' +
+                key +
+                ' not in ' +
+                data.target.name +
+                ' collection'
               );
             }
           }
@@ -749,7 +740,7 @@ export class MongoDriver implements DataStore {
       return Promise.resolve();
     } catch (e) {
       return Promise.reject(
-        'Problem validating key constraint for a ' + schema.name + ':\n\t' + e
+        'Problem validating key constraint :\n\t' + e
       );
     }
   }
@@ -764,17 +755,17 @@ export class MongoDriver implements DataStore {
    * @param {RecordID} item which item to add
    */
   async register(
-    collection: string,
-    owner: RecordID,
+    collection: Collection,
+    owner: string,
     registry: string,
-    item: RecordID
+    item: string
   ): Promise<void> {
     try {
       // check validity of values before making any changes
-      let record = await this.db.collection(collection).findOne({ _id: owner });
+      let record = await this.db.collection(collection.name).findOne({ _id: owner });
       if (!record)
         return Promise.reject(
-          'Registration failed: no owner ' + owner + 'found in ' + collection
+          'Registration failed: no owner ' + owner + 'found in ' + collection.name
         );
       // NOTE: below line is no good because schemaFor(outcomes) is arbitrary
       // let mapping = await this.db.collection(foreignData(schemaFor(collection), registry).target).findOne({ _id: item });
@@ -786,17 +777,17 @@ export class MongoDriver implements DataStore {
       pushdoc[registry] = item;
 
       await this.db
-        .collection(collection)
+        .collection(collection.name)
         .updateOne({ _id: owner }, { $push: pushdoc });
       return Promise.resolve();
     } catch (e) {
       return Promise.reject(
         'Problem registering to a ' +
-          collections +
-          ' ' +
-          registry +
-          ' field:\n\t' +
-          e
+        collection.name +
+        ' ' +
+        registry +
+        ' field:\n\t' +
+        e
       );
     }
   }
@@ -811,14 +802,14 @@ export class MongoDriver implements DataStore {
    * @param {RecordID} item which item to remove
    */
   async unregister(
-    collection: string,
-    owner: RecordID,
+    collection: Collection,
+    owner: string,
     registry: string,
-    item: RecordID
+    item: string
   ): Promise<void> {
     try {
       // check validity of values before making any changes
-      let record = await this.db.collection(collection).findOne({ _id: owner });
+      let record = await this.db.collection(collection.name).findOne({ _id: owner });
       if (!record)
         return Promise.reject(
           'Unregistration failed: no record ' + owner + 'found in ' + collection
@@ -826,11 +817,11 @@ export class MongoDriver implements DataStore {
       if (!record[registry].includes(item)) {
         return Promise.reject(
           'Unregistration failed: record ' +
-            owner +
-            "'s " +
-            registry +
-            ' field has no element ' +
-            item
+          owner +
+          "'s " +
+          registry +
+          ' field has no element ' +
+          item
         );
       }
 
@@ -838,18 +829,18 @@ export class MongoDriver implements DataStore {
       pulldoc[registry] = item;
 
       await this.db
-        .collection(collection)
+        .collection(collection.name)
         .updateOne({ _id: owner }, { $pull: pulldoc });
 
       return Promise.resolve();
     } catch (e) {
       return Promise.reject(
         'Problem unregistering from a ' +
-          collections +
-          ' ' +
-          registry +
-          ' field:\n\t' +
-          e
+        collection.name +
+        ' ' +
+        registry +
+        ' field:\n\t' +
+        e
       );
     }
   }
@@ -865,27 +856,27 @@ export class MongoDriver implements DataStore {
    * @param {number} index the new index for item
    */
   async reorder(
-    collection: string,
-    owner: RecordID,
+    collection: Collection,
+    owner: string,
     registry: string,
-    item: RecordID,
+    item: string,
     index: number
   ): Promise<void> {
     try {
       // check validity of values before making any changes
-      let record = await this.db.collection(collection).findOne({ _id: owner });
+      let record = await this.db.collection(collection.name).findOne({ _id: owner });
       if (!record)
         return Promise.reject(
-          'Reorder failed: no record ' + owner + 'found in ' + collection
+          'Reorder failed: no record ' + owner + 'found in ' + collection.name
         );
       if (!record[registry].includes(item)) {
         return Promise.reject(
           'Reorder failed: record ' +
-            owner +
-            "'s " +
-            registry +
-            ' field has no element ' +
-            item
+          owner +
+          "'s " +
+          registry +
+          ' field has no element ' +
+          item
         );
       }
       if (index < 0)
@@ -903,7 +894,7 @@ export class MongoDriver implements DataStore {
       pushdoc[registry] = { $each: [item], $position: index };
 
       await this.db
-        .collection(collection)
+        .collection(collection.name)
         .updateOne({ _id: owner }, { $push: pushdoc });
 
       return Promise.resolve();
@@ -921,36 +912,34 @@ export class MongoDriver implements DataStore {
    *
    * @returns {RecordID} the database id of the new record
    */
-  async insert(schema: Function, record: Insert): Promise<RecordID> {
+  async insert<T>(collection: Collection, record: T): Promise<string> {
     try {
-      let collection = collectionFor(schema);
-      let foreigns = foreignsFor(schema);
-      // FIXME: Find Difference Method and Remove any type casting
-      if (foreigns) (<any>foreigns).difference(autosFor(schema));
-
-      // check validity of all foreign keys
-      await this.validateForeignKeys(schema, record, foreigns);
+      let foreigns = collection.foreigns;
+      if (foreigns) {
+        // check validity of all foreign keys
+        await this.validateForeignKeys(record, foreigns);
+      }
 
       // perform the actual insert
-      let insert_ = await this.db.collection(collection).insertOne(record);
+      let insert_ = await this.db.collection(collection.name).insertOne(record);
       let id = insert_.insertedId;
 
       // register the new record as needed
       if (foreigns)
         for (let foreign of foreigns) {
-          let data = foreignData(schema, foreign);
+          let data = foreign.data;
           if (data.registry) {
             await this.register(
               data.target,
-              record[foreign],
+              record[foreign.name],
               data.registry,
-              id
+              `${id}`
             );
           }
         }
-      return Promise.resolve(id);
+      return Promise.resolve(`${id}`);
     } catch (e) {
-      return Promise.reject('Problem inserting a ' + schema.name + ':\n\t' + e);
+      return Promise.reject('Problem inserting a ' + collection.name + ':\n\t' + e);
     }
   }
 
@@ -962,28 +951,24 @@ export class MongoDriver implements DataStore {
    * @param {RecordID} id which document to update
    * @param {Update} record the values to change to
    */
-  async update(schema: Function, id: RecordID, record: Update): Promise<void> {
+  async update<T>(collection: Collection, id: string, record: T): Promise<void> {
     try {
-      let collection = collectionFor(schema);
-      let foreigns = foreignsFor(schema);
-      // FIXME: Find Difference Method and Remove any type casting
-      if (foreigns)
-        foreigns = (<any>foreigns)
-          .difference(autosFor(schema))
-          .difference(fixedsFor(schema));
-      // check validity of all foreign keys
-      await this.validateForeignKeys(schema, record, foreigns);
+      let foreigns = collection.foreigns;
+      if (foreigns) {
+        // check validity of all foreign keys
+        await this.validateForeignKeys(record, foreigns);
+      }
 
       // perform the actual update
       await this.db
-        .collection(collection)
+        .collection(collection.name)
         .updateOne({ _id: id }, { $set: record });
 
       // registered fields must be fixed, nothing to change here
 
       return Promise.resolve();
     } catch (e) {
-      return Promise.reject('Problem updating a ' + schema.name + ':\n\t' + e);
+      return Promise.reject('Problem updating a ' + collection.name + ':\n\t' + e);
     }
   }
 
@@ -995,22 +980,21 @@ export class MongoDriver implements DataStore {
    * @param {RecordID} id which document to edit
    * @param {Edit} record the values to change to
    */
-  async edit(schema: Function, id: RecordID, record: Edit): Promise<void> {
+  async edit<T>(collection: Collection, id: string, record: T): Promise<void> {
     try {
-      let collection = collectionFor(schema);
 
       // no foreign fields, no need to validate
 
       // perform the actual update
       await this.db
-        .collection(collection)
+        .collection(collection.name)
         .updateOne({ _id: id }, { $set: record });
 
       // registered fields must be fixed, nothing to change here
 
       return Promise.resolve();
     } catch (e) {
-      return Promise.reject('Problem editing a ' + schema.name + ':\n\t' + e);
+      return Promise.reject('Problem editing a ' + collection.name + ':\n\t' + e);
     }
   }
 
@@ -1018,37 +1002,36 @@ export class MongoDriver implements DataStore {
    * Cascade delete a record and its children.
    * @async
    *
-   * @param {Function} schema provides collection/hierarcy information
-   * @param {RecordID} id the document to delete
+   * @param {COLLECTIONS} collection provides collection information
+   * @param {string} id the document to delete
    */
-  async remove(schema: Function, id: RecordID): Promise<void> {
+  async remove<T>(collection: Collection, id: string): Promise<void> {
     try {
-      let collection = collectionFor(schema);
 
       // fetch data to be deleted ... for the last time :(
       let record = await this.db
-        .collection(collection)
-        .findOne<Record>({ _id: id });
+        .collection(collection.name)
+        .findOne<T>({ _id: id });
 
       // remove all children recursively, and unregister from parents
-      let foreigns = foreignsFor(schema);
+      let foreigns = collection.foreigns;
       if (foreigns)
         for (let foreign of foreigns) {
-          let data = foreignData(schema, foreign);
+          let data = foreign.data;
 
           if (data.child) {
             // get children to remove, as an array
-            let keys = record[foreign];
+            let keys = record[foreign.name];
             if (!(keys instanceof Array)) keys = [keys];
             // remove each child
             for (let key of keys) {
-              await this.remove(schemaFor(data.target), key);
+              await this.remove(data.target, key);
             }
           }
 
           if (data.registry) {
             // get registries to edit, as an array
-            let keys = record[foreign];
+            let keys = record[foreign.name];
             if (!(keys instanceof Array)) keys = [keys];
             // unregister from each key
             for (let key of keys) {
@@ -1058,29 +1041,29 @@ export class MongoDriver implements DataStore {
         }
 
       // perform actual deletion
-      await this.db.collection(collection).deleteOne({ _id: id });
+      await this.db.collection(collection.name).deleteOne({ _id: id });
 
       return Promise.resolve();
     } catch (e) {
-      return Promise.reject('Problem deleting a ' + schema.name + ':\n\t' + e);
+      return Promise.reject('Problem deleting a ' + collection + ':\n\t' + e);
     }
   }
 
   /**
    * Fetch a database record by its id.
    * @param {Function} schema provides collection information
-   * @param {RecordID} id the document to fetch
+   * @param {string} id the document to fetch
    */
-  async fetch<T>(schema: Function, id: RecordID): Promise<T> {
+  async fetch<T>(collection: Collection, id: string): Promise<T> {
     let record = await this.db
-      .collection(collectionFor(schema))
+      .collection(collection.name)
       .findOne<T>({ _id: id });
     if (!record)
       return Promise.reject(
         'Problem fetching a ' +
-          schema.name +
-          ':\n\tInvalid database id ' +
-          JSON.stringify(id)
+        collection +
+        ':\n\tInvalid database id ' +
+        JSON.stringify(id)
       );
     return Promise.resolve(record);
   }
