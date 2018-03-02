@@ -4,7 +4,8 @@ import { Router, Response } from 'express';
 import { LearningObjectInteractor } from '../../interactors/interactors';
 import { HashInterface } from '../../interfaces/interfaces';
 import { User, LearningObject } from '@cyber4all/clark-entity';
-const version = require('../../../package.json').version;
+// This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
+const version = require('../../package.json').version;
 
 export class ExpressRouteDriver {
   private _LearningObjectInteractor: LearningObjectInteractor;

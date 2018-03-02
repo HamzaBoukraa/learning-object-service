@@ -1,5 +1,4 @@
 import * as jwt from 'express-jwt';
-import { key, issuer } from '../config/config';
 
 /**
  * Configuration for JWT middleware.
@@ -7,8 +6,8 @@ import { key, issuer } from '../config/config';
  * @author Gustavus Shaw II
  */
 export const enforceTokenAccess = jwt({
-    secret: key,
-    issuer: issuer,
+    secret: process.env.KEY,
+    issuer: process.env.ISSUER,
     getToken: (req) => {
         return req.cookies.presence;
     },
