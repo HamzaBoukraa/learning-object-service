@@ -1,12 +1,7 @@
 {
   "name": "database-interaction",
   "version": "1.0.0-alpha.1.1",
-<<<<<<< HEAD
   "description": "Database interaction service to ensure consistent behavior over all services.",
-=======
-  "description":
-    "Database interaction service to ensure consistent behavior over all services.",
->>>>>>> 51016cd3d302995be91b813683d2423b3a560d56
   "main": "app.ts",
   "scripts": {
     "start": "npm run gulp-tsc",
