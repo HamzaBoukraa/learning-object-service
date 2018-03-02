@@ -183,7 +183,7 @@ export class ExpressRouteDriver {
 
         //Fetches Learning Objects by IDs
         //FIXME: Need to validate token and that it is coming from cart service
-        router.get('/fecthFullObjects/:ids', async (req, res) => {
+        router.get('/fetchFullObjects/:ids', async (req, res) => {
             try {
                 let ids: ObjectID[] = req.params.ids.split(',');
                 await this._LearningObjectInteractor.loadFullLearningObjectByIDs(this.getResponder(res), ids);
