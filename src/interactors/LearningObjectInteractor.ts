@@ -1,18 +1,4 @@
 import { DataStore, Responder, Interactor } from '../interfaces/interfaces';
-
-import {
-  UserID,
-  LearningObjectID,
-  OutcomeID,
-  LearningOutcomeID,
-  StandardOutcomeID,
-  AssessmentPlanInterface,
-  InstructionalStrategyInterface,
-  LearningGoalInterface,
-  LearningObjectRecord,
-  UserRecord
-} from '@cyber4all/clark-schema';
-
 import {
   User,
   LearningObject,
@@ -25,11 +11,7 @@ import {
   InstructionalStrategy
 } from '@cyber4all/clark-entity';
 
-import { ObjectId, ObjectID } from 'bson';
-
 export class LearningObjectInteractor {
-  constructor(private dataStore: DataStore) {}
-
   /**
    * Load the scalar fields of a user's objects (ignore goals and outcomes).
    * @async
@@ -38,19 +20,21 @@ export class LearningObjectInteractor {
    *
    * @returns {User}
    */
-  async loadLearningObjectSummary(
+  public static async loadLearningObjectSummary(
+    dataStore: DataStore,
     responder: Responder,
     username: string
   ): Promise<void> {
     try {
-      let id = await this.dataStore.findUser(username);
-      let authorRecord = await this.dataStore.fetchUser(id);
+      let objectIDs = await dataStore.getUserObjects(username);
       let summary: LearningObject[] = [];
-      for (let objectid of authorRecord.objects) {
-        let objectRecord = await this.dataStore.fetchLearningObject(objectid);
-        // FIXME: Add organization to authorRecord Schema and pass to User entity
-        let author = this.generateUser(authorRecord);
-        summary.push(await this.generateLearningObject(author, objectRecord));
+      for (let objectid of objectIDs) {
+        let learningObject = await dataStore.fetchLearningObject(
+          objectid,
+          false,
+          true
+        );
+        summary.push(learningObject);
       }
       responder.sendObject(summary);
     } catch (e) {
@@ -67,26 +51,26 @@ export class LearningObjectInteractor {
    *
    * @returns {LearningObject}
    */
-  async loadLearningObject(
+  public static async loadLearningObject(
+    dataStore: DataStore,
     responder: Responder,
     username: string,
     learningObjectName: string,
     accessUnpublished?: boolean
   ): Promise<void> {
     try {
-      let learningObjectID = await this.dataStore.findLearningObject(
+      let learningObjectID = await dataStore.findLearningObject(
         username,
         learningObjectName
       );
-      let record = await this.dataStore.fetchLearningObject(learningObjectID);
-      let authorRecord = await this.dataStore.fetchUser(
-        record.authorID ? record.authorID : record['author']
+      let learningObject = await dataStore.fetchLearningObject(
+        learningObjectID,
+        true,
+        true
       );
-      let author = this.generateUser(authorRecord);
-      let object = await this.generateLearningObject(author, record, true);
       responder.sendObject({
         id: learningObjectID,
-        object: object
+        object: learningObject
       });
     } catch (e) {
       console.log(e);
@@ -94,23 +78,14 @@ export class LearningObjectInteractor {
     }
   }
 
-  async loadFullLearningObjectByIDs(
+  public static async loadFullLearningObjectByIDs(
+    dataStore: DataStore,
     responder: Responder,
-    ids: ObjectID[]
+    ids: string[]
   ): Promise<void> {
     try {
-      let records = await this.dataStore.fetchMultipleObjects(ids);
-      let objects: LearningObject[] = [];
-      for (let doc of records) {
-        let authorRecord = await this.dataStore.fetchUser(
-          doc.authorID ? doc.authorID : doc['author']
-        );
-        let author = this.generateUser(authorRecord);
-        let object = await this.generateLearningObject(author, doc, true);
-        objects.push(object);
-      }
-
-      responder.sendObject(objects);
+      let learningObjects = await dataStore.fetchMultipleObjects(ids, true);
+      responder.sendObject(learningObjects);
     } catch (e) {
       console.log(e);
       responder.sendOperationError(e);
@@ -132,7 +107,8 @@ export class LearningObjectInteractor {
    *
    * @returns {LearningObjectID} the database id of the new record
    */
-  async addLearningObject(
+  public static async addLearningObject(
+    dataStore: DataStore,
     responder: Responder,
     username: string,
     object: LearningObject
@@ -142,27 +118,7 @@ export class LearningObjectInteractor {
         responder.sendOperationError('Learning Object name cannot be empty.');
         return;
       }
-      let authorID = await this.dataStore.findUser(username);
-      let learningObjectID = await this.dataStore.insertLearningObject({
-        authorID: authorID,
-        name_: object.name,
-        date: object.date,
-        length_: object.length,
-        levels: object.levels,
-        goals: this.documentGoals(object.goals),
-        outcomes: [],
-        materials: object.materials,
-        published:
-          object.published === (undefined || null) ? false : object.published
-      });
-
-      let outcomeIDs = await Promise.all(
-        object.outcomes.map((outcome: LearningOutcome) => {
-          return this.addLearningOutcome(learningObjectID, outcome);
-        })
-      );
-      console.log(outcomeIDs);
-
+      let learningObjectID = await dataStore.insertLearningObject(object);
       responder.sendObject(learningObjectID);
     } catch (e) {
       console.log(e);
@@ -179,13 +135,14 @@ export class LearningObjectInteractor {
    *
    * @returns {LearningOutcomeID}
    */
-  async findLearningObject(
+  public static async findLearningObject(
+    dataStore: DataStore,
     responder: Responder,
     username: string,
     learningObjectName: string
   ): Promise<void> {
     try {
-      let learningObjectID = await this.dataStore.findLearningObject(
+      let learningObjectID = await dataStore.findLearningObject(
         username,
         learningObjectName
       );
@@ -197,8 +154,6 @@ export class LearningObjectInteractor {
 
   /**
    * Update an existing learning object record.
-   * NOTE: this function only updates basic fields;
-   *       the object.outcomes fields is ignored
    * NOTE: promise rejected if another learning object
    *       tied to the same author and with the same 'name' field
    *       already exists
@@ -208,182 +163,40 @@ export class LearningObjectInteractor {
    * @param {LearningObjectID} id - database id of the record to change
    * @param {LearningObject} object - entity with values to update to
    */
-  async editLearningObject(
-    id: LearningObjectID,
-    object: LearningObject
-  ): Promise<void> {
-    return this.dataStore.editLearningObject(id, {
-      name_: object.name,
-      date: object.date,
-      length_: object.length,
-      levels: object.levels,
-      goals: this.documentGoals(object.goals),
-      materials: object.materials,
-      published:
-        object.published === (undefined || null) ? false : object.published
-    });
-  }
-
-  /**
-     * Update an existing learning object record.
-     * NOTE: this is a deep update and as such somewhat exp                doc.published ? object.publish() : object.unpublish();
-ensive
-     * NOTE: promise rejected if another learning object
-     *       tied to the same author and with the same 'name' field
-     *       already exists
-     *
-     * @async
-     *
-     * @param {LearningObjectID} id - database id of the record to change
-     * @param {LearningObject} object - entity with values to update to
-     */
-  async updateLearningObject(
+  public static async updateLearningObject(
+    dataStore: DataStore,
     responder: Responder,
-    id: LearningObjectID,
+    id: string,
     object: LearningObject
   ): Promise<void> {
     try {
-      let toDelete = (await this.dataStore.fetchLearningObject(id)).outcomes;
-      let doNotDelete = new Set<LearningOutcomeID>();
-
-      await this.editLearningObject(id, object);
-      for (let outcome of object.outcomes) {
-        try {
-          let outcomeId = await this.dataStore.findLearningOutcome(
-            id,
-            outcome.tag
-          );
-          doNotDelete.add(outcomeId);
-          await this.editLearningOutcome(outcomeId, outcome);
-        } catch (e) {
-          // find operation failed; add it
-          await this.addLearningOutcome(id, outcome);
-        }
-      }
-
-      // delete any learning outcomes not in the update object
-      for (let outcomeId of toDelete) {
-        if (!doNotDelete.has(outcomeId)) {
-          await this.dataStore.deleteLearningOutcome(outcomeId);
-        }
-      }
+      await dataStore.editLearningObject(id, object);
       responder.sendOperationSuccess();
     } catch (e) {
       responder.sendOperationError(e);
     }
   }
 
-  /**
-   * Add a new user to the database.
-   * NOTE: this function only adds basic fields;
-   *       the outcome.mappings field is ignored
-   *
-   * @async
-   *
-   * @param {LearningObjectID} source - database id of the parent
-   * @param {LearningOutcome} outcome - entity to add
-   *
-   * @returns {LearningOutcomeID} the database id of the new record
-   */
-  async addLearningOutcome(
-    source: LearningObjectID,
-    outcome: LearningOutcome
-  ): Promise<any> {
-    let learningOutcomeID = await this.dataStore.insertLearningOutcome({
-      source: source,
-      tag: outcome.tag,
-      bloom: outcome.bloom,
-      verb: outcome.verb,
-      text: outcome.text,
-      mappings: [],
-      assessments: this.documentAssessments(outcome.assessments),
-      strategies: this.documentInstructions(outcome.strategies)
-    });
-
-    await Promise.all(
-      outcome.mappings.map((mapping: StandardOutcome) => {
-        console.log(mapping);
-        return this.dataStore.mapOutcome(learningOutcomeID, mapping['id']);
-      })
-    );
-
-    return learningOutcomeID;
-  }
-
-  /**
-   * Update an existing learning outcome.
-   * NOTE: this function only updates basic fields;
-   *       the outcome.mappings fields is ignored
-   *
-   * @async
-   *
-   * @param {LearningOutcomeID} id - database id of the record to change
-   * @param {LearningOutcome} outcome - entity with values to update to
-   */
-  async editLearningOutcome(
-    id: LearningOutcomeID,
-    outcome: LearningOutcome
-  ): Promise<void> {
-    let toDelete = (await this.dataStore.fetchLearningOutcome(id)).mappings;
-    let doNotDelete = new Set<StandardOutcomeID>();
-    for (let mapping of outcome.mappings) {
-      let mappingID = await this.dataStore.findMappingID(
-        mapping.date,
-        mapping.name,
-        mapping.outcome
-      );
-      doNotDelete.add(mappingID);
-      if (toDelete.indexOf(mappingID) == -1) {
-        this.dataStore.mapOutcome(id, mappingID);
-      }
-    }
-
-    this.dataStore.editLearningOutcome(id, {
-      bloom: outcome.bloom,
-      verb: outcome.verb,
-      text: outcome.text,
-      assessments: this.documentAssessments(outcome.assessments),
-      strategies: this.documentInstructions(outcome.strategies)
-    });
-    // delete any mappings not in the update object
-    for (let mappingId of toDelete) {
-      if (!doNotDelete.has(mappingId)) {
-        await this.dataStore.unmapOutcome(id, mappingId);
-      }
-    }
-  }
-  async reorderOutcome(
-    responder: Responder,
-    object: ObjectId,
-    outcome: OutcomeID,
-    index: number
-  ) {
-    try {
-      await this.dataStore.reorderOutcome(object, outcome, index);
-      responder.sendOperationSuccess();
-    } catch (error) {
-      responder.sendOperationError();
-    }
-  }
-
-  async deleteLearningObject(
+  public static async deleteLearningObject(
+    dataStore: DataStore,
     responder: Responder,
     username: string,
     learningObjectName: string
   ): Promise<void> {
     try {
-      let learningObjectID = await this.dataStore.findLearningObject(
+      let learningObjectID = await dataStore.findLearningObject(
         username,
         learningObjectName
       );
-      await this.dataStore.deleteLearningObject(learningObjectID);
+      await dataStore.deleteLearningObject(learningObjectID);
       responder.sendOperationSuccess();
     } catch (error) {
       responder.sendOperationError(error);
     }
   }
 
-  async deleteMultipleLearningObjects(
+  public static async deleteMultipleLearningObjects(
+    dataStore: DataStore,
     responder: Responder,
     username: string,
     learningObjectNames: string[]
@@ -391,14 +204,11 @@ ensive
     try {
       let learningObjectIDs = await Promise.all(
         learningObjectNames.map(learningObjectName => {
-          return this.dataStore.findLearningObject(
-            username,
-            learningObjectName
-          );
+          return dataStore.findLearningObject(username, learningObjectName);
         })
       );
 
-      await this.dataStore.deleteMultipleLearningObjects(learningObjectIDs);
+      await dataStore.deleteMultipleLearningObjects(learningObjectIDs);
       responder.sendOperationSuccess();
     } catch (error) {
       responder.sendOperationError(error);
@@ -406,50 +216,18 @@ ensive
   }
 
   /**
-   * Add a new standard outcome to the database.
-   * @async
-   *
-   * @param {StandardOutcome} standard entity to add
-   *
-   * @returns {StandardOutcomeID} the database id of the new record
-   */
-  async addStandardOutcome(
-    responder: Responder,
-    standard: StandardOutcome
-  ): Promise<StandardOutcomeID> {
-    return this.dataStore.insertStandardOutcome({
-      author: standard.author,
-      name_: standard.name,
-      date: standard.date,
-      outcome: standard.outcome
-    });
-  }
-
-  /**
    * Return literally all objects. Very expensive.
    * @returns {LearningObject[]} array of literally all objects
    */
-  async fetchAllObjects(
+  public static async fetchAllObjects(
+    dataStore: DataStore,
     responder: Responder,
     currPage: number,
     limit: number
   ): Promise<void> {
     try {
-      let response = await this.dataStore.fetchAllObjects(currPage, limit);
-      let objectRecords = response.objects;
-      let objects: LearningObject[] = [];
-      for (let doc of objectRecords) {
-        let authorRecord = await this.dataStore.fetchUser(
-          doc.authorID ? doc.authorID : doc['author']
-        );
-        let author = this.generateUser(authorRecord);
-        let object = await this.generateLearningObject(author, doc);
-        objects.push(object);
-      }
-      responder.sendObject({
-        objects: objects,
-        total: response.total
-      });
+      let response = await dataStore.fetchAllObjects(currPage, limit);
+      responder.sendObject(response);
     } catch (e) {
       console.log(e);
       responder.sendOperationError(e);
@@ -461,7 +239,8 @@ ensive
    * Returns array of learning objects associated with the given ids.
    * @returns {LearningObjectRecord[]}
    */
-  async fetchMultipleObjects(
+  public static async fetchMultipleObjects(
+    dataStore: DataStore,
     responder: Responder,
     ids: { username: string; learningObjectName: string }[]
   ): Promise<void> {
@@ -469,8 +248,8 @@ ensive
       //Get IDs associated with LearningObjects
       let learningObjectIDs = await Promise.all(
         ids.map(id => {
-          return new Promise<LearningObjectID>((resolve, reject) => {
-            this.dataStore
+          return new Promise<string>((resolve, reject) => {
+            dataStore
               .findLearningObject(id.username, id.learningObjectName)
               .then(
                 learningObjectID => resolve(learningObjectID),
@@ -480,37 +259,29 @@ ensive
         })
       );
 
-      let records: LearningObjectRecord[] = await this.dataStore.fetchMultipleObjects(
-        learningObjectIDs
+      let learningObjects: LearningObject[] = await dataStore.fetchMultipleObjects(
+        learningObjectIDs,
+        false,
+        true
       );
-      let objects: LearningObject[] = [];
-      for (let doc of records) {
-        let authorRecord = await this.dataStore.fetchUser(
-          doc.authorID ? doc.authorID : doc['author']
-        );
-        let author = this.generateUser(authorRecord);
-        let object = await this.generateLearningObject(author, doc, true);
-        objects.push(object);
-      }
-      responder.sendObject(objects);
+      responder.sendObject(learningObjects);
     } catch (e) {
       responder.sendOperationError(e);
     }
   }
 
-  async fetchObjectsByIDs(responder: Responder, ids: LearningObjectID[]) {
+  public static async fetchObjectsByIDs(
+    dataStore: DataStore,
+    responder: Responder,
+    ids: string[]
+  ) {
     try {
-      let records = await this.dataStore.fetchMultipleObjects(ids);
-      let objects: LearningObject[] = [];
-      for (let doc of records) {
-        let authorRecord = await this.dataStore.fetchUser(
-          doc.authorID ? doc.authorID : doc['author']
-        );
-        let author = this.generateUser(authorRecord);
-        let object = await this.generateLearningObject(author, doc, true);
-        objects.push(object);
-      }
-      responder.sendObject(objects);
+      let learningObjects = await dataStore.fetchMultipleObjects(
+        ids,
+        true,
+        true
+      );
+      responder.sendObject(learningObjects);
     } catch (e) {
       responder.sendOperationError(e);
     }
@@ -528,7 +299,8 @@ ensive
    *
    * @returns {Outcome[]} list of outcome suggestions, ordered by score
    */
-  async suggestObjects(
+  public static async suggestObjects(
+    dataStore: DataStore,
     responder: Responder,
     name: string,
     author: string,
@@ -542,7 +314,7 @@ ensive
     limit?: number
   ): Promise<void> {
     try {
-      let response = await this.dataStore.searchObjects(
+      let response = await dataStore.searchObjects(
         name,
         author,
         length,
@@ -554,196 +326,36 @@ ensive
         currPage,
         limit
       );
-      let objectRecords = response.objects;
-      let objects: LearningObject[] = [];
-      for (let doc of objectRecords) {
-        let authorRecord = await this.dataStore.fetchUser(doc.authorID);
-        let author = this.generateUser(authorRecord);
-        let object = await this.generateLearningObject(author, doc);
-        objects.push(object);
-      }
-      responder.sendObject({
-        objects: objects,
-        total: response.total
-      });
+      responder.sendObject(response);
     } catch (e) {
       responder.sendOperationError(e);
     }
   }
 
-  async fetchCollections(responder: Responder, loadObjects?: boolean) {
+  public static async fetchCollections(
+    dataStore: DataStore,
+    responder: Responder,
+    loadObjects?: boolean
+  ) {
     try {
-      let collections = await this.dataStore.fetchCollections();
-      if (!loadObjects) {
-        collections = collections.map(collection => collection['name']);
-        responder.sendObject(collections);
-      } else {
-        let collections_objects = [];
-        for (let collection of collections) {
-          let objects: LearningObject[] = [];
-          let objectRecords = await this.dataStore.fetchMultipleObjects(
-            collection['learningObjects']
-          );
-          for (let doc of objectRecords) {
-            let authorRecord = await this.dataStore.fetchUser(doc.authorID);
-            let author = this.generateUser(authorRecord);
-            let object = await this.generateLearningObject(author, doc);
-            objects.push(object);
-          }
-          collections_objects.push({
-            name: collection['name'],
-            learningObjects: objects
-          });
-        }
-        responder.sendObject(collections_objects);
-      }
+      let collections = await dataStore.fetchCollections(loadObjects);
+      responder.sendObject(collections);
     } catch (e) {
       responder.sendOperationError(e);
     }
   }
 
-  async fetchCollection(responder: Responder, name: string) {
+  public static async fetchCollection(
+    dataStore: DataStore,
+    responder: Responder,
+    name: string
+  ) {
     try {
-      let collection = await this.dataStore.fetchCollection(name);
-      let objectRecords = await this.dataStore.fetchMultipleObjects(
-        collection['learningObjects']
-      );
-      let objects: LearningObject[] = [];
-      for (let doc of objectRecords) {
-        let authorRecord = await this.dataStore.fetchUser(doc.authorID);
-        let author = this.generateUser(authorRecord);
-        let object = await this.generateLearningObject(author, doc);
-        objects.push(object);
-      }
-      responder.sendObject(objects);
+      let collection = await dataStore.fetchCollection(name);
+
+      responder.sendObject(collection);
     } catch (e) {
       responder.sendOperationError(e);
     }
-  }
-
-  //////////////////////////////////////////
-  // HELPER FUNCTIONS - not in public API //
-  //////////////////////////////////////////
-
-  private generateUser(userRecord: UserRecord): User {
-    let user = new User(
-      userRecord.username,
-      userRecord.name_,
-      null,
-      userRecord['organization'] ? userRecord['organization'] : null,
-      null
-    );
-    return user;
-  }
-
-  private async generateLearningObject(
-    author: User,
-    record: LearningObjectRecord,
-    full?: boolean
-  ): Promise<LearningObject> {
-    let learningObject = new LearningObject(author, record.name_);
-    learningObject.date = record.date;
-    learningObject.length = record.length_;
-    if (Array.isArray(record['levels']) && record['levels'].length > 0) {
-      learningObject.levels = record['levels'];
-    } else {
-      record.level
-        ? (learningObject.levels = [<AcademicLevel>record.level])
-        : learningObject.addLevel(AcademicLevel.Undergraduate);
-    }
-    learningObject.materials = record.repository;
-
-    record.published ? learningObject.publish() : learningObject.unpublish();
-    for (let goal of record.goals) {
-      learningObject.addGoal(goal.text);
-    }
-    if (!full) {
-      return learningObject;
-    }
-
-    // load each outcome
-    for (let outcomeid of record.outcomes) {
-      let rOutcome = await this.dataStore.fetchLearningOutcome(outcomeid);
-
-      let outcome = learningObject.addOutcome();
-      outcome.bloom = rOutcome.bloom;
-      outcome.verb = rOutcome.verb;
-      outcome.text = rOutcome.text;
-      for (let rAssessment of rOutcome.assessments) {
-        let assessment = outcome.addAssessment();
-        assessment.plan = rAssessment.plan;
-        assessment.text = rAssessment.text;
-      }
-      for (let rStrategy of rOutcome.strategies) {
-        let strategy = outcome.addStrategy();
-        strategy.instruction = rStrategy.instruction;
-        strategy.text = rStrategy.text;
-      }
-
-      // only extract the basic info for each mapped outcome
-      for (let mapid of rOutcome.mappings) {
-        let rMapping = await this.dataStore.fetchOutcome(mapid);
-        outcome.mapTo({
-          id: `${mapid}`,
-          author: rMapping.author,
-          name: rMapping.name_,
-          date: rMapping.date,
-          outcome: rMapping.outcome
-        });
-      }
-    }
-    return learningObject;
-  }
-
-  /**
-   * Convert a list of learning goals to an array of documents.
-   * @param {LearningGoal[]} goals
-   *
-   * @returns {LearningGoalInterface[]}
-   */
-  private documentGoals(goals: LearningGoal[]): LearningGoalInterface[] {
-    let array: LearningGoalInterface[] = [];
-    for (let i = 0; i < goals.length; i++) {
-      array.push({ text: goals[i].text });
-    }
-    return array;
-  }
-
-  /**
-   * Convert a list of assessment plans to an array of documents.
-   * @param {AssessmentPlan[]} goals
-   *
-   * @returns {AssessmentPlanInterface[]}
-   */
-  private documentAssessments(
-    assessments: AssessmentPlan[] = []
-  ): AssessmentPlanInterface[] {
-    let array: AssessmentPlanInterface[] = [];
-    for (let i = 0; i < assessments.length; i++) {
-      array.push({
-        plan: assessments[i].plan,
-        text: assessments[i].text
-      });
-    }
-    return array;
-  }
-
-  /**
-   * Convert a list of instructional strategies to an array of documents.
-   * @param {InstructionalStrategy[]} goals
-   *
-   * @returns {InstructionalStrategyInterface[]}
-   */
-  private documentInstructions(
-    strategies: InstructionalStrategy[] = []
-  ): InstructionalStrategyInterface[] {
-    let array: InstructionalStrategyInterface[] = [];
-    for (let i = 0; i < strategies.length; i++) {
-      array.push({
-        instruction: strategies[i].instruction,
-        text: strategies[i].text
-      });
-    }
-    return array;
   }
 }
