@@ -465,7 +465,7 @@ export class MongoDriver implements DataStore {
    *
    * @returns {UserID}
    */
-  private async findUser(username: string): Promise<string> {
+  async findUser(username: string): Promise<string> {
     try {
       let query = {};
       if (isEmail(username)) {
@@ -581,7 +581,7 @@ export class MongoDriver implements DataStore {
    *
    * @returns {UserRecord}
    */
-  private async fetchUser(id: string): Promise<User> {
+  async fetchUser(id: string): Promise<User> {
     let doc = await this.fetch<UserDocument>(COLLECTIONS.User, id);
     let user = this.generateUser(doc);
     return user;
