@@ -768,22 +768,33 @@ export class MongoDriver implements DataStore {
     let skip = currPage && limit ? (currPage - 1) * limit : undefined;
 
     try {
+      // Query for users
       let authorRecords: UserDocument[] =
         author || text
           ? await this.db
               .collection(COLLECTIONS.User.name)
               .find<UserDocument>({
-                name_: {
-                  $regex: new RegExp(author ? author : text, 'ig')
-                }
+                $or: [
+                  {
+                    name: {
+                      $regex: new RegExp(author ? author : text, 'ig')
+                    }
+                  },
+                  {
+                    organization: {
+                      $regex: new RegExp(text, 'ig')
+                    }
+                  }
+                ]
               })
               .toArray()
           : null;
       let authorIDs = authorRecords ? authorRecords.map(doc => doc._id) : null;
 
+      //Query by LearningOutcomes' mappings
       let outcomeRecords: LearningOutcomeDocument[] = standardOutcomeIDs
         ? await this.db
-            .collection(COLLECTIONS.LearningObject.name)
+            .collection(COLLECTIONS.LearningOutcome.name)
             .find<LearningOutcomeDocument>({
               mappings: { $all: standardOutcomeIDs }
             })
@@ -793,11 +804,12 @@ export class MongoDriver implements DataStore {
         ? outcomeRecords.map(doc => doc._id)
         : null;
 
-      let objectCursor;
+      let query = <any>{};
+      // Search By Text
       if (text || text === '') {
-        let textQuery = {
+        query = {
           $or: [
-            { name_: { $regex: new RegExp(text, 'ig') } },
+            { name: { $regex: new RegExp(text, 'ig') } },
             {
               goals: {
                 $elemMatch: { text: { $regex: new RegExp(text, 'ig') } }
@@ -807,52 +819,48 @@ export class MongoDriver implements DataStore {
         };
 
         authorIDs
-          ? textQuery.$or.push(<any>{
+          ? query.$or.push(<any>{
               authorID: { $in: authorIDs }
             })
           : 'NOT MATCHING AUTHORS';
 
-        length
-          ? (textQuery['length_'] = { $in: length })
-          : 'NOT MATCHING LENGTHS';
+        length ? (query.length = { $in: length }) : 'NOT MATCHING LENGTHS';
 
-        level ? (textQuery['level'] = { $in: level }) : 'NOT MATCHING LEVELS';
+        level ? (query.levels = { $in: level }) : 'NOT MATCHING LEVELS';
 
         outcomeIDs
-          ? (textQuery['outcomes'] =
-              outcomeIDs.length > 0 ? { $in: outcomeIDs } : ['DONT MATCH ME'])
-          : 'NOT MATCHINF OUTCOMES';
-
-        objectCursor = await this.db
-          .collection(COLLECTIONS.LearningObject.name)
-          .find<LearningObjectDocument>(textQuery);
+          ? (query.outcomes = outcomeIDs.length
+              ? { $in: outcomeIDs }
+              : ['DONT MATCH ME'])
+          : 'NOT MATCHING OUTCOMES';
       } else {
-        let fieldQuery = {};
+        // Search by fields
         authorIDs
-          ? (fieldQuery['authorID'] = { $in: authorIDs })
+          ? (query.authorID = { $in: authorIDs })
           : 'NOT MATCHING AUTHORS';
         name
-          ? (fieldQuery['name_'] = { $regex: new RegExp(name, 'ig') })
+          ? (query.name = { $regex: new RegExp(name, 'ig') })
           : 'NOT MATCHING LEARNING OBJECT NAME';
-        length
-          ? (fieldQuery['length_'] = { $in: length })
-          : 'NOT MATCHING LENGTHS';
-        level ? (fieldQuery['level'] = { $in: level }) : 'NOT MATCHING LEVELS';
+        length ? (query.length = { $in: length }) : 'NOT MATCHING LENGTHS';
+        level ? (query.levels = { $in: level }) : 'NOT MATCHING LEVELS';
         outcomeIDs
-          ? (fieldQuery['outcomes'] = { $in: outcomeIDs })
+          ? (query.outcomes = { $in: outcomeIDs })
           : 'NOT MATCHING OUTCOMES';
-
-        objectCursor = await this.db
-          .collection(COLLECTIONS.LearningObject.name)
-          .find<LearningObjectDocument>(fieldQuery);
       }
 
+      let objectCursor = await this.db
+        .collection(COLLECTIONS.LearningObject.name)
+        .find<LearningObjectDocument>(query);
+
       let totalRecords = await objectCursor.count();
+
+      // Paginate if has limiter
       objectCursor =
         skip !== undefined
           ? objectCursor.skip(skip).limit(limit)
           : limit ? objectCursor.limit(limit) : objectCursor;
 
+      //SortBy
       objectCursor = orderBy
         ? objectCursor.sort(orderBy, sortType ? sortType : 1)
         : objectCursor;
