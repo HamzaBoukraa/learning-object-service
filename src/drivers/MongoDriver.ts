@@ -36,7 +36,7 @@ export interface ForiegnData {
 }
 export class COLLECTIONS {
   public static User: Collection = {
-    name: 'users',
+    name: 'users-temp',
     foreigns: [
       {
         name: 'objects',
@@ -49,7 +49,7 @@ export class COLLECTIONS {
     uniques: ['username']
   };
   public static LearningObject: Collection = {
-    name: 'objects',
+    name: 'objects-temp',
     foreigns: [
       {
         name: 'authorID',
@@ -82,7 +82,7 @@ export class COLLECTIONS {
       }
     ]
   };
-  public static StandardOutcome: Collection = { name: 'outcomes' };
+  public static StandardOutcome: Collection = { name: 'outcomes-temp' };
   public static LearningObjectCollection: Collection = { name: 'collections' };
 }
 
