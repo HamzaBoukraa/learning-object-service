@@ -36,7 +36,7 @@ export interface ForiegnData {
 }
 export class COLLECTIONS {
   public static User: Collection = {
-    name: 'users-temp',
+    name: 'users',
     foreigns: [
       {
         name: 'objects',
@@ -49,7 +49,7 @@ export class COLLECTIONS {
     uniques: ['username']
   };
   public static LearningObject: Collection = {
-    name: 'objects-temp',
+    name: 'objects',
     foreigns: [
       {
         name: 'authorID',
@@ -82,7 +82,7 @@ export class COLLECTIONS {
       }
     ]
   };
-  public static StandardOutcome: Collection = { name: 'outcomes-temp' };
+  public static StandardOutcome: Collection = { name: 'outcomes' };
   public static LearningObjectCollection: Collection = { name: 'collections' };
 }
 
@@ -105,7 +105,7 @@ export class MongoDriver implements DataStore {
       dburi = process.env.CLARK_DB_URI_TEST;
     } else {
       dburi =
-        process.env.NODE_ENV === 'production'
+        process.env.NODE_ENV === 'development'
           ? process.env.CLARK_DB_URI.replace(
               /<DB_PASSWORD>/g,
               process.env.CLARK_DB_PWD
@@ -502,7 +502,7 @@ export class MongoDriver implements DataStore {
         .collection(COLLECTIONS.LearningObject.name)
         .findOne<LearningObjectDocument>({
           authorID: authorID,
-          name_: name
+          name: name
         });
       if (!doc)
         return Promise.reject(
@@ -818,34 +818,24 @@ export class MongoDriver implements DataStore {
           ]
         };
 
-        authorIDs
-          ? query.$or.push(<any>{
-              authorID: { $in: authorIDs }
-            })
-          : 'NOT MATCHING AUTHORS';
+        if (authorIDs) query.$or.push(<any>{ authorID: { $in: authorIDs } });
 
-        length ? (query.length = { $in: length }) : 'NOT MATCHING LENGTHS';
+        if (length) query.length = { $in: length };
 
-        level ? (query.levels = { $in: level }) : 'NOT MATCHING LEVELS';
-
-        outcomeIDs
-          ? (query.outcomes = outcomeIDs.length
-              ? { $in: outcomeIDs }
-              : ['DONT MATCH ME'])
-          : 'NOT MATCHING OUTCOMES';
+        if (level) query.levels = { $in: level };
+        if (outcomeIDs) {
+          query.outcomes = outcomeIDs.length
+            ? { $in: outcomeIDs }
+            : ['DONT MATCH ME'];
+        }
       } else {
         // Search by fields
-        authorIDs
-          ? (query.authorID = { $in: authorIDs })
-          : 'NOT MATCHING AUTHORS';
-        name
-          ? (query.name = { $regex: new RegExp(name, 'ig') })
-          : 'NOT MATCHING LEARNING OBJECT NAME';
-        length ? (query.length = { $in: length }) : 'NOT MATCHING LENGTHS';
-        level ? (query.levels = { $in: level }) : 'NOT MATCHING LEVELS';
-        outcomeIDs
-          ? (query.outcomes = { $in: outcomeIDs })
-          : 'NOT MATCHING OUTCOMES';
+        if (authorIDs) query.authorID = { $in: authorIDs };
+        if (name) query.name = { $regex: new RegExp(name, 'ig') };
+
+        if (length) query.length = { $in: length };
+        if (level) query.levels = { $in: level };
+        if (outcomeIDs) query.outcomes = { $in: outcomeIDs };
       }
 
       let objectCursor = await this.db
@@ -1056,7 +1046,7 @@ export class MongoDriver implements DataStore {
     record: LearningOutcomeDocument
   ): Promise<LearningOutcome> {
     try {
-      let outcome = new LearningOutcome(null);
+      let outcome = new LearningOutcome(new LearningObject());
       outcome.bloom = record.bloom;
       outcome.verb = record.verb;
       outcome.text = record.text;

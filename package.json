@@ -43,8 +43,10 @@
   "devDependencies": {
     "@types/bcrypt": "^1.0.0",
     "@types/cookie-parser": "^1.4.1",
+    "@types/cors": "^2.8.3",
     "@types/dotenv": "^4.0.2",
     "@types/express": "^4.0.39",
+    "@types/jsonwebtoken": "^7.2.5",
     "@types/mongodb": "^2.2.13",
     "@types/oboe": "^2.0.28",
     "@types/request-promise": "^4.1.39",

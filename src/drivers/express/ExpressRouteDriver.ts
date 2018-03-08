@@ -4,6 +4,7 @@ import { Router, Response } from 'express';
 import { LearningObjectInteractor } from '../../interactors/interactors';
 import { HashInterface } from '../../interfaces/interfaces';
 import { User, LearningObject } from '@cyber4all/clark-entity';
+import * as TokenManager from '../TokenManager';
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
 const version = require('../../package.json').version;
 
@@ -96,13 +97,12 @@ export class ExpressRouteDriver {
       })
       .post(async (req, res) => {
         try {
-          // FIXME: Get username from token
-          let username = req.body.author;
+          let username = req.user.username;
           let object = LearningObject.instantiate(req.body.object);
+          object.author.username = username;
           await LearningObjectInteractor.addLearningObject(
             this.dataStore,
             this.getResponder(res),
-            username,
             object
           );
         } catch (e) {
@@ -111,13 +111,15 @@ export class ExpressRouteDriver {
       })
       .patch(async (req, res) => {
         try {
-          let id = req.body.id;
-          let object = LearningObject.instantiate(req.body.object);
-          // FIXME: Verify token
+          let object = LearningObject.instantiate(req.body.learningObject);
+          if (req.user.username !== object.author.username) {
+            this.getResponder(res).sendOperationError('Access Denied');
+            return;
+          }
           await LearningObjectInteractor.updateLearningObject(
             this.dataStore,
             this.getResponder(res),
-            id,
+            object.id,
             object
           );
         } catch (e) {
@@ -144,14 +146,12 @@ export class ExpressRouteDriver {
       }
     );
 
-    // FIXME: Remove username from route and get username from token
-    router.get('/learning-objects/:username/summary', async (req, res) => {
+    router.get('/learning-objects/summary', async (req, res) => {
       try {
-        let username = req.params.username;
         await LearningObjectInteractor.loadLearningObjectSummary(
           this.dataStore,
           this.getResponder(res),
-          username
+          req.user.username
         );
       } catch (e) {
         console.log(e);
@@ -161,36 +161,42 @@ export class ExpressRouteDriver {
       .route('/learning-objects/:username/:learningObjectName')
       .get(async (req, res) => {
         try {
-          // FIXME: Verify token to check and see if user has access to unpublished objects
+          let accessUpublished = false;
+          let username = req.params.username;
+          let cookie = req.cookies.presence;
+          if (req.params.username == 'null' && cookie) {
+            let user = await TokenManager.decode(cookie);
+            username = user.username;
+            accessUpublished = true;
+          }
+
           await LearningObjectInteractor.loadLearningObject(
             this.dataStore,
             this.getResponder(res),
-            req.params.username,
-            req.params.learningObjectName,
-            true
-          );
-        } catch (e) {
-          console.log(e);
-        }
-      })
-      .delete(async (req, res) => {
-        try {
-          let username = req.params.username;
-          let learningObjectName = req.params.learningObjectName;
-          // FIXME: Verify token before loading up
-          await LearningObjectInteractor.deleteLearningObject(
-            this.dataStore,
-            this.getResponder(res),
             username,
-            learningObjectName
+            req.params.learningObjectName,
+            accessUpublished
           );
         } catch (e) {
           console.log(e);
         }
       });
+    router.delete('/learning-objects/:learningObjectName', async (req, res) => {
+      try {
+        let learningObjectName = req.params.learningObjectName;
+        await LearningObjectInteractor.deleteLearningObject(
+          this.dataStore,
+          this.getResponder(res),
+          req.user.username,
+          learningObjectName
+        );
+      } catch (e) {
+        console.log(e);
+      }
+    });
 
     router.delete(
-      '/learning-object/:username/:learningObjectNames/multiple',
+      '/learning-objects/:learningObjectNames/multiple',
       async (req, res) => {
         try {
           let username = req.params.username;

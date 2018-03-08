@@ -5,6 +5,8 @@ import { ExpressRouteDriver } from '../drivers';
 import * as http from 'http';
 import * as logger from 'morgan';
 import { enforceTokenAccess } from '../../middleware/jwt.config';
+import * as cors from 'cors';
+import * as cookieParser from 'cookie-parser';
 
 export class ExpressDriver {
   static app = express();
@@ -16,33 +18,12 @@ export class ExpressDriver {
     //Setup route logger
     this.app.use(logger('dev'));
 
-    // set header to allow connection by given url
-    this.app.use(function(req, res, next) {
-      // Website you wish to allow to connect
-      res.header('Access-Control-Allow-Origin', '*');
+    this.app.use(cors({ origin: true, credentials: true }));
+    // Set up cookie parser
+    this.app.use(cookieParser());
 
-      // Request methods you wish to allow
-      res.header(
-        'Access-Control-Allow-Methods',
-        'GET, POST, OPTIONS, PUT, PATCH, DELETE'
-      );
-
-      // Request headers you wish to allow
-      res.header(
-        'Access-Control-Allow-Headers',
-        'X-Requested-With,content-type'
-      );
-
-      // Set to true if you need the website to include cookies in the requests sent
-      // to the API (e.g. in case you use sessions)
-      res.header('Access-Control-Allow-Credentials', 'true');
-
-      // Pass to next layer of middleware
-      next();
-    });
-
-    //Set Validation Middleware
-    //this.app.use(enforceTokenAccess);
+    // Set Validation Middleware
+    this.app.use(enforceTokenAccess);
 
     // Set our api routes
     this.app.use('/', ExpressRouteDriver.buildRouter(dataStore, hasher));

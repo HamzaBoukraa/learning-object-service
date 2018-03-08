@@ -110,7 +110,6 @@ export class LearningObjectInteractor {
   public static async addLearningObject(
     dataStore: DataStore,
     responder: Responder,
-    username: string,
     object: LearningObject
   ): Promise<void> {
     try {
