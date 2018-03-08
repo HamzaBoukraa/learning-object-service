@@ -8,11 +8,7 @@ import { User, LearningObject } from '@cyber4all/clark-entity';
 const version = require('../../package.json').version;
 
 export class ExpressRouteDriver {
-  private _LearningObjectInteractor: LearningObjectInteractor;
-
-  constructor(private dataStore: DataStore, private hasher: HashInterface) {
-    this._LearningObjectInteractor = new LearningObjectInteractor(dataStore);
-  }
+  constructor(private dataStore: DataStore, private hasher: HashInterface) {}
 
   public static buildRouter(
     dataStore: DataStore,
@@ -36,14 +32,108 @@ export class ExpressRouteDriver {
       });
     });
 
+    router
+      .route('/learning-objects')
+      .get(async (req, res) => {
+        try {
+          let currPage = req.query.currPage ? +req.query.currPage : null;
+          let limit = req.query.limit ? +req.query.limit : null;
+
+          let name = req.query.name;
+          let author = req.query.author;
+          let length = req.query.length;
+          length = length && !Array.isArray(length) ? [length] : length;
+          let level = req.query.level;
+          level = level && !Array.isArray(level) ? [level] : level;
+          let standardOutcomes = req.query.standardOutcomes;
+          standardOutcomes =
+            standardOutcomes && !Array.isArray(standardOutcomes)
+              ? [standardOutcomes]
+              : standardOutcomes;
+
+          //For broad searching | Search all fields to match inputed text
+          let text = req.query.text;
+          // let content = req.query.content;
+
+          let orderBy = req.query.orderBy;
+          let sortType = req.query.sortType ? +req.query.sortType : null;
+
+          if (
+            name |
+            author |
+            length |
+            level |
+            standardOutcomes |
+            text |
+            orderBy |
+            sortType
+          ) {
+            await LearningObjectInteractor.suggestObjects(
+              this.dataStore,
+              this.getResponder(res),
+              name,
+              author,
+              length,
+              level,
+              standardOutcomes,
+              text,
+              orderBy,
+              sortType,
+              currPage,
+              limit
+            );
+          } else {
+            await LearningObjectInteractor.fetchAllObjects(
+              this.dataStore,
+              this.getResponder(res),
+              currPage,
+              limit
+            );
+          }
+        } catch (e) {
+          console.log(e);
+        }
+      })
+      .post(async (req, res) => {
+        try {
+          // FIXME: Get username from token
+          let username = req.body.author;
+          let object = LearningObject.instantiate(req.body.object);
+          await LearningObjectInteractor.addLearningObject(
+            this.dataStore,
+            this.getResponder(res),
+            username,
+            object
+          );
+        } catch (e) {
+          console.log(e);
+        }
+      })
+      .patch(async (req, res) => {
+        try {
+          let id = req.body.id;
+          let object = LearningObject.instantiate(req.body.object);
+          // FIXME: Verify token
+          await LearningObjectInteractor.updateLearningObject(
+            this.dataStore,
+            this.getResponder(res),
+            id,
+            object
+          );
+        } catch (e) {
+          console.log(e);
+        }
+      });
+
     // FIXME: Convert to get and get author's username from token
     router.get(
-      '/findLearningObject/:author/:learningObjectName',
+      '/learning-objects/:username/:learningObjectName/id',
       async (req, res) => {
         try {
-          let username = req.params.author;
+          let username = req.params.username;
           let learningObjectName = req.params.learningObjectName;
-          await this._LearningObjectInteractor.findLearningObject(
+          await LearningObjectInteractor.findLearningObject(
+            this.dataStore,
             this.getResponder(res),
             username,
             learningObjectName
@@ -55,10 +145,11 @@ export class ExpressRouteDriver {
     );
 
     // FIXME: Remove username from route and get username from token
-    router.get('/loadLearningObjectSummary/:username', async (req, res) => {
+    router.get('/learning-objects/:username/summary', async (req, res) => {
       try {
         let username = req.params.username;
-        await this._LearningObjectInteractor.loadLearningObjectSummary(
+        await LearningObjectInteractor.loadLearningObjectSummary(
+          this.dataStore,
           this.getResponder(res),
           username
         );
@@ -66,59 +157,29 @@ export class ExpressRouteDriver {
         console.log(e);
       }
     });
-
-    router.get(
-      '/loadLearningObject/:username/:learningObjectName',
-      async (req, res) => {
+    router
+      .route('/learning-objects/:username/:learningObjectName')
+      .get(async (req, res) => {
         try {
-          await this._LearningObjectInteractor.loadLearningObject(
+          // FIXME: Verify token to check and see if user has access to unpublished objects
+          await LearningObjectInteractor.loadLearningObject(
+            this.dataStore,
             this.getResponder(res),
             req.params.username,
-            req.params.learningObjectName
+            req.params.learningObjectName,
+            true
           );
         } catch (e) {
           console.log(e);
         }
-      }
-    );
-
-    router.post('/addLearningObject', async (req, res) => {
-      try {
-        // FIXME: Get username from token
-        let username = req.body.author;
-        let object = LearningObject.unserialize(req.body.object);
-        await this._LearningObjectInteractor.addLearningObject(
-          this.getResponder(res),
-          username,
-          object
-        );
-      } catch (e) {
-        console.log(e);
-      }
-    });
-
-    router.patch('/updateLearningObject', async (req, res) => {
-      try {
-        let id = req.body.id;
-        let object = LearningObject.unserialize(req.body.object);
-        await this._LearningObjectInteractor.updateLearningObject(
-          this.getResponder(res),
-          id,
-          object
-        );
-      } catch (e) {
-        console.log(e);
-      }
-    });
-
-    // FIXME: Take username out of route, get from token
-    router.delete(
-      '/deleteLearningObject/:username/:learningObjectName',
-      async (req, res) => {
+      })
+      .delete(async (req, res) => {
         try {
           let username = req.params.username;
           let learningObjectName = req.params.learningObjectName;
-          await this._LearningObjectInteractor.deleteLearningObject(
+          // FIXME: Verify token before loading up
+          await LearningObjectInteractor.deleteLearningObject(
+            this.dataStore,
             this.getResponder(res),
             username,
             learningObjectName
@@ -126,17 +187,17 @@ export class ExpressRouteDriver {
         } catch (e) {
           console.log(e);
         }
-      }
-    );
+      });
 
     router.delete(
-      '/deleteMultipleLearningObjects/:username/:learningObjectNames',
+      '/learning-object/:username/:learningObjectNames/multiple',
       async (req, res) => {
         try {
           let username = req.params.username;
           let learningObjectNames = req.params.learningObjectNames.split(',');
-
-          await this._LearningObjectInteractor.deleteMultipleLearningObjects(
+          // FIXME: Verify token before
+          await LearningObjectInteractor.deleteMultipleLearningObjects(
+            this.dataStore,
             this.getResponder(res),
             username,
             learningObjectNames
@@ -147,84 +208,32 @@ export class ExpressRouteDriver {
       }
     );
 
-    router.post('/reorderOutcome', async (req, res) => {
-      try {
-        let outcome = req.body.outcome;
-        let object = req.body.object;
-        let index = req.body.index;
-        await this._LearningObjectInteractor.reorderOutcome(
-          this.getResponder(res),
-          object,
-          outcome,
-          index
-        );
-      } catch (e) {
-        console.log(e);
-      }
-    });
-    // FIXME: IMPLEMENT
-    router.get('/suggestObjects', async (req, res) => {
-      try {
-        let name = req.query.name;
-        let author = req.query.author;
-        let length = req.query.length;
-        length = length && !Array.isArray(length) ? [length] : length;
-        let level = req.query.level;
-        level = level && !Array.isArray(level) ? [level] : level;
-        let standardOutcomes = req.query.standardOutcomes;
-        standardOutcomes =
-          standardOutcomes && !Array.isArray(standardOutcomes)
-            ? [standardOutcomes]
-            : standardOutcomes;
-
-        //For broad searching | Search all fields to match inputed text
-        let text = req.query.text;
-        // let content = req.query.content;
-
-        let orderBy = req.query.orderBy;
-        let sortType = req.query.sortType ? +req.query.sortType : null;
-        let currPage = req.query.currPage ? +req.query.currPage : null;
-        let limit = req.query.limit ? +req.query.limit : null;
-
-        await this._LearningObjectInteractor.suggestObjects(
-          this.getResponder(res),
-          name,
-          author,
-          length,
-          level,
-          standardOutcomes,
-          text,
-          orderBy,
-          sortType,
-          currPage,
-          limit
-        );
-      } catch (e) {
-        console.log(e);
-      }
-    });
-
-    router.get('/fetchAllObjects', async (req, res) => {
-      try {
-        let currPage = req.query.currPage ? +req.query.currPage : null;
-        let limit = req.query.limit ? +req.query.limit : null;
-
-        await this._LearningObjectInteractor.fetchAllObjects(
-          this.getResponder(res),
-          currPage,
-          limit
-        );
-      } catch (e) {
-        console.log(e);
-      }
-    });
+    // router.post('/reorderOutcome', async (req, res) => {
+    //   try {
+    //     let outcome = req.body.outcome;
+    //     let object = req.body.object;
+    //     let index = req.body.index;
+    //     await LearningObjectInteractor.reorderOutcome(
+    //       this.getResponder(res),
+    //       object,
+    //       outcome,
+    //       index
+    //     );
+    //   } catch (e) {
+    //     console.log(e);
+    //   }
+    // });
 
     //Fetches Learing Objects By Username and LearningObject name
-    router.post('/fetchMultipleObjects', async (req, res) => {
+    router.post('/learning-objects/multiple', async (req, res) => {
       try {
-        let ids: { username: string; learningObjectName: string }[] =
+        let ids: {
+          username: string;
+          learningObjectName: string;
+        }[] =
           req.body.ids;
-        await this._LearningObjectInteractor.fetchMultipleObjects(
+        await LearningObjectInteractor.fetchMultipleObjects(
+          this.dataStore,
           this.getResponder(res),
           ids
         );
@@ -235,11 +244,11 @@ export class ExpressRouteDriver {
 
     //Fetches Learning Objects by IDs
     //FIXME: Need to validate token and that it is coming from cart service
-    router.get('/fetchObjectsSummary/:ids', async (req, res) => {
+    router.get('/learning-objects/:ids/summary', async (req, res) => {
       try {
-        // FIXME: Should be of type string when typings are consistent
-        let ids: any[] = req.params.ids.split(',');
-        await this._LearningObjectInteractor.fetchObjectsByIDs(
+        let ids: string[] = req.params.ids.split(',');
+        await LearningObjectInteractor.fetchObjectsByIDs(
+          this.dataStore,
           this.getResponder(res),
           ids
         );
@@ -250,11 +259,11 @@ export class ExpressRouteDriver {
 
     //Fetches Learning Objects by IDs
     //FIXME: Need to validate token and that it is coming from cart service
-    router.get('/fetchFullObjects/:ids', async (req, res) => {
+    router.get('/learning-objects/:ids/full', async (req, res) => {
       try {
-        // FIXME: Should be of type string when typings are consistent
-        let ids: any[] = req.params.ids.split(',');
-        await this._LearningObjectInteractor.loadFullLearningObjectByIDs(
+        let ids: string[] = req.params.ids.split(',');
+        await LearningObjectInteractor.loadFullLearningObjectByIDs(
+          this.dataStore,
           this.getResponder(res),
           ids
         );
@@ -266,7 +275,10 @@ export class ExpressRouteDriver {
     router.get('/collections', async (req, res) => {
       try {
         let responder = this.getResponder(res);
-        await this._LearningObjectInteractor.fetchCollections(responder);
+        await LearningObjectInteractor.fetchCollections(
+          this.dataStore,
+          responder
+        );
       } catch (e) {
         console.log(e);
       }
@@ -274,7 +286,11 @@ export class ExpressRouteDriver {
     router.get('/collections/learning-objects', async (req, res) => {
       try {
         let responder = this.getResponder(res);
-        await this._LearningObjectInteractor.fetchCollections(responder, true);
+        await LearningObjectInteractor.fetchCollections(
+          this.dataStore,
+          responder,
+          true
+        );
       } catch (e) {
         console.log(e);
       }
@@ -283,7 +299,11 @@ export class ExpressRouteDriver {
       try {
         let name = req.params.name;
         let responder = this.getResponder(res);
-        await this._LearningObjectInteractor.fetchCollection(responder, name);
+        await LearningObjectInteractor.fetchCollection(
+          this.dataStore,
+          responder,
+          name
+        );
       } catch (e) {
         console.log(e);
       }
