@@ -54,19 +54,17 @@ export class ExpressRouteDriver {
 
           //For broad searching | Search all fields to match inputed text
           let text = req.query.text;
-          // let content = req.query.content;
-
           let orderBy = req.query.orderBy;
           let sortType = req.query.sortType ? +req.query.sortType : null;
 
           if (
-            name |
-            author |
-            length |
-            level |
-            standardOutcomes |
-            text |
-            orderBy |
+            name ||
+            author ||
+            length ||
+            level ||
+            standardOutcomes ||
+            text ||
+            orderBy ||
             sortType
           ) {
             await LearningObjectInteractor.suggestObjects(
