@@ -1436,7 +1436,7 @@ export class MongoDriver implements DataStore {
     if (!record)
       return Promise.reject(
         'Problem fetching a ' +
-          collection +
+          collection.name +
           ':\n\tInvalid database id ' +
           JSON.stringify(id)
       );

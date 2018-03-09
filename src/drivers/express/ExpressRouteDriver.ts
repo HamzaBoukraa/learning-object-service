@@ -199,13 +199,11 @@ export class ExpressRouteDriver {
       '/learning-objects/:learningObjectNames/multiple',
       async (req, res) => {
         try {
-          let username = req.params.username;
           let learningObjectNames = req.params.learningObjectNames.split(',');
-          // FIXME: Verify token before
           await LearningObjectInteractor.deleteMultipleLearningObjects(
             this.dataStore,
             this.getResponder(res),
-            username,
+            req.user.username,
             learningObjectNames
           );
         } catch (e) {
