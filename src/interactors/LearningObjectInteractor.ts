@@ -351,7 +351,6 @@ export class LearningObjectInteractor {
   ) {
     try {
       let collection = await dataStore.fetchCollection(name);
-
       responder.sendObject(collection);
     } catch (e) {
       responder.sendOperationError(e);

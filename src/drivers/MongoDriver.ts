@@ -892,6 +892,12 @@ export class MongoDriver implements DataStore {
       let collection = await this.db
         .collection(COLLECTIONS.LearningObjectCollection.name)
         .findOne({ name: name });
+      let objects = [];
+      for (let id of collection.learningObjects) {
+        let object = await this.fetchLearningObject(id, false, false);
+        objects.push(object);
+      }
+      collection.learningObjects = objects;
       return collection;
     } catch (e) {
       return Promise.reject(e);
