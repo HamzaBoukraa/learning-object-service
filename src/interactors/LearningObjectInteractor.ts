@@ -66,7 +66,7 @@ export class LearningObjectInteractor {
       let learningObject = await dataStore.fetchLearningObject(
         learningObjectID,
         true,
-        true
+        accessUnpublished
       );
       responder.sendObject({
         id: learningObjectID,
