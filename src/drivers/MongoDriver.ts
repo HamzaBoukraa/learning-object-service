@@ -673,7 +673,7 @@ export class MongoDriver implements DataStore {
     try {
       let objectCursor = await this.db
         .collection(COLLECTIONS.LearningObject.name)
-        .find<LearningObjectDocument>();
+        .find<LearningObjectDocument>({ published: true });
       let totalRecords = await objectCursor.count();
       objectCursor =
         skip !== undefined
@@ -804,7 +804,7 @@ export class MongoDriver implements DataStore {
         ? outcomeRecords.map(doc => doc._id)
         : null;
 
-      let query = <any>{};
+      let query = <any>{ published: true };
       // Search By Text
       if (text || text === '') {
         query = {
@@ -815,7 +815,8 @@ export class MongoDriver implements DataStore {
                 $elemMatch: { text: { $regex: new RegExp(text, 'ig') } }
               }
             }
-          ]
+          ],
+          published: true
         };
 
         if (authorIDs) query.$or.push(<any>{ authorID: { $in: authorIDs } });
