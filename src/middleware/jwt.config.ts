@@ -12,7 +12,7 @@ export const enforceTokenAccess = jwt({
   issuer: process.env.ISSUER,
   getToken: req => {
     return req.cookies.presence;
-  }
+  },
 }).unless({
   // Routes that don't require authorization
   path: [
