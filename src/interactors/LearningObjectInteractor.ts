@@ -121,7 +121,10 @@ export class LearningObjectInteractor {
             object.name
           } already exists.`
         );
-      } else responder.sendOperationError(e);
+      } else
+        responder.sendOperationError(
+          `Problem creating Learning Object. Error${e}`
+        );
     }
   }
 
