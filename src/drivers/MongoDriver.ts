@@ -731,6 +731,7 @@ export class MongoDriver implements DataStore {
           object,
           full
         );
+        if (accessUnpublished) learningObject.id = object._id;
         learningObjects.push(learningObject);
       }
 

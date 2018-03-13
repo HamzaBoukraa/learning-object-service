@@ -164,6 +164,7 @@ export class LearningObjectInteractor {
     object: LearningObject
   ): Promise<void> {
     try {
+      console.log()
       await dataStore.editLearningObject(id, object);
       responder.sendOperationSuccess();
     } catch (e) {
