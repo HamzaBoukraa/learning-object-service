@@ -22,9 +22,9 @@
   },
   "homepage": "https://github.com/Cyber4All/database-interaction#readme",
   "dependencies": {
-    "@cyber4all/clark-entity": "^2.1.0-beta.0.0",
+    "@cyber4all/clark-entity": "^2.1.0-beta.0.1",
     "@cyber4all/clark-schema": "^2.0.0-beta.0.2",
-    "@cyber4all/clark-taxonomy": "1.0.16",
+    "@cyber4all/clark-taxonomy": "^2.0.0",
     "@types/express-jwt": "0.0.38",
     "@types/morgan": "^1.7.35",
     "assert-never": "^1.0.0",
