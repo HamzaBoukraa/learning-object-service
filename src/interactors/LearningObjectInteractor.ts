@@ -34,6 +34,7 @@ export class LearningObjectInteractor {
           false,
           true
         );
+        learningObject.id = objectid;
         summary.push(learningObject);
       }
       responder.sendObject(summary);
@@ -68,10 +69,8 @@ export class LearningObjectInteractor {
         true,
         accessUnpublished
       );
-      responder.sendObject({
-        id: learningObjectID,
-        object: learningObject
-      });
+      if (accessUnpublished) learningObject.id = learningObjectID;
+      responder.sendObject(learningObject);
     } catch (e) {
       console.log(e);
       responder.sendOperationError(e);
