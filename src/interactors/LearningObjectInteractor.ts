@@ -23,7 +23,8 @@ export class LearningObjectInteractor {
   public static async loadLearningObjectSummary(
     dataStore: DataStore,
     responder: Responder,
-    username: string
+    username: string,
+    accessUnpublished?: boolean
   ): Promise<void> {
     try {
       let objectIDs = await dataStore.getUserObjects(username);
@@ -32,7 +33,7 @@ export class LearningObjectInteractor {
         let learningObject = await dataStore.fetchLearningObject(
           objectid,
           false,
-          true
+          accessUnpublished
         );
         learningObject.id = objectid;
         summary.push(learningObject);

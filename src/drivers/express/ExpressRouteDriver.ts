@@ -149,7 +149,8 @@ export class ExpressRouteDriver {
         await LearningObjectInteractor.loadLearningObjectSummary(
           this.dataStore,
           this.getResponder(res),
-          req.user.username
+          req.user.username,
+          true
         );
       } catch (e) {
         console.log(e);
@@ -305,6 +306,19 @@ export class ExpressRouteDriver {
           this.dataStore,
           responder,
           name
+        );
+      } catch (e) {
+        console.log(e);
+      }
+    });
+
+    router.get('/users/:username/learning-objects', async (req, res) => {
+      try {
+        await LearningObjectInteractor.loadLearningObjectSummary(
+          this.dataStore,
+          this.getResponder(res),
+          req.params.username,
+          false
         );
       } catch (e) {
         console.log(e);
