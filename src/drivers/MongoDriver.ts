@@ -715,9 +715,11 @@ export class MongoDriver implements DataStore {
     accessUnpublished?: boolean
   ): Promise<LearningObject[]> {
     try {
+      let query: any = { _id: { $in: ids } };
+      if (!accessUnpublished) query.published = true;
       let objects = await this.db
         .collection(COLLECTIONS.LearningObject.name)
-        .find<LearningObjectDocument>({ _id: { $in: ids } })
+        .find<LearningObjectDocument>(query)
         .toArray();
 
       let learningObjects: LearningObject[] = [];
@@ -729,11 +731,7 @@ export class MongoDriver implements DataStore {
           object,
           full
         );
-        if (!accessUnpublished && !learningObject.published) {
-          //Do Nothing
-        } else {
-          learningObjects.push(learningObject);
-        }
+        learningObjects.push(learningObject);
       }
 
       return learningObjects;

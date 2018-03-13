@@ -28,16 +28,11 @@ export class LearningObjectInteractor {
   ): Promise<void> {
     try {
       let objectIDs = await dataStore.getUserObjects(username);
-      let summary: LearningObject[] = [];
-      for (let objectid of objectIDs) {
-        let learningObject = await dataStore.fetchLearningObject(
-          objectid,
-          false,
-          accessUnpublished
-        );
-        learningObject.id = objectid;
-        summary.push(learningObject);
-      }
+      let summary: LearningObject[] = await dataStore.fetchMultipleObjects(
+        objectIDs,
+        false,
+        accessUnpublished
+      );
       responder.sendObject(summary);
     } catch (e) {
       responder.sendOperationError(e);
