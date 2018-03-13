@@ -115,8 +115,13 @@ export class LearningObjectInteractor {
       let learningObjectID = await dataStore.insertLearningObject(object);
       responder.sendObject(learningObjectID);
     } catch (e) {
-      console.log(e);
-      responder.sendOperationError(e);
+      if (/duplicate key error/gi.test(e)) {
+        responder.sendOperationError(
+          `Could not save Learning Object. Learning Object with name: ${
+            object.name
+          } already exists.`
+        );
+      } else responder.sendOperationError(e);
     }
   }
 
@@ -164,7 +169,7 @@ export class LearningObjectInteractor {
     object: LearningObject
   ): Promise<void> {
     try {
-      console.log()
+      console.log();
       await dataStore.editLearningObject(id, object);
       responder.sendOperationSuccess();
     } catch (e) {

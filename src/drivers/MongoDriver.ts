@@ -168,22 +168,25 @@ export class MongoDriver implements DataStore {
    * @returns {LearningObjectID} the database id of the new record
    */
   async insertLearningObject(object: LearningObject): Promise<string> {
-    let authorID = await this.findUser(object.author.username);
-    let author = await this.fetchUser(authorID);
+    try {
+      let authorID = await this.findUser(object.author.username);
+      let author = await this.fetchUser(authorID);
 
-    let doc = await this.documentLearningObject(object, true);
-    let id = await this.insert(COLLECTIONS.LearningObject, doc);
+      let doc = await this.documentLearningObject(object, true);
+      let id = await this.insert(COLLECTIONS.LearningObject, doc);
 
-    await this.insertLearningOutcomes(
-      {
-        learningObjectID: id,
-        learningObjectName: object.name,
-        authorName: author.name
-      },
-      object.outcomes
-    );
-
-    return id;
+      await this.insertLearningOutcomes(
+        {
+          learningObjectID: id,
+          learningObjectName: object.name,
+          authorName: author.name
+        },
+        object.outcomes
+      );
+      return id;
+    } catch (e) {
+      return Promise.reject(e);
+    }
   }
 
   /**
