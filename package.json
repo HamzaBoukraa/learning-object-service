@@ -1,14 +1,16 @@
 {
   "name": "database-interaction",
   "version": "1.0.0-alpha.1.1",
-  "description": "Database interaction service to ensure consistent behavior over all services.",
+  "description":
+    "Database interaction service to ensure consistent behavior over all services.",
   "main": "app.ts",
   "scripts": {
     "start": "npm run gulp-tsc",
     "build": "node_modules/.bin/gulp tsc",
     "test": "npm run build && node ./dist/tests/test.js",
     "gulp-tsc": "node_modules/.bin/gulp start",
-    "pack": "npm run build && cp ./package.json ./dist && cd ./dist && zip -r ../dist.zip  ./* & cd ..",
+    "pack":
+      "npm run build && cp ./package.json ./dist && cd ./dist && zip -r ../dist.zip  ./* & cd ..",
     "deploy": "eb deploy LearningObject-Service-Production --profile clark"
   },
   "repository": {
@@ -38,7 +40,8 @@
     "gulp-typescript": "^3.1.7",
     "mongodb": "^2.2.31",
     "morgan": "^1.9.0",
-    "source-map-support": "^0.5.0"
+    "source-map-support": "^0.5.0",
+    "cors": "^2.8.4"
   },
   "devDependencies": {
     "@types/bcrypt": "^1.0.0",

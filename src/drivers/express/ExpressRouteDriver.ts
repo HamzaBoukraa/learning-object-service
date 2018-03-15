@@ -124,7 +124,38 @@ export class ExpressRouteDriver {
           console.log(e);
         }
       });
+    router.patch('/learning-objects/publish', async (req, res) => {
+      try {
+        let id = req.body.id;
+        let published = req.body.published;
 
+        await LearningObjectInteractor.togglePublished(
+          this.dataStore,
+          this.getResponder(res),
+          req.user.username,
+          id,
+          published
+        );
+      } catch (e) {
+        console.log(e);
+      }
+    });
+    router.patch('/learning-objects/unpublish', async (req, res) => {
+      try {
+        let id = req.body.id;
+        let published = req.body.published;
+
+        await LearningObjectInteractor.togglePublished(
+          this.dataStore,
+          this.getResponder(res),
+          req.user.username,
+          id,
+          published
+        );
+      } catch (e) {
+        console.log(e);
+      }
+    });
     // FIXME: Convert to get and get author's username from token
     router.get(
       '/learning-objects/:username/:learningObjectName/id',

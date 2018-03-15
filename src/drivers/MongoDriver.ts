@@ -364,6 +364,26 @@ export class MongoDriver implements DataStore {
     }
   }
 
+  public async togglePublished(
+    username: string,
+    id: string,
+    published: boolean
+  ): Promise<void> {
+    try {
+      let userID = await this.findUser(username);
+      let user = await this.fetchUser(userID);
+      //check if user is verified and if user is attempting to publish. If not verified and attempting to publish reject
+
+      //else
+      await this.db
+        .collection(COLLECTIONS.LearningObject.name)
+        .update({ _id: id }, { $set: { published: published } });
+      return Promise.resolve();
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  }
+
   /**
    * Edit a learning outcome.
    * @async

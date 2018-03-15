@@ -172,8 +172,22 @@ export class LearningObjectInteractor {
     object: LearningObject
   ): Promise<void> {
     try {
-      console.log();
       await dataStore.editLearningObject(id, object);
+      responder.sendOperationSuccess();
+    } catch (e) {
+      responder.sendOperationError(e);
+    }
+  }
+
+  public static async togglePublished(
+    dataStore: DataStore,
+    responder: Responder,
+    username: string,
+    id: string,
+    published: boolean
+  ): Promise<void> {
+    try {
+      await dataStore.togglePublished(username, id, published);
       responder.sendOperationSuccess();
     } catch (e) {
       responder.sendOperationError(e);
