@@ -108,12 +108,13 @@ export class LearningObjectInteractor {
     object: LearningObject
   ): Promise<void> {
     try {
-      if (object.name.trim() == '') {
+      if (object.name.trim() === '') {
         responder.sendOperationError('Learning Object name cannot be empty.');
         return;
+      } else {
+        let learningObjectID = await dataStore.insertLearningObject(object);
+        responder.sendObject(learningObjectID);
       }
-      let learningObjectID = await dataStore.insertLearningObject(object);
-      responder.sendObject(learningObjectID);
     } catch (e) {
       if (/duplicate key error/gi.test(e)) {
         responder.sendOperationError(
