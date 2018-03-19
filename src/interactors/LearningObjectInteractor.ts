@@ -173,8 +173,13 @@ export class LearningObjectInteractor {
     object: LearningObject
   ): Promise<void> {
     try {
-      await dataStore.editLearningObject(id, object);
-      responder.sendOperationSuccess();
+      if (object.name.trim() === '') {
+        responder.sendOperationError('Learning Object name cannot be empty.');
+        return;
+      } else {
+        await dataStore.editLearningObject(id, object);
+        responder.sendOperationSuccess();
+      }
     } catch (e) {
       responder.sendOperationError(e);
     }
