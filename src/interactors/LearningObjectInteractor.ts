@@ -1,4 +1,9 @@
-import { DataStore, Responder, Interactor } from '../interfaces/interfaces';
+import {
+  DataStore,
+  Responder,
+  Interactor,
+  FileManager
+} from '../interfaces/interfaces';
 import {
   User,
   LearningObject,
@@ -127,6 +132,59 @@ export class LearningObjectInteractor {
         );
     }
   }
+  /**
+   * Upload Materials and sends back array of LearningObject Materials
+   *
+   * @static
+   * @param {FileManager} fileManager
+   * @param {Responder} responder
+   * @param {string} id
+   * @param {string} username
+   * @param {any[]} files
+   * @returns {Promise<void>}
+   * @memberof LearningObjectInteractor
+   */
+  public static async uploadMaterials(
+    fileManager: FileManager,
+    responder: Responder,
+    id: string,
+    username: string,
+    files: any[]
+  ): Promise<void> {
+    try {
+      let learningObjectFiles = await fileManager.upload(id, username, files);
+      responder.sendObject(learningObjectFiles);
+    } catch (e) {
+      responder.sendOperationError(`Problem uploading materials. Error: ${e}`);
+    }
+  }
+
+  /**
+   * Deletes specified file
+   *
+   * @static
+   * @param {FileManager} fileManager
+   * @param {Responder} responder
+   * @param {string} id
+   * @param {string} username
+   * @param {string} filename
+   * @returns {Promise<void>}
+   * @memberof LearningObjectInteractor
+   */
+  public static async deleteFile(
+    fileManager: FileManager,
+    responder: Responder,
+    id: string,
+    username: string,
+    filename: string
+  ): Promise<void> {
+    try {
+      await fileManager.delete(id, username, filename);
+      responder.sendOperationSuccess();
+    } catch (e) {
+      responder.sendOperationError(`Problem deleting file. Error: ${e}`);
+    }
+  }
 
   /**
    * Look up a learning outcome by its source and tag.
@@ -196,6 +254,7 @@ export class LearningObjectInteractor {
 
   public static async deleteLearningObject(
     dataStore: DataStore,
+    fileManager: FileManager,
     responder: Responder,
     username: string,
     learningObjectName: string
@@ -206,6 +265,7 @@ export class LearningObjectInteractor {
         learningObjectName
       );
       await dataStore.deleteLearningObject(learningObjectID);
+      await fileManager.deleteAll(learningObjectID, username);
       responder.sendOperationSuccess();
     } catch (error) {
       responder.sendOperationError(error);
@@ -214,6 +274,7 @@ export class LearningObjectInteractor {
 
   public static async deleteMultipleLearningObjects(
     dataStore: DataStore,
+    fileManager: FileManager,
     responder: Responder,
     username: string,
     learningObjectNames: string[]
@@ -226,6 +287,9 @@ export class LearningObjectInteractor {
       );
 
       await dataStore.deleteMultipleLearningObjects(learningObjectIDs);
+      for (let id of learningObjectIDs) {
+        await fileManager.deleteAll(id, username);
+      }
       responder.sendOperationSuccess();
     } catch (error) {
       responder.sendOperationError(error);

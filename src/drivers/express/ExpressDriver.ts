@@ -1,6 +1,6 @@
 import * as express from 'express';
 import * as bodyParser from 'body-parser';
-import { DataStore, HashInterface } from '../../interfaces/interfaces';
+import { DataStore } from '../../interfaces/interfaces';
 import { ExpressRouteDriver } from '../drivers';
 import * as http from 'http';
 import * as logger from 'morgan';
@@ -10,7 +10,7 @@ import * as cookieParser from 'cookie-parser';
 
 export class ExpressDriver {
   static app = express();
-  static start(dataStore: DataStore, hasher: HashInterface) {
+  static start(dataStore: DataStore) {
     // configure app to use bodyParser()
     this.app.use(bodyParser.urlencoded({ extended: true }));
     this.app.use(bodyParser.json());
@@ -26,7 +26,7 @@ export class ExpressDriver {
     this.app.use(enforceTokenAccess);
 
     // Set our api routes
-    this.app.use('/', ExpressRouteDriver.buildRouter(dataStore, hasher));
+    this.app.use('/', ExpressRouteDriver.buildRouter(dataStore));
 
     /**
      * Get port from environment and store in Express.
