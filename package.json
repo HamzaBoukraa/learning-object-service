@@ -1,6 +1,6 @@
 {
   "name": "database-interaction",
-  "version": "1.0.0-alpha.1.1",
+  "version": "1.0.0-beta.0.0",
   "description":
     "Database interaction service to ensure consistent behavior over all services.",
   "main": "app.ts",
@@ -11,7 +11,8 @@
     "gulp-tsc": "node_modules/.bin/gulp start",
     "pack":
       "npm run build && cp ./package.json ./dist && cd ./dist && zip -r ../dist.zip  ./* & cd ..",
-    "deploy": "eb deploy LearningObject-Service-Production --profile clark"
+    "deploy":
+      "eb deploy LearningObject-Service-Production --profile clark --label $(node -p \"require('./package.json').version\")"
   },
   "repository": {
     "type": "git",
