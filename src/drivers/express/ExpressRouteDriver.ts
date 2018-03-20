@@ -1,21 +1,22 @@
-import { ExpressResponder } from '../drivers';
-import { DataStore, Responder } from '../../interfaces/interfaces';
+import { ExpressResponder, S3Driver } from '../drivers';
+import { DataStore, Responder, FileManager } from '../../interfaces/interfaces';
 import { Router, Response } from 'express';
 import { LearningObjectInteractor } from '../../interactors/interactors';
-import { HashInterface } from '../../interfaces/interfaces';
 import { User, LearningObject } from '@cyber4all/clark-entity';
 import * as TokenManager from '../TokenManager';
+import * as multer from 'multer';
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
 const version = require('../../package.json').version;
 
 export class ExpressRouteDriver {
-  constructor(private dataStore: DataStore, private hasher: HashInterface) {}
+  private upload = multer({ storage: multer.memoryStorage() });
 
-  public static buildRouter(
-    dataStore: DataStore,
-    hasher: HashInterface
-  ): Router {
-    let e = new ExpressRouteDriver(dataStore, hasher);
+  // TODO: Inject from higher level if neccessary;
+  private fileManager: FileManager = new S3Driver();
+  constructor(private dataStore: DataStore) {}
+
+  public static buildRouter(dataStore: DataStore): Router {
+    let e = new ExpressRouteDriver(dataStore);
     let router: Router = Router();
     e.setRoutes(router);
     return router;
@@ -156,6 +157,38 @@ export class ExpressRouteDriver {
         console.log(e);
       }
     });
+    router.post('/files', this.upload.any(), async (req, res) => {
+      try {
+        let files = req['files'];
+        let user = await TokenManager.decode(req.cookies.presence);
+        let id = req.body.learningObjectID;
+        await LearningObjectInteractor.uploadMaterials(
+          this.fileManager,
+          this.getResponder(res),
+          id,
+          user.username,
+          files
+        );
+      } catch (e) {
+        console.log(e);
+      }
+    });
+    router.delete('/files/:id/:filename', async (req, res) => {
+      try {
+        let id = req.params.id;
+        let filename = req.params.filename;
+        let username = req.user.username;
+        await LearningObjectInteractor.deleteFile(
+          this.fileManager,
+          this.getResponder(res),
+          id,
+          username,
+          filename
+        );
+      } catch (e) {
+        console.log(e);
+      }
+    });
     // FIXME: Convert to get and get author's username from token
     router.get(
       '/learning-objects/:username/:learningObjectName/id',
@@ -216,6 +249,7 @@ export class ExpressRouteDriver {
         let learningObjectName = req.params.learningObjectName;
         await LearningObjectInteractor.deleteLearningObject(
           this.dataStore,
+          this.fileManager,
           this.getResponder(res),
           req.user.username,
           learningObjectName
@@ -232,6 +266,7 @@ export class ExpressRouteDriver {
           let learningObjectNames = req.params.learningObjectNames.split(',');
           await LearningObjectInteractor.deleteMultipleLearningObjects(
             this.dataStore,
+            this.fileManager,
             this.getResponder(res),
             req.user.username,
             learningObjectNames

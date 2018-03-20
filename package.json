@@ -1,6 +1,6 @@
 {
-  "name": "learning-object-service",
-  "version": "1.0.0-beta.0.0",
+  "name": "database-interaction",
+  "version": "1.0.0-alpha.1.1",
   "description": "Database interaction service to ensure consistent behavior over all services.",
   "main": "app.ts",
   "scripts": {
@@ -9,7 +9,7 @@
     "test": "npm run build && node ./dist/tests/test.js",
     "gulp-tsc": "node_modules/.bin/gulp start",
     "pack": "npm run build && cp ./package.json ./dist && cd ./dist && zip -r ../dist.zip  ./* & cd ..",
-    "deploy": "eb deploy LearningObject-Service-Production --profile clark --label $(node -p \"require('./package.json').version\")"
+    "deploy": "eb deploy LearningObject-Service-Production --profile clark"
   },
   "repository": {
     "type": "git",
@@ -28,6 +28,7 @@
     "@types/express-jwt": "0.0.38",
     "@types/morgan": "^1.7.35",
     "assert-never": "^1.0.0",
+    "aws-sdk": "^2.211.0",
     "bcrypt": "^1.0.3",
     "cookie-parser": "^1.4.3",
     "cors": "^2.8.4",
@@ -39,6 +40,7 @@
     "gulp-typescript": "^3.1.7",
     "mongodb": "^2.2.31",
     "morgan": "^1.9.0",
+    "multer": "^1.3.0",
     "source-map-support": "^0.5.0"
   },
   "devDependencies": {
