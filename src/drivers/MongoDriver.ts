@@ -171,7 +171,7 @@ export class MongoDriver implements DataStore {
     try {
       let authorID = await this.findUser(object.author.username);
       let author = await this.fetchUser(authorID);
-
+      if (!author.emailVerified) object.unpublish();
       let doc = await this.documentLearningObject(object, true);
       let id = await this.insert(COLLECTIONS.LearningObject, doc);
 
@@ -301,6 +301,8 @@ export class MongoDriver implements DataStore {
         COLLECTIONS.LearningObject,
         id
       );
+      let author = await this.fetchUser(old.authorID);
+      if (!author.emailVerified) object.unpublish();
 
       let doc = await this.documentLearningObject(object, false, id);
       // perform edit first, so uniqueness problems get caught BEFORE we edit outcomes
@@ -373,7 +375,10 @@ export class MongoDriver implements DataStore {
       let userID = await this.findUser(username);
       let user = await this.fetchUser(userID);
       //check if user is verified and if user is attempting to publish. If not verified and attempting to publish reject
-
+      if (!user.emailVerified && published)
+        return Promise.reject(
+          `Invalid access. User must be verified to publish Learning Objects`
+        );
       //else
       await this.db
         .collection(COLLECTIONS.LearningObject.name)
@@ -1018,10 +1023,13 @@ export class MongoDriver implements DataStore {
     let user = new User(
       userRecord.username,
       userRecord.name,
-      null,
+      userRecord.email,
       userRecord.organization,
       null
     );
+    user.emailVerified = userRecord.emailVerified
+      ? userRecord.emailVerified
+      : false;
     return user;
   }
 

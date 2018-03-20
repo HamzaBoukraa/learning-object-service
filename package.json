@@ -1,18 +1,15 @@
 {
   "name": "learning-object-service",
   "version": "1.0.0-beta.0.0",
-  "description":
-    "Database interaction service to ensure consistent behavior over all services.",
+  "description": "Database interaction service to ensure consistent behavior over all services.",
   "main": "app.ts",
   "scripts": {
     "start": "npm run gulp-tsc",
     "build": "node_modules/.bin/gulp tsc",
     "test": "npm run build && node ./dist/tests/test.js",
     "gulp-tsc": "node_modules/.bin/gulp start",
-    "pack":
-      "npm run build && cp ./package.json ./dist && cd ./dist && zip -r ../dist.zip  ./* & cd ..",
-    "deploy":
-      "eb deploy LearningObject-Service-Production --profile clark --label $(node -p \"require('./package.json').version\")"
+    "pack": "npm run build && cp ./package.json ./dist && cd ./dist && zip -r ../dist.zip  ./* & cd ..",
+    "deploy": "eb deploy LearningObject-Service-Production --profile clark --label $(node -p \"require('./package.json').version\")"
   },
   "repository": {
     "type": "git",
@@ -26,13 +23,14 @@
   "homepage": "https://github.com/Cyber4All/learning-object-service#readme",
   "dependencies": {
     "@cyber4all/clark-entity": "^2.1.0-beta.0.1",
-    "@cyber4all/clark-schema": "^2.0.0-beta.0.2",
+    "@cyber4all/clark-schema": "^2.0.0-beta.0.3",
     "@cyber4all/clark-taxonomy": "^2.0.0",
     "@types/express-jwt": "0.0.38",
     "@types/morgan": "^1.7.35",
     "assert-never": "^1.0.0",
     "bcrypt": "^1.0.3",
     "cookie-parser": "^1.4.3",
+    "cors": "^2.8.4",
     "dotenv": "^4.0.0",
     "express": "^4.16.2",
     "express-jwt": "^5.3.0",
@@ -41,8 +39,7 @@
     "gulp-typescript": "^3.1.7",
     "mongodb": "^2.2.31",
     "morgan": "^1.9.0",
-    "source-map-support": "^0.5.0",
-    "cors": "^2.8.4"
+    "source-map-support": "^0.5.0"
   },
   "devDependencies": {
     "@types/bcrypt": "^1.0.0",
