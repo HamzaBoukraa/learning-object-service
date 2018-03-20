@@ -1,15 +1,18 @@
 {
   "name": "learning-object-service",
   "version": "1.0.0-beta.0.0",
-  "description": "Database interaction service to ensure consistent behavior over all services.",
+  "description":
+    "Database interaction service to ensure consistent behavior over all services.",
   "main": "app.ts",
   "scripts": {
     "start": "npm run gulp-tsc",
     "build": "node_modules/.bin/gulp tsc",
     "test": "npm run build && node ./dist/tests/test.js",
     "gulp-tsc": "node_modules/.bin/gulp start",
-    "pack": "npm run build && cp ./package.json ./dist && cp ./.ebextensions ./dist && cd ./dist && zip -r ../dist.zip  ./* & cd ..",
-    "deploy": "eb deploy LearningObject-Service-Production --profile clark"
+    "pack":
+      "npm run build && cp ./package.json ./dist && cp -r ./.ebextensions ./dist && cd ./dist && zip -r ../dist.zip  ./* & cd ..",
+    "deploy":
+      "eb deploy LearningObject-Service-Production --profile clark --label $(node -p \"require('./package.json').version\")"
   },
   "repository": {
     "type": "git",
