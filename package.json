@@ -1,8 +1,7 @@
 {
   "name": "learning-object-service",
   "version": "1.0.0-beta.0.0",
-  "description":
-    "Database interaction service to ensure consistent behavior over all services.",
+  "description": "Learning Object Microservice.",
   "main": "app.ts",
   "scripts": {
     "start": "npm run gulp-tsc",
