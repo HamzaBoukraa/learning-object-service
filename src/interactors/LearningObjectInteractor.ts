@@ -270,8 +270,15 @@ export class LearningObjectInteractor {
         username,
         learningObjectName
       );
+      let learningObject = await dataStore.fetchLearningObject(
+        learningObjectID,
+        false,
+        true
+      );
       await dataStore.deleteLearningObject(learningObjectID);
-      await fileManager.deleteAll(learningObjectID, username);
+      if (learningObject.materials.files.length) {
+        await fileManager.deleteAll(learningObjectID, username);
+      }
       responder.sendOperationSuccess();
     } catch (error) {
       responder.sendOperationError(error);
@@ -286,15 +293,20 @@ export class LearningObjectInteractor {
     learningObjectNames: string[]
   ): Promise<void> {
     try {
-      let learningObjectIDs = await Promise.all(
-        learningObjectNames.map(learningObjectName => {
-          return dataStore.findLearningObject(username, learningObjectName);
-        })
-      );
-
+      let learningObjectsWithFiles: LearningObject[] = [];
+      let learningObjectIDs: string[] = [];
+      for (let name of learningObjectNames) {
+        let id = await dataStore.findLearningObject(username, name);
+        learningObjectIDs.push(id);
+        let object = await dataStore.fetchLearningObject(id, false, true);
+        object.id = id;
+        if (object.materials.files.length)
+          learningObjectsWithFiles.push(object);
+      }
       await dataStore.deleteMultipleLearningObjects(learningObjectIDs);
-      for (let id of learningObjectIDs) {
-        await fileManager.deleteAll(id, username);
+
+      for (let object of learningObjectsWithFiles) {
+        await fileManager.deleteAll(object.id, username);
       }
       responder.sendOperationSuccess();
     } catch (error) {
