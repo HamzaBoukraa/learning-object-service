@@ -161,14 +161,21 @@ export class ExpressRouteDriver {
       try {
         let files = req['files'];
         let user = await TokenManager.decode(req.cookies.presence);
-        let id = req.body.learningObjectID;
-        await LearningObjectInteractor.uploadMaterials(
-          this.fileManager,
-          this.getResponder(res),
-          id,
-          user.username,
-          files
-        );
+        let responder = this.getResponder(res);
+        if (user.emailVerified) {
+          let id = req.body.learningObjectID;
+          await LearningObjectInteractor.uploadMaterials(
+            this.fileManager,
+            responder,
+            id,
+            user.username,
+            files
+          );
+        } else {
+          responder.sendOperationError(
+            `Invalid access. User must be verified to upload materials.`
+          );
+        }
       } catch (e) {
         console.log(e);
       }
