@@ -169,7 +169,7 @@ export class ExpressRouteDriver {
             responder,
             id,
             user.username,
-            files
+            <any[]>files
           );
         } else {
           responder.sendOperationError(
