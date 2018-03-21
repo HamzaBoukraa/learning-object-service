@@ -106,7 +106,7 @@ export class S3Driver implements FileManager {
    */
   private async deleteObject(params: any): Promise<void> {
     try {
-      await this.s3.deleteObject().promise();
+      await this.s3.deleteObject(params).promise();
     } catch (e) {
       return Promise.reject(e);
     }
