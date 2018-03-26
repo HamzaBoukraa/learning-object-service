@@ -43,7 +43,7 @@ jobs:
           command: npm run zip
       - run: 
           name: Show Directory
-          command: ls -a
+          command: cd ./dist && ls -a && cd ..
       - run:
           name: Deploy to Elastic Beanstalk 
           command: eb deploy LearningObject-Service-Production --verbose
