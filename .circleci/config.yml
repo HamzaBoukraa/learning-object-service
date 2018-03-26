@@ -42,8 +42,11 @@ jobs:
           name: Zip Package for Deployment
           command: npm run zip
       - run: 
+          name: Make fake Directory
+          command: mkdir fake
+      - run: 
           name: Show Directory
-          command: cd ./dist && ls -a && cd ..
+          command: ls -a
       - run:
           name: Deploy to Elastic Beanstalk 
           command: eb deploy LearningObject-Service-Production --verbose
