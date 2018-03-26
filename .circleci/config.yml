@@ -41,6 +41,9 @@ jobs:
       - run: 
           name: Zip Package for Deployment
           command: npm run zip
+      - run: 
+          name: Show Directory
+          command: ls -a
       - run:
           name: Deploy to Elastic Beanstalk 
           command: eb deploy LearningObject-Service-Production --verbose
