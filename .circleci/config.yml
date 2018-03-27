@@ -47,9 +47,6 @@ jobs:
       - run: 
           name: Zip dist
           command: cd ./dist; zip -r ../dist.zip . *; cd ..
-      - run: 
-          name: Show Directory
-          command: ls -a
       - run:
           name: Deploy to Elastic Beanstalk 
           command: eb deploy LearningObject-Service-Production --verbose --label Learning-Object-Service-v$(node -p "require('./package.json').version")
