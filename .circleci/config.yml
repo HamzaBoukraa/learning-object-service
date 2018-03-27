@@ -46,10 +46,10 @@ jobs:
           command: cp -r ./.ebextensions ./dist
       - run: 
           name: Zip dist
-          command: cd ./dist && zip /tmp/dist.zip -r * .[^.]* & cd ..
+          command: tar -cvf ./dist.zip dist
       - run: 
           name: Show Directory
-          command: cd /tmp && ls -a
+          command: ls -a
       - run:
           name: Deploy to Elastic Beanstalk 
           command: eb deploy LearningObject-Service-Production --verbose
