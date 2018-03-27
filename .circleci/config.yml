@@ -39,11 +39,17 @@ jobs:
           command: |
             mkdir ~/.aws && printf "[profile default]\naws_access_key_id = ${AWS_ACCESS_KEY_ID}\naws_secret_access_key = ${AWS_SECRET_ACCESS_KEY}" > ~/.aws/config
       - run: 
-          name: Zip Package for Deployment
-          command: npm run zip
+          name: Copy package.json
+          command: cp ./package.json ./dist
       - run: 
-          name: Make fake Directory
-          command: mkdir fake
+          name: Copy .ebextensions
+          command: cp -r ./.ebextensions ./dist
+      - run: 
+          name: List dist
+          command: cd ./dist && ls -a && cd ..
+      - run: 
+          name: Zip dist
+          command: cd ./dist && zip ../dist.zip -r * .[^.]* & cd ..
       - run: 
           name: Show Directory
           command: ls -a
