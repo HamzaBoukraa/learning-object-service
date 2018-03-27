@@ -45,8 +45,8 @@ jobs:
           name: Copy .ebextensions
           command: cp -r ./.ebextensions ./dist
       - run: 
-          name: Zip dist
-          command: tar -cvf ./dist.zip dist
+          name: Compress dist
+          command: cd dist && tar -cvf ../dist.zip * && cd ..
       - run: 
           name: Show Directory
           command: ls -a
