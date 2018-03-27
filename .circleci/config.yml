@@ -52,7 +52,7 @@ jobs:
           command: ls -a
       - run:
           name: Deploy to Elastic Beanstalk 
-          command: eb deploy LearningObject-Service-Production --verbose
+          command: eb deploy LearningObject-Service-Production --verbose --label Learning-Object-Service-v$(node -p "require('./package.json').version")
 workflows:
   version: 2
   build-and-test:

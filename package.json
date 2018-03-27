@@ -10,7 +10,7 @@
     "gulp-tsc": "node_modules/.bin/gulp start",
     "pack": "npm run build && cp ./package.json ./dist && cp -r ./.ebextensions ./dist && cd ./dist && zip -r ../dist.zip  ./* & cd ..",
     "zip": "cp ./package.json ./dist && cp -r ./.ebextensions ./dist && cd ./dist && zip -r ../dist.zip  ./* & cd ..",
-    "deploy": "eb deploy LearningObject-Service-Production --profile clark --label $(node -p \"require('./package.json').version\")"
+    "deploy": "eb deploy LearningObject-Service-Production --profile clark --label Learning-Object-Service-v$(node -p \"require('./package.json').version\")"
   },
   "repository": {
     "type": "git",
