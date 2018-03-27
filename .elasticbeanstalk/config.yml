@@ -10,4 +10,4 @@ global:
   profile: default
   workspace_type: Application
 deploy:
-  artifact: dist.zip
+  artifact: /tmp/dist.zip

@@ -45,14 +45,11 @@ jobs:
           name: Copy .ebextensions
           command: cp -r ./.ebextensions ./dist
       - run: 
-          name: List dist
-          command: cd ./dist && ls -a && cd ..
-      - run: 
           name: Zip dist
-          command: cd ./dist && zip ../dist.zip -r * .[^.]* & cd ..
+          command: cd ./dist && zip /tmp/dist.zip -r * .[^.]* & cd ..
       - run: 
           name: Show Directory
-          command: ls -a
+          command: cd /tmp && ls -a
       - run:
           name: Deploy to Elastic Beanstalk 
           command: eb deploy LearningObject-Service-Production --verbose
