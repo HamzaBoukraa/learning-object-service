@@ -15,6 +15,7 @@ import {
   AssessmentPlan,
   InstructionalStrategy
 } from '@cyber4all/clark-entity';
+import { Folder } from '../interfaces/FileManager';
 
 export class LearningObjectInteractor {
   /**
@@ -150,10 +151,16 @@ export class LearningObjectInteractor {
     responder: Responder,
     id: string,
     username: string,
-    files: any[]
+    files: any[],
+    directory: Map<string, Folder>
   ): Promise<void> {
     try {
-      let learningObjectFiles = await fileManager.upload(id, username, files);
+      let learningObjectFiles = await fileManager.upload(
+        id,
+        username,
+        files,
+        directory
+      );
       responder.sendObject(learningObjectFiles);
     } catch (e) {
       responder.sendOperationError(`Problem uploading materials. Error: ${e}`);

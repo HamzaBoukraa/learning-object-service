@@ -5,6 +5,7 @@ import { LearningObjectInteractor } from '../../interactors/interactors';
 import { User, LearningObject } from '@cyber4all/clark-entity';
 import * as TokenManager from '../TokenManager';
 import * as multer from 'multer';
+import { Folder } from '../../interfaces/FileManager';
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
 const version = require('../../package.json').version;
 
@@ -159,7 +160,11 @@ export class ExpressRouteDriver {
     });
     router.post('/files', this.upload.any(), async (req, res) => {
       try {
-        let files = req['files'];
+        let files = req.files;
+        let directory = req.body.directory
+          ? JSON.parse(req.body.directory)
+          : null;
+        if (directory) directory = new Map<string, Folder>(directory);
         let user = await TokenManager.decode(req.cookies.presence);
         let responder = this.getResponder(res);
         if (user.emailVerified) {
@@ -169,7 +174,8 @@ export class ExpressRouteDriver {
             responder,
             id,
             user.username,
-            <any[]>files
+            <any[]>files,
+            directory
           );
         } else {
           responder.sendOperationError(
