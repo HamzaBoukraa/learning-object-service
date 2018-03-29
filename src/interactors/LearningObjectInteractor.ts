@@ -15,7 +15,6 @@ import {
   AssessmentPlan,
   InstructionalStrategy
 } from '@cyber4all/clark-entity';
-import { Folder } from '../interfaces/FileManager';
 
 export class LearningObjectInteractor {
   /**
@@ -152,14 +151,14 @@ export class LearningObjectInteractor {
     id: string,
     username: string,
     files: any[],
-    directory: Map<string, Folder>
+    filePathMap: Map<string, string>
   ): Promise<void> {
     try {
       let learningObjectFiles = await fileManager.upload(
         id,
         username,
         files,
-        directory
+        filePathMap
       );
       responder.sendObject(learningObjectFiles);
     } catch (e) {

@@ -1,7 +1,7 @@
 import { FileManager } from '../interfaces/interfaces';
 import * as AWS from 'aws-sdk';
 import { AWS_SDK_CONFIG } from '../config/aws-sdk.config';
-import { LearningObjectFile, Folder } from '../interfaces/FileManager';
+import { LearningObjectFile } from '../interfaces/FileManager';
 AWS.config.credentials = AWS_SDK_CONFIG.credentials;
 
 const AWS_S3_BUCKET = 'neutrino-file-uploads';
@@ -22,15 +22,15 @@ export class S3Driver implements FileManager {
     id: string,
     username: string,
     files: any[],
-    directory: Map<string, Folder>
+    filePathMap: Map<string, string>
   ): Promise<LearningObjectFile[]> {
     try {
       let learningObjectFiles: LearningObjectFile[] = [];
       for (let file of files) {
         let loFile = this.generateLearningObjectFile(file);
-        const parent = this.getParent(directory, loFile);
-        const path = parent ? this.getFullPath(parent, loFile) : loFile.name;
-
+        const parent = filePathMap.get(loFile.id);
+        const path = this.getFullPath(filePathMap, loFile);
+        console.log('PATH: ', path);
         let params = {
           Bucket: AWS_S3_BUCKET,
           Key: `${username}/${id}/${path}`,
@@ -40,7 +40,7 @@ export class S3Driver implements FileManager {
         let response = await this.s3.upload(params).promise();
         loFile.url = response.Location;
         if (parent) {
-          loFile.relativePath = path;
+          loFile.fullPath = path;
         }
         learningObjectFiles.push(loFile);
       }
@@ -144,24 +144,22 @@ export class S3Driver implements FileManager {
 
     return learningObjectFile;
   }
-
-  private getParent(
-    directory: Map<string, Folder>,
+  /**
+   * Gets file's full path
+   *
+   * @private
+   * @param {Map<string, string>} filePathMap
+   * @param {LearningObjectFile} file
+   * @returns
+   * @memberof S3Driver
+   */
+  private getFullPath(
+    filePathMap: Map<string, string>,
     file: LearningObjectFile
-  ): Folder {
-    if (!file.id) return null;
-    let parent = null;
-    for (let [key, folder] of directory) {
-      if (folder.files.indexOf(file.id) > -1) {
-        parent = folder;
-        break;
-      }
-    }
-    return parent;
-  }
-
-  private getFullPath(folder: Folder, file: LearningObjectFile) {
-    let path = `${folder.name}/${file.name}`;
+  ) {
+    let folderName = filePathMap.get(file.id);
+    if (!folderName) return file.name;
+    let path = `${folderName}/${file.name}`;
     return path;
   }
 }
