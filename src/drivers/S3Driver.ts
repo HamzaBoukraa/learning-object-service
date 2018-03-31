@@ -124,7 +124,8 @@ export class S3Driver implements FileManager {
     let originalname = name_id[0];
     let description = +name_id[1];
     let fileType = file.mimetype;
-    let extension = originalname.match(/([A-Za-z]{1,})$/)[0];
+    let extMatch = originalname.match(/([A-Za-z]{1,})$/);
+    let extension = extMatch ? extMatch[0] : '';
     let date = Date.now().toString();
 
     let learningObjectFile: LearningObjectFile = {
