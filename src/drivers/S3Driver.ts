@@ -30,12 +30,11 @@ export class S3Driver implements FileManager {
         let loFile = this.generateLearningObjectFile(file);
         const parent = filePathMap.get(loFile.id);
         const path = this.getFullPath(filePathMap, loFile);
-        console.log('PATH: ', path);
         let params = {
           Bucket: AWS_S3_BUCKET,
           Key: `${username}/${id}/${path}`,
           ACL: AWS_S3_ACL,
-          Body: file.buffer
+          Body: file.buffer.length ? file.buffer : Buffer.from(file.buffer)
         };
         let response = await this.s3.upload(params).promise();
         loFile.url = response.Location;
@@ -46,6 +45,7 @@ export class S3Driver implements FileManager {
       }
       return learningObjectFiles;
     } catch (e) {
+      console.log(e);
       return Promise.reject(e);
     }
   }
@@ -130,7 +130,8 @@ export class S3Driver implements FileManager {
     let originalname = name_id[0];
     let id = name_id[1];
     let fileType = file.mimetype;
-    let extension = originalname.match(/([A-Za-z]{1,})$/)[0];
+    let extMatch = originalname.match(/(\.[^.]*$|$)/);
+    let extension = extMatch ? extMatch[0] : '';
     let date = Date.now().toString();
 
     let learningObjectFile: LearningObjectFile = {
