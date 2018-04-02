@@ -71,11 +71,27 @@ export class LearningObjectInteractor {
         accessUnpublished
       );
       if (accessUnpublished) learningObject.id = learningObjectID;
+
+      if (learningObject.children) {
+        learningObject.children = await this.loadChildObjects(dataStore, learningObject);
+      }
       responder.sendObject(learningObject);
     } catch (e) {
       console.log(e);
       responder.sendOperationError(e);
     }
+  }
+
+  private static async loadChildObjects(dataStore: DataStore, learningObject: LearningObject) {
+    // console.log(learningObject);
+    if (learningObject.children) {
+      const children = await dataStore.fetchMultipleObjects(learningObject.children);
+      for (let child of children) {
+        child.children = await this.loadChildObjects(dataStore, child);
+      }
+      return [...children];
+    }
+    return null;
   }
 
   public static async loadFullLearningObjectByIDs(
@@ -461,5 +477,35 @@ export class LearningObjectInteractor {
     } catch (e) {
       responder.sendOperationError(e);
     }
+  }
+
+  public static async addChild(
+    params:
+      { dataStore: DataStore,
+        responder: Responder,
+        childId: string,
+        username: string,
+        parentName: string,
+      },
+  ) {
+    const parentID = await params.dataStore.findLearningObject(params.username, params.parentName);
+    params.dataStore.insertChild(parentID, params.childId)
+      .then(data => params.responder.sendOperationSuccess())
+      .catch(error => params.responder.sendOperationError(error.message, error.status));
+  }
+
+  public static async removeChild(
+    params: {
+      dataStore: DataStore,
+      responder: Responder,
+      childId: string,
+      username: string,
+      parentName: string,
+    },
+  ) {
+    const parentID = await params.dataStore.findLearningObject(params.username, params.parentName);
+    params.dataStore.deleteChild(parentID, params.childId)
+      .then(data => params.responder.sendOperationSuccess())
+      .catch(error => params.responder.sendOperationError(error.message, error.status));
   }
 }

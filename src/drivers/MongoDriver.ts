@@ -190,6 +190,66 @@ export class MongoDriver implements DataStore {
   }
 
   /**
+   * Inserts a child id into a learning object's children array if the child object
+   * exists in the LearningObject collection.
+   *
+   * @async
+   * @param {string} parentId The database ID of the parent Learning Object
+   * @param {string} childId The database ID of the child Learning Object
+   * @memberof MongoDriver
+   */
+  async insertChild(parentId: string, childId: string): Promise<any> {
+    try {
+      const childObjectExists = await this.db
+        .collection(COLLECTIONS.LearningObject.name)
+        .find(
+          { _id: childId },
+          { _id: 1 },
+      ).limit(1).count() > 0;
+
+      if (childObjectExists) {
+        // TODO: return an error if $addToSet doesn't modify the set (i.e. the child is already added)
+        await this.db
+          .collection(COLLECTIONS.LearningObject.name)
+          .update(
+            { _id: parentId },
+            { $addToSet: { 'children': childId }},
+          );
+      } else {
+        return Promise.reject({ message: `${childId} does not exist`, status: 404 });
+      }
+    } catch (error) {
+      return Promise.reject({ message: `Problem inserting child ${childId} into Object ${parentId}`, status: 400 });
+    }
+  }
+
+  /**
+   * Deletes a child id from a learning object's children array if the child object
+   * exists in the children array.
+   *
+   * @async
+   * @param {string} parentId The database ID of the parent Learning Object
+   * @param {string} childId The database ID of the child Learning Object
+   * @memberof MongoDriver
+   */
+  async deleteChild(parentId: string, childId: string) {
+    try {
+      await this.db
+        .collection(COLLECTIONS.LearningObject.name)
+        .update(
+          { _id: parentId },
+          { $pull: { 'children': childId }},
+        ).then(res => {
+          return res.result.nModified > 0
+            ? Promise.resolve()
+            : Promise.reject({ message: `${childId} is not a child of Object ${parentId}`, status: 404 });
+        });
+    } catch (error) {
+      if (error.message && error.status) { return Promise.reject(error); }
+      return Promise.reject({ message: `Problem removing child ${childId} from Object ${parentId}`, status: 400 });
+    }
+  }
+  /**
    * Insert a learning outcome into the database.
    * @async
    *
@@ -749,7 +809,6 @@ export class MongoDriver implements DataStore {
         .collection(COLLECTIONS.LearningObject.name)
         .find<LearningObjectDocument>(query)
         .toArray();
-
       let learningObjects: LearningObject[] = [];
 
       for (let object of objects) {
@@ -1033,24 +1092,28 @@ export class MongoDriver implements DataStore {
     return user;
   }
 
+  // TODO: Refactor into functions for loading partial vs full objects
   private async generateLearningObject(
     author: User,
     record: LearningObjectDocument,
     full?: boolean
   ): Promise<LearningObject> {
+    // Logic for loading any learning object
     let learningObject = new LearningObject(author, record.name);
     learningObject.date = record.date;
     learningObject.length = record.length;
     learningObject.levels = <AcademicLevel[]>record.levels;
     learningObject.materials = record.materials;
     record.published ? learningObject.publish() : learningObject.unpublish();
-
+    learningObject.children = record.children;
     for (let goal of record.goals) {
       learningObject.addGoal(goal.text);
     }
     if (!full) {
       return learningObject;
     }
+
+    // Logic for loading 'full' learning objects
 
     // load each outcome
     for (let outcomeid of record.outcomes) {
@@ -1076,6 +1139,7 @@ export class MongoDriver implements DataStore {
         outcome.mapTo(mapping);
       }
     }
+
     return learningObject;
   }
 

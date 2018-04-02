@@ -53,6 +53,8 @@ export interface DataStore {
     id: string,
     published: boolean
   ): Promise<void>;
+  insertChild(parentId: string, childId: string): Promise<void>
+  deleteChild(parentId: string, childId: string): Promise<void>
 }
 
 export { Collection as LearningObjectCollection };

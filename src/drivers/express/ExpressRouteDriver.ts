@@ -53,7 +53,7 @@ export class ExpressRouteDriver {
               ? [standardOutcomes]
               : standardOutcomes;
 
-          //For broad searching | Search all fields to match inputed text
+          // For broad searching | Search all fields to match inputed text
           let text = req.query.text;
           let orderBy = req.query.orderBy;
           let sortType = req.query.sortType ? +req.query.sortType : null;
@@ -221,6 +221,33 @@ export class ExpressRouteDriver {
         }
       }
     );
+    router.route('/learning-objects/:username/:learningObjectName/children')
+      .post(async (req, res) => {
+        try {
+          await LearningObjectInteractor.addChild({
+            dataStore: this.dataStore,
+            responder: this.getResponder(res),
+            childId: req.body.id,
+            parentName: req.params.learningObjectName,
+            username: req.params.username,
+          });
+        } catch (error) {
+          console.log(error);
+        }
+      })
+      .delete(async (req, res) => {
+        try {
+          await LearningObjectInteractor.removeChild({
+            dataStore: this.dataStore,
+            responder: this.getResponder(res),
+            childId: req.body.id,
+            parentName: req.params.learningObjectName,
+            username: req.params.username,
+          });
+        } catch (error) {
+          console.log(error);
+        }
+      });
 
     router.get('/learning-objects/summary', async (req, res) => {
       try {
