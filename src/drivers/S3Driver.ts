@@ -21,27 +21,31 @@ export class S3Driver implements FileManager {
   public async upload(
     id: string,
     username: string,
-    files: any[]
+    files: any[],
+    filePathMap: Map<string, string>
   ): Promise<LearningObjectFile[]> {
     try {
       let learningObjectFiles: LearningObjectFile[] = [];
       for (let file of files) {
         let loFile = this.generateLearningObjectFile(file);
-
+        const parent = filePathMap.get(loFile.id);
+        const path = this.getFullPath(filePathMap, loFile);
         let params = {
           Bucket: AWS_S3_BUCKET,
-          Key: `${username}/${id}/${loFile.name}`,
+          Key: `${username}/${id}/${path}`,
           ACL: AWS_S3_ACL,
-          Body: file.buffer
+          Body: file.buffer.length ? file.buffer : Buffer.from(file.buffer)
         };
-
         let response = await this.s3.upload(params).promise();
         loFile.url = response.Location;
+        if (parent) {
+          loFile.fullPath = path;
+        }
         learningObjectFiles.push(loFile);
       }
-
       return learningObjectFiles;
     } catch (e) {
+      console.log(e);
       return Promise.reject(e);
     }
   }
@@ -87,7 +91,9 @@ export class S3Driver implements FileManager {
       const listedObjects = await this.s3.listObjectsV2(listParams).promise();
       let deleteParams = {
         Bucket: AWS_S3_BUCKET,
-        Delete: { Objects: listedObjects.Contents.map(({ Key }) => ({ Key })) }
+        Delete: {
+          Objects: listedObjects.Contents.map(({ Key }) => ({ Key }))
+        }
       };
       await this.s3.deleteObjects(deleteParams).promise();
 
@@ -122,21 +128,39 @@ export class S3Driver implements FileManager {
   private generateLearningObjectFile(file: any): LearningObjectFile {
     let name_id = file.originalname.split(/!@!/g);
     let originalname = name_id[0];
-    let description = +name_id[1];
+    let id = name_id[1];
     let fileType = file.mimetype;
-    let extMatch = originalname.match(/([A-Za-z]{1,})$/);
+    let extMatch = originalname.match(/(\.[^.]*$|$)/);
     let extension = extMatch ? extMatch[0] : '';
     let date = Date.now().toString();
 
     let learningObjectFile: LearningObjectFile = {
+      id: id,
       name: originalname,
       fileType: fileType,
       extension: extension,
       url: null,
-      date: date,
-      description: description
+      date: date
     };
 
     return learningObjectFile;
+  }
+  /**
+   * Gets file's full path
+   *
+   * @private
+   * @param {Map<string, string>} filePathMap
+   * @param {LearningObjectFile} file
+   * @returns
+   * @memberof S3Driver
+   */
+  private getFullPath(
+    filePathMap: Map<string, string>,
+    file: LearningObjectFile
+  ) {
+    let folderName = filePathMap.get(file.id);
+    if (!folderName) return file.name;
+    let path = `${folderName}/${file.name}`;
+    return path;
   }
 }

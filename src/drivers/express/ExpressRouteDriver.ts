@@ -159,9 +159,15 @@ export class ExpressRouteDriver {
     });
     router.post('/files', this.upload.any(), async (req, res) => {
       try {
-        let files = req['files'];
+        let files = req.files;
+        let filePathMap = req.body.filePathMap
+          ? JSON.parse(req.body.filePathMap)
+          : null;
+        if (filePathMap) filePathMap = new Map<string, string>(filePathMap);
+
         let user = await TokenManager.decode(req.cookies.presence);
         let responder = this.getResponder(res);
+
         if (user.emailVerified) {
           let id = req.body.learningObjectID;
           await LearningObjectInteractor.uploadMaterials(
@@ -169,7 +175,8 @@ export class ExpressRouteDriver {
             responder,
             id,
             user.username,
-            <any[]>files
+            <any[]>files,
+            filePathMap
           );
         } else {
           responder.sendOperationError(
