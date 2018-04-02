@@ -166,10 +166,16 @@ export class LearningObjectInteractor {
     responder: Responder,
     id: string,
     username: string,
-    files: any[]
+    files: any[],
+    filePathMap: Map<string, string>
   ): Promise<void> {
     try {
-      let learningObjectFiles = await fileManager.upload(id, username, files);
+      let learningObjectFiles = await fileManager.upload(
+        id,
+        username,
+        files,
+        filePathMap
+      );
       responder.sendObject(learningObjectFiles);
     } catch (e) {
       responder.sendOperationError(`Problem uploading materials. Error: ${e}`);
