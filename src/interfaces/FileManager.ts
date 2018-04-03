@@ -1,3 +1,4 @@
+import { File } from '@cyber4all/clark-entity/dist/learning-object';
 export interface FileManager {
   upload(
     id: string,
@@ -9,13 +10,4 @@ export interface FileManager {
   deleteAll(id: string, username: string): Promise<void>;
 }
 
-// TODO: Move to package
-export type LearningObjectFile = {
-  id: string;
-  name: string;
-  fileType: string;
-  extension: string;
-  url: string;
-  date: string;
-  fullPath?: string;
-};
+export type LearningObjectFile = File;
