@@ -73,7 +73,10 @@ export class LearningObjectInteractor {
       if (accessUnpublished) learningObject.id = learningObjectID;
 
       if (learningObject.children) {
-        learningObject.children = await this.loadChildObjects(dataStore, learningObject);
+        learningObject.children = await this.loadChildObjects(
+          dataStore,
+          learningObject
+        );
       }
       responder.sendObject(learningObject);
     } catch (e) {
@@ -82,10 +85,15 @@ export class LearningObjectInteractor {
     }
   }
 
-  private static async loadChildObjects(dataStore: DataStore, learningObject: LearningObject) {
+  private static async loadChildObjects(
+    dataStore: DataStore,
+    learningObject: LearningObject
+  ) {
     // console.log(learningObject);
     if (learningObject.children) {
-      const children = await dataStore.fetchMultipleObjects(learningObject.children);
+      const children = await dataStore.fetchMultipleObjects(
+        learningObject.children
+      );
       for (let child of children) {
         child.children = await this.loadChildObjects(dataStore, child);
       }
@@ -129,8 +137,9 @@ export class LearningObjectInteractor {
     object: LearningObject
   ): Promise<void> {
     try {
-      if (object.name.trim() === '') {
-        responder.sendOperationError('Learning Object name cannot be empty.');
+      const err = this.validateLearningObject(object);
+      if (err) {
+        responder.sendOperationError(err);
         return;
       } else {
         let learningObjectID = await dataStore.insertLearningObject(object);
@@ -148,6 +157,16 @@ export class LearningObjectInteractor {
           `Problem creating Learning Object. Error${e}`
         );
     }
+  }
+
+  private static validateLearningObject(object: LearningObject): string {
+    let error = null;
+    if (object.name.trim() === '') {
+      error = 'Learning Object name cannot be empty.';
+    } else if (object.published && !object.outcomes.length) {
+      error = 'Learning Object must have outcomes to publish.';
+    }
+    return error;
   }
   /**
    * Upload Materials and sends back array of LearningObject Materials
@@ -253,8 +272,9 @@ export class LearningObjectInteractor {
     object: LearningObject
   ): Promise<void> {
     try {
-      if (object.name.trim() === '') {
-        responder.sendOperationError('Learning Object name cannot be empty.');
+      const err = this.validateLearningObject(object);
+      if (err) {
+        responder.sendOperationError(err);
         return;
       } else {
         await dataStore.editLearningObject(id, object);
@@ -273,6 +293,13 @@ export class LearningObjectInteractor {
     published: boolean
   ): Promise<void> {
     try {
+      let object = await dataStore.fetchLearningObject(id);
+      published ? object.publish() : object.unpublish();
+      const err = this.validateLearningObject(object);
+      if (err) {
+        responder.sendOperationError(err);
+        return;
+      }
       await dataStore.togglePublished(username, id, published);
       responder.sendOperationSuccess();
     } catch (e) {
@@ -479,33 +506,41 @@ export class LearningObjectInteractor {
     }
   }
 
-  public static async addChild(
-    params:
-      { dataStore: DataStore,
-        responder: Responder,
-        childId: string,
-        username: string,
-        parentName: string,
-      },
-  ) {
-    const parentID = await params.dataStore.findLearningObject(params.username, params.parentName);
-    params.dataStore.insertChild(parentID, params.childId)
+  public static async addChild(params: {
+    dataStore: DataStore;
+    responder: Responder;
+    childId: string;
+    username: string;
+    parentName: string;
+  }) {
+    const parentID = await params.dataStore.findLearningObject(
+      params.username,
+      params.parentName
+    );
+    params.dataStore
+      .insertChild(parentID, params.childId)
       .then(data => params.responder.sendOperationSuccess())
-      .catch(error => params.responder.sendOperationError(error.message, error.status));
+      .catch(error =>
+        params.responder.sendOperationError(error.message, error.status)
+      );
   }
 
-  public static async removeChild(
-    params: {
-      dataStore: DataStore,
-      responder: Responder,
-      childId: string,
-      username: string,
-      parentName: string,
-    },
-  ) {
-    const parentID = await params.dataStore.findLearningObject(params.username, params.parentName);
-    params.dataStore.deleteChild(parentID, params.childId)
+  public static async removeChild(params: {
+    dataStore: DataStore;
+    responder: Responder;
+    childId: string;
+    username: string;
+    parentName: string;
+  }) {
+    const parentID = await params.dataStore.findLearningObject(
+      params.username,
+      params.parentName
+    );
+    params.dataStore
+      .deleteChild(parentID, params.childId)
       .then(data => params.responder.sendOperationSuccess())
-      .catch(error => params.responder.sendOperationError(error.message, error.status));
+      .catch(error =>
+        params.responder.sendOperationError(error.message, error.status)
+      );
   }
 }
