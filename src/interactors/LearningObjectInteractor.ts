@@ -293,7 +293,7 @@ export class LearningObjectInteractor {
     published: boolean
   ): Promise<void> {
     try {
-      let object = await dataStore.fetchLearningObject(id, false, true);
+      let object = await dataStore.fetchLearningObject(id, true, true);
       published ? object.publish() : object.unpublish();
       const err = this.validateLearningObject(object);
       if (err) {
