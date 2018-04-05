@@ -16,6 +16,8 @@ import {
   StandardOutcomeDocument
 } from '@cyber4all/clark-schema';
 import { LearningObjectCollection } from '../interfaces/DataStore';
+import * as request from 'request-promise';
+
 dotenv.config();
 
 export interface Collection {
@@ -483,6 +485,13 @@ export class MongoDriver implements DataStore {
    * @param {LearningObjectID} id which document to delete
    */
   async deleteLearningObject(id: string): Promise<void> {
+    // remove object from all carts first
+    try {
+      await this.cleanObjectsFromCarts([id]);
+    } catch(error) {
+      console.log(error);
+    }
+    // now remove from database
     return this.remove(COLLECTIONS.LearningObject, id);
   }
 
@@ -493,11 +502,27 @@ export class MongoDriver implements DataStore {
    * @param {LearningObjectID} id which document to delete
    */
   async deleteMultipleLearningObjects(ids: string[]): Promise<any> {
+    // remove objects from all carts first
+    try {
+      await this.cleanObjectsFromCarts(ids);
+    } catch(error) {
+      console.log(error);
+    }
+    
+    // now remove objects from database
     return Promise.all(
       ids.map(id => {
         return this.remove(COLLECTIONS.LearningObject, id);
       })
     );
+  }
+
+  /**
+   * Removes learning object ids from all carts that reference them
+   * @param ids Array of string ids
+   */
+   async cleanObjectsFromCarts(ids: Array<string>): Promise<void> {
+    return request.patch(process.env.CART_SERVICE_URI + '/libraries/learning-objects/' + ids.join(',') + '/clean');
   }
 
   /**
