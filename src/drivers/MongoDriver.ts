@@ -139,14 +139,17 @@ export class MongoDriver implements DataStore {
    *
    * @param {string} dbIP the host and port on which mongodb is running
    */
-  async connect(dburi: string): Promise<void> {
+  async connect(dbURI: string, retryAttempt?: number): Promise<void> {
     try {
-      this.db = await MongoClient.connect(dburi);
-      return Promise.resolve();
+      this.db = await MongoClient.connect(dbURI);
     } catch (e) {
-      return Promise.reject(
-        'Problem connecting to database at ' + dburi + ':\n\t' + e
-      );
+      if (!retryAttempt) {
+        this.connect(dbURI, 1);
+      } else {
+        return Promise.reject(
+          'Problem connecting to database at ' + dbURI + ':\n\t' + e
+        );
+      }
     }
   }
   /**
@@ -202,26 +205,29 @@ export class MongoDriver implements DataStore {
    */
   async insertChild(parentId: string, childId: string): Promise<any> {
     try {
-      const childObjectExists = await this.db
-        .collection(COLLECTIONS.LearningObject.name)
-        .find(
-          { _id: childId },
-          { _id: 1 },
-      ).limit(1).count() > 0;
+      const childObjectExists =
+        (await this.db
+          .collection(COLLECTIONS.LearningObject.name)
+          .find({ _id: childId }, { _id: 1 })
+          .limit(1)
+          .count()) > 0;
 
       if (childObjectExists) {
         // TODO: return an error if $addToSet doesn't modify the set (i.e. the child is already added)
         await this.db
           .collection(COLLECTIONS.LearningObject.name)
-          .update(
-            { _id: parentId },
-            { $addToSet: { 'children': childId }},
-          );
+          .update({ _id: parentId }, { $addToSet: { children: childId } });
       } else {
-        return Promise.reject({ message: `${childId} does not exist`, status: 404 });
+        return Promise.reject({
+          message: `${childId} does not exist`,
+          status: 404
+        });
       }
     } catch (error) {
-      return Promise.reject({ message: `Problem inserting child ${childId} into Object ${parentId}`, status: 400 });
+      return Promise.reject({
+        message: `Problem inserting child ${childId} into Object ${parentId}`,
+        status: 400
+      });
     }
   }
 
@@ -238,17 +244,23 @@ export class MongoDriver implements DataStore {
     try {
       await this.db
         .collection(COLLECTIONS.LearningObject.name)
-        .update(
-          { _id: parentId },
-          { $pull: { 'children': childId }},
-        ).then(res => {
+        .update({ _id: parentId }, { $pull: { children: childId } })
+        .then(res => {
           return res.result.nModified > 0
             ? Promise.resolve()
-            : Promise.reject({ message: `${childId} is not a child of Object ${parentId}`, status: 404 });
+            : Promise.reject({
+                message: `${childId} is not a child of Object ${parentId}`,
+                status: 404
+              });
         });
     } catch (error) {
-      if (error.message && error.status) { return Promise.reject(error); }
-      return Promise.reject({ message: `Problem removing child ${childId} from Object ${parentId}`, status: 400 });
+      if (error.message && error.status) {
+        return Promise.reject(error);
+      }
+      return Promise.reject({
+        message: `Problem removing child ${childId} from Object ${parentId}`,
+        status: 400
+      });
     }
   }
   /**
@@ -488,7 +500,7 @@ export class MongoDriver implements DataStore {
     // remove object from all carts first
     try {
       await this.cleanObjectsFromCarts([id]);
-    } catch(error) {
+    } catch (error) {
       console.log(error);
     }
     // now remove from database
@@ -505,10 +517,10 @@ export class MongoDriver implements DataStore {
     // remove objects from all carts first
     try {
       await this.cleanObjectsFromCarts(ids);
-    } catch(error) {
+    } catch (error) {
       console.log(error);
     }
-    
+
     // now remove objects from database
     return Promise.all(
       ids.map(id => {
@@ -521,8 +533,13 @@ export class MongoDriver implements DataStore {
    * Removes learning object ids from all carts that reference them
    * @param ids Array of string ids
    */
-   async cleanObjectsFromCarts(ids: Array<string>): Promise<void> {
-    return request.patch(process.env.CART_SERVICE_URI + '/libraries/learning-objects/' + ids.join(',') + '/clean');
+  async cleanObjectsFromCarts(ids: Array<string>): Promise<void> {
+    return request.patch(
+      process.env.CART_SERVICE_URI +
+        '/libraries/learning-objects/' +
+        ids.join(',') +
+        '/clean'
+    );
   }
 
   /**
@@ -930,7 +947,10 @@ export class MongoDriver implements DataStore {
           published: true
         };
 
-        if (authorIDs) query.$or.push(<any>{ authorID: { $in: authorIDs } });
+        if (authorIDs)
+          query.$or.push(<any>{
+            authorID: { $in: authorIDs }
+          });
 
         if (length) query.length = { $in: length };
 
@@ -1084,10 +1104,7 @@ export class MongoDriver implements DataStore {
           };
         }),
         strategies: outcome.strategies.map(strategy => {
-          return {
-            plan: strategy.plan,
-            text: strategy.text
-          };
+          return { plan: strategy.plan, text: strategy.text };
         }),
         mappings: outcome.mappings.map(mapping => mapping.id)
       };
