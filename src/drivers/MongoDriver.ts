@@ -202,26 +202,29 @@ export class MongoDriver implements DataStore {
    */
   async insertChild(parentId: string, childId: string): Promise<any> {
     try {
-      const childObjectExists = await this.db
-        .collection(COLLECTIONS.LearningObject.name)
-        .find(
-          { _id: childId },
-          { _id: 1 },
-      ).limit(1).count() > 0;
+      const childObjectExists =
+        (await this.db
+          .collection(COLLECTIONS.LearningObject.name)
+          .find({ _id: childId }, { _id: 1 })
+          .limit(1)
+          .count()) > 0;
 
       if (childObjectExists) {
         // TODO: return an error if $addToSet doesn't modify the set (i.e. the child is already added)
         await this.db
           .collection(COLLECTIONS.LearningObject.name)
-          .update(
-            { _id: parentId },
-            { $addToSet: { 'children': childId }},
-          );
+          .update({ _id: parentId }, { $addToSet: { children: childId } });
       } else {
-        return Promise.reject({ message: `${childId} does not exist`, status: 404 });
+        return Promise.reject({
+          message: `${childId} does not exist`,
+          status: 404
+        });
       }
     } catch (error) {
-      return Promise.reject({ message: `Problem inserting child ${childId} into Object ${parentId}`, status: 400 });
+      return Promise.reject({
+        message: `Problem inserting child ${childId} into Object ${parentId}`,
+        status: 400
+      });
     }
   }
 
@@ -238,17 +241,23 @@ export class MongoDriver implements DataStore {
     try {
       await this.db
         .collection(COLLECTIONS.LearningObject.name)
-        .update(
-          { _id: parentId },
-          { $pull: { 'children': childId }},
-        ).then(res => {
+        .update({ _id: parentId }, { $pull: { children: childId } })
+        .then(res => {
           return res.result.nModified > 0
             ? Promise.resolve()
-            : Promise.reject({ message: `${childId} is not a child of Object ${parentId}`, status: 404 });
+            : Promise.reject({
+                message: `${childId} is not a child of Object ${parentId}`,
+                status: 404
+              });
         });
     } catch (error) {
-      if (error.message && error.status) { return Promise.reject(error); }
-      return Promise.reject({ message: `Problem removing child ${childId} from Object ${parentId}`, status: 400 });
+      if (error.message && error.status) {
+        return Promise.reject(error);
+      }
+      return Promise.reject({
+        message: `Problem removing child ${childId} from Object ${parentId}`,
+        status: 400
+      });
     }
   }
   /**
@@ -488,7 +497,7 @@ export class MongoDriver implements DataStore {
     // remove object from all carts first
     try {
       await this.cleanObjectsFromCarts([id]);
-    } catch(error) {
+    } catch (error) {
       console.log(error);
     }
     // now remove from database
@@ -505,10 +514,10 @@ export class MongoDriver implements DataStore {
     // remove objects from all carts first
     try {
       await this.cleanObjectsFromCarts(ids);
-    } catch(error) {
+    } catch (error) {
       console.log(error);
     }
-    
+
     // now remove objects from database
     return Promise.all(
       ids.map(id => {
@@ -521,8 +530,13 @@ export class MongoDriver implements DataStore {
    * Removes learning object ids from all carts that reference them
    * @param ids Array of string ids
    */
-   async cleanObjectsFromCarts(ids: Array<string>): Promise<void> {
-    return request.patch(process.env.CART_SERVICE_URI + '/libraries/learning-objects/' + ids.join(',') + '/clean');
+  async cleanObjectsFromCarts(ids: Array<string>): Promise<void> {
+    return request.patch(
+      process.env.CART_SERVICE_URI +
+        '/libraries/learning-objects/' +
+        ids.join(',') +
+        '/clean'
+    );
   }
 
   /**
@@ -825,15 +839,24 @@ export class MongoDriver implements DataStore {
   async fetchMultipleObjects(
     ids: string[],
     full?: boolean,
-    accessUnpublished?: boolean
+    accessUnpublished?: boolean,
+    orderBy?: string,
+    sortType?: number
   ): Promise<LearningObject[]> {
     try {
       let query: any = { _id: { $in: ids } };
       if (!accessUnpublished) query.published = true;
-      let objects = await this.db
+      let objectCursor = await this.db
         .collection(COLLECTIONS.LearningObject.name)
-        .find<LearningObjectDocument>(query)
-        .toArray();
+        .find<LearningObjectDocument>(query);
+
+      objectCursor = objectCursor.sort(
+        orderBy ? orderBy : 'name',
+        sortType ? sortType : 1
+      );
+
+      const objects = await objectCursor.toArray();
+
       let learningObjects: LearningObject[] = [];
 
       for (let object of objects) {
