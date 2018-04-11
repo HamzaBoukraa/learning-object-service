@@ -29,14 +29,18 @@ export class LearningObjectInteractor {
     dataStore: DataStore,
     responder: Responder,
     username: string,
-    accessUnpublished?: boolean
+    accessUnpublished?: boolean,
+    orderBy?: string,
+    sortType?: number
   ): Promise<void> {
     try {
       let objectIDs = await dataStore.getUserObjects(username);
       let summary: LearningObject[] = await dataStore.fetchMultipleObjects(
         objectIDs,
         false,
-        accessUnpublished
+        accessUnpublished,
+        orderBy,
+        sortType
       );
       responder.sendObject(summary);
     } catch (e) {

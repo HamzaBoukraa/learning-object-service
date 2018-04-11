@@ -842,15 +842,24 @@ export class MongoDriver implements DataStore {
   async fetchMultipleObjects(
     ids: string[],
     full?: boolean,
-    accessUnpublished?: boolean
+    accessUnpublished?: boolean,
+    orderBy?: string,
+    sortType?: number
   ): Promise<LearningObject[]> {
     try {
       let query: any = { _id: { $in: ids } };
       if (!accessUnpublished) query.published = true;
-      let objects = await this.db
+      let objectCursor = await this.db
         .collection(COLLECTIONS.LearningObject.name)
-        .find<LearningObjectDocument>(query)
-        .toArray();
+        .find<LearningObjectDocument>(query);
+
+      objectCursor = objectCursor.sort(
+        orderBy ? orderBy : 'name',
+        sortType ? sortType : 1
+      );
+
+      const objects = await objectCursor.toArray();
+
       let learningObjects: LearningObject[] = [];
 
       for (let object of objects) {

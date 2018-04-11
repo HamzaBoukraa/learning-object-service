@@ -221,7 +221,8 @@ export class ExpressRouteDriver {
         }
       }
     );
-    router.route('/learning-objects/:username/:learningObjectName/children')
+    router
+      .route('/learning-objects/:username/:learningObjectName/children')
       .post(async (req, res) => {
         try {
           await LearningObjectInteractor.addChild({
@@ -229,7 +230,7 @@ export class ExpressRouteDriver {
             responder: this.getResponder(res),
             childId: req.body.id,
             parentName: req.params.learningObjectName,
-            username: req.params.username,
+            username: req.params.username
           });
         } catch (error) {
           console.log(error);
@@ -242,7 +243,7 @@ export class ExpressRouteDriver {
             responder: this.getResponder(res),
             childId: req.body.id,
             parentName: req.params.learningObjectName,
-            username: req.params.username,
+            username: req.params.username
           });
         } catch (error) {
           console.log(error);
@@ -251,11 +252,15 @@ export class ExpressRouteDriver {
 
     router.get('/learning-objects/summary', async (req, res) => {
       try {
+        let orderBy = req.query.orderBy;
+        let sortType = req.query.sortType ? +req.query.sortType : null;
         await LearningObjectInteractor.loadLearningObjectSummary(
           this.dataStore,
           this.getResponder(res),
           req.user.username,
-          true
+          true,
+          orderBy,
+          sortType
         );
       } catch (e) {
         console.log(e);
