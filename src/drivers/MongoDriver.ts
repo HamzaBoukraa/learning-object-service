@@ -139,14 +139,17 @@ export class MongoDriver implements DataStore {
    *
    * @param {string} dbIP the host and port on which mongodb is running
    */
-  async connect(dburi: string): Promise<void> {
+  async connect(dbURI: string, retryAttempt?: number): Promise<void> {
     try {
-      this.db = await MongoClient.connect(dburi);
-      return Promise.resolve();
+      this.db = await MongoClient.connect(dbURI);
     } catch (e) {
-      return Promise.reject(
-        'Problem connecting to database at ' + dburi + ':\n\t' + e
-      );
+      if (!retryAttempt) {
+        this.connect(dbURI, 1);
+      } else {
+        return Promise.reject(
+          'Problem connecting to database at ' + dbURI + ':\n\t' + e
+        );
+      }
     }
   }
   /**
@@ -953,7 +956,10 @@ export class MongoDriver implements DataStore {
           published: true
         };
 
-        if (authorIDs) query.$or.push(<any>{ authorID: { $in: authorIDs } });
+        if (authorIDs)
+          query.$or.push(<any>{
+            authorID: { $in: authorIDs }
+          });
 
         if (length) query.length = { $in: length };
 
@@ -1107,10 +1113,7 @@ export class MongoDriver implements DataStore {
           };
         }),
         strategies: outcome.strategies.map(strategy => {
-          return {
-            plan: strategy.plan,
-            text: strategy.text
-          };
+          return { plan: strategy.plan, text: strategy.text };
         }),
         mappings: outcome.mappings.map(mapping => mapping.id)
       };
