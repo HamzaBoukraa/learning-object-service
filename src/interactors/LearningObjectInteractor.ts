@@ -169,6 +169,8 @@ export class LearningObjectInteractor {
       error = 'Learning Object name cannot be empty.';
     } else if (object.published && !object.outcomes.length) {
       error = 'Learning Object must have outcomes to publish.';
+    } else if (object.published && !object.goals[0].text) {
+      error = 'Learning Object must have a description to publish.';
     }
     return error;
   }
