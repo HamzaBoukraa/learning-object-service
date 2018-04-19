@@ -2,7 +2,7 @@ import {
   DataStore,
   Responder,
   Interactor,
-  FileManager
+  FileManager,
 } from '../interfaces/interfaces';
 import {
   User,
@@ -13,8 +13,11 @@ import {
   LearningOutcome,
   LearningGoal,
   AssessmentPlan,
-  InstructionalStrategy
+  InstructionalStrategy,
 } from '@cyber4all/clark-entity';
+
+import * as stopword from 'stopword';
+import * as stemmer from 'stemmer';
 
 export class LearningObjectInteractor {
   /**
@@ -31,16 +34,16 @@ export class LearningObjectInteractor {
     username: string,
     accessUnpublished?: boolean,
     orderBy?: string,
-    sortType?: number
+    sortType?: number,
   ): Promise<void> {
     try {
-      let objectIDs = await dataStore.getUserObjects(username);
-      let summary: LearningObject[] = await dataStore.fetchMultipleObjects(
+      const objectIDs = await dataStore.getUserObjects(username);
+      const summary: LearningObject[] = await dataStore.fetchMultipleObjects(
         objectIDs,
         false,
         accessUnpublished,
         orderBy,
-        sortType
+        sortType,
       );
       responder.sendObject(summary);
     } catch (e) {
@@ -62,24 +65,24 @@ export class LearningObjectInteractor {
     responder: Responder,
     username: string,
     learningObjectName: string,
-    accessUnpublished?: boolean
+    accessUnpublished?: boolean,
   ): Promise<void> {
     try {
-      let learningObjectID = await dataStore.findLearningObject(
+      const learningObjectID = await dataStore.findLearningObject(
         username,
-        learningObjectName
+        learningObjectName,
       );
-      let learningObject = await dataStore.fetchLearningObject(
+      const learningObject = await dataStore.fetchLearningObject(
         learningObjectID,
         true,
-        accessUnpublished
+        accessUnpublished,
       );
       if (accessUnpublished) learningObject.id = learningObjectID;
 
       if (learningObject.children) {
         learningObject.children = await this.loadChildObjects(
           dataStore,
-          learningObject
+          learningObject,
         );
       }
       responder.sendObject(learningObject);
@@ -91,12 +94,12 @@ export class LearningObjectInteractor {
 
   private static async loadChildObjects(
     dataStore: DataStore,
-    learningObject: LearningObject
+    learningObject: LearningObject,
   ) {
     // console.log(learningObject);
     if (learningObject.children) {
       const children = await dataStore.fetchMultipleObjects(
-        learningObject.children
+        learningObject.children,
       );
       for (let child of children) {
         child.children = await this.loadChildObjects(dataStore, child);
@@ -109,10 +112,10 @@ export class LearningObjectInteractor {
   public static async loadFullLearningObjectByIDs(
     dataStore: DataStore,
     responder: Responder,
-    ids: string[]
+    ids: string[],
   ): Promise<void> {
     try {
-      let learningObjects = await dataStore.fetchMultipleObjects(ids, true);
+      const learningObjects = await dataStore.fetchMultipleObjects(ids, true);
       responder.sendObject(learningObjects);
     } catch (e) {
       console.log(e);
@@ -138,7 +141,7 @@ export class LearningObjectInteractor {
   public static async addLearningObject(
     dataStore: DataStore,
     responder: Responder,
-    object: LearningObject
+    object: LearningObject,
   ): Promise<void> {
     try {
       const err = this.validateLearningObject(object);
@@ -146,7 +149,7 @@ export class LearningObjectInteractor {
         responder.sendOperationError(err);
         return;
       } else {
-        let learningObjectID = await dataStore.insertLearningObject(object);
+        const learningObjectID = await dataStore.insertLearningObject(object);
         responder.sendObject(learningObjectID);
       }
     } catch (e) {
@@ -154,11 +157,11 @@ export class LearningObjectInteractor {
         responder.sendOperationError(
           `Could not save Learning Object. Learning Object with name: ${
             object.name
-          } already exists.`
+          } already exists.`,
         );
       } else
         responder.sendOperationError(
-          `Problem creating Learning Object. Error${e}`
+          `Problem creating Learning Object. Error${e}`,
         );
     }
   }
@@ -192,14 +195,14 @@ export class LearningObjectInteractor {
     id: string,
     username: string,
     files: any[],
-    filePathMap: Map<string, string>
+    filePathMap: Map<string, string>,
   ): Promise<void> {
     try {
-      let learningObjectFiles = await fileManager.upload(
+      const learningObjectFiles = await fileManager.upload(
         id,
         username,
         files,
-        filePathMap
+        filePathMap,
       );
       responder.sendObject(learningObjectFiles);
     } catch (e) {
@@ -224,7 +227,7 @@ export class LearningObjectInteractor {
     responder: Responder,
     id: string,
     username: string,
-    filename: string
+    filename: string,
   ): Promise<void> {
     try {
       await fileManager.delete(id, username, filename);
@@ -247,12 +250,12 @@ export class LearningObjectInteractor {
     dataStore: DataStore,
     responder: Responder,
     username: string,
-    learningObjectName: string
+    learningObjectName: string,
   ): Promise<void> {
     try {
-      let learningObjectID = await dataStore.findLearningObject(
+      const learningObjectID = await dataStore.findLearningObject(
         username,
-        learningObjectName
+        learningObjectName,
       );
       responder.sendObject(learningObjectID);
     } catch (e) {
@@ -275,7 +278,7 @@ export class LearningObjectInteractor {
     dataStore: DataStore,
     responder: Responder,
     id: string,
-    object: LearningObject
+    object: LearningObject,
   ): Promise<void> {
     try {
       const err = this.validateLearningObject(object);
@@ -296,10 +299,10 @@ export class LearningObjectInteractor {
     responder: Responder,
     username: string,
     id: string,
-    published: boolean
+    published: boolean,
   ): Promise<void> {
     try {
-      let object = await dataStore.fetchLearningObject(id, true, true);
+      const object = await dataStore.fetchLearningObject(id, true, true);
       published ? object.publish() : object.unpublish();
       const err = this.validateLearningObject(object);
       if (err) {
@@ -318,17 +321,17 @@ export class LearningObjectInteractor {
     fileManager: FileManager,
     responder: Responder,
     username: string,
-    learningObjectName: string
+    learningObjectName: string,
   ): Promise<void> {
     try {
-      let learningObjectID = await dataStore.findLearningObject(
+      const learningObjectID = await dataStore.findLearningObject(
         username,
-        learningObjectName
+        learningObjectName,
       );
-      let learningObject = await dataStore.fetchLearningObject(
+      const learningObject = await dataStore.fetchLearningObject(
         learningObjectID,
         false,
-        true
+        true,
       );
       await dataStore.deleteLearningObject(learningObjectID);
       if (learningObject.materials.files.length) {
@@ -345,15 +348,15 @@ export class LearningObjectInteractor {
     fileManager: FileManager,
     responder: Responder,
     username: string,
-    learningObjectNames: string[]
+    learningObjectNames: string[],
   ): Promise<void> {
     try {
-      let learningObjectsWithFiles: LearningObject[] = [];
-      let learningObjectIDs: string[] = [];
+      const learningObjectsWithFiles: LearningObject[] = [];
+      const learningObjectIDs: string[] = [];
       for (let name of learningObjectNames) {
-        let id = await dataStore.findLearningObject(username, name);
+        const id = await dataStore.findLearningObject(username, name);
         learningObjectIDs.push(id);
-        let object = await dataStore.fetchLearningObject(id, false, true);
+        const object = await dataStore.fetchLearningObject(id, false, true);
         object.id = id;
         if (object.materials.files.length)
           learningObjectsWithFiles.push(object);
@@ -377,10 +380,10 @@ export class LearningObjectInteractor {
     dataStore: DataStore,
     responder: Responder,
     currPage: number,
-    limit: number
+    limit: number,
   ): Promise<void> {
     try {
-      let response = await dataStore.fetchAllObjects(currPage, limit);
+      const response = await dataStore.fetchAllObjects(currPage, limit);
       responder.sendObject(response);
     } catch (e) {
       console.log(e);
@@ -396,27 +399,27 @@ export class LearningObjectInteractor {
   public static async fetchMultipleObjects(
     dataStore: DataStore,
     responder: Responder,
-    ids: { username: string; learningObjectName: string }[]
+    ids: { username: string; learningObjectName: string }[],
   ): Promise<void> {
     try {
-      //Get IDs associated with LearningObjects
-      let learningObjectIDs = await Promise.all(
+      // Get IDs associated with LearningObjects
+      const learningObjectIDs = await Promise.all(
         ids.map(id => {
           return new Promise<string>((resolve, reject) => {
             dataStore
               .findLearningObject(id.username, id.learningObjectName)
               .then(
                 learningObjectID => resolve(learningObjectID),
-                err => reject(err)
+                err => reject(err),
               );
           });
-        })
+        }),
       );
 
-      let learningObjects: LearningObject[] = await dataStore.fetchMultipleObjects(
+      const learningObjects: LearningObject[] = await dataStore.fetchMultipleObjects(
         learningObjectIDs,
         false,
-        true
+        true,
       );
       responder.sendObject(learningObjects);
     } catch (e) {
@@ -427,13 +430,13 @@ export class LearningObjectInteractor {
   public static async fetchObjectsByIDs(
     dataStore: DataStore,
     responder: Responder,
-    ids: string[]
+    ids: string[],
   ) {
     try {
-      let learningObjects = await dataStore.fetchMultipleObjects(
+      const learningObjects = await dataStore.fetchMultipleObjects(
         ids,
         true,
-        true
+        true,
       );
       responder.sendObject(learningObjects);
     } catch (e) {
@@ -465,10 +468,14 @@ export class LearningObjectInteractor {
     orderBy?: string,
     sortType?: number,
     currPage?: number,
-    limit?: number
+    limit?: number,
   ): Promise<void> {
     try {
-      let response = await dataStore.searchObjects(
+      if (text) {
+        text = this.removeStopwords(text);
+        text = this.stemWords(text);
+      }
+      const response = await dataStore.searchObjects(
         name,
         author,
         length,
@@ -478,7 +485,7 @@ export class LearningObjectInteractor {
         orderBy,
         sortType,
         currPage,
-        limit
+        limit,
       );
       responder.sendObject(response);
     } catch (e) {
@@ -489,10 +496,10 @@ export class LearningObjectInteractor {
   public static async fetchCollections(
     dataStore: DataStore,
     responder: Responder,
-    loadObjects?: boolean
+    loadObjects?: boolean,
   ) {
     try {
-      let collections = await dataStore.fetchCollections(loadObjects);
+      const collections = await dataStore.fetchCollections(loadObjects);
       responder.sendObject(collections);
     } catch (e) {
       responder.sendOperationError(e);
@@ -502,10 +509,10 @@ export class LearningObjectInteractor {
   public static async fetchCollection(
     dataStore: DataStore,
     responder: Responder,
-    name: string
+    name: string,
   ) {
     try {
-      let collection = await dataStore.fetchCollection(name);
+      const collection = await dataStore.fetchCollection(name);
       responder.sendObject(collection);
     } catch (e) {
       responder.sendOperationError(e);
@@ -521,13 +528,13 @@ export class LearningObjectInteractor {
   }) {
     const parentID = await params.dataStore.findLearningObject(
       params.username,
-      params.parentName
+      params.parentName,
     );
     params.dataStore
       .insertChild(parentID, params.childId)
       .then(data => params.responder.sendOperationSuccess())
       .catch(error =>
-        params.responder.sendOperationError(error.message, error.status)
+        params.responder.sendOperationError(error.message, error.status),
       );
   }
 
@@ -540,13 +547,49 @@ export class LearningObjectInteractor {
   }) {
     const parentID = await params.dataStore.findLearningObject(
       params.username,
-      params.parentName
+      params.parentName,
     );
     params.dataStore
       .deleteChild(parentID, params.childId)
       .then(data => params.responder.sendOperationSuccess())
       .catch(error =>
-        params.responder.sendOperationError(error.message, error.status)
+        params.responder.sendOperationError(error.message, error.status),
       );
+  }
+
+  /**
+   * Returns stems for words in a string
+   *
+   * @private
+   * @static
+   * @param {string} text
+   * @returns {string}
+   * @memberof SuggestionInteractor
+   */
+  private static stemWords(text: string): string {
+    text = text
+      .split(' ')
+      .map(word => stemmer(word))
+      .join(' ')
+      .trim();
+    return text;
+  }
+
+  /**
+   * Returns string without stopwords
+   *
+   * @private
+   * @static
+   * @param {string} text
+   * @returns {string}
+   * @memberof SuggestionInteractor
+   */
+  private static removeStopwords(text: string): string {
+    const oldString = text.split(' ');
+    text = stopword
+      .removeStopwords(oldString)
+      .join(' ')
+      .trim();
+    return text;
   }
 }
