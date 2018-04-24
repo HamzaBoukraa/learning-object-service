@@ -150,7 +150,8 @@ export class LearningObjectInteractor {
         return;
       } else {
         const learningObjectID = await dataStore.insertLearningObject(object);
-        responder.sendObject(learningObjectID);
+        object.id = learningObjectID;
+        responder.sendObject(object);
       }
     } catch (e) {
       if (/duplicate key error/gi.test(e)) {
