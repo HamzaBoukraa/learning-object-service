@@ -16,8 +16,8 @@ export class ExpressRouteDriver {
   constructor(private dataStore: DataStore) {}
 
   public static buildRouter(dataStore: DataStore): Router {
-    let e = new ExpressRouteDriver(dataStore);
-    let router: Router = Router();
+    const e = new ExpressRouteDriver(dataStore);
+    const router: Router = Router();
     e.setRoutes(router);
     return router;
   }
@@ -30,7 +30,7 @@ export class ExpressRouteDriver {
     router.get('/', async (req, res) => {
       res.json({
         version,
-        message: `Welcome to the Learning Objects' API v${version}`
+        message: `Welcome to the Learning Objects' API v${version}`,
       });
     });
 
@@ -38,11 +38,11 @@ export class ExpressRouteDriver {
       .route('/learning-objects')
       .get(async (req, res) => {
         try {
-          let currPage = req.query.currPage ? +req.query.currPage : null;
-          let limit = req.query.limit ? +req.query.limit : null;
+          const currPage = req.query.currPage ? +req.query.currPage : null;
+          const limit = req.query.limit ? +req.query.limit : null;
 
-          let name = req.query.name;
-          let author = req.query.author;
+          const name = req.query.name;
+          const author = req.query.author;
           let length = req.query.length;
           length = length && !Array.isArray(length) ? [length] : length;
           let level = req.query.level;
@@ -54,9 +54,9 @@ export class ExpressRouteDriver {
               : standardOutcomes;
 
           // For broad searching | Search all fields to match inputed text
-          let text = req.query.text;
-          let orderBy = req.query.orderBy;
-          let sortType = req.query.sortType ? +req.query.sortType : null;
+          const text = req.query.text;
+          const orderBy = req.query.orderBy;
+          const sortType = req.query.sortType ? +req.query.sortType : null;
 
           if (
             name ||
@@ -80,14 +80,14 @@ export class ExpressRouteDriver {
               orderBy,
               sortType,
               currPage,
-              limit
+              limit,
             );
           } else {
             await LearningObjectInteractor.fetchAllObjects(
               this.dataStore,
               this.getResponder(res),
               currPage,
-              limit
+              limit,
             );
           }
         } catch (e) {
@@ -96,13 +96,13 @@ export class ExpressRouteDriver {
       })
       .post(async (req, res) => {
         try {
-          let username = req.user.username;
-          let object = LearningObject.instantiate(req.body.object);
+          const username = req.user.username;
+          const object = LearningObject.instantiate(req.body.object);
           object.author.username = username;
           await LearningObjectInteractor.addLearningObject(
             this.dataStore,
             this.getResponder(res),
-            object
+            object,
           );
         } catch (e) {
           console.log(e);
@@ -110,7 +110,7 @@ export class ExpressRouteDriver {
       })
       .patch(async (req, res) => {
         try {
-          let object = LearningObject.instantiate(req.body.learningObject);
+          const object = LearningObject.instantiate(req.body.learningObject);
           if (req.user.username !== object.author.username) {
             this.getResponder(res).sendOperationError('Access Denied');
             return;
@@ -119,7 +119,7 @@ export class ExpressRouteDriver {
             this.dataStore,
             this.getResponder(res),
             object.id,
-            object
+            object,
           );
         } catch (e) {
           console.log(e);
@@ -127,15 +127,15 @@ export class ExpressRouteDriver {
       });
     router.patch('/learning-objects/publish', async (req, res) => {
       try {
-        let id = req.body.id;
-        let published = req.body.published;
+        const id = req.body.id;
+        const published = req.body.published;
 
         await LearningObjectInteractor.togglePublished(
           this.dataStore,
           this.getResponder(res),
           req.user.username,
           id,
-          published
+          published,
         );
       } catch (e) {
         console.log(e);
@@ -143,15 +143,15 @@ export class ExpressRouteDriver {
     });
     router.patch('/learning-objects/unpublish', async (req, res) => {
       try {
-        let id = req.body.id;
-        let published = req.body.published;
+        const id = req.body.id;
+        const published = req.body.published;
 
         await LearningObjectInteractor.togglePublished(
           this.dataStore,
           this.getResponder(res),
           req.user.username,
           id,
-          published
+          published,
         );
       } catch (e) {
         console.log(e);
@@ -159,28 +159,30 @@ export class ExpressRouteDriver {
     });
     router.post('/files', this.upload.any(), async (req, res) => {
       try {
-        let files = req.files;
+        const files = req.files;
         let filePathMap = req.body.filePathMap
           ? JSON.parse(req.body.filePathMap)
           : null;
-        if (filePathMap) filePathMap = new Map<string, string>(filePathMap);
+        if (filePathMap) {
+          filePathMap = new Map<string, string>(filePathMap);
+        }
 
-        let user = await TokenManager.decode(req.cookies.presence);
-        let responder = this.getResponder(res);
+        const user = await TokenManager.decode(req.cookies.presence);
+        const responder = this.getResponder(res);
 
         if (user.emailVerified) {
-          let id = req.body.learningObjectID;
+          const id = req.body.learningObjectID;
           await LearningObjectInteractor.uploadMaterials(
             this.fileManager,
             responder,
             id,
             user.username,
             <any[]>files,
-            filePathMap
+            filePathMap,
           );
         } else {
           responder.sendOperationError(
-            `Invalid access. User must be verified to upload materials.`
+            `Invalid access. User must be verified to upload materials.`,
           );
         }
       } catch (e) {
@@ -189,15 +191,15 @@ export class ExpressRouteDriver {
     });
     router.delete('/files/:id/:filename', async (req, res) => {
       try {
-        let id = req.params.id;
-        let filename = req.params.filename;
-        let username = req.user.username;
+        const id = req.params.id;
+        const filename = req.params.filename;
+        const username = req.user.username;
         await LearningObjectInteractor.deleteFile(
           this.fileManager,
           this.getResponder(res),
           id,
           username,
-          filename
+          filename,
         );
       } catch (e) {
         console.log(e);
@@ -208,18 +210,18 @@ export class ExpressRouteDriver {
       '/learning-objects/:username/:learningObjectName/id',
       async (req, res) => {
         try {
-          let username = req.params.username;
-          let learningObjectName = req.params.learningObjectName;
+          const username = req.params.username;
+          const learningObjectName = req.params.learningObjectName;
           await LearningObjectInteractor.findLearningObject(
             this.dataStore,
             this.getResponder(res),
             username,
-            learningObjectName
+            learningObjectName,
           );
         } catch (e) {
           console.log(e);
         }
-      }
+      },
     );
     router
       .route('/learning-objects/:username/:learningObjectName/children')
@@ -230,7 +232,7 @@ export class ExpressRouteDriver {
             responder: this.getResponder(res),
             childId: req.body.id,
             parentName: req.params.learningObjectName,
-            username: req.params.username
+            username: req.params.username,
           });
         } catch (error) {
           console.log(error);
@@ -243,7 +245,7 @@ export class ExpressRouteDriver {
             responder: this.getResponder(res),
             childId: req.body.id,
             parentName: req.params.learningObjectName,
-            username: req.params.username
+            username: req.params.username,
           });
         } catch (error) {
           console.log(error);
@@ -252,15 +254,15 @@ export class ExpressRouteDriver {
 
     router.get('/learning-objects/summary', async (req, res) => {
       try {
-        let orderBy = req.query.orderBy;
-        let sortType = req.query.sortType ? +req.query.sortType : null;
+        const orderBy = req.query.orderBy;
+        const sortType = req.query.sortType ? +req.query.sortType : null;
         await LearningObjectInteractor.loadLearningObjectSummary(
           this.dataStore,
           this.getResponder(res),
           req.user.username,
           true,
           orderBy,
-          sortType
+          sortType,
         );
       } catch (e) {
         console.log(e);
@@ -272,9 +274,9 @@ export class ExpressRouteDriver {
         try {
           let accessUpublished = false;
           let username = req.params.username;
-          let cookie = req.cookies.presence;
+          const cookie = req.cookies.presence;
           if (req.params.username == 'null' && cookie) {
-            let user = await TokenManager.decode(cookie);
+            const user = await TokenManager.decode(cookie);
             username = user.username;
             accessUpublished = true;
           }
@@ -284,7 +286,7 @@ export class ExpressRouteDriver {
             this.getResponder(res),
             username,
             req.params.learningObjectName,
-            accessUpublished
+            accessUpublished,
           );
         } catch (e) {
           console.log(e);
@@ -292,13 +294,13 @@ export class ExpressRouteDriver {
       });
     router.delete('/learning-objects/:learningObjectName', async (req, res) => {
       try {
-        let learningObjectName = req.params.learningObjectName;
+        const learningObjectName = req.params.learningObjectName;
         await LearningObjectInteractor.deleteLearningObject(
           this.dataStore,
           this.fileManager,
           this.getResponder(res),
           req.user.username,
-          learningObjectName
+          learningObjectName,
         );
       } catch (e) {
         console.log(e);
@@ -309,25 +311,25 @@ export class ExpressRouteDriver {
       '/learning-objects/:learningObjectNames/multiple',
       async (req, res) => {
         try {
-          let learningObjectNames = req.params.learningObjectNames.split(',');
+          const learningObjectNames = req.params.learningObjectNames.split(',');
           await LearningObjectInteractor.deleteMultipleLearningObjects(
             this.dataStore,
             this.fileManager,
             this.getResponder(res),
             req.user.username,
-            learningObjectNames
+            learningObjectNames,
           );
         } catch (e) {
           console.log(e);
         }
-      }
+      },
     );
 
     // router.post('/reorderOutcome', async (req, res) => {
     //   try {
-    //     let outcome = req.body.outcome;
-    //     let object = req.body.object;
-    //     let index = req.body.index;
+    //    const outcome = req.body.outcome;
+    //    const object = req.body.object;
+    //    const index = req.body.index;
     //     await LearningObjectInteractor.reorderOutcome(
     //       this.getResponder(res),
     //       object,
@@ -339,10 +341,10 @@ export class ExpressRouteDriver {
     //   }
     // });
 
-    //Fetches Learing Objects By Username and LearningObject name
+    // Fetches Learing Objects By Username and LearningObject name
     router.post('/learning-objects/multiple', async (req, res) => {
       try {
-        let ids: {
+        const ids: {
           username: string;
           learningObjectName: string;
         }[] =
@@ -350,37 +352,37 @@ export class ExpressRouteDriver {
         await LearningObjectInteractor.fetchMultipleObjects(
           this.dataStore,
           this.getResponder(res),
-          ids
+          ids,
         );
       } catch (e) {
         console.log(e);
       }
     });
 
-    //Fetches Learning Objects by IDs
-    //FIXME: Need to validate token and that it is coming from cart service
+    // Fetches Learning Objects by IDs
+    // FIXME: Need to validate token and that it is coming from cart service
     router.get('/cart/learning-objects/:ids/summary', async (req, res) => {
       try {
-        let ids: string[] = req.params.ids.split(',');
+        const ids: string[] = req.params.ids.split(',');
         await LearningObjectInteractor.fetchObjectsByIDs(
           this.dataStore,
           this.getResponder(res),
-          ids
+          ids,
         );
       } catch (e) {
         console.log(e);
       }
     });
 
-    //Fetches Learning Objects by IDs
-    //FIXME: Need to validate token and that it is coming from cart service
+    // Fetches Learning Objects by IDs
+    // FIXME: Need to validate token and that it is coming from cart service
     router.get('/cart/learning-objects/:ids/full', async (req, res) => {
       try {
-        let ids: string[] = req.params.ids.split(',');
+        const ids: string[] = req.params.ids.split(',');
         await LearningObjectInteractor.loadFullLearningObjectByIDs(
           this.dataStore,
           this.getResponder(res),
-          ids
+          ids,
         );
       } catch (e) {
         console.log(e);
@@ -389,10 +391,10 @@ export class ExpressRouteDriver {
 
     router.get('/collections', async (req, res) => {
       try {
-        let responder = this.getResponder(res);
+        const responder = this.getResponder(res);
         await LearningObjectInteractor.fetchCollections(
           this.dataStore,
-          responder
+          responder,
         );
       } catch (e) {
         console.log(e);
@@ -400,11 +402,11 @@ export class ExpressRouteDriver {
     });
     router.get('/collections/learning-objects', async (req, res) => {
       try {
-        let responder = this.getResponder(res);
+        const responder = this.getResponder(res);
         await LearningObjectInteractor.fetchCollections(
           this.dataStore,
           responder,
-          true
+          true,
         );
       } catch (e) {
         console.log(e);
@@ -412,12 +414,12 @@ export class ExpressRouteDriver {
     });
     router.get('/collections/:name/learning-objects', async (req, res) => {
       try {
-        let name = req.params.name;
-        let responder = this.getResponder(res);
+        const name = req.params.name;
+        const responder = this.getResponder(res);
         await LearningObjectInteractor.fetchCollection(
           this.dataStore,
           responder,
-          name
+          name,
         );
       } catch (e) {
         console.log(e);
@@ -430,7 +432,7 @@ export class ExpressRouteDriver {
           this.dataStore,
           this.getResponder(res),
           req.params.username,
-          false
+          false,
         );
       } catch (e) {
         console.log(e);

@@ -7,13 +7,13 @@ import {
   StandardOutcome,
   User,
   AcademicLevel,
-  Outcome
+  Outcome,
 } from '@cyber4all/clark-entity';
 import {
   LearningObjectDocument,
   LearningOutcomeDocument,
   UserDocument,
-  StandardOutcomeDocument
+  StandardOutcomeDocument,
 } from '@cyber4all/clark-schema';
 import { LearningObjectCollection } from '../interfaces/DataStore';
 import * as request from 'request-promise';
@@ -44,11 +44,11 @@ export class COLLECTIONS {
         name: 'objects',
         data: {
           target: 'LearningObject',
-          child: true
-        }
-      }
+          child: true,
+        },
+      },
     ],
-    uniques: ['username']
+    uniques: ['username'],
   };
   public static LearningObject: Collection = {
     name: 'objects',
@@ -58,18 +58,18 @@ export class COLLECTIONS {
         data: {
           target: 'User',
           child: false,
-          registry: 'objects'
-        }
+          registry: 'objects',
+        },
       },
       {
         name: 'outcomes',
         data: {
           target: 'LearningOutcome',
           child: true,
-          registry: 'source'
-        }
-      }
-    ]
+          registry: 'source',
+        },
+      },
+    ],
   };
   public static LearningOutcome: Collection = {
     name: 'learning-outcomes',
@@ -79,10 +79,10 @@ export class COLLECTIONS {
         data: {
           target: 'LearningObject',
           child: false,
-          registry: 'outcomes'
-        }
-      }
-    ]
+          registry: 'outcomes',
+        },
+      },
+    ],
   };
   public static StandardOutcome: Collection = { name: 'outcomes' };
   public static LearningObjectCollection: Collection = { name: 'collections' };
@@ -95,7 +95,7 @@ COLLECTIONS_MAP.set('LearningOutcome', COLLECTIONS.LearningOutcome);
 COLLECTIONS_MAP.set('StandardOutcome', COLLECTIONS.StandardOutcome);
 COLLECTIONS_MAP.set(
   'LearningObjectCollection',
-  COLLECTIONS.LearningObjectCollection
+  COLLECTIONS.LearningObjectCollection,
 );
 
 export class MongoDriver implements DataStore {
@@ -110,13 +110,13 @@ export class MongoDriver implements DataStore {
         process.env.NODE_ENV === 'production'
           ? process.env.CLARK_DB_URI.replace(
               /<DB_PASSWORD>/g,
-              process.env.CLARK_DB_PWD
+              process.env.CLARK_DB_PWD,
             )
               .replace(/<DB_PORT>/g, process.env.CLARK_DB_PORT)
               .replace(/<DB_NAME>/g, process.env.CLARK_DB_NAME)
           : process.env.CLARK_DB_URI_DEV.replace(
               /<DB_PASSWORD>/g,
-              process.env.CLARK_DB_PWD
+              process.env.CLARK_DB_PWD,
             )
               .replace(/<DB_PORT>/g, process.env.CLARK_DB_PORT)
               .replace(/<DB_NAME>/g, process.env.CLARK_DB_NAME);
@@ -147,7 +147,7 @@ export class MongoDriver implements DataStore {
         this.connect(dbURI, 1);
       } else {
         return Promise.reject(
-          'Problem connecting to database at ' + dbURI + ':\n\t' + e
+          'Problem connecting to database at ' + dbURI + ':\n\t' + e,
         );
       }
     }
@@ -184,9 +184,9 @@ export class MongoDriver implements DataStore {
         {
           learningObjectID: id,
           learningObjectName: object.name,
-          authorName: author.name
+          authorName: author.name,
         },
-        object.outcomes
+        object.outcomes,
       );
       return id;
     } catch (e) {
@@ -220,13 +220,13 @@ export class MongoDriver implements DataStore {
       } else {
         return Promise.reject({
           message: `${childId} does not exist`,
-          status: 404
+          status: 404,
         });
       }
     } catch (error) {
       return Promise.reject({
         message: `Problem inserting child ${childId} into Object ${parentId}`,
-        status: 400
+        status: 400,
       });
     }
   }
@@ -250,7 +250,7 @@ export class MongoDriver implements DataStore {
             ? Promise.resolve()
             : Promise.reject({
                 message: `${childId} is not a child of Object ${parentId}`,
-                status: 404
+                status: 404,
               });
         });
     } catch (error) {
@@ -259,7 +259,7 @@ export class MongoDriver implements DataStore {
       }
       return Promise.reject({
         message: `Problem removing child ${childId} from Object ${parentId}`,
-        status: 400
+        status: 400,
       });
     }
   }
@@ -277,7 +277,7 @@ export class MongoDriver implements DataStore {
       learningObjectName: string;
       authorName: string;
     },
-    outcomes: LearningOutcome[]
+    outcomes: LearningOutcome[],
   ): Promise<void> {
     try {
       for (let outcome of outcomes) {
@@ -310,13 +310,13 @@ export class MongoDriver implements DataStore {
     let target = await this.db.collection('outcomes').findOne({ _id: mapping });
     if (!target)
       return Promise.reject(
-        'Registration failed: no mapping ' + mapping + 'found in outcomes'
+        'Registration failed: no mapping ' + mapping + 'found in outcomes',
       );
     return this.register(
       COLLECTIONS.LearningOutcome,
       outcome,
       'mappings',
-      mapping
+      mapping,
     );
   }
 
@@ -332,7 +332,7 @@ export class MongoDriver implements DataStore {
       COLLECTIONS.LearningOutcome,
       outcome,
       'mappings',
-      mapping
+      mapping,
     );
   }
 
@@ -347,14 +347,14 @@ export class MongoDriver implements DataStore {
   async reorderOutcome(
     object: string,
     outcome: string,
-    index: number
+    index: number,
   ): Promise<void> {
     return this.reorder(
       COLLECTIONS.LearningObject,
       object,
       'outcomes',
       outcome,
-      index
+      index,
     );
   }
 
@@ -373,7 +373,7 @@ export class MongoDriver implements DataStore {
     try {
       let old = await this.fetch<LearningObjectDocument>(
         COLLECTIONS.LearningObject,
-        id
+        id,
       );
       let author = await this.fetchUser(old.authorID);
       if (!author.emailVerified) object.unpublish();
@@ -394,7 +394,7 @@ export class MongoDriver implements DataStore {
           await this.editLearningOutcome(outcomeID, outcome, {
             learningObjectID: id,
             learningObjectName: doc.name,
-            authorName: object.author.name
+            authorName: object.author.name,
           });
         } catch (e) {
           //If outcome does not exist, add it;
@@ -408,9 +408,9 @@ export class MongoDriver implements DataStore {
           {
             learningObjectID: id,
             learningObjectName: doc.name,
-            authorName: object.author.name
+            authorName: object.author.name,
           },
-          outcomesToAdd
+          outcomesToAdd,
         );
       }
 
@@ -429,9 +429,9 @@ export class MongoDriver implements DataStore {
         {
           $set: {
             name: object.name,
-            date: object.date
-          }
-        }
+            date: object.date,
+          },
+        },
       );
 
       return Promise.resolve();
@@ -443,7 +443,7 @@ export class MongoDriver implements DataStore {
   public async togglePublished(
     username: string,
     id: string,
-    published: boolean
+    published: boolean,
   ): Promise<void> {
     try {
       let userID = await this.findUser(username);
@@ -451,7 +451,7 @@ export class MongoDriver implements DataStore {
       //check if user is verified and if user is attempting to publish. If not verified and attempting to publish reject
       if (!user.emailVerified && published)
         return Promise.reject(
-          `Invalid access. User must be verified to publish Learning Objects`
+          `Invalid access. User must be verified to publish Learning Objects`,
         );
       //else
       await this.db
@@ -477,11 +477,11 @@ export class MongoDriver implements DataStore {
       learningObjectID: string;
       learningObjectName: string;
       authorName: string;
-    }
+    },
   ): Promise<void> {
     let doc: LearningOutcomeDocument = await this.documentLearningOutcome(
       outcome,
-      source
+      source,
     );
     return this.edit(COLLECTIONS.LearningOutcome, id, doc);
   }
@@ -525,7 +525,7 @@ export class MongoDriver implements DataStore {
     return Promise.all(
       ids.map(id => {
         return this.remove(COLLECTIONS.LearningObject, id);
-      })
+      }),
     );
   }
 
@@ -538,7 +538,7 @@ export class MongoDriver implements DataStore {
       process.env.CART_SERVICE_URI +
         '/libraries/learning-objects/' +
         ids.join(',') +
-        '/clean'
+        '/clean',
     );
   }
 
@@ -608,7 +608,7 @@ export class MongoDriver implements DataStore {
         .findOne<UserDocument>(query);
       if (!userRecord)
         return Promise.reject(
-          'No user with username or email' + username + ' exists.'
+          'No user with username or email' + username + ' exists.',
         );
       return `${userRecord._id}`;
     } catch (e) {
@@ -632,11 +632,11 @@ export class MongoDriver implements DataStore {
         .collection(COLLECTIONS.LearningObject.name)
         .findOne<LearningObjectDocument>({
           authorID: authorID,
-          name: name
+          name: name,
         });
       if (!doc)
         return Promise.reject(
-          "No learning object '" + name + "' for the given user"
+          "No learning object '" + name + "' for the given user",
         );
       return Promise.resolve(doc._id);
     } catch (e) {
@@ -655,18 +655,18 @@ export class MongoDriver implements DataStore {
    */
   private async findLearningOutcome(
     source: string,
-    tag: number
+    tag: number,
   ): Promise<string> {
     try {
       let doc = await this.db
         .collection(COLLECTIONS.LearningOutcome.name)
         .findOne<LearningOutcomeDocument>({
           source: source,
-          tag: tag
+          tag: tag,
         });
       if (!doc)
         return Promise.reject(
-          "No learning outcome '" + tag + "' for the given learning object"
+          "No learning outcome '" + tag + "' for the given learning object",
         );
       return Promise.resolve(doc._id);
     } catch (e) {
@@ -684,18 +684,18 @@ export class MongoDriver implements DataStore {
   async findMappingID(
     date: string,
     name: string,
-    outcome: string
+    outcome: string,
   ): Promise<string> {
     try {
       let tag = date + '$' + name + '$' + outcome;
       let doc = await this.db
         .collection(COLLECTIONS.StandardOutcome.name)
         .findOne<StandardOutcomeDocument>({
-          tag: tag
+          tag: tag,
         });
       if (!doc)
         return Promise.reject(
-          "No mappings found with tag: '" + tag + "' in the database"
+          "No mappings found with tag: '" + tag + "' in the database",
         );
       return Promise.resolve(doc._id);
     } catch (e) {
@@ -728,22 +728,22 @@ export class MongoDriver implements DataStore {
   async fetchLearningObject(
     id: string,
     full?: boolean,
-    accessUnpublished?: boolean
+    accessUnpublished?: boolean,
   ): Promise<LearningObject> {
     let object = await this.fetch<LearningObjectDocument>(
       COLLECTIONS.LearningObject,
-      id
+      id,
     );
     let author = await this.fetchUser(object.authorID);
 
     let learningObject = await this.generateLearningObject(
       author,
       object,
-      full
+      full,
     );
     if (!accessUnpublished && !learningObject.published)
       return Promise.reject(
-        'User does not have access to the requested resource.'
+        'User does not have access to the requested resource.',
       );
     return learningObject;
   }
@@ -760,7 +760,7 @@ export class MongoDriver implements DataStore {
     try {
       let record = await this.fetch<LearningOutcomeDocument>(
         COLLECTIONS.LearningOutcome,
-        id
+        id,
       );
       let outcome = await this.generateLearningOutcome(record);
       return outcome;
@@ -781,7 +781,7 @@ export class MongoDriver implements DataStore {
     try {
       let record = await this.fetch<StandardOutcomeDocument>(
         COLLECTIONS.StandardOutcome,
-        id
+        id,
       );
       let outcome = await this.generateStandardOutcome(record);
       return outcome;
@@ -796,7 +796,7 @@ export class MongoDriver implements DataStore {
    */
   async fetchAllObjects(
     currPage?: number,
-    limit?: number
+    limit?: number,
   ): Promise<{ objects: LearningObject[]; total: number }> {
     if (currPage !== undefined && currPage <= 0) currPage = 1;
     let skip = currPage && limit ? (currPage - 1) * limit : undefined;
@@ -808,7 +808,9 @@ export class MongoDriver implements DataStore {
       objectCursor =
         skip !== undefined
           ? objectCursor.skip(skip).limit(limit)
-          : limit ? objectCursor.limit(limit) : objectCursor;
+          : limit
+            ? objectCursor.limit(limit)
+            : objectCursor;
       let objects = await objectCursor.toArray();
 
       let learningObjects: LearningObject[] = [];
@@ -818,14 +820,14 @@ export class MongoDriver implements DataStore {
         let learningObject = await this.generateLearningObject(
           author,
           object,
-          false
+          false,
         );
         learningObjects.push(learningObject);
       }
 
       return Promise.resolve({
         objects: learningObjects,
-        total: totalRecords
+        total: totalRecords,
       });
     } catch (e) {
       return Promise.reject(`Error fetching all learning objects. Error: ${e}`);
@@ -844,7 +846,7 @@ export class MongoDriver implements DataStore {
     full?: boolean,
     accessUnpublished?: boolean,
     orderBy?: string,
-    sortType?: number
+    sortType?: number,
   ): Promise<LearningObject[]> {
     try {
       let query: any = { _id: { $in: ids } };
@@ -855,7 +857,7 @@ export class MongoDriver implements DataStore {
 
       objectCursor = objectCursor.sort(
         orderBy ? orderBy : 'name',
-        sortType ? sortType : 1
+        sortType ? sortType : 1,
       );
 
       const objects = await objectCursor.toArray();
@@ -867,7 +869,7 @@ export class MongoDriver implements DataStore {
         let learningObject = await this.generateLearningObject(
           author,
           object,
-          full
+          full,
         );
         if (accessUnpublished) learningObject.id = object._id;
         learningObjects.push(learningObject);
@@ -876,7 +878,7 @@ export class MongoDriver implements DataStore {
       return learningObjects;
     } catch (e) {
       return Promise.reject(
-        `Problem fecthing LearningObjects: ${ids}. Error: ${e}`
+        `Problem fecthing LearningObjects: ${ids}. Error: ${e}`,
       );
     }
   }
@@ -899,7 +901,7 @@ export class MongoDriver implements DataStore {
     orderBy?: string,
     sortType?: number,
     currPage?: number,
-    limit?: number
+    limit?: number,
   ): Promise<{ objects: LearningObject[]; total: number }> {
     if (currPage !== undefined && currPage <= 0) currPage = 1;
     let skip = currPage && limit ? (currPage - 1) * limit : undefined;
@@ -914,15 +916,15 @@ export class MongoDriver implements DataStore {
                 $or: [
                   {
                     name: {
-                      $regex: new RegExp(author ? author : text, 'ig')
-                    }
+                      $regex: new RegExp(author ? author : text, 'ig'),
+                    },
                   },
                   {
                     organization: {
-                      $regex: new RegExp(text, 'ig')
-                    }
-                  }
-                ]
+                      $regex: new RegExp(text, 'ig'),
+                    },
+                  },
+                ],
               })
               .toArray()
           : null;
@@ -933,7 +935,7 @@ export class MongoDriver implements DataStore {
         ? await this.db
             .collection(COLLECTIONS.LearningOutcome.name)
             .find<LearningOutcomeDocument>({
-              mappings: { $all: standardOutcomeIDs }
+              mappings: { $all: standardOutcomeIDs },
             })
             .toArray()
         : null;
@@ -949,16 +951,16 @@ export class MongoDriver implements DataStore {
             { name: { $regex: new RegExp(text, 'ig') } },
             {
               goals: {
-                $elemMatch: { text: { $regex: new RegExp(text, 'ig') } }
-              }
-            }
+                $elemMatch: { text: { $regex: new RegExp(text, 'ig') } },
+              },
+            },
           ],
-          published: true
+          published: true,
         };
 
         if (authorIDs)
           query.$or.push(<any>{
-            authorID: { $in: authorIDs }
+            authorID: { $in: authorIDs },
           });
 
         if (length) query.length = { $in: length };
@@ -989,7 +991,9 @@ export class MongoDriver implements DataStore {
       objectCursor =
         skip !== undefined
           ? objectCursor.skip(skip).limit(limit)
-          : limit ? objectCursor.limit(limit) : objectCursor;
+          : limit
+            ? objectCursor.limit(limit)
+            : objectCursor;
 
       //SortBy
       objectCursor = orderBy
@@ -1004,14 +1008,14 @@ export class MongoDriver implements DataStore {
         let learningObject = await this.generateLearningObject(
           author,
           object,
-          false
+          false,
         );
         learningObjects.push(learningObject);
       }
 
       return Promise.resolve({
         objects: learningObjects,
-        total: totalRecords
+        total: totalRecords,
       });
     } catch (e) {
       return Promise.reject('Error suggesting objects' + e);
@@ -1052,7 +1056,7 @@ export class MongoDriver implements DataStore {
   private async documentLearningObject(
     object: LearningObject,
     isNew?: boolean,
-    id?: string
+    id?: string,
   ): Promise<LearningObjectDocument> {
     try {
       let authorID = await this.findUser(object.author.username);
@@ -1065,12 +1069,12 @@ export class MongoDriver implements DataStore {
         levels: object.levels,
         goals: object.goals.map(goal => {
           return {
-            text: goal.text
+            text: goal.text,
           };
         }),
         outcomes: [],
         materials: object.materials,
-        published: object.published
+        published: object.published,
       };
       if (isNew) {
         doc._id = new ObjectID().toHexString();
@@ -1081,7 +1085,7 @@ export class MongoDriver implements DataStore {
       return doc;
     } catch (e) {
       return Promise.reject(
-        `Problem creating document for Learning Object. Error:${e}`
+        `Problem creating document for Learning Object. Error:${e}`,
       );
     }
   }
@@ -1093,7 +1097,7 @@ export class MongoDriver implements DataStore {
       learningObjectName: string;
       authorName: string;
     },
-    isNew?: boolean
+    isNew?: boolean,
   ): Promise<LearningOutcomeDocument> {
     try {
       let doc: LearningOutcomeDocument = {
@@ -1109,13 +1113,13 @@ export class MongoDriver implements DataStore {
         assessments: outcome.assessments.map(assessment => {
           return {
             plan: assessment.plan,
-            text: assessment.text
+            text: assessment.text,
           };
         }),
         strategies: outcome.strategies.map(strategy => {
           return { plan: strategy.plan, text: strategy.text };
         }),
-        mappings: outcome.mappings.map(mapping => mapping.id)
+        mappings: outcome.mappings.map(mapping => mapping.id),
       };
 
       if (isNew) {
@@ -1124,7 +1128,7 @@ export class MongoDriver implements DataStore {
       return doc;
     } catch (e) {
       return Promise.reject(
-        `Problem creating document for Learning Outcome. Error:${e}`
+        `Problem creating document for Learning Outcome. Error:${e}`,
       );
     }
   }
@@ -1135,7 +1139,7 @@ export class MongoDriver implements DataStore {
       userRecord.name,
       userRecord.email,
       userRecord.organization,
-      null
+      null,
     );
     user.emailVerified = userRecord.emailVerified
       ? userRecord.emailVerified
@@ -1147,7 +1151,7 @@ export class MongoDriver implements DataStore {
   private async generateLearningObject(
     author: User,
     record: LearningObjectDocument,
-    full?: boolean
+    full?: boolean,
   ): Promise<LearningObject> {
     // Logic for loading any learning object
     let learningObject = new LearningObject(author, record.name);
@@ -1195,7 +1199,7 @@ export class MongoDriver implements DataStore {
   }
 
   private async generateLearningOutcome(
-    record: LearningOutcomeDocument
+    record: LearningOutcomeDocument,
   ): Promise<LearningOutcome> {
     try {
       let outcome = new LearningOutcome(new LearningObject());
@@ -1230,7 +1234,7 @@ export class MongoDriver implements DataStore {
       author: record.author,
       name: record.name,
       date: record.date,
-      outcome: record.outcome
+      outcome: record.outcome,
     };
 
     return outcome;
@@ -1248,7 +1252,7 @@ export class MongoDriver implements DataStore {
    */
   private async validateForeignKeys<T>(
     record: T,
-    foreigns: Foriegn[]
+    foreigns: Foriegn[],
   ): Promise<void> {
     try {
       if (foreigns)
@@ -1271,7 +1275,7 @@ export class MongoDriver implements DataStore {
                   key +
                   ' not in ' +
                   data.target +
-                  ' collection'
+                  ' collection',
               );
             }
           }
@@ -1295,7 +1299,7 @@ export class MongoDriver implements DataStore {
     collection: Collection,
     owner: string,
     registry: string,
-    item: string
+    item: string,
   ): Promise<void> {
     try {
       // check validity of values before making any changes
@@ -1307,7 +1311,7 @@ export class MongoDriver implements DataStore {
           'Registration failed: no owner ' +
             owner +
             'found in ' +
-            collection.name
+            collection.name,
         );
       // NOTE: below line is no good because schemaFor(outcomes) is arbitrary
       // let mapping = await this.db.collection(foreignData(schemaFor(collection), registry).target).findOne({ _id: item });
@@ -1329,7 +1333,7 @@ export class MongoDriver implements DataStore {
           ' ' +
           registry +
           ' field:\n\t' +
-          e
+          e,
       );
     }
   }
@@ -1347,7 +1351,7 @@ export class MongoDriver implements DataStore {
     collection: Collection,
     owner: string,
     registry: string,
-    item: string
+    item: string,
   ): Promise<void> {
     try {
       // check validity of values before making any changes
@@ -1356,7 +1360,10 @@ export class MongoDriver implements DataStore {
         .findOne({ _id: owner });
       if (!record)
         return Promise.reject(
-          'Unregistration failed: no record ' + owner + 'found in ' + collection
+          'Unregistration failed: no record ' +
+            owner +
+            'found in ' +
+            collection,
         );
       if (!record[registry].includes(item)) {
         return Promise.reject(
@@ -1365,7 +1372,7 @@ export class MongoDriver implements DataStore {
             "'s " +
             registry +
             ' field has no element ' +
-            item
+            item,
         );
       }
 
@@ -1384,7 +1391,7 @@ export class MongoDriver implements DataStore {
           ' ' +
           registry +
           ' field:\n\t' +
-          e
+          e,
       );
     }
   }
@@ -1404,7 +1411,7 @@ export class MongoDriver implements DataStore {
     owner: string,
     registry: string,
     item: string,
-    index: number
+    index: number,
   ): Promise<void> {
     try {
       // check validity of values before making any changes
@@ -1413,7 +1420,7 @@ export class MongoDriver implements DataStore {
         .findOne({ _id: owner });
       if (!record)
         return Promise.reject(
-          'Reorder failed: no record ' + owner + 'found in ' + collection.name
+          'Reorder failed: no record ' + owner + 'found in ' + collection.name,
         );
       if (!record[registry].includes(item)) {
         return Promise.reject(
@@ -1422,14 +1429,14 @@ export class MongoDriver implements DataStore {
             "'s " +
             registry +
             ' field has no element ' +
-            item
+            item,
         );
       }
       if (index < 0)
         return Promise.reject('Reorder failed: index cannot be negative');
       if (index >= record[registry].length) {
         return Promise.reject(
-          'Reorder failed: index exceeds length of ' + registry + ' field'
+          'Reorder failed: index exceeds length of ' + registry + ' field',
         );
       }
 
@@ -1480,14 +1487,14 @@ export class MongoDriver implements DataStore {
               collection,
               record[foreign.name],
               data.registry,
-              `${id}`
+              `${id}`,
             );
           }
         }
       return Promise.resolve(`${id}`);
     } catch (e) {
       return Promise.reject(
-        'Problem inserting a ' + collection.name + ':\n\t' + e
+        'Problem inserting a ' + collection.name + ':\n\t' + e,
       );
     }
   }
@@ -1503,7 +1510,7 @@ export class MongoDriver implements DataStore {
   private async edit<T>(
     collection: Collection,
     id: string,
-    record: T
+    record: T,
   ): Promise<void> {
     try {
       // no foreign fields, no need to validate
@@ -1519,7 +1526,7 @@ export class MongoDriver implements DataStore {
     } catch (e) {
       console.log(e);
       return Promise.reject(
-        'Problem editing a ' + collection.name + ':\n\t' + e
+        'Problem editing a ' + collection.name + ':\n\t' + e,
       );
     }
   }
@@ -1590,7 +1597,7 @@ export class MongoDriver implements DataStore {
         'Problem fetching a ' +
           collection.name +
           ':\n\tInvalid database id ' +
-          JSON.stringify(id)
+          JSON.stringify(id),
       );
     return Promise.resolve(record);
   }

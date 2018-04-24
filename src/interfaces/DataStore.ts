@@ -3,7 +3,7 @@ import {
   LearningOutcome,
   StandardOutcome,
   User,
-  Collection
+  Collection,
 } from '@cyber4all/clark-entity';
 
 export interface DataStore {
@@ -13,7 +13,7 @@ export interface DataStore {
   reorderOutcome(
     objectID: string,
     outcomeID: string,
-    index: number
+    index: number,
   ): Promise<void>;
   editLearningObject(id: string, object: LearningObject): Promise<void>;
   deleteLearningObject(id: string): Promise<void>;
@@ -23,18 +23,18 @@ export interface DataStore {
   fetchLearningObject(
     id: string,
     full?: boolean,
-    accessUnpublished?: boolean
+    accessUnpublished?: boolean,
   ): Promise<LearningObject>;
   fetchMultipleObjects(
     ids: string[],
     full?: boolean,
     accessUnpublished?: boolean,
     orderBy?: string,
-    sortType?: number
+    sortType?: number,
   ): Promise<LearningObject[]>;
   fetchAllObjects(
     currPage?: number,
-    limit?: number
+    limit?: number,
   ): Promise<{ objects: LearningObject[]; total: number }>;
   searchObjects(
     name: string,
@@ -46,14 +46,14 @@ export interface DataStore {
     orderBy?: string,
     sortType?: number,
     currPage?: number,
-    limit?: number
+    limit?: number,
   ): Promise<{ objects: LearningObject[]; total: number }>;
   fetchCollections(loadObjects?: boolean): Promise<Collection[]>;
   fetchCollection(name: string): Promise<Collection>;
   togglePublished(
     username: string,
     id: string,
-    published: boolean
+    published: boolean,
   ): Promise<void>;
   insertChild(parentId: string, childId: string): Promise<void>;
   deleteChild(parentId: string, childId: string): Promise<void>;
