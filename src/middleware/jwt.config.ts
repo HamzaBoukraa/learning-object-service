@@ -12,22 +12,22 @@ export const enforceTokenAccess = jwt({
   issuer: process.env.ISSUER,
   getToken: req => {
     return req.cookies.presence;
-  }
+  },
 }).unless({
   // Routes that don't require authorization
   path: [
     '/',
     { url: '/learning-objects', methods: ['GET'] },
     {
-      url: /\/learning-objects\/[A-Z,a-z,0-9,_]+\/[A-Z,a-z,0-9,_]+/i,
-      methods: ['GET']
+      url: /\/learning-objects\/[0-z,.,-]+\/[0-z,.,-]+/i,
+      methods: ['GET'],
     },
     '/learning-objects/multiple',
-    /\/learning-objects\/[(A-Z,a-z,0-9,_)]+\/summary/i,
-    /\/learning-objects\/[(A-Z,a-z,0-9,_)]+\/full/i,
+    /\/learning-objects\/[(0-z,.,-)]+\/summary/i,
+    /\/learning-objects\/[(0-z,.,-)]+\/full/i,
     '/collections',
     '/collections/learning-objects',
     /\/collections\/.+\/learning-objects/i,
-    /\/users\/[(A-Z,a-z,0-9,_)]+\/learning-objects/i
-  ]
+    /\/users\/[(0-z,.,-)]+\/learning-objects/i,
+  ],
 });
