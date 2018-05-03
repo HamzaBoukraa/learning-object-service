@@ -1,9 +1,12 @@
-import { ExpressDriver, MongoDriver } from './drivers/drivers';
-import { DataStore } from './interfaces/interfaces';
+import { ExpressDriver, MongoDriver, S3Driver } from './drivers/drivers';
+import { DataStore, FileManager } from './interfaces/interfaces';
 
 // ----------------------------------------------------------------------------------
 // Initializations
 // ----------------------------------------------------------------------------------
-let dataStore: DataStore = new MongoDriver();
+const dataStore: DataStore = new MongoDriver();
+
+const fileManager: FileManager = new S3Driver();
+
 // ----------------------------------------------------------------------------------
-ExpressDriver.start(dataStore);
+ExpressDriver.start(dataStore, fileManager);
