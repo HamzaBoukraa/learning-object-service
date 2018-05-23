@@ -22,16 +22,16 @@ dotenv.config();
 
 export interface Collection {
   name: string;
-  foreigns?: Foriegn[];
+  foreigns?: Foreign[];
   uniques?: string[];
   text?: string[];
 }
-export interface Foriegn {
+export interface Foreign {
   name: string;
-  data: ForiegnData;
+  data: ForeignData;
 }
 
-export interface ForiegnData {
+export interface ForeignData {
   target: string;
   child: boolean;
   registry?: string;
@@ -174,11 +174,11 @@ export class MongoDriver implements DataStore {
    */
   async insertLearningObject(object: LearningObject): Promise<string> {
     try {
-      let authorID = await this.findUser(object.author.username);
-      let author = await this.fetchUser(authorID);
+      const authorID = await this.findUser(object.author.username);
+      const author = await this.fetchUser(authorID);
       if (!author.emailVerified) object.unpublish();
-      let doc = await this.documentLearningObject(object, true);
-      let id = await this.insert(COLLECTIONS.LearningObject, doc);
+      const doc = await this.documentLearningObject(object, true);
+      const id = await this.insert(COLLECTIONS.LearningObject, doc);
 
       await this.insertLearningOutcomes(
         {
@@ -232,7 +232,7 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Deletes a child id from a learning object's children array if the child object
+   * Deconstes a child id from a learning object's children array if the child object
    * exists in the children array.
    *
    * @async
@@ -240,7 +240,7 @@ export class MongoDriver implements DataStore {
    * @param {string} childId The database ID of the child Learning Object
    * @memberof MongoDriver
    */
-  async deleteChild(parentId: string, childId: string) {
+  async deconsteChild(parentId: string, childId: string) {
     try {
       await this.db
         .collection(COLLECTIONS.LearningObject.name)
@@ -280,8 +280,8 @@ export class MongoDriver implements DataStore {
     outcomes: LearningOutcome[],
   ): Promise<void> {
     try {
-      for (let outcome of outcomes) {
-        let doc = await this.documentLearningOutcome(outcome, source, true);
+      for (const outcome of outcomes) {
+        const doc = await this.documentLearningOutcome(outcome, source, true);
         await this.insert(COLLECTIONS.LearningOutcome, doc);
       }
     } catch (e) {
@@ -307,7 +307,9 @@ export class MongoDriver implements DataStore {
          */
     // validate mapping, since it can't (currently) happen in generic register function
     // NOTE: this is a temporary fix. Do TODO above!
-    let target = await this.db.collection('outcomes').findOne({ _id: mapping });
+    const target = await this.db
+      .collection('outcomes')
+      .findOne({ _id: mapping });
     if (!target)
       return Promise.reject(
         'Registration failed: no mapping ' + mapping + 'found in outcomes',
@@ -371,33 +373,33 @@ export class MongoDriver implements DataStore {
    */
   async editLearningObject(id: string, object: LearningObject): Promise<void> {
     try {
-      let old = await this.fetch<LearningObjectDocument>(
+      const old = await this.fetch<LearningObjectDocument>(
         COLLECTIONS.LearningObject,
         id,
       );
-      let author = await this.fetchUser(old.authorID);
+      const author = await this.fetchUser(old.authorID);
       if (!author.emailVerified) object.unpublish();
 
-      let doc = await this.documentLearningObject(object, false, id);
+      const doc = await this.documentLearningObject(object, false, id);
       // perform edit first, so uniqueness problems get caught BEFORE we edit outcomes
       await this.edit(COLLECTIONS.LearningObject, id, doc);
 
-      let outcomesToAdd = [];
+      const outcomesToAdd = [];
       let oldOutcomes: Set<string> | string[] = new Set(old.outcomes);
-      for (let outcome of object.outcomes) {
+      for (const outcome of object.outcomes) {
         try {
           // Check if outcome already exists
-          let outcomeID = await this.findLearningOutcome(id, outcome.tag);
-          //Remove from array of outcomes
+          const outcomeID = await this.findLearningOutcome(id, outcome.tag);
+          // Remove from array of outcomes
           oldOutcomes.delete(outcomeID);
-          //Edit Learning Outcome
+          // Edit Learning Outcome
           await this.editLearningOutcome(outcomeID, outcome, {
             learningObjectID: id,
             learningObjectName: doc.name,
             authorName: object.author.name,
           });
         } catch (e) {
-          //If outcome does not exist, add it;
+          // If outcome does not exist, add it;
           outcomesToAdd.push(outcome);
         }
       }
@@ -414,11 +416,11 @@ export class MongoDriver implements DataStore {
         );
       }
 
-      // Remove deleted outcomes
+      // Remove deconsted outcomes
       oldOutcomes = Array.from(oldOutcomes);
 
       if (oldOutcomes.length) {
-        for (let outcomeID of oldOutcomes) {
+        for (const outcomeID of oldOutcomes) {
           await this.remove(COLLECTIONS.LearningOutcome, outcomeID);
         }
       }
@@ -446,14 +448,14 @@ export class MongoDriver implements DataStore {
     published: boolean,
   ): Promise<void> {
     try {
-      let userID = await this.findUser(username);
-      let user = await this.fetchUser(userID);
-      //check if user is verified and if user is attempting to publish. If not verified and attempting to publish reject
+      const userID = await this.findUser(username);
+      const user = await this.fetchUser(userID);
+      // check if user is verified and if user is attempting to publish. If not verified and attempting to publish reject
       if (!user.emailVerified && published)
         return Promise.reject(
           `Invalid access. User must be verified to publish Learning Objects`,
         );
-      //else
+      // else
       await this.db
         .collection(COLLECTIONS.LearningObject.name)
         .update({ _id: id }, { $set: { published: published } });
@@ -479,7 +481,7 @@ export class MongoDriver implements DataStore {
       authorName: string;
     },
   ): Promise<void> {
-    let doc: LearningOutcomeDocument = await this.documentLearningOutcome(
+    const doc: LearningOutcomeDocument = await this.documentLearningOutcome(
       outcome,
       source,
     );
@@ -487,16 +489,16 @@ export class MongoDriver implements DataStore {
   }
 
   //////////////////////////////////////////
-  // DELETIONS - will cascade to children //
+  // DEconstIONS - will cascade to children //
   //////////////////////////////////////////
 
   /**
    * Remove a learning object (and its outcomes) from the database.
    * @async
    *
-   * @param {LearningObjectID} id which document to delete
+   * @param {LearningObjectID} id which document to deconste
    */
-  async deleteLearningObject(id: string): Promise<void> {
+  async deconsteLearningObject(id: string): Promise<void> {
     // remove object from all carts first
     try {
       await this.cleanObjectsFromCarts([id]);
@@ -511,9 +513,9 @@ export class MongoDriver implements DataStore {
    * Remove a learning object (and its outcomes) from the database.
    * @async
    *
-   * @param {LearningObjectID} id which document to delete
+   * @param {LearningObjectID} id which document to deconste
    */
-  async deleteMultipleLearningObjects(ids: string[]): Promise<any> {
+  async deconsteMultipleLearningObjects(ids: string[]): Promise<any> {
     // remove objects from all carts first
     try {
       await this.cleanObjectsFromCarts(ids);
@@ -546,9 +548,9 @@ export class MongoDriver implements DataStore {
    * Remove a learning outcome from the database.
    * @async
    *
-   * @param {LearningOutcomeID} id which document to delete
+   * @param {LearningOutcomeID} id which document to deconste
    */
-  private async deleteLearningOutcome(id: string): Promise<void> {
+  private async deconsteLearningOutcome(id: string): Promise<void> {
     try {
       // find any outcomes mapping to this one, and unmap them
       //  this data assurance step is in the general category of
@@ -577,8 +579,8 @@ export class MongoDriver implements DataStore {
    */
   async getUserObjects(username: string): Promise<string[]> {
     try {
-      let id = await this.findUser(username);
-      let user = await this.db
+      const id = await this.findUser(username);
+      const user = await this.db
         .collection(COLLECTIONS.User.name)
         .findOne<UserDocument>({ _id: id });
       return user.objects;
@@ -597,13 +599,13 @@ export class MongoDriver implements DataStore {
    */
   async findUser(username: string): Promise<string> {
     try {
-      let query = {};
+      const query = {};
       if (isEmail(username)) {
         query['email'] = username;
       } else {
         query['username'] = username;
       }
-      let userRecord = await this.db
+      const userRecord = await this.db
         .collection(COLLECTIONS.User.name)
         .findOne<UserDocument>(query);
       if (!userRecord)
@@ -627,8 +629,8 @@ export class MongoDriver implements DataStore {
    */
   async findLearningObject(username: string, name: string): Promise<string> {
     try {
-      let authorID = await this.findUser(username);
-      let doc = await this.db
+      const authorID = await this.findUser(username);
+      const doc = await this.db
         .collection(COLLECTIONS.LearningObject.name)
         .findOne<LearningObjectDocument>({
           authorID: authorID,
@@ -636,7 +638,7 @@ export class MongoDriver implements DataStore {
         });
       if (!doc)
         return Promise.reject(
-          "No learning object '" + name + "' for the given user",
+          'No learning object ' + name + ' for the given user',
         );
       return Promise.resolve(doc._id);
     } catch (e) {
@@ -658,7 +660,7 @@ export class MongoDriver implements DataStore {
     tag: number,
   ): Promise<string> {
     try {
-      let doc = await this.db
+      const doc = await this.db
         .collection(COLLECTIONS.LearningOutcome.name)
         .findOne<LearningOutcomeDocument>({
           source: source,
@@ -666,7 +668,7 @@ export class MongoDriver implements DataStore {
         });
       if (!doc)
         return Promise.reject(
-          "No learning outcome '" + tag + "' for the given learning object",
+          'No learning outcome ' + tag + ' for the given learning object',
         );
       return Promise.resolve(doc._id);
     } catch (e) {
@@ -687,15 +689,15 @@ export class MongoDriver implements DataStore {
     outcome: string,
   ): Promise<string> {
     try {
-      let tag = date + '$' + name + '$' + outcome;
-      let doc = await this.db
+      const tag = date + '$' + name + '$' + outcome;
+      const doc = await this.db
         .collection(COLLECTIONS.StandardOutcome.name)
         .findOne<StandardOutcomeDocument>({
           tag: tag,
         });
       if (!doc)
         return Promise.reject(
-          "No mappings found with tag: '" + tag + "' in the database",
+          'No mappings found with tag: ' + tag + ' in the database',
         );
       return Promise.resolve(doc._id);
     } catch (e) {
@@ -712,8 +714,8 @@ export class MongoDriver implements DataStore {
    * @returns {UserRecord}
    */
   async fetchUser(id: string): Promise<User> {
-    let doc = await this.fetch<UserDocument>(COLLECTIONS.User, id);
-    let user = this.generateUser(doc);
+    const doc = await this.fetch<UserDocument>(COLLECTIONS.User, id);
+    const user = this.generateUser(doc);
     return user;
   }
 
@@ -730,13 +732,13 @@ export class MongoDriver implements DataStore {
     full?: boolean,
     accessUnpublished?: boolean,
   ): Promise<LearningObject> {
-    let object = await this.fetch<LearningObjectDocument>(
+    const object = await this.fetch<LearningObjectDocument>(
       COLLECTIONS.LearningObject,
       id,
     );
-    let author = await this.fetchUser(object.authorID);
+    const author = await this.fetchUser(object.authorID);
 
-    let learningObject = await this.generateLearningObject(
+    const learningObject = await this.generateLearningObject(
       author,
       object,
       full,
@@ -758,11 +760,11 @@ export class MongoDriver implements DataStore {
    */
   private async fetchLearningOutcome(id: string): Promise<LearningOutcome> {
     try {
-      let record = await this.fetch<LearningOutcomeDocument>(
+      const record = await this.fetch<LearningOutcomeDocument>(
         COLLECTIONS.LearningOutcome,
         id,
       );
-      let outcome = await this.generateLearningOutcome(record);
+      const outcome = await this.generateLearningOutcome(record);
       return outcome;
     } catch (e) {
       return Promise.reject(e);
@@ -779,11 +781,11 @@ export class MongoDriver implements DataStore {
    */
   private async fetchOutcome(id: string): Promise<Outcome> {
     try {
-      let record = await this.fetch<StandardOutcomeDocument>(
+      const record = await this.fetch<StandardOutcomeDocument>(
         COLLECTIONS.StandardOutcome,
         id,
       );
-      let outcome = await this.generateStandardOutcome(record);
+      const outcome = await this.generateStandardOutcome(record);
       return outcome;
     } catch (e) {
       return Promise.reject(e);
@@ -795,33 +797,48 @@ export class MongoDriver implements DataStore {
    * @returns {Cursor<LearningObjectRecord>[]} cursor of literally all objects
    */
   async fetchAllObjects(
+    accessUnpublished?: boolean,
     currPage?: number,
     limit?: number,
   ): Promise<{ objects: LearningObject[]; total: number }> {
-    if (currPage !== undefined && currPage <= 0) currPage = 1;
-    let skip = currPage && limit ? (currPage - 1) * limit : undefined;
+    if (currPage !== undefined && currPage <= 0) {
+      currPage = 1;
+    }
+    const skip = currPage && limit ? (currPage - 1) * limit : undefined;
+
     try {
+      const query: any = {};
+
+      if (!accessUnpublished) {
+        query.published = true;
+      }
+
       let objectCursor = await this.db
         .collection(COLLECTIONS.LearningObject.name)
-        .find<LearningObjectDocument>({ published: true });
-      let totalRecords = await objectCursor.count();
+        .find<LearningObjectDocument>(query);
+      const totalRecords = await objectCursor.count();
       objectCursor =
         skip !== undefined
           ? objectCursor.skip(skip).limit(limit)
           : limit
             ? objectCursor.limit(limit)
             : objectCursor;
-      let objects = await objectCursor.toArray();
+      const objects = await objectCursor.toArray();
 
-      let learningObjects: LearningObject[] = [];
+      const learningObjects: LearningObject[] = [];
 
-      for (let object of objects) {
-        let author = await this.fetchUser(object.authorID);
-        let learningObject = await this.generateLearningObject(
+      for (const object of objects) {
+        const author = await this.fetchUser(object.authorID);
+        const learningObject = await this.generateLearningObject(
           author,
           object,
           false,
         );
+
+        if (accessUnpublished) {
+          learningObject.id = object._id;
+        }
+
         learningObjects.push(learningObject);
       }
 
@@ -835,7 +852,7 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Fetchs the learning object documents associated with the given ids.
+   * Fetches the learning object documents associated with the given ids.
    *
    * @param ids array of database ids
    *
@@ -849,7 +866,7 @@ export class MongoDriver implements DataStore {
     sortType?: number,
   ): Promise<LearningObject[]> {
     try {
-      let query: any = { _id: { $in: ids } };
+      const query: any = { _id: { $in: ids } };
       if (!accessUnpublished) query.published = true;
       let objectCursor = await this.db
         .collection(COLLECTIONS.LearningObject.name)
@@ -862,11 +879,11 @@ export class MongoDriver implements DataStore {
 
       const objects = await objectCursor.toArray();
 
-      let learningObjects: LearningObject[] = [];
+      const learningObjects: LearningObject[] = [];
 
-      for (let object of objects) {
-        let author = await this.fetchUser(object.authorID);
-        let learningObject = await this.generateLearningObject(
+      for (const object of objects) {
+        const author = await this.fetchUser(object.authorID);
+        const learningObject = await this.generateLearningObject(
           author,
           object,
           full,
@@ -878,7 +895,7 @@ export class MongoDriver implements DataStore {
       return learningObjects;
     } catch (e) {
       return Promise.reject(
-        `Problem fecthing LearningObjects: ${ids}. Error: ${e}`,
+        `Problem fetching LearningObjects: ${ids}. Error: ${e}`,
       );
     }
   }
@@ -891,6 +908,7 @@ export class MongoDriver implements DataStore {
     * TODO: behavior is currently very strict (ex. name, author must exactly match)
     *       Consider text-indexing these fields to exploit mongo $text querying.
     */
+  // tslint:disable-next-line:member-ordering
   async searchObjects(
     name: string,
     author: string,
@@ -898,94 +916,46 @@ export class MongoDriver implements DataStore {
     level: string[],
     standardOutcomeIDs: string[],
     text: string,
+    accessUnpublished?: boolean,
     orderBy?: string,
     sortType?: number,
     currPage?: number,
     limit?: number,
   ): Promise<{ objects: LearningObject[]; total: number }> {
     if (currPage !== undefined && currPage <= 0) currPage = 1;
-    let skip = currPage && limit ? (currPage - 1) * limit : undefined;
+    const skip = currPage && limit ? (currPage - 1) * limit : undefined;
 
     try {
       // Query for users
-      let authorRecords: UserDocument[] =
-        author || text
-          ? await this.db
-              .collection(COLLECTIONS.User.name)
-              .find<UserDocument>({
-                $or: [
-                  {
-                    name: {
-                      $regex: new RegExp(author ? author : text, 'ig'),
-                    },
-                  },
-                  {
-                    organization: {
-                      $regex: new RegExp(text, 'ig'),
-                    },
-                  },
-                ],
-              })
-              .toArray()
-          : null;
-      let authorIDs = authorRecords ? authorRecords.map(doc => doc._id) : null;
-
-      //Query by LearningOutcomes' mappings
-      let outcomeRecords: LearningOutcomeDocument[] = standardOutcomeIDs
-        ? await this.db
-            .collection(COLLECTIONS.LearningOutcome.name)
-            .find<LearningOutcomeDocument>({
-              mappings: { $all: standardOutcomeIDs },
-            })
-            .toArray()
+      const authorRecords: UserDocument[] = await this.matchUsers(author, text);
+      const authorIDs = authorRecords
+        ? authorRecords.map(doc => doc._id)
         : null;
-      let outcomeIDs = outcomeRecords
+
+      // Query by LearningOutcomes' mappings
+      const outcomeRecords: LearningOutcomeDocument[] = await this.matchOutcomes(
+        standardOutcomeIDs,
+      );
+      const outcomeIDs = outcomeRecords
         ? outcomeRecords.map(doc => doc._id)
         : null;
 
-      let query = <any>{ published: true };
-      // Search By Text
-      if (text || text === '') {
-        query = {
-          $or: [
-            { name: { $regex: new RegExp(text, 'ig') } },
-            {
-              goals: {
-                $elemMatch: { text: { $regex: new RegExp(text, 'ig') } },
-              },
-            },
-          ],
-          published: true,
-        };
-
-        if (authorIDs)
-          query.$or.push(<any>{
-            authorID: { $in: authorIDs },
-          });
-
-        if (length) query.length = { $in: length };
-
-        if (level) query.levels = { $in: level };
-        if (outcomeIDs) {
-          query.outcomes = outcomeIDs.length
-            ? { $in: outcomeIDs }
-            : ['DONT MATCH ME'];
-        }
-      } else {
-        // Search by fields
-        if (authorIDs) query.authorID = { $in: authorIDs };
-        if (name) query.name = { $regex: new RegExp(name, 'ig') };
-
-        if (length) query.length = { $in: length };
-        if (level) query.levels = { $in: level };
-        if (outcomeIDs) query.outcomes = { $in: outcomeIDs };
-      }
+      let query: any = this.buildSearchQuery(
+        accessUnpublished,
+        text,
+        authorIDs,
+        length,
+        level,
+        outcomeIDs,
+        name,
+      );
 
       let objectCursor = await this.db
         .collection(COLLECTIONS.LearningObject.name)
-        .find<LearningObjectDocument>(query);
+        .find<LearningObjectDocument>(query, { score: { $meta: 'textScore' } })
+        .sort({ score: { $meta: 'textScore' } });
 
-      let totalRecords = await objectCursor.count();
+      const totalRecords = await objectCursor.count();
 
       // Paginate if has limiter
       objectCursor =
@@ -995,17 +965,17 @@ export class MongoDriver implements DataStore {
             ? objectCursor.limit(limit)
             : objectCursor;
 
-      //SortBy
+      // SortBy
       objectCursor = orderBy
         ? objectCursor.sort(orderBy, sortType ? sortType : 1)
         : objectCursor;
-      let objects = await objectCursor.toArray();
+      const objects = await objectCursor.toArray();
 
-      let learningObjects: LearningObject[] = [];
+      const learningObjects: LearningObject[] = [];
 
-      for (let object of objects) {
-        let author = await this.fetchUser(object.authorID);
-        let learningObject = await this.generateLearningObject(
+      for (const object of objects) {
+        const author = await this.fetchUser(object.authorID);
+        const learningObject = await this.generateLearningObject(
           author,
           object,
           false,
@@ -1021,10 +991,126 @@ export class MongoDriver implements DataStore {
       return Promise.reject('Error suggesting objects' + e);
     }
   }
-
+  /**
+   * Builds query object for Learning Object search
+   *
+   * @private
+   * @param {boolean} accessUnpublished
+   * @param {string} text
+   * @param {string[]} authorIDs
+   * @param {string[]} length
+   * @param {string[]} level
+   * @param {string[]} outcomeIDs
+   * @param {string} name
+   * @returns
+   * @memberof MongoDriver
+   */
+  private buildSearchQuery(
+    accessUnpublished: boolean,
+    text: string,
+    authorIDs: string[],
+    length: string[],
+    level: string[],
+    outcomeIDs: string[],
+    name: string,
+  ) {
+    let query: any = <any>{};
+    if (!accessUnpublished) {
+      query.published = true;
+    }
+    // Search By Text
+    if (text || text === '') {
+      query = {
+        $or: [{ $text: { $search: text } }],
+      };
+      if (authorIDs && authorIDs.length) {
+        query.$or.push(<any>{
+          authorID: { $in: authorIDs },
+        });
+      }
+      if (length) {
+        query.length = { $in: length };
+      }
+      if (level) {
+        query.levels = { $in: level };
+      }
+      if (outcomeIDs) {
+        query.outcomes = outcomeIDs.length
+          ? { $in: outcomeIDs }
+          : ['DONT MATCH ME'];
+      }
+    } else {
+      // Search by fields
+      if (name) {
+        query.$text = { $search: text };
+      }
+      if (authorIDs) {
+        query.authorID = { $in: authorIDs };
+      }
+      if (length) {
+        query.length = { $in: length };
+      }
+      if (level) {
+        query.levels = { $in: level };
+      }
+      if (outcomeIDs) {
+        query.outcomes = { $in: outcomeIDs };
+      }
+    }
+    return query;
+  }
+  /**
+   * Gets Learning Outcome IDs that contain Standard Outcome IDs
+   *
+   * @private
+   * @param {string[]} standardOutcomeIDs
+   * @returns {Promise<LearningOutcomeDocument[]>}
+   * @memberof MongoDriver
+   */
+  private async matchOutcomes(
+    standardOutcomeIDs: string[],
+  ): Promise<LearningOutcomeDocument[]> {
+    return standardOutcomeIDs
+      ? await this.db
+          .collection(COLLECTIONS.LearningOutcome.name)
+          .find<LearningOutcomeDocument>({
+            mappings: { $all: standardOutcomeIDs },
+          })
+          .toArray()
+      : null;
+  }
+  /**
+   * Search for users that match author or text param
+   *
+   * @private
+   * @param {string} author
+   * @param {string} text
+   * @returns {Promise<UserDocument[]>}
+   * @memberof MongoDriver
+   */
+  private async matchUsers(
+    author: string,
+    text: string,
+  ): Promise<UserDocument[]> {
+    return author || text
+      ? await this.db
+          .collection(COLLECTIONS.User.name)
+          .find<UserDocument>(
+            { $text: { $search: author ? author : text } },
+            { score: { $meta: 'textScore' } },
+          )
+          .toArray()
+      : null;
+  }
+  /**
+   * Fetches all Learning Object collections
+   *
+   * @returns {Promise<LearningObjectCollection[]>}
+   * @memberof MongoDriver
+   */
   async fetchCollections(): Promise<LearningObjectCollection[]> {
     try {
-      let collectionsCursor = await this.db
+      const collectionsCursor = await this.db
         .collection(COLLECTIONS.LearningObjectCollection.name)
         .find();
       return collectionsCursor.toArray();
@@ -1032,14 +1118,21 @@ export class MongoDriver implements DataStore {
       return Promise.reject(e);
     }
   }
+  /**
+   * Fetches Learning Object Collection by name
+   *
+   * @param {string} name
+   * @returns {Promise<LearningObjectCollection>}
+   * @memberof MongoDriver
+   */
   async fetchCollection(name: string): Promise<LearningObjectCollection> {
     try {
-      let collection = await this.db
+      const collection = await this.db
         .collection(COLLECTIONS.LearningObjectCollection.name)
         .findOne({ name: name });
-      let objects = [];
-      for (let id of collection.learningObjects) {
-        let object = await this.fetchLearningObject(id, false, false);
+      const objects = [];
+      for (const id of collection.learningObjects) {
+        const object = await this.fetchLearningObject(id, false, false);
         objects.push(object);
       }
       collection.learningObjects = objects;
@@ -1052,16 +1145,25 @@ export class MongoDriver implements DataStore {
   ////////////////////////////////////////////////
   // GENERIC HELPER METHODS - not in public API //
   ////////////////////////////////////////////////
-
+  /**
+   * Converts Learning Object to Document
+   *
+   * @private
+   * @param {LearningObject} object
+   * @param {boolean} [isNew]
+   * @param {string} [id]
+   * @returns {Promise<LearningObjectDocument>}
+   * @memberof MongoDriver
+   */
   private async documentLearningObject(
     object: LearningObject,
     isNew?: boolean,
     id?: string,
   ): Promise<LearningObjectDocument> {
     try {
-      let authorID = await this.findUser(object.author.username);
-      let author = await this.fetchUser(authorID);
-      let doc: LearningObjectDocument = {
+      const authorID = await this.findUser(object.author.username);
+      const author = await this.fetchUser(authorID);
+      const doc: LearningObjectDocument = {
         authorID: authorID,
         name: object.name,
         date: object.date,
@@ -1089,7 +1191,20 @@ export class MongoDriver implements DataStore {
       );
     }
   }
-
+  /**
+   * Converts Learning Outcome to Document
+   *
+   * @private
+   * @param {LearningOutcome} outcome
+   * @param {{
+   *       learningObjectID: string;
+   *       learningObjectName: string;
+   *       authorName: string;
+   *     }} source
+   * @param {boolean} [isNew]
+   * @returns {Promise<LearningOutcomeDocument>}
+   * @memberof MongoDriver
+   */
   private async documentLearningOutcome(
     outcome: LearningOutcome,
     source: {
@@ -1100,7 +1215,7 @@ export class MongoDriver implements DataStore {
     isNew?: boolean,
   ): Promise<LearningOutcomeDocument> {
     try {
-      let doc: LearningOutcomeDocument = {
+      const doc: LearningOutcomeDocument = {
         source: source.learningObjectID,
         tag: outcome.tag,
         author: source.authorName,
@@ -1132,9 +1247,16 @@ export class MongoDriver implements DataStore {
       );
     }
   }
-
+  /**
+   * Generates User object from Document
+   *
+   * @private
+   * @param {UserDocument} userRecord
+   * @returns {User}
+   * @memberof MongoDriver
+   */
   private generateUser(userRecord: UserDocument): User {
-    let user = new User(
+    const user = new User(
       userRecord.username,
       userRecord.name,
       userRecord.email,
@@ -1147,21 +1269,30 @@ export class MongoDriver implements DataStore {
     return user;
   }
 
-  // TODO: Refactor into functions for loading partial vs full objects
+  /**
+   * Generates Learning Object from Document
+   *
+   * @private
+   * @param {User} author
+   * @param {LearningObjectDocument} record
+   * @param {boolean} [full]
+   * @returns {Promise<LearningObject>}
+   * @memberof MongoDriver
+   */
   private async generateLearningObject(
     author: User,
     record: LearningObjectDocument,
     full?: boolean,
   ): Promise<LearningObject> {
     // Logic for loading any learning object
-    let learningObject = new LearningObject(author, record.name);
+    const learningObject = new LearningObject(author, record.name);
     learningObject.date = record.date;
     learningObject.length = record.length;
     learningObject.levels = <AcademicLevel[]>record.levels;
     learningObject.materials = record.materials;
     record.published ? learningObject.publish() : learningObject.unpublish();
     learningObject.children = record.children;
-    for (let goal of record.goals) {
+    for (const goal of record.goals) {
       learningObject.addGoal(goal.text);
     }
     if (!full) {
@@ -1171,55 +1302,62 @@ export class MongoDriver implements DataStore {
     // Logic for loading 'full' learning objects
 
     // load each outcome
-    for (let outcomeid of record.outcomes) {
-      let rOutcome = await this.fetchLearningOutcome(outcomeid);
+    for (const outcomeid of record.outcomes) {
+      const rOutcome = await this.fetchLearningOutcome(outcomeid);
 
-      let outcome = learningObject.addOutcome();
+      const outcome = learningObject.addOutcome();
       outcome.bloom = rOutcome.bloom;
       outcome.verb = rOutcome.verb;
       outcome.text = rOutcome.text;
-      for (let rAssessment of rOutcome.assessments) {
-        let assessment = outcome.addAssessment();
+      for (const rAssessment of rOutcome.assessments) {
+        const assessment = outcome.addAssessment();
         assessment.plan = rAssessment.plan;
         assessment.text = rAssessment.text;
       }
-      for (let rStrategy of rOutcome.strategies) {
-        let strategy = outcome.addStrategy();
+      for (const rStrategy of rOutcome.strategies) {
+        const strategy = outcome.addStrategy();
         strategy.plan = rStrategy.plan;
         strategy.text = rStrategy.text;
       }
 
       // only extract the basic info for each mapped outcome
-      for (let mapping of rOutcome.mappings) {
+      for (const mapping of rOutcome.mappings) {
         outcome.mapTo(mapping);
       }
     }
 
     return learningObject;
   }
-
+  /**
+   * Generates LearningOutcome from Document
+   *
+   * @private
+   * @param {LearningOutcomeDocument} record
+   * @returns {Promise<LearningOutcome>}
+   * @memberof MongoDriver
+   */
   private async generateLearningOutcome(
     record: LearningOutcomeDocument,
   ): Promise<LearningOutcome> {
     try {
-      let outcome = new LearningOutcome(new LearningObject());
+      const outcome = new LearningOutcome(new LearningObject());
       outcome.bloom = record.bloom;
       outcome.verb = record.verb;
       outcome.text = record.text;
       // Add assessments
-      for (let rAssessment of record.assessments) {
-        let assessment = outcome.addAssessment();
+      for (const rAssessment of record.assessments) {
+        const assessment = outcome.addAssessment();
         assessment.plan = rAssessment.plan;
         assessment.text = rAssessment.text;
       }
       // Add Strategies
-      for (let rStrategy of record.strategies) {
-        let strategy = outcome.addStrategy();
+      for (const rStrategy of record.strategies) {
+        const strategy = outcome.addStrategy();
         strategy.plan = rStrategy.plan;
         strategy.text = rStrategy.text;
       }
-      for (let mappingID of record.mappings) {
-        let mapping = await this.fetchOutcome(mappingID);
+      for (const mappingID of record.mappings) {
+        const mapping = await this.fetchOutcome(mappingID);
         outcome.mapTo(mapping);
       }
       return outcome;
@@ -1227,9 +1365,16 @@ export class MongoDriver implements DataStore {
       return Promise.reject(`Problem generating LearningOutcome. Error: ${e}`);
     }
   }
-
+  /**
+   * Generates Outcome from Document
+   *
+   * @private
+   * @param {StandardOutcomeDocument} record
+   * @returns {Outcome}
+   * @memberof MongoDriver
+   */
   private generateStandardOutcome(record: StandardOutcomeDocument): Outcome {
-    let outcome: Outcome = {
+    const outcome: Outcome = {
       id: record._id,
       author: record.author,
       name: record.name,
@@ -1252,19 +1397,19 @@ export class MongoDriver implements DataStore {
    */
   private async validateForeignKeys<T>(
     record: T,
-    foreigns: Foriegn[],
+    foreigns: Foreign[],
   ): Promise<void> {
     try {
       if (foreigns)
-        for (let foreign of foreigns) {
-          let data = foreign.data;
+        for (const foreign of foreigns) {
+          const data = foreign.data;
           // get id's to check, as an array
           let keys = record[foreign.name];
           if (!(keys instanceof Array)) keys = [keys];
           // fetch foreign document and reject if it doesn't exist
-          for (let key of keys) {
-            let collection = COLLECTIONS_MAP.get(data.target);
-            let count = await this.db
+          for (const key of keys) {
+            const collection = COLLECTIONS_MAP.get(data.target);
+            const count = await this.db
               .collection(collection.name)
               .count({ _id: key });
             if (count === 0) {
@@ -1303,7 +1448,7 @@ export class MongoDriver implements DataStore {
   ): Promise<void> {
     try {
       // check validity of values before making any changes
-      let record = await this.db
+      const record = await this.db
         .collection(collection.name)
         .findOne({ _id: owner });
       if (!record)
@@ -1313,13 +1458,8 @@ export class MongoDriver implements DataStore {
             'found in ' +
             collection.name,
         );
-      // NOTE: below line is no good because schemaFor(outcomes) is arbitrary
-      // let mapping = await this.db.collection(foreignData(schemaFor(collection), registry).target).findOne({ _id: item });
-      // TODO: switch register and unregister and probably all thse to use schema instead of collection, so the next line works
-      // let mapping = await this.db.collection(foreignData(schema, registry).target).findOne({ _id: item });
-      // if (!mapping) return Promise.reject('Registration failed: no mapping ' + mapping + 'found in ' + collection);
 
-      let pushdoc = {};
+      const pushdoc = {};
       pushdoc[registry] = item;
 
       await this.db
@@ -1355,28 +1495,28 @@ export class MongoDriver implements DataStore {
   ): Promise<void> {
     try {
       // check validity of values before making any changes
-      let record = await this.db
+      const record = await this.db
         .collection(collection.name)
         .findOne({ _id: owner });
       if (!record)
         return Promise.reject(
-          'Unregistration failed: no record ' +
+          'Un-registration failed: no record ' +
             owner +
             'found in ' +
             collection,
         );
       if (!record[registry].includes(item)) {
         return Promise.reject(
-          'Unregistration failed: record ' +
+          'Un-registration failed: record ' +
             owner +
-            "'s " +
+            ' s' +
             registry +
             ' field has no element ' +
             item,
         );
       }
 
-      let pulldoc = {};
+      const pulldoc = {};
       pulldoc[registry] = item;
 
       await this.db
@@ -1386,7 +1526,7 @@ export class MongoDriver implements DataStore {
       return Promise.resolve();
     } catch (e) {
       return Promise.reject(
-        'Problem unregistering from a ' +
+        'Problem un-registering from a ' +
           collection.name +
           ' ' +
           registry +
@@ -1415,7 +1555,7 @@ export class MongoDriver implements DataStore {
   ): Promise<void> {
     try {
       // check validity of values before making any changes
-      let record = await this.db
+      const record = await this.db
         .collection(collection.name)
         .findOne({ _id: owner });
       if (!record)
@@ -1426,7 +1566,7 @@ export class MongoDriver implements DataStore {
         return Promise.reject(
           'Reorder failed: record ' +
             owner +
-            "'s " +
+            ' s' +
             registry +
             ' field has no element ' +
             item,
@@ -1443,7 +1583,7 @@ export class MongoDriver implements DataStore {
       // perform the necessary operations
       await this.unregister(collection, owner, registry, item);
 
-      let pushdoc = {};
+      const pushdoc = {};
       pushdoc[registry] = { $each: [item], $position: index };
 
       await this.db
@@ -1467,22 +1607,24 @@ export class MongoDriver implements DataStore {
    */
   private async insert<T>(collection: Collection, record: T): Promise<string> {
     try {
-      let foreigns = collection.foreigns;
+      const foreigns = collection.foreigns;
       if (foreigns) {
         // check validity of all foreign keys
         await this.validateForeignKeys(record, foreigns);
       }
 
       // perform the actual insert
-      let insert_ = await this.db.collection(collection.name).insertOne(record);
-      let id = insert_.insertedId;
+      const insert_ = await this.db
+        .collection(collection.name)
+        .insertOne(record);
+      const id = insert_.insertedId;
 
       // register the new record as needed
       if (foreigns)
-        for (let foreign of foreigns) {
-          let data = foreign.data;
+        for (const foreign of foreigns) {
+          const data = foreign.data;
           if (!data.child && data.registry) {
-            let collection = COLLECTIONS_MAP.get(data.target);
+            const collection = COLLECTIONS_MAP.get(data.target);
             await this.register(
               collection,
               record[foreign.name],
@@ -1532,32 +1674,31 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Cascade delete a record and its children.
+   * Cascade deconste a record and its children.
    * @async
    *
    * @param {COLLECTIONS} collection provides collection information
-   * @param {string} id the document to delete
+   * @param {string} id the document to deconste
    */
   private async remove<T>(collection: Collection, id: string): Promise<void> {
     try {
-      // fetch data to be deleted ... for the last time :(
-      let record = await this.db
+      const record = await this.db
         .collection(collection.name)
         .findOne<T>({ _id: id });
 
       // remove all children recursively, and unregister from parents
-      let foreigns = collection.foreigns;
+      const foreigns = collection.foreigns;
       if (foreigns)
-        for (let foreign of foreigns) {
-          let data = foreign.data;
+        for (const foreign of foreigns) {
+          const data = foreign.data;
 
           if (data.child) {
             // get children to remove, as an array
             let keys = record[foreign.name];
             if (!(keys instanceof Array)) keys = [keys];
             // remove each child
-            for (let key of keys) {
-              let collection = COLLECTIONS_MAP.get(data.target);
+            for (const key of keys) {
+              const collection = COLLECTIONS_MAP.get(data.target);
               await this.remove(collection, key);
             }
           }
@@ -1567,8 +1708,8 @@ export class MongoDriver implements DataStore {
             let keys = record[foreign.name];
             if (!(keys instanceof Array)) keys = [keys];
             // unregister from each key
-            for (let key of keys) {
-              let collection = COLLECTIONS_MAP.get(data.target);
+            for (const key of keys) {
+              const collection = COLLECTIONS_MAP.get(data.target);
               await this.unregister(collection, key, data.registry, id);
             }
           }
@@ -1579,7 +1720,7 @@ export class MongoDriver implements DataStore {
 
       return Promise.resolve();
     } catch (e) {
-      return Promise.reject('Problem deleting a ' + collection + ':\n\t' + e);
+      return Promise.reject('Problem deleting ' + collection + ':\n\t' + e);
     }
   }
 
@@ -1589,7 +1730,7 @@ export class MongoDriver implements DataStore {
    * @param {string} id the document to fetch
    */
   private async fetch<T>(collection: Collection, id: string): Promise<T> {
-    let record = await this.db
+    const record = await this.db
       .collection(collection.name)
       .findOne<T>({ _id: id });
     if (!record)

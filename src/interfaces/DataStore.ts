@@ -33,6 +33,7 @@ export interface DataStore {
     sortType?: number,
   ): Promise<LearningObject[]>;
   fetchAllObjects(
+    accessUnpublished?: boolean,
     currPage?: number,
     limit?: number,
   ): Promise<{ objects: LearningObject[]; total: number }>;
@@ -43,6 +44,7 @@ export interface DataStore {
     level: string[],
     standardOutcomeIDs: string[],
     text: string,
+    accessUnpublished?: boolean,
     orderBy?: string,
     sortType?: number,
     currPage?: number,

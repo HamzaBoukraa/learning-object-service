@@ -1,7 +1,7 @@
 import * as express from 'express';
 import * as bodyParser from 'body-parser';
-import { DataStore } from '../../interfaces/interfaces';
-import { ExpressRouteDriver } from '../drivers';
+import { DataStore, FileManager } from '../../interfaces/interfaces';
+import { ExpressRouteDriver, ExpressAdminRouteDriver } from '../drivers';
 import * as http from 'http';
 import * as logger from 'morgan';
 import { enforceTokenAccess } from '../../middleware/jwt.config';
@@ -10,15 +10,24 @@ import * as cookieParser from 'cookie-parser';
 
 export class ExpressDriver {
   static app = express();
-  static start(dataStore: DataStore) {
+  static start(dataStore: DataStore, fileManager: FileManager) {
     // configure app to use bodyParser()
-    this.app.use(bodyParser.urlencoded({ extended: true }));
+    this.app.use(
+      bodyParser.urlencoded({
+        extended: true,
+      }),
+    );
     this.app.use(bodyParser.json());
 
-    //Setup route logger
+    // Setup route logger
     this.app.use(logger('dev'));
 
-    this.app.use(cors({ origin: true, credentials: true }));
+    this.app.use(
+      cors({
+        origin: true,
+        credentials: true,
+      }),
+    );
     // Set up cookie parser
     this.app.use(cookieParser());
 
@@ -26,7 +35,13 @@ export class ExpressDriver {
     this.app.use(enforceTokenAccess);
 
     // Set our api routes
-    this.app.use('/', ExpressRouteDriver.buildRouter(dataStore));
+    this.app.use('/', ExpressRouteDriver.buildRouter(dataStore, fileManager));
+
+    // Set admin api routes
+    this.app.use(
+      '/admin',
+      ExpressAdminRouteDriver.buildRouter(dataStore, fileManager),
+    );
 
     /**
      * Get port from environment and store in Express.
@@ -46,7 +61,7 @@ export class ExpressDriver {
      * Listen on provided port, on all network interfaces.
      */
     server.listen(port, () =>
-      console.log(`Learning Object Service running on localhost:${port}`)
+      console.log(`Learning Object Service running on localhost:${port}`),
     );
 
     return this.app;
