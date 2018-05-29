@@ -30,12 +30,11 @@ export class LearningObjectInteractor {
    */
   public static async loadLearningObjectSummary(
     dataStore: DataStore,
-    responder: Responder,
     username: string,
     accessUnpublished?: boolean,
     orderBy?: string,
     sortType?: number,
-  ): Promise<void> {
+  ): Promise<LearningObject[]> {
     try {
       const objectIDs = await dataStore.getUserObjects(username);
       const summary: LearningObject[] = await dataStore.fetchMultipleObjects(
@@ -45,9 +44,9 @@ export class LearningObjectInteractor {
         orderBy,
         sortType,
       );
-      responder.sendObject(summary);
+      return summary;
     } catch (e) {
-      responder.sendOperationError(e);
+      return Promise.reject(`Problem loading summary. Error: ${e}`);
     }
   }
 
@@ -62,11 +61,10 @@ export class LearningObjectInteractor {
    */
   public static async loadLearningObject(
     dataStore: DataStore,
-    responder: Responder,
     username: string,
     learningObjectName: string,
     accessUnpublished?: boolean,
-  ): Promise<void> {
+  ): Promise<LearningObject> {
     try {
       const learningObjectID = await dataStore.findLearningObject(
         username,
@@ -85,18 +83,16 @@ export class LearningObjectInteractor {
           learningObject,
         );
       }
-      responder.sendObject(learningObject);
+      return learningObject;
     } catch (e) {
-      console.log(e);
-      responder.sendOperationError(e);
+      return Promise.reject(e);
     }
   }
 
   private static async loadChildObjects(
     dataStore: DataStore,
     learningObject: LearningObject,
-  ) {
-    // console.log(learningObject);
+  ): Promise<LearningObject[]> {
     if (learningObject.children) {
       const children = await dataStore.fetchMultipleObjects(
         learningObject.children,
@@ -111,15 +107,15 @@ export class LearningObjectInteractor {
 
   public static async loadFullLearningObjectByIDs(
     dataStore: DataStore,
-    responder: Responder,
     ids: string[],
-  ): Promise<void> {
+  ): Promise<LearningObject[]> {
     try {
       const learningObjects = await dataStore.fetchMultipleObjects(ids, true);
-      responder.sendObject(learningObjects);
+      return learningObjects;
     } catch (e) {
-      console.log(e);
-      responder.sendOperationError(e);
+      return Promise.reject(
+        `Problem loading full LearningObject by ID. Error: ${e}`,
+      );
     }
   }
 
@@ -140,30 +136,26 @@ export class LearningObjectInteractor {
    */
   public static async addLearningObject(
     dataStore: DataStore,
-    responder: Responder,
     object: LearningObject,
-  ): Promise<void> {
+  ): Promise<LearningObject> {
     try {
       const err = this.validateLearningObject(object);
       if (err) {
-        responder.sendOperationError(err);
-        return;
+        return Promise.reject(err);
       } else {
         const learningObjectID = await dataStore.insertLearningObject(object);
         object.id = learningObjectID;
-        responder.sendObject(object);
+        return object;
       }
     } catch (e) {
       if (/duplicate key error/gi.test(e)) {
-        responder.sendOperationError(
+        return Promise.reject(
           `Could not save Learning Object. Learning Object with name: ${
             object.name
           } already exists.`,
         );
-      } else
-        responder.sendOperationError(
-          `Problem creating Learning Object. Error${e}`,
-        );
+      }
+      return Promise.reject(`Problem creating Learning Object. Error${e}`);
     }
   }
 
@@ -192,12 +184,11 @@ export class LearningObjectInteractor {
    */
   public static async uploadMaterials(
     fileManager: FileManager,
-    responder: Responder,
     id: string,
     username: string,
     files: any[],
     filePathMap: Map<string, string>,
-  ): Promise<void> {
+  ): Promise<any> {
     try {
       const learningObjectFiles = await fileManager.upload(
         id,
@@ -205,9 +196,9 @@ export class LearningObjectInteractor {
         files,
         filePathMap,
       );
-      responder.sendObject(learningObjectFiles);
+      return learningObjectFiles;
     } catch (e) {
-      responder.sendOperationError(`Problem uploading materials. Error: ${e}`);
+      return Promise.reject(`Problem uploading materials. Error: ${e}`);
     }
   }
 
@@ -225,16 +216,14 @@ export class LearningObjectInteractor {
    */
   public static async deleteFile(
     fileManager: FileManager,
-    responder: Responder,
     id: string,
     username: string,
     filename: string,
   ): Promise<void> {
     try {
-      await fileManager.delete(id, username, filename);
-      responder.sendOperationSuccess();
+      return fileManager.delete(id, username, filename);
     } catch (e) {
-      responder.sendOperationError(`Problem deleting file. Error: ${e}`);
+      return Promise.reject(`Problem deleting file. Error: ${e}`);
     }
   }
 
@@ -249,18 +238,17 @@ export class LearningObjectInteractor {
    */
   public static async findLearningObject(
     dataStore: DataStore,
-    responder: Responder,
     username: string,
     learningObjectName: string,
-  ): Promise<void> {
+  ): Promise<string> {
     try {
       const learningObjectID = await dataStore.findLearningObject(
         username,
         learningObjectName,
       );
-      responder.sendObject(learningObjectID);
+      return learningObjectID;
     } catch (e) {
-      responder.sendOperationError(e);
+      return Promise.reject(`Problem finding LearningObject. Error: ${e}`);
     }
   }
 
@@ -277,27 +265,23 @@ export class LearningObjectInteractor {
    */
   public static async updateLearningObject(
     dataStore: DataStore,
-    responder: Responder,
     id: string,
     object: LearningObject,
   ): Promise<void> {
     try {
       const err = this.validateLearningObject(object);
       if (err) {
-        responder.sendOperationError(err);
-        return;
+        return Promise.reject(err);
       } else {
-        await dataStore.editLearningObject(id, object);
-        responder.sendOperationSuccess();
+        return dataStore.editLearningObject(id, object);
       }
     } catch (e) {
-      responder.sendOperationError(e);
+      return Promise.reject(`Problem updating Learning Object. Error: ${e}`);
     }
   }
 
   public static async togglePublished(
     dataStore: DataStore,
-    responder: Responder,
     username: string,
     id: string,
     published: boolean,
@@ -307,20 +291,17 @@ export class LearningObjectInteractor {
       published ? object.publish() : object.unpublish();
       const err = this.validateLearningObject(object);
       if (err) {
-        responder.sendOperationError(err);
-        return;
+        return Promise.reject(err);
       }
-      await dataStore.togglePublished(username, id, published);
-      responder.sendOperationSuccess();
+      return dataStore.togglePublished(username, id, published);
     } catch (e) {
-      responder.sendOperationError(e);
+      return Promise.reject(`Problem toggling publish status. Error:  ${e}`);
     }
   }
 
   public static async deleteLearningObject(
     dataStore: DataStore,
     fileManager: FileManager,
-    responder: Responder,
     username: string,
     learningObjectName: string,
   ): Promise<void> {
@@ -338,16 +319,16 @@ export class LearningObjectInteractor {
       if (learningObject.materials.files.length) {
         await fileManager.deleteAll(learningObjectID, username);
       }
-      responder.sendOperationSuccess();
     } catch (error) {
-      responder.sendOperationError(error);
+      return Promise.reject(
+        `Problem deleting Learning Object. Error: ${error}`,
+      );
     }
   }
 
   public static async deleteMultipleLearningObjects(
     dataStore: DataStore,
     fileManager: FileManager,
-    responder: Responder,
     username: string,
     learningObjectNames: string[],
   ): Promise<void> {
@@ -367,9 +348,10 @@ export class LearningObjectInteractor {
       for (let object of learningObjectsWithFiles) {
         await fileManager.deleteAll(object.id, username);
       }
-      responder.sendOperationSuccess();
     } catch (error) {
-      responder.sendOperationError(error);
+      return Promise.reject(
+        `Problem deleting Learning Objects. Error: ${error}`,
+      );
     }
   }
 
@@ -379,16 +361,21 @@ export class LearningObjectInteractor {
    */
   public static async fetchAllObjects(
     dataStore: DataStore,
-    responder: Responder,
     currPage: number,
     limit: number,
-  ): Promise<void> {
+  ): Promise<any> {
     try {
-      const response = await dataStore.fetchAllObjects(currPage, limit);
-      responder.sendObject(response);
+      const accessUnpublished = false;
+      const response = await dataStore.fetchAllObjects(
+        accessUnpublished,
+        currPage,
+        limit,
+      );
+      return response;
     } catch (e) {
-      console.log(e);
-      responder.sendOperationError(e);
+      return Promise.reject(
+        `Problem fetching all Learning Objects. Error: ${e}`,
+      );
     }
   }
 
@@ -399,9 +386,8 @@ export class LearningObjectInteractor {
    */
   public static async fetchMultipleObjects(
     dataStore: DataStore,
-    responder: Responder,
     ids: { username: string; learningObjectName: string }[],
-  ): Promise<void> {
+  ): Promise<LearningObject[]> {
     try {
       // Get IDs associated with LearningObjects
       const learningObjectIDs = await Promise.all(
@@ -422,32 +408,34 @@ export class LearningObjectInteractor {
         false,
         true,
       );
-      responder.sendObject(learningObjects);
+      return learningObjects;
     } catch (e) {
-      responder.sendOperationError(e);
+      return Promise.reject(
+        `Problem fetching multiple Learning Objects. Error: ${e}`,
+      );
     }
   }
 
   public static async fetchObjectsByIDs(
     dataStore: DataStore,
-    responder: Responder,
     ids: string[],
-  ) {
+  ): Promise<LearningObject[]> {
     try {
       const learningObjects = await dataStore.fetchMultipleObjects(
         ids,
         true,
         true,
       );
-      responder.sendObject(learningObjects);
+      return learningObjects;
     } catch (e) {
-      responder.sendOperationError(e);
+      return Promise.reject(
+        `Problem fetching LearningObjects by ID. Error: ${e}`,
+      );
     }
   }
 
   /**
    * Search for objects by name, author, length, level, and content.
-   * FIXME: implementation is rough and probably not as efficient as it could be
    *
    * @param {string} name the objects' names should closely relate
    * @param {string} author the objects' authors' names` should closely relate
@@ -457,20 +445,20 @@ export class LearningObjectInteractor {
    *
    * @returns {Outcome[]} list of outcome suggestions, ordered by score
    */
-  public static async suggestObjects(
+  public static async searchObjects(
     dataStore: DataStore,
-    responder: Responder,
     name: string,
     author: string,
     length: string[],
     level: string[],
     standardOutcomeIDs: string[],
     text: string,
+    accessUnpublished?: boolean,
     orderBy?: string,
     sortType?: number,
     currPage?: number,
     limit?: number,
-  ): Promise<void> {
+  ): Promise<any> {
     try {
       if (text) {
         text = this.removeStopwords(text);
@@ -483,79 +471,74 @@ export class LearningObjectInteractor {
         level,
         standardOutcomeIDs,
         text,
+        accessUnpublished,
         orderBy,
         sortType,
         currPage,
         limit,
       );
-      responder.sendObject(response);
+      return response;
     } catch (e) {
-      responder.sendOperationError(e);
+      return Promise.reject(`Problem suggesting Learning Objects. Error:${e}`);
     }
   }
 
   public static async fetchCollections(
     dataStore: DataStore,
-    responder: Responder,
     loadObjects?: boolean,
-  ) {
+  ): Promise<any> {
     try {
       const collections = await dataStore.fetchCollections(loadObjects);
-      responder.sendObject(collections);
+      return collections;
     } catch (e) {
-      responder.sendOperationError(e);
+      return Promise.reject(`Problem fetching collections. Error: ${e}`);
     }
   }
 
   public static async fetchCollection(
     dataStore: DataStore,
-    responder: Responder,
     name: string,
-  ) {
+  ): Promise<any> {
     try {
       const collection = await dataStore.fetchCollection(name);
-      responder.sendObject(collection);
+      return collection;
     } catch (e) {
-      responder.sendOperationError(e);
+      return Promise.reject(`Problem fetching collection. Error: ${e}`);
     }
   }
 
   public static async addChild(params: {
     dataStore: DataStore;
-    responder: Responder;
     childId: string;
     username: string;
     parentName: string;
-  }) {
-    const parentID = await params.dataStore.findLearningObject(
-      params.username,
-      params.parentName,
-    );
-    params.dataStore
-      .insertChild(parentID, params.childId)
-      .then(data => params.responder.sendOperationSuccess())
-      .catch(error =>
-        params.responder.sendOperationError(error.message, error.status),
+  }): Promise<void> {
+    try {
+      const parentID = await params.dataStore.findLearningObject(
+        params.username,
+        params.parentName,
       );
+      return params.dataStore.insertChild(parentID, params.childId);
+    } catch (e) {
+      return Promise.reject(`Problem adding child. Error: ${e}`);
+    }
   }
 
   public static async removeChild(params: {
     dataStore: DataStore;
-    responder: Responder;
     childId: string;
     username: string;
     parentName: string;
   }) {
-    const parentID = await params.dataStore.findLearningObject(
-      params.username,
-      params.parentName,
-    );
-    params.dataStore
-      .deleteChild(parentID, params.childId)
-      .then(data => params.responder.sendOperationSuccess())
-      .catch(error =>
-        params.responder.sendOperationError(error.message, error.status),
+    try {
+      const parentID = await params.dataStore.findLearningObject(
+        params.username,
+        params.parentName,
       );
+      return params.dataStore.deleteChild(parentID, params.childId);
+    } catch (e) {
+      return Promise.reject(`Problem removing child. Error: ${e}`);
+    }
   }
 
   /**

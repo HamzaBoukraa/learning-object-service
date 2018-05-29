@@ -8,30 +8,24 @@ const JSON_FILES = ['package.json', 'src/*.json', 'src/**/*.json'];
 const tsProject = ts.createProject('tsconfig.json');
 
 gulp.task('tsc', () => {
-    const tsResult = tsProject.src()
-        .pipe(tsProject());
-    return tsResult.js.pipe(gulp.dest('dist'));
+  const tsResult = tsProject.src().pipe(tsProject());
+  return tsResult.js.pipe(gulp.dest('dist'));
 });
 
 gulp.task('watch', ['tsc'], () => {
-    gulp.watch('src/**/*.ts', ['tsc']);
+  gulp.watch('src/**/*.ts', ['tsc']);
 });
 
-gulp.task('assets', function () {
-    return gulp.src(JSON_FILES)
-        .pipe(gulp.dest('dist'));
+gulp.task('assets', function() {
+  return gulp.src(JSON_FILES).pipe(gulp.dest('dist'));
 });
 
-gulp.task('start', ['watch', 'assets'], function () {
-    nodemon({
-        script: 'dist/app.js',
-        ext: 'js html',
-        env: {
-            'NODE_ENV': 'development'
-        },
-        watch: ['./dist']
-    })
+gulp.task('start', ['watch', 'assets'], function() {
+  nodemon({
+    script: 'dist/app.js',
+    ext: 'js html',
+    watch: ['./dist'],
+  });
 });
-
 
 gulp.task('default', ['watch', 'assets']);
