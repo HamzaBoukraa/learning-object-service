@@ -232,7 +232,7 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Deconstes a child id from a learning object's children array if the child object
+   * deletes a child id from a learning object's children array if the child object
    * exists in the children array.
    *
    * @async
@@ -240,7 +240,7 @@ export class MongoDriver implements DataStore {
    * @param {string} childId The database ID of the child Learning Object
    * @memberof MongoDriver
    */
-  async deconsteChild(parentId: string, childId: string) {
+  async deleteChild(parentId: string, childId: string) {
     try {
       await this.db
         .collection(COLLECTIONS.LearningObject.name)
@@ -416,7 +416,7 @@ export class MongoDriver implements DataStore {
         );
       }
 
-      // Remove deconsted outcomes
+      // Remove deleted outcomes
       oldOutcomes = Array.from(oldOutcomes);
 
       if (oldOutcomes.length) {
@@ -496,9 +496,9 @@ export class MongoDriver implements DataStore {
    * Remove a learning object (and its outcomes) from the database.
    * @async
    *
-   * @param {LearningObjectID} id which document to deconste
+   * @param {LearningObjectID} id which document to delete
    */
-  async deconsteLearningObject(id: string): Promise<void> {
+  async deleteLearningObject(id: string): Promise<void> {
     // remove object from all carts first
     try {
       await this.cleanObjectsFromCarts([id]);
@@ -513,9 +513,9 @@ export class MongoDriver implements DataStore {
    * Remove a learning object (and its outcomes) from the database.
    * @async
    *
-   * @param {LearningObjectID} id which document to deconste
+   * @param {LearningObjectID} id which document to delete
    */
-  async deconsteMultipleLearningObjects(ids: string[]): Promise<any> {
+  async deleteMultipleLearningObjects(ids: string[]): Promise<any> {
     // remove objects from all carts first
     try {
       await this.cleanObjectsFromCarts(ids);
@@ -548,9 +548,9 @@ export class MongoDriver implements DataStore {
    * Remove a learning outcome from the database.
    * @async
    *
-   * @param {LearningOutcomeID} id which document to deconste
+   * @param {LearningOutcomeID} id which document to delete
    */
-  private async deconsteLearningOutcome(id: string): Promise<void> {
+  private async deleteLearningOutcome(id: string): Promise<void> {
     try {
       // find any outcomes mapping to this one, and unmap them
       //  this data assurance step is in the general category of
@@ -1674,11 +1674,11 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Cascade deconste a record and its children.
+   * Cascade delete a record and its children.
    * @async
    *
    * @param {COLLECTIONS} collection provides collection information
-   * @param {string} id the document to deconste
+   * @param {string} id the document to delete
    */
   private async remove<T>(collection: Collection, id: string): Promise<void> {
     try {
