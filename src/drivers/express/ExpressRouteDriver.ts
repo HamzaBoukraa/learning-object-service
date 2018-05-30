@@ -12,7 +12,7 @@ const version = require('../../package.json').version;
 export class ExpressRouteDriver {
   private upload = multer({ storage: multer.memoryStorage() });
 
-  constructor(private dataStore: DataStore, fileManager: FileManager) {}
+  constructor(private dataStore: DataStore, private fileManager: FileManager) {}
 
   public static buildRouter(
     dataStore: DataStore,
