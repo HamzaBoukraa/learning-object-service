@@ -1021,7 +1021,10 @@ export class MongoDriver implements DataStore {
     // Search By Text
     if (text || text === '') {
       query = {
-        $or: [{ $text: { $search: text } }],
+        $or: [
+          { $text: { $search: text } },
+          { name: { $regex: new RegExp(text, 'ig') } },
+        ],
       };
       if (authorIDs && authorIDs.length) {
         query.$or.push(<any>{
@@ -1092,13 +1095,22 @@ export class MongoDriver implements DataStore {
     author: string,
     text: string,
   ): Promise<UserDocument[]> {
+    const query = {
+      $or: [{ $text: { $search: author ? author : text } }],
+    };
+
+    if (text) {
+      (<any[]>query.$or).push(
+        { username: { $regex: new RegExp(text, 'ig') } },
+        { name: { $regex: new RegExp(text, 'ig') } },
+        { email: { $regex: new RegExp(text, 'ig') } },
+      );
+    }
     return author || text
       ? await this.db
           .collection(COLLECTIONS.User.name)
-          .find<UserDocument>(
-            { $text: { $search: author ? author : text } },
-            { score: { $meta: 'textScore' } },
-          )
+          .find<UserDocument>(query, { score: { $meta: 'textScore' } })
+          .sort({ score: { $meta: 'textScore' } })
           .toArray()
       : null;
   }
