@@ -35,7 +35,7 @@ export interface DataStore {
   ): Promise<LearningObject[]>;
   fetchAllObjects(
     accessUnpublished?: boolean,
-    currPage?: number,
+    page?: number,
     limit?: number,
   ): Promise<{ objects: LearningObject[]; total: number }>;
   searchObjects(
@@ -48,7 +48,7 @@ export interface DataStore {
     accessUnpublished?: boolean,
     orderBy?: string,
     sortType?: number,
-    currPage?: number,
+    page?: number,
     limit?: number,
   ): Promise<{ objects: LearningObject[]; total: number }>;
   fetchCollections(loadObjects?: boolean): Promise<Collection[]>;

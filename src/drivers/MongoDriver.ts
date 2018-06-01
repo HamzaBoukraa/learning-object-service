@@ -825,13 +825,13 @@ export class MongoDriver implements DataStore {
    */
   async fetchAllObjects(
     accessUnpublished?: boolean,
-    currPage?: number,
+    page?: number,
     limit?: number,
   ): Promise<{ objects: LearningObject[]; total: number }> {
-    if (currPage !== undefined && currPage <= 0) {
-      currPage = 1;
+    if (page !== undefined && page <= 0) {
+      page = 1;
     }
-    const skip = currPage && limit ? (currPage - 1) * limit : undefined;
+    const skip = page && limit ? (page - 1) * limit : undefined;
 
     try {
       const query: any = {};
@@ -946,12 +946,11 @@ export class MongoDriver implements DataStore {
     accessUnpublished?: boolean,
     orderBy?: string,
     sortType?: number,
-    currPage?: number,
+    page?: number,
     limit?: number,
   ): Promise<{ objects: LearningObject[]; total: number }> {
-    if (currPage !== undefined && currPage <= 0) currPage = 1;
-    const skip = currPage && limit ? (currPage - 1) * limit : undefined;
-
+    if (page !== undefined && page <= 0) page = 1;
+    const skip = page && limit ? (page - 1) * limit : undefined;
     try {
       // Query for users
       const authorRecords: UserDocument[] = await this.matchUsers(author, text);

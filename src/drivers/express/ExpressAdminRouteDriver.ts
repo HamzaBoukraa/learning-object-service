@@ -37,7 +37,7 @@ export class ExpressAdminRouteDriver {
       const responder = this.getResponder(res);
 
       try {
-        const currPage = req.query.currPage ? +req.query.currPage : null;
+        const page = req.query.page ? +req.query.page : null;
         const limit = req.query.limit ? +req.query.limit : null;
 
         const name = req.query.name;
@@ -79,13 +79,13 @@ export class ExpressAdminRouteDriver {
             text,
             orderBy,
             sortType,
-            currPage,
+            page,
             limit,
           );
         } else {
           learningObjects = await AdminLearningObjectInteractor.fetchAllObjects(
             this.dataStore,
-            currPage,
+            page,
             limit,
           );
         }
