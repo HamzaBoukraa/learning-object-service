@@ -22,16 +22,16 @@ dotenv.config();
 
 export interface Collection {
   name: string;
-  foreigns?: Foriegn[];
+  foreigns?: Foreign[];
   uniques?: string[];
   text?: string[];
 }
-export interface Foriegn {
+export interface Foreign {
   name: string;
-  data: ForiegnData;
+  data: ForeignData;
 }
 
-export interface ForiegnData {
+export interface ForeignData {
   target: string;
   child: boolean;
   registry?: string;
@@ -232,7 +232,7 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Deconstes a child id from a learning object's children array if the child object
+   * deletes a child id from a learning object's children array if the child object
    * exists in the children array.
    *
    * @async
@@ -879,7 +879,7 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Fetchs the learning object documents associated with the given ids.
+   * Fetches the learning object documents associated with the given ids.
    *
    * @param ids array of database ids
    *
@@ -922,7 +922,7 @@ export class MongoDriver implements DataStore {
       return learningObjects;
     } catch (e) {
       return Promise.reject(
-        `Problem fecthing LearningObjects: ${ids}. Error: ${e}`,
+        `Problem fetching LearningObjects: ${ids}. Error: ${e}`,
       );
     }
   }
@@ -954,87 +954,33 @@ export class MongoDriver implements DataStore {
 
     try {
       // Query for users
-      const authorRecords: UserDocument[] =
-        author || text
-          ? await this.db
-              .collection(COLLECTIONS.User.name)
-              .find<UserDocument>({
-                $or: [
-                  {
-                    name: {
-                      $regex: new RegExp(author ? author : text, 'ig'),
-                    },
-                  },
-                  {
-                    organization: {
-                      $regex: new RegExp(text, 'ig'),
-                    },
-                  },
-                ],
-              })
-              .toArray()
-          : null;
+      const authorRecords: UserDocument[] = await this.matchUsers(author, text);
       const authorIDs = authorRecords
         ? authorRecords.map(doc => doc._id)
         : null;
 
       // Query by LearningOutcomes' mappings
-      const outcomeRecords: LearningOutcomeDocument[] = standardOutcomeIDs
-        ? await this.db
-            .collection(COLLECTIONS.LearningOutcome.name)
-            .find<LearningOutcomeDocument>({
-              mappings: { $all: standardOutcomeIDs },
-            })
-            .toArray()
-        : null;
+      const outcomeRecords: LearningOutcomeDocument[] = await this.matchOutcomes(
+        standardOutcomeIDs,
+      );
       const outcomeIDs = outcomeRecords
         ? outcomeRecords.map(doc => doc._id)
         : null;
 
-      let query: any = <any>{};
-
-      if (!accessUnpublished) {
-        query.published = true;
-      }
-      // Search By Text
-      if (text || text === '') {
-        query = {
-          $or: [
-            { name: { $regex: new RegExp(text, 'ig') } },
-            {
-              goals: {
-                $elemMatch: { text: { $regex: new RegExp(text, 'ig') } },
-              },
-            },
-          ],
-        };
-
-        if (authorIDs)
-          query.$or.push(<any>{
-            authorID: { $in: authorIDs },
-          });
-
-        if (length) query.length = { $in: length };
-
-        if (level) query.levels = { $in: level };
-        if (outcomeIDs) {
-          query.outcomes = outcomeIDs.length
-            ? { $in: outcomeIDs }
-            : ['DONT MATCH ME'];
-        }
-      } else {
-        // Search by fields
-        if (authorIDs) query.authorID = { $in: authorIDs };
-        if (name) query.name = { $regex: new RegExp(name, 'ig') };
-
-        if (length) query.length = { $in: length };
-        if (level) query.levels = { $in: level };
-        if (outcomeIDs) query.outcomes = { $in: outcomeIDs };
-      }
+      let query: any = this.buildSearchQuery(
+        accessUnpublished,
+        text,
+        authorIDs,
+        length,
+        level,
+        outcomeIDs,
+        name,
+      );
 
       let objectCursor = await this.db
         .collection(COLLECTIONS.LearningObject.name)
-        .find<LearningObjectDocument>(query);
+        .find<LearningObjectDocument>(query, { score: { $meta: 'textScore' } })
+        .sort({ score: { $meta: 'textScore' } });
 
       const totalRecords = await objectCursor.count();
 
@@ -1075,7 +1021,135 @@ export class MongoDriver implements DataStore {
       return Promise.reject('Error suggesting objects' + e);
     }
   }
+  /**
+   * Builds query object for Learning Object search
+   *
+   * @private
+   * @param {boolean} accessUnpublished
+   * @param {string} text
+   * @param {string[]} authorIDs
+   * @param {string[]} length
+   * @param {string[]} level
+   * @param {string[]} outcomeIDs
+   * @param {string} name
+   * @returns
+   * @memberof MongoDriver
+   */
+  private buildSearchQuery(
+    accessUnpublished: boolean,
+    text: string,
+    authorIDs: string[],
+    length: string[],
+    level: string[],
+    outcomeIDs: string[],
+    name: string,
+  ) {
+    let query: any = <any>{};
+    if (!accessUnpublished) {
+      query.published = true;
+    }
+    // Search By Text
+    if (text || text === '') {
+      query = {
+        $or: [
+          { $text: { $search: text } },
+          { name: { $regex: new RegExp(text, 'ig') } },
+        ],
+      };
+      if (authorIDs && authorIDs.length) {
+        query.$or.push(<any>{
+          authorID: { $in: authorIDs },
+        });
+      }
+      if (length) {
+        query.length = { $in: length };
+      }
+      if (level) {
+        query.levels = { $in: level };
+      }
+      if (outcomeIDs) {
+        query.outcomes = outcomeIDs.length
+          ? { $in: outcomeIDs }
+          : ['DONT MATCH ME'];
+      }
+    } else {
+      // Search by fields
+      if (name) {
+        query.$text = { $search: text };
+      }
+      if (authorIDs) {
+        query.authorID = { $in: authorIDs };
+      }
+      if (length) {
+        query.length = { $in: length };
+      }
+      if (level) {
+        query.levels = { $in: level };
+      }
+      if (outcomeIDs) {
+        query.outcomes = { $in: outcomeIDs };
+      }
+    }
+    return query;
+  }
+  /**
+   * Gets Learning Outcome IDs that contain Standard Outcome IDs
+   *
+   * @private
+   * @param {string[]} standardOutcomeIDs
+   * @returns {Promise<LearningOutcomeDocument[]>}
+   * @memberof MongoDriver
+   */
+  private async matchOutcomes(
+    standardOutcomeIDs: string[],
+  ): Promise<LearningOutcomeDocument[]> {
+    return standardOutcomeIDs
+      ? await this.db
+          .collection(COLLECTIONS.LearningOutcome.name)
+          .find<LearningOutcomeDocument>({
+            mappings: { $all: standardOutcomeIDs },
+          })
+          .toArray()
+      : null;
+  }
+  /**
+   * Search for users that match author or text param
+   *
+   * @private
+   * @param {string} author
+   * @param {string} text
+   * @returns {Promise<UserDocument[]>}
+   * @memberof MongoDriver
+   */
+  private async matchUsers(
+    author: string,
+    text: string,
+  ): Promise<UserDocument[]> {
+    const query = {
+      $or: [{ $text: { $search: author ? author : text } }],
+    };
 
+    if (text) {
+      (<any[]>query.$or).push(
+        { username: { $regex: new RegExp(text, 'ig') } },
+        { name: { $regex: new RegExp(text, 'ig') } },
+        { email: { $regex: new RegExp(text, 'ig') } },
+      );
+    }
+    return author || text
+      ? await this.db
+          .collection(COLLECTIONS.User.name)
+          .find<UserDocument>(query, { score: { $meta: 'textScore' } })
+          .sort({ score: { $meta: 'textScore' } })
+          .toArray()
+      : null;
+  }
+  /**
+   * Fetches all Learning Object collections
+   *
+   * @returns {Promise<LearningObjectCollection[]>}
+   * @memberof MongoDriver
+   */
   async fetchCollections(): Promise<LearningObjectCollection[]> {
     try {
       const collectionsCursor = await this.db
@@ -1086,6 +1160,13 @@ export class MongoDriver implements DataStore {
       return Promise.reject(e);
     }
   }
+  /**
+   * Fetches Learning Object Collection by name
+   *
+   * @param {string} name
+   * @returns {Promise<LearningObjectCollection>}
+   * @memberof MongoDriver
+   */
   async fetchCollection(name: string): Promise<LearningObjectCollection> {
     try {
       const collection = await this.db
@@ -1106,7 +1187,16 @@ export class MongoDriver implements DataStore {
   ////////////////////////////////////////////////
   // GENERIC HELPER METHODS - not in public API //
   ////////////////////////////////////////////////
-
+  /**
+   * Converts Learning Object to Document
+   *
+   * @private
+   * @param {LearningObject} object
+   * @param {boolean} [isNew]
+   * @param {string} [id]
+   * @returns {Promise<LearningObjectDocument>}
+   * @memberof MongoDriver
+   */
   private async documentLearningObject(
     object: LearningObject,
     isNew?: boolean,
@@ -1143,7 +1233,20 @@ export class MongoDriver implements DataStore {
       );
     }
   }
-
+  /**
+   * Converts Learning Outcome to Document
+   *
+   * @private
+   * @param {LearningOutcome} outcome
+   * @param {{
+   *       learningObjectID: string;
+   *       learningObjectName: string;
+   *       authorName: string;
+   *     }} source
+   * @param {boolean} [isNew]
+   * @returns {Promise<LearningOutcomeDocument>}
+   * @memberof MongoDriver
+   */
   private async documentLearningOutcome(
     outcome: LearningOutcome,
     source: {
@@ -1186,7 +1289,14 @@ export class MongoDriver implements DataStore {
       );
     }
   }
-
+  /**
+   * Generates User object from Document
+   *
+   * @private
+   * @param {UserDocument} userRecord
+   * @returns {User}
+   * @memberof MongoDriver
+   */
   private generateUser(userRecord: UserDocument): User {
     const user = new User(
       userRecord.username,
@@ -1201,7 +1311,16 @@ export class MongoDriver implements DataStore {
     return user;
   }
 
-  // TODO: Refactor into functions for loading partial vs full objects
+  /**
+   * Generates Learning Object from Document
+   *
+   * @private
+   * @param {User} author
+   * @param {LearningObjectDocument} record
+   * @param {boolean} [full]
+   * @returns {Promise<LearningObject>}
+   * @memberof MongoDriver
+   */
   private async generateLearningObject(
     author: User,
     record: LearningObjectDocument,
@@ -1252,7 +1371,14 @@ export class MongoDriver implements DataStore {
 
     return learningObject;
   }
-
+  /**
+   * Generates LearningOutcome from Document
+   *
+   * @private
+   * @param {LearningOutcomeDocument} record
+   * @returns {Promise<LearningOutcome>}
+   * @memberof MongoDriver
+   */
   private async generateLearningOutcome(
     record: LearningOutcomeDocument,
   ): Promise<LearningOutcome> {
@@ -1282,7 +1408,14 @@ export class MongoDriver implements DataStore {
       return Promise.reject(`Problem generating LearningOutcome. Error: ${e}`);
     }
   }
-
+  /**
+   * Generates Outcome from Document
+   *
+   * @private
+   * @param {StandardOutcomeDocument} record
+   * @returns {Outcome}
+   * @memberof MongoDriver
+   */
   private generateStandardOutcome(record: StandardOutcomeDocument): Outcome {
     const outcome: Outcome = {
       id: record._id,
@@ -1307,7 +1440,7 @@ export class MongoDriver implements DataStore {
    */
   private async validateForeignKeys<T>(
     record: T,
-    foreigns: Foriegn[],
+    foreigns: Foreign[],
   ): Promise<void> {
     try {
       if (foreigns)
@@ -1368,11 +1501,6 @@ export class MongoDriver implements DataStore {
             'found in ' +
             collection.name,
         );
-      // NOTE: below line is no good because schemaFor(outcomes) is arbitrary
-      // const mapping = await this.db.collection(foreignData(schemaFor(collection), registry).target).findOne({ _id: item });
-      // TODO: switch register and unregister and probably all thse to use schema instead of collection, so the next line works
-      // const mapping = await this.db.collection(foreignData(schema, registry).target).findOne({ _id: item });
-      // if (!mapping) return Promise.reject('Registration failed: no mapping ' + mapping + 'found in ' + collection);
 
       const pushdoc = {};
       pushdoc[registry] = item;
@@ -1415,14 +1543,14 @@ export class MongoDriver implements DataStore {
         .findOne({ _id: owner });
       if (!record)
         return Promise.reject(
-          'Unregistration failed: no record ' +
+          'Un-registration failed: no record ' +
             owner +
             'found in ' +
             collection,
         );
       if (!record[registry].includes(item)) {
         return Promise.reject(
-          'Unregistration failed: record ' +
+          'Un-registration failed: record ' +
             owner +
             ' s' +
             registry +
@@ -1441,7 +1569,7 @@ export class MongoDriver implements DataStore {
       return Promise.resolve();
     } catch (e) {
       return Promise.reject(
-        'Problem unregistering from a ' +
+        'Problem un-registering from a ' +
           collection.name +
           ' ' +
           registry +
@@ -1597,7 +1725,6 @@ export class MongoDriver implements DataStore {
    */
   private async remove<T>(collection: Collection, id: string): Promise<void> {
     try {
-      // fetch data to be deleted ... for the last time :(
       const record = await this.db
         .collection(collection.name)
         .findOne<T>({ _id: id });
@@ -1631,12 +1758,12 @@ export class MongoDriver implements DataStore {
           }
         }
 
-      // perform actual deconstion
+      // perform actual deletion
       await this.db.collection(collection.name).deleteOne({ _id: id });
 
       return Promise.resolve();
     } catch (e) {
-      return Promise.reject('Problem deconsting a ' + collection + ':\n\t' + e);
+      return Promise.reject('Problem deleting ' + collection + ':\n\t' + e);
     }
   }
 
