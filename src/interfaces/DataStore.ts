@@ -16,6 +16,7 @@ export interface DataStore {
     index: number,
   ): Promise<void>;
   editLearningObject(id: string, object: LearningObject): Promise<void>;
+  toggleLock(id: string, lock?: { date: string }): Promise<void>;
   deleteLearningObject(id: string): Promise<void>;
   deleteMultipleLearningObjects(ids: string[]): Promise<void>;
   getUserObjects(username: string): Promise<string[]>;

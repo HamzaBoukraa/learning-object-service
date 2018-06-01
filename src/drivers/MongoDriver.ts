@@ -240,7 +240,7 @@ export class MongoDriver implements DataStore {
    * @param {string} childId The database ID of the child Learning Object
    * @memberof MongoDriver
    */
-  async deconsteChild(parentId: string, childId: string) {
+  async deleteChild(parentId: string, childId: string) {
     try {
       await this.db
         .collection(COLLECTIONS.LearningObject.name)
@@ -416,7 +416,7 @@ export class MongoDriver implements DataStore {
         );
       }
 
-      // Remove deconsted outcomes
+      // Remove deleted outcomes
       oldOutcomes = Array.from(oldOutcomes);
 
       if (oldOutcomes.length) {
@@ -442,6 +442,22 @@ export class MongoDriver implements DataStore {
     }
   }
 
+  public async toggleLock(id: string, lock?: { date: string }): Promise<void> {
+    try {
+      await this.db
+        .collection(COLLECTIONS.LearningObject.name)
+        .update(
+          { _id: id },
+          lock
+            ? { $set: { lock: lock, published: false } }
+            : { $unset: { lock: null } },
+        );
+      return Promise.resolve();
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  }
+
   public async togglePublished(
     username: string,
     id: string,
@@ -456,9 +472,20 @@ export class MongoDriver implements DataStore {
           `Invalid access. User must be verified to publish Learning Objects`,
         );
       // else
+      const object = await this.db
+        .collection(COLLECTIONS.LearningObject.name)
+        .findOne({ _id: id }, { _id: 0, lock: 1 });
+      if (object.lock) {
+        return Promise.reject(
+          `Unable to publish. Learning Object locked by reviewer.`,
+        );
+      }
       await this.db
         .collection(COLLECTIONS.LearningObject.name)
-        .update({ _id: id }, { $set: { published: published } });
+        .update(
+          { _id: id, lock: { $exists: false } },
+          { $set: { published: published } },
+        );
       return Promise.resolve();
     } catch (e) {
       return Promise.reject(e);
@@ -489,16 +516,16 @@ export class MongoDriver implements DataStore {
   }
 
   //////////////////////////////////////////
-  // DEconstIONS - will cascade to children //
+  // DELETIONS - will cascade to children //
   //////////////////////////////////////////
 
   /**
    * Remove a learning object (and its outcomes) from the database.
    * @async
    *
-   * @param {LearningObjectID} id which document to deconste
+   * @param {LearningObjectID} id which document to delete
    */
-  async deconsteLearningObject(id: string): Promise<void> {
+  async deleteLearningObject(id: string): Promise<void> {
     // remove object from all carts first
     try {
       await this.cleanObjectsFromCarts([id]);
@@ -513,9 +540,9 @@ export class MongoDriver implements DataStore {
    * Remove a learning object (and its outcomes) from the database.
    * @async
    *
-   * @param {LearningObjectID} id which document to deconste
+   * @param {LearningObjectID} id which document to delete
    */
-  async deconsteMultipleLearningObjects(ids: string[]): Promise<any> {
+  async deleteMultipleLearningObjects(ids: string[]): Promise<any> {
     // remove objects from all carts first
     try {
       await this.cleanObjectsFromCarts(ids);
@@ -548,9 +575,9 @@ export class MongoDriver implements DataStore {
    * Remove a learning outcome from the database.
    * @async
    *
-   * @param {LearningOutcomeID} id which document to deconste
+   * @param {LearningOutcomeID} id which document to delete
    */
-  private async deconsteLearningOutcome(id: string): Promise<void> {
+  private async deleteLearningOutcome(id: string): Promise<void> {
     try {
       // find any outcomes mapping to this one, and unmap them
       //  this data assurance step is in the general category of
@@ -980,7 +1007,6 @@ export class MongoDriver implements DataStore {
               },
             },
           ],
-          published: true,
         };
 
         if (authorIDs)
@@ -1035,6 +1061,9 @@ export class MongoDriver implements DataStore {
           object,
           false,
         );
+        if (accessUnpublished) {
+          learningObject.id = object._id;
+        }
         learningObjects.push(learningObject);
       }
 
@@ -1186,6 +1215,7 @@ export class MongoDriver implements DataStore {
     learningObject.materials = record.materials;
     record.published ? learningObject.publish() : learningObject.unpublish();
     learningObject.children = record.children;
+    learningObject.lock = record.lock;
     for (const goal of record.goals) {
       learningObject.addGoal(goal.text);
     }
@@ -1559,15 +1589,15 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Cascade deconste a record and its children.
+   * Cascade delete a record and its children.
    * @async
    *
    * @param {COLLECTIONS} collection provides collection information
-   * @param {string} id the document to deconste
+   * @param {string} id the document to delete
    */
   private async remove<T>(collection: Collection, id: string): Promise<void> {
     try {
-      // fetch data to be deconsted ... for the last time :(
+      // fetch data to be deleted ... for the last time :(
       const record = await this.db
         .collection(collection.name)
         .findOne<T>({ _id: id });

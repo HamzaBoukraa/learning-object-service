@@ -95,7 +95,7 @@ export class ExpressAdminRouteDriver {
       }
     });
     router.patch(
-      '/users/:username/learning-objects/publish',
+      '/users/:username/learning-objects/:learningObjectName/publish',
       async (req, res) => {
         const responder = this.getResponder(res);
         try {
@@ -115,7 +115,7 @@ export class ExpressAdminRouteDriver {
       },
     );
     router.patch(
-      '/users/:username/learning-objects/unpublish',
+      '/users/:username/learning-objects/:learningObjectName/unpublish',
       async (req, res) => {
         const responder = this.getResponder(res);
         try {
@@ -128,6 +128,38 @@ export class ExpressAdminRouteDriver {
             id,
             published,
           );
+          responder.sendOperationSuccess();
+        } catch (e) {
+          responder.sendOperationError(e);
+        }
+      },
+    );
+    router.patch(
+      '/users/:username/learning-objects/:learningObjectName/lock',
+      async (req, res) => {
+        const responder = this.getResponder(res);
+        try {
+          const id = req.body.id;
+          const lock = req.body.lock;
+
+          await AdminLearningObjectInteractor.toggleLock(
+            this.dataStore,
+            id,
+            lock,
+          );
+          responder.sendOperationSuccess();
+        } catch (e) {
+          responder.sendOperationError(e);
+        }
+      },
+    );
+    router.patch(
+      '/users/:username/learning-objects/:learningObjectName/unlock',
+      async (req, res) => {
+        const responder = this.getResponder(res);
+        try {
+          const id = req.body.id;
+          await AdminLearningObjectInteractor.toggleLock(this.dataStore, id);
           responder.sendOperationSuccess();
         } catch (e) {
           responder.sendOperationError(e);
