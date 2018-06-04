@@ -91,6 +91,18 @@ export class AdminLearningObjectInteractor {
     }
   }
 
+  public static async toggleLock(
+    dataStore: DataStore,
+    id: string,
+    lock?: { date: string },
+  ): Promise<void> {
+    try {
+      return dataStore.toggleLock(id, lock);
+    } catch (e) {
+      return Promise.reject(`Problem toggling lock. Error:  ${e}`);
+    }
+  }
+
   public static async deleteLearningObject(
     dataStore: DataStore,
     fileManager: FileManager,

@@ -7,6 +7,7 @@ import * as logger from 'morgan';
 import { enforceTokenAccess } from '../../middleware/jwt.config';
 import * as cors from 'cors';
 import * as cookieParser from 'cookie-parser';
+import { enforceAdminAccess } from '../../middleware/admin-access';
 
 export class ExpressDriver {
   static app = express();
@@ -38,6 +39,7 @@ export class ExpressDriver {
     this.app.use('/', ExpressRouteDriver.buildRouter(dataStore, fileManager));
 
     // Set admin api routes
+    this.app.use(enforceAdminAccess);
     this.app.use(
       '/admin',
       ExpressAdminRouteDriver.buildRouter(dataStore, fileManager),

@@ -37,7 +37,7 @@ export class ExpressAdminRouteDriver {
       const responder = this.getResponder(res);
 
       try {
-        const currPage = req.query.currPage ? +req.query.currPage : null;
+        const page = req.query.page ? +req.query.page : null;
         const limit = req.query.limit ? +req.query.limit : null;
 
         const name = req.query.name;
@@ -79,13 +79,13 @@ export class ExpressAdminRouteDriver {
             text,
             orderBy,
             sortType,
-            currPage,
+            page,
             limit,
           );
         } else {
           learningObjects = await AdminLearningObjectInteractor.fetchAllObjects(
             this.dataStore,
-            currPage,
+            page,
             limit,
           );
         }
@@ -94,42 +94,80 @@ export class ExpressAdminRouteDriver {
         responder.sendOperationError(e);
       }
     });
-    router.patch('/:username/learning-objects/publish', async (req, res) => {
-      const responder = this.getResponder(res);
-      try {
-        const id = req.body.id;
-        const published = req.body.published;
+    router.patch(
+      '/users/:username/learning-objects/:learningObjectName/publish',
+      async (req, res) => {
+        const responder = this.getResponder(res);
+        try {
+          const id = req.body.id;
+          const published = req.body.published;
 
-        await AdminLearningObjectInteractor.togglePublished(
-          this.dataStore,
-          req.params.username,
-          id,
-          published,
-        );
-        responder.sendOperationSuccess();
-      } catch (e) {
-        responder.sendOperationError(e);
-      }
-    });
-    router.patch('/:username/learning-objects/unpublish', async (req, res) => {
-      const responder = this.getResponder(res);
-      try {
-        const id = req.body.id;
-        const published = req.body.published;
+          await AdminLearningObjectInteractor.togglePublished(
+            this.dataStore,
+            req.params.username,
+            id,
+            published,
+          );
+          responder.sendOperationSuccess();
+        } catch (e) {
+          responder.sendOperationError(e);
+        }
+      },
+    );
+    router.patch(
+      '/users/:username/learning-objects/:learningObjectName/unpublish',
+      async (req, res) => {
+        const responder = this.getResponder(res);
+        try {
+          const id = req.body.id;
+          const published = req.body.published;
 
-        await AdminLearningObjectInteractor.togglePublished(
-          this.dataStore,
-          req.params.username,
-          id,
-          published,
-        );
-        responder.sendOperationSuccess();
-      } catch (e) {
-        responder.sendOperationError(e);
-      }
-    });
+          await AdminLearningObjectInteractor.togglePublished(
+            this.dataStore,
+            req.params.username,
+            id,
+            published,
+          );
+          responder.sendOperationSuccess();
+        } catch (e) {
+          responder.sendOperationError(e);
+        }
+      },
+    );
+    router.patch(
+      '/users/:username/learning-objects/:learningObjectName/lock',
+      async (req, res) => {
+        const responder = this.getResponder(res);
+        try {
+          const id = req.body.id;
+          const lock = req.body.lock;
+
+          await AdminLearningObjectInteractor.toggleLock(
+            this.dataStore,
+            id,
+            lock,
+          );
+          responder.sendOperationSuccess();
+        } catch (e) {
+          responder.sendOperationError(e);
+        }
+      },
+    );
+    router.patch(
+      '/users/:username/learning-objects/:learningObjectName/unlock',
+      async (req, res) => {
+        const responder = this.getResponder(res);
+        try {
+          const id = req.body.id;
+          await AdminLearningObjectInteractor.toggleLock(this.dataStore, id);
+          responder.sendOperationSuccess();
+        } catch (e) {
+          responder.sendOperationError(e);
+        }
+      },
+    );
     router.delete(
-      '/:username/learning-objects/:learningObjectName',
+      '/users/:username/learning-objects/:learningObjectName',
       async (req, res) => {
         const responder = this.getResponder(res);
         try {
@@ -148,7 +186,7 @@ export class ExpressAdminRouteDriver {
     );
 
     router.delete(
-      '/:username/learning-objects/:learningObjectNames/multiple',
+      '/learning-objects/:learningObjectNames/multiple',
       async (req, res) => {
         const responder = this.getResponder(res);
         try {

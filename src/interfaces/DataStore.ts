@@ -16,6 +16,7 @@ export interface DataStore {
     index: number,
   ): Promise<void>;
   editLearningObject(id: string, object: LearningObject): Promise<void>;
+  toggleLock(id: string, lock?: { date: string }): Promise<void>;
   deleteLearningObject(id: string): Promise<void>;
   deleteMultipleLearningObjects(ids: string[]): Promise<void>;
   getUserObjects(username: string): Promise<string[]>;
@@ -34,7 +35,7 @@ export interface DataStore {
   ): Promise<LearningObject[]>;
   fetchAllObjects(
     accessUnpublished?: boolean,
-    currPage?: number,
+    page?: number,
     limit?: number,
   ): Promise<{ objects: LearningObject[]; total: number }>;
   searchObjects(
@@ -47,7 +48,7 @@ export interface DataStore {
     accessUnpublished?: boolean,
     orderBy?: string,
     sortType?: number,
-    currPage?: number,
+    page?: number,
     limit?: number,
   ): Promise<{ objects: LearningObject[]; total: number }>;
   fetchCollections(loadObjects?: boolean): Promise<Collection[]>;

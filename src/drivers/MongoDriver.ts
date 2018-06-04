@@ -442,6 +442,22 @@ export class MongoDriver implements DataStore {
     }
   }
 
+  public async toggleLock(id: string, lock?: { date: string }): Promise<void> {
+    try {
+      await this.db
+        .collection(COLLECTIONS.LearningObject.name)
+        .update(
+          { _id: id },
+          lock
+            ? { $set: { lock: lock, published: false } }
+            : { $unset: { lock: null } },
+        );
+      return Promise.resolve();
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  }
+
   public async togglePublished(
     username: string,
     id: string,
@@ -456,9 +472,20 @@ export class MongoDriver implements DataStore {
           `Invalid access. User must be verified to publish Learning Objects`,
         );
       // else
+      const object = await this.db
+        .collection(COLLECTIONS.LearningObject.name)
+        .findOne({ _id: id }, { _id: 0, lock: 1 });
+      if (object.lock) {
+        return Promise.reject(
+          `Unable to publish. Learning Object locked by reviewer.`,
+        );
+      }
       await this.db
         .collection(COLLECTIONS.LearningObject.name)
-        .update({ _id: id }, { $set: { published: published } });
+        .update(
+          { _id: id, lock: { $exists: false } },
+          { $set: { published: published } },
+        );
       return Promise.resolve();
     } catch (e) {
       return Promise.reject(e);
@@ -489,7 +516,7 @@ export class MongoDriver implements DataStore {
   }
 
   //////////////////////////////////////////
-  // DEconstIONS - will cascade to children //
+  // DELETIONS - will cascade to children //
   //////////////////////////////////////////
 
   /**
@@ -798,13 +825,13 @@ export class MongoDriver implements DataStore {
    */
   async fetchAllObjects(
     accessUnpublished?: boolean,
-    currPage?: number,
+    page?: number,
     limit?: number,
   ): Promise<{ objects: LearningObject[]; total: number }> {
-    if (currPage !== undefined && currPage <= 0) {
-      currPage = 1;
+    if (page !== undefined && page <= 0) {
+      page = 1;
     }
-    const skip = currPage && limit ? (currPage - 1) * limit : undefined;
+    const skip = page && limit ? (page - 1) * limit : undefined;
 
     try {
       const query: any = {};
@@ -919,12 +946,11 @@ export class MongoDriver implements DataStore {
     accessUnpublished?: boolean,
     orderBy?: string,
     sortType?: number,
-    currPage?: number,
+    page?: number,
     limit?: number,
   ): Promise<{ objects: LearningObject[]; total: number }> {
-    if (currPage !== undefined && currPage <= 0) currPage = 1;
-    const skip = currPage && limit ? (currPage - 1) * limit : undefined;
-
+    if (page !== undefined && page <= 0) page = 1;
+    const skip = page && limit ? (page - 1) * limit : undefined;
     try {
       // Query for users
       const authorRecords: UserDocument[] = await this.matchUsers(author, text);
@@ -980,6 +1006,9 @@ export class MongoDriver implements DataStore {
           object,
           false,
         );
+        if (accessUnpublished) {
+          learningObject.id = object._id;
+        }
         learningObjects.push(learningObject);
       }
 
@@ -1304,6 +1333,7 @@ export class MongoDriver implements DataStore {
     learningObject.materials = record.materials;
     record.published ? learningObject.publish() : learningObject.unpublish();
     learningObject.children = record.children;
+    learningObject.lock = record.lock;
     for (const goal of record.goals) {
       learningObject.addGoal(goal.text);
     }
