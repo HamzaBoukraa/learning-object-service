@@ -40,11 +40,12 @@ export class LearningObjectInteractor {
       let total = 0;
       let summary: LearningObject[] = [];
       if (
-        query.name ||
-        query.length ||
-        query.level ||
-        query.standardOutcomeIDs ||
-        query.text
+        query &&
+        (query.name ||
+          query.length ||
+          query.level ||
+          query.standardOutcomeIDs ||
+          query.text)
       ) {
         const response = await this.searchObjects(
           dataStore,
@@ -68,8 +69,8 @@ export class LearningObjectInteractor {
           objectIDs,
           false,
           accessUnpublished,
-          query.orderBy,
-          query.sortType,
+          query ? query.orderBy : null,
+          query ? query.sortType : null,
         );
         total = summary.length;
       }
