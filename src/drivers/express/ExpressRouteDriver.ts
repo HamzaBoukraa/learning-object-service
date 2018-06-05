@@ -270,14 +270,13 @@ export class ExpressRouteDriver {
     router.get('/learning-objects/summary', async (req, res) => {
       const responder = this.getResponder(res);
       try {
-        const orderBy = req.query.orderBy;
-        const sortType = req.query.sortType ? +req.query.sortType : null;
+        const children = req.query.children;
         const objects = await LearningObjectInteractor.loadLearningObjectSummary(
           this.dataStore,
           req.user.username,
           true,
-          orderBy,
-          sortType,
+          children,
+          req.query,
         );
         responder.sendObject(objects);
       } catch (e) {
