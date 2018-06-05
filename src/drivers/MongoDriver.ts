@@ -144,7 +144,10 @@ export class MongoDriver implements DataStore {
       this.db = await MongoClient.connect(dbURI);
     } catch (e) {
       if (!retryAttempt) {
-        this.connect(dbURI, 1);
+        this.connect(
+          dbURI,
+          1,
+        );
       } else {
         return Promise.reject(
           'Problem connecting to database at ' + dbURI + ':\n\t' + e,
@@ -1049,12 +1052,10 @@ export class MongoDriver implements DataStore {
     }
     // Search By Text
     if (text || text === '') {
-      query = {
-        $or: [
-          { $text: { $search: text } },
-          { name: { $regex: new RegExp(text, 'ig') } },
-        ],
-      };
+      query.$or = [
+        { $text: { $search: text } },
+        { name: { $regex: new RegExp(text, 'ig') } },
+      ];
       if (authorIDs && authorIDs.length) {
         query.$or.push(<any>{
           authorID: { $in: authorIDs },
