@@ -960,7 +960,8 @@ export class MongoDriver implements DataStore {
       const authorIDs = authorRecords
         ? authorRecords.map(doc => doc._id)
         : null;
-
+      const exactAuthor =
+        author && authorIDs && authorIDs.length ? true : false;
       // Query by LearningOutcomes' mappings
       const outcomeRecords: LearningOutcomeDocument[] = await this.matchOutcomes(
         standardOutcomeIDs,
@@ -977,6 +978,7 @@ export class MongoDriver implements DataStore {
         level,
         outcomeIDs,
         name,
+        exactAuthor,
       );
 
       let objectCursor = await this.db
@@ -1045,6 +1047,7 @@ export class MongoDriver implements DataStore {
     level: string[],
     outcomeIDs: string[],
     name: string,
+    exactAuthor?: boolean,
   ) {
     let query: any = <any>{};
     if (!accessUnpublished) {
@@ -1057,9 +1060,13 @@ export class MongoDriver implements DataStore {
         { name: { $regex: new RegExp(text, 'ig') } },
       ];
       if (authorIDs && authorIDs.length) {
-        query.$or.push(<any>{
-          authorID: { $in: authorIDs },
-        });
+        if (exactAuthor) {
+          query.authorID = authorIDs[0];
+        } else {
+          query.$or.push(<any>{
+            authorID: { $in: authorIDs },
+          });
+        }
       }
       if (length) {
         query.length = { $in: length };
@@ -1075,7 +1082,7 @@ export class MongoDriver implements DataStore {
     } else {
       // Search by fields
       if (name) {
-        query.$text = { $search: text };
+        query.$text = { $search: name };
       }
       if (authorIDs) {
         query.authorID = { $in: authorIDs };

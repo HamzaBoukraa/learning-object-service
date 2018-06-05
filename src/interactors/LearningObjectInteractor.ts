@@ -37,14 +37,42 @@ export class LearningObjectInteractor {
     query?: LearningObjectQuery,
   ): Promise<LearningObject[]> {
     try {
-      const objectIDs = await dataStore.getUserObjects(username);
-      let summary: LearningObject[] = await dataStore.fetchMultipleObjects(
-        objectIDs,
-        false,
-        accessUnpublished,
-        query.orderBy,
-        query.sortType,
-      );
+      let total = 0;
+      let summary: LearningObject[] = [];
+      if (
+        query.name ||
+        query.length ||
+        query.level ||
+        query.standardOutcomeIDs ||
+        query.text
+      ) {
+        const response = await this.searchObjects(
+          dataStore,
+          query.name,
+          username,
+          query.length,
+          query.level,
+          query.standardOutcomeIDs,
+          query.text,
+          accessUnpublished,
+          query.orderBy,
+          query.sortType,
+          query.page,
+          query.limit,
+        );
+        summary = response.objects;
+        total = response.total;
+      } else {
+        const objectIDs = await dataStore.getUserObjects(username);
+        summary = await dataStore.fetchMultipleObjects(
+          objectIDs,
+          false,
+          accessUnpublished,
+          query.orderBy,
+          query.sortType,
+        );
+        total = summary.length;
+      }
 
       if (loadChildren) {
         summary = await Promise.all(
@@ -490,7 +518,7 @@ export class LearningObjectInteractor {
     sortType?: number,
     currPage?: number,
     limit?: number,
-  ): Promise<any> {
+  ): Promise<{ total: number; objects: LearningObject[] }> {
     try {
       if (text) {
         text = this.removeStopwords(text);
