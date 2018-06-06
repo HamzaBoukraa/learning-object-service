@@ -1226,6 +1226,7 @@ export class MongoDriver implements DataStore {
         outcomes: [],
         materials: object.materials,
         published: object.published,
+        contributors: object.contributors,
       };
       if (isNew) {
         doc._id = new ObjectID().toHexString();
@@ -1342,6 +1343,8 @@ export class MongoDriver implements DataStore {
     record.published ? learningObject.publish() : learningObject.unpublish();
     learningObject.children = record.children;
     learningObject.lock = record.lock;
+    learningObject.contributors = record.contributors;
+    console.log(record.contributors);
     for (const goal of record.goals) {
       learningObject.addGoal(goal.text);
     }
