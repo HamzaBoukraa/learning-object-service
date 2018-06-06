@@ -63,3 +63,16 @@ export interface DataStore {
 }
 
 export { Collection as LearningObjectCollection };
+
+export type LearningObjectQuery = {
+  name?: string;
+  author?: string;
+  length?: string[];
+  level?: string[];
+  standardOutcomeIDs?: string[];
+  text?: string;
+  orderBy?: string;
+  sortType?: -1 | 1;
+  page?: number;
+  limit?: number;
+};

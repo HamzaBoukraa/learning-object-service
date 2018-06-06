@@ -18,6 +18,7 @@ import {
 
 import * as stopword from 'stopword';
 import * as stemmer from 'stemmer';
+import { LearningObjectQuery } from '../interfaces/DataStore';
 
 export class LearningObjectInteractor {
   /**
@@ -32,18 +33,64 @@ export class LearningObjectInteractor {
     dataStore: DataStore,
     username: string,
     accessUnpublished?: boolean,
-    orderBy?: string,
-    sortType?: number,
+    loadChildren?: boolean,
+    query?: LearningObjectQuery,
   ): Promise<LearningObject[]> {
     try {
-      const objectIDs = await dataStore.getUserObjects(username);
-      const summary: LearningObject[] = await dataStore.fetchMultipleObjects(
-        objectIDs,
-        false,
-        accessUnpublished,
-        orderBy,
-        sortType,
-      );
+      let total = 0;
+      let summary: LearningObject[] = [];
+      if (
+        query &&
+        (query.name ||
+          query.length ||
+          query.level ||
+          query.standardOutcomeIDs ||
+          query.text)
+      ) {
+        const response = await this.searchObjects(
+          dataStore,
+          query.name,
+          username,
+          query.length,
+          query.level,
+          query.standardOutcomeIDs,
+          query.text,
+          accessUnpublished,
+          query.orderBy,
+          query.sortType,
+          query.page,
+          query.limit,
+        );
+        summary = response.objects;
+        total = response.total;
+      } else {
+        const objectIDs = await dataStore.getUserObjects(username);
+        summary = await dataStore.fetchMultipleObjects(
+          objectIDs,
+          false,
+          accessUnpublished,
+          query ? query.orderBy : null,
+          query ? query.sortType : null,
+        );
+        total = summary.length;
+      }
+
+      if (loadChildren) {
+        summary = await Promise.all(
+          summary.map(async object => {
+            if (object.children && object.children.length) {
+              object.children = await this.loadChildObjects(
+                dataStore,
+                object,
+                false,
+                accessUnpublished,
+              );
+            }
+            return object;
+          }),
+        );
+      }
+
       return summary;
     } catch (e) {
       return Promise.reject(`Problem loading summary. Error: ${e}`);
@@ -66,6 +113,7 @@ export class LearningObjectInteractor {
     accessUnpublished?: boolean,
   ): Promise<LearningObject> {
     try {
+      const fullChildren = false;
       const learningObjectID = await dataStore.findLearningObject(
         username,
         learningObjectName,
@@ -75,12 +123,16 @@ export class LearningObjectInteractor {
         true,
         accessUnpublished,
       );
-      if (accessUnpublished) learningObject.id = learningObjectID;
+      if (accessUnpublished) {
+        learningObject.id = learningObjectID;
+      }
 
       if (learningObject.children) {
         learningObject.children = await this.loadChildObjects(
           dataStore,
           learningObject,
+          fullChildren,
+          accessUnpublished,
         );
       }
       return learningObject;
@@ -92,13 +144,22 @@ export class LearningObjectInteractor {
   private static async loadChildObjects(
     dataStore: DataStore,
     learningObject: LearningObject,
+    full?: boolean,
+    accessUnpublished?: boolean,
   ): Promise<LearningObject[]> {
     if (learningObject.children) {
       const children = await dataStore.fetchMultipleObjects(
         learningObject.children,
+        full,
+        accessUnpublished,
       );
       for (let child of children) {
-        child.children = await this.loadChildObjects(dataStore, child);
+        child.children = await this.loadChildObjects(
+          dataStore,
+          child,
+          full,
+          accessUnpublished,
+        );
       }
       return [...children];
     }
@@ -458,7 +519,7 @@ export class LearningObjectInteractor {
     sortType?: number,
     currPage?: number,
     limit?: number,
-  ): Promise<any> {
+  ): Promise<{ total: number; objects: LearningObject[] }> {
     try {
       if (text) {
         text = this.removeStopwords(text);
