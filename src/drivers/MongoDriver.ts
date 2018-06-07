@@ -1181,8 +1181,12 @@ export class MongoDriver implements DataStore {
         .findOne({ name: name });
       const objects = [];
       for (const id of collection.learningObjects) {
-        const object = await this.fetchLearningObject(id, false, false);
-        objects.push(object);
+        try {
+          const object = await this.fetchLearningObject(id, false, false);
+          objects.push(object);
+        } catch (e) {
+          console.log('Object is unpublished. Do not add, continue');
+        }
       }
       collection.learningObjects = objects;
       return collection;
