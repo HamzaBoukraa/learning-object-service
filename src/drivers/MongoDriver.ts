@@ -1065,10 +1065,14 @@ export class MongoDriver implements DataStore {
         if (exactAuthor) {
           query.authorID = authors[0]._id;
         } else {
-          query.$or.push(<any>{
-            authorID: { $in: authors.map(author => author._id) },
-            contributors: { $in: authors.map(author => author.username) },
-          });
+          query.$or.push(
+            <any>{
+              authorID: { $in: authors.map(author => author._id) },
+            },
+            {
+              contributors: { $in: authors.map(author => author.username) },
+            },
+          );
         }
       }
       if (length) {
