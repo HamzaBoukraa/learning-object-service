@@ -1058,6 +1058,7 @@ export class MongoDriver implements DataStore {
       query.$or = [
         { $text: { $search: text } },
         { name: { $regex: new RegExp(text, 'ig') } },
+        { contributors: { $regex: new RegExp(text, 'ig') } },
       ];
       if (authorIDs && authorIDs.length) {
         if (exactAuthor) {
@@ -1344,7 +1345,6 @@ export class MongoDriver implements DataStore {
     learningObject.children = record.children;
     learningObject.lock = record.lock;
     learningObject.contributors = record.contributors;
-    console.log(record.contributors);
     for (const goal of record.goals) {
       learningObject.addGoal(goal.text);
     }
