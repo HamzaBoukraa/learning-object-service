@@ -19,6 +19,8 @@ import {
 import * as stopword from 'stopword';
 import * as stemmer from 'stemmer';
 import { LearningObjectQuery } from '../interfaces/DataStore';
+import { HTTPServiceMessager } from '../drivers/HTTPServiceMessager';
+import { SYSTEM_EVENT, SERVICE } from '../interfaces/ServiceMessager';
 
 export class LearningObjectInteractor {
   /**
@@ -334,9 +336,22 @@ export class LearningObjectInteractor {
       if (err) {
         return Promise.reject(err);
       } else {
+        // FIXME: resolve service manager through an abstraction layer
+        new HTTPServiceMessager().sendMessage(
+          SERVICE.USER_SERVICE,
+          {
+            event: SYSTEM_EVENT.AUTHOR_UPDATED_LEARNING_OBJECT,
+            payload: {
+              username: object.author.username,
+              learningObjectName: object.name,
+              id,
+            },
+          },
+        );
         return dataStore.editLearningObject(id, object);
       }
     } catch (e) {
+      // TODO: If editLearningObject fails the notification should be deleted
       return Promise.reject(`Problem updating Learning Object. Error: ${e}`);
     }
   }
