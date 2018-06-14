@@ -24,18 +24,34 @@ describe('loadLearningObjectSummary', () => {
       const username = 'nvisal1';
       return LearningObjectInteractor.loadLearningObjectSummary(driver, username ).then(val => {
         // expect(response.error).toEqual('Server error encounter.');
-        console.log(val);
         expect(val).toBeTruthy();
         done();
       }).catch((error) => {
-        console.log(error);
+        expect(true).toBe(false);
         done();
       });
     }).catch((error) => {
-      console.log(error);
+      expect(true).toBe(false);
       done();
     });
   });
+    // Test 2: Provide expected input
+  it('should return error - empty username given!', done => {
+        driver.connect(dburi).then(val => {
+          const username = '';
+          return LearningObjectInteractor.loadLearningObjectSummary(driver, username ).then(val => {
+            // expect(response.error).toEqual('Server error encounter.');
+            expect(true).toBe(false);
+            done();
+          }).catch((error) => {
+            expect(error).toBeTruthy();
+            done();
+          });
+        }).catch((error) => {
+          expect(true).toBe(false);
+          done();
+        });
+      });
 });
 
 // ** loadLearningObject **
@@ -45,24 +61,45 @@ describe('loadLearningObjectSummary', () => {
 // failure - returns Promise.reject(`Problem searching users. Error: ${e}`);
 describe('loadLearningObject', () => {
     // Test 1: Provide expected input
-  it('should load learning object', done => {
+  it('should load learning object - invalid access - throws error!', done => {
     driver.connect(dburi).then(val => {
       const username = 'nvisal1';
       const learningObjectName = 'test contributors';
-      return LearningObjectInteractor.loadLearningObject(driver, username, learningObjectName ).then(val => {
+      return LearningObjectInteractor.loadLearningObject(driver, username, learningObjectName).then(val => {
         // expect(response.error).toEqual('Server error encounter.');
-        console.log(val);
-        expect(val).toBeTruthy();
+        expect(true).toBe(false);
         done();
       }).catch((error) => {
         console.log(error);
+        expect(error).toBeTruthy();
         done();
       });
     }).catch((error) => {
       console.log(error);
+      expect(true).toBe(false);
       done();
     });
   });
+    // Test 2: Provide expected input
+  it('should return error - incorrect user', done => {
+        driver.connect(dburi).then(val => {
+          const username = '';
+          const learningObjectName = 'test contributors';
+          return LearningObjectInteractor.loadLearningObject(driver, username, learningObjectName).then(val => {
+            // expect(response.error).toEqual('Server error encounter.');
+            expect(true).toBe(false);
+            done();
+          }).catch((error) => {
+            console.log(error);
+            expect(error).toBeTruthy();
+            done();
+          });
+        }).catch((error) => {
+          console.log(error);
+          expect(true).toBe(false);
+          done();
+        });
+      });
 });
 
 // ** loadFullLearningObjectByIDs **
@@ -74,22 +111,41 @@ describe('loadFullLearningObjectByIDs', () => {
     // Test 1: Provide expected input
   it('should load full learning object', done => {
     driver.connect(dburi).then(val => {
-      const username = 'nvisal1';
-      const ids = ['5b17ea3be3a1c4761f7f9463'];
+      const ids = ['5b17ea3be3a1c4761f7f9463', '5b17ea3be3a1c4761f7f9463'];
       return LearningObjectInteractor.loadFullLearningObjectByIDs(driver, ids ).then(val => {
         // expect(response.error).toEqual('Server error encounter.');
-        console.log(val);
         expect(val).toBeTruthy();
         done();
       }).catch((error) => {
         console.log(error);
+        expect(true).toBe(false);
         done();
       });
     }).catch((error) => {
       console.log(error);
+      expect(true).toBe(false);
       done();
     });
   });
+    // Test 1: Provide expected input
+  it('should return learning object - given empty array!', done => {
+        driver.connect(dburi).then(val => {
+          const ids = [''];
+          return LearningObjectInteractor.loadFullLearningObjectByIDs(driver, ids ).then(val => {
+            // expect(response.error).toEqual('Server error encounter.');
+            expect(val).toBeTruthy();
+            done();
+          }).catch((error) => {
+            console.log(error);
+            expect(true).toBe(false);
+            done();
+          });
+        }).catch((error) => {
+          console.log(error);
+          expect(true).toBe(false);
+          done();
+        });
+      });
 });
 
 // ** findLearningObject **
@@ -105,7 +161,6 @@ describe('findLearningObject', () => {
       const learningObjectName = 'test contributors';
       return LearningObjectInteractor.findLearningObject(driver, username, learningObjectName ).then(val => {
         // expect(response.error).toEqual('Server error encounter.');
-        console.log(val);
         expect(val).toBeTruthy();
         done();
       }).catch((error) => {
@@ -162,7 +217,6 @@ describe('togglePublished', () => {
       const published = true;
       return LearningObjectInteractor.togglePublished(driver, username, id, published).then(val => {
         // expect(response.error).toEqual('Server error encounter.');
-        console.log(val);
         expect(val).toBeTruthy();
         done();
       }).catch((error) => {
@@ -189,7 +243,6 @@ describe('fetchAllObjects', () => {
       const limit = 3;
       return LearningObjectInteractor.fetchAllObjects(driver, currPage, limit).then(val => {
         // expect(response.error).toEqual('Server error encounter.');
-        console.log(val);
         expect(val).toBeTruthy();
         done();
       }).catch((error) => {
@@ -215,7 +268,6 @@ describe('fetchMultipleObjects', () => {
       const ids = [{username: 'nvisal1', learningObjectName: 'test contributors'}];
       return LearningObjectInteractor.fetchMultipleObjects(driver, ids).then(val => {
         // expect(response.error).toEqual('Server error encounter.');
-        console.log(val);
         expect(val).toBeTruthy();
         done();
       }).catch((error) => {
@@ -241,7 +293,6 @@ describe('fetchObjectsByIDs', () => {
       const ids = ['5b17ea3be3a1c4761f7f9463'];
       return LearningObjectInteractor.fetchObjectsByIDs(driver, ids).then(val => {
         // expect(response.error).toEqual('Server error encounter.');
-        console.log(val);
         expect(val).toBeTruthy();
         done();
       }).catch((error) => {
@@ -266,7 +317,6 @@ describe('fetchCollections', () => {
     driver.connect(dburi).then(val => {
       return LearningObjectInteractor.fetchCollections(driver).then(val => {
         // expect(response.error).toEqual('Server error encounter.');
-        console.log(val);
         expect(val).toBeTruthy();
         done();
       }).catch((error) => {
@@ -292,7 +342,6 @@ describe('fetchCollection', () => {
       const name = 'test contributors';
       return LearningObjectInteractor.fetchCollection(driver, name).then(val => {
         // expect(response.error).toEqual('Server error encounter.');
-        console.log(val);
         expect(val).toBeTruthy();
         done();
       }).catch((error) => {

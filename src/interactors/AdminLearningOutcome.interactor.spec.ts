@@ -22,16 +22,31 @@ describe('fetchAllObjects', () => {
   it('should return an array of objects', done => {
     driver.connect(dburi).then(val => {
       return AdminLearningObjectInteractor.fetchAllObjects(driver).then(val => {
-        // expect(response.error).toEqual('Server error encounter.');
-        console.log(val);
         expect(val).toBeTruthy();
         done();
       }).catch((error) => {
         console.log(error);
+        expect(true).toBe(false);
         done();
       });
     }).catch((error) => {
       console.log(error);
+      expect(true).toBe(false);
+      done();
+    });
+  });
+   // Test 2: Provide expected input
+  it('should return an error - given invalid data store!', done => {
+    driver.connect(dburi).then(val => {
+      return AdminLearningObjectInteractor.fetchAllObjects(this.driver).then(val => {
+        expect(true).toBe(false);
+        done();
+      }).catch((error) => {
+        expect(error).toBeTruthy();
+        done();
+      });
+    }).catch((error) => {
+      expect(true).toBe(false);
       done();
     });
   });
