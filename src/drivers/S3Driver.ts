@@ -21,26 +21,55 @@ export class S3Driver implements FileManager {
   public async upload(
     id: string,
     username: string,
+    file: any,
+  ): Promise<LearningObjectFile> {
+    try {
+      console.log('FILE: ', file, id);
+      const loFile: LearningObjectFile = this.generateLearningObjectFile(
+        file,
+      );
+      // const params = {
+      //   Bucket: AWS_S3_BUCKET,
+      //   Key: `${username}/${id}/${loFile.fullPath ? loFile.fullPath : loFile.name}`,
+      //   ACL: AWS_S3_ACL,
+      //   Body: file.buffer.length ? file.buffer : Buffer.from(file.buffer),
+      // };
+
+      // const response = await this.s3.upload(params).promise();
+      // loFile.url = response.Location;
+      const success = loFile.fullPath ? true : true;
+      return  success ? loFile : Promise.reject(loFile);
+    } catch (e) {
+      console.log(e);
+      return Promise.reject(e);
+    }
+  }
+  /**
+   * Uploads files to S3
+   *
+   * @param {string} id
+   * @param {string} username
+   * @param {any[]} files
+   * @returns {Promise<LearningObjectFile[]>}
+   * @memberof S3Driver
+   */
+  public async uploadMultiple(
+    id: string,
+    username: string,
     files: any[],
-    filePathMap: Map<string, string>
   ): Promise<LearningObjectFile[]> {
     try {
-      let learningObjectFiles: LearningObjectFile[] = [];
+      const learningObjectFiles: LearningObjectFile[] = [];
       for (let file of files) {
-        let loFile = this.generateLearningObjectFile(file);
-        const parent = filePathMap.get(loFile.id);
-        const path = this.getFullPath(filePathMap, loFile);
-        let params = {
+        const loFile = this.generateLearningObjectFile(file);
+        const params = {
           Bucket: AWS_S3_BUCKET,
-          Key: `${username}/${id}/${path}`,
+          Key: `${username}/${id}/${loFile.fullPath ? loFile.fullPath : loFile.name}`,
           ACL: AWS_S3_ACL,
-          Body: file.buffer.length ? file.buffer : Buffer.from(file.buffer)
+          Body: file.buffer.length ? file.buffer : Buffer.from(file.buffer),
         };
-        let response = await this.s3.upload(params).promise();
+        const response = await this.s3.upload(params).promise();
         loFile.url = response.Location;
-        if (parent) {
-          loFile.fullPath = path;
-        }
         learningObjectFiles.push(loFile);
       }
       return learningObjectFiles;
@@ -61,12 +90,12 @@ export class S3Driver implements FileManager {
   public async delete(
     id: string,
     username: string,
-    filename: string
+    filename: string,
   ): Promise<void> {
     try {
-      let params = {
+      const params = {
         Bucket: AWS_S3_BUCKET,
-        Key: `${username}/${id}/${filename}`
+        Key: `${username}/${id}/${filename}`,
       };
       await this.deleteObject(params);
     } catch (e) {
@@ -85,15 +114,15 @@ export class S3Driver implements FileManager {
     try {
       const listParams = {
         Bucket: AWS_S3_BUCKET,
-        Prefix: `${username}/${id}/`
+        Prefix: `${username}/${id}/`,
       };
 
       const listedObjects = await this.s3.listObjectsV2(listParams).promise();
       let deleteParams = {
         Bucket: AWS_S3_BUCKET,
         Delete: {
-          Objects: listedObjects.Contents.map(({ Key }) => ({ Key }))
-        }
+          Objects: listedObjects.Contents.map(({ Key }) => ({ Key })),
+        },
       };
       await this.s3.deleteObjects(deleteParams).promise();
 
@@ -126,41 +155,23 @@ export class S3Driver implements FileManager {
    * @memberof S3Driver
    */
   private generateLearningObjectFile(file: any): LearningObjectFile {
-    let name_id = file.originalname.split(/!@!/g);
-    let originalname = name_id[0];
-    let id = name_id[1];
-    let fileType = file.mimetype;
-    let extMatch = originalname.match(/(\.[^.]*$|$)/);
-    let extension = extMatch ? extMatch[0] : '';
-    let date = Date.now().toString();
+    const paths = (<string>file.originalname).split(/\//g);
+    const originalname = paths[paths.length - 1];
+    const fileType = file.mimetype;
+    const extMatch = originalname.match(/(\.[^.]*$|$)/);
+    const extension = extMatch ? extMatch[0] : '';
+    const date = Date.now().toString();
 
-    let learningObjectFile: LearningObjectFile = {
-      id: id,
+    const learningObjectFile: LearningObjectFile = {
+      id: undefined,
       name: originalname,
       fileType: fileType,
       extension: extension,
       url: null,
-      date: date
+      date: date,
+      fullPath: paths.length > 1 ? paths.join('/') : undefined,
     };
 
     return learningObjectFile;
   }
-  /**
-   * Gets file's full path
-   *
-   * @private
-   * @param {Map<string, string>} filePathMap
-   * @param {LearningObjectFile} file
-   * @returns
-   * @memberof S3Driver
-   */
-  private getFullPath(
-    filePathMap: Map<string, string>,
-    file: LearningObjectFile
-  ) {
-    let folderName = filePathMap.get(file.id);
-    if (!folderName) return file.name;
-    let path = `${folderName}/${file.name}`;
-    return path;
-  }
-}
+ 

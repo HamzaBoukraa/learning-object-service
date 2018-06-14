@@ -232,34 +232,27 @@ export class LearningObjectInteractor {
     return error;
   }
   /**
-   * Upload Materials and sends back array of LearningObject Materials
+   * Uploads file and sends LearningObjectFile
    *
    * @static
    * @param {FileManager} fileManager
-   * @param {Responder} responder
    * @param {string} id
    * @param {string} username
-   * @param {any[]} files
-   * @returns {Promise<void>}
+   * @param {any} file
+   * @returns {Promise<any>}
    * @memberof LearningObjectInteractor
    */
-  public static async uploadMaterials(
+  public static uploadFile(
     fileManager: FileManager,
     id: string,
     username: string,
-    files: any[],
-    filePathMap: Map<string, string>,
+    file: any,
   ): Promise<any> {
     try {
-      const learningObjectFiles = await fileManager.upload(
-        id,
-        username,
-        files,
-        filePathMap,
-      );
-      return learningObjectFiles;
+      file.originalname = decodeFilePath(file.originalname);
+      return fileManager.upload(id, username, file);
     } catch (e) {
-      return Promise.reject(`Problem uploading materials. Error: ${e}`);
+      return Promise.reject(`Problem uploading file. Error: ${e}`);
     }
   }
 
@@ -637,4 +630,10 @@ export class LearningObjectInteractor {
       .trim();
     return text;
   }
+}
+
+export function decodeFilePath(path: string): string {
+  const replacementChar = '!@!';
+  const sanitized = path.replace(new RegExp(replacementChar, 'g'), '/');
+  return sanitized;
 }

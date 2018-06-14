@@ -172,26 +172,18 @@ export class ExpressRouteDriver {
     router.post('/files', this.upload.any(), async (req, res) => {
       const responder = this.getResponder(res);
       try {
-        const files = req.files;
-        let filePathMap = req.body.filePathMap
-          ? JSON.parse(req.body.filePathMap)
-          : null;
-        if (filePathMap) {
-          filePathMap = new Map<string, string>(filePathMap);
-        }
-
+        const file = req.files[0];
         const user = await TokenManager.decode(req.cookies.presence);
 
         if (user.emailVerified) {
           const id = req.body.learningObjectID;
-          const materials = await LearningObjectInteractor.uploadMaterials(
+          const loFile = await LearningObjectInteractor.uploadFile(
             this.fileManager,
             id,
             user.username,
-            <any[]>files,
-            filePathMap,
+            file,
           );
-          responder.sendObject(materials);
+          responder.sendObject(loFile);
         } else {
           responder.sendOperationError(
             `Invalid access. User must be verified to upload materials.`,
