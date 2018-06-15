@@ -99,7 +99,6 @@ describe('loadFullLearningObjectByIDs', () => {
 });
 
 describe('findLearningObject', () => {
-    // Test 1: Provide expected input
   it('should find a learning object ID', done => {
       const username = 'nvisal1';
       const learningObjectName = 'testing more contributors 2';
@@ -111,17 +110,43 @@ describe('findLearningObject', () => {
         done();
       });
   });
+  it('should return an error - invalid username provided!', done => {
+    const username = '';
+    const learningObjectName = 'testing more contributors 2';
+    return LearningObjectInteractor.findLearningObject(driver, username, learningObjectName ).then(val => {
+      expect.fail();
+      done();
+    }).catch((error) => {
+      expect(error).to.be.a('string');
+      done();
+    });
+  });
+  it('should return an error - invalid lo name provided!', done => {
+    const username = 'nvisal1';
+    const learningObjectName = '';
+    return LearningObjectInteractor.findLearningObject(driver, username, learningObjectName ).then(val => {
+      expect.fail();
+      done();
+    }).catch((error) => {
+      expect(error).to.be.a('string');
+      done();
+    });
+  });
+  it('should return an error - invalid data store provided!', done => {
+    const username = 'nvisal1';
+    const learningObjectName = 'testing more contributors 2';
+    return LearningObjectInteractor.findLearningObject(this.driver, username, learningObjectName ).then(val => {
+      expect.fail();
+      done();
+    }).catch((error) => {
+      expect(error).to.be.a('string');
+      done();
+    });
+  });
 });
 
-// // ** updateLearningObject **
-// // params (dataStore: DataStore, currPage?: number, limit?: number)
-// //   organization?: string;
-// // success - returns an array of users
-// // failure - returns Promise.reject(`Problem searching users. Error: ${e}`);
 // describe('updateLearningObject', () => {
-//     // Test 1: Provide expected input
 //   it('should return an array of objects', done => {
-//     driver.connect(dburi).then(val => {
 //       const username = 'nvisal1';
 //       const learningObjectName = 'test object';
 //       const learningObject =
@@ -134,10 +159,6 @@ describe('findLearningObject', () => {
 //         console.log(error);
 //         done();
 //       });
-//     }).catch((error) => {
-//       console.log(error);
-//       done();
-//     });
 //   });
 // });
 
@@ -159,7 +180,6 @@ describe('togglePublished', () => {
 });
 
 describe('fetchAllObjects', () => {
-    // Test 1: Provide expected input
   it('should fetch all objects', done => {
       const currPage = 1;
       const limit = 3;
@@ -171,10 +191,42 @@ describe('fetchAllObjects', () => {
         done();
       });
   });
+  it('should return error - invalid currPage provided!', done => {
+    let currPage;
+    const limit = 3;
+    return LearningObjectInteractor.fetchAllObjects(driver, currPage, limit).then(val => {
+      expect.fail();
+      done();
+    }).catch((error) => {
+      expect(error).to.be.an('object');
+      done();
+    });
+  });
+  it('should return error - invalid limit provided!', done => {
+    const currPage = 1;
+    let limit;
+    return LearningObjectInteractor.fetchAllObjects(driver, currPage, limit).then(val => {
+      expect.fail();
+      done();
+    }).catch((error) => {
+      expect(error).to.be.an('object');
+      done();
+    });
+  });
+  it('should return error - invalid data store provided!', done => {
+    const currPage = 1;
+    const limit = 3;
+    return LearningObjectInteractor.fetchAllObjects(this.driver, currPage, limit).then(val => {
+      expect.fail();
+      done();
+    }).catch((error) => {
+      expect(error).to.be.a('string');
+      done();
+    });
+  });
 });
 
 describe('fetchMultipleObjects', () => {
-    // Test 1: Provide expected input
   it('should return an array of objects - based on given username and lo name', done => {
       const ids = [{username: 'nvisal1', learningObjectName: 'testing more contributors 2'}];
       return LearningObjectInteractor.fetchMultipleObjects(driver, ids).then(val => {
@@ -185,6 +237,16 @@ describe('fetchMultipleObjects', () => {
         done();
       });
   });
+  it('should return an error - invalid data store provided!', done => {
+    const ids = [{username: 'nvisal1', learningObjectName: 'testing more contributors 2'}];
+    return LearningObjectInteractor.fetchMultipleObjects(this.driver, ids).then(val => {
+      expect.fail();
+      done();
+    }).catch((error) => {
+      expect(error).to.be.a('string');
+      done();
+    });
+});
 });
 
 describe('fetchObjectsByIDs', () => {
@@ -210,6 +272,129 @@ describe('fetchObjectsByIDs', () => {
   });
 });
 
+describe('searchObjects', () => {
+  it('should return an object - contains search results', done => {
+      const name = 'testing more contributors 2';
+      const author = '5a9583401405cb053272ced1';
+      const length = ['nanomodule'];
+      const levels = ['undergraduate'];
+      const outcomeIDs = ['5b23d22c87e4934e12547e32'];
+      const text = 'testing more contributors 2';
+      return LearningObjectInteractor.searchObjects(driver, name, author, length, levels, outcomeIDs, text).then(val => {
+        expect(val).to.be.an('object');
+        done();
+      }).catch((error) => {
+        expect.fail();
+        done();
+      });
+  });
+  it('should return an error - invalid data store provided!', done => {
+    const name = 'testing more contributors 2';
+    const author = '5a9583401405cb053272ced1';
+    const length = ['nanomodule'];
+    const levels = ['undergraduate'];
+    const outcomeIDs = ['5b23d22c87e4934e12547e32'];
+    const text = 'testing more contributors 2';
+    return LearningObjectInteractor.searchObjects(this.driver, name, author, length, levels, outcomeIDs, text).then(val => {
+        expect.fail();
+        done();
+      }).catch((error) => {
+        expect(error).to.be.a('string');
+        done();
+      });
+  });
+  it('should return an object - invalid name provided!', done => {
+    const name = '';
+    const author = 'nvisal1';
+    const length = ['nanomodule'];
+    const levels = ['undergraduate'];
+    const outcomeIDs = ['5b23d22c87e4934e12547e32'];
+    const text = 'testing more contributors 2';
+    return LearningObjectInteractor.searchObjects(driver, name, author, length, levels, outcomeIDs, text).then(val => {
+        expect(val).to.be.an('object');
+        done();
+      }).catch((error) => {
+        expect.fail();
+        done();
+      });
+  });
+  it('should return an object - invalid author provided!', done => {
+    const name = 'testing more contributors 2';
+    const author = '';
+    const length = ['nanomodule'];
+    const levels = ['undergraduate'];
+    const outcomeIDs = ['5b23d22c87e4934e12547e32'];
+    const text = 'testing more contributors 2';
+    return LearningObjectInteractor.searchObjects(driver, name, author, length, levels, outcomeIDs, text).then(val => {
+        expect(val).to.be.an('object');
+        done();
+      }).catch((error) => {
+        expect.fail();
+        done();
+      });
+  });
+  it('should return an object - invalid length provided!', done => {
+    const name = 'testing more contributors 2';
+    const author = 'nvisal1';
+    const length = [''];
+    const levels = ['undergraduate'];
+    const outcomeIDs = ['5b23d22c87e4934e12547e32'];
+    const text = 'testing more contributors 2';
+    return LearningObjectInteractor.searchObjects(driver, name, author, length, levels, outcomeIDs, text).then(val => {
+        expect(val).to.be.an('object');
+        done();
+      }).catch((error) => {
+        expect.fail();
+        done();
+      });
+  });
+  it('should return an object - invalid levels provided!', done => {
+    const name = 'testing more contributors 2';
+    const author = 'nvisal1';
+    const length = ['nanomodule'];
+    const levels = [''];
+    const outcomeIDs = ['5b23d22c87e4934e12547e32'];
+    const text = 'testing more contributors 2';
+    return LearningObjectInteractor.searchObjects(driver, name, author, length, levels, outcomeIDs, text).then(val => {
+        expect(val).to.be.an('object');
+        done();
+      }).catch((error) => {
+        expect.fail();
+        done();
+      });
+  });
+  it('should return an object - invalid outcomeIDs provided!', done => {
+    const name = 'testing more contributors 2';
+    const author = 'nvisal1';
+    const length = ['nanomodule'];
+    const levels = ['undergraduate'];
+    const outcomeIDs = [''];
+    const text = 'testing more contributors 2';
+    return LearningObjectInteractor.searchObjects(driver, name, author, length, levels, outcomeIDs, text).then(val => {
+        expect(val).to.be.an('object');
+        done();
+      }).catch((error) => {
+        expect.fail();
+        done();
+      });
+  });
+  it('should return an object - invalid text provided!', done => {
+    const name = 'testing more contributors 2';
+    const author = 'nvisal1';
+    const length = ['nanomodule'];
+    const levels = ['undergraduate'];
+    const outcomeIDs = ['5b23d22c87e4934e12547e32'];
+    const text = '';
+    return LearningObjectInteractor.searchObjects(driver, name, author, length, levels, outcomeIDs, text).then(val => {
+        expect(val).to.be.an('object');
+        done();
+      }).catch((error) => {
+        expect.fail();
+        done();
+      });
+  });
+});
+
 describe('fetchCollections', () => {
   it('should return an array of objects - these objects contain lo IDs', done => {
       return LearningObjectInteractor.fetchCollections(driver).then(val => {
@@ -232,7 +417,6 @@ describe('fetchCollections', () => {
 });
 
 describe('fetchCollection', () => {
-    // Test 1: Provide expected input
   it('should return an object - contains an array of learning objects - *** above logs caused from this test ***', done => {
       // Extra time for this test is required, will timeout otherwise!
       jest.setTimeout(10000);
