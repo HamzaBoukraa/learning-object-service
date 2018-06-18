@@ -1195,6 +1195,34 @@ export class MongoDriver implements DataStore {
     }
   }
 
+  async fetchCollectionMeta(name: string): Promise<{name: string, abstracts?: any[]}> {
+    try {
+      const meta = await this.db.collection(COLLECTIONS.LearningObjectCollection.name).findOne({ name }, {name: 1, abstracts: 1});
+      return meta;
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  }
+
+  async fetchCollectionObjects(name: string): Promise<LearningObject[]> {
+    try {
+      const collection = await this.db.collection(COLLECTIONS.LearningObjectCollection.name).findOne({ name }, {learningObjects: 1});
+      const objects = [];
+      for (const id of collection.learningObjects) {
+        try {
+          const object = await this.fetchLearningObject(id, false, false);
+          objects.push(object);
+        } catch (e) {
+          console.log('Object is unpublished. Do not add, continue');
+        }
+      }
+      collection.learningObjects = objects;
+      return collection;
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  }
+
   ////////////////////////////////////////////////
   // GENERIC HELPER METHODS - not in public API //
   ////////////////////////////////////////////////

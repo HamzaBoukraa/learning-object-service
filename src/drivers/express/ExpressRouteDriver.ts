@@ -433,7 +433,10 @@ export class ExpressRouteDriver {
         responder.sendOperationError(e);
       }
     });
-    router.get('/collections/:name/learning-objects', async (req, res) => {
+    /**
+     * Return a full collection {name: string, abstracts: [], learningObjects: []}
+     */
+    router.get('/collections/:name', async (req, res) => {
       const responder = this.getResponder(res);
       try {
         const name = req.params.name;
@@ -446,7 +449,30 @@ export class ExpressRouteDriver {
         responder.sendOperationError(e);
       }
     });
-
+    /**
+     * Return a list of learningObjects from a collection
+     */
+    router.get('/collections/:name/learning-objects', async (req, res) => {
+      const responder = this.getResponder(res);
+      try {
+        const objects = await LearningObjectInteractor.fetchCollectionObjects(this.dataStore, req.params.name);
+        responder.sendObject(objects);
+      } catch (e) {
+        responder.sendOperationError(e);
+      }
+    });
+    /**
+     * Return the name of a collection and a list of it's abstracts
+     */
+    router.get('/collections/:name/meta', async (req, res) => {
+      const responder = this.getResponder(res);
+      try {
+        const collectionMeta = await LearningObjectInteractor.fetchCollectionMeta(this.dataStore, req.params.name);
+        responder.sendObject(collectionMeta);
+      } catch (e) {
+        responder.sendOperationError(e);
+      }
+    });
     router.get('/users/:username/learning-objects', async (req, res) => {
       const responder = this.getResponder(res);
       try {
