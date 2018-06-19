@@ -1,5 +1,5 @@
 import { LearningObjectInteractor, AdminLearningObjectInteractor } from '../interactors/interactors';
-import MongoDriver from '../drivers/MongoDriver';
+import { MongoDriver } from '../drivers/MongoDriver';
 import { expect } from 'chai';
 const driver = new MongoDriver; // DataStore
 beforeAll(done => {

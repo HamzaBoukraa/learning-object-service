@@ -98,7 +98,7 @@ COLLECTIONS_MAP.set(
   COLLECTIONS.LearningObjectCollection,
 );
 
-export default class MongoDriver implements DataStore {
+export class MongoDriver implements DataStore {
   private db: Db;
 
   constructor() {

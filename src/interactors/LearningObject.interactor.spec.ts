@@ -1,5 +1,5 @@
 import { LearningObjectInteractor, AdminLearningObjectInteractor } from '../interactors/interactors';
-import MongoDriver from '../drivers/MongoDriver';
+import { MongoDriver } from '../drivers/MongoDriver';
 import { S3Driver } from '../drivers/S3Driver';
 // const expect = require('chai').expect;
 import { expect } from 'chai';
