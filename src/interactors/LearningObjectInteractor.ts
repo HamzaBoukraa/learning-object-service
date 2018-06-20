@@ -538,8 +538,10 @@ export class LearningObjectInteractor {
         currPage,
         limit,
       );
+      console.log(response);
       return response;
     } catch (e) {
+      console.log(e);
       return Promise.reject(`Problem suggesting Learning Objects. Error:${e}`);
     }
   }

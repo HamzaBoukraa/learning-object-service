@@ -45,15 +45,15 @@ describe('fetchAllObjects', () => {
 
 describe('searchObjects', () => {
   it('should return an array of users', done => {
-    const name = 'testing more contributors 2';
-    const author = '5a9583401405cb053272ced1';
+    const name = 'testing more contributors';
+    const author = 'nvisal1';
     const length = ['nanomodule'];
     const levels = ['undergraduate'];
-    const outcomeIDs = ['5b23d22c87e4934e12547e32'];
-    const text = 'testing more contributors 2';
+    const outcomeIDs = ['5b23cc9016bdb944d96f1b01'];
+    const text = 'testing more contributor';
     const query = { username: 'nvisal1' };
     return AdminLearningObjectInteractor.searchObjects(driver, name, author, length, levels, outcomeIDs, text).then(val => {
-      expect(val).to.be.an('object');
+      expect(val).to.be.an('array');
       done();
     }).catch((error) => {
       expect.fail();

@@ -69,6 +69,7 @@ export class AdminLearningObjectInteractor {
         limit,
       );
     } catch (e) {
+      console.log(e);
       return Promise.reject(`Problem searching Learning Objects. Error:${e}`);
     }
   }
