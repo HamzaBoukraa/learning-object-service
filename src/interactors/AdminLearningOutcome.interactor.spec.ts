@@ -22,52 +22,67 @@ beforeAll(done => {
 
 describe('fetchAllObjects', () => {
   it('should return an array of objects', done => {
-      jest.setTimeout(10000);
-      return AdminLearningObjectInteractor.fetchAllObjects(driver).then(val => {
-        expect(val).to.be.an('object');
-        done();
-      }).catch((error) => {
-        console.log(error);
-        expect.fail();
-        done();
-      });
+    jest.setTimeout(10000);
+    return AdminLearningObjectInteractor.fetchAllObjects(driver).then(val => {
+      expect(val).to.be.an('object');
+      done();
+    }).catch((error) => {
+      console.log(error);
+      expect.fail();
+      done();
+    });
   });
   it('should return an error - given invalid data store!', done => {
-      return AdminLearningObjectInteractor.fetchAllObjects(this.driver).then(val => {
-        expect.fail();
-        done();
-      }).catch((error) => {
-        expect(error).to.be.a('string');
-        done();
-      });
+    return AdminLearningObjectInteractor.fetchAllObjects(this.driver).then(val => {
+      expect.fail();
+      done();
+    }).catch((error) => {
+      expect(error).to.be.a('string');
+      done();
+    });
   });
 });
 
 describe('searchObjects', () => {
   it('should return an array of users', done => {
-      const name = 'testing more contributors 2';
-      const author = '5a9583401405cb053272ced1';
-      const length = ['nanomodule'];
-      const levels = ['undergraduate'];
-      const outcomeIDs = ['5b23d22c87e4934e12547e32'];
-      const text = 'testing more contributors 2';
-      const query = { username: 'nvisal1' };
-      return AdminLearningObjectInteractor.searchObjects(driver, name, author, length, levels, outcomeIDs, text).then(val => {
-        expect(val).to.be.an('object');
-        done();
-      }).catch((error) => {
-        expect.fail();
-        done();
-      });
+    const name = 'testing more contributors 2';
+    const author = '5a9583401405cb053272ced1';
+    const length = ['nanomodule'];
+    const levels = ['undergraduate'];
+    const outcomeIDs = ['5b23d22c87e4934e12547e32'];
+    const text = 'testing more contributors 2';
+    const query = { username: 'nvisal1' };
+    return AdminLearningObjectInteractor.searchObjects(driver, name, author, length, levels, outcomeIDs, text).then(val => {
+      expect(val).to.be.an('object');
+      done();
+    }).catch((error) => {
+      expect.fail();
+      done();
+    });
   });
 });
 
 describe('togglePublished', () => {
   it('should toggle the published status', done => {
-      const username = 'nvisal1';
+    const username = 'nvisal1';
+    const id = '5b23d22c87e4934e12547e31';
+    const published = false;
+    return AdminLearningObjectInteractor.togglePublished(driver, username, id, published).then(val => {
+      expect(val).to.be.an('undefined');
+      done();
+    }).catch((error) => {
+      console.log(error);
+      expect.fail();
+      done();
+    });
+  });
+});
+
+describe('toggleLock', () => {
+    it('should toggle the lock status', done => {
       const id = '5b23d22c87e4934e12547e31';
       const published = false;
-      return AdminLearningObjectInteractor.togglePublished(driver, username, id, published).then(val => {
+      return AdminLearningObjectInteractor.toggleLock(driver, id).then(val => {
         expect(val).to.be.an('undefined');
         done();
       }).catch((error) => {
@@ -75,21 +90,6 @@ describe('togglePublished', () => {
         expect.fail();
         done();
       });
-  });
-});
-
-describe('toggleLock', () => {
-    it('should toggle the lock status', done => {
-        const id = '5b23d22c87e4934e12547e31';
-        const published = false;
-        return AdminLearningObjectInteractor.toggleLock(driver, id).then(val => {
-          expect(val).to.be.an('undefined');
-          done();
-        }).catch((error) => {
-          console.log(error);
-          expect.fail();
-          done();
-        });
     });
   });
 
