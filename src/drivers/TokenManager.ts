@@ -9,7 +9,7 @@ import * as jwt from 'jsonwebtoken';
 export function verifyJWT(
   token: string,
   res: any,
-  callback: Function
+  callback: Function,
 ): boolean {
   try {
     const decoded = jwt.verify(token, process.env.KEY, {});
@@ -24,17 +24,29 @@ export function verifyJWT(
   }
 }
 
+export function generateServiceToken() {
+  const payload = {
+    SERVICE_KEY: process.env.SERVICE_KEY,
+  };
+  const options = {
+    issuer: process.env.ISSUER,
+    expiresIn: 86400,
+    audience: 'https://clark.center',
+  };
+  return jwt.sign(payload, process.env.KEY, options);
+}
+
 export function decode(token: string): Promise<any> {
   return new Promise((resolve, reject) => {
     jwt.verify(
       token,
       process.env.KEY,
       {
-        issuer: process.env.ISSUER
+        issuer: process.env.ISSUER,
       },
       (err: any, decoded: any) => {
         err ? reject(err) : resolve(decoded);
-      }
+      },
     );
   });
 }
