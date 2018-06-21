@@ -663,6 +663,24 @@ export class LearningObjectInteractor {
     }
   }
 
+  public static async fetchCollectionMeta(dataStore: DataStore, name: string): Promise<any> {
+    try {
+      const collectionMeta = await dataStore.fetchCollectionMeta(name);
+      return collectionMeta;
+    } catch (e) {
+      return Promise.reject(`Problem fetching collection metadata. Error: ${e}`);
+    }
+  }
+
+  public static async fetchCollectionObjects(dataStore: DataStore, name: string): Promise<any> {
+    try {
+      const objects = await dataStore.fetchCollectionObjects(name);
+      return objects;
+    } catch (e) {
+      return Promise.reject(`Problem fetching collection objects. Error: ${e}`);
+    }
+  }
+
   public static async addChild(params: {
     dataStore: DataStore;
     childId: string;
