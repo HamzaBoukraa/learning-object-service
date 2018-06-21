@@ -956,12 +956,13 @@ export class MongoDriver implements DataStore {
     const skip = page && limit ? (page - 1) * limit : undefined;
     try {
       // Query for users
-      const authorRecords: UserDocument[] = await this.matchUsers(author, text);
-      const authorIDs = authorRecords
-        ? authorRecords.map(doc => doc._id)
-        : null;
+      const authorRecords: {
+        _id: string;
+        username: string;
+      }[] = await this.matchUsers(author, text);
+
       const exactAuthor =
-        author && authorIDs && authorIDs.length ? true : false;
+        author && authorRecords && authorRecords.length ? true : false;
       // Query by LearningOutcomes' mappings
       const outcomeRecords: LearningOutcomeDocument[] = await this.matchOutcomes(
         standardOutcomeIDs,
@@ -973,7 +974,7 @@ export class MongoDriver implements DataStore {
       let query: any = this.buildSearchQuery(
         accessUnpublished,
         text,
-        authorIDs,
+        authorRecords,
         length,
         level,
         outcomeIDs,
@@ -1042,7 +1043,7 @@ export class MongoDriver implements DataStore {
   private buildSearchQuery(
     accessUnpublished: boolean,
     text: string,
-    authorIDs: string[],
+    authors: { _id: string; username: string }[],
     length: string[],
     level: string[],
     outcomeIDs: string[],
@@ -1058,14 +1059,20 @@ export class MongoDriver implements DataStore {
       query.$or = [
         { $text: { $search: text } },
         { name: { $regex: new RegExp(text, 'ig') } },
+        { contributors: { $regex: new RegExp(text, 'ig') } },
       ];
-      if (authorIDs && authorIDs.length) {
+      if (authors && authors.length) {
         if (exactAuthor) {
-          query.authorID = authorIDs[0];
+          query.authorID = authors[0]._id;
         } else {
-          query.$or.push(<any>{
-            authorID: { $in: authorIDs },
-          });
+          query.$or.push(
+            <any>{
+              authorID: { $in: authors.map(author => author._id) },
+            },
+            {
+              contributors: { $in: authors.map(author => author.username) },
+            },
+          );
         }
       }
       if (length) {
@@ -1084,8 +1091,9 @@ export class MongoDriver implements DataStore {
       if (name) {
         query.$text = { $search: name };
       }
-      if (authorIDs) {
-        query.authorID = { $in: authorIDs };
+      if (authors) {
+        query.authorID = { $in: authors.map(author => author._id) };
+        query.contributors = { $in: authors.map(author => author.username) };
       }
       if (length) {
         query.length = { $in: length };
@@ -1131,7 +1139,7 @@ export class MongoDriver implements DataStore {
   private async matchUsers(
     author: string,
     text: string,
-  ): Promise<UserDocument[]> {
+  ): Promise<{ _id: string; username: string }[]> {
     const query = {
       $or: [{ $text: { $search: author ? author : text } }],
     };
@@ -1146,10 +1154,14 @@ export class MongoDriver implements DataStore {
     return author || text
       ? await this.db
           .collection(COLLECTIONS.User.name)
-          .find<UserDocument>(query, { score: { $meta: 'textScore' } })
+          .find<{ _id: string; username: string }>(query, {
+            _id: 1,
+            username: 1,
+            score: { $meta: 'textScore' },
+          })
           .sort({ score: { $meta: 'textScore' } })
           .toArray()
-      : null;
+      : Promise.resolve(null);
   }
   /**
    * Fetches all Learning Object collections
@@ -1258,6 +1270,7 @@ export class MongoDriver implements DataStore {
         outcomes: [],
         materials: object.materials,
         published: object.published,
+        contributors: object.contributors,
       };
       if (isNew) {
         doc._id = new ObjectID().toHexString();
@@ -1374,6 +1387,7 @@ export class MongoDriver implements DataStore {
     record.published ? learningObject.publish() : learningObject.unpublish();
     learningObject.children = record.children;
     learningObject.lock = record.lock;
+    learningObject.contributors = record.contributors;
     for (const goal of record.goals) {
       learningObject.addGoal(goal.text);
     }
