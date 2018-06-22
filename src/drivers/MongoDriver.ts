@@ -567,7 +567,7 @@ export class MongoDriver implements DataStore {
    */
   async cleanObjectsFromCarts(ids: Array<string>): Promise<void> {
     return request.patch(
-      process.env.CART_SERVICE_URI +
+      process.env.CART_API +
         '/libraries/learning-objects/' +
         ids.join(',') +
         '/clean',
@@ -1207,9 +1207,13 @@ export class MongoDriver implements DataStore {
     }
   }
 
-  async fetchCollectionMeta(name: string): Promise<{name: string, abstracts?: any[]}> {
+  async fetchCollectionMeta(
+    name: string,
+  ): Promise<{ name: string; abstracts?: any[] }> {
     try {
-      const meta = await this.db.collection(COLLECTIONS.LearningObjectCollection.name).findOne({ name }, {name: 1, abstracts: 1});
+      const meta = await this.db
+        .collection(COLLECTIONS.LearningObjectCollection.name)
+        .findOne({ name }, { name: 1, abstracts: 1 });
       return meta;
     } catch (e) {
       return Promise.reject(e);
@@ -1218,7 +1222,9 @@ export class MongoDriver implements DataStore {
 
   async fetchCollectionObjects(name: string): Promise<LearningObject[]> {
     try {
-      const collection = await this.db.collection(COLLECTIONS.LearningObjectCollection.name).findOne({ name }, {learningObjects: 1});
+      const collection = await this.db
+        .collection(COLLECTIONS.LearningObjectCollection.name)
+        .findOne({ name }, { learningObjects: 1 });
       const objects = [];
       for (const id of collection.learningObjects) {
         try {
