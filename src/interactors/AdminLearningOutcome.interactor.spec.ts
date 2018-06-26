@@ -43,24 +43,24 @@ describe('fetchAllObjects', () => {
   });
 });
 
-describe('searchObjects', () => {
-  it('should return an array of users', done => {
-    const name = 'testing more contributors';
-    const author = 'nvisal1';
-    const length = ['nanomodule'];
-    const levels = ['undergraduate'];
-    const outcomeIDs = ['5b23cc9016bdb944d96f1b01'];
-    const text = 'testing more contributor';
-    const query = { username: 'nvisal1' };
-    return AdminLearningObjectInteractor.searchObjects(driver, name, author, length, levels, outcomeIDs, text).then(val => {
-      expect(val).to.be.an('array');
-      done();
-    }).catch((error) => {
-      expect.fail();
-      done();
-    });
-  });
-});
+// describe('searchObjects', () => {
+//   it('should return an array of users', done => {
+//     const name = 'testing more contributors';
+//     const author = 'nvisal1';
+//     const length = ['nanomodule'];
+//     const levels = ['undergraduate'];
+//     const outcomeIDs = ['5b23cc9016bdb944d96f1b01'];
+//     const text = 'testing more contributor';
+//     const query = { username: 'nvisal1' };
+//     return AdminLearningObjectInteractor.searchObjects(driver, name, author, length, levels, outcomeIDs, text).then(val => {
+//       expect(val).to.be.an('array');
+//       done();
+//     }).catch((error) => {
+//       expect.fail();
+//       done();
+//     });
+//   });
+// });
 
 describe('togglePublished', () => {
   it('should toggle the published status', done => {
