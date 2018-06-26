@@ -62,21 +62,22 @@ describe('fetchAllObjects', () => {
 //   });
 // });
 
-describe('togglePublished', () => {
-  it('should toggle the published status', done => {
-    const username = 'nvisal1';
-    const id = '5b23d22c87e4934e12547e31';
-    const published = false;
-    return AdminLearningObjectInteractor.togglePublished(driver, username, id, published).then(val => {
-      expect(val).to.be.an('undefined');
-      done();
-    }).catch((error) => {
-      console.log(error);
-      expect.fail();
-      done();
-    });
-  });
-});
+// describe('togglePublished', () => {
+//   it('should toggle the published status', done => {
+//     const username = 'nvisal1';
+//     const id = '5b23d22c87e4934e12547e31';
+//     const published = false;
+//     return AdminLearningObjectInteractor.togglePublished(driver, username, id, published).then(val => {
+//       console.log(val);
+//       expect(val).to.be.an('undefined');
+//       done();
+//     }).catch((error) => {
+//       console.log(error);
+//       expect.fail();
+//       done();
+//     });
+//   });
+// });
 
 describe('toggleLock', () => {
     it('should toggle the lock status', done => {

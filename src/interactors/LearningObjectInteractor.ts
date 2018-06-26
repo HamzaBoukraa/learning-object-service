@@ -99,7 +99,7 @@ export class LearningObjectInteractor {
             object.metrics = await this.loadMetrics(object.id);
             return object;
           } catch (e) {
-            console.log(e);
+            // console.log(e);
             return object;
           }
         }),
@@ -153,7 +153,7 @@ export class LearningObjectInteractor {
       try {
         learningObject.metrics = await this.loadMetrics(learningObjectID);
       } catch (e) {
-        console.log(e);
+        // console.log(e);
       }
 
       return learningObject;
@@ -181,7 +181,7 @@ export class LearningObjectInteractor {
             object.metrics = await this.loadMetrics(object.id);
             return object;
           } catch (e) {
-            console.log(e);
+            // console.log(e);
             return object;
           }
         }),
@@ -213,7 +213,7 @@ export class LearningObjectInteractor {
             object.metrics = await this.loadMetrics(object.id);
             return object;
           } catch (e) {
-            console.log(e);
+            // console.log(e);
             return object;
           }
         }),
@@ -485,7 +485,7 @@ export class LearningObjectInteractor {
             object.metrics = await this.loadMetrics(object.id);
             return object;
           } catch (e) {
-            console.log(e);
+            // console.log(e);
             return object;
           }
         }),
@@ -534,7 +534,7 @@ export class LearningObjectInteractor {
             object.metrics = await this.loadMetrics(object.id);
             return object;
           } catch (e) {
-            console.log(e);
+            // console.log(e);
             return object;
           }
         }),
@@ -564,7 +564,7 @@ export class LearningObjectInteractor {
             object.metrics = await this.loadMetrics(object.id);
             return object;
           } catch (e) {
-            console.log(e);
+            // console.log(e);
             return object;
           }
         }),
@@ -621,9 +621,6 @@ export class LearningObjectInteractor {
         currPage,
         limit,
       );
-<<<<<<< HEAD
-      console.log(response);
-=======
 
       response.objects = await Promise.all(
         response.objects.map(async object => {
@@ -631,15 +628,14 @@ export class LearningObjectInteractor {
             object.metrics = await this.loadMetrics(object.id);
             return object;
           } catch (e) {
-            console.log(e);
+            // console.log(e);
             return object;
           }
         }),
       );
->>>>>>> 400f5734158832f9545e788572ebf5d343daba7c
       return response;
     } catch (e) {
-      console.log(e);
+      // console.log(e);
       return Promise.reject(`Problem suggesting Learning Objects. Error:${e}`);
     }
   }

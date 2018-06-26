@@ -53,9 +53,11 @@ describe('loadLearningObject', () => {
     const username = 'nvisal1';
     const learningObjectName = 'testing more contributors';
     return LearningObjectInteractor.loadLearningObject(driver, username, learningObjectName).then(val => {
+      console.log(val);
       expect(val).to.be.an('object');
       done();
     }).catch((error) => {
+      console.log(error);
       expect.fail();
       done();
     });
@@ -142,6 +144,7 @@ describe('addLearningObject', () => {
     const learningObjectName = 'testing more contributors';
     LearningObjectInteractor.loadLearningObject(driver, username, learningObjectName).then(val => {
       return LearningObjectInteractor.addLearningObject(driver, val).then(val => {
+        console.log(val);
         expect.fail();
         done();
       }).catch ((error) => {
@@ -153,23 +156,23 @@ describe('addLearningObject', () => {
       done();
     });
   });
-  it('should return an object - we are creating a new object!', done => {
-    const username = 'nvisal1';
-    const learningObjectName = 'testing more contributors';
-    LearningObjectInteractor.loadLearningObject(driver, username, learningObjectName).then(val => {
-      val.name = 'unit testing 2';
-      return LearningObjectInteractor.addLearningObject(driver, val).then(val => {
-        expect(val).to.be.an('object');
-        done();
-      }).catch ((error) => {
-        expect.fail();
-        done();
-      });
-    }).catch((error) => {
-      expect.fail();
-      done();
-    });
-  });
+  // it('should return an object - we are creating a new object!', done => {
+  //   const username = 'nvisal1';
+  //   const learningObjectName = 'testing more contributors';
+  //   LearningObjectInteractor.loadLearningObject(driver, username, learningObjectName).then(val => {
+  //     val.name = 'unit testing 2';
+  //     return LearningObjectInteractor.addLearningObject(driver, val).then(val => {
+  //       expect(val).to.be.an('object');
+  //       done();
+  //     }).catch ((error) => {
+  //       expect.fail();
+  //       done();
+  //     });
+  //   }).catch((error) => {
+  //     expect.fail();
+  //     done();
+  //   });
+  // });
 });
 
 describe('findLearningObject', () => {
@@ -481,7 +484,7 @@ describe('fetchObjectsByIDs', () => {
   //     done();
   //   });
   // });
-});
+// });
 
 describe('fetchCollections', () => {
 it('should return an array of objects - these objects contain lo IDs', done => {
@@ -529,41 +532,41 @@ describe('fetchCollection', () => {
   });
 });
 
-describe('addChild', () => {
-  it('should return an object', done => {
-    const params = {
-      dataStore: driver,
-      childId: '5b23cc7b16bdb944d96f1b00',
-      username: 'nvisal1',
-      parentName: 'testing more contributors 2',
-    };
-    return LearningObjectInteractor.addChild(params).then(val => {
-        expect(val).to.be.an('undefined');
-        done();
-    }).catch((error) => {
-        expect.fail();
-        done();
-    });
-  });
-});
+// describe('addChild', () => {
+//   it('should return an object', done => {
+//     const params = {
+//       dataStore: driver,
+//       childId: '5b23ca0e14dc5644410b30b1',
+//       username: 'nvisal1',
+//       parentName: 'testing more contributors',
+//     };
+//     return LearningObjectInteractor.addChild(params).then(val => {
+//         expect(val).to.be.an('undefined');
+//         done();
+//     }).catch((error) => {
+//         expect.fail();
+//         done();
+//     });
+//   });
+// });
 
-describe('removeChild', () => {
-  it('should return an object', done => {
-    const params = {
-      dataStore: driver,
-      childId: '5b23cc7b16bdb944d96f1b00',
-      username: 'nvisal1',
-      parentName: 'testing more contributors 2',
-    };
-    return LearningObjectInteractor.removeChild(params).then(val => {
-        expect(val).to.be.an('undefined');
-        done();
-    }).catch((error) => {
-        expect.fail();
-        done();
-    });
-  });
-});
+// describe('removeChild', () => {
+//   it('should return an object', done => {
+//     const params = {
+//       dataStore: driver,
+//       childId: '5b23ca0e14dc5644410b30b1',
+//       username: 'nvisal1',
+//       parentName: 'testing more contributors',
+//     };
+//     return LearningObjectInteractor.removeChild(params).then(val => {
+//         expect(val).to.be.an('undefined');
+//         done();
+//     }).catch((error) => {
+//         expect.fail();
+//         done();
+//     });
+//   });
+// });
 
 afterAll (() => {
   driver.disconnect();
