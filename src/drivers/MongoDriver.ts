@@ -102,26 +102,20 @@ export class MongoDriver implements DataStore {
   private db: Db;
 
   constructor() {
-    let dburi = '';
-    if (process.env.NODE_ENV === 'test') {
-      dburi = process.env.CLARK_DB_URI_TEST;
-    } else {
-      dburi =
-        process.env.NODE_ENV === 'production'
-          ? process.env.CLARK_DB_URI.replace(
-              /<DB_PASSWORD>/g,
-              process.env.CLARK_DB_PWD,
-            )
-              .replace(/<DB_PORT>/g, process.env.CLARK_DB_PORT)
-              .replace(/<DB_NAME>/g, process.env.CLARK_DB_NAME)
-          : process.env.CLARK_DB_URI_DEV.replace(
-              /<DB_PASSWORD>/g,
-              process.env.CLARK_DB_PWD,
-            )
-              .replace(/<DB_PORT>/g, process.env.CLARK_DB_PORT)
-              .replace(/<DB_NAME>/g, process.env.CLARK_DB_NAME);
-    }
-
+    const dburi =
+      process.env.NODE_ENV === 'production'
+        ? process.env.CLARK_DB_URI.replace(
+            /<DB_PASSWORD>/g,
+            process.env.CLARK_DB_PWD,
+          )
+            .replace(/<DB_PORT>/g, process.env.CLARK_DB_PORT)
+            .replace(/<DB_NAME>/g, process.env.CLARK_DB_NAME)
+        : process.env.CLARK_DB_URI_DEV.replace(
+            /<DB_PASSWORD>/g,
+            process.env.CLARK_DB_PWD,
+          )
+            .replace(/<DB_PORT>/g, process.env.CLARK_DB_PORT)
+            .replace(/<DB_NAME>/g, process.env.CLARK_DB_NAME);
     this.connect(dburi);
   }
 
@@ -567,7 +561,7 @@ export class MongoDriver implements DataStore {
    */
   async cleanObjectsFromCarts(ids: Array<string>): Promise<void> {
     return request.patch(
-      process.env.CART_SERVICE_URI +
+      process.env.CART_API +
         '/libraries/learning-objects/' +
         ids.join(',') +
         '/clean',
@@ -1207,9 +1201,13 @@ export class MongoDriver implements DataStore {
     }
   }
 
-  async fetchCollectionMeta(name: string): Promise<{name: string, abstracts?: any[]}> {
+  async fetchCollectionMeta(
+    name: string,
+  ): Promise<{ name: string; abstracts?: any[] }> {
     try {
-      const meta = await this.db.collection(COLLECTIONS.LearningObjectCollection.name).findOne({ name }, {name: 1, abstracts: 1});
+      const meta = await this.db
+        .collection(COLLECTIONS.LearningObjectCollection.name)
+        .findOne({ name }, { name: 1, abstracts: 1 });
       return meta;
     } catch (e) {
       return Promise.reject(e);
@@ -1218,7 +1216,9 @@ export class MongoDriver implements DataStore {
 
   async fetchCollectionObjects(name: string): Promise<LearningObject[]> {
     try {
-      const collection = await this.db.collection(COLLECTIONS.LearningObjectCollection.name).findOne({ name }, {learningObjects: 1});
+      const collection = await this.db
+        .collection(COLLECTIONS.LearningObjectCollection.name)
+        .findOne({ name }, { learningObjects: 1 });
       const objects = [];
       for (const id of collection.learningObjects) {
         try {
