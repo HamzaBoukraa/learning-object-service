@@ -1191,7 +1191,7 @@ export class MongoDriver implements DataStore {
           const object = await this.fetchLearningObject(id, false, false);
           objects.push(object);
         } catch (e) {
-          // console.log('Object is unpublished. Do not add, continue');
+          console.log('Object is unpublished. Do not add, continue');
         }
       }
       collection.learningObjects = objects;
