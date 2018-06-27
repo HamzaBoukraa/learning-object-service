@@ -343,22 +343,7 @@ export class ExpressRouteDriver {
       },
     );
 
-    // router.post('/reorderOutcome', async (req, res) => {
-    //   try {
-    //    const outcome = req.body.outcome;
-    //    const object = req.body.object;
-    //    const index = req.body.index;
-    //     await LearningObjectInteractor.reorderOutcome(
-    //       this.getResponder(res),
-    //       object,
-    //       outcome,
-    //       index
-    //     );
-    //   } catch (e) {
-    //     responder.sendOperationError(e)
-    //   }
-    // });
-
+    // FIXME: Remove if not in use
     // Fetches Learing Objects By Username and LearningObject name
     router.post('/learning-objects/multiple', async (req, res) => {
       const responder = this.getResponder(res);
@@ -455,7 +440,10 @@ export class ExpressRouteDriver {
     router.get('/collections/:name/learning-objects', async (req, res) => {
       const responder = this.getResponder(res);
       try {
-        const objects = await LearningObjectInteractor.fetchCollectionObjects(this.dataStore, req.params.name);
+        const objects = await LearningObjectInteractor.fetchCollectionObjects(
+          this.dataStore,
+          req.params.name,
+        );
         responder.sendObject(objects);
       } catch (e) {
         responder.sendOperationError(e);
@@ -467,7 +455,10 @@ export class ExpressRouteDriver {
     router.get('/collections/:name/meta', async (req, res) => {
       const responder = this.getResponder(res);
       try {
-        const collectionMeta = await LearningObjectInteractor.fetchCollectionMeta(this.dataStore, req.params.name);
+        const collectionMeta = await LearningObjectInteractor.fetchCollectionMeta(
+          this.dataStore,
+          req.params.name,
+        );
         responder.sendObject(collectionMeta);
       } catch (e) {
         responder.sendOperationError(e);

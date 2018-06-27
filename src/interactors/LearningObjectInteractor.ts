@@ -605,8 +605,12 @@ export class LearningObjectInteractor {
   ): Promise<{ total: number; objects: LearningObject[] }> {
     try {
       if (text) {
-        text = this.removeStopwords(text);
-        text = this.stemWords(text);
+        const firstChar = text.charAt(0);
+        const lastChar = text.charAt(text.length - 1);
+        if (firstChar !== `"` && lastChar !== `"`) {
+          text = this.removeStopwords(text);
+          text = this.stemWords(text);
+        }
       }
       const response = await dataStore.searchObjects(
         name,
@@ -663,16 +667,24 @@ export class LearningObjectInteractor {
     }
   }
 
-  public static async fetchCollectionMeta(dataStore: DataStore, name: string): Promise<any> {
+  public static async fetchCollectionMeta(
+    dataStore: DataStore,
+    name: string,
+  ): Promise<any> {
     try {
       const collectionMeta = await dataStore.fetchCollectionMeta(name);
       return collectionMeta;
     } catch (e) {
-      return Promise.reject(`Problem fetching collection metadata. Error: ${e}`);
+      return Promise.reject(
+        `Problem fetching collection metadata. Error: ${e}`,
+      );
     }
   }
 
-  public static async fetchCollectionObjects(dataStore: DataStore, name: string): Promise<any> {
+  public static async fetchCollectionObjects(
+    dataStore: DataStore,
+    name: string,
+  ): Promise<any> {
     try {
       const objects = await dataStore.fetchCollectionObjects(name);
       return objects;
