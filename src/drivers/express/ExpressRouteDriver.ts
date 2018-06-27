@@ -343,7 +343,6 @@ export class ExpressRouteDriver {
       },
     );
 
-    // FIXME: Remove if not in use
     // Fetches Learing Objects By Username and LearningObject name
     router.post('/learning-objects/multiple', async (req, res) => {
       const responder = this.getResponder(res);
