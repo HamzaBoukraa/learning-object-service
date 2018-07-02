@@ -19,6 +19,8 @@ import {
 import * as stopword from 'stopword';
 import * as stemmer from 'stemmer';
 import { LearningObjectQuery } from '../interfaces/DataStore';
+import { Metrics } from '@cyber4all/clark-entity/dist/learning-object';
+import { CartInteractor } from './CartInteractor';
 
 export class LearningObjectInteractor {
   /**
@@ -91,6 +93,18 @@ export class LearningObjectInteractor {
         );
       }
 
+      summary = await Promise.all(
+        summary.map(async object => {
+          try {
+            object.metrics = await this.loadMetrics(object.id);
+            return object;
+          } catch (e) {
+            console.log(e);
+            return object;
+          }
+        }),
+      );
+
       return summary;
     } catch (e) {
       return Promise.reject(`Problem loading summary. Error: ${e}`);
@@ -135,6 +149,13 @@ export class LearningObjectInteractor {
           accessUnpublished,
         );
       }
+
+      try {
+        learningObject.metrics = await this.loadMetrics(learningObjectID);
+      } catch (e) {
+        console.log(e);
+      }
+
       return learningObject;
     } catch (e) {
       return Promise.reject(e);
@@ -148,11 +169,24 @@ export class LearningObjectInteractor {
     accessUnpublished?: boolean,
   ): Promise<LearningObject[]> {
     if (learningObject.children) {
-      const children = await dataStore.fetchMultipleObjects(
-        learningObject.children,
+      let children = await dataStore.fetchMultipleObjects(
+        <string[]>learningObject.children,
         full,
         accessUnpublished,
       );
+
+      children = await Promise.all(
+        children.map(async object => {
+          try {
+            object.metrics = await this.loadMetrics(object.id);
+            return object;
+          } catch (e) {
+            console.log(e);
+            return object;
+          }
+        }),
+      );
+
       for (let child of children) {
         child.children = await this.loadChildObjects(
           dataStore,
@@ -171,7 +205,20 @@ export class LearningObjectInteractor {
     ids: string[],
   ): Promise<LearningObject[]> {
     try {
-      const learningObjects = await dataStore.fetchMultipleObjects(ids, true);
+      let learningObjects = await dataStore.fetchMultipleObjects(ids, true);
+
+      learningObjects = await Promise.all(
+        learningObjects.map(async object => {
+          try {
+            object.metrics = await this.loadMetrics(object.id);
+            return object;
+          } catch (e) {
+            console.log(e);
+            return object;
+          }
+        }),
+      );
+
       return learningObjects;
     } catch (e) {
       return Promise.reject(
@@ -424,13 +471,24 @@ export class LearningObjectInteractor {
     dataStore: DataStore,
     currPage: number,
     limit: number,
-  ): Promise<any> {
+  ): Promise<{ objects: LearningObject[]; total: number }> {
     try {
       const accessUnpublished = false;
       const response = await dataStore.fetchAllObjects(
         accessUnpublished,
         currPage,
         limit,
+      );
+      response.objects = await Promise.all(
+        response.objects.map(async object => {
+          try {
+            object.metrics = await this.loadMetrics(object.id);
+            return object;
+          } catch (e) {
+            console.log(e);
+            return object;
+          }
+        }),
       );
       return response;
     } catch (e) {
@@ -464,10 +522,22 @@ export class LearningObjectInteractor {
         }),
       );
 
-      const learningObjects: LearningObject[] = await dataStore.fetchMultipleObjects(
+      let learningObjects: LearningObject[] = await dataStore.fetchMultipleObjects(
         learningObjectIDs,
         false,
         true,
+      );
+
+      learningObjects = await Promise.all(
+        learningObjects.map(async object => {
+          try {
+            object.metrics = await this.loadMetrics(object.id);
+            return object;
+          } catch (e) {
+            console.log(e);
+            return object;
+          }
+        }),
       );
       return learningObjects;
     } catch (e) {
@@ -482,11 +552,24 @@ export class LearningObjectInteractor {
     ids: string[],
   ): Promise<LearningObject[]> {
     try {
-      const learningObjects = await dataStore.fetchMultipleObjects(
+      let learningObjects = await dataStore.fetchMultipleObjects(
         ids,
         true,
         true,
       );
+
+      learningObjects = await Promise.all(
+        learningObjects.map(async object => {
+          try {
+            object.metrics = await this.loadMetrics(object.id);
+            return object;
+          } catch (e) {
+            console.log(e);
+            return object;
+          }
+        }),
+      );
+
       return learningObjects;
     } catch (e) {
       return Promise.reject(
@@ -522,8 +605,12 @@ export class LearningObjectInteractor {
   ): Promise<{ total: number; objects: LearningObject[] }> {
     try {
       if (text) {
-        text = this.removeStopwords(text);
-        text = this.stemWords(text);
+        const firstChar = text.charAt(0);
+        const lastChar = text.charAt(text.length - 1);
+        if (firstChar !== `"` && lastChar !== `"`) {
+          text = this.removeStopwords(text);
+          text = this.stemWords(text);
+        }
       }
       const response = await dataStore.searchObjects(
         name,
@@ -537,6 +624,18 @@ export class LearningObjectInteractor {
         sortType,
         currPage,
         limit,
+      );
+
+      response.objects = await Promise.all(
+        response.objects.map(async object => {
+          try {
+            object.metrics = await this.loadMetrics(object.id);
+            return object;
+          } catch (e) {
+            console.log(e);
+            return object;
+          }
+        }),
       );
       return response;
     } catch (e) {
@@ -568,16 +667,24 @@ export class LearningObjectInteractor {
     }
   }
 
-  public static async fetchCollectionMeta(dataStore: DataStore, name: string): Promise<any> {
+  public static async fetchCollectionMeta(
+    dataStore: DataStore,
+    name: string,
+  ): Promise<any> {
     try {
       const collectionMeta = await dataStore.fetchCollectionMeta(name);
       return collectionMeta;
     } catch (e) {
-      return Promise.reject(`Problem fetching collection metadata. Error: ${e}`);
+      return Promise.reject(
+        `Problem fetching collection metadata. Error: ${e}`,
+      );
     }
   }
 
-  public static async fetchCollectionObjects(dataStore: DataStore, name: string): Promise<any> {
+  public static async fetchCollectionObjects(
+    dataStore: DataStore,
+    name: string,
+  ): Promise<any> {
     try {
       const objects = await dataStore.fetchCollectionObjects(name);
       return objects;
@@ -617,6 +724,22 @@ export class LearningObjectInteractor {
       return params.dataStore.deleteChild(parentID, params.childId);
     } catch (e) {
       return Promise.reject(`Problem removing child. Error: ${e}`);
+    }
+  }
+  /**
+   * Fetches Metrics for Learning Object
+   *
+   * @private
+   * @static
+   * @param {string} objectID
+   * @returns {Promise<Metrics>}
+   * @memberof LearningObjectInteractor
+   */
+  private static async loadMetrics(objectID: string): Promise<Metrics> {
+    try {
+      return CartInteractor.getMetrics(objectID);
+    } catch (e) {
+      return Promise.reject(e);
     }
   }
 
