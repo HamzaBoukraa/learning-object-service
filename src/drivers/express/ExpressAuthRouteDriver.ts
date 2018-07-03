@@ -256,27 +256,6 @@ export class ExpressAuthRouteDriver {
       },
     );
 
-    // Fetches Learning Objects By Username and LearningObject name
-    router.post('/learning-objects/multiple', async (req, res) => {
-      const responder = this.getResponder(res);
-      try {
-        const user = req.user;
-        let ids: {
-          username: string;
-          learningObjectName: string;
-        }[] =
-          req.body.ids;
-        ids = ids.filter(id => this.hasAccess(user, 'username', id.username));
-        const objects = await LearningObjectInteractor.fetchMultipleObjects(
-          this.dataStore,
-          ids,
-        );
-        responder.sendObject(objects);
-      } catch (e) {
-        responder.sendOperationError(e);
-      }
-    });
-
     // TODO: Need to validate token and that it is coming from cart service
     router.get('/cart/learning-objects/:ids/summary', async (req, res) => {
       const responder = this.getResponder(res);
