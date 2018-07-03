@@ -119,10 +119,10 @@ export class ExpressAuthRouteDriver {
           const user = req.user;
           const username = req.params.username;
           const learningObjectName = req.params.learningObjectName;
-          if (this.hasAccess(user, 'username', username)) {
+          if (this.hasAccess(user, 'username', username) || user.SERVICE_KEY) {
             const id = await LearningObjectInteractor.findLearningObject(
               this.dataStore,
-              user.username,
+              username,
               learningObjectName,
             );
             responder.sendObject(id);
