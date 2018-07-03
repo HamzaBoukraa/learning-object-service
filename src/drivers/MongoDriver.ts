@@ -1,10 +1,9 @@
-import { MongoClient, Db, Cursor, ObjectID } from 'mongodb';
+import { MongoClient, Db, ObjectID } from 'mongodb';
 import { DataStore } from '../interfaces/interfaces';
 import * as dotenv from 'dotenv';
 import {
   LearningObject,
   LearningOutcome,
-  StandardOutcome,
   User,
   AcademicLevel,
   Outcome,
