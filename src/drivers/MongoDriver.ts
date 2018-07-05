@@ -100,21 +100,7 @@ COLLECTIONS_MAP.set(
 export class MongoDriver implements DataStore {
   private db: Db;
 
-  constructor() {
-    const dburi =
-      process.env.NODE_ENV === 'production'
-        ? process.env.CLARK_DB_URI.replace(
-            /<DB_PASSWORD>/g,
-            process.env.CLARK_DB_PWD,
-          )
-            .replace(/<DB_PORT>/g, process.env.CLARK_DB_PORT)
-            .replace(/<DB_NAME>/g, process.env.CLARK_DB_NAME)
-        : process.env.CLARK_DB_URI_DEV.replace(
-            /<DB_PASSWORD>/g,
-            process.env.CLARK_DB_PWD,
-          )
-            .replace(/<DB_PORT>/g, process.env.CLARK_DB_PORT)
-            .replace(/<DB_NAME>/g, process.env.CLARK_DB_NAME);
+  constructor(dburi: string) {
     this.connect(dburi);
   }
 
