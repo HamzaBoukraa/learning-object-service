@@ -999,15 +999,13 @@ export class MongoDriver implements DataStore {
       const learningObjects: LearningObject[] = [];
 
       for (const object of objects) {
-        const author = await this.fetchUser(object.authorID);
+        const objectAuthor = await this.fetchUser(object.authorID);
         const learningObject = await this.generateLearningObject(
-          author,
+          objectAuthor,
           object,
           false,
         );
-        if (accessUnpublished) {
-          learningObject.id = object._id;
-        }
+        learningObject.id = object._id;
         learningObjects.push(learningObject);
       }
 
