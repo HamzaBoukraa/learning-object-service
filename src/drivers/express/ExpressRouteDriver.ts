@@ -6,7 +6,7 @@ import { LearningObject } from '@cyber4all/clark-entity';
 import * as TokenManager from '../TokenManager';
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
 // tslint:disable-next-line:no-require-imports
-const version = require('../../package.json').version;
+const version = require('../../../package.json').version;
 
 export class ExpressRouteDriver {
   constructor(private dataStore: DataStore) {}
