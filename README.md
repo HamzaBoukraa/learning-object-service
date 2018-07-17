@@ -1,4 +1,7 @@
 # Learning Object Service
+
+[![Greenkeeper badge](https://badges.greenkeeper.io/Cyber4All/learning-object-service.svg)](https://greenkeeper.io/)
+
 Service that handles business logic for interacting with Learning Objects.
 
 The service listens for requests at `/api/<request-name>`.
