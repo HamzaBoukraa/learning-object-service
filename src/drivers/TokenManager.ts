@@ -9,7 +9,7 @@ import * as jwt from 'jsonwebtoken';
 export function verifyJWT(
   token: string,
   res: any,
-  callback: Function
+  callback: Function,
 ): boolean {
   try {
     const decoded = jwt.verify(token, process.env.KEY, {});
@@ -31,7 +31,7 @@ export function generateServiceToken() {
   const options = {
     issuer: process.env.ISSUER,
     expiresIn: 86400,
-    audience: 'https://clark.center'
+    audience: 'https://clark.center',
   };
   return jwt.sign(payload, process.env.KEY, options);
 }
