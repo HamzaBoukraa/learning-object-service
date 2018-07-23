@@ -26,7 +26,6 @@ jobs:
           paths: 
               - ./package.json
               - ./deploy.sh
-
   integration-test:
     <<: *defaults
     steps:
