@@ -19,8 +19,8 @@ import {
 import * as stopword from 'stopword';
 import * as stemmer from 'stemmer';
 import { LearningObjectQuery } from '../interfaces/DataStore';
-import { AMQPServiceMessager } from '../drivers/AMQPServiceMessager';
-import { SYSTEM_EVENT, SERVICE } from '../interfaces/ServiceMessager';
+import { AMQPServiceMessager } from '../drivers/service-messager/AMQPServiceMessager';
+import { SYSTEM_EVENT, SERVICE } from '../drivers/service-messager/ServiceMessager';
 import { Metrics } from '@cyber4all/clark-entity/dist/learning-object';
 import { CartInteractor } from './CartInteractor';
 
@@ -384,6 +384,7 @@ export class LearningObjectInteractor {
         return Promise.reject(err);
       } else {
         // FIXME: resolve service manager through an abstraction layer
+        console.log('send update');
         new AMQPServiceMessager().sendMessage(
           SERVICE.USER_SERVICE,
           {

@@ -1,4 +1,4 @@
-import { ServiceMessager, SERVICE, ServiceMessage, SYSTEM_EVENT } from '../interfaces/ServiceMessager';
+import { ServiceMessager, SERVICE, ServiceMessage, SYSTEM_EVENT } from './ServiceMessager';
 import * as amqp from 'amqplib';
 
 export class AMQPServiceMessager implements ServiceMessager {
