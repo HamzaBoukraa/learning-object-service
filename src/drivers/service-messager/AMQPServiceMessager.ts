@@ -11,6 +11,7 @@ export class AMQPServiceMessager implements ServiceMessager {
    * @param message the message to send
    */
   sendMessage(service: SERVICE, message: ServiceMessage) {
+    console.log(message.event);
     switch (message.event) {
       case SYSTEM_EVENT.AUTHOR_UPDATED_LEARNING_OBJECT:
         this.triggerUpdateMessage(message);
@@ -22,20 +23,34 @@ export class AMQPServiceMessager implements ServiceMessager {
 
 
   private triggerUpdateMessage(message: any) {
-    amqp.connect('amqp://localhost:5672', function (err: any, conn: any) {
+    console.log('trigger update');
+    /* amqp.connect('amqp://rabbitmq:5672', function (err: any, conn: any) {
       if (err) throw err;
-      conn.createChannel(function (channelError: any, ch: any) {
+      conn.createConfirmChannel(function (channelError: any, ch: any) {
         if (channelError) throw channelError;
         const q = 'hello';
 
-        ch.assertQueue(q, { durable: false });
-        // Note: on Node 6 Buffer.from(msg) should be used
-        ch.sendToQueue(q, new Buffer(JSON.stringify(message)));
-
-        ch.close();
-        conn.close();
+        ch.publish('', q, new Buffer(JSON.stringify(message)), { deliveryMode: 2 }, () => {
+          console.log('ack');
+          conn.close();
+        });
       });
-    });
+    }); */
+    try {
+      amqp.connect('amqp://rabbitmq:5672').then((conn: any) => {
+        conn.createConfirmChannel().then((ch: any, err: any) => {
+          if (err) throw err;
+          const q = 'hello';
+
+          ch.publish('', q, new Buffer(JSON.stringify(message)), { deliveryMode: 2 }, () => {
+            console.log('ack');
+            conn.close();
+          });
+        });
+      });
+    } catch (e) {
+      console.error(e);
+    }
   }
 }
 
