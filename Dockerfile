@@ -23,6 +23,8 @@ ENV PATH /opt/node_modules/.bin:$PATH
 WORKDIR /opt/app
 COPY . /opt/app
 
+FROM node:8 as tester
+
 # Build source and clean up
 RUN npm run build
 
