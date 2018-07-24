@@ -60,7 +60,6 @@
     "@types/request-promise": "^4.1.39",
     "@types/stemmer": "^1.0.1",
     "@types/tape": "^4.2.31",
-    "cors": "^2.8.4",
     "gulp": "^3.9.1",
     "gulp-nodemon": "^2.2.1",
     "gulp-typescript": "^4.0.2",
