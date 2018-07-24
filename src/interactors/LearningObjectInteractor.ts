@@ -19,10 +19,9 @@ import {
 import * as stopword from 'stopword';
 import * as stemmer from 'stemmer';
 import { LearningObjectQuery } from '../interfaces/DataStore';
-import { AMQPServiceMessager } from '../drivers/service-messager/AMQPServiceMessager';
-import { SYSTEM_EVENT, SERVICE } from '../drivers/service-messager/ServiceMessager';
 import { Metrics } from '@cyber4all/clark-entity/dist/learning-object';
 import { CartInteractor } from './CartInteractor';
+import { EventDispatcher, SYSTEM_EVENT } from '@cyber4all/service-messager';
 
 export class LearningObjectInteractor {
   /**
@@ -383,19 +382,14 @@ export class LearningObjectInteractor {
       if (err) {
         return Promise.reject(err);
       } else {
-        // FIXME: resolve service manager through an abstraction layer
-        console.log('send update');
-        new AMQPServiceMessager().sendMessage(
-          SERVICE.USER_SERVICE,
-          {
-            event: SYSTEM_EVENT.AUTHOR_UPDATED_LEARNING_OBJECT,
-            payload: {
-              author: object.author.username,
-              learningObjectName: object.name,
-              learningObjectID: id,
-            },
+        EventDispatcher.dispatch({
+          event: SYSTEM_EVENT.AUTHOR_UPDATED_LEARNING_OBJECT,
+          payload: {
+            author: object.author.username,
+            learningObjectName: object.name,
+            learningObjectID: id,
           },
-        );
+        });
         return dataStore.editLearningObject(id, object);
       }
     } catch (e) {
