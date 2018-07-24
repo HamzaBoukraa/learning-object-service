@@ -45,7 +45,6 @@
     "stopword": "^0.1.10"
   },
   "devDependencies": {
-    "@types/amqplib": "^0.5.8",
     "@types/bcrypt": "^2.0.0",
     "@types/cookie-parser": "^1.4.1",
     "@types/cors": "^2.8.3",
