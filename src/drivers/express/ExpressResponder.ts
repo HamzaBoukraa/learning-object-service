@@ -4,7 +4,6 @@ import { Subject } from 'rxjs';
 import { LearningObject } from '@cyber4all/clark-entity';
 
 export class ExpressResponder implements Responder {
-
   spy: Subject<any>;
   shouldReturn: boolean;
 
@@ -30,5 +29,9 @@ export class ExpressResponder implements Responder {
     } else {
       this.res.status(200).send(object);
     }
+  }
+
+  unauthorized(message?: string) {
+    this.res.status(403).send(`Invalid access. ${message}`.trim());
   }
 }

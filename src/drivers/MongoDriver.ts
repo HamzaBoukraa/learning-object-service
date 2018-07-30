@@ -100,27 +100,7 @@ COLLECTIONS_MAP.set(
 export class MongoDriver implements DataStore {
   private db: Db;
 
-  constructor() {
-    let dburi = '';
-    if (process.env.NODE_ENV === 'test') {
-      dburi = process.env.CLARK_DB_URI_TEST;
-    } else {
-      dburi =
-        process.env.NODE_ENV === 'production'
-          ? process.env.CLARK_DB_URI.replace(
-              /<DB_PASSWORD>/g,
-              process.env.CLARK_DB_PWD,
-            )
-              .replace(/<DB_PORT>/g, process.env.CLARK_DB_PORT)
-              .replace(/<DB_NAME>/g, process.env.CLARK_DB_NAME)
-          : process.env.CLARK_DB_URI_DEV.replace(
-              /<DB_PASSWORD>/g,
-              process.env.CLARK_DB_PWD,
-            )
-              .replace(/<DB_PORT>/g, process.env.CLARK_DB_PORT)
-              .replace(/<DB_NAME>/g, process.env.CLARK_DB_NAME);
-    }
-
+  constructor(dburi: string) {
     this.connect(dburi);
   }
 
@@ -1005,15 +985,13 @@ export class MongoDriver implements DataStore {
       const learningObjects: LearningObject[] = [];
 
       for (const object of objects) {
-        const author = await this.fetchUser(object.authorID);
+        const objectAuthor = await this.fetchUser(object.authorID);
         const learningObject = await this.generateLearningObject(
-          author,
+          objectAuthor,
           object,
           false,
         );
-        if (accessUnpublished) {
-          learningObject.id = object._id;
-        }
+        learningObject.id = object._id;
         learningObjects.push(learningObject);
       }
 
