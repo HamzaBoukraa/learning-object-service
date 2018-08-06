@@ -863,9 +863,7 @@ export class MongoDriver implements DataStore {
           false,
         );
 
-        if (accessUnpublished) {
-          learningObject.id = object._id;
-        }
+        learningObject.id = object._id;
 
         learningObjects.push(learningObject);
       }
@@ -916,7 +914,7 @@ export class MongoDriver implements DataStore {
           object,
           full,
         );
-        if (accessUnpublished) learningObject.id = object._id;
+        learningObject.id = object._id;
         learningObjects.push(learningObject);
       }
 
