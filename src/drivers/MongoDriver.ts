@@ -428,7 +428,10 @@ export class MongoDriver implements DataStore {
     }
   }
 
-  public async toggleLock(id: string, lock: LearningObjectLock): Promise<void> {
+  public async toggleLock(
+    id: string,
+    lock?: LearningObjectLock,
+  ): Promise<void> {
     try {
       const updates: any = {
         lock,
