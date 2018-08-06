@@ -9,7 +9,7 @@ export enum Restriction {
 }
 export interface LearningObjectLock {
   date?: string;
-  restriction: Restriction;
+  restrictions: Restriction[];
 }
 
 export class AdminLearningObjectInteractor {

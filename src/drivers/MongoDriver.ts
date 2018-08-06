@@ -438,8 +438,8 @@ export class MongoDriver implements DataStore {
       };
 
       if (
-        lock.restriction === Restriction.FULL ||
-        lock.restriction === Restriction.PUBLISH
+        lock.restrictions.indexOf(Restriction.FULL) > -1 ||
+        lock.restrictions.indexOf(Restriction.PUBLISH) > -1
       ) {
         updates.published = false;
       }
@@ -474,8 +474,8 @@ export class MongoDriver implements DataStore {
         .collection(COLLECTIONS.LearningObject.name)
         .findOne({ _id: id }, { _id: 0, lock: 1 });
       if (
-        object.lock.restriction === Restriction.FULL ||
-        object.lock.restriction === Restriction.PUBLISH
+        object.lock.restrictions.indexOf(Restriction.FULL) > -1 ||
+        object.lock.restrictions.indexOf(Restriction.PUBLISH) > -1
       ) {
         return Promise.reject(
           `Unable to publish. Learning Object locked by reviewer.`,
