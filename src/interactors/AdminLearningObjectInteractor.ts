@@ -1,6 +1,16 @@
 import { LearningObjectInteractor } from './interactors';
 import { DataStore, FileManager } from '../interfaces/interfaces';
-import { LearningObject } from '@cyber4all/clark-entity';
+
+// TODO: Move to clark-entity package
+export enum Restriction {
+  FULL = 'full',
+  PUBLISH = 'publish',
+  DOWNLOAD = 'download',
+}
+export interface LearningObjectLock {
+  date?: string;
+  restriction: Restriction;
+}
 
 export class AdminLearningObjectInteractor {
   private static learningObjectInteractor = LearningObjectInteractor;
@@ -94,7 +104,7 @@ export class AdminLearningObjectInteractor {
   public static async toggleLock(
     dataStore: DataStore,
     id: string,
-    lock?: { date: string },
+    lock?: LearningObjectLock,
   ): Promise<void> {
     try {
       return dataStore.toggleLock(id, lock);
