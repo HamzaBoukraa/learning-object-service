@@ -7,10 +7,10 @@ export enum Restriction {
   PUBLISH = 'publish',
   DOWNLOAD = 'download',
 }
-export type LearningObjectLock = {
+export interface LearningObjectLock {
   date?: string;
   restriction: Restriction;
-};
+}
 
 export class AdminLearningObjectInteractor {
   private static learningObjectInteractor = LearningObjectInteractor;
