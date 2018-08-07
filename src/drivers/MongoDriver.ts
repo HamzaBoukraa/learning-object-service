@@ -438,8 +438,9 @@ export class MongoDriver implements DataStore {
       };
 
       if (
-        lock.restrictions.indexOf(Restriction.FULL) > -1 ||
-        lock.restrictions.indexOf(Restriction.PUBLISH) > -1
+        lock &&
+        (lock.restrictions.indexOf(Restriction.FULL) > -1 ||
+          lock.restrictions.indexOf(Restriction.PUBLISH) > -1)
       ) {
         updates.published = false;
       }
