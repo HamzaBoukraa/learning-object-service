@@ -35,6 +35,7 @@ export class ExpressAuthRouteDriver {
           object.author.username = username;
           const learningObject = await LearningObjectInteractor.addLearningObject(
             this.dataStore,
+            this.fileManager,
             object,
           );
           responder.sendObject(learningObject);
@@ -50,6 +51,7 @@ export class ExpressAuthRouteDriver {
           if (this.hasAccess(user, 'username', object.author.username)) {
             await LearningObjectInteractor.updateLearningObject(
               this.dataStore,
+              this.fileManager,
               object.id,
               object,
             );
