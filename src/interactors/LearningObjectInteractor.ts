@@ -448,8 +448,9 @@ export class LearningObjectInteractor {
         learningObjectIDs.push(id);
         const object = await dataStore.fetchLearningObject(id, false, true);
         object.id = id;
-        if (object.materials.files.length)
+        if (object.materials.files.length) {
           learningObjectsWithFiles.push(object);
+        }
       }
       await dataStore.deleteMultipleLearningObjects(learningObjectIDs);
 

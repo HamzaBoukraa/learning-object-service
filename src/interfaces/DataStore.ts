@@ -5,6 +5,7 @@ import {
   User,
   Collection,
 } from '@cyber4all/clark-entity';
+import { LearningObjectLock } from '../interactors/AdminLearningObjectInteractor';
 
 export interface DataStore {
   connect(dburi: string): Promise<void>;
@@ -16,7 +17,7 @@ export interface DataStore {
     index: number,
   ): Promise<void>;
   editLearningObject(id: string, object: LearningObject): Promise<void>;
-  toggleLock(id: string, lock?: { date: string }): Promise<void>;
+  toggleLock(id: string, lock?: LearningObjectLock): Promise<void>;
   deleteLearningObject(id: string): Promise<void>;
   deleteMultipleLearningObjects(ids: string[]): Promise<void>;
   getUserObjects(username: string): Promise<string[]>;

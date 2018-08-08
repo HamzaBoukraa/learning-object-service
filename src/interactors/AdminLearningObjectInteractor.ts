@@ -1,6 +1,16 @@
 import { LearningObjectInteractor } from './interactors';
 import { DataStore, FileManager } from '../interfaces/interfaces';
-import { LearningObject } from '@cyber4all/clark-entity';
+
+// TODO: Move to clark-entity package
+export enum Restriction {
+  FULL = 'full',
+  PUBLISH = 'publish',
+  DOWNLOAD = 'download',
+}
+export interface LearningObjectLock {
+  date?: string;
+  restrictions: Restriction[];
+}
 
 export class AdminLearningObjectInteractor {
   private static learningObjectInteractor = LearningObjectInteractor;
@@ -54,7 +64,7 @@ export class AdminLearningObjectInteractor {
   ): Promise<any> {
     try {
       const accessUnpublished = true;
-      return this.learningObjectInteractor.searchObjects(
+      return await this.learningObjectInteractor.searchObjects(
         dataStore,
         name,
         author,
@@ -80,7 +90,7 @@ export class AdminLearningObjectInteractor {
     published: boolean,
   ): Promise<void> {
     try {
-      return this.learningObjectInteractor.togglePublished(
+      return await this.learningObjectInteractor.togglePublished(
         dataStore,
         username,
         id,
@@ -94,10 +104,10 @@ export class AdminLearningObjectInteractor {
   public static async toggleLock(
     dataStore: DataStore,
     id: string,
-    lock?: { date: string },
+    lock?: LearningObjectLock,
   ): Promise<void> {
     try {
-      return dataStore.toggleLock(id, lock);
+      return await dataStore.toggleLock(id, lock);
     } catch (e) {
       return Promise.reject(`Problem toggling lock. Error:  ${e}`);
     }
@@ -110,7 +120,7 @@ export class AdminLearningObjectInteractor {
     learningObjectName: string,
   ): Promise<void> {
     try {
-      return this.learningObjectInteractor.deleteLearningObject(
+      return await this.learningObjectInteractor.deleteLearningObject(
         dataStore,
         fileManager,
         username,
@@ -130,7 +140,7 @@ export class AdminLearningObjectInteractor {
     learningObjectIDs: string[],
   ): Promise<void> {
     try {
-      return this.learningObjectInteractor.deleteMultipleLearningObjects(
+      return await this.learningObjectInteractor.deleteMultipleLearningObjects(
         dataStore,
         fileManager,
         username,

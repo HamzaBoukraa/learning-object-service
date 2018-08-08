@@ -16,6 +16,10 @@ import {
 } from '@cyber4all/clark-schema';
 import { LearningObjectCollection } from '../interfaces/DataStore';
 import * as request from 'request-promise';
+import {
+  LearningObjectLock,
+  Restriction,
+} from '../interactors/AdminLearningObjectInteractor';
 
 dotenv.config();
 
@@ -424,15 +428,28 @@ export class MongoDriver implements DataStore {
     }
   }
 
-  public async toggleLock(id: string, lock?: { date: string }): Promise<void> {
+  public async toggleLock(
+    id: string,
+    lock?: LearningObjectLock,
+  ): Promise<void> {
     try {
+      const updates: any = {
+        lock,
+      };
+
+      if (
+        lock &&
+        (lock.restrictions.indexOf(Restriction.FULL) > -1 ||
+          lock.restrictions.indexOf(Restriction.PUBLISH) > -1)
+      ) {
+        updates.published = false;
+      }
+
       await this.db
         .collection(COLLECTIONS.LearningObject.name)
         .update(
           { _id: id },
-          lock
-            ? { $set: { lock: lock, published: false } }
-            : { $unset: { lock: null } },
+          lock ? { $set: updates } : { $unset: { lock: null } },
         );
       return Promise.resolve();
     } catch (e) {
@@ -454,10 +471,13 @@ export class MongoDriver implements DataStore {
           `Invalid access. User must be verified to publish Learning Objects`,
         );
       // else
-      const object = await this.db
+      const object: { lock: LearningObjectLock } = await this.db
         .collection(COLLECTIONS.LearningObject.name)
         .findOne({ _id: id }, { _id: 0, lock: 1 });
-      if (object.lock) {
+      if (
+        object.lock.restrictions.indexOf(Restriction.FULL) > -1 ||
+        object.lock.restrictions.indexOf(Restriction.PUBLISH) > -1
+      ) {
         return Promise.reject(
           `Unable to publish. Learning Object locked by reviewer.`,
         );
@@ -844,9 +864,7 @@ export class MongoDriver implements DataStore {
           false,
         );
 
-        if (accessUnpublished) {
-          learningObject.id = object._id;
-        }
+        learningObject.id = object._id;
 
         learningObjects.push(learningObject);
       }
@@ -897,7 +915,7 @@ export class MongoDriver implements DataStore {
           object,
           full,
         );
-        if (accessUnpublished) learningObject.id = object._id;
+        learningObject.id = object._id;
         learningObjects.push(learningObject);
       }
 
