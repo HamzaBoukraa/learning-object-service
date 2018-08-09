@@ -188,6 +188,22 @@ export class LearningObjectInteractor {
     return null;
   }
 
+  public static async fetchParents(params: {
+    dataStore: DataStore;
+    query: LearningObjectQuery;
+  }): Promise<LearningObject[]> {
+    try {
+      return await params.dataStore.findParentObjects({
+        query: params.query,
+      });
+    } catch (e) {
+      console.log(e);
+      return Promise.reject(
+        `Problem fetching parent objects for ${params.query.id}. Error: ${e}`,
+      );
+    }
+  }
+
   public static async loadFullLearningObjectByIDs(
     dataStore: DataStore,
     ids: string[],
@@ -447,21 +463,25 @@ export class LearningObjectInteractor {
     try {
       const learningObjectsWithFiles: LearningObject[] = [];
       const learningObjectIDs: string[] = [];
-      for (let name of learningObjectNames) {
-        const id = await dataStore.findLearningObject(username, name);
-        learningObjectIDs.push(id);
-        const object = await dataStore.fetchLearningObject(id, false, true);
-        object.id = id;
-        if (object.materials.files.length) {
-          learningObjectsWithFiles.push(object);
-        }
-      }
+      await Promise.all(
+        learningObjectNames.map(async name => {
+          const id = await dataStore.findLearningObject(username, name);
+          learningObjectIDs.push(id);
+          const object = await dataStore.fetchLearningObject(id, false, true);
+          object.id = id;
+          if (object.materials.files.length) {
+            learningObjectsWithFiles.push(object);
+          }
+        }),
+      );
       await dataStore.deleteMultipleLearningObjects(learningObjectIDs);
 
-      for (let object of learningObjectsWithFiles) {
-        const path = `${object.id}/${username}/`;
-        await fileManager.deleteAll(path);
-      }
+      await Promise.all(
+        learningObjectsWithFiles.map(async object => {
+          const path = `${object.id}/${username}/`;
+          await fileManager.deleteAll(path);
+        }),
+      );
     } catch (error) {
       return Promise.reject(
         `Problem deleting Learning Objects. Error: ${error}`,

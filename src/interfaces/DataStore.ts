@@ -63,19 +63,27 @@ export interface DataStore {
   ): Promise<void>;
   insertChild(parentId: string, childId: string): Promise<void>;
   deleteChild(parentId: string, childId: string): Promise<void>;
+  findParentObjects(params: {
+    query: LearningObjectQuery;
+  }): Promise<LearningObject[]>;
 }
 
 export { Collection as LearningObjectCollection };
 
-export type LearningObjectQuery = {
+export interface Filters {
+  orderBy?: string;
+  sortType?: -1 | 1;
+  page?: number;
+  limit?: number;
+}
+
+export interface LearningObjectQuery extends Filters {
+  id?: string;
   name?: string;
   author?: string;
   length?: string[];
   level?: string[];
   standardOutcomeIDs?: string[];
   text?: string;
-  orderBy?: string;
-  sortType?: -1 | 1;
-  page?: number;
-  limit?: number;
-};
+  full?: boolean;
+}
