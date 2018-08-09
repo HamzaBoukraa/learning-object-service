@@ -31,9 +31,7 @@ export class S3Driver implements FileManager {
    * @returns {Promise<void>}
    * @memberof S3Driver
    */
-  public async delete(
-    path: string,
-  ): Promise<void> {
+  public async delete(path: string): Promise<void> {
     try {
       const params = {
         Bucket: AWS_S3_BUCKET,
@@ -93,5 +91,4 @@ export class S3Driver implements FileManager {
       return Promise.reject(e);
     }
   }
-
-
+}
