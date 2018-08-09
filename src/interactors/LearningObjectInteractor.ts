@@ -694,9 +694,9 @@ export class LearningObjectInteractor {
     }
   }
 
-  public static async addChild(params: {
+  public static async setChildren(params: {
     dataStore: DataStore;
-    childId: string;
+    children: string[];
     username: string;
     parentName: string;
   }): Promise<void> {
@@ -705,7 +705,7 @@ export class LearningObjectInteractor {
         params.username,
         params.parentName,
       );
-      return params.dataStore.insertChild(parentID, params.childId);
+      return params.dataStore.setChildren(parentID, params.children);
     } catch (e) {
       return Promise.reject(`Problem adding child. Error: ${e}`);
     }
