@@ -70,7 +70,7 @@ export class S3Driver implements FileManager {
       await this.s3.deleteObjects(deleteParams).promise();
 
       if (listedObjects.IsTruncated) {
-        return await this.deleteAll(path); 
+        return await this.deleteAll(path);
       }
       return Promise.resolve();
     } catch (e) {
@@ -93,5 +93,5 @@ export class S3Driver implements FileManager {
       return Promise.reject(e);
     }
   }
- 
- 
+
+
