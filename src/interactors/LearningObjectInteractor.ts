@@ -445,7 +445,7 @@ export class LearningObjectInteractor {
       await dataStore.deleteLearningObject(learningObjectID);
       if (learningObject.materials.files.length) {
         const path = `${learningObjectID}/${username}/`;
-        await fileManager.deleteAll(path);
+        return fileManager.deleteAll(path);
       }
     } catch (error) {
       return Promise.reject(
@@ -479,7 +479,7 @@ export class LearningObjectInteractor {
       await Promise.all(
         learningObjectsWithFiles.map(async object => {
           const path = `${object.id}/${username}/`;
-          await fileManager.deleteAll(path);
+          return fileManager.deleteAll(path);
         }),
       );
     } catch (error) {
