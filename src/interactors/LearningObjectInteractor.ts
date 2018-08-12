@@ -297,7 +297,10 @@ export class LearningObjectInteractor {
             filePathMap,
             loFile,
           )}`;
-          loFile.url = await fileManager.upload(path, file);
+          loFile.url = await fileManager.upload(
+            path,
+            file.buffer.length ? file.buffer : Buffer.from(file.buffer),
+          );
           if (parent) {
             loFile.fullPath = path;
           }
