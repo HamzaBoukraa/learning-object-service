@@ -293,12 +293,10 @@ export class LearningObjectInteractor {
         files.map(async file => {
           const loFile = this.generateLearningObjectFile(file);
           const parent = filePathMap.get(loFile.id);
-          const path = `${username}/${id}/${this.getFullPath(
-            filePathMap,
-            loFile,
-          )}`;
+          const path = `${this.getFullPath(filePathMap, loFile)}`;
+          const uploadPath = `${username}/${id}/${path}`;
           loFile.url = await fileManager.upload(
-            path,
+            uploadPath,
             file.buffer.length ? file.buffer : Buffer.from(file.buffer),
           );
           if (parent) {
@@ -332,7 +330,7 @@ export class LearningObjectInteractor {
     filename: string,
   ): Promise<void> {
     try {
-      const path = `${id}/${username}/${filename}`;
+      const path = `${username}/${id}/${filename}`;
       return fileManager.delete(path);
     } catch (e) {
       return Promise.reject(`Problem deleting file. Error: ${e}`);
