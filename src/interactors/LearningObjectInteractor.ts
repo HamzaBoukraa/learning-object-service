@@ -293,7 +293,7 @@ export class LearningObjectInteractor {
         files.map(async file => {
           const loFile = this.generateLearningObjectFile(file);
           const parent = filePathMap.get(loFile.id);
-          const path = `${this.getFullPath(filePathMap, loFile)}`;
+          const path = this.getFullPath(filePathMap, loFile);
           const uploadPath = `${username}/${id}/${path}`;
           loFile.url = await fileManager.upload(
             uploadPath,
