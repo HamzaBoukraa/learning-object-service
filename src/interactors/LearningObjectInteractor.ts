@@ -125,9 +125,7 @@ export class LearningObjectInteractor {
         true,
         accessUnpublished,
       );
-      if (accessUnpublished) {
-        learningObject.id = learningObjectID;
-      }
+      learningObject.id = learningObjectID;
 
       if (learningObject.children) {
         learningObject.children = await this.loadChildObjects(
