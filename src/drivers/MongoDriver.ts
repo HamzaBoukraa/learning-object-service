@@ -475,8 +475,9 @@ export class MongoDriver implements DataStore {
         .collection(COLLECTIONS.LearningObject.name)
         .findOne({ _id: id }, { _id: 0, lock: 1 });
       if (
-        object.lock.restrictions.indexOf(Restriction.FULL) > -1 ||
-        object.lock.restrictions.indexOf(Restriction.PUBLISH) > -1
+        object.lock &&
+        (object.lock.restrictions.indexOf(Restriction.FULL) > -1 ||
+          object.lock.restrictions.indexOf(Restriction.PUBLISH) > -1)
       ) {
         return Promise.reject(
           `Unable to publish. Learning Object locked by reviewer.`,
