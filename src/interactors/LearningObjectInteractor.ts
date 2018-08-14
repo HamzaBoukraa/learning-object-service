@@ -125,9 +125,7 @@ export class LearningObjectInteractor {
         true,
         accessUnpublished,
       );
-      if (accessUnpublished) {
-        learningObject.id = learningObjectID;
-      }
+      learningObject.id = learningObjectID;
 
       if (learningObject.children) {
         learningObject.children = await this.loadChildObjects(
@@ -143,7 +141,6 @@ export class LearningObjectInteractor {
       } catch (e) {
         console.log(e);
       }
-
       return learningObject;
     } catch (e) {
       return Promise.reject(e);
