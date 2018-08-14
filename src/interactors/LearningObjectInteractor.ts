@@ -131,9 +131,7 @@ export class LearningObjectInteractor {
         true,
         accessUnpublished,
       );
-      if (accessUnpublished) {
-        learningObject.id = learningObjectID;
-      }
+      learningObject.id = learningObjectID;
 
       if (learningObject.children) {
         learningObject.children = await this.loadChildObjects(
@@ -149,7 +147,6 @@ export class LearningObjectInteractor {
       } catch (e) {
         console.log(e);
       }
-
       return learningObject;
     } catch (e) {
       return Promise.reject(e);
@@ -250,15 +247,16 @@ export class LearningObjectInteractor {
         object.id = learningObjectID;
 
         // Generate PDF and update Learning Object with PDF meta.
-        this.generatePDF(fileManager, object).then(pdf => {
-          this.savePDFMetadata(
-            object,
-            pdf,
-            dataStore,
-            fileManager,
-            learningObjectID,
-          );
-        });
+        const oldPDF: LearningObjectPDF = object.materials['pdf'];
+        const pdf = await this.generatePDF(fileManager, object);
+        if (oldPDF) {
+          this.deleteOldPDF(oldPDF, pdf, fileManager, learningObjectID, object);
+        }
+        object.materials['pdf'] = {
+          name: pdf.name,
+          url: pdf.url,
+        };
+        dataStore.editLearningObject(object.id, object);
 
         return object;
       }
@@ -272,22 +270,6 @@ export class LearningObjectInteractor {
       }
       return Promise.reject(`Problem creating Learning Object. Error${e}`);
     }
-  }
-
-  private static savePDFMetadata(
-    object: LearningObject,
-    pdf: LearningObjectPDF,
-    dataStore: DataStore,
-    fileManager: FileManager,
-    learningObjectID: string,
-  ) {
-    object.materials['pdf'] = {
-      name: pdf.name,
-      url: pdf.url,
-    };
-    this.updateLearningObject(dataStore, fileManager, learningObjectID, object);
-    const oldPDF: LearningObjectPDF = object.materials['pdf'];
-    this.deleteOldPDF(oldPDF, pdf, fileManager, learningObjectID, object);
   }
 
   private static validateLearningObject(object: LearningObject): string {
@@ -362,7 +344,7 @@ export class LearningObjectInteractor {
     filename: string,
   ): Promise<void> {
     try {
-      const path = `${id}/${username}/${filename}`;
+      const path = `${username}/${id}/${filename}`;
       return fileManager.delete(path);
     } catch (e) {
       return Promise.reject(`Problem deleting file. Error: ${e}`);
@@ -417,9 +399,16 @@ export class LearningObjectInteractor {
         return Promise.reject(err);
       } else {
         // Generate PDF and update Learning Object with PDF meta.
-        this.generatePDF(fileManager, object).then(pdf => {
-          this.savePDFMetadata(object, pdf, dataStore, fileManager, id);
-        });
+        const oldObject = await dataStore.fetchLearningObject(id, false, true);
+        const oldPDF: LearningObjectPDF = oldObject.materials['pdf'];
+        const pdf = await this.generatePDF(fileManager, object);
+        if (oldPDF) {
+          this.deleteOldPDF(oldPDF, pdf, fileManager, id, object);
+        }
+        object.materials['pdf'] = {
+          name: pdf.name,
+          url: pdf.url,
+        };
         return dataStore.editLearningObject(id, object);
       }
     } catch (e) {
@@ -434,7 +423,7 @@ export class LearningObjectInteractor {
     id: string,
     object: LearningObject,
   ) {
-    if (oldPDF && oldPDF.name !== pdf.name) {
+    if (oldPDF.name !== pdf.name) {
       this.deleteFile(fileManager, id, object.author.username, oldPDF.name);
     }
   }
@@ -469,16 +458,10 @@ export class LearningObjectInteractor {
         username,
         learningObjectName,
       );
-      const learningObject = await dataStore.fetchLearningObject(
-        learningObjectID,
-        false,
-        true,
-      );
       await dataStore.deleteLearningObject(learningObjectID);
-      if (learningObject.materials.files.length) {
-        const path = `${learningObjectID}/${username}/`;
-        await fileManager.deleteAll(path);
-      }
+      const path = `${username}/${learningObjectID}/`;
+      fileManager.deleteAll(path);
+      return Promise.resolve();
     } catch (error) {
       return Promise.reject(
         `Problem deleting Learning Object. Error: ${error}`,
@@ -493,23 +476,19 @@ export class LearningObjectInteractor {
     learningObjectNames: string[],
   ): Promise<void> {
     try {
-      const learningObjectsWithFiles: LearningObject[] = [];
-      const learningObjectIDs: string[] = [];
-      for (let name of learningObjectNames) {
-        const id = await dataStore.findLearningObject(username, name);
-        learningObjectIDs.push(id);
-        const object = await dataStore.fetchLearningObject(id, false, true);
-        object.id = id;
-        if (object.materials.files.length) {
-          learningObjectsWithFiles.push(object);
-        }
-      }
+      const learningObjectIDs: string[] = await Promise.all(
+        learningObjectNames.map((name: string) => {
+          return dataStore.findLearningObject(username, name);
+        }),
+      );
       await dataStore.deleteMultipleLearningObjects(learningObjectIDs);
 
-      for (let object of learningObjectsWithFiles) {
-        const path = `${object.id}/${username}/`;
-        await fileManager.deleteAll(path);
-      }
+      learningObjectIDs.map(id => {
+        const path = `${username}/${id}/`;
+        return fileManager.deleteAll(path);
+      });
+
+      return Promise.resolve();
     } catch (error) {
       return Promise.reject(
         `Problem deleting Learning Objects. Error: ${error}`,
