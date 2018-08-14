@@ -14,9 +14,10 @@ export class LibraryInteractor {
   };
   public static async getMetrics(objectID: string): Promise<Metrics> {
     try {
-      this.options.uri = LIBRARY_ROUTES.METRICS(objectID);
-      this.options.headers.Authorization = `Bearer ${generateServiceToken()}`;
-      return request(this.options);
+      const options = { ...this.options };
+      options.uri = LIBRARY_ROUTES.METRICS(objectID);
+      options.headers.Authorization = `Bearer ${generateServiceToken()}`;
+      return request(options);
     } catch (e) {
       return Promise.reject(`Problem fetching metrics. Error: ${e}`);
     }
@@ -29,9 +30,10 @@ export class LibraryInteractor {
   public static async cleanObjectsFromLibraries(
     ids: Array<string>,
   ): Promise<void> {
-    this.options.uri = LIBRARY_ROUTES.CLEAN(ids);
-    this.options.method = 'PATCH';
-    this.options.headers.Authorization = `Bearer ${generateServiceToken()}`;
-    return request(this.options);
+    const options = { ...this.options };
+    options.uri = LIBRARY_ROUTES.CLEAN(ids);
+    options.method = 'PATCH';
+    options.headers.Authorization = `Bearer ${generateServiceToken()}`;
+    return request(options);
   }
 }
