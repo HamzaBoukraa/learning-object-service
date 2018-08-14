@@ -203,5 +203,18 @@ export class ExpressRouteDriver {
         responder.sendOperationError(e);
       }
     });
+    router.get('/users/:username/learning-objects', async (req, res) => {
+      const responder = this.getResponder(res);
+      try {
+        const objects = await LearningObjectInteractor.loadLearningObjectSummary(
+          this.dataStore,
+          req.params.username,
+          false,
+        );
+        responder.sendObject(objects);
+      } catch (e) {
+        responder.sendOperationError(e);
+      }
+    });
   }
 }
