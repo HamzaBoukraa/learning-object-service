@@ -244,6 +244,8 @@ export class LearningObjectInteractor {
         return object;
       }
     } catch (e) {
+      // The duplicate key error is produced by Mongo, via a constraint on the authorID/name compound index
+      // FIXME: This should be an error that is encapsulated within the MongoDriver, since it is specific to Mongo's indexing functionality
       if (/duplicate key error/gi.test(e)) {
         return Promise.reject(
           `Could not save Learning Object. Learning Object with name: ${
