@@ -203,18 +203,12 @@ export class MongoDriver implements DataStore {
           status: 404,
         });
       } else {
-
-        const lengths = ['nanomodule', 'micromodule', 'module', 'unit', 'course'];
-        const maxLengthIndex = lengths.indexOf(parentObject.length);
-
-        for (let i = 0, l = children.length; i < l; i++) {
-          if (lengths.indexOf(childrenObjects[i].length) >= maxLengthIndex) {
-            // this learning object is of an equal or greater length than the parent
-            return Promise.reject({
-              message: `One or more of the children objects are of a length greater than or equal to the parent objects length`,
-              status: 400,
-            });
-          }
+        if (!this.checkChildrenLength(parentObject, childrenObjects)) {
+          // at least one of the children is of an equal or greater length than the parent
+          return Promise.reject({
+            message: `One or more of the children objects are of a length greater than or equal to the parent objects length`,
+            status: 400,
+          });
         }
 
         parentObject.children = children;
@@ -227,9 +221,29 @@ export class MongoDriver implements DataStore {
       console.log(error);
       return Promise.reject({
         message: `Problem inserting children into Object ${parentId}`,
-        status: 400,
+        status: 500,
       });
     }
+  }
+
+  /**
+   * Iterates the provided array of children objects and ensure that none of them are of an equal or greater length than the parent
+   * @param {LearningObject} parent Learning object to which children will be added
+   * @param {LearningObject[]} children Array of learning objects to be added as children to parent
+   */
+  private checkChildrenLength(parent: LearningObject, children: LearningObject[]): boolean {
+    // FIXME: These lengths should be retrieved from a standardized source such as a npm module
+    const lengths = ['nanomodule', 'micromodule', 'module', 'unit', 'course'];
+    const maxLengthIndex = lengths.indexOf(parent.length);
+
+    for (let i = 0, l = children.length; i < l; i++) {
+      if (lengths.indexOf(children[i].length) >= maxLengthIndex) {
+        // this learning object is of an equal or greater length than the parent
+        return false;
+      }
+    }
+
+    return true;
   }
 
   /**
