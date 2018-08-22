@@ -549,6 +549,14 @@ export class MongoDriver implements DataStore {
     } catch (error) {
       console.log(error);
     }
+
+    // remove references to learning object from parents
+    try {
+      await this.db.collection(COLLECTIONS.LearningObject.name).findOneAndUpdate({ children: id }, { $pull: { children: id } });
+    } catch (error) {
+      console.log(error);
+    }
+
     // now remove from database
     return this.remove(COLLECTIONS.LearningObject, id);
   }
