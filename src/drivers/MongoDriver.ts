@@ -192,32 +192,61 @@ export class MongoDriver implements DataStore {
    * @param {string} childId The database ID of the child Learning Object
    * @memberof MongoDriver
    */
-  async insertChild(parentId: string, childId: string): Promise<any> {
+  async setChildren(parentId: string, children: string[]): Promise<any> {
     try {
-      const childObjectExists =
-        (await this.db
-          .collection(COLLECTIONS.LearningObject.name)
-          .find({ _id: childId }, { _id: 1 })
-          .limit(1)
-          .count()) > 0;
+      const collection = this.db.collection(COLLECTIONS.LearningObject.name);
 
-      if (childObjectExists) {
-        // TODO: return an error if $addToSet doesn't modify the set (i.e. the child is already added)
-        await this.db
-          .collection(COLLECTIONS.LearningObject.name)
-          .update({ _id: parentId }, { $addToSet: { children: childId } });
-      } else {
+      const parentObject = await collection.findOne({ _id: parentId });
+      const childrenObjects = await collection.find({ _id: { $in: children } }).toArray();
+
+      // check that the same number of children objects were returned as ids were sent
+      if (childrenObjects.length !== children.length) {
         return Promise.reject({
-          message: `${childId} does not exist`,
+          message: `One or more of the children id's does not exist`,
           status: 404,
         });
+      } else {
+        if (!this.checkChildrenLength(parentObject, childrenObjects)) {
+          // at least one of the children is of an equal or greater length than the parent
+          return Promise.reject({
+            message: `One or more of the children objects are of a length greater than or equal to the parent objects length`,
+            status: 400,
+          });
+        }
+
+        parentObject.children = children;
+
+        // replace children array of parent with passed children array
+        await this.db.collection(COLLECTIONS.LearningObject.name).findOneAndUpdate({ _id: parentId }, { $set: { children } }, { upsert: true });
       }
+
     } catch (error) {
+      console.log(error);
       return Promise.reject({
-        message: `Problem inserting child ${childId} into Object ${parentId}`,
-        status: 400,
+        message: `Problem inserting children into Object ${parentId}`,
+        status: 500,
       });
     }
+  }
+
+  /**
+   * Iterates the provided array of children objects and ensure that none of them are of an equal or greater length than the parent
+   * @param {LearningObject} parent Learning object to which children will be added
+   * @param {LearningObject[]} children Array of learning objects to be added as children to parent
+   */
+  private checkChildrenLength(parent: LearningObject, children: LearningObject[]): boolean {
+    // FIXME: These lengths should be retrieved from a standardized source such as a npm module
+    const lengths = ['nanomodule', 'micromodule', 'module', 'unit', 'course'];
+    const maxLengthIndex = lengths.indexOf(parent.length);
+
+    for (let i = 0, l = children.length; i < l; i++) {
+      if (lengths.indexOf(children[i].length) >= maxLengthIndex) {
+        // this learning object is of an equal or greater length than the parent
+        return false;
+      }
+    }
+
+    return true;
   }
 
   /**
@@ -575,6 +604,14 @@ export class MongoDriver implements DataStore {
     } catch (error) {
       console.log(error);
     }
+
+    // remove references to learning object from parents
+    try {
+      await this.db.collection(COLLECTIONS.LearningObject.name).findOneAndUpdate({ children: id }, { $pull: { children: id } });
+    } catch (error) {
+      console.log(error);
+    }
+
     // now remove from database
     return this.remove(COLLECTIONS.LearningObject, id);
   }
