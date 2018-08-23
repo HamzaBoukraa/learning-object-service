@@ -212,6 +212,14 @@ export class LearningObjectInteractor {
         learningObjects.map(async object => {
           try {
             object.metrics = await this.loadMetrics(object.id);
+            if (object.children && object.children.length) {
+              object.children = await this.loadChildObjects(
+                dataStore,
+                object,
+                false,
+                false,
+              );
+            }
             return object;
           } catch (e) {
             console.log(e);
@@ -597,7 +605,6 @@ export class LearningObjectInteractor {
           }
         }),
       );
-
       return learningObjects;
     } catch (e) {
       return Promise.reject(
