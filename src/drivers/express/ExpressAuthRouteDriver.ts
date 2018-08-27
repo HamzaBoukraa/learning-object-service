@@ -192,9 +192,9 @@ export class ExpressAuthRouteDriver {
           const username = req.params.username;
           const user = req.user;
           if (this.hasAccess(user, 'username', username)) {
-            await LearningObjectInteractor.addChild({
+            await LearningObjectInteractor.setChildren({
               dataStore: this.dataStore,
-              childId: req.body.id,
+              children: req.body.children,
               parentName: req.params.learningObjectName,
               username: user.username,
             });

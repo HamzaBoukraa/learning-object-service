@@ -191,6 +191,22 @@ export class LearningObjectInteractor {
     return null;
   }
 
+  public static async fetchParents(params: {
+    dataStore: DataStore;
+    query: LearningObjectQuery;
+  }): Promise<LearningObject[]> {
+    try {
+      return await params.dataStore.findParentObjects({
+        query: params.query,
+      });
+    } catch (e) {
+      console.log(e);
+      return Promise.reject(
+        `Problem fetching parent objects for ${params.query.id}. Error: ${e}`,
+      );
+    }
+  }
+
   public static async loadFullLearningObjectByIDs(
     dataStore: DataStore,
     ids: string[],
@@ -202,6 +218,14 @@ export class LearningObjectInteractor {
         learningObjects.map(async object => {
           try {
             object.metrics = await this.loadMetrics(object.id);
+            if (object.children && object.children.length) {
+              object.children = await this.loadChildObjects(
+                dataStore,
+                object,
+                false,
+                false,
+              );
+            }
             return object;
           } catch (e) {
             console.log(e);
@@ -261,6 +285,8 @@ export class LearningObjectInteractor {
         return object;
       }
     } catch (e) {
+      // The duplicate key error is produced by Mongo, via a constraint on the authorID/name compound index
+      // FIXME: This should be an error that is encapsulated within the MongoDriver, since it is specific to Mongo's indexing functionality
       if (/duplicate key error/gi.test(e)) {
         return Promise.reject(
           `Could not save Learning Object. Learning Object with name: ${
@@ -605,7 +631,6 @@ export class LearningObjectInteractor {
           }
         }),
       );
-
       return learningObjects;
     } catch (e) {
       return Promise.reject(
@@ -729,9 +754,9 @@ export class LearningObjectInteractor {
     }
   }
 
-  public static async addChild(params: {
+  public static async setChildren(params: {
     dataStore: DataStore;
-    childId: string;
+    children: string[];
     username: string;
     parentName: string;
   }): Promise<void> {
@@ -740,7 +765,7 @@ export class LearningObjectInteractor {
         params.username,
         params.parentName,
       );
-      return params.dataStore.insertChild(parentID, params.childId);
+      return params.dataStore.setChildren(parentID, params.children);
     } catch (e) {
       return Promise.reject(`Problem adding child. Error: ${e}`);
     }

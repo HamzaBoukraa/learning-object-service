@@ -4,6 +4,7 @@ import { Router, Response } from 'express';
 import { LearningObjectInteractor } from '../../interactors/interactors';
 import { LearningObject } from '@cyber4all/clark-entity';
 import * as TokenManager from '../TokenManager';
+import { LearningObjectQuery } from '../../interfaces/DataStore';
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
 // tslint:disable-next-line:no-require-imports
 const version = require('../../../package.json').version;
@@ -92,6 +93,20 @@ export class ExpressRouteDriver {
         responder.sendObject(learningObjects);
       } catch (e) {
         console.log(e);
+        responder.sendOperationError(e);
+      }
+    });
+    router.get('/learning-objects/:id/parents', async (req, res) => {
+      const responder = this.getResponder(res);
+      try {
+        const query: LearningObjectQuery = req.query;
+        query.id = req.params.id;
+        const parents = await LearningObjectInteractor.fetchParents({
+          query,
+          dataStore: this.dataStore,
+        });
+        responder.sendObject(parents);
+      } catch (e) {
         responder.sendOperationError(e);
       }
     });
