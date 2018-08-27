@@ -10,6 +10,12 @@ import { CartInteractor } from './CartInteractor';
 import { File } from '@cyber4all/clark-entity/dist/learning-object';
 export type LearningObjectFile = File;
 export type GradientVector = [number, number, number, number];
+
+export type LearningObjectPDF = {
+  name: string;
+  url: string;
+};
+
 export class LearningObjectInteractor {
   /**
    * Load the scalar fields of a user's objects (ignore goals and outcomes).
@@ -263,7 +269,19 @@ export class LearningObjectInteractor {
       } else {
         const learningObjectID = await dataStore.insertLearningObject(object);
         object.id = learningObjectID;
-        this.generatePDF(fileManager, object);
+
+        // Generate PDF and update Learning Object with PDF meta.
+        const oldPDF: LearningObjectPDF = object.materials['pdf'];
+        const pdf = await this.generatePDF(fileManager, object);
+        if (oldPDF) {
+          this.deleteOldPDF(oldPDF, pdf, fileManager, learningObjectID, object);
+        }
+        object.materials['pdf'] = {
+          name: pdf.name,
+          url: pdf.url,
+        };
+        dataStore.editLearningObject(object.id, object);
+
         return object;
       }
     } catch (e) {
@@ -355,7 +373,7 @@ export class LearningObjectInteractor {
     filename: string,
   ): Promise<void> {
     try {
-      const path = `${id}/${username}/${filename}`;
+      const path = `${username}/${id}/${filename}`;
       return fileManager.delete(path);
     } catch (e) {
       return Promise.reject(`Problem deleting file. Error: ${e}`);
@@ -409,11 +427,33 @@ export class LearningObjectInteractor {
       if (err) {
         return Promise.reject(err);
       } else {
-        this.generatePDF(fileManager, object);
+        // Generate PDF and update Learning Object with PDF meta.
+        const oldObject = await dataStore.fetchLearningObject(id, false, true);
+        const oldPDF: LearningObjectPDF = oldObject.materials['pdf'];
+        const pdf = await this.generatePDF(fileManager, object);
+        if (oldPDF) {
+          this.deleteOldPDF(oldPDF, pdf, fileManager, id, object);
+        }
+        object.materials['pdf'] = {
+          name: pdf.name,
+          url: pdf.url,
+        };
         return dataStore.editLearningObject(id, object);
       }
     } catch (e) {
       return Promise.reject(`Problem updating Learning Object. Error: ${e}`);
+    }
+  }
+
+  private static deleteOldPDF(
+    oldPDF: LearningObjectPDF,
+    pdf: LearningObjectPDF,
+    fileManager: FileManager,
+    id: string,
+    object: LearningObject,
+  ) {
+    if (oldPDF.name !== pdf.name) {
+      this.deleteFile(fileManager, id, object.author.username, oldPDF.name);
     }
   }
 
@@ -447,16 +487,10 @@ export class LearningObjectInteractor {
         username,
         learningObjectName,
       );
-      const learningObject = await dataStore.fetchLearningObject(
-        learningObjectID,
-        false,
-        true,
-      );
       await dataStore.deleteLearningObject(learningObjectID);
-      if (learningObject.materials.files.length) {
-        const path = `${learningObjectID}/${username}/`;
-        return fileManager.deleteAll(path);
-      }
+      const path = `${username}/${learningObjectID}/`;
+      fileManager.deleteAll(path);
+      return Promise.resolve();
     } catch (error) {
       return Promise.reject(
         `Problem deleting Learning Object. Error: ${error}`,
@@ -471,27 +505,19 @@ export class LearningObjectInteractor {
     learningObjectNames: string[],
   ): Promise<void> {
     try {
-      const learningObjectsWithFiles: LearningObject[] = [];
-      const learningObjectIDs: string[] = [];
-      await Promise.all(
-        learningObjectNames.map(async name => {
-          const id = await dataStore.findLearningObject(username, name);
-          learningObjectIDs.push(id);
-          const object = await dataStore.fetchLearningObject(id, false, true);
-          object.id = id;
-          if (object.materials.files.length) {
-            learningObjectsWithFiles.push(object);
-          }
+      const learningObjectIDs: string[] = await Promise.all(
+        learningObjectNames.map((name: string) => {
+          return dataStore.findLearningObject(username, name);
         }),
       );
       await dataStore.deleteMultipleLearningObjects(learningObjectIDs);
 
-      await Promise.all(
-        learningObjectsWithFiles.map(async object => {
-          const path = `${object.id}/${username}/`;
-          return fileManager.deleteAll(path);
-        }),
-      );
+      learningObjectIDs.map(id => {
+        const path = `${username}/${id}/`;
+        return fileManager.deleteAll(path);
+      });
+
+      return Promise.resolve();
     } catch (error) {
       return Promise.reject(
         `Problem deleting Learning Objects. Error: ${error}`,
@@ -882,7 +908,12 @@ export class LearningObjectInteractor {
     // Create array to catch Buffers
     const buffers: Buffer[] = [];
     // Add Event Handlers
-    this.addEventListeners(fileManager, doc, buffers, learningObject);
+    const pdf = this.addEventListeners(
+      fileManager,
+      doc,
+      buffers,
+      learningObject,
+    );
     const gradientRGB: GradientVector = [0, 0, 650, 0];
     // MetaData
     this.appendMetaData(doc, learningObject);
@@ -905,6 +936,7 @@ export class LearningObjectInteractor {
       this.appendTextMaterials(gradientRGB, doc, learningObject);
     }
     doc.end();
+    return pdf;
   }
 
   /**
@@ -923,19 +955,27 @@ export class LearningObjectInteractor {
     doc: PDFKit.PDFDocument,
     buffers: Buffer[],
     learningObject: LearningObject,
-  ) {
+  ): Promise<LearningObjectPDF> {
     doc.on('data', (data: Buffer) => {
       buffers.push(data);
     });
     doc.on('error', e => {
       console.log(e);
     });
-    doc.on('end', () => {
-      const buffer: Buffer = Buffer.concat(buffers);
-      const path = `${learningObject.author.username}/${
-        learningObject.name
-      }/0ReadMeFirst - ${learningObject.name}.pdf`;
-      return fileManager.upload(path, buffer);
+
+    return new Promise<LearningObjectPDF>(resolve => {
+      doc.on('end', async () => {
+        const buffer: Buffer = Buffer.concat(buffers);
+        const fileName = `0ReadMeFirst - ${learningObject.name}.pdf`;
+        const path = `${learningObject.author.username}/${
+          learningObject.id
+        }/${fileName}`;
+        const url = await fileManager.upload(path, buffer);
+        resolve({
+          url,
+          name: fileName,
+        });
+      });
     });
   }
 

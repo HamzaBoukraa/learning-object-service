@@ -1538,11 +1538,11 @@ export class MongoDriver implements DataStore {
     learningObject.date = record.date;
     learningObject.length = record.length;
     learningObject.levels = <AcademicLevel[]>record.levels;
-    learningObject.materials = record.materials;
+    learningObject.materials = <any>record.materials;
     record.published ? learningObject.publish() : learningObject.unpublish();
     learningObject.children = record.children;
-    learningObject.lock = record.lock;
-    learningObject.contributors = record.contributors;
+    learningObject.lock = record['lock'];
+    learningObject.contributors = record['contributors'];
     for (const goal of record.goals) {
       learningObject.addGoal(goal.text);
     }
