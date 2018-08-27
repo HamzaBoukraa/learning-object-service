@@ -6,7 +6,7 @@ import * as striptags from 'striptags';
 import * as stemmer from 'stemmer';
 import { LearningObjectQuery } from '../interfaces/DataStore';
 import { Metrics } from '@cyber4all/clark-entity/dist/learning-object';
-import { CartInteractor } from './CartInteractor';
+import { LibraryInteractor } from './LibraryInteractor';
 import { File } from '@cyber4all/clark-entity/dist/learning-object';
 export type LearningObjectFile = File;
 export type GradientVector = [number, number, number, number];
@@ -488,8 +488,11 @@ export class LearningObjectInteractor {
         learningObjectName,
       );
       await dataStore.deleteLearningObject(learningObjectID);
-      const path = `${username}/${learningObjectID}/`;
-      fileManager.deleteAll(path);
+      if (learningObject.materials.files.length) {
+        const path = `${learningObjectID}/${username}/`;
+        await fileManager.deleteAll(path);
+      }
+      LibraryInteractor.cleanObjectsFromLibraries([learningObjectID]);
       return Promise.resolve();
     } catch (error) {
       return Promise.reject(
@@ -512,12 +515,11 @@ export class LearningObjectInteractor {
       );
       await dataStore.deleteMultipleLearningObjects(learningObjectIDs);
 
-      learningObjectIDs.map(id => {
-        const path = `${username}/${id}/`;
-        return fileManager.deleteAll(path);
-      });
-
-      return Promise.resolve();
+      for (let object of learningObjectsWithFiles) {
+        const path = `${object.id}/${username}/`;
+        await fileManager.deleteAll(path);
+      }
+      LibraryInteractor.cleanObjectsFromLibraries(learningObjectIDs);
     } catch (error) {
       return Promise.reject(
         `Problem deleting Learning Objects. Error: ${error}`,
@@ -798,7 +800,7 @@ export class LearningObjectInteractor {
    */
   private static async loadMetrics(objectID: string): Promise<Metrics> {
     try {
-      return CartInteractor.getMetrics(objectID);
+      return LibraryInteractor.getMetrics(objectID);
     } catch (e) {
       return Promise.reject(e);
     }
