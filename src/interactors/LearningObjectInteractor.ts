@@ -3,7 +3,6 @@ import { LearningObject, LearningOutcome } from '@cyber4all/clark-entity';
 import * as PDFKit from 'pdfkit';
 import * as stopword from 'stopword';
 import * as striptags from 'striptags';
-import * as stemmer from 'stemmer';
 import { LearningObjectQuery } from '../interfaces/DataStore';
 import { Metrics } from '@cyber4all/clark-entity/dist/learning-object';
 import { CartInteractor } from './CartInteractor';
@@ -616,7 +615,6 @@ export class LearningObjectInteractor {
         const lastChar = text.charAt(text.length - 1);
         if (firstChar !== `"` && lastChar !== `"`) {
           text = this.removeStopwords(text);
-          text = this.stemWords(text);
         }
       }
       const response = await dataStore.searchObjects(
@@ -748,24 +746,6 @@ export class LearningObjectInteractor {
     } catch (e) {
       return Promise.reject(e);
     }
-  }
-
-  /**
-   * Returns stems for words in a string
-   *
-   * @private
-   * @static
-   * @param {string} text
-   * @returns {string}
-   * @memberof SuggestionInteractor
-   */
-  private static stemWords(text: string): string {
-    text = text
-      .split(' ')
-      .map(word => stemmer(word))
-      .join(' ')
-      .trim();
-    return text;
   }
 
   /**
