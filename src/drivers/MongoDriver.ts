@@ -599,6 +599,10 @@ export class MongoDriver implements DataStore {
    */
   async deleteLearningObject(id: string): Promise<void> {
     try {
+      // remove children references to this learning object from parent
+      await this.deleteLearningObjectParentReferences(id);
+
+      // now remove the object
       return await this.remove(COLLECTIONS.LearningObject, id);
     } catch (e) {
       return Promise.reject(e);
@@ -614,10 +618,23 @@ export class MongoDriver implements DataStore {
   async deleteMultipleLearningObjects(ids: string[]): Promise<any> {
     // now remove objects from database
     return Promise.all(
-      ids.map(id => {
+      ids.map(async (id) => {
+        // remove children references to this learning object from parent
+        await this.deleteLearningObjectParentReferences(id);
+
+        // now remove the object
         return this.remove(COLLECTIONS.LearningObject, id);
       }),
     );
+  }
+
+  /**
+   * Iterates a user's learning objects and removes children references to the specified id
+   * @param id represents the learning object whose references are to be removed
+   */
+  private async deleteLearningObjectParentReferences(id: string): Promise<any> {
+    // remove references to learning object from parents
+    return await this.db.collection(COLLECTIONS.LearningObject.name).findOneAndUpdate({ children: id }, { $pull: { children: id } });
   }
 
   /**
