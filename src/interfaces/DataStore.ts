@@ -5,6 +5,7 @@ import {
   User,
   Collection,
 } from '@cyber4all/clark-entity';
+import { LearningObjectLock } from '../interactors/AdminLearningObjectInteractor';
 
 export interface DataStore {
   connect(dburi: string): Promise<void>;
@@ -16,7 +17,7 @@ export interface DataStore {
     index: number,
   ): Promise<void>;
   editLearningObject(id: string, object: LearningObject): Promise<void>;
-  toggleLock(id: string, lock?: { date: string }): Promise<void>;
+  toggleLock(id: string, lock?: LearningObjectLock): Promise<void>;
   deleteLearningObject(id: string): Promise<void>;
   deleteMultipleLearningObjects(ids: string[]): Promise<void>;
   getUserObjects(username: string): Promise<string[]>;
@@ -53,26 +54,36 @@ export interface DataStore {
   ): Promise<{ objects: LearningObject[]; total: number }>;
   fetchCollections(loadObjects?: boolean): Promise<Collection[]>;
   fetchCollection(name: string): Promise<Collection>;
+  fetchCollectionMeta(name: string): Promise<any>;
+  fetchCollectionObjects(name: string): Promise<LearningObject[]>;
   togglePublished(
     username: string,
     id: string,
     published: boolean,
   ): Promise<void>;
-  insertChild(parentId: string, childId: string): Promise<void>;
+  setChildren(parentId: string, children: string[]): Promise<void>;
   deleteChild(parentId: string, childId: string): Promise<void>;
+  findParentObjects(params: {
+    query: LearningObjectQuery;
+  }): Promise<LearningObject[]>;
 }
 
 export { Collection as LearningObjectCollection };
 
-export type LearningObjectQuery = {
+export interface Filters {
+  orderBy?: string;
+  sortType?: -1 | 1;
+  page?: number;
+  limit?: number;
+}
+
+export interface LearningObjectQuery extends Filters {
+  id?: string;
   name?: string;
   author?: string;
   length?: string[];
   level?: string[];
   standardOutcomeIDs?: string[];
   text?: string;
-  orderBy?: string;
-  sortType?: -1 | 1;
-  page?: number;
-  limit?: number;
-};
+  full?: boolean;
+}

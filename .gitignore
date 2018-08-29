@@ -3,3 +3,4 @@
 .env
 dist.zip
 .DS_Store
+/coverage

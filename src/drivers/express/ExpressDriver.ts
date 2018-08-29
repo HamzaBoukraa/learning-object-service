@@ -1,7 +1,11 @@
 import * as express from 'express';
 import * as bodyParser from 'body-parser';
 import { DataStore, FileManager } from '../../interfaces/interfaces';
-import { ExpressRouteDriver, ExpressAdminRouteDriver } from '../drivers';
+import {
+  ExpressRouteDriver,
+  ExpressAdminRouteDriver,
+  ExpressAuthRouteDriver,
+} from '../drivers';
 import * as http from 'http';
 import * as logger from 'morgan';
 import { enforceTokenAccess } from '../../middleware/jwt.config';
@@ -32,11 +36,22 @@ export class ExpressDriver {
     // Set up cookie parser
     this.app.use(cookieParser());
 
+    // Set our public api routes
+    this.app.use('/', ExpressRouteDriver.buildRouter(dataStore));
+
     // Set Validation Middleware
     this.app.use(enforceTokenAccess);
+    this.app.use((error: any, req: any, res: any, next: any) => {
+      if (error.name === 'UnauthorizedError') {
+        res.status(401).send('Invalid Access Token');
+      }
+    });
 
-    // Set our api routes
-    this.app.use('/', ExpressRouteDriver.buildRouter(dataStore, fileManager));
+    // Set our authenticated api routes
+    this.app.use(
+      '/',
+      ExpressAuthRouteDriver.buildRouter(dataStore, fileManager),
+    );
 
     // Set admin api routes
     this.app.use(enforceAdminAccess);
