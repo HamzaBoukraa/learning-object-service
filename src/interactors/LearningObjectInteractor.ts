@@ -484,10 +484,14 @@ export class LearningObjectInteractor {
         username,
         learningObjectName,
       );
-      const learningObject = await dataStore.fetchLearningObject(learningObjectID, false, true);
+      const learningObject = await dataStore.fetchLearningObject(
+        learningObjectID,
+        false,
+        true,
+      );
       await dataStore.deleteLearningObject(learningObjectID);
       if (learningObject.materials.files.length) {
-        const path = `${learningObjectID}/${username}/`;
+        const path = `${username}/${learningObjectID}/`;
         await fileManager.deleteAll(path);
       }
       LibraryInteractor.cleanObjectsFromLibraries([learningObjectID]);
@@ -512,9 +516,11 @@ export class LearningObjectInteractor {
         }),
       );
       await dataStore.deleteMultipleLearningObjects(learningObjectIDs);
-      const learningObjectsWithFiles = await dataStore.fetchMultipleObjects(learningObjectIDs);
+      const learningObjectsWithFiles = await dataStore.fetchMultipleObjects(
+        learningObjectIDs,
+      );
       for (let object of learningObjectsWithFiles) {
-        const path = `${object.id}/${username}/`;
+        const path = `${username}/${object.id}/`;
         await fileManager.deleteAll(path);
       }
       LibraryInteractor.cleanObjectsFromLibraries(learningObjectIDs);
