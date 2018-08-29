@@ -484,6 +484,7 @@ export class LearningObjectInteractor {
         username,
         learningObjectName,
       );
+      const learningObject = await dataStore.fetchLearningObject(learningObjectID, false, true);
       await dataStore.deleteLearningObject(learningObjectID);
       if (learningObject.materials.files.length) {
         const path = `${learningObjectID}/${username}/`;
@@ -511,7 +512,7 @@ export class LearningObjectInteractor {
         }),
       );
       await dataStore.deleteMultipleLearningObjects(learningObjectIDs);
-
+      const learningObjectsWithFiles = await dataStore.fetchMultipleObjects(learningObjectIDs);
       for (let object of learningObjectsWithFiles) {
         const path = `${object.id}/${username}/`;
         await fileManager.deleteAll(path);
