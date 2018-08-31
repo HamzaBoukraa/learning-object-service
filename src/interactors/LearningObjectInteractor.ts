@@ -489,7 +489,7 @@ export class LearningObjectInteractor {
       );
       await dataStore.deleteLearningObject(learningObjectID);
       if (learningObject.materials.files.length) {
-        const path = `${learningObjectID}/${username}/`;
+        const path = `${username}/${learningObjectID}/`;
         await fileManager.deleteAll(path);
       }
       LibraryInteractor.cleanObjectsFromLibraries([learningObjectID]);
@@ -518,7 +518,7 @@ export class LearningObjectInteractor {
         learningObjectIDs,
       );
       for (let object of learningObjectsWithFiles) {
-        const path = `${object.id}/${username}/`;
+        const path = `${username}/${object.id}/`;
         await fileManager.deleteAll(path);
       }
       LibraryInteractor.cleanObjectsFromLibraries(learningObjectIDs);
