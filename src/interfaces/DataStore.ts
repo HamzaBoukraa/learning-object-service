@@ -1,11 +1,10 @@
-import {
-  LearningObject,
-  LearningOutcome,
-  StandardOutcome,
-  User,
-  Collection,
-} from '@cyber4all/clark-entity';
+import { LearningObject, Collection } from '@cyber4all/clark-entity';
 import { LearningObjectLock } from '../interactors/AdminLearningObjectInteractor';
+import {
+  MultipartFileUploadStatus,
+  MultipartFileUploadStatusUpdates,
+  CompletedPart,
+} from './FileManager';
 
 export interface DataStore {
   connect(dburi: string): Promise<void>;
@@ -66,6 +65,20 @@ export interface DataStore {
   findParentObjects(params: {
     query: LearningObjectQuery;
   }): Promise<LearningObject[]>;
+
+  // Multipart Uploads
+  insertMultipartUploadStatus(params: {
+    status: MultipartFileUploadStatus;
+  }): Promise<void>;
+  fetchMultipartUploadStatus(params: {
+    id: string;
+  }): Promise<MultipartFileUploadStatus>;
+  updateMultipartUploadStatus(params: {
+    id: string;
+    updates: MultipartFileUploadStatusUpdates;
+    completedPart: CompletedPart;
+  }): Promise<void>;
+  deleteMultipartUploadStatus(params: { id: string }): Promise<void>;
 }
 
 export { Collection as LearningObjectCollection };
