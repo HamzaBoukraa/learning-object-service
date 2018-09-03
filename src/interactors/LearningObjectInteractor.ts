@@ -365,7 +365,7 @@ export class LearningObjectInteractor {
       }
       // If LearningObjectFile was generated, update LearningObject's materials
       if (loFile) {
-        this.updateMaterials({
+        await this.updateMaterials({
           loFile,
           dataStore: params.dataStore,
           id: params.id,
@@ -610,6 +610,7 @@ export class LearningObjectInteractor {
         path: params.file.fullPath ? params.file.fullPath : params.file.name,
         bytesUploaded: +params.file.dzchunksize,
         completedParts: [params.multipartData.completedPart],
+        createdAt: Date.now().toString(),
       };
       return await params.dataStore.insertMultipartUploadStatus({
         status: uploadStatus,
