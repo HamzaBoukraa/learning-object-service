@@ -10,7 +10,6 @@ export interface FileManager {
     completedPartList?: CompletedPartList;
   }): Promise<MultipartUploadData>;
   cancelMultipart(params: { path: string; uploadId: string }): Promise<void>;
-  removeMultipartUploads(): Promise<void>;
 }
 
 // Export aliased types for ease of update in the case that AWS S3 is no longer the driver used.

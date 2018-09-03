@@ -95,10 +95,6 @@ export class S3Driver implements FileManager {
         },
       };
     } catch (e) {
-      this.cancelMultipart({
-        path: params.file.path,
-        uploadId: params.file.uploadId,
-      });
       return Promise.reject(e);
     }
   }
