@@ -39,7 +39,7 @@ export class S3Driver implements FileManager {
 
   /**
    * Processes Chunk uploads
-   *
+   * If there is trouble with the upload AWS auto aborts multipart upload
    * @param {{
    *     file: MultipartFileUpload;
    *     finish?: boolean;
@@ -54,12 +54,14 @@ export class S3Driver implements FileManager {
     completedPartList?: CompletedPartList;
   }): Promise<MultipartUploadData> {
     try {
+      // If uploadId doesn't exist, a multipart upload has not been created for file upload
       if (!params.file.uploadId) {
         const createParams = {
           Bucket: AWS_S3_BUCKET,
           ACL: AWS_S3_ACL,
           Key: params.file.path,
         };
+        // Create multipart file upload
         const createdUpload = await this.s3
           .createMultipartUpload(createParams)
           .promise();
@@ -72,7 +74,10 @@ export class S3Driver implements FileManager {
         PartNumber: params.file.partNumber,
         UploadId: params.file.uploadId,
       };
+      // Upload chunk
       const uploadData = await this.s3.uploadPart(partUploadParams).promise();
+
+      // If last chunk is being uploaded, finalize multipart upload
       if (params.finish) {
         const completedParams = {
           Bucket: AWS_S3_BUCKET,
@@ -82,11 +87,13 @@ export class S3Driver implements FileManager {
             Parts: params.completedPartList,
           },
         };
+        // Finalize upload
         const completedUploadData = await this.s3
           .completeMultipartUpload(completedParams)
           .promise();
         return { url: completedUploadData.Location };
       }
+
       return {
         uploadId: params.file.uploadId,
         completedPart: {
