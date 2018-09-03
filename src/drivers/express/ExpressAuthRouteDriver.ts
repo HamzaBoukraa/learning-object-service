@@ -154,12 +154,12 @@ export class ExpressAuthRouteDriver {
             mimetype: file.mimetype,
             size: dzMetadata.dztotalfilesize,
           };
-          // const user = req.user;
+          const user = req.user;
 
-          if (true) {
+          if (this.hasAccess(user, 'emailVerified', true)) {
             const loFile = await LearningObjectInteractor.uploadFile({
               id,
-              username: 'gshaw7',
+              username: user.username,
               dataStore: this.dataStore,
               fileManager: this.fileManager,
               file: upload,
