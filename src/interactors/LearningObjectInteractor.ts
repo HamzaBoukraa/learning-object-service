@@ -439,7 +439,7 @@ export class LearningObjectInteractor {
       let found = false;
       for (let i = 0; i < learningObject.materials.files.length; i++) {
         const oldFile = learningObject.materials.files[i];
-        if (params.loFile.name === oldFile.name) {
+        if (params.loFile.url === oldFile.url) {
           found = true;
           params.loFile.description = oldFile.description;
           learningObject.materials.files[i] = params.loFile;
