@@ -130,6 +130,7 @@ export class ExpressRouteDriver {
           );
           responder.sendObject(object);
         } catch (e) {
+          console.error(e);
           responder.sendOperationError(e);
         }
       });
