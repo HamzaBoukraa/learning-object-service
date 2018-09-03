@@ -40,12 +40,12 @@ export class ExpressDriver {
     this.app.use('/', ExpressRouteDriver.buildRouter(dataStore));
 
     // Set Validation Middleware
-    this.app.use(enforceTokenAccess);
-    this.app.use((error: any, req: any, res: any, next: any) => {
-      if (error.name === 'UnauthorizedError') {
-        res.status(401).send('Invalid Access Token');
-      }
-    });
+    // this.app.use(enforceTokenAccess);
+    // this.app.use((error: any, req: any, res: any, next: any) => {
+    //   if (error.name === 'UnauthorizedError') {
+    //     res.status(401).send('Invalid Access Token');
+    //   }
+    // });
 
     // Set our authenticated api routes
     this.app.use(
