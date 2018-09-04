@@ -16,13 +16,19 @@ import {
   MultipartUploadData,
   CompletedPartList,
 } from '../interfaces/FileManager';
-export type LearningObjectFile = File;
+// TODO: Update File in clark-entity
+export interface LearningObjectFile extends File {
+  packageable: boolean;
+}
 export type GradientVector = [number, number, number, number];
 
 export type LearningObjectPDF = {
   name: string;
   url: string;
 };
+
+// file size is in bytes
+const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
 
 export class LearningObjectInteractor {
   /**
@@ -1157,9 +1163,16 @@ export class LearningObjectInteractor {
       fileType: file.mimetype,
       extension: extension,
       fullPath: file.fullPath,
+      packageable: this.isPackageable(file),
     };
 
     return learningObjectFile;
+  }
+
+  private static isPackageable(file: DZFile) {
+    // if dztotalfilesize doesn't exist it must not be a chunk upload.
+    // this means by default it must be a packageable file size
+    return !(file.dztotalfilesize > MAX_PACKAGEABLE_FILE_SIZE);
   }
 
   /**
