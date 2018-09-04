@@ -208,8 +208,27 @@ export class ExpressAuthRouteDriver {
         responder.sendOperationError(e);
       }
     });
-
     router
+      .patch('/learning-objects/:id/pdf', async (req, res) => {
+        const responder = this.getResponder(res);
+        try {
+          const id = req.params.id;
+          const object = await LearningObjectInteractor.updateReadme({
+            id,
+            dataStore: this.dataStore,
+            fileManager: this.fileManager,
+          });
+          await LearningObjectInteractor.updateLearningObject(
+            this.dataStore,
+            this.fileManager,
+            id,
+            object,
+          );
+          responder.sendOperationSuccess();
+        } catch (e) {
+          responder.sendOperationSuccess();
+        }
+      })
       .route('/learning-objects/:username/:learningObjectName/children')
       .post(async (req, res) => {
         const responder = this.getResponder(res);

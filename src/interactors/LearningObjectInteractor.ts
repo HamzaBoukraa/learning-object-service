@@ -285,16 +285,12 @@ export class LearningObjectInteractor {
         object.id = learningObjectID;
 
         // Generate PDF and update Learning Object with PDF meta.
-        const oldPDF: LearningObjectPDF = object.materials['pdf'];
-        const pdf = await this.generatePDF(fileManager, object);
-        if (oldPDF) {
-          this.deleteOldPDF(oldPDF, pdf, fileManager, learningObjectID, object);
-        }
-        object.materials['pdf'] = {
-          name: pdf.name,
-          url: pdf.url,
-        };
-        dataStore.editLearningObject(object.id, object);
+        object = await this.updateReadme({
+          fileManager,
+          object,
+          dataStore,
+        });
+        this.updateLearningObject(dataStore, fileManager, object.id, object);
 
         return object;
       }
@@ -736,17 +732,12 @@ export class LearningObjectInteractor {
       if (err) {
         return Promise.reject(err);
       } else {
-        // Generate PDF and update Learning Object with PDF meta.
-        const oldObject = await dataStore.fetchLearningObject(id, false, true);
-        const oldPDF: LearningObjectPDF = oldObject.materials['pdf'];
-        const pdf = await this.generatePDF(fileManager, object);
-        if (oldPDF) {
-          this.deleteOldPDF(oldPDF, pdf, fileManager, id, object);
-        }
-        object.materials['pdf'] = {
-          name: pdf.name,
-          url: pdf.url,
-        };
+        object = await this.updateReadme({
+          dataStore,
+          fileManager,
+          object,
+        });
+
         return dataStore.editLearningObject(id, object);
       }
     } catch (e) {
@@ -754,15 +745,54 @@ export class LearningObjectInteractor {
     }
   }
 
-  private static deleteOldPDF(
-    oldPDF: LearningObjectPDF,
-    pdf: LearningObjectPDF,
-    fileManager: FileManager,
-    id: string,
-    object: LearningObject,
-  ) {
-    if (oldPDF.name !== pdf.name) {
-      this.deleteFile(fileManager, id, object.author.username, oldPDF.name);
+  /**
+   * Updates Readme PDF for Learning Object
+   *
+   * @static
+   * @param {{
+   *     dataStore: DataStore;
+   *     fileManager: FileManager;
+   *     object?: LearningObject;
+   *     id?: string;
+   *   }} params
+   * @returns {Promise<LearningObject>}
+   * @memberof LearningObjectInteractor
+   */
+  public static async updateReadme(params: {
+    dataStore: DataStore;
+    fileManager: FileManager;
+    object?: LearningObject;
+    id?: string;
+  }): Promise<LearningObject> {
+    try {
+      let object = params.object;
+      const id = params.id;
+      if (!object && id) {
+        object = await params.dataStore.fetchLearningObject(id, true, true);
+      } else if (!object && !id) {
+        throw new Error(`No learning object or id provided.`);
+      }
+      const oldPDF: LearningObjectPDF = object.materials['pdf'];
+      const pdf = await this.generatePDF(params.fileManager, object);
+
+      if (oldPDF && oldPDF.name !== pdf.name) {
+        this.deleteFile(
+          params.fileManager,
+          object.id,
+          object.author.username,
+          oldPDF.name,
+        );
+      }
+
+      object.materials['pdf'] = {
+        name: pdf.name,
+        url: pdf.url,
+      };
+      return object;
+    } catch (e) {
+      return Promise.reject(
+        `Problem updating Readme for learning object. Error: ${e}`,
+      );
     }
   }
 
@@ -1220,6 +1250,18 @@ export class LearningObjectInteractor {
     ) {
       this.appendTextMaterials(gradientRGB, doc, learningObject);
     }
+    // Unpacked Files
+    console.log(learningObject.materials.files);
+    const unpackedFiles = learningObject.materials.files.filter(
+      f => !f['packageable'],
+    );
+    if (unpackedFiles.length) {
+      this.appendUnpackedFileURLs({
+        gradientRGB,
+        doc,
+        files: <LearningObjectFile[]>unpackedFiles,
+      });
+    }
     doc.end();
     return pdf;
   }
@@ -1600,7 +1642,49 @@ export class LearningObjectInteractor {
     doc.fillColor('#333').font('Helvetica');
     doc.text(learningObject.materials.notes);
   }
+
+  /**
+   * Appends Unpacked file URLs to PDF Document
+   *
+   * @private
+   * @static
+   * @param {GradientVector} gradientRGB
+   * @param {PDFKit.PDFDocument} doc
+   * @param {files} LearningObjectFile[]
+   * @memberof LearningObjectInteractor
+   */
+  private static appendUnpackedFileURLs(params: {
+    gradientRGB: GradientVector;
+    doc: PDFKit.PDFDocument;
+    files: LearningObjectFile[];
+  }) {
+    // @ts-ignore GradientVector is an array of length 4
+    const grad = params.doc.linearGradient(...params.gradientRGB);
+    grad.stop(0, '#2b4066').stop(1, '#3b608b');
+    params.doc.rect(0, params.doc.y, 650, 50).fill(grad);
+    params.doc.stroke();
+    params.doc
+      .fontSize(14.5)
+      .font('Helvetica-Bold')
+      .fillColor('#FFF')
+      .text('Files', params.doc.x, params.doc.y + 20, { align: 'center' });
+    params.doc.moveDown(2);
+    params.files.forEach(file => {
+      params.doc.fillColor('#3b3c3e');
+      console.log(file);
+      params.doc.text(file.name);
+      params.doc.moveDown(0.25);
+      params.doc.font('Helvetica').fillColor('#1B9CFC');
+      params.doc.text(`${file.url}`, params.doc.x, params.doc.y, {
+        link: file.url,
+        underline: true,
+      });
+      params.doc.moveDown(0.5);
+    });
+    params.doc.moveDown(1);
+  }
 }
+
 export function titleCase(text: string): string {
   const textArr = text.split(' ');
   for (let i = 0; i < textArr.length; i++) {
