@@ -1282,7 +1282,7 @@ export class LearningObjectInteractor {
         doc,
         title: PDFText.DESCRIPTION_TITLE,
         headerYStart: doc.y - 75,
-        textYStart: doc.y - 90,
+        textYStart: doc.y - 70 + 20,
       });
       this.appendLearningGoals(doc, learningObject);
     }
@@ -1708,7 +1708,7 @@ export class LearningObjectInteractor {
     params.doc
       .rect(
         0,
-        params.headerYStart ? params.headerYStart : params.doc.y,
+        params.headerYStart !== undefined ? params.headerYStart : params.doc.y,
         650,
         params.height ? params.height : 50,
       )
@@ -1720,8 +1720,8 @@ export class LearningObjectInteractor {
       .fillColor(PDFColors.WHITE)
       .text(
         params.title,
-        params.textXStart ? params.textXStart : params.doc.x,
-        params.textYStart ? params.textYStart : params.doc.y + 20,
+        params.textXStart !== undefined ? params.textXStart : params.doc.x,
+        params.textYStart !== undefined ? params.textYStart : params.doc.y + 20,
         {
           align: params.align ? params.align : 'center',
         },
