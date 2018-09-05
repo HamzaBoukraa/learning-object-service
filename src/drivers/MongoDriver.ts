@@ -1162,6 +1162,30 @@ export class MongoDriver implements DataStore {
       return Promise.reject('Error suggesting objects' + e);
     }
   }
+
+  async findSingleFile(params: {
+    learningObjectId:     string,
+    fileName:             string,
+  }): Promise<object> {
+    try {
+      const fileMetaData = await this.db.collection('objects').aggregate([
+        {$match: { '_id': params.learningObjectId }},
+        {$project: {
+          'materials.files': {$filter: {
+            input: '$materials.files',
+            as: 'file',
+            cond: {$eq: ['$$file.name', params.fileName]},
+          }},
+        }},
+      ]).toArray();
+
+      // Should never return more than one object.
+      return fileMetaData[0];
+
+    } catch (e) {
+      Promise.reject(e);
+    }
+  }
   /**
    * Builds query object for Learning Object search
    *

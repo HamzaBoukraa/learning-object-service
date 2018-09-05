@@ -7,6 +7,7 @@ import {
   MultipartUploadData,
   CompletedPartList,
 } from '../interfaces/FileManager';
+
 AWS.config.credentials = AWS_SDK_CONFIG.credentials;
 
 const AWS_S3_BUCKET = 'neutrino-file-uploads';
@@ -184,6 +185,7 @@ export class S3Driver implements FileManager {
       return Promise.reject(e);
     }
   }
+
   /**
    * Deletes Object From S3
    *
@@ -199,5 +201,15 @@ export class S3Driver implements FileManager {
     } catch (e) {
       return Promise.reject(e);
     }
+  }
+
+
+  private sanitizeFileName(name: string): string {
+    const MAX_CHAR = 250;
+    let clean = name.replace(/[\\/:"*?<>|]/gi, '_');
+    if (clean.length > MAX_CHAR) {
+      clean = clean.slice(0, MAX_CHAR);
+    }
+    return clean;
   }
 }

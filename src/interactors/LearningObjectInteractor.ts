@@ -1,8 +1,9 @@
-import { DataStore, FileManager } from '../interfaces/interfaces';
+import { DataStore, FileManager, Responder } from '../interfaces/interfaces';
 import { LearningObject, LearningOutcome } from '@cyber4all/clark-entity';
 import * as PDFKit from 'pdfkit';
 import * as stopword from 'stopword';
 import * as striptags from 'striptags';
+import * as https from 'https';
 import { LearningObjectQuery } from '../interfaces/DataStore';
 import { Metrics } from '@cyber4all/clark-entity/dist/learning-object';
 import { LibraryInteractor } from './LibraryInteractor';
@@ -409,6 +410,34 @@ export class LearningObjectInteractor {
       return Promise.resolve();
     } catch (e) {
       return Promise.reject(`Problem canceling upload. Error: ${e}`);
+    }
+  }
+
+  public static async downloadSingleFile(params: {
+    learningObjectId:     string,
+    fileName:             string,
+    dataStore:            DataStore,
+    fileManager:          FileManager,
+    responder:            Responder,
+  }): Promise<any> {
+    try {
+      // Collect requested file metadata from datastore
+      const fileMetaData = await params.dataStore.findSingleFile({
+        learningObjectId:     params.learningObjectId,
+        fileName:             params.fileName,
+      });
+
+      const url = fileMetaData['materials'].files[0].url;
+
+      // Make http request using attached url in file metadata, pipe response
+      // tslint:disable-next-line:max-line-length
+      https.get(url , (res) => {
+        res.pipe(params.responder.writeStream(
+          params.fileName,
+        ));
+      });
+    } catch (e) {
+      Promise.reject(e);
     }
   }
 

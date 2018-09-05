@@ -5,6 +5,7 @@ import { LearningObjectInteractor } from '../../interactors/interactors';
 import { LearningObject } from '@cyber4all/clark-entity';
 import * as multer from 'multer';
 import { DZFileMetadata, DZFile } from '../../interfaces/FileManager';
+import { enforceWhitelist } from '../../middleware/whitelist';
 
 export class ExpressAuthRouteDriver {
   private upload = multer({ storage: multer.memoryStorage() });
@@ -308,6 +309,24 @@ export class ExpressAuthRouteDriver {
           ids,
         );
         responder.sendObject(objects);
+      } catch (e) {
+        responder.sendOperationError(e);
+      }
+    });
+    // This Middleware is only applied to a single route
+    router.use(enforceWhitelist);
+    router.get('/learning-objects/:learningObjectId/files/:fileName', async (req, res) => {
+      const responder            = this.getResponder(res);
+      const learningObjectId     = req.params.learningObjectId;
+      const fileName             = req.params.fileName;
+      try {
+        await LearningObjectInteractor.downloadSingleFile({
+          learningObjectId,
+          fileName,
+          dataStore: this.dataStore,
+          fileManager: this.fileManager,
+          responder,
+        });
       } catch (e) {
         responder.sendOperationError(e);
       }
