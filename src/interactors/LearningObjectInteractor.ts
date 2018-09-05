@@ -17,6 +17,7 @@ import {
   MultipartUploadData,
   CompletedPartList,
 } from '../interfaces/FileManager';
+import { LEARNING_OBJECT_ROUTES } from '../routes';
 // TODO: Update File in clark-entity
 export interface LearningObjectFile extends File {
   packageable: boolean;
@@ -1348,6 +1349,7 @@ export class LearningObjectInteractor {
       this.appendUnpackedFileURLs({
         doc,
         files: <LearningObjectFile[]>unpackedFiles,
+        id: learningObject.id,
       });
     }
     doc.end();
@@ -1693,6 +1695,7 @@ export class LearningObjectInteractor {
   private static appendUnpackedFileURLs(params: {
     doc: PDFKit.PDFDocument;
     files: LearningObjectFile[];
+    id: string;
   }) {
     params.doc.fillColor(PDFColors.TEXT).font(PDFFonts.REGULAR);
     params.doc.text(PDFText.UNPACKED_FILES_DESCRIPTION, { align: 'center' });
@@ -1701,9 +1704,17 @@ export class LearningObjectInteractor {
       params.doc.fillColor(PDFColors.DARK_TEXT);
       params.doc.text(file.name);
       params.doc.moveDown(0.25);
+
+      if (file.description) {
+        params.doc.font(PDFFonts.REGULAR).fillColor(PDFColors.TEXT);
+        params.doc.text(file.description);
+        params.doc.moveDown(0.25);
+      }
+
       params.doc.font(PDFFonts.REGULAR).fillColor(PDFColors.LINK);
-      params.doc.text(`${file.url}`, params.doc.x, params.doc.y, {
-        link: file.url,
+      const url = LEARNING_OBJECT_ROUTES.GET_FILE(params.id, file.name);
+      params.doc.text(`${url}`, params.doc.x, params.doc.y, {
+        link: url,
         underline: true,
       });
       params.doc.moveDown(0.5);
