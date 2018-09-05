@@ -20,7 +20,37 @@ import {
 export interface LearningObjectFile extends File {
   packageable: boolean;
 }
-export type GradientVector = [number, number, number, number];
+type GradientVector = [number, number, number, number];
+type PDFHeaderAlignment = 'left' | 'right' | 'center' | 'justify';
+enum PDFFonts {
+  REGULAR = 'Helvetica',
+  BOLD = 'Helvetica-Bold',
+}
+enum PDFFontSizes {
+  JUMBO = 25,
+  LARGE = 20,
+  MEDIUM = 18,
+  REGULAR = 14.5,
+}
+enum PDFColors {
+  TEXT = '#333',
+  DARK_TEXT = '#3b3c3e',
+  LINK = '#1B9CFC',
+  BANNER = '#3b608b',
+  WHITE = '#FFF',
+  DARK_BLUE = '#2b4066',
+  LIGHT_BLUE = '#3b608b',
+}
+enum PDFText {
+  CREATOR = 'C.L.A.R.K. | Cybersecurity Labs and Resource Knowledge-base',
+  COVER_PAGE_TITLE = 'CLARK | Cybersecurity Labs and Resource Knowledge-base',
+  OUTCOMES_TITLE = 'Outcomes',
+  DESCRIPTION_TITLE = 'Description',
+  MATERIALS_TITLE = 'Content',
+  UNPACKED_FILES_TITLE = 'Files',
+  ASSESSMENTS_TITLE = 'Assessments',
+  INSTRUCTIONAL_STRATEGIES_TITLE = 'Instructional Strategies',
+}
 
 export type LearningObjectPDF = {
   name: string;
@@ -1233,31 +1263,59 @@ export class LearningObjectInteractor {
     // MetaData
     this.appendMetaData(doc, learningObject);
     // Cover Page
-    this.appendCoverPage(gradientRGB, doc, learningObject);
+    this.appendGradientHeader({
+      gradientRGB,
+      doc,
+      title: PDFText.COVER_PAGE_TITLE,
+      headerYStart: 0,
+      textXStart: 100,
+      textYStart: 22,
+    });
+    this.appendCoverPage(doc, learningObject);
     doc.addPage();
     // Goals
     if (learningObject.goals.length) {
-      this.appendLearningGoals(gradientRGB, doc, learningObject);
+      this.appendGradientHeader({
+        gradientRGB,
+        doc,
+        title: PDFText.DESCRIPTION_TITLE,
+        headerYStart: doc.y - 75,
+        textYStart: doc.y - 90,
+      });
+      this.appendLearningGoals(doc, learningObject);
     }
     // Outcomes
     if (learningObject.outcomes.length) {
-      this.appendOutcomes(gradientRGB, doc, learningObject);
+      this.appendGradientHeader({
+        gradientRGB,
+        doc,
+        title: PDFText.OUTCOMES_TITLE,
+      });
+      this.appendOutcomes(doc, learningObject);
     }
     // Content (Urls)
     if (
       learningObject.materials.urls.length ||
       learningObject.materials.notes
     ) {
-      this.appendTextMaterials(gradientRGB, doc, learningObject);
+      this.appendGradientHeader({
+        gradientRGB,
+        doc,
+        title: PDFText.MATERIALS_TITLE,
+      });
+      this.appendTextMaterials(doc, learningObject);
     }
     // Unpacked Files
-    console.log(learningObject.materials.files);
     const unpackedFiles = learningObject.materials.files.filter(
       f => !f['packageable'],
     );
     if (unpackedFiles.length) {
-      this.appendUnpackedFileURLs({
+      this.appendGradientHeader({
         gradientRGB,
+        doc,
+        title: PDFText.UNPACKED_FILES_TITLE,
+      });
+      this.appendUnpackedFileURLs({
         doc,
         files: <LearningObjectFile[]>unpackedFiles,
       });
@@ -1325,8 +1383,7 @@ export class LearningObjectInteractor {
   ) {
     doc.info.Title = learningObject.name;
     doc.info.Author = learningObject.author.name;
-    doc.info.Creator =
-      'C.L.A.R.K. | Cybersecurity Labs and Resource Knowledge-base';
+    doc.info.Creator = PDFText.CREATOR;
     doc.info.CreationDate = new Date(+learningObject.date);
     doc.info.ModDate = new Date();
   }
@@ -1336,41 +1393,27 @@ export class LearningObjectInteractor {
    *
    * @private
    * @static
-   * @param {number[]} gradientRGB
    * @param {PDFKit.PDFDocument} doc
    * @param {LearningObject} learningObject
    * @memberof LearningObjectInteractor
    */
   private static appendCoverPage(
-    gradientRGB: GradientVector,
     doc: PDFKit.PDFDocument,
     learningObject: LearningObject,
   ) {
-    // @ts-ignore GradientVector is an array of length 4
-    const grad: PDFKit.PDFLinearGradient = doc.linearGradient(...gradientRGB);
-    grad.stop(0, '#2b4066').stop(1, '#3b608b');
-    doc.rect(0, 0, 650, 50).fill(grad);
-    doc.stroke();
+    doc.moveDown(8);
     doc
-      .fontSize(14.5)
-      .font('Helvetica-Bold')
-      .fillColor('#FFF')
-      .text('CLARK | Cybersecurity Labs and Resource Knowledge-base', 100, 22, {
-        align: 'center',
-      });
-    doc.moveDown(10);
-    doc
-      .fontSize(25)
-      .fillColor('#333')
+      .fontSize(PDFFontSizes.JUMBO)
+      .fillColor(PDFColors.TEXT)
       .text(learningObject.name, { align: 'center' });
     doc.moveDown(2);
-    doc.font('Helvetica');
-    doc.fontSize(20).text(learningObject.length.toUpperCase(), {
+    doc.font(PDFFonts.REGULAR);
+    doc.fontSize(PDFFontSizes.LARGE).text(learningObject.length.toUpperCase(), {
       align: 'center',
     });
     doc.moveDown(2);
     const authorName = titleCase(learningObject.author.name);
-    doc.fontSize(18).text(
+    doc.fontSize(PDFFontSizes.MEDIUM).text(
       `${authorName} - ${new Date(+learningObject.date).toLocaleDateString(
         'en-US',
         {
@@ -1394,25 +1437,13 @@ export class LearningObjectInteractor {
    * @memberof LearningObjectInteractor
    */
   private static appendLearningGoals(
-    gradientRGB: GradientVector,
     doc: PDFKit.PDFDocument,
     learningObject: LearningObject,
   ) {
-    // @ts-ignore GradientVector is an array of length 4
-    const grad: PDFKit.PDFLinearGradient = doc.linearGradient(...gradientRGB);
-    grad.stop(0, '#2b4066').stop(1, '#3b608b');
-    doc.rect(0, doc.y - 75, 650, 50).fill(grad);
-    doc.stroke();
     doc
-      .fontSize(14.5)
-      .font('Helvetica-Bold')
-      .fillColor('#FFF')
-      .text('Description', doc.x, doc.y - 70 + 20, { align: 'center' });
-    doc.moveDown(2);
-    doc
-      .fillColor('#333')
-      .fontSize(14.5)
-      .font('Helvetica');
+      .fillColor(PDFColors.TEXT)
+      .fontSize(PDFFontSizes.REGULAR)
+      .font(PDFFonts.REGULAR);
     // Only get first goal for 'description'
     const goal = learningObject.goals[0];
     // Strip html tags from rich text
@@ -1433,21 +1464,9 @@ export class LearningObjectInteractor {
    * @memberof LearningObjectInteractor
    */
   private static appendOutcomes(
-    gradientRGB: GradientVector,
     doc: PDFKit.PDFDocument,
     learningObject: LearningObject,
   ) {
-    // @ts-ignore GradientVector is an array of length 4
-    const grad = doc.linearGradient(...gradientRGB);
-    grad.stop(0, '#2b4066').stop(1, '#3b608b');
-    doc.rect(0, doc.y, 650, 50).fill(grad);
-    doc.stroke();
-    doc
-      .fontSize(14.5)
-      .font('Helvetica-Bold')
-      .fillColor('#FFF')
-      .text('Outcomes', doc.x, doc.y + 20, { align: 'center' });
-    doc.moveDown(2);
     learningObject.outcomes.forEach(outcome => {
       this.appendOutcomeHeader(doc, outcome);
       // Assessments
@@ -1476,15 +1495,15 @@ export class LearningObjectInteractor {
     outcome: LearningOutcome,
   ) {
     doc
-      .fillColor('#3b608b')
-      .fontSize(14.5)
-      .font('Helvetica-Bold');
+      .fillColor(PDFColors.BANNER)
+      .fontSize(PDFFontSizes.REGULAR)
+      .font(PDFFonts.BOLD);
     doc.text(outcome.bloom);
     doc.moveDown(0.5);
     doc
-      .fontSize(14.5)
-      .font('Helvetica')
-      .fillColor('#333');
+      .fontSize(PDFFontSizes.REGULAR)
+      .font(PDFFonts.REGULAR)
+      .fillColor(PDFColors.TEXT);
     doc.text(
       `Students will be able to ${outcome.verb.toLowerCase()} ${outcome.text}`,
     );
@@ -1504,16 +1523,16 @@ export class LearningObjectInteractor {
     outcome: LearningOutcome,
   ) {
     doc
-      .fillColor('#3b608b')
-      .fontSize(14.5)
-      .font('Helvetica-Bold');
-    doc.text('Assessments');
+      .fillColor(PDFColors.BANNER)
+      .fontSize(PDFFontSizes.REGULAR)
+      .font(PDFFonts.BOLD);
+    doc.text(PDFText.ASSESSMENTS_TITLE);
     doc.moveDown(0.5);
     outcome.assessments.forEach(assessment => {
-      doc.fillColor('#333');
+      doc.fillColor(PDFColors.TEXT);
       doc.text(assessment.plan);
       doc.moveDown(0.5);
-      doc.font('Helvetica');
+      doc.font(PDFFonts.REGULAR);
       doc.text(assessment.text);
       doc.moveDown(0.5);
     });
@@ -1534,16 +1553,16 @@ export class LearningObjectInteractor {
     outcome: LearningOutcome,
   ) {
     doc
-      .fillColor('#3b608b')
-      .fontSize(14.5)
-      .font('Helvetica-Bold');
-    doc.text('Instructional Strategies');
+      .fillColor(PDFColors.BANNER)
+      .fontSize(PDFFontSizes.REGULAR)
+      .font(PDFFonts.BOLD);
+    doc.text(PDFText.INSTRUCTIONAL_STRATEGIES_TITLE);
     doc.moveDown(0.5);
     outcome.strategies.forEach(strategy => {
-      doc.fillColor('#333');
+      doc.fillColor(PDFColors.TEXT);
       doc.text(strategy.plan);
       doc.moveDown(0.5);
-      doc.font('Helvetica');
+      doc.font(PDFFonts.REGULAR);
       doc.text(strategy.text);
       doc.moveDown(0.5);
     });
@@ -1561,21 +1580,9 @@ export class LearningObjectInteractor {
    * @memberof LearningObjectInteractor
    */
   private static appendTextMaterials(
-    gradientRGB: GradientVector,
     doc: PDFKit.PDFDocument,
     learningObject: LearningObject,
   ) {
-    // @ts-ignore GradientVector is an array of length 4
-    const grad = doc.linearGradient(...gradientRGB);
-    grad.stop(0, '#2b4066').stop(1, '#3b608b');
-    doc.rect(0, doc.y, 650, 50).fill(grad);
-    doc.stroke();
-    doc
-      .fontSize(14.5)
-      .font('Helvetica-Bold')
-      .fillColor('#FFF')
-      .text('Content', doc.x, doc.y + 20, { align: 'center' });
-    doc.moveDown(2);
     // Content (URLs)
     if (learningObject.materials.urls.length) {
       this.appendMaterialURLs(doc, learningObject);
@@ -1601,16 +1608,16 @@ export class LearningObjectInteractor {
     learningObject: LearningObject,
   ) {
     doc
-      .fillColor('#3b608b')
-      .fontSize(14.5)
-      .font('Helvetica-Bold');
+      .fillColor(PDFColors.BANNER)
+      .fontSize(PDFFontSizes.REGULAR)
+      .font(PDFFonts.BOLD);
     doc.text('Links');
     doc.moveDown(0.5);
     learningObject.materials.urls.forEach(url => {
-      doc.fillColor('#3b3c3e');
+      doc.fillColor(PDFColors.DARK_TEXT);
       doc.text(url.title);
       doc.moveDown(0.25);
-      doc.font('Helvetica').fillColor('#1B9CFC');
+      doc.font(PDFFonts.REGULAR).fillColor(PDFColors.LINK);
       doc.text(`${url.url}`, doc.x, doc.y, {
         link: url.url,
         underline: true,
@@ -1634,12 +1641,12 @@ export class LearningObjectInteractor {
     learningObject: LearningObject,
   ) {
     doc
-      .fillColor('#3b608b')
-      .fontSize(14.5)
-      .font('Helvetica-Bold');
+      .fillColor(PDFColors.BANNER)
+      .fontSize(PDFFontSizes.REGULAR)
+      .font(PDFFonts.BOLD);
     doc.text('Notes');
     doc.moveDown(0.5);
-    doc.fillColor('#333').font('Helvetica');
+    doc.fillColor(PDFColors.TEXT).font(PDFFonts.REGULAR);
     doc.text(learningObject.materials.notes);
   }
 
@@ -1654,27 +1661,14 @@ export class LearningObjectInteractor {
    * @memberof LearningObjectInteractor
    */
   private static appendUnpackedFileURLs(params: {
-    gradientRGB: GradientVector;
     doc: PDFKit.PDFDocument;
     files: LearningObjectFile[];
   }) {
-    // @ts-ignore GradientVector is an array of length 4
-    const grad = params.doc.linearGradient(...params.gradientRGB);
-    grad.stop(0, '#2b4066').stop(1, '#3b608b');
-    params.doc.rect(0, params.doc.y, 650, 50).fill(grad);
-    params.doc.stroke();
-    params.doc
-      .fontSize(14.5)
-      .font('Helvetica-Bold')
-      .fillColor('#FFF')
-      .text('Files', params.doc.x, params.doc.y + 20, { align: 'center' });
-    params.doc.moveDown(2);
     params.files.forEach(file => {
-      params.doc.fillColor('#3b3c3e');
-      console.log(file);
+      params.doc.fillColor(PDFColors.DARK_TEXT);
       params.doc.text(file.name);
       params.doc.moveDown(0.25);
-      params.doc.font('Helvetica').fillColor('#1B9CFC');
+      params.doc.font(PDFFonts.REGULAR).fillColor(PDFColors.LINK);
       params.doc.text(`${file.url}`, params.doc.x, params.doc.y, {
         link: file.url,
         underline: true,
@@ -1682,6 +1676,55 @@ export class LearningObjectInteractor {
       params.doc.moveDown(0.5);
     });
     params.doc.moveDown(1);
+  }
+
+  /**
+   * Appends header with gradient background to PDF
+   *
+   * @private
+   * @static
+   * @param {{
+   *     gradientRGB: GradientVector;
+   *     doc: PDFKit.PDFDocument;
+   *     title: string;
+   *   }} params
+   * @memberof LearningObjectInteractor
+   */
+  private static appendGradientHeader(params: {
+    gradientRGB: GradientVector;
+    doc: PDFKit.PDFDocument;
+    title: string;
+    align?: PDFHeaderAlignment;
+    fontSize?: number;
+    height?: number;
+    headerYStart?: number;
+    textYStart?: number;
+    textXStart?: number;
+  }) {
+    const grad = params.doc.linearGradient(...params.gradientRGB);
+    grad.stop(0, PDFColors.DARK_BLUE).stop(1, PDFColors.LIGHT_BLUE);
+    params.doc
+      .rect(
+        0,
+        params.headerYStart ? params.headerYStart : params.doc.y,
+        650,
+        params.height ? params.height : 50,
+      )
+      .fill(grad);
+    params.doc.stroke();
+    params.doc
+      .fontSize(params.fontSize ? params.fontSize : PDFFontSizes.REGULAR)
+      .font(PDFFonts.BOLD)
+      .fillColor(PDFColors.WHITE)
+      .text(
+        params.title,
+        params.textXStart ? params.textXStart : params.doc.x,
+        params.textYStart ? params.textYStart : params.doc.y + 20,
+        {
+          align: params.align ? params.align : 'center',
+        },
+      );
+    params.doc.moveDown(2);
   }
 }
 
