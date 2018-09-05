@@ -50,6 +50,8 @@ enum PDFText {
   UNPACKED_FILES_TITLE = 'Files',
   ASSESSMENTS_TITLE = 'Assessments',
   INSTRUCTIONAL_STRATEGIES_TITLE = 'Instructional Strategies',
+  URLS_TITLE = 'Links',
+  NOTES_TITLE = 'Notes',
 }
 
 export type LearningObjectPDF = {
@@ -1611,7 +1613,7 @@ export class LearningObjectInteractor {
       .fillColor(PDFColors.BANNER)
       .fontSize(PDFFontSizes.REGULAR)
       .font(PDFFonts.BOLD);
-    doc.text('Links');
+    doc.text(PDFText.URLS_TITLE);
     doc.moveDown(0.5);
     learningObject.materials.urls.forEach(url => {
       doc.fillColor(PDFColors.DARK_TEXT);
@@ -1644,7 +1646,7 @@ export class LearningObjectInteractor {
       .fillColor(PDFColors.BANNER)
       .fontSize(PDFFontSizes.REGULAR)
       .font(PDFFonts.BOLD);
-    doc.text('Notes');
+    doc.text(PDFText.NOTES_TITLE);
     doc.moveDown(0.5);
     doc.fillColor(PDFColors.TEXT).font(PDFFonts.REGULAR);
     doc.text(learningObject.materials.notes);
