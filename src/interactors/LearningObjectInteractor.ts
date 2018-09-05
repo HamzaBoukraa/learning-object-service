@@ -48,7 +48,8 @@ enum PDFText {
   OUTCOMES_TITLE = 'Outcomes',
   DESCRIPTION_TITLE = 'Description',
   MATERIALS_TITLE = 'Content',
-  UNPACKED_FILES_TITLE = 'Files',
+  UNPACKED_FILES_TITLE = 'Resources',
+  UNPACKED_FILES_DESCRIPTION = 'These materials on CLARK are required to use this learning object.',
   ASSESSMENTS_TITLE = 'Assessments',
   INSTRUCTIONAL_STRATEGIES_TITLE = 'Instructional Strategies',
   URLS_TITLE = 'Links',
@@ -448,27 +449,25 @@ export class LearningObjectInteractor {
   }
 
   public static async downloadSingleFile(params: {
-    learningObjectId:     string,
-    fileName:             string,
-    dataStore:            DataStore,
-    fileManager:          FileManager,
-    responder:            Responder,
+    learningObjectId: string;
+    fileName: string;
+    dataStore: DataStore;
+    fileManager: FileManager;
+    responder: Responder;
   }): Promise<any> {
     try {
       // Collect requested file metadata from datastore
       const fileMetaData = await params.dataStore.findSingleFile({
-        learningObjectId:     params.learningObjectId,
-        fileName:             params.fileName,
+        learningObjectId: params.learningObjectId,
+        fileName: params.fileName,
       });
 
       const url = fileMetaData['materials'].files[0].url;
 
       // Make http request using attached url in file metadata, pipe response
       // tslint:disable-next-line:max-line-length
-      https.get(url , (res) => {
-        res.pipe(params.responder.writeStream(
-          params.fileName,
-        ));
+      https.get(url, res => {
+        res.pipe(params.responder.writeStream(params.fileName));
       });
     } catch (e) {
       Promise.reject(e);
@@ -1695,6 +1694,9 @@ export class LearningObjectInteractor {
     doc: PDFKit.PDFDocument;
     files: LearningObjectFile[];
   }) {
+    params.doc.fillColor(PDFColors.TEXT).font(PDFFonts.REGULAR);
+    params.doc.text(PDFText.UNPACKED_FILES_DESCRIPTION, { align: 'center' });
+    params.doc.moveDown(2);
     params.files.forEach(file => {
       params.doc.fillColor(PDFColors.DARK_TEXT);
       params.doc.text(file.name);
