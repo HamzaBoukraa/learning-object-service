@@ -284,6 +284,27 @@ export class ExpressAuthRouteDriver {
       }
     });
 
+    router.get('/learning-objects/:learningObjectId/files/:fileName', async (req, res) => {
+      const responder            = this.getResponder(res);
+      const learningObjectId     = req.params.learningObjectId;
+      const fileName             = req.params.fileName;
+      try {
+        if (await enforceWhitelist(req.user.username)) {
+          await LearningObjectInteractor.downloadSingleFile({
+            learningObjectId,
+            fileName,
+            dataStore: this.dataStore,
+            fileManager: this.fileManager,
+            responder,
+          });
+        } else {
+        responder.sendOperationError('Invalid download access');
+       }
+      } catch (e) {
+        responder.sendOperationError(e);
+      }
+    });
+
     router.delete(
       '/learning-objects/:learningObjectNames/multiple',
       async (req, res) => {
@@ -328,24 +349,6 @@ export class ExpressAuthRouteDriver {
           ids,
         );
         responder.sendObject(objects);
-      } catch (e) {
-        responder.sendOperationError(e);
-      }
-    });
-    // This Middleware is only applied to a single route
-    router.use(enforceWhitelist);
-    router.get('/learning-objects/:learningObjectId/files/:fileName', async (req, res) => {
-      const responder            = this.getResponder(res);
-      const learningObjectId     = req.params.learningObjectId;
-      const fileName             = req.params.fileName;
-      try {
-        await LearningObjectInteractor.downloadSingleFile({
-          learningObjectId,
-          fileName,
-          dataStore: this.dataStore,
-          fileManager: this.fileManager,
-          responder,
-        });
       } catch (e) {
         responder.sendOperationError(e);
       }

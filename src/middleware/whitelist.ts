@@ -1,22 +1,18 @@
-import * as jwt from 'jsonwebtoken';
 import * as dotenv from 'dotenv';
 import fetch from 'node-fetch';
 dotenv.config();
 
-export const enforceWhitelist = async (req, res, next) => {
-    let user = req.user;
-
+export async function enforceWhitelist (username: string) {
     try {
         const response = await fetch(process.env.WHITELISTURL);
         const object = await response.json();
         const whitelist: string[] = object.whitelist;
-        const username = user.username;
-        if (whitelist.includes(username)) {
-          next();
+        if (whitelist.indexOf(username) !== -1) {
+          return true;
         } else {
-            res.status(401).send('Invalid download access!');
+          return false;
         }
       } catch (e) {
-            res.status(401).send('Invalid download access!');
+          return false;
       }
-};
+}

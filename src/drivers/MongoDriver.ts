@@ -1164,8 +1164,8 @@ export class MongoDriver implements DataStore {
   }
 
   async findSingleFile(params: {
-    learningObjectId:     string,
-    fileName:             string,
+    learningObjectId: string;
+    fileName: string;
   }): Promise<object> {
     try {
       const fileMetaData = await this.db.collection('objects').aggregate([
