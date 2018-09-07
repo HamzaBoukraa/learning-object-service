@@ -1612,6 +1612,7 @@ export class MongoDriver implements DataStore {
   ): Promise<LearningObject> {
     // Logic for loading any learning object
     const learningObject = new LearningObject(author, record.name);
+    learningObject.id = record._id;
     learningObject.date = record.date;
     learningObject.length = record.length;
     learningObject.levels = <AcademicLevel[]>record.levels;
