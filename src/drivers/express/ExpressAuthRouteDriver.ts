@@ -227,7 +227,7 @@ export class ExpressAuthRouteDriver {
           );
           responder.sendOperationSuccess();
         } catch (e) {
-          responder.sendOperationSuccess();
+          responder.sendOperationError(e);
         }
       })
       .route('/learning-objects/:username/:learningObjectName/children')
@@ -284,26 +284,29 @@ export class ExpressAuthRouteDriver {
       }
     });
 
-    router.get('/learning-objects/:learningObjectId/files/:fileName', async (req, res) => {
-      const responder            = this.getResponder(res);
-      const learningObjectId     = req.params.learningObjectId;
-      const fileName             = req.params.fileName;
-      try {
-        if (await enforceWhitelist(req.user.username)) {
-          await LearningObjectInteractor.downloadSingleFile({
-            learningObjectId,
-            fileName,
-            dataStore: this.dataStore,
-            fileManager: this.fileManager,
-            responder,
-          });
-        } else {
-        responder.sendOperationError('Invalid download access');
-       }
-      } catch (e) {
-        responder.sendOperationError(e);
-      }
-    });
+    router.get(
+      '/learning-objects/:learningObjectId/files/:fileName',
+      async (req, res) => {
+        const responder = this.getResponder(res);
+        const learningObjectId = req.params.learningObjectId;
+        const fileName = req.params.fileName;
+        try {
+          if (await enforceWhitelist(req.user.username)) {
+            await LearningObjectInteractor.downloadSingleFile({
+              learningObjectId,
+              fileName,
+              dataStore: this.dataStore,
+              fileManager: this.fileManager,
+              responder,
+            });
+          } else {
+            responder.sendOperationError('Invalid download access');
+          }
+        } catch (e) {
+          responder.sendOperationError(e);
+        }
+      },
+    );
 
     router.delete(
       '/learning-objects/:learningObjectNames/multiple',
