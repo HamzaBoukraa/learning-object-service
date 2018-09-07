@@ -790,16 +790,15 @@ export class LearningObjectInteractor {
   ): Promise<void> {
     try {
       const err = this.validateLearningObject(object);
-      if (err) {
-        return Promise.reject(err);
-      } else {
+      if (!err) {
         object = await this.updateReadme({
           dataStore,
           fileManager,
           object,
         });
-
-        return dataStore.editLearningObject(id, object);
+        return await dataStore.editLearningObject(id, object);
+      } else {
+        throw new Error(err);
       }
     } catch (e) {
       return Promise.reject(`Problem updating Learning Object. Error: ${e}`);
