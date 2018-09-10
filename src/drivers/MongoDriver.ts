@@ -1468,6 +1468,21 @@ export class MongoDriver implements DataStore {
     }
   }
 
+  async addToCollection(
+    learningObjectId: string,
+    collection: string,
+  ): Promise <void> {
+    try {
+      // Append learning object id to specified collection
+      await this.db
+        .collection(COLLECTIONS.LearningObjectCollection.name)
+        .update({ name: collection },
+                { $push: { 'learningObjects': learningObjectId }});
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  }
+
   ////////////////////////////////////////////////
   // GENERIC HELPER METHODS - not in public API //
   ////////////////////////////////////////////////

@@ -79,6 +79,7 @@ export interface DataStore {
     completedPart: CompletedPart;
   }): Promise<void>;
   deleteMultipartUploadStatus(params: { id: string }): Promise<void>;
+  addToCollection(learningObjectId: string, collection: string): Promise<void>;
 }
 
 export { Collection as LearningObjectCollection };

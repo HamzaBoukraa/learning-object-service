@@ -1065,6 +1065,18 @@ export class LearningObjectInteractor {
     }
   }
 
+  public static async addToCollection(
+    dataStore: DataStore,
+    learningObjectId: string,
+    collection: string,
+  ): Promise<void> {
+    try {
+      dataStore.addToCollection(learningObjectId, collection);
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  }
+
   public static async setChildren(params: {
     dataStore: DataStore;
     children: string[];
