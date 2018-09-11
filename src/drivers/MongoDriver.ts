@@ -117,6 +117,7 @@ COLLECTIONS_MAP.set(
 );
 
 export class MongoDriver implements DataStore {
+  private mongoClient: MongoClient;
   private db: Db;
 
   constructor(dburi: string) {
@@ -139,7 +140,8 @@ export class MongoDriver implements DataStore {
    */
   async connect(dbURI: string, retryAttempt?: number): Promise<void> {
     try {
-      this.db = await MongoClient.connect(dbURI);
+      this.mongoClient = await MongoClient.connect(dbURI);
+      this.db = this.mongoClient.db();
     } catch (e) {
       if (!retryAttempt) {
         this.connect(
@@ -159,7 +161,7 @@ export class MongoDriver implements DataStore {
    * important or if you are sure that *everything* is finished.
    */
   disconnect(): void {
-    this.db.close();
+    this.mongoClient.close();
   }
   /////////////
   // INSERTS //
