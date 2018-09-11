@@ -28,6 +28,7 @@ import {
   MultipartFileUploadStatusUpdates,
   CompletedPart,
 } from '../interfaces/FileManager';
+import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
 
 dotenv.config();
 
@@ -194,6 +195,43 @@ export class MongoDriver implements DataStore {
         object.outcomes,
       );
       return id;
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  }
+
+  /**
+   * Updates or inserts LearningObjectFile into learning object's files array
+   *
+   * @param {{
+   *     id: string;
+   *     loFile: LearningObjectFile;
+   *   }} params
+   * @returns {Promise<void>}
+   * @memberof MongoDriver
+   */
+  public async addToFiles(params: {
+    id: string;
+    loFile: LearningObjectFile;
+  }): Promise<void> {
+    try {
+      const existingDoc = await this.db
+        .collection(COLLECTIONS.LearningObject.name)
+        .findOneAndUpdate(
+          { _id: params.id, 'materials.files.url': params.loFile.url },
+          { $set: { 'materials.files.$[element]': params.loFile } },
+          // @ts-ignore: arrayFilters is in fact a property defined by documentation. Property does not exist in type definition.
+          { arrayFilters: [{ 'element.url': params.loFile.url }] },
+        );
+      if (!existingDoc.value) {
+        await this.db.collection(COLLECTIONS.LearningObject.name).updateOne(
+          {
+            _id: params.id,
+          },
+          { $push: { 'materials.files': params.loFile } },
+        );
+      }
+      return Promise.resolve();
     } catch (e) {
       return Promise.reject(e);
     }
