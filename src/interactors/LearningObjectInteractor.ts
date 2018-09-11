@@ -4,7 +4,10 @@ import * as PDFKit from 'pdfkit';
 import * as stopword from 'stopword';
 import * as striptags from 'striptags';
 import { LearningObjectQuery } from '../interfaces/DataStore';
-import { Metrics } from '@cyber4all/clark-entity/dist/learning-object';
+import {
+  Metrics,
+  LearningObjectPDF,
+} from '@cyber4all/clark-entity/dist/learning-object';
 import { LibraryInteractor } from './LibraryInteractor';
 import { File } from '@cyber4all/clark-entity/dist/learning-object';
 import {
@@ -18,11 +21,6 @@ import {
 } from '../interfaces/FileManager';
 export type LearningObjectFile = File;
 export type GradientVector = [number, number, number, number];
-
-export type LearningObjectPDF = {
-  name: string;
-  url: string;
-};
 
 export class LearningObjectInteractor {
   /**

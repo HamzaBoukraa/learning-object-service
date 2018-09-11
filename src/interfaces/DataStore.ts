@@ -1,10 +1,10 @@
 import { LearningObject, Collection } from '@cyber4all/clark-entity';
-import { LearningObjectLock } from '../interactors/AdminLearningObjectInteractor';
 import {
   MultipartFileUploadStatus,
   MultipartFileUploadStatusUpdates,
   CompletedPart,
 } from './FileManager';
+import { LearningObjectLock } from '@cyber4all/clark-entity/dist/learning-object';
 
 export interface DataStore {
   connect(dburi: string): Promise<void>;
