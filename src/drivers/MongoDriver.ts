@@ -2085,7 +2085,7 @@ export function isEmail(value: string): boolean {
 }
 
 /**
- * Escapes Regex quantifiers, alternation, single sequence anchor, new line, and parenthesis characters in a string
+ * Escapes Regex quantifier, alternation, single sequence anchor, new line, and parenthesis characters in a string
  *
  * @export
  * @param {string} text
