@@ -1771,6 +1771,13 @@ export class LearningObjectInteractor {
   }
 }
 
+/**
+ * Title cases string
+ *
+ * @export
+ * @param {string} text
+ * @returns {string}
+ */
 export function titleCase(text: string): string {
   const textArr = text.split(' ');
   for (let i = 0; i < textArr.length; i++) {
@@ -1780,6 +1787,16 @@ export function titleCase(text: string): string {
   }
   return textArr.join(' ');
 }
+
+/**
+ * Replaces illegal file path characters with '_'.
+ * Truncates string if longer than file path's legal max length of 250 (Windows constraint was said to be somewhere between 247-260);
+ * .zip extension will make the max length go to 254 which is still within the legal range
+ *
+ * @export
+ * @param {string} name
+ * @returns {string}
+ */
 const MAX_CHAR = 250;
 export function sanitizeFileName(name: string): string {
   let clean = name.replace(/[\\/:"*?<>|]/gi, '_');
