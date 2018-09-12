@@ -202,14 +202,4 @@ export class S3Driver implements FileManager {
       return Promise.reject(e);
     }
   }
-
-
-  private sanitizeFileName(name: string): string {
-    const MAX_CHAR = 250;
-    let clean = name.replace(/[\\/:"*?<>|]/gi, '_');
-    if (clean.length > MAX_CHAR) {
-      clean = clean.slice(0, MAX_CHAR);
-    }
-    return clean;
-  }
 }
