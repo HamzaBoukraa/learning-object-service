@@ -12,10 +12,17 @@ import { enforceTokenAccess } from '../../middleware/jwt.config';
 import * as cors from 'cors';
 import * as cookieParser from 'cookie-parser';
 import { enforceAdminAccess } from '../../middleware/admin-access';
+import * as raven from 'raven';
 
 export class ExpressDriver {
   static app = express();
   static start(dataStore: DataStore, fileManager: FileManager) {
+    raven
+      .config(process.env.SENTRY_DSN)
+      .install();
+
+    this.app.use(raven.requestHandler());
+    this.app.use(raven.errorHandler());
     // configure app to use bodyParser()
     this.app.use(
       bodyParser.urlencoded({
