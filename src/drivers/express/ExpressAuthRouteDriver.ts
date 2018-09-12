@@ -7,6 +7,7 @@ import * as multer from 'multer';
 import { DZFileMetadata, DZFile } from '../../interfaces/FileManager';
 import { enforceWhitelist } from '../../middleware/whitelist';
 
+import { reportError } from '../SentryConnector';
 export class ExpressAuthRouteDriver {
   private upload = multer({ storage: multer.memoryStorage() });
 
@@ -27,6 +28,22 @@ export class ExpressAuthRouteDriver {
   }
 
   private setRoutes(router: Router): void {
+    router.use((req, res, next) => {
+      // If the username in the cookie is not lowercase and error will be reported
+      // and the value adjusted to be lowercase
+      if (!(req.user.username === req.user.username.toLowerCase())) {
+        // This odd try/catch setup is so that we don't abort the current operation,
+        // but still have Sentry realize that an error was thrown.
+        try {
+          throw new Error(`${req.user.username} was retrieved from the token. Should be lowercase`);
+        } catch (e) {
+          console.log(e.message);
+          reportError(e);
+        }
+        req.user.username = req.user.username.toLowerCase();
+      }
+      next();
+    });
     router
       .route('/learning-objects')
       .post(async (req, res) => {
