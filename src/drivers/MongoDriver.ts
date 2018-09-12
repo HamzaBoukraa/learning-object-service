@@ -2085,14 +2085,14 @@ export function isEmail(value: string): boolean {
 }
 
 /**
- * Escapes Regex character in string
+ * Escapes Regex quantifiers, alternation, single sequence anchor, new line, and parenthesis characters in a string
  *
  * @export
  * @param {string} text
  * @returns {string}
  */
 export function sanitizeRegex(text: string): string {
-  const regexChars = /\.|\+|\*|\^|\$|\?|\[|\]/;
+  const regexChars = /\.|\+|\*|\^|\$|\?|\[|\]|\(|\)|\|/;
   if (regexChars.test(text)) {
     let newString = '';
     const chars = text.split('');
