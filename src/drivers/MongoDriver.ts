@@ -1094,6 +1094,7 @@ export class MongoDriver implements DataStore {
   async searchObjects(
     name: string,
     author: string,
+    collection: string,
     length: string[],
     level: string[],
     standardOutcomeIDs: string[],
@@ -1110,6 +1111,14 @@ export class MongoDriver implements DataStore {
         _id: string;
         username: string;
       }[] = await this.matchUsers(author, text);
+
+      // If filtering by collection, get array of
+      // learning object ids that are associated with
+      // the specified collection.
+      let collectionIds;
+      if (collection) {
+        collectionIds = await this.getCollectionIds(collection);
+      }
 
       const exactAuthor =
         author && authorRecords && authorRecords.length ? true : false;
@@ -1129,6 +1138,7 @@ export class MongoDriver implements DataStore {
         level,
         outcomeIDs,
         name,
+        collectionIds,
         exactAuthor,
       );
 
@@ -1184,6 +1194,7 @@ export class MongoDriver implements DataStore {
     level: string[],
     outcomeIDs: string[],
     name: string,
+    collectionIds: string[],
     exactAuthor?: boolean,
   ) {
     let query: any = <any>{};
@@ -1200,6 +1211,7 @@ export class MongoDriver implements DataStore {
         length,
         level,
         outcomeIDs,
+        collectionIds,
       );
     } else {
       // Search by fields
@@ -1210,6 +1222,7 @@ export class MongoDriver implements DataStore {
         length,
         level,
         outcomeIDs,
+        collectionIds,
       );
     }
     return query;
@@ -1235,6 +1248,7 @@ export class MongoDriver implements DataStore {
     length: string[],
     level: string[],
     outcomeIDs: string[],
+    collectionIds: string[],
   ) {
     if (name) {
       query.$text = { $search: name };
@@ -1252,7 +1266,36 @@ export class MongoDriver implements DataStore {
     if (outcomeIDs) {
       query.outcomes = { $in: outcomeIDs };
     }
+    if (collectionIds) {
+      // Collection is not a property of learning object, we are filtering by id
+      query._id = { $in: collectionIds };
+    }
+
     return query;
+  }
+
+  /**
+   * Get all learning object ids from a specified collection
+   *
+   * @private
+   * @param {string} collection
+   * @returns
+   * @memberof MongoDriver
+   */
+  private async getCollectionIds(collection: string): Promise<string[]> {
+    try {
+      const collectionLearningObjectIds = await this.db
+        .collection(COLLECTIONS.LearningObjectCollection.name)
+        .aggregate([
+          { $match: { name: collection }},
+          { $project: { learningObjects: 1 }},
+        ])
+        .toArray();
+      return collectionLearningObjectIds[0]['learningObjects'];
+    } catch (e) {
+      console.log(e);
+      return Promise.reject(e);
+    }
   }
 
   /**
@@ -1277,6 +1320,7 @@ export class MongoDriver implements DataStore {
     length: string[],
     level: string[],
     outcomeIDs: string[],
+    collectionIds: string[],
   ) {
     query.$or = [
       { $text: { $search: text } },
@@ -1302,6 +1346,10 @@ export class MongoDriver implements DataStore {
     }
     if (level) {
       query.levels = { $in: level };
+    }
+    if (collectionIds) {
+      // Collection is not a property of learning object, we are filtering by id
+      query._id = { $in: collectionIds };
     }
     if (outcomeIDs) {
       query.outcomes = outcomeIDs.length
