@@ -1006,7 +1006,7 @@ export class LearningObjectInteractor {
             object.metrics = await this.loadMetrics(object.id);
             return object;
           } catch (e) {
-            // console.log(e);
+            console.log(e);
             return object;
           }
         }),
