@@ -1071,8 +1071,9 @@ export class LearningObjectInteractor {
     collection: string,
   ): Promise<void> {
     try {
-      dataStore.addToCollection(learningObjectId, collection);
+      await dataStore.addToCollection(learningObjectId, collection);
     } catch (e) {
+      console.log(e);
       return Promise.reject(e);
     }
   }

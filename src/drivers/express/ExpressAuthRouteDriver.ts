@@ -114,7 +114,7 @@ export class ExpressAuthRouteDriver {
         responder.sendOperationError(e);
       }
     });
-    router.post('/collection/learning-objects/:id', async (req, res) => {
+    router.post('/collections/learning-objects/:id', async (req, res) => {
         const responder = this.getResponder(res);
         const learningObjectId = req.params.id;
         const collection = req.query.collection;
@@ -126,6 +126,7 @@ export class ExpressAuthRouteDriver {
           );
           responder.sendOperationSuccess();
         } catch (e) {
+          console.log(e);
           responder.sendOperationError(e);
         }
       });
