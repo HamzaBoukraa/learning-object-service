@@ -4,6 +4,7 @@ import { Router, Response } from 'express';
 import { LearningObjectInteractor } from '../../interactors/interactors';
 import { LearningObject } from '@cyber4all/clark-entity';
 import * as multer from 'multer';
+import { DZFileMetadata, DZFile } from '../../interfaces/FileManager';
 
 export class ExpressAuthRouteDriver {
   private upload = multer({ storage: multer.memoryStorage() });
@@ -136,32 +137,56 @@ export class ExpressAuthRouteDriver {
         }
       },
     );
-    router.post('/files', this.upload.any(), async (req, res) => {
+    router.post(
+      '/learning-objects/:id/files',
+      this.upload.any(),
+      async (req, res) => {
+        const responder = this.getResponder(res);
+        try {
+          const file: Express.Multer.File = req.files[0];
+          const id = req.params.id;
+          const dzMetadata: DZFileMetadata = req.body;
+          const upload: DZFile = {
+            ...dzMetadata,
+            name: file.originalname,
+            encoding: file.encoding,
+            buffer: file.buffer,
+            mimetype: file.mimetype,
+            size: dzMetadata.dztotalfilesize,
+          };
+          const user = req.user;
+
+          if (this.hasAccess(user, 'emailVerified', true)) {
+            const loFile = await LearningObjectInteractor.uploadFile({
+              id,
+              username: user.username,
+              dataStore: this.dataStore,
+              fileManager: this.fileManager,
+              file: upload,
+            });
+
+            responder.sendObject(loFile);
+          } else {
+            responder.unauthorized(
+              'User must be verified to upload materials.',
+            );
+          }
+        } catch (e) {
+          responder.sendOperationError(e);
+        }
+      },
+    );
+    router.delete('/learning-objects/:id/files', async (req, res) => {
       const responder = this.getResponder(res);
       try {
-        const files = req.files;
-        let filePathMap = req.body.filePathMap
-          ? JSON.parse(req.body.filePathMap)
-          : null;
-        if (filePathMap) {
-          filePathMap = new Map<string, string>(filePathMap);
-        }
+        const uploadStatusId = req.body.uploadId;
+        await LearningObjectInteractor.cancelUpload({
+          uploadStatusId,
+          dataStore: this.dataStore,
+          fileManager: this.fileManager,
+        });
 
-        const user = req.user;
-
-        if (this.hasAccess(user, 'emailVerified', true)) {
-          const id = req.body.learningObjectID;
-          const materials = await LearningObjectInteractor.uploadMaterials(
-            this.fileManager,
-            id,
-            user.username,
-            <any[]>files,
-            filePathMap,
-          );
-          responder.sendObject(materials);
-        } else {
-          responder.unauthorized('User must be verified to upload materials.');
-        }
+        responder.sendOperationSuccess();
       } catch (e) {
         responder.sendOperationError(e);
       }

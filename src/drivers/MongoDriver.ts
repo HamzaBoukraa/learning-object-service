@@ -19,11 +19,12 @@ import {
   LearningObjectQuery,
   Filters,
 } from '../interfaces/DataStore';
-import * as request from 'request-promise';
 import {
-  LearningObjectLock,
-  Restriction,
-} from '../interactors/AdminLearningObjectInteractor';
+  MultipartFileUploadStatus,
+  MultipartFileUploadStatusUpdates,
+  CompletedPart,
+} from '../interfaces/FileManager';
+import { LearningObjectLock, Restriction } from '@cyber4all/clark-entity/dist/learning-object';
 
 dotenv.config();
 
@@ -93,6 +94,9 @@ export class COLLECTIONS {
   };
   public static StandardOutcome: Collection = { name: 'outcomes' };
   public static LearningObjectCollection: Collection = { name: 'collections' };
+  public static MultipartUploadStatusCollection: Collection = {
+    name: 'multipart-upload-statuses',
+  };
 }
 
 const COLLECTIONS_MAP = new Map<string, Collection>();
@@ -103,6 +107,10 @@ COLLECTIONS_MAP.set('StandardOutcome', COLLECTIONS.StandardOutcome);
 COLLECTIONS_MAP.set(
   'LearningObjectCollection',
   COLLECTIONS.LearningObjectCollection,
+);
+COLLECTIONS_MAP.set(
+  'MultipartUploadStatusCollection',
+  COLLECTIONS.MultipartUploadStatusCollection,
 );
 
 export class MongoDriver implements DataStore {
@@ -131,7 +139,10 @@ export class MongoDriver implements DataStore {
       this.db = await MongoClient.connect(dbURI);
     } catch (e) {
       if (!retryAttempt) {
-        this.connect(dbURI, 1);
+        this.connect(
+          dbURI,
+          1,
+        );
       } else {
         return Promise.reject(
           'Problem connecting to database at ' + dbURI + ':\n\t' + e,
@@ -183,6 +194,71 @@ export class MongoDriver implements DataStore {
     }
   }
 
+  public async insertMultipartUploadStatus(params: {
+    status: MultipartFileUploadStatus;
+  }): Promise<void> {
+    try {
+      await this.db
+        .collection<MultipartFileUploadStatus>(
+          COLLECTIONS.MultipartUploadStatusCollection.name,
+        )
+        .insertOne(params.status);
+      return Promise.resolve();
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  }
+  public async fetchMultipartUploadStatus(params: {
+    id: string;
+  }): Promise<MultipartFileUploadStatus> {
+    try {
+      const status = await this.db
+        .collection<MultipartFileUploadStatus>(
+          COLLECTIONS.MultipartUploadStatusCollection.name,
+        )
+        .findOne({ _id: params.id });
+      return status;
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  }
+  public async updateMultipartUploadStatus(params: {
+    id: string;
+    updates: MultipartFileUploadStatusUpdates;
+    completedPart: CompletedPart;
+  }): Promise<void> {
+    try {
+      await this.db
+        .collection<MultipartFileUploadStatus>(
+          COLLECTIONS.MultipartUploadStatusCollection.name,
+        )
+        .updateOne(
+          { _id: params.id },
+          {
+            $set: params.updates,
+            $push: { completedParts: params.completedPart },
+          },
+        );
+      return Promise.resolve();
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  }
+  public async deleteMultipartUploadStatus(params: {
+    id: string;
+  }): Promise<void> {
+    try {
+      await this.db
+        .collection<MultipartFileUploadStatus>(
+          COLLECTIONS.MultipartUploadStatusCollection.name,
+        )
+        .deleteOne({ _id: params.id });
+      return Promise.resolve();
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  }
+
   /**
    * Inserts a child id into a learning object's children array if the child object
    * exists in the LearningObject collection.
@@ -197,7 +273,9 @@ export class MongoDriver implements DataStore {
       const collection = this.db.collection(COLLECTIONS.LearningObject.name);
 
       const parentObject = await collection.findOne({ _id: parentId });
-      const childrenObjects = await collection.find({ _id: { $in: children } }).toArray();
+      const childrenObjects = await collection
+        .find({ _id: { $in: children } })
+        .toArray();
 
       // check that the same number of children objects were returned as ids were sent
       if (childrenObjects.length !== children.length) {
@@ -217,9 +295,14 @@ export class MongoDriver implements DataStore {
         parentObject.children = children;
 
         // replace children array of parent with passed children array
-        await this.db.collection(COLLECTIONS.LearningObject.name).findOneAndUpdate({ _id: parentId }, { $set: { children } }, { upsert: true });
+        await this.db
+          .collection(COLLECTIONS.LearningObject.name)
+          .findOneAndUpdate(
+            { _id: parentId },
+            { $set: { children } },
+            { upsert: true },
+          );
       }
-
     } catch (error) {
       console.log(error);
       return Promise.reject({
@@ -234,7 +317,10 @@ export class MongoDriver implements DataStore {
    * @param {LearningObject} parent Learning object to which children will be added
    * @param {LearningObject[]} children Array of learning objects to be added as children to parent
    */
-  private checkChildrenLength(parent: LearningObject, children: LearningObject[]): boolean {
+  private checkChildrenLength(
+    parent: LearningObject,
+    children: LearningObject[],
+  ): boolean {
     // FIXME: These lengths should be retrieved from a standardized source such as a npm module
     const lengths = ['nanomodule', 'micromodule', 'module', 'unit', 'course'];
     const maxLengthIndex = lengths.indexOf(parent.length);
@@ -618,7 +704,7 @@ export class MongoDriver implements DataStore {
   async deleteMultipleLearningObjects(ids: string[]): Promise<any> {
     // now remove objects from database
     return Promise.all(
-      ids.map(async (id) => {
+      ids.map(async id => {
         // remove children references to this learning object from parent
         await this.deleteLearningObjectParentReferences(id);
 
@@ -634,7 +720,9 @@ export class MongoDriver implements DataStore {
    */
   private async deleteLearningObjectParentReferences(id: string): Promise<any> {
     // remove references to learning object from parents
-    return await this.db.collection(COLLECTIONS.LearningObject.name).findOneAndUpdate({ children: id }, { $pull: { children: id } });
+    return await this.db
+      .collection(COLLECTIONS.LearningObject.name)
+      .findOneAndUpdate({ children: id }, { $pull: { children: id } });
   }
 
   /**
@@ -1521,6 +1609,7 @@ export class MongoDriver implements DataStore {
   ): Promise<LearningObject> {
     // Logic for loading any learning object
     const learningObject = new LearningObject(author, record.name);
+    learningObject.id = record._id;
     learningObject.date = record.date;
     learningObject.length = record.length;
     learningObject.levels = <AcademicLevel[]>record.levels;
