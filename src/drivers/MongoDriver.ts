@@ -30,6 +30,7 @@ import {
 } from '../interfaces/FileManager';
 import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
 import { Material } from '@cyber4all/clark-entity/dist/learning-object';
+import { reportError } from './SentryConnector';
 
 dotenv.config();
 
@@ -1713,6 +1714,13 @@ export class MongoDriver implements DataStore {
         } else {
           const obj = User.instantiate(user);
           id = await this.findUser(obj.username);
+          reportError(
+            new Error(
+              `Learning object ${
+                record._id
+              } contains an invalid type for contributors property.`,
+            ),
+          );
         }
         return this.fetchUser(id);
       }),
