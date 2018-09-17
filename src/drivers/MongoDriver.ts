@@ -29,6 +29,7 @@ import {
   CompletedPart,
 } from '../interfaces/FileManager';
 import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
+import { Material } from '@cyber4all/clark-entity/dist/learning-object';
 
 dotenv.config();
 
@@ -1558,6 +1559,9 @@ export class MongoDriver implements DataStore {
   ): Promise<LearningObjectDocument> {
     try {
       const authorID = await this.findUser(object.author.username);
+      const contributorIds = await Promise.all(
+        object.contributors.map(user => this.findUser(user.username)),
+      );
       const doc: LearningObjectDocument = {
         authorID: authorID,
         name: object.name,
@@ -1572,7 +1576,7 @@ export class MongoDriver implements DataStore {
         outcomes: [],
         materials: object.materials,
         published: object.published,
-        contributors: object.contributors,
+        contributors: contributorIds,
       };
       if (isNew) {
         doc._id = new ObjectID().toHexString();
@@ -1686,11 +1690,11 @@ export class MongoDriver implements DataStore {
     learningObject.date = record.date;
     learningObject.length = record.length;
     learningObject.levels = <AcademicLevel[]>record.levels;
-    learningObject.materials = <any>record.materials;
+    learningObject.materials = <Material>record.materials;
     record.published ? learningObject.publish() : learningObject.unpublish();
     learningObject.children = record.children;
-    learningObject.lock = record['lock'];
-    learningObject.contributors = record['contributors'];
+    learningObject.lock = record.lock;
+
     for (const goal of record.goals) {
       learningObject.addGoal(goal.text);
     }
@@ -1699,7 +1703,9 @@ export class MongoDriver implements DataStore {
     }
 
     // Logic for loading 'full' learning objects
-
+    learningObject.contributors = await Promise.all(
+      record.contributors.map(id => this.fetchUser(id)),
+    );
     // load each outcome
     await Promise.all(
       record.outcomes.map(async outcomeID => {
