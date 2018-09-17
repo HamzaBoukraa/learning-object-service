@@ -80,6 +80,10 @@ export interface DataStore {
     completedPart: CompletedPart;
   }): Promise<void>;
   deleteMultipartUploadStatus(params: { id: string }): Promise<void>;
+  findSingleFile(params: {
+    learningObjectId: string;
+    fileId: string;
+  }): Promise<LearningObjectFile>;
 }
 
 export { Collection as LearningObjectCollection };

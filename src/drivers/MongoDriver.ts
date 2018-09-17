@@ -1174,7 +1174,8 @@ export class MongoDriver implements DataStore {
 
       let objectCursor = await this.db
         .collection(COLLECTIONS.LearningObject.name)
-        .find<LearningObjectDocument>(query, { score: { $meta: 'textScore' } })
+        .find<LearningObjectDocument>(query)
+        .project({ score: { $meta: 'textScore' } })
         .sort({ score: { $meta: 'textScore' } });
 
       const totalRecords = await objectCursor.count();
@@ -1200,6 +1201,34 @@ export class MongoDriver implements DataStore {
       });
     } catch (e) {
       return Promise.reject('Error suggesting objects' + e);
+    }
+  }
+
+  async findSingleFile(params: {
+    learningObjectId: string;
+    fileId: string;
+  }): Promise<LearningObjectFile> {
+    try {
+      const fileMetaData = await this.db
+        .collection(COLLECTIONS.LearningObject.name)
+        .findOne(
+          {
+            _id: params.learningObjectId,
+            'materials.files': {
+              $elemMatch: { id: params.fileId },
+            },
+          },
+          {
+            _id: 0,
+            'materials.files.$': 1,
+          },
+        );
+
+      // Object contains materials property.
+      // Files array within materials will alway contain one element
+      return fileMetaData.materials.files[0];
+    } catch (e) {
+      Promise.reject(e);
     }
   }
   /**
@@ -1429,7 +1458,8 @@ export class MongoDriver implements DataStore {
     return author || text
       ? await this.db
           .collection(COLLECTIONS.User.name)
-          .find<{ _id: string; username: string }>(query, {
+          .find<{ _id: string; username: string }>(query)
+          .project({
             _id: 1,
             username: 1,
             score: { $meta: 'textScore' },

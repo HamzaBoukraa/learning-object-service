@@ -1,4 +1,5 @@
 import { Subject } from 'rxjs';
+import { Response } from 'express';
 
 export interface Responder {
   spy: Subject<any>;
@@ -7,4 +8,5 @@ export interface Responder {
   sendOperationError(error?: string, status?: number): void;
   sendObject(object: any): void;
   unauthorized(message?: string): void;
+  writeStream(attachment?: string): Response;
 }
