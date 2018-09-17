@@ -118,6 +118,7 @@ COLLECTIONS_MAP.set(
 );
 
 export class MongoDriver implements DataStore {
+  private mongoClient: MongoClient;
   private db: Db;
 
   constructor(dburi: string) {
@@ -140,7 +141,8 @@ export class MongoDriver implements DataStore {
    */
   async connect(dbURI: string, retryAttempt?: number): Promise<void> {
     try {
-      this.db = await MongoClient.connect(dbURI);
+      this.mongoClient = await MongoClient.connect(dbURI);
+      this.db = this.mongoClient.db();
     } catch (e) {
       if (!retryAttempt) {
         this.connect(
@@ -160,7 +162,7 @@ export class MongoDriver implements DataStore {
    * important or if you are sure that *everything* is finished.
    */
   disconnect(): void {
-    this.db.close();
+    this.mongoClient.close();
   }
   /////////////
   // INSERTS //
@@ -1172,7 +1174,8 @@ export class MongoDriver implements DataStore {
 
       let objectCursor = await this.db
         .collection(COLLECTIONS.LearningObject.name)
-        .find<LearningObjectDocument>(query, { score: { $meta: 'textScore' } })
+        .find<LearningObjectDocument>(query)
+        .project({ score: { $meta: 'textScore' } })
         .sort({ score: { $meta: 'textScore' } });
 
       const totalRecords = await objectCursor.count();
@@ -1454,7 +1457,8 @@ export class MongoDriver implements DataStore {
     return author || text
       ? await this.db
           .collection(COLLECTIONS.User.name)
-          .find<{ _id: string; username: string }>(query, {
+          .find<{ _id: string; username: string }>(query)
+          .project({
             _id: 1,
             username: 1,
             score: { $meta: 'textScore' },
