@@ -451,7 +451,7 @@ export class LearningObjectInteractor {
 
   public static async downloadSingleFile(params: {
     learningObjectId: string;
-    fileName: string;
+    fileId: string;
     dataStore: DataStore;
     fileManager: FileManager;
     responder: Responder;
@@ -460,15 +460,15 @@ export class LearningObjectInteractor {
       // Collect requested file metadata from datastore
       const fileMetaData = await params.dataStore.findSingleFile({
         learningObjectId: params.learningObjectId,
-        fileName: params.fileName,
+        fileId: params.fileId,
       });
 
-      const url = fileMetaData['materials'].files[0].url;
+      const url = fileMetaData['url'];
 
       // Make http request using attached url in file metadata, pipe response
       // tslint:disable-next-line:max-line-length
       https.get(url, res => {
-        res.pipe(params.responder.writeStream(params.fileName));
+        res.pipe(params.responder.writeStream(params.fileId));
       });
     } catch (e) {
       Promise.reject(e);

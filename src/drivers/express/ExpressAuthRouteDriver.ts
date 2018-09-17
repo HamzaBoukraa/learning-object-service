@@ -302,16 +302,16 @@ export class ExpressAuthRouteDriver {
     });
 
     router.get(
-      '/learning-objects/:learningObjectId/files/:fileName',
+      '/learning-objects/:learningObjectId/files/:fileId',
       async (req, res) => {
         const responder = this.getResponder(res);
         const learningObjectId = req.params.learningObjectId;
-        const fileName = req.params.fileName;
+        const fileId = req.params.fileId;
         try {
           if (await enforceWhitelist(req.user.username)) {
             await LearningObjectInteractor.downloadSingleFile({
               learningObjectId,
-              fileName,
+              fileId,
               dataStore: this.dataStore,
               fileManager: this.fileManager,
               responder,
