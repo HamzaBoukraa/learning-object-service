@@ -1711,7 +1711,7 @@ export class LearningObjectInteractor {
       }
 
       params.doc.font(PDFFonts.REGULAR).fillColor(PDFColors.LINK);
-      const url = LEARNING_OBJECT_ROUTES.GET_FILE(params.id, file.name);
+      const url = LEARNING_OBJECT_ROUTES.GET_FILE(params.id, file.id);
       params.doc.text(`${url}`, params.doc.x, params.doc.y, {
         link: url,
         underline: true,
