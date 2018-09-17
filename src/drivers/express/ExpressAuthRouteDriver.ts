@@ -137,10 +137,11 @@ export class ExpressAuthRouteDriver {
         responder.sendOperationError(e);
       }
     });
-    router.post('/collections/learning-objects/:id', async (req, res) => {
+    router.patch('/learning-objects/:learningObjectId/collections', async (req, res) => {
         const responder = this.getResponder(res);
-        const learningObjectId = req.params.id;
-        const collection = req.query.collection;
+        const learningObjectId = req.params.learningObjectId;
+        const collection = req.body.collection;
+
         try {
           LearningObjectInteractor.addToCollection(
             this.dataStore,

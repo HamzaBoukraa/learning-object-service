@@ -1471,13 +1471,15 @@ export class MongoDriver implements DataStore {
   async addToCollection(
     learningObjectId: string,
     collection: string,
-  ): Promise <void> {
+  ): Promise<void> {
     try {
-      // Append learning object id to specified collection
+      // access learning object and update it's collection property
       await this.db
-        .collection(COLLECTIONS.LearningObjectCollection.name)
-        .update({ name: collection },
-                { $push: { 'learningObjects': learningObjectId }});
+        .collection(COLLECTIONS.LearningObject.name)
+        .findOneAndUpdate(
+          { _id: learningObjectId },
+          { $set: { collection } },
+        );
     } catch (e) {
       return Promise.reject(e);
     }
@@ -1518,6 +1520,7 @@ export class MongoDriver implements DataStore {
         materials: object.materials,
         published: object.published,
         contributors: object.contributors,
+        collection: object.collection
       };
       if (isNew) {
         doc._id = new ObjectID().toHexString();
@@ -1636,6 +1639,7 @@ export class MongoDriver implements DataStore {
     learningObject.children = record.children;
     learningObject.lock = record['lock'];
     learningObject.contributors = record['contributors'];
+    learningObject.collection = record['collection'];
     for (const goal of record.goals) {
       learningObject.addGoal(goal.text);
     }
