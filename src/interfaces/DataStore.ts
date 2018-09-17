@@ -5,6 +5,7 @@ import {
   MultipartFileUploadStatusUpdates,
   CompletedPart,
 } from './FileManager';
+import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
 
 export interface DataStore {
   connect(dburi: string): Promise<void>;
@@ -65,7 +66,7 @@ export interface DataStore {
   findParentObjects(params: {
     query: LearningObjectQuery;
   }): Promise<LearningObject[]>;
-
+  addToFiles(params: { id: string; loFile: LearningObjectFile }): Promise<void>;
   // Multipart Uploads
   insertMultipartUploadStatus(params: {
     status: MultipartFileUploadStatus;

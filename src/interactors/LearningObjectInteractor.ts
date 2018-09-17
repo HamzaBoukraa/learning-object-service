@@ -476,7 +476,7 @@ export class LearningObjectInteractor {
   }
 
   /**
-   * Updates or inserts metadata for file as LearningObjectFile
+   * Inserts metadata for file as LearningObjectFile
    *
    * @private
    * @static
@@ -494,28 +494,10 @@ export class LearningObjectInteractor {
     loFile: LearningObjectFile;
   }): Promise<void> {
     try {
-      const learningObject = await params.dataStore.fetchLearningObject(
-        params.id,
-        true,
-        true,
-      );
-      let found = false;
-      for (let i = 0; i < learningObject.materials.files.length; i++) {
-        const oldFile = learningObject.materials.files[i];
-        if (params.loFile.url === oldFile.url) {
-          found = true;
-          params.loFile.description = oldFile.description;
-          learningObject.materials.files[i] = params.loFile;
-          break;
-        }
-      }
-      if (!found) {
-        learningObject.materials.files.push(params.loFile);
-      }
-      return await params.dataStore.editLearningObject(
-        params.id,
-        learningObject,
-      );
+      return await params.dataStore.addToFiles({
+        id: params.id,
+        loFile: params.loFile,
+      });
     } catch (e) {
       return Promise.reject(e);
     }
