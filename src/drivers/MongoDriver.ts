@@ -1167,8 +1167,6 @@ export class MongoDriver implements DataStore {
     learningObjectId: string;
     fileId: string;
   }): Promise<object> {
-    console.log(params.learningObjectId);
-    console.log(params.fileId);
     try {
       const fileMetaData = await this.db.collection(COLLECTIONS.LearningObject.name)
         .findOne
@@ -1179,14 +1177,16 @@ export class MongoDriver implements DataStore {
               {
                 $elemMatch:
                     { 'id': params.fileId },
-            },
+              },
           },
           {
+            _id: 0,
             'materials.files.$': 1
           },
         );
 
-      // Should never return more than one object.
+      // Object contains materials property.
+      // Files array within materials will alway contain one element
       return fileMetaData.materials.files[0];
 
     } catch (e) {
