@@ -470,7 +470,9 @@ export class LearningObjectInteractor {
       https.get(url, res => {
         res.pipe(
           params.responder.writeStream(
-            `${fileMetaData.name}.${fileMetaData.extension}`,
+            `${fileMetaData.name}.${
+              fileMetaData.extension ? fileMetaData.extension : ''
+            }`,
           ),
         );
       });
