@@ -5,6 +5,8 @@ import { LearningObjectInteractor } from '../../interactors/interactors';
 import { LearningObject } from '@cyber4all/clark-entity';
 import * as multer from 'multer';
 import { DZFileMetadata, DZFile } from '../../interfaces/FileManager';
+import { enforceWhitelist } from '../../middleware/whitelist';
+
 import { reportError } from '../SentryConnector';
 export class ExpressAuthRouteDriver {
   private upload = multer({ storage: multer.memoryStorage() });
@@ -231,8 +233,27 @@ export class ExpressAuthRouteDriver {
         responder.sendOperationError(e);
       }
     });
-
     router
+      .patch('/learning-objects/:id/pdf', async (req, res) => {
+        const responder = this.getResponder(res);
+        try {
+          const id = req.params.id;
+          const object = await LearningObjectInteractor.updateReadme({
+            id,
+            dataStore: this.dataStore,
+            fileManager: this.fileManager,
+          });
+          await LearningObjectInteractor.updateLearningObject(
+            this.dataStore,
+            this.fileManager,
+            id,
+            object,
+          );
+          responder.sendOperationSuccess();
+        } catch (e) {
+          responder.sendOperationError(e);
+        }
+      })
       .route('/learning-objects/:username/:learningObjectName/children')
       .post(async (req, res) => {
         const responder = this.getResponder(res);
@@ -286,6 +307,30 @@ export class ExpressAuthRouteDriver {
         responder.sendOperationError(e);
       }
     });
+
+    router.get(
+      '/learning-objects/:learningObjectId/files/:fileId',
+      async (req, res) => {
+        const responder = this.getResponder(res);
+        const learningObjectId = req.params.learningObjectId;
+        const fileId = req.params.fileId;
+        try {
+          if (await enforceWhitelist(req.user.username)) {
+            await LearningObjectInteractor.downloadSingleFile({
+              learningObjectId,
+              fileId,
+              dataStore: this.dataStore,
+              fileManager: this.fileManager,
+              responder,
+            });
+          } else {
+            responder.sendOperationError('Invalid download access');
+          }
+        } catch (e) {
+          responder.sendOperationError(e);
+        }
+      },
+    );
 
     router.delete(
       '/learning-objects/:learningObjectNames/multiple',
