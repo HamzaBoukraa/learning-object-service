@@ -118,7 +118,6 @@ COLLECTIONS_MAP.set(
 );
 
 export class MongoDriver implements DataStore {
-  private mongoClient: MongoClient;
   private db: Db;
 
   constructor(dburi: string) {
@@ -141,8 +140,7 @@ export class MongoDriver implements DataStore {
    */
   async connect(dbURI: string, retryAttempt?: number): Promise<void> {
     try {
-      this.mongoClient = await MongoClient.connect(dbURI);
-      this.db = this.mongoClient.db();
+      this.db = await MongoClient.connect(dbURI);
     } catch (e) {
       if (!retryAttempt) {
         this.connect(
@@ -162,7 +160,7 @@ export class MongoDriver implements DataStore {
    * important or if you are sure that *everything* is finished.
    */
   disconnect(): void {
-    this.mongoClient.close();
+    this.db.close();
   }
   /////////////
   // INSERTS //
@@ -1208,27 +1206,24 @@ export class MongoDriver implements DataStore {
     fileId: string;
   }): Promise<object> {
     try {
-      const fileMetaData = await this.db.collection(COLLECTIONS.LearningObject.name)
-        .findOne
-        (
+      const fileMetaData = await this.db
+        .collection(COLLECTIONS.LearningObject.name)
+        .findOne(
           {
             _id: params.learningObjectId,
-            'materials.files':
-              {
-                $elemMatch:
-                    { 'id': params.fileId },
-              },
+            'materials.files': {
+              $elemMatch: { id: params.fileId },
+            },
           },
           {
             _id: 0,
-            'materials.files.$': 1
+            'materials.files.$': 1,
           },
         );
 
       // Object contains materials property.
       // Files array within materials will alway contain one element
       return fileMetaData.materials.files[0];
-
     } catch (e) {
       Promise.reject(e);
     }
