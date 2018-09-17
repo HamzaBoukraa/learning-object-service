@@ -1703,8 +1703,19 @@ export class MongoDriver implements DataStore {
     }
 
     // Logic for loading 'full' learning objects
+
+    // Load Contributors
     learningObject.contributors = await Promise.all(
-      record.contributors.map(id => this.fetchUser(id)),
+      record.contributors.map(async user => {
+        let id: string;
+        if (typeof user === 'string') {
+          id = user;
+        } else {
+          const obj = User.instantiate(user);
+          id = await this.findUser(obj.username);
+        }
+        return this.fetchUser(id);
+      }),
     );
     // load each outcome
     await Promise.all(
