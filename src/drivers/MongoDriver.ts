@@ -26,6 +26,8 @@ import {
 } from '../interfaces/FileManager';
 import { LearningObjectLock, Restriction } from '@cyber4all/clark-entity/dist/learning-object';
 import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
+import { Material } from '@cyber4all/clark-entity/dist/learning-object';
+import { reportError } from './SentryConnector';
 
 dotenv.config();
 
@@ -115,6 +117,7 @@ COLLECTIONS_MAP.set(
 );
 
 export class MongoDriver implements DataStore {
+  private mongoClient: MongoClient;
   private db: Db;
 
   constructor(dburi: string) {
@@ -137,7 +140,8 @@ export class MongoDriver implements DataStore {
    */
   async connect(dbURI: string, retryAttempt?: number): Promise<void> {
     try {
-      this.db = await MongoClient.connect(dbURI);
+      this.mongoClient = await MongoClient.connect(dbURI);
+      this.db = this.mongoClient.db();
     } catch (e) {
       if (!retryAttempt) {
         this.connect(
@@ -157,7 +161,7 @@ export class MongoDriver implements DataStore {
    * important or if you are sure that *everything* is finished.
    */
   disconnect(): void {
-    this.db.close();
+    this.mongoClient.close();
   }
   /////////////
   // INSERTS //
@@ -1169,7 +1173,8 @@ export class MongoDriver implements DataStore {
 
       let objectCursor = await this.db
         .collection(COLLECTIONS.LearningObject.name)
-        .find<LearningObjectDocument>(query, { score: { $meta: 'textScore' } })
+        .find<LearningObjectDocument>(query)
+        .project({ score: { $meta: 'textScore' } })
         .sort({ score: { $meta: 'textScore' } });
 
       const totalRecords = await objectCursor.count();
@@ -1201,7 +1206,7 @@ export class MongoDriver implements DataStore {
   async findSingleFile(params: {
     learningObjectId: string;
     fileId: string;
-  }): Promise<object> {
+  }): Promise<LearningObjectFile> {
     try {
       const fileMetaData = await this.db
         .collection(COLLECTIONS.LearningObject.name)
@@ -1451,7 +1456,8 @@ export class MongoDriver implements DataStore {
     return author || text
       ? await this.db
           .collection(COLLECTIONS.User.name)
-          .find<{ _id: string; username: string }>(query, {
+          .find<{ _id: string; username: string }>(query)
+          .project({
             _id: 1,
             username: 1,
             score: { $meta: 'textScore' },
@@ -1551,6 +1557,14 @@ export class MongoDriver implements DataStore {
   ): Promise<LearningObjectDocument> {
     try {
       const authorID = await this.findUser(object.author.username);
+      let contributorIds: string[] = [];
+
+      if (object.contributors && object.contributors.length) {
+        contributorIds = await Promise.all(
+          object.contributors.map(user => this.findUser(user.username)),
+        );
+      }
+
       const doc: LearningObjectDocument = {
         authorID: authorID,
         name: object.name,
@@ -1565,7 +1579,7 @@ export class MongoDriver implements DataStore {
         outcomes: [],
         materials: object.materials,
         published: object.published,
-        contributors: object.contributors,
+        contributors: contributorIds,
       };
       if (isNew) {
         doc._id = new ObjectID().toHexString();
@@ -1679,11 +1693,11 @@ export class MongoDriver implements DataStore {
     learningObject.date = record.date;
     learningObject.length = record.length;
     learningObject.levels = <AcademicLevel[]>record.levels;
-    learningObject.materials = <any>record.materials;
+    learningObject.materials = <Material>record.materials;
     record.published ? learningObject.publish() : learningObject.unpublish();
     learningObject.children = record.children;
-    learningObject.lock = record['lock'];
-    learningObject.contributors = record['contributors'];
+    learningObject.lock = record.lock;
+
     for (const goal of record.goals) {
       learningObject.addGoal(goal.text);
     }
@@ -1693,6 +1707,28 @@ export class MongoDriver implements DataStore {
 
     // Logic for loading 'full' learning objects
 
+    // Load Contributors
+    if (record.contributors && record.contributors.length) {
+      learningObject.contributors = await Promise.all(
+        record.contributors.map(async user => {
+          let id: string;
+          if (typeof user === 'string') {
+            id = user;
+          } else {
+            const obj = User.instantiate(user);
+            id = await this.findUser(obj.username);
+            reportError(
+              new Error(
+                `Learning object ${
+                  record._id
+                } contains an invalid type for contributors property.`,
+              ),
+            );
+          }
+          return this.fetchUser(id);
+        }),
+      );
+    }
     // load each outcome
     await Promise.all(
       record.outcomes.map(async outcomeID => {

@@ -466,12 +466,18 @@ export class LearningObjectInteractor {
         fileId: params.fileId,
       });
 
-      const url = fileMetaData['url'];
+      const url = fileMetaData.url;
 
       // Make http request using attached url in file metadata, pipe response
       // tslint:disable-next-line:max-line-length
       https.get(url, res => {
-        res.pipe(params.responder.writeStream(params.fileId));
+        res.pipe(
+          params.responder.writeStream(
+            `${fileMetaData.name}.${
+              fileMetaData.extension ? fileMetaData.extension : ''
+            }`,
+          ),
+        );
       });
     } catch (e) {
       Promise.reject(e);
