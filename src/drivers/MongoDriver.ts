@@ -1346,10 +1346,11 @@ export class MongoDriver implements DataStore {
     level: string[],
     outcomeIDs: string[],
   ) {
+    const regex = new RegExp(sanitizeRegex(text));
     query.$or = [
       { $text: { $search: text } },
-      { name: { $regex: new RegExp(text, 'ig') } },
-      { contributors: { $regex: new RegExp(text, 'ig') } },
+      { name: { $regex: regex } },
+      { contributors: { $regex: regex } },
     ];
     if (authors && authors.length) {
       if (exactAuthor) {
@@ -1445,12 +1446,12 @@ export class MongoDriver implements DataStore {
     const query = {
       $or: [{ $text: { $search: author ? author : text } }],
     };
-
     if (text) {
+      const regex = new RegExp(sanitizeRegex(text), 'ig');
       (<any[]>query.$or).push(
-        { username: { $regex: new RegExp(text, 'ig') } },
-        { name: { $regex: new RegExp(text, 'ig') } },
-        { email: { $regex: new RegExp(text, 'ig') } },
+        { username: { $regex: regex } },
+        { name: { $regex: regex } },
+        { email: { $regex: regex } },
       );
     }
     return author || text
@@ -2180,4 +2181,29 @@ export function isEmail(value: string): boolean {
     return true;
   }
   return false;
+}
+
+/**
+ * Escapes Regex quantifier, alternation, single sequence anchor, new line, and parenthesis characters in a string
+ *
+ * @export
+ * @param {string} text
+ * @returns {string}
+ */
+export function sanitizeRegex(text: string): string {
+  const regexChars = /\.|\+|\*|\^|\$|\?|\[|\]|\(|\)|\|/;
+  if (regexChars.test(text)) {
+    let newString = '';
+    const chars = text.split('');
+    for (const c of chars) {
+      const isSpecial = regexChars.test(c.trim());
+      if (isSpecial) {
+        newString += `\\${c}`;
+      } else {
+        newString += c;
+      }
+    }
+    text = newString;
+  }
+  return text;
 }
