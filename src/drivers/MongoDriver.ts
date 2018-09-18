@@ -1560,9 +1560,14 @@ export class MongoDriver implements DataStore {
   ): Promise<LearningObjectDocument> {
     try {
       const authorID = await this.findUser(object.author.username);
-      const contributorIds = await Promise.all(
-        object.contributors.map(user => this.findUser(user.username)),
-      );
+      let contributorIds: string[] = [];
+
+      if (object.contributors && object.contributors.length) {
+        contributorIds = await Promise.all(
+          object.contributors.map(user => this.findUser(user.username)),
+        );
+      }
+
       const doc: LearningObjectDocument = {
         authorID: authorID,
         name: object.name,
@@ -1706,25 +1711,27 @@ export class MongoDriver implements DataStore {
     // Logic for loading 'full' learning objects
 
     // Load Contributors
-    learningObject.contributors = await Promise.all(
-      record.contributors.map(async user => {
-        let id: string;
-        if (typeof user === 'string') {
-          id = user;
-        } else {
-          const obj = User.instantiate(user);
-          id = await this.findUser(obj.username);
-          reportError(
-            new Error(
-              `Learning object ${
-                record._id
-              } contains an invalid type for contributors property.`,
-            ),
-          );
-        }
-        return this.fetchUser(id);
-      }),
-    );
+    if (record.contributors && record.contributors.length) {
+      learningObject.contributors = await Promise.all(
+        record.contributors.map(async user => {
+          let id: string;
+          if (typeof user === 'string') {
+            id = user;
+          } else {
+            const obj = User.instantiate(user);
+            id = await this.findUser(obj.username);
+            reportError(
+              new Error(
+                `Learning object ${
+                  record._id
+                } contains an invalid type for contributors property.`,
+              ),
+            );
+          }
+          return this.fetchUser(id);
+        }),
+      );
+    }
     // load each outcome
     await Promise.all(
       record.outcomes.map(async outcomeID => {
