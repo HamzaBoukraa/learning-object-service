@@ -7,6 +7,7 @@ import {
   MultipartUploadData,
   CompletedPartList,
 } from '../interfaces/FileManager';
+
 AWS.config.credentials = AWS_SDK_CONFIG.credentials;
 
 const AWS_S3_BUCKET = 'neutrino-file-uploads';
@@ -184,6 +185,7 @@ export class S3Driver implements FileManager {
       return Promise.reject(e);
     }
   }
+
   /**
    * Deletes Object From S3
    *

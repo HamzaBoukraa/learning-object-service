@@ -5,6 +5,7 @@ import {
   CompletedPart,
 } from './FileManager';
 import { LearningObjectLock } from '@cyber4all/clark-entity/dist/learning-object';
+import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
 
 export interface DataStore {
   connect(dburi: string): Promise<void>;
@@ -65,7 +66,7 @@ export interface DataStore {
   findParentObjects(params: {
     query: LearningObjectQuery;
   }): Promise<LearningObject[]>;
-
+  addToFiles(params: { id: string; loFile: LearningObjectFile }): Promise<void>;
   // Multipart Uploads
   insertMultipartUploadStatus(params: {
     status: MultipartFileUploadStatus;
@@ -79,6 +80,10 @@ export interface DataStore {
     completedPart: CompletedPart;
   }): Promise<void>;
   deleteMultipartUploadStatus(params: { id: string }): Promise<void>;
+  findSingleFile(params: {
+    learningObjectId:     string,
+    fileId:             string,
+  }): Promise<object>;
 }
 
 export { Collection as LearningObjectCollection };

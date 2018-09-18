@@ -25,6 +25,7 @@ import {
   CompletedPart,
 } from '../interfaces/FileManager';
 import { LearningObjectLock, Restriction } from '@cyber4all/clark-entity/dist/learning-object';
+import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
 
 dotenv.config();
 
@@ -189,6 +190,43 @@ export class MongoDriver implements DataStore {
         object.outcomes,
       );
       return id;
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  }
+
+  /**
+   * Updates or inserts LearningObjectFile into learning object's files array
+   *
+   * @param {{
+   *     id: string;
+   *     loFile: LearningObjectFile;
+   *   }} params
+   * @returns {Promise<void>}
+   * @memberof MongoDriver
+   */
+  public async addToFiles(params: {
+    id: string;
+    loFile: LearningObjectFile;
+  }): Promise<void> {
+    try {
+      const existingDoc = await this.db
+        .collection(COLLECTIONS.LearningObject.name)
+        .findOneAndUpdate(
+          { _id: params.id, 'materials.files.url': params.loFile.url },
+          { $set: { 'materials.files.$[element]': params.loFile } },
+          // @ts-ignore: arrayFilters is in fact a property defined by documentation. Property does not exist in type definition.
+          { arrayFilters: [{ 'element.url': params.loFile.url }] },
+        );
+      if (!existingDoc.value) {
+        await this.db.collection(COLLECTIONS.LearningObject.name).updateOne(
+          {
+            _id: params.id,
+          },
+          { $push: { 'materials.files': params.loFile } },
+        );
+      }
+      return Promise.resolve();
     } catch (e) {
       return Promise.reject(e);
     }
@@ -1157,6 +1195,34 @@ export class MongoDriver implements DataStore {
       });
     } catch (e) {
       return Promise.reject('Error suggesting objects' + e);
+    }
+  }
+
+  async findSingleFile(params: {
+    learningObjectId: string;
+    fileId: string;
+  }): Promise<object> {
+    try {
+      const fileMetaData = await this.db
+        .collection(COLLECTIONS.LearningObject.name)
+        .findOne(
+          {
+            _id: params.learningObjectId,
+            'materials.files': {
+              $elemMatch: { id: params.fileId },
+            },
+          },
+          {
+            _id: 0,
+            'materials.files.$': 1,
+          },
+        );
+
+      // Object contains materials property.
+      // Files array within materials will alway contain one element
+      return fileMetaData.materials.files[0];
+    } catch (e) {
+      Promise.reject(e);
     }
   }
   /**
