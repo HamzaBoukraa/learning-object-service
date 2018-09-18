@@ -20,14 +20,11 @@ import {
   Filters,
 } from '../interfaces/DataStore';
 import {
-  LearningObjectLock,
-  Restriction,
-} from '../interactors/AdminLearningObjectInteractor';
-import {
   MultipartFileUploadStatus,
   MultipartFileUploadStatusUpdates,
   CompletedPart,
 } from '../interfaces/FileManager';
+import { LearningObjectLock, Restriction } from '@cyber4all/clark-entity/dist/learning-object';
 import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
 import { Material } from '@cyber4all/clark-entity/dist/learning-object';
 import { reportError } from './SentryConnector';

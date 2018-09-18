@@ -5,7 +5,10 @@ import * as stopword from 'stopword';
 import * as striptags from 'striptags';
 import * as https from 'https';
 import { LearningObjectQuery } from '../interfaces/DataStore';
-import { Metrics } from '@cyber4all/clark-entity/dist/learning-object';
+import {
+  Metrics,
+  LearningObjectPDF,
+} from '@cyber4all/clark-entity/dist/learning-object';
 import { LibraryInteractor } from './LibraryInteractor';
 import { File } from '@cyber4all/clark-entity/dist/learning-object';
 import {
