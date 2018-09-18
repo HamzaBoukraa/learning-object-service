@@ -42,6 +42,7 @@ export interface DataStore {
   searchObjects(
     name: string,
     author: string,
+    collection: string,
     length: string[],
     level: string[],
     standardOutcomeIDs: string[],

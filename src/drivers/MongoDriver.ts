@@ -1133,6 +1133,7 @@ export class MongoDriver implements DataStore {
   async searchObjects(
     name: string,
     author: string,
+    collection: string,
     length: string[],
     level: string[],
     standardOutcomeIDs: string[],
@@ -1168,6 +1169,7 @@ export class MongoDriver implements DataStore {
         level,
         outcomeIDs,
         name,
+        collection,
         exactAuthor,
       );
 
@@ -1252,6 +1254,7 @@ export class MongoDriver implements DataStore {
     level: string[],
     outcomeIDs: string[],
     name: string,
+    collection: string,
     exactAuthor?: boolean,
   ) {
     let query: any = <any>{};
@@ -1268,6 +1271,7 @@ export class MongoDriver implements DataStore {
         length,
         level,
         outcomeIDs,
+        collection,
       );
     } else {
       // Search by fields
@@ -1278,6 +1282,7 @@ export class MongoDriver implements DataStore {
         length,
         level,
         outcomeIDs,
+        collection,
       );
     }
     return query;
@@ -1303,6 +1308,7 @@ export class MongoDriver implements DataStore {
     length: string[],
     level: string[],
     outcomeIDs: string[],
+    collection: string,
   ) {
     if (name) {
       query.$text = { $search: name };
@@ -1320,7 +1326,35 @@ export class MongoDriver implements DataStore {
     if (outcomeIDs) {
       query.outcomes = { $in: outcomeIDs };
     }
+    if (collection) {
+      query.collection = collection;
+    }
+
     return query;
+  }
+
+  /**
+   * Get all learning object ids from a specified collection
+   *
+   * @private
+   * @param {string} collection
+   * @returns
+   * @memberof MongoDriver
+   */
+  private async getCollectionIds(collection: string): Promise<string[]> {
+    try {
+      const collectionLearningObjectIds = await this.db
+        .collection(COLLECTIONS.LearningObjectCollection.name)
+        .aggregate([
+          { $match: { name: collection } },
+          { $project: { learningObjects: 1 } },
+        ])
+        .toArray();
+      return collectionLearningObjectIds[0]['learningObjects'];
+    } catch (e) {
+      console.log(e);
+      return Promise.reject(e);
+    }
   }
 
   /**
@@ -1345,6 +1379,7 @@ export class MongoDriver implements DataStore {
     length: string[],
     level: string[],
     outcomeIDs: string[],
+    collection: string,
   ) {
     const regex = new RegExp(sanitizeRegex(text));
     query.$or = [
@@ -1371,6 +1406,9 @@ export class MongoDriver implements DataStore {
     }
     if (level) {
       query.levels = { $in: level };
+    }
+    if (collection) {
+      query.collection = collection;
     }
     if (outcomeIDs) {
       query.outcomes = outcomeIDs.length

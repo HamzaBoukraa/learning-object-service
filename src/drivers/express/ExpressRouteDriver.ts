@@ -40,6 +40,7 @@ export class ExpressRouteDriver {
 
         const name = req.query.name;
         const author = req.query.author;
+        const collection = req.query.collection;
         let length = req.query.length;
         length = length && !Array.isArray(length) ? [length] : length;
         let level = req.query.level;
@@ -62,6 +63,7 @@ export class ExpressRouteDriver {
         if (
           name ||
           author ||
+          collection ||
           length ||
           level ||
           standardOutcomes ||
@@ -73,6 +75,7 @@ export class ExpressRouteDriver {
             this.dataStore,
             name,
             author,
+            collection,
             length,
             level,
             standardOutcomes,

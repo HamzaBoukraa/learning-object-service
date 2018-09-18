@@ -1053,6 +1053,7 @@ export class LearningObjectInteractor {
     dataStore: DataStore,
     name: string,
     author: string,
+    collection: string,
     length: string[],
     level: string[],
     standardOutcomeIDs: string[],
@@ -1074,6 +1075,7 @@ export class LearningObjectInteractor {
       const response = await dataStore.searchObjects(
         name,
         author,
+        collection,
         length,
         level,
         standardOutcomeIDs,
