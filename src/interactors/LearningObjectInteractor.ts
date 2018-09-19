@@ -5,7 +5,10 @@ import * as stopword from 'stopword';
 import * as striptags from 'striptags';
 import * as https from 'https';
 import { LearningObjectQuery } from '../interfaces/DataStore';
-import { Metrics } from '@cyber4all/clark-entity/dist/learning-object';
+import {
+  Metrics,
+  LearningObjectPDF,
+} from '@cyber4all/clark-entity/dist/learning-object';
 import { LibraryInteractor } from './LibraryInteractor';
 import { File } from '@cyber4all/clark-entity/dist/learning-object';
 import {
@@ -1050,6 +1053,7 @@ export class LearningObjectInteractor {
     dataStore: DataStore,
     name: string,
     author: string,
+    collection: string,
     length: string[],
     level: string[],
     standardOutcomeIDs: string[],
@@ -1071,6 +1075,7 @@ export class LearningObjectInteractor {
       const response = await dataStore.searchObjects(
         name,
         author,
+        collection,
         length,
         level,
         standardOutcomeIDs,
@@ -1146,6 +1151,19 @@ export class LearningObjectInteractor {
       return objects;
     } catch (e) {
       return Promise.reject(`Problem fetching collection objects. Error: ${e}`);
+    }
+  }
+
+  public static async addToCollection(
+    dataStore: DataStore,
+    learningObjectId: string,
+    collection: string,
+  ): Promise<void> {
+    try {
+      await dataStore.addToCollection(learningObjectId, collection);
+    } catch (e) {
+      console.log(e);
+      return Promise.reject(e);
     }
   }
 

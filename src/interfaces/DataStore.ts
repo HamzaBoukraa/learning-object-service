@@ -1,10 +1,10 @@
 import { LearningObject, Collection } from '@cyber4all/clark-entity';
-import { LearningObjectLock } from '../interactors/AdminLearningObjectInteractor';
 import {
   MultipartFileUploadStatus,
   MultipartFileUploadStatusUpdates,
   CompletedPart,
 } from './FileManager';
+import { LearningObjectLock } from '@cyber4all/clark-entity/dist/learning-object';
 import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
 
 export interface DataStore {
@@ -42,6 +42,7 @@ export interface DataStore {
   searchObjects(
     name: string,
     author: string,
+    collection: string,
     length: string[],
     level: string[],
     standardOutcomeIDs: string[],
@@ -80,6 +81,7 @@ export interface DataStore {
     completedPart: CompletedPart;
   }): Promise<void>;
   deleteMultipartUploadStatus(params: { id: string }): Promise<void>;
+  addToCollection(learningObjectId: string, collection: string): Promise<void>;
   findSingleFile(params: {
     learningObjectId: string;
     fileId: string;
