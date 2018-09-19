@@ -24,7 +24,10 @@ import {
   MultipartFileUploadStatusUpdates,
   CompletedPart,
 } from '../interfaces/FileManager';
-import { LearningObjectLock, Restriction } from '@cyber4all/clark-entity/dist/learning-object';
+import {
+  LearningObjectLock,
+  Restriction,
+} from '@cyber4all/clark-entity/dist/learning-object';
 import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
 import { Material } from '@cyber4all/clark-entity/dist/learning-object';
 import { reportError } from './SentryConnector';
@@ -1560,10 +1563,7 @@ export class MongoDriver implements DataStore {
       // access learning object and update it's collection property
       await this.db
         .collection(COLLECTIONS.LearningObject.name)
-        .findOneAndUpdate(
-          { _id: learningObjectId },
-          { $set: { collection } },
-        );
+        .findOneAndUpdate({ _id: learningObjectId }, { $set: { collection } });
     } catch (e) {
       return Promise.reject(e);
     }
@@ -1611,8 +1611,8 @@ export class MongoDriver implements DataStore {
         outcomes: [],
         materials: object.materials,
         published: object.published,
-        contributors: object.contributors,
-        collection: object.collection
+        contributors: contributorIds,
+        collection: object.collection,
       };
       if (isNew) {
         doc._id = new ObjectID().toHexString();
@@ -1729,9 +1729,8 @@ export class MongoDriver implements DataStore {
     learningObject.materials = <Material>record.materials;
     record.published ? learningObject.publish() : learningObject.unpublish();
     learningObject.children = record.children;
-    learningObject.lock = record['lock'];
-    learningObject.contributors = record['contributors'];
-    learningObject.collection = record['collection'];
+    learningObject.lock = record.lock;
+    learningObject.collection = record.collection;
     for (const goal of record.goals) {
       learningObject.addGoal(goal.text);
     }
