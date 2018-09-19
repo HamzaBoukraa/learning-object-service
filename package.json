@@ -24,7 +24,7 @@
   "homepage": "https://github.com/Cyber4All/learning-object-service#readme",
   "dependencies": {
     "@cyber4all/clark-entity": "^3.1.0",
-    "@cyber4all/clark-schema": "^1.0.2",
+    "@cyber4all/clark-schema": "^1.1.0",
     "@cyber4all/clark-taxonomy": "2.0.2",
     "@cyber4all/clark-tooltip": "^0.6.1",
     "@types/pdfkit": "^0.7.36",
