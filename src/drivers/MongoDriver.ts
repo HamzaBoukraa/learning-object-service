@@ -1334,30 +1334,6 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Get all learning object ids from a specified collection
-   *
-   * @private
-   * @param {string} collection
-   * @returns
-   * @memberof MongoDriver
-   */
-  private async getCollectionIds(collection: string): Promise<string[]> {
-    try {
-      const collectionLearningObjectIds = await this.db
-        .collection(COLLECTIONS.LearningObjectCollection.name)
-        .aggregate([
-          { $match: { name: collection } },
-          { $project: { learningObjects: 1 } },
-        ])
-        .toArray();
-      return collectionLearningObjectIds[0]['learningObjects'];
-    } catch (e) {
-      console.log(e);
-      return Promise.reject(e);
-    }
-  }
-
-  /**
    * Builds Learning Object Query based on Text
    *
    * @private
