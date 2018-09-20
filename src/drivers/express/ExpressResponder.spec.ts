@@ -1,5 +1,5 @@
 import { ExpressResponder } from '../drivers';
-import { MockExpressResponse } from '../../tests/MockExpressResponse';
+import { MockExpressResponse } from '../../tests/mock-drivers/express/MockExpressResponse';
 import { Response } from 'express';
 import { LearningObject } from '@cyber4all/clark-entity';
 
@@ -35,5 +35,4 @@ describe('ExpressResponder', () => {
       responder.sendObject(learningObject);
     });
   });
-
 });
