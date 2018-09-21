@@ -11,6 +11,12 @@ import * as fs from 'fs';
 import * as loki from 'lokijs';
 import * as uuid from 'uuid';
 
+const COLLECTIONS = {
+  LEARNING_OBJECTS: 'objects',
+  COLLECTIONS: 'collections',
+  MULTIPART_UPLOAD_STATUSES: 'multipart-upload-statuses',
+};
+
 export class MockDataStore implements DataStore {
   private db: loki;
   connect(file: string): Promise<void> {
@@ -31,39 +37,74 @@ export class MockDataStore implements DataStore {
   insertLearningObject(object: LearningObject): Promise<string> {
     const id = uuid();
     object._id = id;
+    this.db.getCollection(COLLECTIONS.LEARNING_OBJECTS).insert(object);
     return Promise.resolve(id);
   }
-  reorderOutcome(
-    objectID: string,
-    outcomeID: string,
-    index: number,
-  ): Promise<void> {
+  reorderOutcome(id: string, outcomeID: string, index: number): Promise<void> {
     throw new Error('Method not implemented.');
   }
   editLearningObject(id: string, object: LearningObject): Promise<void> {
-    throw new Error('Method not implemented.');
+    this.db
+      .getCollection(COLLECTIONS.LEARNING_OBJECTS)
+      .findAndUpdate({ _id: id }, obj => object);
+    return Promise.resolve();
   }
   toggleLock(id: string, lock?: LearningObjectLock): Promise<void> {
-    throw new Error('Method not implemented.');
+    this.db
+      .getCollection(COLLECTIONS.LEARNING_OBJECTS)
+      .findAndUpdate({ _id: id }, (obj: LearningObject) => {
+        if (lock) {
+          obj.unpublish();
+          obj.lock = lock;
+        } else {
+          obj.lock = undefined;
+        }
+        return obj;
+      });
+    return Promise.resolve();
   }
   deleteLearningObject(id: string): Promise<void> {
-    throw new Error('Method not implemented.');
+    this.db
+      .getCollection(COLLECTIONS.LEARNING_OBJECTS)
+      .findAndRemove({ _id: id });
+    return Promise.resolve();
   }
   deleteMultipleLearningObjects(ids: string[]): Promise<void> {
-    throw new Error('Method not implemented.');
+    this.db
+      .getCollection(COLLECTIONS.LEARNING_OBJECTS)
+      .findAndRemove({ $in: ids });
+    return Promise.resolve();
   }
   getUserObjects(username: string): Promise<string[]> {
-    throw new Error('Method not implemented.');
+    const objects: string[] = this.db
+      .getCollection(COLLECTIONS.LEARNING_OBJECTS)
+      .find({ '_author._username': username })
+      .map<string>(obj => obj._id);
+    return Promise.resolve(objects);
   }
   findLearningObject(username: string, name: string): Promise<string> {
-    throw new Error('Method not implemented.');
+    const id: string = this.db
+      .getCollection(COLLECTIONS.LEARNING_OBJECTS)
+      .findOne({ name, '_author._username': username })._id;
+    return Promise.resolve(id);
   }
   fetchLearningObject(
     id: string,
     full?: boolean,
     accessUnpublished?: boolean,
   ): Promise<LearningObject> {
-    throw new Error('Method not implemented.');
+    const query: any = { _id: id };
+    if (!accessUnpublished) {
+      query._published = true;
+    }
+    let obj = this.db
+      .getCollection(COLLECTIONS.LEARNING_OBJECTS)
+      .findOne(query);
+    if (obj) {
+      obj = LearningObject.instantiate(obj);
+    }
+
+    return Promise.resolve(obj);
   }
   fetchMultipleObjects(
     ids: string[],
@@ -72,14 +113,30 @@ export class MockDataStore implements DataStore {
     orderBy?: string,
     sortType?: number,
   ): Promise<LearningObject[]> {
-    throw new Error('Method not implemented.');
+    const query: any = { $in: ids };
+    if (!accessUnpublished) {
+      query._published = true;
+    }
+    let objs = this.db.getCollection(COLLECTIONS.LEARNING_OBJECTS).find(query);
+    if (objs && objs.length) {
+      objs = objs.map(o => LearningObject.instantiate(o));
+    }
+    return Promise.resolve(objs);
   }
   fetchAllObjects(
     accessUnpublished?: boolean,
     page?: number,
     limit?: number,
   ): Promise<{ objects: LearningObject[]; total: number }> {
-    throw new Error('Method not implemented.');
+    const query: any = {};
+    if (!accessUnpublished) {
+      query._published = true;
+    }
+    let objs = this.db.getCollection(COLLECTIONS.LEARNING_OBJECTS).find(query);
+    if (objs && objs.length) {
+      objs = objs.map(o => LearningObject.instantiate(o));
+    }
+    return Promise.resolve({ objects: objs, total: objs.length });
   }
   searchObjects(
     name: string,
@@ -95,37 +152,99 @@ export class MockDataStore implements DataStore {
     page?: number,
     limit?: number,
   ): Promise<{ objects: LearningObject[]; total: number }> {
-    throw new Error('Method not implemented.');
+    const query: any = {};
+    if (name) {
+      query._name = name;
+    }
+    if (author) {
+      query._author._username = author;
+    }
+    if (collection) {
+      query._collection = collection;
+    }
+    if (length) {
+      query._length = length;
+    }
+    if (level) {
+      query._levels = level;
+    }
+    if (!accessUnpublished) {
+      query._published = true;
+    }
+    let objs = this.db.getCollection(COLLECTIONS.LEARNING_OBJECTS).find(query);
+    if (objs && objs.length) {
+      objs = objs.map(o => LearningObject.instantiate(o));
+    }
+    return Promise.resolve({ objects: objs, total: objs.length });
   }
   fetchCollections(loadObjects?: boolean): Promise<Collection[]> {
-    throw new Error('Method not implemented.');
+    const collections = this.db.getCollection(COLLECTIONS.COLLECTIONS).find();
+    return Promise.resolve(collections);
   }
   fetchCollection(name: string): Promise<Collection> {
-    throw new Error('Method not implemented.');
+    const collection = this.db
+      .getCollection(COLLECTIONS.COLLECTIONS)
+      .findOne({ name });
+    return Promise.resolve(collection);
   }
   fetchCollectionMeta(name: string): Promise<any> {
-    throw new Error('Method not implemented.');
+    const collection = this.db
+      .getCollection(COLLECTIONS.COLLECTIONS)
+      .findOne({ name });
+    delete collection.learningObjects;
+    return Promise.resolve(collection);
   }
   fetchCollectionObjects(name: string): Promise<LearningObject[]> {
-    throw new Error('Method not implemented.');
+    const collection = this.db
+      .getCollection(COLLECTIONS.COLLECTIONS)
+      .findOne({ name });
+    const ids = collection.learningObjects;
+    return this.fetchMultipleObjects(ids);
   }
   togglePublished(
     username: string,
     id: string,
     published: boolean,
   ): Promise<void> {
-    throw new Error('Method not implemented.');
+    this.db
+      .getCollection(COLLECTIONS.LEARNING_OBJECTS)
+      .findAndUpdate({ _id: id }, (obj: LearningObject) => {
+        if (published) {
+          obj.publish();
+        } else {
+          obj.unpublish();
+        }
+        return obj;
+      });
+    return Promise.resolve();
   }
   setChildren(parentId: string, children: string[]): Promise<void> {
-    throw new Error('Method not implemented.');
+    this.db
+      .getCollection(COLLECTIONS.LEARNING_OBJECTS)
+      .findAndUpdate({ _id: parentId }, obj => {
+        obj._children = [...obj._children, ...children];
+        return obj;
+      });
+    return Promise.resolve();
   }
   deleteChild(parentId: string, childId: string): Promise<void> {
-    throw new Error('Method not implemented.');
+    this.db
+      .getCollection(COLLECTIONS.LEARNING_OBJECTS)
+      .findAndUpdate({ _id: parentId }, obj => {
+        const index = obj._children.indexOf(childId);
+        obj._children.splice(index, 1);
+        return obj;
+      });
+    return Promise.resolve();
   }
   findParentObjects(params: {
     query: LearningObjectQuery;
   }): Promise<LearningObject[]> {
-    throw new Error('Method not implemented.');
+    let objects = this.db
+      .getCollection(COLLECTIONS.LEARNING_OBJECTS)
+      .find({ _children: params.query.id });
+    objects = objects.map(obj => LearningObject.instantiate(obj));
+    return Promise.resolve(objects);
   }
   addToFiles(params: {
     id: string;
@@ -154,7 +273,13 @@ export class MockDataStore implements DataStore {
     throw new Error('Method not implemented.');
   }
   addToCollection(learningObjectId: string, collection: string): Promise<void> {
-    throw new Error('Method not implemented.');
+    this.db
+      .getCollection(COLLECTIONS.LEARNING_OBJECTS)
+      .findAndUpdate({ _id: learningObjectId }, obj => {
+        obj._collection = collection;
+        return obj;
+      });
+    return Promise.resolve();
   }
   findSingleFile(params: {
     learningObjectId: string;
