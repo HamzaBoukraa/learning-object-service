@@ -27,9 +27,9 @@ import {
 import {
   LearningObjectLock,
   Restriction,
+  Material
 } from '@cyber4all/clark-entity/dist/learning-object';
 import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
-import { Material } from '@cyber4all/clark-entity/dist/learning-object';
 import { reportError } from './SentryConnector';
 import * as ObjectMapper from './Mongo/ObjectMapper';
 import { SubmissionDatastore } from './LearningObjectSubmission/SubmissionDatastore';
@@ -1237,7 +1237,7 @@ export class MongoDriver implements DataStore {
     }
     if (released) {
       // Check that the learning object does not have a download restriction
-      query['lock.restrictions'] = { $nin: ['download']};
+      query['lock.restrictions'] = { $nin: [Restriction.DOWNLOAD]};
     }
     // Search By Text
     if (text || text === '') {
