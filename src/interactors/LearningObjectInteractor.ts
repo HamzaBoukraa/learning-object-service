@@ -1063,6 +1063,7 @@ export class LearningObjectInteractor {
     sortType?: number,
     currPage?: number,
     limit?: number,
+    released?: boolean
   ): Promise<{ total: number; objects: LearningObject[] }> {
     try {
       if (text) {
@@ -1085,6 +1086,7 @@ export class LearningObjectInteractor {
         sortType,
         currPage,
         limit,
+        released
       );
 
       response.objects = await Promise.all(
