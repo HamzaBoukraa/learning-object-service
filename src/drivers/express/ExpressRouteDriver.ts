@@ -50,6 +50,7 @@ export class ExpressRouteDriver {
           standardOutcomes && !Array.isArray(standardOutcomes)
             ? [standardOutcomes]
             : standardOutcomes;
+        const released = req.query.released;
 
         // For broad searching | Search all fields to match inputed text
         const text = req.query.text;
@@ -69,7 +70,8 @@ export class ExpressRouteDriver {
           standardOutcomes ||
           text ||
           orderBy ||
-          sortType
+          sortType ||
+          released
         ) {
           learningObjects = await LearningObjectInteractor.searchObjects(
             this.dataStore,
@@ -85,6 +87,7 @@ export class ExpressRouteDriver {
             sortType,
             currPage,
             limit,
+            released
           );
         } else {
           learningObjects = await LearningObjectInteractor.fetchAllObjects(
