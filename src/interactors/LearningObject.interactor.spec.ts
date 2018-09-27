@@ -1,15 +1,22 @@
 import { LearningObjectInteractor, AdminLearningObjectInteractor } from '../interactors/interactors';
 import { expect } from 'chai';
-import { LearningObject } from '@cyber4all/clark-entity';
 import { MockDataStore } from '../tests/mock-drivers/MockDataStore';
 import { MockS3Driver } from '../tests/mock-drivers/MockS3Driver';
+import { MockLibraryDriver } from '../tests/mock-drivers/MockLibraryDriver';
 import { MOCK_OBJECTS } from '../tests/mocks';
-const driver = new MockDataStore; // DataStore
-const fileManager = new MockS3Driver(); // FileManager
+import { DataStore } from '../interfaces/DataStore';
+import { FileManager, LibraryCommunicator } from '../interfaces/interfaces';
+const driver: DataStore = new MockDataStore; // DataStore
+const fileManager: FileManager = new MockS3Driver(); // FileManager
+const library: LibraryCommunicator = new MockLibraryDriver();
 
 describe('loadLearningObjectSummary', () => {
   it('should load learning object summary', done => {
-    return LearningObjectInteractor.loadLearningObjectSummary(driver, MOCK_OBJECTS.USERNAME).then(val => {
+    return LearningObjectInteractor.loadLearningObjectSummary(
+      driver,
+      library,
+      MOCK_OBJECTS.USERNAME,
+    ).then(val => {
       expect(val).to.be.an('array');
       done();
     }).catch((error) => {
@@ -18,7 +25,11 @@ describe('loadLearningObjectSummary', () => {
     });
   });
   it('should return error - empty username given!', done => {
-    return LearningObjectInteractor.loadLearningObjectSummary(driver, MOCK_OBJECTS.EMPTY_STRING).then(val => {
+    return LearningObjectInteractor.loadLearningObjectSummary(
+      driver,
+      library,
+      MOCK_OBJECTS.EMPTY_STRING,
+    ).then(val => {
       expect.fail();
       done();
     }).catch((error) => {
@@ -30,7 +41,12 @@ describe('loadLearningObjectSummary', () => {
 
 describe('loadLearningObject', () => {
   it('should load learning object', done => {
-    return LearningObjectInteractor.loadLearningObject(driver, MOCK_OBJECTS.USERNAME, MOCK_OBJECTS.LEARNING_OBJECT_NAME).then(val => {
+    return LearningObjectInteractor.loadLearningObject(
+      driver,
+      library,
+      MOCK_OBJECTS.USERNAME,
+      MOCK_OBJECTS.LEARNING_OBJECT_NAME,
+    ).then(val => {
       console.log(val);
       expect(val).to.be.an('object');
       done();
@@ -41,7 +57,12 @@ describe('loadLearningObject', () => {
     });
   });
   it('should return error - requesting unpublished object', done => {
-    return LearningObjectInteractor.loadLearningObject(driver, MOCK_OBJECTS.USERNAME, MOCK_OBJECTS.LEARNING_OBJECT_NAME).then(val => {
+    return LearningObjectInteractor.loadLearningObject(
+      driver,
+      library,
+      MOCK_OBJECTS.USERNAME,
+      MOCK_OBJECTS.LEARNING_OBJECT_NAME,
+    ).then(val => {
       expect.fail();
       done();
     }).catch((error) => {
@@ -50,7 +71,12 @@ describe('loadLearningObject', () => {
     });
   });
   it('should return error - incorrect user', done => {
-    return LearningObjectInteractor.loadLearningObject(driver, MOCK_OBJECTS.EMPTY_STRING, MOCK_OBJECTS.LEARNING_OBJECT_NAME).then(val => {
+    return LearningObjectInteractor.loadLearningObject(
+      driver,
+      library,
+      MOCK_OBJECTS.EMPTY_STRING,
+      MOCK_OBJECTS.LEARNING_OBJECT_NAME,
+    ).then(val => {
       expect.fail();
       done();
     }).catch((error) => {
@@ -62,7 +88,11 @@ describe('loadLearningObject', () => {
 
 describe('loadFullLearningObjectByIDs', () => {
   it('should load full learning object', done => {
-    return LearningObjectInteractor.loadFullLearningObjectByIDs(driver, [MOCK_OBJECTS.LEARNING_OBJECT_ID]).then(val => {
+    return LearningObjectInteractor.loadFullLearningObjectByIDs(
+      driver,
+      library,
+      [MOCK_OBJECTS.LEARNING_OBJECT_ID],
+    ).then(val => {
       expect(val).to.be.an('array');
       done();
     }).catch((error) => {
@@ -71,7 +101,11 @@ describe('loadFullLearningObjectByIDs', () => {
     });
   });
   it('should return learning object - given empty array!', done => {
-    return LearningObjectInteractor.loadFullLearningObjectByIDs(driver, [MOCK_OBJECTS.EMPTY_STRING]).then(val => {
+    return LearningObjectInteractor.loadFullLearningObjectByIDs(
+      driver,
+      library,
+      [MOCK_OBJECTS.EMPTY_STRING],
+    ).then(val => {
       expect(val).to.be.an('array');
       done();
     }).catch((error) => {
@@ -112,10 +146,18 @@ describe('loadFullLearningObjectByIDs', () => {
 
 describe('addLearningObject', () => {
   it('should return an error - we are trying to publish an object that already exists!', done => {
-    const username = 'nvisal1';
-    const learningObjectName = 'testing more contributors';
-    LearningObjectInteractor.loadLearningObject(driver, username, learningObjectName).then(val => {
-      return LearningObjectInteractor.addLearningObject(driver, fileManager, val).then(val => {
+    LearningObjectInteractor.loadLearningObject(
+      driver,
+      library,
+      MOCK_OBJECTS.USERNAME,
+      MOCK_OBJECTS.LEARNING_OBJECT_NAME,
+    ).then(val => {
+      return LearningObjectInteractor.addLearningObject(
+        driver,
+        fileManager,
+        val,
+      // tslint:disable-next-line:no-shadowed-variable
+      ).then(val => {
         console.log(val);
         expect.fail();
         done();
@@ -149,7 +191,11 @@ describe('addLearningObject', () => {
 
 describe('findLearningObject', () => {
   it('should find a learning object ID', done => {
-    return LearningObjectInteractor.findLearningObject(driver, MOCK_OBJECTS.USERNAME, MOCK_OBJECTS.LEARNING_OBJECT_NAME).then(val => {
+    return LearningObjectInteractor.findLearningObject(
+      driver,
+      MOCK_OBJECTS.USERNAME,
+      MOCK_OBJECTS.LEARNING_OBJECT_NAME,
+    ).then(val => {
       expect(val).to.be.a('string');
       done();
     }).catch((error) => {
@@ -158,7 +204,11 @@ describe('findLearningObject', () => {
     });
   });
   it('should return an error - invalid username provided!', done => {
-    return LearningObjectInteractor.findLearningObject(driver, MOCK_OBJECTS.EMPTY_STRING, MOCK_OBJECTS.LEARNING_OBJECT_NAME).then(val => {
+    return LearningObjectInteractor.findLearningObject(
+      driver,
+      MOCK_OBJECTS.EMPTY_STRING,
+      MOCK_OBJECTS.LEARNING_OBJECT_NAME,
+    ).then(val => {
       expect.fail();
       done();
     }).catch((error) => {
@@ -167,7 +217,11 @@ describe('findLearningObject', () => {
     });
   });
   it('should return an error - invalid lo name provided!', done => {
-    return LearningObjectInteractor.findLearningObject(driver, MOCK_OBJECTS.USERNAME, MOCK_OBJECTS.LEARNING_OBJECT_NAME).then(val => {
+    return LearningObjectInteractor.findLearningObject(
+      driver,
+      MOCK_OBJECTS.USERNAME,
+      MOCK_OBJECTS.LEARNING_OBJECT_NAME,
+    ).then(val => {
       expect.fail();
       done();
     }).catch((error) => {
@@ -179,8 +233,19 @@ describe('findLearningObject', () => {
 
 describe('updateLearningObject', () => {
   it('should return an object - undefined because no changes were made', done => {
-    LearningObjectInteractor.loadLearningObject(driver, MOCK_OBJECTS.USERNAME, MOCK_OBJECTS.LEARNING_OBJECT_NAME).then(val => {
-      return LearningObjectInteractor.updateLearningObject(driver, fileManager, MOCK_OBJECTS.LEARNING_OBJECT_ID, val).then(val => {
+    LearningObjectInteractor.loadLearningObject(
+      driver,
+      library,
+      MOCK_OBJECTS.USERNAME,
+      MOCK_OBJECTS.LEARNING_OBJECT_NAME,
+    ).then(val => {
+      return LearningObjectInteractor.updateLearningObject(
+        driver,
+        fileManager,
+        MOCK_OBJECTS.LEARNING_OBJECT_ID,
+        val,
+      // tslint:disable-next-line:no-shadowed-variable
+      ).then(val => {
         expect(val).to.be.an('undefined');
         done();
       }).catch ((error) => {
@@ -196,7 +261,12 @@ describe('updateLearningObject', () => {
 
 describe('togglePublished', () => {
   it('should return error', done => {
-    return LearningObjectInteractor.togglePublished(driver, MOCK_OBJECTS.USERNAME, MOCK_OBJECTS.EMPTY_STRING, true).then(val => {
+    return LearningObjectInteractor.togglePublished(
+      driver,
+      MOCK_OBJECTS.USERNAME,
+      MOCK_OBJECTS.EMPTY_STRING,
+      true,
+    ).then(val => {
       expect.fail();
       done();
     }).catch((error) => {
@@ -208,7 +278,12 @@ describe('togglePublished', () => {
 
 describe('fetchAllObjects', () => {
   it('should fetch all objects', done => {
-    return LearningObjectInteractor.fetchAllObjects(driver, MOCK_OBJECTS.CURR_PAGE, MOCK_OBJECTS.LIMIT).then(val => {
+    return LearningObjectInteractor.fetchAllObjects(
+      driver,
+      library,
+      MOCK_OBJECTS.CURR_PAGE,
+      MOCK_OBJECTS.LIMIT,
+    ).then(val => {
       expect(val).to.be.an('object');
       done();
     }).catch((error) => {
@@ -220,7 +295,12 @@ describe('fetchAllObjects', () => {
   it('should return error - invalid currPage provided!', done => {
     let currPage;
     const limit = 3;
-    return LearningObjectInteractor.fetchAllObjects(driver, currPage, limit).then(val => {
+    return LearningObjectInteractor.fetchAllObjects(
+      driver,
+      library,
+      currPage,
+      limit,
+    ).then(val => {
       expect.fail();
       done();
     }).catch((error) => {
@@ -230,7 +310,12 @@ describe('fetchAllObjects', () => {
   });
 
   it('should return error - invalid limit provided!', done => {
-    return LearningObjectInteractor.fetchAllObjects(driver, MOCK_OBJECTS.CURR_PAGE, MOCK_OBJECTS.NaN).then(val => {
+    return LearningObjectInteractor.fetchAllObjects(
+      driver,
+      library,
+      MOCK_OBJECTS.CURR_PAGE,
+      MOCK_OBJECTS.NaN,
+    ).then(val => {
       expect.fail();
       done();
     }).catch((error) => {
@@ -242,8 +327,17 @@ describe('fetchAllObjects', () => {
 
 describe('fetchMultipleObjects', () => {
   it('should return an array of objects - based on given username and lo name', done => {
-    const ids = [{username: MOCK_OBJECTS.USERNAME, learningObjectName: MOCK_OBJECTS.LEARNING_OBJECT_NAME}];
-    return LearningObjectInteractor.fetchMultipleObjects(driver, ids).then(val => {
+    const object = [
+      {
+        username: MOCK_OBJECTS.USERNAME,
+        learningObjectName: MOCK_OBJECTS.LEARNING_OBJECT_NAME,
+      },
+    ];
+    return LearningObjectInteractor.fetchMultipleObjects(
+      driver,
+      library,
+      object,
+    ).then(val => {
       expect(val).to.be.an('array');
       done();
     }).catch((error) => {
@@ -255,7 +349,11 @@ describe('fetchMultipleObjects', () => {
 
 describe('fetchObjectsByIDs', () => {
   it('should return an array of objects - based on given IDs', done => {
-    return LearningObjectInteractor.fetchObjectsByIDs(driver, [MOCK_OBJECTS.LEARNING_OBJECT_ID]).then(val => {
+    return LearningObjectInteractor.fetchObjectsByIDs(
+      driver,
+      library,
+      [MOCK_OBJECTS.LEARNING_OBJECT_ID],
+    ).then(val => {
       expect(val).to.be.an('array');
       done();
     }).catch((error) => {
@@ -412,7 +510,10 @@ describe('fetchCollections', () => {
 
 describe('fetchCollection', () => {
   it('should return an object - contains an array of learning objects ', done => {
-    return LearningObjectInteractor.fetchCollection(driver, MOCK_OBJECTS.COLLECTION_NAME).then(val => {
+    return LearningObjectInteractor.fetchCollection(
+      driver,
+      MOCK_OBJECTS.COLLECTION_NAME,
+    ).then(val => {
       expect(val).to.be.an('object');
       done();
     }).catch((error) => {
@@ -422,7 +523,10 @@ describe('fetchCollection', () => {
   });
 
   it('should return an error - invalid collection name', done => {
-    return LearningObjectInteractor.fetchCollection(driver, MOCK_OBJECTS.EMPTY_STRING).then(val => {
+    return LearningObjectInteractor.fetchCollection(
+      driver,
+      MOCK_OBJECTS.EMPTY_STRING,
+    ).then(val => {
       expect.fail();
       done();
     }).catch((error) => {

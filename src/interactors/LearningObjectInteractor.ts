@@ -17,7 +17,6 @@ import {
   Metrics,
   LearningObjectPDF,
 } from '@cyber4all/clark-entity/dist/learning-object';
-import { LibraryDriver } from '../drivers/LibraryDriver';
 import { File } from '@cyber4all/clark-entity/dist/learning-object';
 import {
   MultipartFileUpload,
@@ -87,6 +86,7 @@ export class LearningObjectInteractor {
    */
   public static async loadLearningObjectSummary(
     dataStore: DataStore,
+    library: LibraryCommunicator,
     username: string,
     accessUnpublished?: boolean,
     loadChildren?: boolean,
@@ -137,6 +137,7 @@ export class LearningObjectInteractor {
             if (object.children && object.children.length) {
               object.children = await this.loadChildObjects(
                 dataStore,
+                library,
                 object,
                 false,
                 accessUnpublished,
@@ -150,7 +151,7 @@ export class LearningObjectInteractor {
       summary = await Promise.all(
         summary.map(async object => {
           try {
-            object.metrics = await this.loadMetrics(object.id);
+            object.metrics = await this.loadMetrics(library, object.id);
             return object;
           } catch (e) {
             console.log(e);
@@ -176,6 +177,7 @@ export class LearningObjectInteractor {
    */
   public static async loadLearningObject(
     dataStore: DataStore,
+    library: LibraryCommunicator,
     username: string,
     learningObjectName: string,
     accessUnpublished?: boolean,
@@ -196,6 +198,7 @@ export class LearningObjectInteractor {
       if (learningObject.children) {
         learningObject.children = await this.loadChildObjects(
           dataStore,
+          library,
           learningObject,
           fullChildren,
           accessUnpublished,
@@ -203,7 +206,7 @@ export class LearningObjectInteractor {
       }
 
       try {
-        learningObject.metrics = await this.loadMetrics(learningObjectID);
+        learningObject.metrics = await this.loadMetrics(library, learningObjectID);
       } catch (e) {
         console.log(e);
       }
@@ -215,6 +218,7 @@ export class LearningObjectInteractor {
 
   private static async loadChildObjects(
     dataStore: DataStore,
+    library: LibraryCommunicator,
     learningObject: LearningObject,
     full?: boolean,
     accessUnpublished?: boolean,
@@ -229,7 +233,7 @@ export class LearningObjectInteractor {
       children = await Promise.all(
         children.map(async object => {
           try {
-            object.metrics = await this.loadMetrics(object.id);
+            object.metrics = await this.loadMetrics(library, object.id);
             return object;
           } catch (e) {
             console.log(e);
@@ -241,6 +245,7 @@ export class LearningObjectInteractor {
       for (let child of children) {
         child.children = await this.loadChildObjects(
           dataStore,
+          library,
           child,
           full,
           accessUnpublished,
@@ -269,6 +274,7 @@ export class LearningObjectInteractor {
 
   public static async loadFullLearningObjectByIDs(
     dataStore: DataStore,
+    library: LibraryCommunicator,
     ids: string[],
   ): Promise<LearningObject[]> {
     try {
@@ -277,10 +283,11 @@ export class LearningObjectInteractor {
       learningObjects = await Promise.all(
         learningObjects.map(async object => {
           try {
-            object.metrics = await this.loadMetrics(object.id);
+            object.metrics = await this.loadMetrics(library, object.id);
             if (object.children && object.children.length) {
               object.children = await this.loadChildObjects(
                 dataStore,
+                library,
                 object,
                 false,
                 false,
@@ -977,6 +984,7 @@ export class LearningObjectInteractor {
    */
   public static async fetchMultipleObjects(
     dataStore: DataStore,
+    library: LibraryCommunicator,
     ids: { username: string; learningObjectName: string }[],
   ): Promise<LearningObject[]> {
     try {
@@ -1003,7 +1011,7 @@ export class LearningObjectInteractor {
       learningObjects = await Promise.all(
         learningObjects.map(async object => {
           try {
-            object.metrics = await this.loadMetrics(object.id);
+            object.metrics = await this.loadMetrics(library, object.id);
             return object;
           } catch (e) {
             console.log(e);
@@ -1021,6 +1029,7 @@ export class LearningObjectInteractor {
 
   public static async fetchObjectsByIDs(
     dataStore: DataStore,
+    library: LibraryCommunicator,
     ids: string[],
   ): Promise<LearningObject[]> {
     try {
@@ -1033,7 +1042,7 @@ export class LearningObjectInteractor {
       learningObjects = await Promise.all(
         learningObjects.map(async object => {
           try {
-            object.metrics = await this.loadMetrics(object.id);
+            object.metrics = await this.loadMetrics(library, object.id);
             return object;
           } catch (e) {
             console.log(e);
@@ -1062,6 +1071,7 @@ export class LearningObjectInteractor {
    */
   public static async searchObjects(
     dataStore: DataStore,
+    library: LibraryCommunicator,
     name: string,
     author: string,
     collection: string,
@@ -1101,7 +1111,7 @@ export class LearningObjectInteractor {
       response.objects = await Promise.all(
         response.objects.map(async object => {
           try {
-            object.metrics = await this.loadMetrics(object.id);
+            object.metrics = await this.loadMetrics(library, object.id);
             return object;
           } catch (e) {
             console.log(e);
@@ -1225,7 +1235,7 @@ export class LearningObjectInteractor {
     objectID: string,
   ): Promise<Metrics> {
     try {
-      return await library.getMetrics(objectID);
+      return library.getMetrics(objectID);
     } catch (e) {
       return Promise.reject(e);
     }

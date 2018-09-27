@@ -1,5 +1,5 @@
 import { ExpressResponder } from '../drivers';
-import { DataStore, Responder, FileManager } from '../../interfaces/interfaces';
+import { DataStore, Responder, FileManager, LibraryCommunicator } from '../../interfaces/interfaces';
 import { Router, Response } from 'express';
 import { LearningObjectInteractor } from '../../interactors/interactors';
 import { LearningObject } from '@cyber4all/clark-entity';
@@ -11,13 +11,18 @@ import { reportError } from '../SentryConnector';
 export class ExpressAuthRouteDriver {
   private upload = multer({ storage: multer.memoryStorage() });
 
-  constructor(private dataStore: DataStore, private fileManager: FileManager) {}
+  constructor(
+    private dataStore: DataStore,
+    private fileManager: FileManager,
+    private library: LibraryCommunicator,
+  ) {}
 
   public static buildRouter(
     dataStore: DataStore,
     fileManager: FileManager,
+    library: LibraryCommunicator,
   ): Router {
-    const e = new ExpressAuthRouteDriver(dataStore, fileManager);
+    const e = new ExpressAuthRouteDriver(dataStore, fileManager, library);
     const router: Router = Router();
     e.setRoutes(router);
     return router;
@@ -316,6 +321,7 @@ export class ExpressAuthRouteDriver {
         await LearningObjectInteractor.deleteLearningObject(
           this.dataStore,
           this.fileManager,
+          this.library,
           req.user.username,
           learningObjectName,
         );
@@ -358,6 +364,7 @@ export class ExpressAuthRouteDriver {
           await LearningObjectInteractor.deleteMultipleLearningObjects(
             this.dataStore,
             this.fileManager,
+            this.library,
             req.user.username,
             learningObjectNames,
           );

@@ -1,5 +1,5 @@
 import { ExpressResponder } from '../drivers';
-import { DataStore, Responder } from '../../interfaces/interfaces';
+import { DataStore, Responder, LibraryCommunicator } from '../../interfaces/interfaces';
 import { Router, Response } from 'express';
 import { LearningObjectInteractor } from '../../interactors/interactors';
 import { LearningObject } from '@cyber4all/clark-entity';
@@ -10,10 +10,10 @@ import { LearningObjectQuery } from '../../interfaces/DataStore';
 const version = require('../../../package.json').version;
 
 export class ExpressRouteDriver {
-  constructor(private dataStore: DataStore) {}
+  constructor(private dataStore: DataStore, private library: LibraryCommunicator) {}
 
-  public static buildRouter(dataStore: DataStore): Router {
-    const e = new ExpressRouteDriver(dataStore);
+  public static buildRouter(dataStore: DataStore, library: LibraryCommunicator): Router {
+    const e = new ExpressRouteDriver(dataStore, library);
     const router: Router = Router();
     e.setRoutes(router);
     return router;
@@ -73,6 +73,7 @@ export class ExpressRouteDriver {
         ) {
           learningObjects = await LearningObjectInteractor.searchObjects(
             this.dataStore,
+            this.library,
             name,
             author,
             collection,
@@ -89,6 +90,7 @@ export class ExpressRouteDriver {
         } else {
           learningObjects = await LearningObjectInteractor.fetchAllObjects(
             this.dataStore,
+            this.library,
             currPage,
             limit,
           );
@@ -127,6 +129,7 @@ export class ExpressRouteDriver {
           }
           const object = await LearningObjectInteractor.loadLearningObject(
             this.dataStore,
+            this.library,
             username,
             req.params.learningObjectName,
             accessUnpublished,
@@ -212,6 +215,7 @@ export class ExpressRouteDriver {
       try {
         const objects = await LearningObjectInteractor.loadLearningObjectSummary(
           this.dataStore,
+          this.library,
           req.params.username,
           false,
         );
