@@ -1,5 +1,13 @@
-import { DataStore, FileManager, Responder } from '../interfaces/interfaces';
-import { LearningObject, LearningOutcome } from '@cyber4all/clark-entity';
+import {
+  DataStore,
+  FileManager,
+  Responder,
+  LibraryCommunicator,
+} from '../interfaces/interfaces';
+import {
+  LearningObject,
+  LearningOutcome,
+} from '@cyber4all/clark-entity';
 import * as PDFKit from 'pdfkit';
 import * as stopword from 'stopword';
 import * as striptags from 'striptags';
@@ -9,7 +17,7 @@ import {
   Metrics,
   LearningObjectPDF,
 } from '@cyber4all/clark-entity/dist/learning-object';
-import { LibraryInteractor } from './LibraryInteractor';
+import { LibraryDriver } from '../drivers/LibraryDriver';
 import { File } from '@cyber4all/clark-entity/dist/learning-object';
 import {
   MultipartFileUpload,
@@ -869,6 +877,7 @@ export class LearningObjectInteractor {
   public static async deleteLearningObject(
     dataStore: DataStore,
     fileManager: FileManager,
+    library: LibraryCommunicator,
     username: string,
     learningObjectName: string,
   ): Promise<void> {
@@ -887,7 +896,7 @@ export class LearningObjectInteractor {
         const path = `${username}/${learningObjectID}/`;
         await fileManager.deleteAll({ path });
       }
-      LibraryInteractor.cleanObjectsFromLibraries([learningObjectID]);
+      await library.cleanObjectsFromLibraries([learningObjectID]);
       return Promise.resolve();
     } catch (error) {
       return Promise.reject(
@@ -899,6 +908,7 @@ export class LearningObjectInteractor {
   public static async deleteMultipleLearningObjects(
     dataStore: DataStore,
     fileManager: FileManager,
+    library: LibraryCommunicator,
     username: string,
     learningObjectNames: string[],
   ): Promise<void> {
@@ -916,7 +926,7 @@ export class LearningObjectInteractor {
         const path = `${username}/${object.id}/`;
         await fileManager.deleteAll({ path });
       }
-      LibraryInteractor.cleanObjectsFromLibraries(learningObjectIDs);
+      await library.cleanObjectsFromLibraries(learningObjectIDs);
     } catch (error) {
       return Promise.reject(
         `Problem deleting Learning Objects. Error: ${error}`,
@@ -930,6 +940,7 @@ export class LearningObjectInteractor {
    */
   public static async fetchAllObjects(
     dataStore: DataStore,
+    library: LibraryCommunicator,
     currPage: number,
     limit: number,
   ): Promise<{ objects: LearningObject[]; total: number }> {
@@ -943,7 +954,7 @@ export class LearningObjectInteractor {
       response.objects = await Promise.all(
         response.objects.map(async object => {
           try {
-            object.metrics = await this.loadMetrics(object.id);
+            object.metrics = await this.loadMetrics(library, object.id);
             return object;
           } catch (e) {
             console.log(e);
@@ -1209,9 +1220,12 @@ export class LearningObjectInteractor {
    * @returns {Promise<Metrics>}
    * @memberof LearningObjectInteractor
    */
-  private static async loadMetrics(objectID: string): Promise<Metrics> {
+  private static async loadMetrics(
+    library: LibraryCommunicator,
+    objectID: string,
+  ): Promise<Metrics> {
     try {
-      return LibraryInteractor.getMetrics(objectID);
+      return await library.getMetrics(objectID);
     } catch (e) {
       return Promise.reject(e);
     }
