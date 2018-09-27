@@ -692,7 +692,7 @@ export class MongoDriver implements DataStore {
       await this.db
         .collection(COLLECTIONS.LearningObject.name)
         .update(
-          { _id: id, lock: { $exists: false } },
+          { _id: id },
           { $set: { published: published } },
         );
       return Promise.resolve();
