@@ -185,6 +185,12 @@ export class MongoDriver implements DataStore {
       if (!author.emailVerified) {
         object.unpublish();
       }
+
+      object.lock = {
+        restrictions: [
+          Restriction.DOWNLOAD,
+        ],
+      };
       const doc = await this.documentLearningObject(object, true);
       const id = await this.insert(COLLECTIONS.LearningObject, doc);
 
@@ -276,7 +282,7 @@ export class MongoDriver implements DataStore {
       await this.db
         .collection<MultipartFileUploadStatus>(
           COLLECTIONS.MultipartUploadStatusCollection.name,
-        )
+        ) 
         .updateOne(
           { _id: params.id },
           {
@@ -1613,6 +1619,7 @@ export class MongoDriver implements DataStore {
         published: object.published,
         contributors: contributorIds,
         collection: object.collection,
+        lock: object.lock,
       };
       if (isNew) {
         doc._id = new ObjectID().toHexString();
