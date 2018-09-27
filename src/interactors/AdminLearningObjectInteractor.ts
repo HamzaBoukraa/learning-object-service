@@ -58,6 +58,7 @@ export class AdminLearningObjectInteractor {
         dataStore,
         name,
         author,
+        null,
         length,
         level,
         standardOutcomeIDs,

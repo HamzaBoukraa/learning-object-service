@@ -52,6 +52,7 @@ export interface DataStore {
     sortType?: number,
     page?: number,
     limit?: number,
+    released?: boolean,
   ): Promise<{ objects: LearningObject[]; total: number }>;
   fetchCollections(loadObjects?: boolean): Promise<Collection[]>;
   fetchCollection(name: string): Promise<Collection>;

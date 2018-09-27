@@ -119,6 +119,7 @@ export class ExpressAuthRouteDriver {
         );
         responder.sendOperationSuccess();
       } catch (e) {
+        console.error(e);
         responder.sendOperationError(e);
       }
     });

@@ -27,10 +27,12 @@ import {
 import {
   LearningObjectLock,
   Restriction,
+  Material
 } from '@cyber4all/clark-entity/dist/learning-object';
 import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
-import { Material } from '@cyber4all/clark-entity/dist/learning-object';
 import { reportError } from './SentryConnector';
+import * as ObjectMapper from './Mongo/ObjectMapper';
+import { SubmissionDatastore } from './LearningObjectSubmission/SubmissionDatastore';
 
 dotenv.config();
 
@@ -120,11 +122,15 @@ COLLECTIONS_MAP.set(
 );
 
 export class MongoDriver implements DataStore {
+  submissionStore: SubmissionDatastore;
+  togglePublished(username: string, id: string, published: boolean): Promise<void> {
+    return this.submissionStore.togglePublished(username, id, published);
+  }
   private mongoClient: MongoClient;
   private db: Db;
 
   constructor(dburi: string) {
-    this.connect(dburi);
+    this.connect(dburi).then(() => this.submissionStore = new SubmissionDatastore(this.db));
   }
 
   /**
@@ -663,44 +669,6 @@ export class MongoDriver implements DataStore {
     }
   }
 
-  public async togglePublished(
-    username: string,
-    id: string,
-    published: boolean,
-  ): Promise<void> {
-    try {
-      const userID = await this.findUser(username);
-      const user = await this.fetchUser(userID);
-      // check if user is verified and if user is attempting to publish. If not verified and attempting to publish reject
-      if (!user.emailVerified && published)
-        return Promise.reject(
-          `Invalid access. User must be verified to publish Learning Objects`,
-        );
-      // else
-      const object: { lock: LearningObjectLock } = await this.db
-        .collection(COLLECTIONS.LearningObject.name)
-        .findOne({ _id: id }, { _id: 0, lock: 1 });
-      if (
-        object.lock &&
-        (object.lock.restrictions.indexOf(Restriction.FULL) > -1 ||
-          object.lock.restrictions.indexOf(Restriction.PUBLISH) > -1)
-      ) {
-        return Promise.reject(
-          `Unable to publish. Learning Object locked by reviewer.`,
-        );
-      }
-      await this.db
-        .collection(COLLECTIONS.LearningObject.name)
-        .update(
-          { _id: id },
-          { $set: { published: published } },
-        );
-      return Promise.resolve();
-    } catch (e) {
-      return Promise.reject(e);
-    }
-  }
-
   /**
    * Edit a learning outcome.
    * @async
@@ -948,7 +916,7 @@ export class MongoDriver implements DataStore {
   async fetchUser(id: string): Promise<User> {
     try {
       const doc = await this.fetch<UserDocument>(COLLECTIONS.User, id);
-      const user = this.generateUser(doc);
+      const user = ObjectMapper.generateUser(doc);
       return user;
     } catch (e) {
       return Promise.reject(e);
@@ -1152,6 +1120,7 @@ export class MongoDriver implements DataStore {
     sortType?: 1 | -1,
     page?: number,
     limit?: number,
+    released?: boolean,
   ): Promise<{ objects: LearningObject[]; total: number }> {
     try {
       // Query for users
@@ -1180,6 +1149,7 @@ export class MongoDriver implements DataStore {
         name,
         collection,
         exactAuthor,
+        released
       );
 
       let objectCursor = await this.db
@@ -1265,10 +1235,15 @@ export class MongoDriver implements DataStore {
     name: string,
     collection: string,
     exactAuthor?: boolean,
+    released?: boolean,
   ) {
     let query: any = <any>{};
     if (!accessUnpublished) {
       query.published = true;
+    }
+    if (released) {
+      // Check that the learning object does not have a download restriction
+      query['lock.restrictions'] = { $nin: [Restriction.DOWNLOAD]};
     }
     // Search By Text
     if (text || text === '') {
@@ -1689,27 +1664,6 @@ export class MongoDriver implements DataStore {
         `Problem creating document for Learning Outcome. Error:${e}`,
       );
     }
-  }
-  /**
-   * Generates User object from Document
-   *
-   * @private
-   * @param {UserDocument} userRecord
-   * @returns {User}
-   * @memberof MongoDriver
-   */
-  private generateUser(userRecord: UserDocument): User {
-    const user = new User(
-      userRecord.username,
-      userRecord.name,
-      userRecord.email,
-      userRecord.organization,
-      null,
-    );
-    user.emailVerified = userRecord.emailVerified
-      ? userRecord.emailVerified
-      : false;
-    return user;
   }
 
   /**
