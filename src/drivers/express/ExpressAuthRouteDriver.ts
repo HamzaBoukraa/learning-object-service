@@ -4,7 +4,10 @@ import { Router, Response } from 'express';
 import { LearningObjectInteractor } from '../../interactors/interactors';
 import { LearningObject } from '@cyber4all/clark-entity';
 import * as multer from 'multer';
+import { DZFileMetadata, DZFile } from '../../interfaces/FileManager';
+import { enforceWhitelist } from '../../middleware/whitelist';
 
+import { reportError } from '../SentryConnector';
 export class ExpressAuthRouteDriver {
   private upload = multer({ storage: multer.memoryStorage() });
 
@@ -25,6 +28,29 @@ export class ExpressAuthRouteDriver {
   }
 
   private setRoutes(router: Router): void {
+    router.use((req, res, next) => {
+      // If the username in the cookie is not lowercase and error will be reported
+      // and the value adjusted to be lowercase
+      if (
+        !req.user.SERVICE_KEY &&
+        !(req.user.username === req.user.username.toLowerCase())
+      ) {
+        // This odd try/catch setup is so that we don't abort the current operation,
+        // but still have Sentry realize that an error was thrown.
+        try {
+          throw new Error(
+            `${
+              req.user.username
+            } was retrieved from the token. Should be lowercase`,
+          );
+        } catch (e) {
+          console.log(e.message);
+          reportError(e);
+        }
+        req.user.username = req.user.username.toLowerCase();
+      }
+      next();
+    });
     router
       .route('/learning-objects')
       .post(async (req, res) => {
@@ -35,6 +61,7 @@ export class ExpressAuthRouteDriver {
           object.author.username = username;
           const learningObject = await LearningObjectInteractor.addLearningObject(
             this.dataStore,
+            this.fileManager,
             object,
           );
           responder.sendObject(learningObject);
@@ -50,6 +77,7 @@ export class ExpressAuthRouteDriver {
           if (this.hasAccess(user, 'username', object.author.username)) {
             await LearningObjectInteractor.updateLearningObject(
               this.dataStore,
+              this.fileManager,
               object.id,
               object,
             );
@@ -91,6 +119,7 @@ export class ExpressAuthRouteDriver {
         );
         responder.sendOperationSuccess();
       } catch (e) {
+        console.error(e);
         responder.sendOperationError(e);
       }
     });
@@ -111,6 +140,23 @@ export class ExpressAuthRouteDriver {
         responder.sendOperationError(e);
       }
     });
+    router.patch('/learning-objects/:learningObjectId/collections', async (req, res) => {
+        const responder = this.getResponder(res);
+        const learningObjectId = req.params.learningObjectId;
+        const collection = req.body.collection;
+
+        try {
+          LearningObjectInteractor.addToCollection(
+            this.dataStore,
+            learningObjectId,
+            collection,
+          );
+          responder.sendOperationSuccess();
+        } catch (e) {
+          console.log(e);
+          responder.sendOperationError(e);
+        }
+      });
     router.get(
       '/learning-objects/:username/:learningObjectName/id',
       async (req, res) => {
@@ -134,32 +180,56 @@ export class ExpressAuthRouteDriver {
         }
       },
     );
-    router.post('/files', this.upload.any(), async (req, res) => {
+    router.post(
+      '/learning-objects/:id/files',
+      this.upload.any(),
+      async (req, res) => {
+        const responder = this.getResponder(res);
+        try {
+          const file: Express.Multer.File = req.files[0];
+          const id = req.params.id;
+          const dzMetadata: DZFileMetadata = req.body;
+          const upload: DZFile = {
+            ...dzMetadata,
+            name: file.originalname,
+            encoding: file.encoding,
+            buffer: file.buffer,
+            mimetype: file.mimetype,
+            size: dzMetadata.dztotalfilesize,
+          };
+          const user = req.user;
+
+          if (this.hasAccess(user, 'emailVerified', true)) {
+            const loFile = await LearningObjectInteractor.uploadFile({
+              id,
+              username: user.username,
+              dataStore: this.dataStore,
+              fileManager: this.fileManager,
+              file: upload,
+            });
+
+            responder.sendObject(loFile);
+          } else {
+            responder.unauthorized(
+              'User must be verified to upload materials.',
+            );
+          }
+        } catch (e) {
+          responder.sendOperationError(e);
+        }
+      },
+    );
+    router.delete('/learning-objects/:id/files', async (req, res) => {
       const responder = this.getResponder(res);
       try {
-        const files = req.files;
-        let filePathMap = req.body.filePathMap
-          ? JSON.parse(req.body.filePathMap)
-          : null;
-        if (filePathMap) {
-          filePathMap = new Map<string, string>(filePathMap);
-        }
+        const uploadStatusId = req.body.uploadId;
+        await LearningObjectInteractor.cancelUpload({
+          uploadStatusId,
+          dataStore: this.dataStore,
+          fileManager: this.fileManager,
+        });
 
-        const user = req.user;
-
-        if (this.hasAccess(user, 'emailVerified', true)) {
-          const id = req.body.learningObjectID;
-          const materials = await LearningObjectInteractor.uploadMaterials(
-            this.fileManager,
-            id,
-            user.username,
-            <any[]>files,
-            filePathMap,
-          );
-          responder.sendObject(materials);
-        } else {
-          responder.unauthorized('User must be verified to upload materials.');
-        }
+        responder.sendOperationSuccess();
       } catch (e) {
         responder.sendOperationError(e);
       }
@@ -181,8 +251,27 @@ export class ExpressAuthRouteDriver {
         responder.sendOperationError(e);
       }
     });
-
     router
+      .patch('/learning-objects/:id/pdf', async (req, res) => {
+        const responder = this.getResponder(res);
+        try {
+          const id = req.params.id;
+          const object = await LearningObjectInteractor.updateReadme({
+            id,
+            dataStore: this.dataStore,
+            fileManager: this.fileManager,
+          });
+          await LearningObjectInteractor.updateLearningObject(
+            this.dataStore,
+            this.fileManager,
+            id,
+            object,
+          );
+          responder.sendOperationSuccess();
+        } catch (e) {
+          responder.sendOperationError(e);
+        }
+      })
       .route('/learning-objects/:username/:learningObjectName/children')
       .post(async (req, res) => {
         const responder = this.getResponder(res);
@@ -190,9 +279,9 @@ export class ExpressAuthRouteDriver {
           const username = req.params.username;
           const user = req.user;
           if (this.hasAccess(user, 'username', username)) {
-            await LearningObjectInteractor.addChild({
+            await LearningObjectInteractor.setChildren({
               dataStore: this.dataStore,
-              childId: req.body.id,
+              children: req.body.children,
               parentName: req.params.learningObjectName,
               username: user.username,
             });
@@ -236,6 +325,30 @@ export class ExpressAuthRouteDriver {
         responder.sendOperationError(e);
       }
     });
+
+    router.get(
+      '/learning-objects/:learningObjectId/files/:fileId',
+      async (req, res) => {
+        const responder = this.getResponder(res);
+        const learningObjectId = req.params.learningObjectId;
+        const fileId = req.params.fileId;
+        try {
+          if (await enforceWhitelist(req.user.username)) {
+            await LearningObjectInteractor.downloadSingleFile({
+              learningObjectId,
+              fileId,
+              dataStore: this.dataStore,
+              fileManager: this.fileManager,
+              responder,
+            });
+          } else {
+            responder.sendOperationError('Invalid download access');
+          }
+        } catch (e) {
+          responder.sendOperationError(e);
+        }
+      },
+    );
 
     router.delete(
       '/learning-objects/:learningObjectNames/multiple',

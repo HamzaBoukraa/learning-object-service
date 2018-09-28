@@ -1,7 +1,13 @@
 import { FileManager } from '../interfaces/interfaces';
 import * as AWS from 'aws-sdk';
 import { AWS_SDK_CONFIG } from '../config/aws-sdk.config';
-import { LearningObjectFile } from '../interfaces/FileManager';
+import {
+  FileUpload,
+  MultipartFileUpload,
+  MultipartUploadData,
+  CompletedPartList,
+} from '../interfaces/FileManager';
+
 AWS.config.credentials = AWS_SDK_CONFIG.credentials;
 
 const AWS_S3_BUCKET = 'neutrino-file-uploads';
@@ -9,66 +15,139 @@ const AWS_S3_ACL = 'public-read';
 
 export class S3Driver implements FileManager {
   private s3 = new AWS.S3({ region: AWS_SDK_CONFIG.region });
+
   /**
-   * Uploads files to S3
+   * Uploads single file
    *
-   * @param {string} id
-   * @param {string} username
-   * @param {any[]} files
-   * @returns {Promise<LearningObjectFile[]>}
+   * @param {{ file: FileUpload }} params
+   * @returns {Promise<string>}
    * @memberof S3Driver
    */
-  public async upload(
-    id: string,
-    username: string,
-    files: any[],
-    filePathMap: Map<string, string>
-  ): Promise<LearningObjectFile[]> {
+  public async upload(params: { file: FileUpload }): Promise<string> {
     try {
-      let learningObjectFiles: LearningObjectFile[] = [];
-      for (let file of files) {
-        let loFile = this.generateLearningObjectFile(file);
-        const parent = filePathMap.get(loFile.id);
-        const path = this.getFullPath(filePathMap, loFile);
-        let params = {
-          Bucket: AWS_S3_BUCKET,
-          Key: `${username}/${id}/${path}`,
-          ACL: AWS_S3_ACL,
-          Body: file.buffer.length ? file.buffer : Buffer.from(file.buffer)
-        };
-        let response = await this.s3.upload(params).promise();
-        loFile.url = response.Location;
-        if (parent) {
-          loFile.fullPath = path;
-        }
-        learningObjectFiles.push(loFile);
-      }
-      return learningObjectFiles;
+      const uploadParams = {
+        Bucket: AWS_S3_BUCKET,
+        Key: params.file.path,
+        ACL: AWS_S3_ACL,
+        Body: params.file.data,
+      };
+      const response = await this.s3.upload(uploadParams).promise();
+      return response.Location;
     } catch (e) {
-      console.log(e);
       return Promise.reject(e);
     }
   }
+
   /**
-   * Deletes Specified file from storage
+   * Processes Chunk uploads
+   * If there is trouble with the upload AWS auto aborts multipart upload
+   * @param {{
+   *     file: MultipartFileUpload;
+   *     finish?: boolean;
+   *     completedPartList?: CompletedPartList;
+   *   }} params
+   * @returns {Promise<MultipartUploadData>}
+   * @memberof S3Driver
+   */
+  public async processMultipart(params: {
+    file: MultipartFileUpload;
+    finish?: boolean;
+    completedPartList?: CompletedPartList;
+  }): Promise<MultipartUploadData> {
+    try {
+      // If uploadId doesn't exist, a multipart upload has not been created for file upload
+      if (!params.file.uploadId) {
+        const createParams = {
+          Bucket: AWS_S3_BUCKET,
+          ACL: AWS_S3_ACL,
+          Key: params.file.path,
+        };
+        // Create multipart file upload
+        const createdUpload = await this.s3
+          .createMultipartUpload(createParams)
+          .promise();
+        params.file.uploadId = createdUpload.UploadId;
+      }
+      const partUploadParams = {
+        Bucket: AWS_S3_BUCKET,
+        Key: params.file.path,
+        Body: params.file.data,
+        PartNumber: params.file.partNumber,
+        UploadId: params.file.uploadId,
+      };
+      // Upload chunk
+      const uploadData = await this.s3.uploadPart(partUploadParams).promise();
+
+      // If last chunk is being uploaded, finalize multipart upload
+      if (params.finish) {
+        const completedParams = {
+          Bucket: AWS_S3_BUCKET,
+          Key: params.file.path,
+          UploadId: params.file.uploadId,
+          MultipartUpload: {
+            Parts: params.completedPartList,
+          },
+        };
+        // Finalize upload
+        const completedUploadData = await this.s3
+          .completeMultipartUpload(completedParams)
+          .promise();
+        return { url: completedUploadData.Location };
+      }
+
+      return {
+        uploadId: params.file.uploadId,
+        completedPart: {
+          ETag: uploadData.ETag,
+          PartNumber: params.file.partNumber,
+        },
+      };
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  }
+
+  /**
+   * Cancels chunk upload
    *
-   * @param {string} id
-   * @param {string} username
-   * @param {string} filename
+   * @param {{
+   *     path: string;
+   *     uploadId: string;
+   *   }} params
    * @returns {Promise<void>}
    * @memberof S3Driver
    */
-  public async delete(
-    id: string,
-    username: string,
-    filename: string
-  ): Promise<void> {
+  async cancelMultipart(params: {
+    path: string;
+    uploadId: string;
+  }): Promise<void> {
     try {
-      let params = {
+      const abortUploadParams = {
         Bucket: AWS_S3_BUCKET,
-        Key: `${username}/${id}/${filename}`
+        Key: params.path,
+        UploadId: params.uploadId,
       };
-      await this.deleteObject(params);
+      await this.s3.abortMultipartUpload(abortUploadParams).promise();
+      return Promise.resolve();
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  }
+
+  /**
+   * Deletes Specified file from storage
+   *
+   * @param {string} path
+   * @returns {Promise<void>}
+   * @memberof S3Driver
+   */
+  public async delete(params: { path: string }): Promise<void> {
+    try {
+      const deleteParams = {
+        Bucket: AWS_S3_BUCKET,
+        Key: params.path,
+      };
+      return await this.deleteObject(deleteParams);
     } catch (e) {
       return Promise.reject(e);
     }
@@ -76,32 +155,37 @@ export class S3Driver implements FileManager {
   /**
    * Deletes all files in storage
    *
-   * @param {string} id
-   * @param {string} username
+   * @param {string} path
    * @returns {Promise<void>}
    * @memberof S3Driver
    */
-  public async deleteAll(id: string, username: string): Promise<void> {
+  public async deleteAll(params: { path: string }): Promise<void> {
     try {
       const listParams = {
         Bucket: AWS_S3_BUCKET,
-        Prefix: `${username}/${id}/`
+        Prefix: params.path,
       };
 
       const listedObjects = await this.s3.listObjectsV2(listParams).promise();
-      let deleteParams = {
+
+      const deleteParams = {
         Bucket: AWS_S3_BUCKET,
         Delete: {
-          Objects: listedObjects.Contents.map(({ Key }) => ({ Key }))
-        }
+          Objects: listedObjects.Contents.map(({ Key }) => ({ Key })),
+        },
       };
+
       await this.s3.deleteObjects(deleteParams).promise();
 
-      if (listedObjects.IsTruncated) await this.deleteAll(id, username);
+      if (listedObjects.IsTruncated) {
+        return await this.deleteAll(params);
+      }
+      return Promise.resolve();
     } catch (e) {
       return Promise.reject(e);
     }
   }
+
   /**
    * Deletes Object From S3
    *
@@ -113,54 +197,9 @@ export class S3Driver implements FileManager {
   private async deleteObject(params: any): Promise<void> {
     try {
       await this.s3.deleteObject(params).promise();
+      return Promise.resolve();
     } catch (e) {
       return Promise.reject(e);
     }
-  }
-  /**
-   * Generates new LearningObjectFile Object
-   *
-   * @private
-   * @param {any} file
-   * @returns
-   * @memberof S3Driver
-   */
-  private generateLearningObjectFile(file: any): LearningObjectFile {
-    let name_id = file.originalname.split(/!@!/g);
-    let originalname = name_id[0];
-    let id = name_id[1];
-    let fileType = file.mimetype;
-    let extMatch = originalname.match(/(\.[^.]*$|$)/);
-    let extension = extMatch ? extMatch[0] : '';
-    let date = Date.now().toString();
-
-    let learningObjectFile: LearningObjectFile = {
-      id: id,
-      name: originalname,
-      fileType: fileType,
-      extension: extension,
-      url: null,
-      date: date
-    };
-
-    return learningObjectFile;
-  }
-  /**
-   * Gets file's full path
-   *
-   * @private
-   * @param {Map<string, string>} filePathMap
-   * @param {LearningObjectFile} file
-   * @returns
-   * @memberof S3Driver
-   */
-  private getFullPath(
-    filePathMap: Map<string, string>,
-    file: LearningObjectFile
-  ) {
-    let folderName = filePathMap.get(file.id);
-    if (!folderName) return file.name;
-    let path = `${folderName}/${file.name}`;
-    return path;
   }
 }

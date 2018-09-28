@@ -4,6 +4,7 @@ import { Router, Response } from 'express';
 import { LearningObjectInteractor } from '../../interactors/interactors';
 import { LearningObject } from '@cyber4all/clark-entity';
 import * as TokenManager from '../TokenManager';
+import { LearningObjectQuery } from '../../interfaces/DataStore';
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
 // tslint:disable-next-line:no-require-imports
 const version = require('../../../package.json').version;
@@ -39,6 +40,7 @@ export class ExpressRouteDriver {
 
         const name = req.query.name;
         const author = req.query.author;
+        const collection = req.query.collection;
         let length = req.query.length;
         length = length && !Array.isArray(length) ? [length] : length;
         let level = req.query.level;
@@ -48,6 +50,7 @@ export class ExpressRouteDriver {
           standardOutcomes && !Array.isArray(standardOutcomes)
             ? [standardOutcomes]
             : standardOutcomes;
+        const released = req.query.released;
 
         // For broad searching | Search all fields to match inputed text
         const text = req.query.text;
@@ -61,17 +64,20 @@ export class ExpressRouteDriver {
         if (
           name ||
           author ||
+          collection ||
           length ||
           level ||
           standardOutcomes ||
           text ||
           orderBy ||
-          sortType
+          sortType ||
+          released
         ) {
           learningObjects = await LearningObjectInteractor.searchObjects(
             this.dataStore,
             name,
             author,
+            collection,
             length,
             level,
             standardOutcomes,
@@ -81,6 +87,7 @@ export class ExpressRouteDriver {
             sortType,
             currPage,
             limit,
+            released
           );
         } else {
           learningObjects = await LearningObjectInteractor.fetchAllObjects(
@@ -92,6 +99,20 @@ export class ExpressRouteDriver {
         responder.sendObject(learningObjects);
       } catch (e) {
         console.log(e);
+        responder.sendOperationError(e);
+      }
+    });
+    router.get('/learning-objects/:id/parents', async (req, res) => {
+      const responder = this.getResponder(res);
+      try {
+        const query: LearningObjectQuery = req.query;
+        query.id = req.params.id;
+        const parents = await LearningObjectInteractor.fetchParents({
+          query,
+          dataStore: this.dataStore,
+        });
+        responder.sendObject(parents);
+      } catch (e) {
         responder.sendOperationError(e);
       }
     });
@@ -115,6 +136,7 @@ export class ExpressRouteDriver {
           );
           responder.sendObject(object);
         } catch (e) {
+          console.error(e);
           responder.sendOperationError(e);
         }
       });

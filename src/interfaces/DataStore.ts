@@ -1,11 +1,11 @@
+import { LearningObject, Collection } from '@cyber4all/clark-entity';
 import {
-  LearningObject,
-  LearningOutcome,
-  StandardOutcome,
-  User,
-  Collection,
-} from '@cyber4all/clark-entity';
-import { LearningObjectLock } from '../interactors/AdminLearningObjectInteractor';
+  MultipartFileUploadStatus,
+  MultipartFileUploadStatusUpdates,
+  CompletedPart,
+} from './FileManager';
+import { LearningObjectLock } from '@cyber4all/clark-entity/dist/learning-object';
+import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
 
 export interface DataStore {
   connect(dburi: string): Promise<void>;
@@ -42,6 +42,7 @@ export interface DataStore {
   searchObjects(
     name: string,
     author: string,
+    collection: string,
     length: string[],
     level: string[],
     standardOutcomeIDs: string[],
@@ -51,6 +52,7 @@ export interface DataStore {
     sortType?: number,
     page?: number,
     limit?: number,
+    released?: boolean,
   ): Promise<{ objects: LearningObject[]; total: number }>;
   fetchCollections(loadObjects?: boolean): Promise<Collection[]>;
   fetchCollection(name: string): Promise<Collection>;
@@ -61,21 +63,48 @@ export interface DataStore {
     id: string,
     published: boolean,
   ): Promise<void>;
-  insertChild(parentId: string, childId: string): Promise<void>;
+  setChildren(parentId: string, children: string[]): Promise<void>;
   deleteChild(parentId: string, childId: string): Promise<void>;
+  findParentObjects(params: {
+    query: LearningObjectQuery;
+  }): Promise<LearningObject[]>;
+  addToFiles(params: { id: string; loFile: LearningObjectFile }): Promise<void>;
+  // Multipart Uploads
+  insertMultipartUploadStatus(params: {
+    status: MultipartFileUploadStatus;
+  }): Promise<void>;
+  fetchMultipartUploadStatus(params: {
+    id: string;
+  }): Promise<MultipartFileUploadStatus>;
+  updateMultipartUploadStatus(params: {
+    id: string;
+    updates: MultipartFileUploadStatusUpdates;
+    completedPart: CompletedPart;
+  }): Promise<void>;
+  deleteMultipartUploadStatus(params: { id: string }): Promise<void>;
+  addToCollection(learningObjectId: string, collection: string): Promise<void>;
+  findSingleFile(params: {
+    learningObjectId: string;
+    fileId: string;
+  }): Promise<LearningObjectFile>;
 }
 
 export { Collection as LearningObjectCollection };
 
-export type LearningObjectQuery = {
+export interface Filters {
+  orderBy?: string;
+  sortType?: -1 | 1;
+  page?: number;
+  limit?: number;
+}
+
+export interface LearningObjectQuery extends Filters {
+  id?: string;
   name?: string;
   author?: string;
   length?: string[];
   level?: string[];
   standardOutcomeIDs?: string[];
   text?: string;
-  orderBy?: string;
-  sortType?: -1 | 1;
-  page?: number;
-  limit?: number;
-};
+  full?: boolean;
+}

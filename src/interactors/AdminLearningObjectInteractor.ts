@@ -1,16 +1,6 @@
 import { LearningObjectInteractor } from './interactors';
 import { DataStore, FileManager } from '../interfaces/interfaces';
-
-// TODO: Move to clark-entity package
-export enum Restriction {
-  FULL = 'full',
-  PUBLISH = 'publish',
-  DOWNLOAD = 'download',
-}
-export interface LearningObjectLock {
-  date?: string;
-  restrictions: Restriction[];
-}
+import { LearningObjectLock } from '@cyber4all/clark-entity/dist/learning-object';
 
 export class AdminLearningObjectInteractor {
   private static learningObjectInteractor = LearningObjectInteractor;
@@ -68,6 +58,7 @@ export class AdminLearningObjectInteractor {
         dataStore,
         name,
         author,
+        null,
         length,
         level,
         standardOutcomeIDs,

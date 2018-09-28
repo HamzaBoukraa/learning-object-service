@@ -34,4 +34,11 @@ export class ExpressResponder implements Responder {
   unauthorized(message?: string) {
     this.res.status(403).send(`Invalid access. ${message}`.trim());
   }
+
+  writeStream(attachment?: string): Response {
+    if (attachment) {
+      this.res.attachment(attachment);
+    }
+    return this.res;
+  }
 }
