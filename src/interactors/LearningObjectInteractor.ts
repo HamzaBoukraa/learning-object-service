@@ -105,6 +105,7 @@ export class LearningObjectInteractor {
       ) {
         const response = await this.searchObjects(
           dataStore,
+          library,
           query.name,
           username,
           query.length,
@@ -188,11 +189,13 @@ export class LearningObjectInteractor {
         username,
         learningObjectName,
       );
+
       const learningObject = await dataStore.fetchLearningObject(
         learningObjectID,
         true,
         accessUnpublished,
       );
+
       learningObject.id = learningObjectID;
 
       if (learningObject.children) {
