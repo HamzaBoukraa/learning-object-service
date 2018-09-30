@@ -1692,6 +1692,7 @@ export class MongoDriver implements DataStore {
     learningObject.children = record.children;
     learningObject.lock = record.lock;
     learningObject.collection = record.collection;
+    learningObject.status = record.status;
     for (const goal of record.goals) {
       learningObject.addGoal(goal.text);
     }
