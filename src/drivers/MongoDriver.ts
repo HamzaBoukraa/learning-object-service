@@ -32,9 +32,7 @@ import {
 import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
 import { reportError } from './SentryConnector';
 import * as ObjectMapper from './Mongo/ObjectMapper';
-import { SubmissionDatastore } from './LearningObjectSubmission/SubmissionDatastore';
-
-dotenv.config();
+import { SubmissionDatastore } from '../LearningObjectSubmission/SubmissionDatastore';
 
 export interface Collection {
   name: string;

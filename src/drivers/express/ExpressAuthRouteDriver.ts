@@ -6,7 +6,7 @@ import { LearningObject } from '@cyber4all/clark-entity';
 import * as multer from 'multer';
 import { DZFileMetadata, DZFile } from '../../interfaces/FileManager';
 import { enforceWhitelist } from '../../middleware/whitelist';
-import * as SubmissionRouteDriver from '../LearningObjectSubmission/SubmissionRouteDriver';
+import * as SubmissionRouteDriver from '../../LearningObjectSubmission/SubmissionRouteDriver';
 
 import { reportError } from '../SentryConnector';
 export class ExpressAuthRouteDriver {
