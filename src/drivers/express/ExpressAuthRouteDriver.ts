@@ -6,6 +6,7 @@ import { LearningObject } from '@cyber4all/clark-entity';
 import * as multer from 'multer';
 import { DZFileMetadata, DZFile } from '../../interfaces/FileManager';
 import { enforceWhitelist } from '../../middleware/whitelist';
+import * as SubmissionRouteDriver from '../LearningObjectSubmission/SubmissionRouteDriver';
 
 import { reportError } from '../SentryConnector';
 export class ExpressAuthRouteDriver {
@@ -51,6 +52,7 @@ export class ExpressAuthRouteDriver {
       }
       next();
     });
+    router.use('/learning-objects', SubmissionRouteDriver.initialize(this.dataStore));
     router
       .route('/learning-objects')
       .post(async (req, res) => {
@@ -105,41 +107,7 @@ export class ExpressAuthRouteDriver {
         responder.sendOperationError(e);
       }
     });
-    router.patch('/learning-objects/publish', async (req, res) => {
-      const responder = this.getResponder(res);
-      try {
-        const id = req.body.id;
-        const published = req.body.published;
-
-        await LearningObjectInteractor.togglePublished(
-          this.dataStore,
-          req.user.username,
-          id,
-          published,
-        );
-        responder.sendOperationSuccess();
-      } catch (e) {
-        console.error(e);
-        responder.sendOperationError(e);
-      }
-    });
-    router.patch('/learning-objects/unpublish', async (req, res) => {
-      const responder = this.getResponder(res);
-      try {
-        const id = req.body.id;
-        const published = req.body.published;
-
-        await LearningObjectInteractor.togglePublished(
-          this.dataStore,
-          req.user.username,
-          id,
-          published,
-        );
-        responder.sendOperationSuccess();
-      } catch (e) {
-        responder.sendOperationError(e);
-      }
-    });
+    
     router.patch('/learning-objects/:learningObjectId/collections', async (req, res) => {
         const responder = this.getResponder(res);
         const learningObjectId = req.params.learningObjectId;
