@@ -1,5 +1,5 @@
-import { DataStore } from "../../interfaces/DataStore";
-import { LearningObjectInteractor } from "../../interactors/interactors";
+import { DataStore } from '../../interfaces/DataStore';
+import { LearningObjectInteractor } from '../../interactors/interactors';
 
 export async function togglePublished(
   dataStore: DataStore,

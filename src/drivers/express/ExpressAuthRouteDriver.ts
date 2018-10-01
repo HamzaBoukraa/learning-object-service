@@ -107,7 +107,6 @@ export class ExpressAuthRouteDriver {
         responder.sendOperationError(e);
       }
     });
-    
     router.patch('/learning-objects/:learningObjectId/collections', async (req, res) => {
         const responder = this.getResponder(res);
         const learningObjectId = req.params.learningObjectId;
