@@ -1328,6 +1328,7 @@ export class LearningObjectInteractor {
         gradientRGB,
         doc,
         title: PDFText.OUTCOMES_TITLE,
+        textYStart: doc.y - 70 + 20,
       });
       this.appendOutcomes(doc, learningObject);
     }
