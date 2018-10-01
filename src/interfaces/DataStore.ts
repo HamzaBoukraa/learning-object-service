@@ -43,6 +43,7 @@ export interface DataStore {
     name: string,
     author: string,
     collection: string,
+    status: string[],
     length: string[],
     level: string[],
     standardOutcomeIDs: string[],
