@@ -1,6 +1,5 @@
 import { MongoClient, Db, ObjectID, Cursor } from 'mongodb';
 import { DataStore } from '../interfaces/interfaces';
-import * as dotenv from 'dotenv';
 import {
   LearningObject,
   LearningOutcome,
