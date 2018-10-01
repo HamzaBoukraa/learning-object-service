@@ -1,8 +1,8 @@
 import { User, Collection } from '@cyber4all/clark-entity';
-import { COLLECTIONS } from '../MongoDriver';
+import { COLLECTIONS } from '../drivers/MongoDriver';
 import { Db } from 'mongodb';
 import { UserDocument } from '@cyber4all/clark-schema';
-import * as ObjectMapper from '../Mongo/ObjectMapper';
+import * as ObjectMapper from '../drivers/Mongo/ObjectMapper';
 import { Restriction, LearningObjectLock } from '@cyber4all/clark-entity/dist/learning-object';
 
 const ERROR_MESSAGE = {

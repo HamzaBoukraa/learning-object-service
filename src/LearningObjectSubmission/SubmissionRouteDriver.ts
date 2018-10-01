@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { togglePublished } from './SubmissionInteractor';
-import { DataStore } from '../../interfaces/DataStore';
-import { ExpressResponder } from '../express/ExpressResponder';
+import { DataStore } from '../interfaces/DataStore';
+import { ExpressResponder } from '../drivers/express/ExpressResponder';
 
 /**
  * Initializes an express router with endpoints to publish and unpublish a learning object.
