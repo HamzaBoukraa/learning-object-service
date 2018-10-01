@@ -24,10 +24,6 @@ export class ExpressAuthRouteDriver {
     return router;
   }
 
-  private getResponder(response: Response): Responder {
-    return new ExpressResponder(response);
-  }
-
   private setRoutes(router: Router): void {
     router.use((req, res, next) => {
       // If the username in the cookie is not lowercase and error will be reported
@@ -56,7 +52,7 @@ export class ExpressAuthRouteDriver {
     router
       .route('/learning-objects')
       .post(async (req, res) => {
-        const responder = this.getResponder(res);
+        const responder = new ExpressResponder(res);
         try {
           const username = req.user.username;
           const object = LearningObject.instantiate(req.body.object);
@@ -72,7 +68,7 @@ export class ExpressAuthRouteDriver {
         }
       })
       .patch(async (req, res) => {
-        const responder = this.getResponder(res);
+        const responder = new ExpressResponder(res);
         try {
           const object = LearningObject.instantiate(req.body.learningObject);
           const user = req.user;
@@ -92,7 +88,7 @@ export class ExpressAuthRouteDriver {
         }
       });
     router.get('/learning-objects/summary', async (req, res) => {
-      const responder = this.getResponder(res);
+      const responder = new ExpressResponder(res);
       try {
         const children = req.query.children;
         const objects = await LearningObjectInteractor.loadLearningObjectSummary(
@@ -108,7 +104,7 @@ export class ExpressAuthRouteDriver {
       }
     });
     router.patch('/learning-objects/:learningObjectId/collections', async (req, res) => {
-        const responder = this.getResponder(res);
+        const responder = new ExpressResponder(res);
         const learningObjectId = req.params.learningObjectId;
         const collection = req.body.collection;
 
@@ -127,7 +123,7 @@ export class ExpressAuthRouteDriver {
     router.get(
       '/learning-objects/:username/:learningObjectName/id',
       async (req, res) => {
-        const responder = this.getResponder(res);
+        const responder = new ExpressResponder(res);
         try {
           const user = req.user;
           const username = req.params.username;
@@ -151,7 +147,7 @@ export class ExpressAuthRouteDriver {
       '/learning-objects/:id/files',
       this.upload.any(),
       async (req, res) => {
-        const responder = this.getResponder(res);
+        const responder = new ExpressResponder(res);
         try {
           const file: Express.Multer.File = req.files[0];
           const id = req.params.id;
@@ -187,7 +183,7 @@ export class ExpressAuthRouteDriver {
       },
     );
     router.delete('/learning-objects/:id/files', async (req, res) => {
-      const responder = this.getResponder(res);
+      const responder = new ExpressResponder(res);
       try {
         const uploadStatusId = req.body.uploadId;
         await LearningObjectInteractor.cancelUpload({
@@ -202,7 +198,7 @@ export class ExpressAuthRouteDriver {
       }
     });
     router.delete('/files/:id/:filename', async (req, res) => {
-      const responder = this.getResponder(res);
+      const responder = new ExpressResponder(res);
       try {
         const id = req.params.id;
         const filename = req.params.filename;
@@ -220,7 +216,7 @@ export class ExpressAuthRouteDriver {
     });
     router
       .patch('/learning-objects/:id/pdf', async (req, res) => {
-        const responder = this.getResponder(res);
+        const responder = new ExpressResponder(res);
         try {
           const id = req.params.id;
           const object = await LearningObjectInteractor.updateReadme({
@@ -241,7 +237,7 @@ export class ExpressAuthRouteDriver {
       })
       .route('/learning-objects/:username/:learningObjectName/children')
       .post(async (req, res) => {
-        const responder = this.getResponder(res);
+        const responder = new ExpressResponder(res);
         try {
           const username = req.params.username;
           const user = req.user;
@@ -261,7 +257,7 @@ export class ExpressAuthRouteDriver {
         }
       })
       .delete(async (req, res) => {
-        const responder = this.getResponder(res);
+        const responder = new ExpressResponder(res);
         try {
           const user = req.user;
           const username = req.params.username;
@@ -278,7 +274,7 @@ export class ExpressAuthRouteDriver {
         }
       });
     router.delete('/learning-objects/:learningObjectName', async (req, res) => {
-      const responder = this.getResponder(res);
+      const responder = new ExpressResponder(res);
       try {
         const learningObjectName = req.params.learningObjectName;
         await LearningObjectInteractor.deleteLearningObject(
@@ -296,7 +292,7 @@ export class ExpressAuthRouteDriver {
     router.get(
       '/learning-objects/:learningObjectId/files/:fileId',
       async (req, res) => {
-        const responder = this.getResponder(res);
+        const responder = new ExpressResponder(res);
         const learningObjectId = req.params.learningObjectId;
         const fileId = req.params.fileId;
         try {
@@ -320,7 +316,7 @@ export class ExpressAuthRouteDriver {
     router.delete(
       '/learning-objects/:learningObjectNames/multiple',
       async (req, res) => {
-        const responder = this.getResponder(res);
+        const responder = new ExpressResponder(res);
         try {
           const learningObjectNames = req.params.learningObjectNames.split(',');
           await LearningObjectInteractor.deleteMultipleLearningObjects(
@@ -338,7 +334,7 @@ export class ExpressAuthRouteDriver {
 
     // TODO: Need to validate token and that it is coming from cart service
     router.get('/cart/learning-objects/:ids/summary', async (req, res) => {
-      const responder = this.getResponder(res);
+      const responder = new ExpressResponder(res);
       try {
         const ids: string[] = req.params.ids.split(',');
         const objects = await LearningObjectInteractor.fetchObjectsByIDs(
@@ -353,7 +349,7 @@ export class ExpressAuthRouteDriver {
 
     // TODO: Need to validate token and that it is coming from cart service
     router.get('/cart/learning-objects/:ids/full', async (req, res) => {
-      const responder = this.getResponder(res);
+      const responder = new ExpressResponder(res);
       try {
         const ids: string[] = req.params.ids.split(',');
         const objects = await LearningObjectInteractor.loadFullLearningObjectByIDs(
