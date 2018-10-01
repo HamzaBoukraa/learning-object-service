@@ -4,7 +4,9 @@ dotenv.config();
 export const LEARNING_OBJECT_ROUTES = {
   GET_FILE(id: string, filename: string) {
     return `${
-      process.env.LEARNING_OBJECT_API
+      process.env.NODE_ENV === 'production'
+        ? process.env.LEARNING_OBJECT_API
+        : process.env.LEARNING_OBJECT_API_DEV
     }/learning-objects/${id}/files/${encodeURIComponent(filename)}`;
   },
 };

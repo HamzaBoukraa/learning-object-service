@@ -1311,23 +1311,25 @@ export class LearningObjectInteractor {
     });
     this.appendCoverPage(doc, learningObject);
     doc.addPage();
-    // Goals
-    if (learningObject.goals.length) {
-      this.appendGradientHeader({
-        gradientRGB,
-        doc,
-        title: PDFText.DESCRIPTION_TITLE,
-        headerYStart: doc.y - 75,
-        textYStart: doc.y - 70 + 20,
-      });
-      this.appendLearningGoals(doc, learningObject);
-    }
+    // Description TEMP REMOVAL
+    // if (learningObject.goals.length) {
+    //   this.appendGradientHeader({
+    //     gradientRGB,
+    //     doc,
+    //     title: PDFText.DESCRIPTION_TITLE,
+    //     headerYStart: doc.y - 75,
+    //     textYStart: doc.y - 70 + 20,
+    //   });
+    //   this.appendLearningGoals(doc, learningObject);
+    // }
     // Outcomes
     if (learningObject.outcomes.length) {
       this.appendGradientHeader({
         gradientRGB,
         doc,
         title: PDFText.OUTCOMES_TITLE,
+        headerYStart: doc.y - 75,
+        textYStart: doc.y - 70 + 20,
       });
       this.appendOutcomes(doc, learningObject);
     }
@@ -1686,7 +1688,14 @@ export class LearningObjectInteractor {
     doc.text(PDFText.NOTES_TITLE);
     doc.moveDown(0.5);
     doc.fillColor(PDFColors.TEXT).font(PDFFonts.REGULAR);
-    doc.text(learningObject.materials.notes);
+    // Print lines with individual api calls to avoid malformed
+    const lines = learningObject.materials.notes
+      .split(/\n/g)
+      .filter(line => line);
+    for (const line of lines) {
+      doc.text(line);
+      doc.moveDown(0.5);
+    }
   }
 
   /**
