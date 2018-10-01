@@ -7,7 +7,6 @@ import { MOCK_OBJECTS } from '../tests/mocks';
 import { DataStore } from '../interfaces/DataStore';
 import { FileManager, LibraryCommunicator } from '../interfaces/interfaces';
 const driver: DataStore = new MockDataStore; // DataStore
-const fileManager: FileManager = new MockS3Driver(); // FileManager
 const library: LibraryCommunicator = new MockLibraryDriver();
 
 describe('loadLearningObjectSummary', () => {
@@ -24,53 +23,6 @@ describe('loadLearningObjectSummary', () => {
       done();
     });
   });
-});
-
-describe('loadLearningObject', () => {
-  // it('should load learning object', done => {
-  //   return LearningObjectInteractor.loadLearningObject(
-  //     driver,
-  //     library,
-  //     MOCK_OBJECTS.USERNAME,
-  //     MOCK_OBJECTS.LEARNING_OBJECT_NAME,
-  //   ).then(val => {
-  //     console.log(val);
-  //     expect(val).to.be.an('object');
-  //     done();
-  //   }).catch((error) => {
-  //     console.log(error);
-  //     expect.fail();
-  //     done();
-  //   });
-  // });
-  // it('should return error - requesting unpublished object', done => {
-  //   return LearningObjectInteractor.loadLearningObject(
-  //     driver,
-  //     library,
-  //     MOCK_OBJECTS.USERNAME,
-  //     MOCK_OBJECTS.LEARNING_OBJECT_NAME,
-  //   ).then(val => {
-  //     expect.fail();
-  //     done();
-  //   }).catch((error) => {
-  //     expect(error).to.be.a('string');
-  //     done();
-  //   });
-  // });
-  // it('should return error - incorrect user', done => {
-  //   return LearningObjectInteractor.loadLearningObject(
-  //     driver,
-  //     library,
-  //     MOCK_OBJECTS.EMPTY_STRING,
-  //     MOCK_OBJECTS.LEARNING_OBJECT_NAME,
-  //   ).then(val => {
-  //     expect.fail();
-  //     done();
-  //   }).catch((error) => {
-  //     expect(error).to.be.a('string');
-  //     done();
-  //   });
-  // });
 });
 
 describe('loadFullLearningObjectByIDs', () => {
@@ -102,34 +54,6 @@ describe('loadFullLearningObjectByIDs', () => {
   });
 });
 
-describe('addLearningObject', () => {
-  // it('should return an error - we are trying to publish an object that already exists!', done => {
-  //   LearningObjectInteractor.loadLearningObject(
-  //     driver,
-  //     library,
-  //     MOCK_OBJECTS.USERNAME,
-  //     MOCK_OBJECTS.LEARNING_OBJECT_NAME,
-  //   ).then(val => {
-  //     return LearningObjectInteractor.addLearningObject(
-  //       driver,
-  //       fileManager,
-  //       val,
-  //     // tslint:disable-next-line:no-shadowed-variable
-  //     ).then(val => {
-  //       console.log(val);
-  //       expect.fail();
-  //       done();
-  //     }).catch ((error) => {
-  //       expect(error).to.be.a('string');
-  //       done();
-  //     });
-  //   }).catch((error) => {
-  //     expect.fail();
-  //     done();
-  //   });
-  // });
-});
-
 describe('findLearningObject', () => {
   it('should find a learning object ID', done => {
     return LearningObjectInteractor.findLearningObject(
@@ -144,34 +68,6 @@ describe('findLearningObject', () => {
       done();
     });
   });
-});
-
-describe('updateLearningObject', () => {
-  // it('should return an object - undefined because no changes were made', done => {
-  //   LearningObjectInteractor.loadLearningObject(
-  //     driver,
-  //     library,
-  //     MOCK_OBJECTS.USERNAME,
-  //     MOCK_OBJECTS.LEARNING_OBJECT_NAME,
-  //   ).then(val => {
-  //     return LearningObjectInteractor.updateLearningObject(
-  //       driver,
-  //       fileManager,
-  //       MOCK_OBJECTS.LEARNING_OBJECT_ID,
-  //       val,
-  //     // tslint:disable-next-line:no-shadowed-variable
-  //     ).then(val => {
-  //       expect(val).to.be.an('undefined');
-  //       done();
-  //     }).catch ((error) => {
-  //       expect.fail();
-  //       done();
-  //     });
-  //   }).catch((error) => {
-  //     expect.fail();
-  //     done();
-  //   });
-  // });
 });
 
 describe('togglePublished', () => {

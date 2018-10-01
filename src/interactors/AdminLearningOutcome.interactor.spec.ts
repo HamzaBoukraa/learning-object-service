@@ -19,42 +19,6 @@ describe('fetchAllObjects', () => {
   });
 });
 
-// describe('searchObjects', () => {
-//   it('should return an array of users', done => {
-//     const name = 'testing more contributors';
-//     const author = 'nvisal1';
-//     const length = ['nanomodule'];
-//     const levels = ['undergraduate'];
-//     const outcomeIDs = ['5b23cc9016bdb944d96f1b01'];
-//     const text = 'testing more contributor';
-//     const query = { username: 'nvisal1' };
-//     return AdminLearningObjectInteractor.searchObjects(driver, name, author, length, levels, outcomeIDs, text).then(val => {
-//       expect(val).to.be.an('array');
-//       done();
-//     }).catch((error) => {
-//       expect.fail();
-//       done();
-//     });
-//   });
-// });
-
-// describe('togglePublished', () => {
-//   it('should toggle the published status', done => {
-//     const username = 'nvisal1';
-//     const id = '5b23d22c87e4934e12547e31';
-//     const published = false;
-//     return AdminLearningObjectInteractor.togglePublished(driver, username, id, published).then(val => {
-//       console.log(val);
-//       expect(val).to.be.an('undefined');
-//       done();
-//     }).catch((error) => {
-//       console.log(error);
-//       expect.fail();
-//       done();
-//     });
-//   });
-// });
-
 describe('toggleLock', () => {
   it('should toggle the lock status', done => {
     return AdminLearningObjectInteractor.toggleLock(driver, MOCK_OBJECTS.LEARNING_OBJECT_ID)
