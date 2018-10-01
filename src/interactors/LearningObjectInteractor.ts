@@ -1687,7 +1687,14 @@ export class LearningObjectInteractor {
     doc.text(PDFText.NOTES_TITLE);
     doc.moveDown(0.5);
     doc.fillColor(PDFColors.TEXT).font(PDFFonts.REGULAR);
-    doc.text(learningObject.materials.notes);
+    // Print lines with individual api calls to avoid malformed
+    const lines = learningObject.materials.notes
+      .split(/\n/g)
+      .filter(line => line);
+    for (const line of lines) {
+      doc.text(line);
+      doc.moveDown(0.5);
+    }
   }
 
   /**
