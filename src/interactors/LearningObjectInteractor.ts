@@ -1311,23 +1311,24 @@ export class LearningObjectInteractor {
     });
     this.appendCoverPage(doc, learningObject);
     doc.addPage();
-    // Goals
-    if (learningObject.goals.length) {
-      this.appendGradientHeader({
-        gradientRGB,
-        doc,
-        title: PDFText.DESCRIPTION_TITLE,
-        headerYStart: doc.y - 75,
-        textYStart: doc.y - 70 + 20,
-      });
-      this.appendLearningGoals(doc, learningObject);
-    }
+    // Description TEMP REMOVAL
+    // if (learningObject.goals.length) {
+    //   this.appendGradientHeader({
+    //     gradientRGB,
+    //     doc,
+    //     title: PDFText.DESCRIPTION_TITLE,
+    //     headerYStart: doc.y - 75,
+    //     textYStart: doc.y - 70 + 20,
+    //   });
+    //   this.appendLearningGoals(doc, learningObject);
+    // }
     // Outcomes
     if (learningObject.outcomes.length) {
       this.appendGradientHeader({
         gradientRGB,
         doc,
         title: PDFText.OUTCOMES_TITLE,
+        headerYStart: doc.y - 75,
         textYStart: doc.y - 70 + 20,
       });
       this.appendOutcomes(doc, learningObject);
