@@ -80,6 +80,9 @@ export class S3Driver implements FileManager {
 
       // If last chunk is being uploaded, finalize multipart upload
       if (params.finish) {
+        // append final part to parts list before uploading
+        params.completedPartList.push({ ETag: uploadData.ETag, PartNumber: params.file.partNumber });
+
         const completedParams = {
           Bucket: AWS_S3_BUCKET,
           Key: params.file.path,
