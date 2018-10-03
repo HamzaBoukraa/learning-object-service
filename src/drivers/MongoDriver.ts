@@ -1435,8 +1435,6 @@ export class MongoDriver implements DataStore {
             ? cursor.limit(filters.limit)
             : cursor;
 
-      console.log(typeof filters.orderBy, typeof filters.sortType)
-
       // SortBy
       cursor = filters.orderBy
         ? cursor.sort(filters.orderBy, filters.sortType ? filters.sortType : 1)
