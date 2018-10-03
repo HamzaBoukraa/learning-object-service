@@ -93,14 +93,24 @@ export class LearningObjectInteractor {
           query.length ||
           query.level ||
           query.standardOutcomeIDs ||
+          query.orderBy ||
+          query.sortType ||
+          query.collection ||
+          query.status ||
           query.text)
       ) {
+        const level = query.level ? (Array.isArray(query.level) ? query.level : [query.level]) : undefined;
+        const length = query.length ? (Array.isArray(query.length) ? query.length : [query.length]) : undefined;
+        const status = query.status ? (Array.isArray(query.status) ? query.status : [query.status]) : undefined;
+
         const response = await this.searchObjects(
           dataStore,
           query.name,
           username,
-          query.length,
-          query.level,
+          query.collection,
+          status,
+          length,
+          level,
           query.standardOutcomeIDs,
           query.text,
           accessUnpublished,
@@ -1054,6 +1064,7 @@ export class LearningObjectInteractor {
     name: string,
     author: string,
     collection: string,
+    status: string[],
     length: string[],
     level: string[],
     standardOutcomeIDs: string[],
@@ -1077,6 +1088,7 @@ export class LearningObjectInteractor {
         name,
         author,
         collection,
+        status,
         length,
         level,
         standardOutcomeIDs,

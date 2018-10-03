@@ -1111,6 +1111,7 @@ export class MongoDriver implements DataStore {
     name: string,
     author: string,
     collection: string,
+    status: string[],
     length: string[],
     level: string[],
     standardOutcomeIDs: string[],
@@ -1131,18 +1132,23 @@ export class MongoDriver implements DataStore {
 
       const exactAuthor =
         author && authorRecords && authorRecords.length ? true : false;
+
       // Query by LearningOutcomes' mappings
-      const outcomeRecords: LearningOutcomeDocument[] = await this.matchOutcomes(
-        standardOutcomeIDs,
-      );
-      const outcomeIDs = outcomeRecords
-        ? outcomeRecords.map(doc => doc._id)
-        : null;
+      let outcomeIDs;
+      if (standardOutcomeIDs) {
+        const outcomeRecords: LearningOutcomeDocument[] = await this.matchOutcomes(
+          standardOutcomeIDs,
+        );
+        outcomeIDs =  outcomeRecords
+          ? outcomeRecords.map(doc => doc._id)
+          : null;
+      }
 
       let query: any = this.buildSearchQuery(
         accessUnpublished,
         text,
         authorRecords,
+        status,
         length,
         level,
         outcomeIDs,
@@ -1159,6 +1165,11 @@ export class MongoDriver implements DataStore {
         .sort({ score: { $meta: 'textScore' } });
 
       const totalRecords = await objectCursor.count();
+
+      if (typeof sortType === 'string') {
+        // @ts-ignore
+        sortType = parseInt(sortType, 10) || 1;
+      }
 
       // Paginate if has limiter
       objectCursor = this.applyCursorFilters(objectCursor, {
@@ -1211,6 +1222,7 @@ export class MongoDriver implements DataStore {
       Promise.reject(e);
     }
   }
+
   /**
    * Builds query object for Learning Object search
    *
@@ -1229,6 +1241,7 @@ export class MongoDriver implements DataStore {
     accessUnpublished: boolean,
     text: string,
     authors: { _id: string; username: string }[],
+    status: string[],
     length: string[],
     level: string[],
     outcomeIDs: string[],
@@ -1252,6 +1265,7 @@ export class MongoDriver implements DataStore {
         text,
         authors,
         exactAuthor,
+        status,
         length,
         level,
         outcomeIDs,
@@ -1263,10 +1277,12 @@ export class MongoDriver implements DataStore {
         name,
         query,
         authors,
+        status,
         length,
         level,
         outcomeIDs,
         collection,
+        exactAuthor,
       );
     }
     return query;
@@ -1289,23 +1305,39 @@ export class MongoDriver implements DataStore {
     name: string,
     query: any,
     authors: { _id: string; username: string }[],
+    status: string[],
     length: string[],
     level: string[],
     outcomeIDs: string[],
     collection: string,
+    exactAuthor: boolean,
   ) {
     if (name) {
       query.$text = { $search: name };
     }
     if (authors) {
-      query.authorID = { $in: authors.map(author => author._id) };
-      query.contributors = { $in: authors.map(author => author.username) };
+      if (exactAuthor) {
+        query.authorID = authors[0]._id;
+      } else {
+        query.$or.push(
+          <any>{
+            authorID: { $in: authors.map(author => author._id) },
+          },
+          {
+            contributors: { $in: authors.map(author => author.username) },
+          },
+        );
+      }
     }
+    
     if (length) {
       query.length = { $in: length };
     }
     if (level) {
       query.levels = { $in: level };
+    }
+    if (status) {
+      query.status = { $in: status };
     }
     if (outcomeIDs) {
       query.outcomes = { $in: outcomeIDs };
@@ -1336,6 +1368,7 @@ export class MongoDriver implements DataStore {
     text: string,
     authors: { _id: string; username: string }[],
     exactAuthor: boolean,
+    status: string[],
     length: string[],
     level: string[],
     outcomeIDs: string[],
@@ -1366,6 +1399,9 @@ export class MongoDriver implements DataStore {
     }
     if (level) {
       query.levels = { $in: level };
+    }
+    if (status) {
+      query.status = { $in: status };
     }
     if (collection) {
       query.collection = collection;
@@ -1692,6 +1728,7 @@ export class MongoDriver implements DataStore {
     learningObject.children = record.children;
     learningObject.lock = record.lock;
     learningObject.collection = record.collection;
+    learningObject.status = record.status;
     for (const goal of record.goals) {
       learningObject.addGoal(goal.text);
     }
