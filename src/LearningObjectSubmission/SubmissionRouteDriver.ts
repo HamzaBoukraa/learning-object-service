@@ -47,6 +47,7 @@ export function initialize(dataStore: DataStore) {
       );
       responder.sendOperationSuccess();
     } catch (e) {
+      console.error(e);
       responder.sendOperationError(e);
     }
   }
