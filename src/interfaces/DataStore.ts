@@ -59,7 +59,6 @@ export interface DataStore {
   ): Promise<{ objects: LearningObject[]; total: number }>;
   fetchCollections(loadObjects?: boolean): Promise<Collection[]>;
   fetchCollection(name: string): Promise<Collection>;
-  fetchCollectionDecor(): Promise<any[]>;
   fetchCollectionMeta(name: string): Promise<any>;
   fetchCollectionObjects(name: string): Promise<LearningObject[]>;
   togglePublished(
