@@ -36,7 +36,7 @@ export class SubmissionDatastore {
         .collection(COLLECTIONS.LearningObject.name)
         .update(
           { _id: id },
-          { $set: { published: published, status: 'waiting' } },
+          { $set: { published: published, status: published ? 'waiting' : 'unpublished' } },
         );
       return Promise.resolve();
     } catch (e) {

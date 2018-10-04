@@ -47,6 +47,8 @@ enum PDFText {
 /**
  * Generates PDF for Learning Object
  *
+ * @private
+ * @static
  * @param {FileManager} fileManager
  * @param {LearningObject} learningObject
  * @memberof LearningObjectInteractor
@@ -80,23 +82,25 @@ export function generatePDF(
   });
   appendCoverPage(doc, learningObject);
   doc.addPage();
-  // Goals
-  if (learningObject.goals.length) {
-    appendGradientHeader({
-      gradientRGB,
-      doc,
-      title: PDFText.DESCRIPTION_TITLE,
-      headerYStart: doc.y - 75,
-      textYStart: doc.y - 70 + 20,
-    });
-    appendLearningGoals(doc, learningObject);
-  }
+  // Description TEMP REMOVAL
+  // if (learningObject.goals.length) {
+  //   appendGradientHeader({
+  //     gradientRGB,
+  //     doc,
+  //     title: PDFText.DESCRIPTION_TITLE,
+  //     headerYStart: doc.y - 75,
+  //     textYStart: doc.y - 70 + 20,
+  //   });
+  //   appendLearningGoals(doc, learningObject);
+  // }
   // Outcomes
   if (learningObject.outcomes.length) {
     appendGradientHeader({
       gradientRGB,
       doc,
       title: PDFText.OUTCOMES_TITLE,
+      headerYStart: doc.y - 75,
+      textYStart: doc.y - 70 + 20,
     });
     appendOutcomes(doc, learningObject);
   }
@@ -131,6 +135,7 @@ export function generatePDF(
   doc.end();
   return pdf;
 }
+
 /**
  * Adds event listeners to PDF write process
  *
@@ -454,7 +459,14 @@ function appendMaterialNotes(
   doc.text(PDFText.NOTES_TITLE);
   doc.moveDown(0.5);
   doc.fillColor(PDFColors.TEXT).font(PDFFonts.REGULAR);
-  doc.text(learningObject.materials.notes);
+  // Print lines with individual api calls to avoid malformed
+  const lines = learningObject.materials.notes
+    .split(/\n/g)
+    .filter(line => line);
+  for (const line of lines) {
+    doc.text(line);
+    doc.moveDown(0.5);
+  }
 }
 
 /**
@@ -464,7 +476,7 @@ function appendMaterialNotes(
  * @static
  * @param {GradientVector} gradientRGB
  * @param {PDFKit.PDFDocument} doc
- * @param {files} File[]
+ * @param {files} LearningObjectFile[]
  * @memberof LearningObjectInteractor
  */
 function appendUnpackedFileURLs(params: {
@@ -553,7 +565,7 @@ function appendGradientHeader(params: {
  * @param {string} text
  * @returns {string}
  */
-function titleCase(text: string): string {
+export function titleCase(text: string): string {
   const textArr = text.split(' ');
   for (let i = 0; i < textArr.length; i++) {
     let word = textArr[i];
