@@ -1510,10 +1510,18 @@ export class MongoDriver implements DataStore {
    */
   async fetchCollections(): Promise<LearningObjectCollection[]> {
     try {
-      const collectionsCursor = await this.db
+      const collections = await this.db
         .collection(COLLECTIONS.LearningObjectCollection.name)
-        .find();
-      return collectionsCursor.toArray();
+        .aggregate([
+          {$project: {
+            _id: 0,
+            name: 1,
+            abvName: 1,
+            primaryColor: 1,
+            hasLogo: 1,
+          }},
+        ]).toArray();
+      return collections;
     } catch (e) {
       return Promise.reject(e);
     }
