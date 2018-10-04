@@ -40,7 +40,7 @@ export function initialize(dataStore: DataStore) {
       const username = req.user.username;
 
       await togglePublished(
-        this.dataStore,
+        dataStore,
         username,
         id,
         published,
