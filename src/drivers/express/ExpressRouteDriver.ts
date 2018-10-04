@@ -38,6 +38,8 @@ export class ExpressRouteDriver {
         const currPage = req.query.currPage ? +req.query.currPage : null;
         const limit = req.query.limit ? +req.query.limit : null;
 
+        const status = req.query.status ? req.query.status : null;
+
         const name = req.query.name;
         const author = req.query.author;
         const collection = req.query.collection;
@@ -59,7 +61,7 @@ export class ExpressRouteDriver {
 
         let learningObjects: { total: number; objects: LearningObject[] };
 
-        const accessUpublished = false;
+        const accessUnpublished = false;
 
         if (
           name ||
@@ -75,19 +77,22 @@ export class ExpressRouteDriver {
         ) {
           learningObjects = await LearningObjectInteractor.searchObjects(
             this.dataStore,
-            name,
-            author,
-            collection,
-            length,
-            level,
-            standardOutcomes,
-            text,
-            accessUpublished,
-            orderBy,
-            sortType,
-            currPage,
-            limit,
-            released
+            {
+              name,
+              author,
+              collection,
+              status,
+              length,
+              level,
+              standardOutcomeIDs: standardOutcomes,
+              text,
+              accessUnpublished,
+              orderBy,
+              sortType,
+              currPage,
+              limit,
+              released,
+            },
           );
         } else {
           learningObjects = await LearningObjectInteractor.fetchAllObjects(

@@ -105,19 +105,21 @@ export class LearningObjectInteractor {
 
         const response = await this.searchObjects(
           dataStore,
-          query.name,
-          username,
-          query.collection,
-          status,
-          length,
-          level,
-          query.standardOutcomeIDs,
-          query.text,
-          accessUnpublished,
-          query.orderBy,
-          query.sortType,
-          query.page,
-          query.limit,
+          {
+            name: query.name,
+            author: username,
+            collection: query.collection,
+            status,
+            length,
+            level,
+            standardOutcomeIDs: query.standardOutcomeIDs,
+            text: query.text,
+            accessUnpublished,
+            orderBy: query.orderBy,
+            sortType: query.sortType,
+            currPage: query.page,
+            limit: query.limit,
+          },
         );
         summary = response.objects;
         total = response.total;
@@ -1061,44 +1063,48 @@ export class LearningObjectInteractor {
    */
   public static async searchObjects(
     dataStore: DataStore,
-    name: string,
-    author: string,
-    collection: string,
-    status: string[],
-    length: string[],
-    level: string[],
-    standardOutcomeIDs: string[],
-    text: string,
-    accessUnpublished?: boolean,
-    orderBy?: string,
-    sortType?: number,
-    currPage?: number,
-    limit?: number,
-    released?: boolean
+    params: {
+      name: string,
+      author: string,
+      collection: string,
+      status: string[],
+      length: string[],
+      level: string[],
+      standardOutcomeIDs: string[],
+      text: string,
+      accessUnpublished?: boolean,
+      orderBy?: string,
+      sortType?: number,
+      currPage?: number,
+      limit?: number,
+      released?: boolean,
+    },
   ): Promise<{ total: number; objects: LearningObject[] }> {
     try {
-      if (text) {
-        const firstChar = text.charAt(0);
-        const lastChar = text.charAt(text.length - 1);
+      if (params.text) {
+        const firstChar = params.text.charAt(0);
+        const lastChar = params.text.charAt(params.text.length - 1);
         if (firstChar !== `"` && lastChar !== `"`) {
-          text = this.removeStopwords(text);
+          params.text = this.removeStopwords(params.text);
         }
       }
       const response = await dataStore.searchObjects(
-        name,
-        author,
-        collection,
-        status,
-        length,
-        level,
-        standardOutcomeIDs,
-        text,
-        accessUnpublished,
-        orderBy,
-        sortType,
-        currPage,
-        limit,
-        released
+        {
+          name: params.name,
+          author: params.author,
+          collection: params.collection,
+          status: params.status,
+          length: params.length,
+          level: params.level,
+          standardOutcomeIDs: params.standardOutcomeIDs,
+          text: params.text,
+          accessUnpublished: params.accessUnpublished,
+          orderBy: params.orderBy,
+          sortType: params.sortType,
+          page: params.currPage,
+          limit: params.limit,
+          released: params.released,
+        },
       );
 
       response.objects = await Promise.all(

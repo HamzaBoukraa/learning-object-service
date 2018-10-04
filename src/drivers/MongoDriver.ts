@@ -1107,37 +1107,38 @@ export class MongoDriver implements DataStore {
     *       Consider text-indexing these fields to exploit mongo $text querying.
     */
   // tslint:disable-next-line:member-ordering
-  async searchObjects(
-    name: string,
-    author: string,
-    collection: string,
-    status: string[],
-    length: string[],
-    level: string[],
-    standardOutcomeIDs: string[],
-    text: string,
-    accessUnpublished?: boolean,
-    orderBy?: string,
-    sortType?: 1 | -1,
-    page?: number,
-    limit?: number,
-    released?: boolean,
+  async searchObjects(params: {
+      name: string,
+      author: string,
+      collection: string,
+      status: string[],
+      length: string[],
+      level: string[],
+      standardOutcomeIDs: string[],
+      text: string,
+      accessUnpublished?: boolean,
+      orderBy?: string,
+      sortType?: 1 | -1,
+      page?: number,
+      limit?: number,
+      released?: boolean,
+    },
   ): Promise<{ objects: LearningObject[]; total: number }> {
     try {
       // Query for users
       const authorRecords: {
         _id: string;
         username: string;
-      }[] = await this.matchUsers(author, text);
+      }[] = await this.matchUsers(params.author, params.text);
 
       const exactAuthor =
-        author && authorRecords && authorRecords.length ? true : false;
+        params.author && authorRecords && authorRecords.length ? true : false;
 
       // Query by LearningOutcomes' mappings
       let outcomeIDs;
-      if (standardOutcomeIDs) {
+      if (params.standardOutcomeIDs) {
         const outcomeRecords: LearningOutcomeDocument[] = await this.matchOutcomes(
-          standardOutcomeIDs,
+          params.standardOutcomeIDs,
         );
         outcomeIDs =  outcomeRecords
           ? outcomeRecords.map(doc => doc._id)
@@ -1145,17 +1146,17 @@ export class MongoDriver implements DataStore {
       }
 
       let query: any = this.buildSearchQuery(
-        accessUnpublished,
-        text,
+        params.accessUnpublished,
+        params.text,
         authorRecords,
-        status,
-        length,
-        level,
+        params.status,
+        params.length,
+        params.level,
         outcomeIDs,
-        name,
-        collection,
+        params.name,
+        params.collection,
         exactAuthor,
-        released
+        params.released,
       );
 
       let objectCursor = await this.db
@@ -1166,17 +1167,17 @@ export class MongoDriver implements DataStore {
 
       const totalRecords = await objectCursor.count();
 
-      if (typeof sortType === 'string') {
+      if (typeof params.sortType === 'string') {
         // @ts-ignore
         sortType = parseInt(sortType, 10) || 1;
       }
 
       // Paginate if has limiter
       objectCursor = this.applyCursorFilters(objectCursor, {
-        page,
-        limit,
-        orderBy,
-        sortType,
+        page: params.page,
+        limit: params.limit,
+        orderBy: params.orderBy,
+        sortType: params.sortType,
       });
 
       const docs = await objectCursor.toArray();
