@@ -93,21 +93,33 @@ export class LearningObjectInteractor {
           query.length ||
           query.level ||
           query.standardOutcomeIDs ||
+          query.orderBy ||
+          query.sortType ||
+          query.collection ||
+          query.status ||
           query.text)
       ) {
+        const level = query.level ? (Array.isArray(query.level) ? query.level : [query.level]) : undefined;
+        const length = query.length ? (Array.isArray(query.length) ? query.length : [query.length]) : undefined;
+        const status = query.status ? (Array.isArray(query.status) ? query.status : [query.status]) : undefined;
+
         const response = await this.searchObjects(
           dataStore,
-          query.name,
-          username,
-          query.length,
-          query.level,
-          query.standardOutcomeIDs,
-          query.text,
-          accessUnpublished,
-          query.orderBy,
-          query.sortType,
-          query.page,
-          query.limit,
+          {
+            name: query.name,
+            author: username,
+            collection: query.collection,
+            status,
+            length,
+            level,
+            standardOutcomeIDs: query.standardOutcomeIDs,
+            text: query.text,
+            accessUnpublished,
+            orderBy: query.orderBy,
+            sortType: query.sortType,
+            currPage: query.page,
+            limit: query.limit,
+          },
         );
         summary = response.objects;
         total = response.total;
@@ -1032,42 +1044,48 @@ export class LearningObjectInteractor {
    */
   public static async searchObjects(
     dataStore: DataStore,
-    name: string,
-    author: string,
-    collection: string,
-    length: string[],
-    level: string[],
-    standardOutcomeIDs: string[],
-    text: string,
-    accessUnpublished?: boolean,
-    orderBy?: string,
-    sortType?: number,
-    currPage?: number,
-    limit?: number,
-    released?: boolean
+    params: {
+      name: string,
+      author: string,
+      collection: string,
+      status: string[],
+      length: string[],
+      level: string[],
+      standardOutcomeIDs: string[],
+      text: string,
+      accessUnpublished?: boolean,
+      orderBy?: string,
+      sortType?: number,
+      currPage?: number,
+      limit?: number,
+      released?: boolean,
+    },
   ): Promise<{ total: number; objects: LearningObject[] }> {
     try {
-      if (text) {
-        const firstChar = text.charAt(0);
-        const lastChar = text.charAt(text.length - 1);
+      if (params.text) {
+        const firstChar = params.text.charAt(0);
+        const lastChar = params.text.charAt(params.text.length - 1);
         if (firstChar !== `"` && lastChar !== `"`) {
-          text = this.removeStopwords(text);
+          params.text = this.removeStopwords(params.text);
         }
       }
       const response = await dataStore.searchObjects(
-        name,
-        author,
-        collection,
-        length,
-        level,
-        standardOutcomeIDs,
-        text,
-        accessUnpublished,
-        orderBy,
-        sortType,
-        currPage,
-        limit,
-        released
+        {
+          name: params.name,
+          author: params.author,
+          collection: params.collection,
+          status: params.status,
+          length: params.length,
+          level: params.level,
+          standardOutcomeIDs: params.standardOutcomeIDs,
+          text: params.text,
+          accessUnpublished: params.accessUnpublished,
+          orderBy: params.orderBy,
+          sortType: params.sortType,
+          page: params.currPage,
+          limit: params.limit,
+          released: params.released,
+        },
       );
 
       response.objects = await Promise.all(
@@ -1292,23 +1310,25 @@ export class LearningObjectInteractor {
     });
     this.appendCoverPage(doc, learningObject);
     doc.addPage();
-    // Goals
-    if (learningObject.goals.length) {
-      this.appendGradientHeader({
-        gradientRGB,
-        doc,
-        title: PDFText.DESCRIPTION_TITLE,
-        headerYStart: doc.y - 75,
-        textYStart: doc.y - 70 + 20,
-      });
-      this.appendLearningGoals(doc, learningObject);
-    }
+    // Description TEMP REMOVAL
+    // if (learningObject.goals.length) {
+    //   this.appendGradientHeader({
+    //     gradientRGB,
+    //     doc,
+    //     title: PDFText.DESCRIPTION_TITLE,
+    //     headerYStart: doc.y - 75,
+    //     textYStart: doc.y - 70 + 20,
+    //   });
+    //   this.appendLearningGoals(doc, learningObject);
+    // }
     // Outcomes
     if (learningObject.outcomes.length) {
       this.appendGradientHeader({
         gradientRGB,
         doc,
         title: PDFText.OUTCOMES_TITLE,
+        headerYStart: doc.y - 75,
+        textYStart: doc.y - 70 + 20,
       });
       this.appendOutcomes(doc, learningObject);
     }
@@ -1667,7 +1687,14 @@ export class LearningObjectInteractor {
     doc.text(PDFText.NOTES_TITLE);
     doc.moveDown(0.5);
     doc.fillColor(PDFColors.TEXT).font(PDFFonts.REGULAR);
-    doc.text(learningObject.materials.notes);
+    // Print lines with individual api calls to avoid malformed
+    const lines = learningObject.materials.notes
+      .split(/\n/g)
+      .filter(line => line);
+    for (const line of lines) {
+      doc.text(line);
+      doc.moveDown(0.5);
+    }
   }
 
   /**
