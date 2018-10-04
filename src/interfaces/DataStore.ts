@@ -40,20 +40,22 @@ export interface DataStore {
     limit?: number,
   ): Promise<{ objects: LearningObject[]; total: number }>;
   searchObjects(
-    name: string,
-    author: string,
-    collection: string,
-    status: string[],
-    length: string[],
-    level: string[],
-    standardOutcomeIDs: string[],
-    text: string,
-    accessUnpublished?: boolean,
-    orderBy?: string,
-    sortType?: number,
-    page?: number,
-    limit?: number,
-    released?: boolean,
+    params: {
+      name: string,
+      author: string,
+      collection: string,
+      status: string[],
+      length: string[],
+      level: string[],
+      standardOutcomeIDs: string[],
+      text: string,
+      accessUnpublished?: boolean,
+      orderBy?: string,
+      sortType?: number,
+      page?: number,
+      limit?: number,
+      released?: boolean,
+    },
   ): Promise<{ objects: LearningObject[]; total: number }>;
   fetchCollections(loadObjects?: boolean): Promise<Collection[]>;
   fetchCollection(name: string): Promise<Collection>;
@@ -108,4 +110,6 @@ export interface LearningObjectQuery extends Filters {
   standardOutcomeIDs?: string[];
   text?: string;
   full?: boolean;
+  collection?: string;
+  status?: string[];
 }
