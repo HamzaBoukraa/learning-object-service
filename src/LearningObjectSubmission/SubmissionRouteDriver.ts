@@ -51,7 +51,7 @@ export function initialize(dataStore: DataStore) {
     }
   }
   const router: Router = Router();
-  router.patch('/publish', publish);
-  router.patch('/unpublish', unpublish);
+  router.patch('/learning-objects/publish', publish);
+  router.patch('/learning-objects/unpublish', unpublish);
   return router;
 }

@@ -31,7 +31,7 @@ switch (process.env.NODE_ENV) {
     break;
 }
 
-const dataStore = new MongoDriver(dburi);
+const dataStore: DataStore = new MongoDriver(dburi);
 
 const fileManager: FileManager = new S3Driver();
 

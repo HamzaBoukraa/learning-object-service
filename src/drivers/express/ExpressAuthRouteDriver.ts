@@ -7,6 +7,8 @@ import * as multer from 'multer';
 import { DZFileMetadata, DZFile } from '../../interfaces/FileManager';
 import { enforceWhitelist } from '../../middleware/whitelist';
 import * as SubmissionRouteDriver from '../../LearningObjectSubmission/SubmissionRouteDriver';
+import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
+import { updateReadme, updateLearningObject } from '../../LearningObjects/LearningObjectInteractor';
 
 import { reportError } from '../SentryConnector';
 export class ExpressAuthRouteDriver {
@@ -48,45 +50,8 @@ export class ExpressAuthRouteDriver {
       }
       next();
     });
-    router.use('/learning-objects', SubmissionRouteDriver.initialize(this.dataStore));
-    router
-      .route('/learning-objects')
-      .post(async (req, res) => {
-        const responder = new ExpressResponder(res);
-        try {
-          const username = req.user.username;
-          const object = LearningObject.instantiate(req.body.object);
-          object.author.username = username;
-          const learningObject = await LearningObjectInteractor.addLearningObject(
-            this.dataStore,
-            this.fileManager,
-            object,
-          );
-          responder.sendObject(learningObject);
-        } catch (e) {
-          responder.sendOperationError(e);
-        }
-      })
-      .patch(async (req, res) => {
-        const responder = new ExpressResponder(res);
-        try {
-          const object = LearningObject.instantiate(req.body.learningObject);
-          const user = req.user;
-          if (this.hasAccess(user, 'username', object.author.username)) {
-            await LearningObjectInteractor.updateLearningObject(
-              this.dataStore,
-              this.fileManager,
-              object.id,
-              object,
-            );
-            responder.sendOperationSuccess();
-          } else {
-            responder.unauthorized('Could not update Learning Object');
-          }
-        } catch (e) {
-          responder.sendOperationError(e);
-        }
-      });
+    router.use('', SubmissionRouteDriver.initialize(this.dataStore));
+    router.use('', LearningObjectRouteHandler.initialize({dataStore: this.dataStore, fileManager: this.fileManager}));
     router.get('/learning-objects/summary', async (req, res) => {
       const responder = new ExpressResponder(res);
       try {
@@ -219,12 +184,12 @@ export class ExpressAuthRouteDriver {
         const responder = new ExpressResponder(res);
         try {
           const id = req.params.id;
-          const object = await LearningObjectInteractor.updateReadme({
+          const object = await updateReadme({
             id,
             dataStore: this.dataStore,
             fileManager: this.fileManager,
           });
-          await LearningObjectInteractor.updateLearningObject(
+          await updateLearningObject(
             this.dataStore,
             this.fileManager,
             id,
@@ -234,8 +199,8 @@ export class ExpressAuthRouteDriver {
         } catch (e) {
           responder.sendOperationError(e);
         }
-      })
-      .route('/learning-objects/:username/:learningObjectName/children')
+      });
+    router.route('/learning-objects/:username/:learningObjectName/children')
       .post(async (req, res) => {
         const responder = new ExpressResponder(res);
         try {
@@ -273,21 +238,6 @@ export class ExpressAuthRouteDriver {
           responder.sendOperationError(e);
         }
       });
-    router.delete('/learning-objects/:learningObjectName', async (req, res) => {
-      const responder = new ExpressResponder(res);
-      try {
-        const learningObjectName = req.params.learningObjectName;
-        await LearningObjectInteractor.deleteLearningObject(
-          this.dataStore,
-          this.fileManager,
-          req.user.username,
-          learningObjectName,
-        );
-        responder.sendOperationSuccess();
-      } catch (e) {
-        responder.sendOperationError(e);
-      }
-    });
 
     router.get(
       '/learning-objects/:learningObjectId/files/:fileId',
