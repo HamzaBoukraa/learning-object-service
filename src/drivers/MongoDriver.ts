@@ -1523,6 +1523,7 @@ export class MongoDriver implements DataStore {
         ]).toArray();
       return collections;
     } catch (e) {
+      console.error(e);
       return Promise.reject(e);
     }
   }
