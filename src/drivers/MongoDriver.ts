@@ -183,6 +183,7 @@ export class MongoDriver implements DataStore {
    */
   async insertLearningObject(object: LearningObject): Promise<string> {
     try {
+      // FIXME: This should be scoped to Interactor
       const authorID = await this.findUser(object.author.username);
       const author = await this.fetchUser(authorID);
       if (!author.emailVerified) {
@@ -195,6 +196,7 @@ export class MongoDriver implements DataStore {
         ],
       };
       const doc = await this.documentLearningObject(object, true);
+      // FIXME: WHY?? ID Is inserted in document LearningObject function
       const id = await this.insert(COLLECTIONS.LearningObject, doc);
 
       await this.insertLearningOutcomes(
@@ -205,6 +207,7 @@ export class MongoDriver implements DataStore {
         },
         object.outcomes,
       );
+      // FIXME: ID is wrong
       return id;
     } catch (e) {
       return Promise.reject(e);

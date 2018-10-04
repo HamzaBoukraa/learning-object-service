@@ -1,6 +1,10 @@
 import * as express from 'express';
 import * as bodyParser from 'body-parser';
-import { DataStore, FileManager } from '../../interfaces/interfaces';
+import {
+  DataStore,
+  FileManager,
+  LibraryCommunicator,
+} from '../../interfaces/interfaces';
 import {
   ExpressRouteDriver,
   ExpressAdminRouteDriver,
@@ -16,7 +20,12 @@ import * as raven from 'raven';
 
 export class ExpressDriver {
   static app = express();
-  static start(dataStore: DataStore, fileManager: FileManager) {
+
+  static start(
+    dataStore: DataStore,
+    fileManager: FileManager,
+    library: LibraryCommunicator,
+  ) {
     raven
       .config(process.env.SENTRY_DSN)
       .install();
@@ -44,7 +53,7 @@ export class ExpressDriver {
     this.app.use(cookieParser());
 
     // Set our public api routes
-    this.app.use('/', ExpressRouteDriver.buildRouter(dataStore));
+    this.app.use('/', ExpressRouteDriver.buildRouter(dataStore, library));
 
     // Set Validation Middleware
     this.app.use(enforceTokenAccess);
@@ -57,7 +66,7 @@ export class ExpressDriver {
     // Set our authenticated api routes
     this.app.use(
       '/',
-      ExpressAuthRouteDriver.buildRouter(dataStore, fileManager),
+      ExpressAuthRouteDriver.buildRouter(dataStore, fileManager, library),
     );
 
     // Set admin api routes
