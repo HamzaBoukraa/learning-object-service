@@ -1517,7 +1517,6 @@ export class MongoDriver implements DataStore {
             _id: 0,
             name: 1,
             abvName: 1,
-            primaryColor: 1,
             hasLogo: 1,
           }},
         ]).toArray();
