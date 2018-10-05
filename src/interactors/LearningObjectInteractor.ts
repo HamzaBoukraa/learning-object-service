@@ -391,6 +391,8 @@ export class LearningObjectInteractor {
     username: string;
     file: DZFile;
   }): Promise<LearningObjectFile> {
+    console.log('Got to upload file method');
+    console.log(params);
     try {
       let loFile: LearningObjectFile;
       const uploadPath = `${params.username}/${params.id}/${
@@ -417,6 +419,12 @@ export class LearningObjectInteractor {
       }
       // If LearningObjectFile was generated, update LearningObject's materials
       if (loFile) {
+        // FIXME should be implemented in clark entity 
+        // @ts-ignore
+        loFile.size = params.file.size;
+        console.log('\n\nAbout to test if size was allocated...\n\n');
+        //@ts-ignore
+        console.log('File size: ' + loFile.size);
         await this.updateMaterials({
           loFile,
           dataStore: params.dataStore,
