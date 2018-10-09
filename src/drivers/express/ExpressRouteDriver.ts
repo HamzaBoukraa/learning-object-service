@@ -149,6 +149,9 @@ export class ExpressRouteDriver {
         }
       });
 
+    /**
+     * Return all collections {name: string, abvName: string, primaryColor: string, hasLogo: boolean}
+     */
     router.get('/collections', async (req, res) => {
       const responder = this.getResponder(res);
       try {
@@ -157,18 +160,7 @@ export class ExpressRouteDriver {
         );
         responder.sendObject(collections);
       } catch (e) {
-        responder.sendOperationError(e);
-      }
-    });
-    router.get('/collections/learning-objects', async (req, res) => {
-      const responder = this.getResponder(res);
-      try {
-        const collections = await LearningObjectInteractor.fetchCollections(
-          this.dataStore,
-          true,
-        );
-        responder.sendObject(collections);
-      } catch (e) {
+        console.error(e);
         responder.sendOperationError(e);
       }
     });
