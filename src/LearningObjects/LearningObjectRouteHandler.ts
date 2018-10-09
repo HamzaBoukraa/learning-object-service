@@ -3,13 +3,13 @@ import * as LearningObjectInteractor from './LearningObjectInteractor';
 import { Request, Response, Router } from 'express';
 import { LearningObject } from '@cyber4all/clark-entity';
 import { DataStore } from '../interfaces/DataStore';
-import { FileManager } from '../interfaces/interfaces';
+import { FileManager, LibraryCommunicator } from '../interfaces/interfaces';
 
 /**
  * Initializes an express router with endpoints to Create, Update, and Delete
  * a Learning Object.
  */
-export function initialize({ dataStore, fileManager}: { dataStore: DataStore, fileManager: FileManager}) {
+export function initialize({ dataStore, fileManager, library}: { dataStore: DataStore, fileManager: FileManager, library: LibraryCommunicator}) {
   const router: Router = Router();
   const addLearningObject = async (req: Request, res: Response) => {
     const responder = new ExpressResponder(res);
@@ -58,6 +58,7 @@ export function initialize({ dataStore, fileManager}: { dataStore: DataStore, fi
         fileManager,
         req.user.username,
         learningObjectName,
+        library,
       );
       responder.sendOperationSuccess();
     } catch (e) {

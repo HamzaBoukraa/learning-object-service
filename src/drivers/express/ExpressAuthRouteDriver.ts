@@ -8,7 +8,7 @@ import { DZFileMetadata, DZFile } from '../../interfaces/FileManager';
 import { enforceWhitelist } from '../../middleware/whitelist';
 import * as SubmissionRouteDriver from '../../LearningObjectSubmission/SubmissionRouteDriver';
 import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
-import { updateReadme, updateLearningObject } from '../../LearningObjects/LearningObjectInteractor';
+import { updateReadme, updateLearningObject, deleteFile } from '../../LearningObjects/LearningObjectInteractor';
 
 import { reportError } from '../SentryConnector';
 export class ExpressAuthRouteDriver {
@@ -56,13 +56,14 @@ export class ExpressAuthRouteDriver {
       next();
     });
     router.use('', SubmissionRouteDriver.initialize(this.dataStore));
-    router.use('', LearningObjectRouteHandler.initialize({dataStore: this.dataStore, fileManager: this.fileManager}));
+    router.use('', LearningObjectRouteHandler.initialize({dataStore: this.dataStore, fileManager: this.fileManager, library: this.library}));
     router.get('/learning-objects/summary', async (req, res) => {
       const responder = new ExpressResponder(res);
       try {
         const children = req.query.children;
         const objects = await LearningObjectInteractor.loadLearningObjectSummary(
           this.dataStore,
+          this.library,
           req.user.username,
           true,
           children,
@@ -173,7 +174,7 @@ export class ExpressAuthRouteDriver {
         const id = req.params.id;
         const filename = req.params.filename;
         const username = req.user.username;
-        await LearningObjectInteractor.deleteFile(
+        await deleteFile(
           this.fileManager,
           id,
           username,
@@ -295,6 +296,7 @@ export class ExpressAuthRouteDriver {
         const ids: string[] = req.params.ids.split(',');
         const objects = await LearningObjectInteractor.fetchObjectsByIDs(
           this.dataStore,
+          this.library,
           ids,
         );
         responder.sendObject(objects);
@@ -310,6 +312,7 @@ export class ExpressAuthRouteDriver {
         const ids: string[] = req.params.ids.split(',');
         const objects = await LearningObjectInteractor.loadFullLearningObjectByIDs(
           this.dataStore,
+          this.library,
           ids,
         );
         responder.sendObject(objects);

@@ -1,10 +1,9 @@
 import { LearningObject } from '@cyber4all/clark-entity';
 import { LearningObjectInteractor } from '../interactors/interactors';
 import { DataStore } from '../interfaces/DataStore';
-import { FileManager } from '../interfaces/interfaces';
+import { FileManager, LibraryCommunicator } from '../interfaces/interfaces';
 import { generatePDF } from './PDFKitDriver';
 import { LearningObjectPDF } from '@cyber4all/clark-entity/dist/learning-object';
-import { LibraryInteractor } from '../interactors/LibraryInteractor';
 
 /**
  * Add a new learning object to the database.
@@ -97,6 +96,7 @@ export async function deleteLearningObject(
   fileManager: FileManager,
   username: string,
   learningObjectName: string,
+  library: LibraryCommunicator,
 ): Promise<void> {
   try {
     const learningObjectID = await dataStore.findLearningObject(
@@ -113,7 +113,7 @@ export async function deleteLearningObject(
       const path = `${username}/${learningObjectID}/`;
       await fileManager.deleteAll({ path });
     }
-    LibraryInteractor.cleanObjectsFromLibraries([learningObjectID]);
+    library.cleanObjectsFromLibraries([learningObjectID]);
     return Promise.resolve();
   } catch (error) {
     return Promise.reject(
@@ -185,7 +185,7 @@ export async function updateReadme(params: {
  * @returns {Promise<void>}
  * @memberof LearningObjectInteractor
  */
-async function deleteFile(
+export async function deleteFile(
   fileManager: FileManager,
   id: string,
   username: string,
