@@ -54,20 +54,21 @@ export class AdminLearningObjectInteractor {
   ): Promise<any> {
     try {
       const accessUnpublished = true;
-      return await this.learningObjectInteractor.searchObjects(
-        dataStore,
-        name,
-        author,
-        null,
-        length,
-        level,
-        standardOutcomeIDs,
-        text,
-        accessUnpublished,
-        orderBy,
-        sortType,
-        page,
-        limit,
+      return await this.learningObjectInteractor.searchObjects(dataStore, {
+          name,
+          author,
+          collection: undefined,
+          status: undefined,
+          length,
+          level,
+          standardOutcomeIDs,
+          text,
+          accessUnpublished,
+          orderBy,
+          sortType,
+          currPage: page,
+          limit,
+        }
       );
     } catch (e) {
       return Promise.reject(`Problem searching Learning Objects. Error:${e}`);
