@@ -892,12 +892,12 @@ export class LearningObjectInteractor {
 
   public static async fetchCollections(
     dataStore: DataStore,
-    loadObjects?: boolean,
   ): Promise<any> {
     try {
-      const collections = await dataStore.fetchCollections(loadObjects);
+      const collections = await dataStore.fetchCollections();
       return collections;
     } catch (e) {
+      console.error(e);
       return Promise.reject(`Problem fetching collections. Error: ${e}`);
     }
   }
