@@ -245,7 +245,6 @@ export class MongoDriver implements DataStore {
           { $push: { 'materials.files': params.loFile } },
         );
       }
-      console.log('MongoDriver file size: ' + params.loFile.size);
       return Promise.resolve();
     } catch (e) {
       return Promise.reject(e);
