@@ -27,7 +27,7 @@ import {
 import {
   LearningObjectLock,
   Restriction,
-  Material
+  Material,
 } from '@cyber4all/clark-entity/dist/learning-object';
 import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
 import { reportError } from './SentryConnector';
@@ -123,14 +123,20 @@ COLLECTIONS_MAP.set(
 
 export class MongoDriver implements DataStore {
   submissionStore: SubmissionDatastore;
-  togglePublished(username: string, id: string, published: boolean): Promise<void> {
+  togglePublished(
+    username: string,
+    id: string,
+    published: boolean,
+  ): Promise<void> {
     return this.submissionStore.togglePublished(username, id, published);
   }
   private mongoClient: MongoClient;
   private db: Db;
 
   constructor(dburi: string) {
-    this.connect(dburi).then(() => this.submissionStore = new SubmissionDatastore(this.db));
+    this.connect(dburi).then(
+      () => (this.submissionStore = new SubmissionDatastore(this.db)),
+    );
   }
 
   /**
@@ -193,9 +199,7 @@ export class MongoDriver implements DataStore {
       }
 
       object.lock = {
-        restrictions: [
-          Restriction.DOWNLOAD,
-        ],
+        restrictions: [Restriction.DOWNLOAD],
       };
       const doc = await this.documentLearningObject(object, true);
       const id = await this.insert(COLLECTIONS.LearningObject, doc);
@@ -288,7 +292,7 @@ export class MongoDriver implements DataStore {
       await this.db
         .collection<MultipartFileUploadStatus>(
           COLLECTIONS.MultipartUploadStatusCollection.name,
-        ) 
+        )
         .updateOne(
           { _id: params.id },
           {
@@ -1108,22 +1112,21 @@ export class MongoDriver implements DataStore {
     */
   // tslint:disable-next-line:member-ordering
   async searchObjects(params: {
-      name: string,
-      author: string,
-      collection: string,
-      status: string[],
-      length: string[],
-      level: string[],
-      standardOutcomeIDs: string[],
-      text: string,
-      accessUnpublished?: boolean,
-      orderBy?: string,
-      sortType?: 1 | -1,
-      page?: number,
-      limit?: number,
-      released?: boolean,
-    },
-  ): Promise<{ objects: LearningObject[]; total: number }> {
+    name: string;
+    author: string;
+    collection: string;
+    status: string[];
+    length: string[];
+    level: string[];
+    standardOutcomeIDs: string[];
+    text: string;
+    accessUnpublished?: boolean;
+    orderBy?: string;
+    sortType?: 1 | -1;
+    page?: number;
+    limit?: number;
+    released?: boolean;
+  }): Promise<{ objects: LearningObject[]; total: number }> {
     try {
       // Query for users
       const authorRecords: {
@@ -1140,9 +1143,7 @@ export class MongoDriver implements DataStore {
         const outcomeRecords: LearningOutcomeDocument[] = await this.matchOutcomes(
           params.standardOutcomeIDs,
         );
-        outcomeIDs =  outcomeRecords
-          ? outcomeRecords.map(doc => doc._id)
-          : null;
+        outcomeIDs = outcomeRecords ? outcomeRecords.map(doc => doc._id) : null;
       }
 
       let query: any = this.buildSearchQuery(
@@ -1257,7 +1258,7 @@ export class MongoDriver implements DataStore {
     }
     if (released) {
       // Check that the learning object does not have a download restriction
-      query['lock.restrictions'] = { $nin: [Restriction.DOWNLOAD]};
+      query['lock.restrictions'] = { $nin: [Restriction.DOWNLOAD] };
     }
     // Search By Text
     if (text || text === '') {
@@ -1330,7 +1331,7 @@ export class MongoDriver implements DataStore {
         );
       }
     }
-    
+
     if (length) {
       query.length = { $in: length };
     }
@@ -1390,7 +1391,7 @@ export class MongoDriver implements DataStore {
             authorID: { $in: authors.map(author => author._id) },
           },
           {
-            contributors: { $in: authors.map(author => author.username) },
+            contributors: { $in: authors.map(author => author._id) },
           },
         );
       }
@@ -1513,13 +1514,16 @@ export class MongoDriver implements DataStore {
       const collections = await this.db
         .collection(COLLECTIONS.LearningObjectCollection.name)
         .aggregate([
-          {$project: {
-            _id: 0,
-            name: 1,
-            abvName: 1,
-            hasLogo: 1,
-          }},
-        ]).toArray();
+          {
+            $project: {
+              _id: 0,
+              name: 1,
+              abvName: 1,
+              hasLogo: 1,
+            },
+          },
+        ])
+        .toArray();
       return collections;
     } catch (e) {
       console.error(e);
