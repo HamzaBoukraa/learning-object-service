@@ -7,6 +7,7 @@ import {
   MultipartUploadData,
   CompletedPartList,
 } from '../interfaces/FileManager';
+import { Readable } from 'stream';
 
 AWS.config.credentials = AWS_SDK_CONFIG.credentials;
 
@@ -81,7 +82,10 @@ export class S3Driver implements FileManager {
       // If last chunk is being uploaded, finalize multipart upload
       if (params.finish) {
         // append final part to parts list before uploading
-        params.completedPartList.push({ ETag: uploadData.ETag, PartNumber: params.file.partNumber });
+        params.completedPartList.push({
+          ETag: uploadData.ETag,
+          PartNumber: params.file.partNumber,
+        });
 
         const completedParams = {
           Bucket: AWS_S3_BUCKET,
@@ -187,6 +191,14 @@ export class S3Driver implements FileManager {
     } catch (e) {
       return Promise.reject(e);
     }
+  }
+
+  streamFile(params: { path: string }): Readable {
+    const fetchParams = {
+      Bucket: AWS_S3_BUCKET,
+      Key: params.path,
+    };
+    return this.s3.getObject(fetchParams).createReadStream();
   }
 
   /**
