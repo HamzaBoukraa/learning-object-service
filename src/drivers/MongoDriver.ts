@@ -242,6 +242,9 @@ export class MongoDriver implements DataStore {
           { arrayFilters: [{ 'element.url': params.loFile.url }] },
         );
       if (!existingDoc.value) {
+        if (!params.loFile.id) {
+          params.loFile.id = new ObjectID().toHexString();
+        }
         await this.db.collection(COLLECTIONS.LearningObject.name).updateOne(
           {
             _id: params.id,
