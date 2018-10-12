@@ -8,5 +8,5 @@ export interface Responder {
   sendOperationError(error?: string, status?: number): void;
   sendObject(object: any): void;
   unauthorized(message?: string): void;
-  writeStream(attachment?: string): Response;
+  writeStream(attachment?: string, mimeType?: string): Response;
 }

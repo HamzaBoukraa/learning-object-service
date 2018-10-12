@@ -35,9 +35,12 @@ export class ExpressResponder implements Responder {
     this.res.status(403).send(`Invalid access. ${message}`.trim());
   }
 
-  writeStream(attachment?: string): Response {
+  writeStream(attachment?: string, mimeType?: string): Response {
     if (attachment) {
       this.res.attachment(attachment);
+    }
+    if (mimeType) {
+      this.res.contentType(mimeType);
     }
     return this.res;
   }
