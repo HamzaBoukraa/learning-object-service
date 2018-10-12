@@ -2,7 +2,7 @@ import fetch from 'node-fetch';
 
 export async function enforceWhitelist(username: string) {
   try {
-    const response = await fetch(process.env.WHITELISTURL);
+    const response = await fetch(process.env.WHITELISTURLSD);
     const object = await response.json();
     const whitelist: string[] = object.whitelist;
     if (whitelist.indexOf(username) !== -1) {
@@ -11,6 +11,6 @@ export async function enforceWhitelist(username: string) {
       return false;
     }
   } catch (e) {
-    return false;
+    throw e;
   }
 }

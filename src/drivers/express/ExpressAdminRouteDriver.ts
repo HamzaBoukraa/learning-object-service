@@ -1,15 +1,13 @@
-import { ExpressResponder } from '../drivers';
-import { DataStore, Responder, FileManager } from '../../interfaces/interfaces';
-import { Router, Response } from 'express';
+import { LearningObject } from '@cyber4all/clark-entity';
+import { Router } from 'express';
 import { AdminLearningObjectInteractor } from '../../interactors/interactors';
-import { User, LearningObject } from '@cyber4all/clark-entity';
-import * as TokenManager from '../TokenManager';
+import { DataStore, FileManager } from '../../interfaces/interfaces';
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
 // tslint:disable-next-line:no-require-imports
 const version = require('../../../package.json').version;
 
 export class ExpressAdminRouteDriver {
-  constructor(private dataStore: DataStore, private fileManager: FileManager) {}
+  constructor(private dataStore: DataStore, private fileManager: FileManager) { }
 
   public static buildRouter(
     dataStore: DataStore,
@@ -21,10 +19,6 @@ export class ExpressAdminRouteDriver {
     return router;
   }
 
-  private getResponder(response: Response): Responder {
-    return new ExpressResponder(response);
-  }
-
   private setRoutes(router: Router): void {
     router.get('/', async (req, res) => {
       res.json({
@@ -34,7 +28,6 @@ export class ExpressAdminRouteDriver {
     });
 
     router.route('/learning-objects').get(async (req, res) => {
-      const responder = this.getResponder(res);
 
       try {
         const page = req.query.page ? +req.query.page : null;
@@ -89,15 +82,16 @@ export class ExpressAdminRouteDriver {
             limit,
           );
         }
-        responder.sendObject(learningObjects);
+        res.status(200).send(learningObjects);
       } catch (e) {
-        responder.sendOperationError(e);
+        console.error(e);
+        res.status(500).send(e);
       }
     });
     router.patch(
       '/users/:username/learning-objects/:learningObjectName/publish',
       async (req, res) => {
-        const responder = this.getResponder(res);
+
         try {
           const id = req.body.id;
           const published = req.body.published;
@@ -108,16 +102,17 @@ export class ExpressAdminRouteDriver {
             id,
             published,
           );
-          responder.sendOperationSuccess();
+          res.sendStatus(200);
         } catch (e) {
-          responder.sendOperationError(e);
+          console.error(e);
+          res.status(500).send(e);
         }
       },
     );
     router.patch(
       '/users/:username/learning-objects/:learningObjectName/unpublish',
       async (req, res) => {
-        const responder = this.getResponder(res);
+
         try {
           const id = req.body.id;
           const published = req.body.published;
@@ -128,16 +123,16 @@ export class ExpressAdminRouteDriver {
             id,
             published,
           );
-          responder.sendOperationSuccess();
+          res.sendStatus(200);
         } catch (e) {
-          responder.sendOperationError(e);
+          console.error(e);
+          res.status(500).send(e);
         }
       },
     );
     router.patch(
       '/users/:username/learning-objects/:learningObjectName/lock',
       async (req, res) => {
-        const responder = this.getResponder(res);
         try {
           const id = req.body.id;
           const lock = req.body.lock;
@@ -147,29 +142,29 @@ export class ExpressAdminRouteDriver {
             id,
             lock,
           );
-          responder.sendOperationSuccess();
+          res.sendStatus(200);
         } catch (e) {
-          responder.sendOperationError(e);
+          console.error(e);
+          res.status(500).send(e);
         }
       },
     );
     router.patch(
       '/users/:username/learning-objects/:learningObjectName/unlock',
       async (req, res) => {
-        const responder = this.getResponder(res);
         try {
           const id = req.body.id;
           await AdminLearningObjectInteractor.toggleLock(this.dataStore, id);
-          responder.sendOperationSuccess();
+          res.sendStatus(200);
         } catch (e) {
-          responder.sendOperationError(e);
+          console.error(e);
+          res.status(500).send(e);
         }
       },
     );
     router.delete(
       '/users/:username/learning-objects/:learningObjectName',
       async (req, res) => {
-        const responder = this.getResponder(res);
         try {
           const learningObjectName = req.params.learningObjectName;
           await AdminLearningObjectInteractor.deleteLearningObject(
@@ -178,9 +173,10 @@ export class ExpressAdminRouteDriver {
             req.params.username,
             learningObjectName,
           );
-          responder.sendOperationSuccess();
+          res.sendStatus(200);
         } catch (e) {
-          responder.sendOperationError(e);
+          console.error(e);
+          res.status(500).send(e);
         }
       },
     );
@@ -188,7 +184,6 @@ export class ExpressAdminRouteDriver {
     router.delete(
       '/learning-objects/:learningObjectNames/multiple',
       async (req, res) => {
-        const responder = this.getResponder(res);
         try {
           const learningObjectNames = req.params.learningObjectNames.split(',');
           await AdminLearningObjectInteractor.deleteMultipleLearningObjects(
@@ -197,9 +192,10 @@ export class ExpressAdminRouteDriver {
             req.params.username,
             learningObjectNames,
           );
-          responder.sendOperationSuccess();
+          res.sendStatus(200);
         } catch (e) {
-          responder.sendOperationError(e);
+          console.error(e);
+          res.status(500).send(e);
         }
       },
     );

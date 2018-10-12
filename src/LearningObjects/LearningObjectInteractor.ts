@@ -178,7 +178,6 @@ export async function updateReadme(params: {
  *
  * @static
  * @param {FileManager} fileManager
- * @param {Responder} responder
  * @param {string} id
  * @param {string} username
  * @param {string} filename

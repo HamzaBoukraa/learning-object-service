@@ -1,15 +1,13 @@
 import {
-   DataStore,
-   FileManager,
-   Responder,
-   LibraryCommunicator,
+  DataStore,
+  FileManager,
+  LibraryCommunicator,
 } from '../interfaces/interfaces';
 import { LearningObject } from '@cyber4all/clark-entity';
 import * as stopword from 'stopword';
-import * as https from 'https';
 import { LearningObjectQuery } from '../interfaces/DataStore';
 import {
-  Metrics,
+  Metrics, Restriction,
 } from '@cyber4all/clark-entity/dist/learning-object';
 import { File } from '@cyber4all/clark-entity/dist/learning-object';
 import {
@@ -21,7 +19,8 @@ import {
   MultipartUploadData,
   CompletedPartList,
 } from '../interfaces/FileManager';
-import { generatePDF } from '../LearningObjects/PDFKitDriver';
+import { fetchFile } from '../FileManager/fetchFile';
+import { enforceWhitelist } from '../middleware/whitelist';
 // TODO: Update File in clark-entity
 export interface LearningObjectFile extends File {
   packageable: boolean;
@@ -316,7 +315,7 @@ export class LearningObjectInteractor {
       let loFile: LearningObjectFile;
       const uploadPath = `${params.username}/${params.id}/${
         params.file.fullPath ? params.file.fullPath : params.file.name
-      }`;
+        }`;
       const fileUpload: FileUpload = {
         path: uploadPath,
         data: params.file.buffer,
@@ -390,30 +389,28 @@ export class LearningObjectInteractor {
     fileId: string;
     dataStore: DataStore;
     fileManager: FileManager;
-    responder: Responder;
+    username: string,
   }): Promise<any> {
     try {
-      // Collect requested file metadata from datastore
-      const fileMetaData = await params.dataStore.findSingleFile({
-        learningObjectId: params.learningObjectId,
-        fileId: params.fileId,
-      });
+      const [isWhitelisted, learningObject, fileMetaData] = await Promise.all([
+        // Check if the user is on the whitelist
+        enforceWhitelist(params.username),
+        // Fetch the learning object
+        params.dataStore.fetchLearningObject(params.learningObjectId),
+        // Collect requested file metadata from datastore
+        params.dataStore.findSingleFile({
+          learningObjectId: params.learningObjectId,
+          fileId: params.fileId,
+        })]);
 
-      const url = fileMetaData.url;
+      // if the user is not on the whitelist and the LO is not released, throw access error
+      if (!isWhitelisted && learningObject.lock && learningObject.lock.restrictions.indexOf(Restriction.DOWNLOAD) !== -1) {
+        throw new Error('Invalid Access');
+      }
 
-      // Make http request using attached url in file metadata, pipe response
-      // tslint:disable-next-line:max-line-length
-      https.get(url, res => {
-        res.pipe(
-          params.responder.writeStream(
-            `${fileMetaData.name}.${
-              fileMetaData.extension ? fileMetaData.extension : ''
-            }`,
-          ),
-        );
-      });
+      return Promise.resolve(fetchFile(fileMetaData.url, fileMetaData.name));
     } catch (e) {
-      Promise.reject(e);
+      return Promise.reject(e);
     }
   }
 

@@ -1,7 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { togglePublished } from './SubmissionInteractor';
 import { DataStore } from '../interfaces/DataStore';
-import { ExpressResponder } from '../drivers/express/ExpressResponder';
 
 /**
  * Initializes an express router with endpoints to publish and unpublish a learning object.
@@ -14,7 +13,7 @@ import { ExpressResponder } from '../drivers/express/ExpressResponder';
  */
 export function initialize(dataStore: DataStore) {
   async function publish(req: Request, res: Response) {
-    const responder = new ExpressResponder(res);
+
     try {
       const id = req.body.id;
       const published = req.body.published;
@@ -26,14 +25,13 @@ export function initialize(dataStore: DataStore) {
         id,
         published,
       );
-      responder.sendOperationSuccess();
+      res.sendStatus(200);
     } catch (e) {
       console.error(e);
-      responder.sendOperationError(e);
+      res.status(500).send(e);
     }
   }
   async function unpublish(req: Request, res: Response) {
-    const responder = new ExpressResponder(res);
     try {
       const id = req.body.id;
       const published = req.body.published;
@@ -45,10 +43,10 @@ export function initialize(dataStore: DataStore) {
         id,
         published,
       );
-      responder.sendOperationSuccess();
+      res.sendStatus(200);
     } catch (e) {
       console.error(e);
-      responder.sendOperationError(e);
+      res.status(500).send(e);
     }
   }
   const router: Router = Router();

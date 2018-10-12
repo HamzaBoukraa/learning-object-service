@@ -1,4 +1,3 @@
-import { ExpressResponder } from '../drivers/drivers';
 import * as LearningObjectInteractor from './LearningObjectInteractor';
 import { Request, Response, Router } from 'express';
 import { LearningObject } from '@cyber4all/clark-entity';
@@ -12,7 +11,6 @@ import { FileManager, LibraryCommunicator } from '../interfaces/interfaces';
 export function initialize({ dataStore, fileManager, library}: { dataStore: DataStore, fileManager: FileManager, library: LibraryCommunicator}) {
   const router: Router = Router();
   const addLearningObject = async (req: Request, res: Response) => {
-    const responder = new ExpressResponder(res);
     try {
       const username = req.user.username;
       const object = LearningObject.instantiate(req.body.object);
@@ -22,13 +20,13 @@ export function initialize({ dataStore, fileManager, library}: { dataStore: Data
         fileManager,
         object,
       );
-      responder.sendObject(learningObject);
+      res.status(200).send(learningObject);
     } catch (e) {
-      responder.sendOperationError(e);
+      console.error(e);
+      res.status(500).send(e);
     }
   };
   const updateLearningObject = async (req: Request, res: Response) => {
-    const responder = new ExpressResponder(res);
     try {
       // FIXME: Instantiate should possibly be done in the interactor
       const object = LearningObject.instantiate(req.body.learningObject);
@@ -41,16 +39,16 @@ export function initialize({ dataStore, fileManager, library}: { dataStore: Data
           object.id,
           object,
         );
-        responder.sendOperationSuccess();
+        res.sendStatus(200);
       } else {
-        responder.unauthorized('Could not update Learning Object');
+        res.status(403).send('Invalid access. Could not update Learning Object');
       }
     } catch (e) {
-      responder.sendOperationError(e);
+      console.error(e);
+      res.status(500).send(e);
     }
   };
   const deleteLearningObject = async (req: Request, res: Response) => {
-    const responder = new ExpressResponder(res);
     try {
       const learningObjectName = req.params.learningObjectName;
       await LearningObjectInteractor.deleteLearningObject(
@@ -60,9 +58,10 @@ export function initialize({ dataStore, fileManager, library}: { dataStore: Data
         learningObjectName,
         library,
       );
-      responder.sendOperationSuccess();
+      res.sendStatus(200);
     } catch (e) {
-      responder.sendOperationError(e);
+      console.error(e);
+      res.status(500).send(e);
     }
   };
   router
