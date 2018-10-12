@@ -8,6 +8,7 @@ import { DZFileMetadata, DZFile } from '../../interfaces/FileManager';
 import { enforceWhitelist } from '../../middleware/whitelist';
 
 import { reportError } from '../SentryConnector';
+import { FileInteractor } from '../../interactors/FileInteractor';
 export class ExpressAuthRouteDriver {
   private upload = multer({ storage: multer.memoryStorage() });
 
@@ -140,7 +141,9 @@ export class ExpressAuthRouteDriver {
         responder.sendOperationError(e);
       }
     });
-    router.patch('/learning-objects/:learningObjectId/collections', async (req, res) => {
+    router.patch(
+      '/learning-objects/:learningObjectId/collections',
+      async (req, res) => {
         const responder = this.getResponder(res);
         const learningObjectId = req.params.learningObjectId;
         const collection = req.body.collection;
@@ -156,7 +159,8 @@ export class ExpressAuthRouteDriver {
           console.log(e);
           responder.sendOperationError(e);
         }
-      });
+      },
+    );
     router.get(
       '/learning-objects/:username/:learningObjectName/id',
       async (req, res) => {
@@ -325,6 +329,35 @@ export class ExpressAuthRouteDriver {
         responder.sendOperationError(e);
       }
     });
+
+    router.get(
+      '/users/:username/learning-objects/:loId/files/:fileId/download',
+      async (req, res) => {
+        const responder = this.getResponder(res);
+        try {
+          const open = req.query.open;
+          const username: string = req.params.username;
+          const loId: string = req.params.loId;
+          const fileId: string = req.params.fileId;
+          const {
+            filename,
+            mimeType,
+            stream,
+          } = await FileInteractor.streamFile({
+            username,
+            fileId,
+            dataStore: this.dataStore,
+            fileManager: this.fileManager,
+            learningObjectId: loId,
+          });
+          stream.pipe(
+            responder.writeStream(!open ? filename : undefined, mimeType),
+          );
+        } catch (e) {
+          responder.sendOperationError(e);
+        }
+      },
+    );
 
     router.get(
       '/learning-objects/:learningObjectId/files/:fileId',
