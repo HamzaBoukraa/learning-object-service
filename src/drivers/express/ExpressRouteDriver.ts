@@ -1,6 +1,5 @@
-import { ExpressResponder } from '../drivers';
-import { DataStore, Responder } from '../../interfaces/interfaces';
-import { Router, Response } from 'express';
+import { DataStore, LibraryCommunicator } from '../../interfaces/interfaces';
+import { Router } from 'express';
 import { LearningObjectInteractor } from '../../interactors/interactors';
 import { LearningObject } from '@cyber4all/clark-entity';
 import * as TokenManager from '../TokenManager';
@@ -10,17 +9,13 @@ import { LearningObjectQuery } from '../../interfaces/DataStore';
 const version = require('../../../package.json').version;
 
 export class ExpressRouteDriver {
-  constructor(private dataStore: DataStore) {}
+  constructor(private dataStore: DataStore, private library: LibraryCommunicator) {}
 
-  public static buildRouter(dataStore: DataStore): Router {
-    const e = new ExpressRouteDriver(dataStore);
+  public static buildRouter(dataStore: DataStore, library: LibraryCommunicator): Router {
+    const e = new ExpressRouteDriver(dataStore, library);
     const router: Router = Router();
     e.setRoutes(router);
     return router;
-  }
-
-  private getResponder(response: Response): Responder {
-    return new ExpressResponder(response);
   }
 
   private setRoutes(router: Router): void {
@@ -32,8 +27,6 @@ export class ExpressRouteDriver {
     });
 
     router.route('/learning-objects').get(async (req, res) => {
-      const responder = this.getResponder(res);
-
       try {
         const currPage = req.query.currPage ? +req.query.currPage : null;
         const limit = req.query.limit ? +req.query.limit : null;
@@ -77,6 +70,7 @@ export class ExpressRouteDriver {
         ) {
           learningObjects = await LearningObjectInteractor.searchObjects(
             this.dataStore,
+            this.library,
             {
               name,
               author,
@@ -97,18 +91,18 @@ export class ExpressRouteDriver {
         } else {
           learningObjects = await LearningObjectInteractor.fetchAllObjects(
             this.dataStore,
+            this.library,
             currPage,
             limit,
           );
         }
-        responder.sendObject(learningObjects);
+        res.status(200).send(learningObjects);
       } catch (e) {
         console.log(e);
-        responder.sendOperationError(e);
+        res.status(500).send(e);
       }
     });
     router.get('/learning-objects/:id/parents', async (req, res) => {
-      const responder = this.getResponder(res);
       try {
         const query: LearningObjectQuery = req.query;
         query.id = req.params.id;
@@ -116,15 +110,15 @@ export class ExpressRouteDriver {
           query,
           dataStore: this.dataStore,
         });
-        responder.sendObject(parents);
+        res.status(200).send(parents);
       } catch (e) {
-        responder.sendOperationError(e);
+        console.error(e);
+        res.status(500).send(e);
       }
     });
     router
       .route('/learning-objects/:username/:learningObjectName')
       .get(async (req, res) => {
-        const responder = this.getResponder(res);
         try {
           let accessUnpublished = false;
           const username = req.params.username;
@@ -135,14 +129,15 @@ export class ExpressRouteDriver {
           }
           const object = await LearningObjectInteractor.loadLearningObject(
             this.dataStore,
+            this.library,
             username,
             req.params.learningObjectName,
             accessUnpublished,
           );
-          responder.sendObject(object);
+          res.status(200).send(object);
         } catch (e) {
           console.error(e);
-          responder.sendOperationError(e);
+          res.status(500).send(e);
         }
       });
 
@@ -150,74 +145,74 @@ export class ExpressRouteDriver {
      * Return all collections {name: string, abvName: string, primaryColor: string, hasLogo: boolean}
      */
     router.get('/collections', async (req, res) => {
-      const responder = this.getResponder(res);
       try {
         const collections = await LearningObjectInteractor.fetchCollections(
           this.dataStore,
         );
-        responder.sendObject(collections);
+        res.status(200).send(collections);
       } catch (e) {
         console.error(e);
-        responder.sendOperationError(e);
+        res.status(500).send(e);
       }
     });
     /**
      * Return a full collection {name: string, abstracts: [], learningObjects: []}
      */
     router.get('/collections/:name', async (req, res) => {
-      const responder = this.getResponder(res);
       try {
         const name = req.params.name;
         const collection = await LearningObjectInteractor.fetchCollection(
           this.dataStore,
           name,
         );
-        responder.sendObject(collection);
+        res.status(200).send(collection);
       } catch (e) {
-        responder.sendOperationError(e);
+        console.error(e);
+        res.status(500).send(e);
       }
     });
     /**
      * Return a list of learningObjects from a collection
      */
     router.get('/collections/:name/learning-objects', async (req, res) => {
-      const responder = this.getResponder(res);
       try {
         const objects = await LearningObjectInteractor.fetchCollectionObjects(
           this.dataStore,
           req.params.name,
         );
-        responder.sendObject(objects);
+        res.status(200).send(objects);
       } catch (e) {
-        responder.sendOperationError(e);
+        console.error(e);
+        res.status(500).send(e);
       }
     });
     /**
      * Return the name of a collection and a list of it's abstracts
      */
     router.get('/collections/:name/meta', async (req, res) => {
-      const responder = this.getResponder(res);
       try {
         const collectionMeta = await LearningObjectInteractor.fetchCollectionMeta(
           this.dataStore,
           req.params.name,
         );
-        responder.sendObject(collectionMeta);
+        res.status(200).send(collectionMeta);
       } catch (e) {
-        responder.sendOperationError(e);
+        console.error(e);
+        res.status(500).send(e);
       }
     });
     router.get('/users/:username/learning-objects', async (req, res) => {
-      const responder = this.getResponder(res);
       try {
         const objects = await LearningObjectInteractor.loadLearningObjectSummary(
           this.dataStore,
+          this.library,
           req.params.username,
           false,
         );
-        responder.sendObject(objects);
+        res.status(200).send(objects);
       } catch (e) {
-        responder.sendOperationError(e);
+        console.error(e);
+        res.status(500).send(e);
       }
     });
   }

@@ -1,6 +1,15 @@
-import { ExpressDriver, MongoDriver, S3Driver } from './drivers/drivers';
-import { DataStore, FileManager } from './interfaces/interfaces';
+import {
+  ExpressDriver,
+  MongoDriver,
+  S3Driver,
+} from './drivers/drivers';
+import {
+  DataStore,
+  FileManager,
+  LibraryCommunicator,
+} from './interfaces/interfaces';
 import * as dotenv from 'dotenv';
+import { LibraryDriver } from './drivers/LibraryDriver';
 dotenv.config();
 // ----------------------------------------------------------------------------------
 // Initializations
@@ -31,9 +40,8 @@ switch (process.env.NODE_ENV) {
     break;
 }
 
-const dataStore = new MongoDriver(dburi);
-
+const dataStore: DataStore = new MongoDriver(dburi);
 const fileManager: FileManager = new S3Driver();
-
+const library: LibraryCommunicator = new LibraryDriver();
 // ----------------------------------------------------------------------------------
-ExpressDriver.start(dataStore, fileManager);
+ExpressDriver.start(dataStore, fileManager, library);
