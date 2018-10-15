@@ -1,15 +1,14 @@
-import { DataStore, FileManager, Responder } from '../interfaces/interfaces';
-import { LearningObject, LearningOutcome } from '@cyber4all/clark-entity';
-import * as PDFKit from 'pdfkit';
+import {
+  DataStore,
+  FileManager,
+  LibraryCommunicator,
+} from '../interfaces/interfaces';
+import { LearningObject } from '@cyber4all/clark-entity';
 import * as stopword from 'stopword';
-import * as striptags from 'striptags';
-import * as https from 'https';
 import { LearningObjectQuery } from '../interfaces/DataStore';
 import {
-  Metrics,
-  LearningObjectPDF,
+  Metrics, Restriction,
 } from '@cyber4all/clark-entity/dist/learning-object';
-import { LibraryInteractor } from './LibraryInteractor';
 import { File } from '@cyber4all/clark-entity/dist/learning-object';
 import {
   MultipartFileUpload,
@@ -20,50 +19,12 @@ import {
   MultipartUploadData,
   CompletedPartList,
 } from '../interfaces/FileManager';
-import { LEARNING_OBJECT_ROUTES } from '../routes';
+import { fetchFile } from '../FileManager/fetchFile';
+import { enforceWhitelist } from '../middleware/whitelist';
 // TODO: Update File in clark-entity
 export interface LearningObjectFile extends File {
   packageable: boolean;
 }
-type GradientVector = [number, number, number, number];
-type PDFHeaderAlignment = 'left' | 'right' | 'center' | 'justify';
-enum PDFFonts {
-  REGULAR = 'Helvetica',
-  BOLD = 'Helvetica-Bold',
-}
-enum PDFFontSizes {
-  JUMBO = 25,
-  LARGE = 20,
-  MEDIUM = 18,
-  REGULAR = 14.5,
-}
-enum PDFColors {
-  TEXT = '#333',
-  DARK_TEXT = '#3b3c3e',
-  LINK = '#1B9CFC',
-  BANNER = '#3b608b',
-  WHITE = '#FFF',
-  DARK_BLUE = '#2b4066',
-  LIGHT_BLUE = '#3b608b',
-}
-enum PDFText {
-  CREATOR = 'C.L.A.R.K. | Cybersecurity Labs and Resource Knowledge-base',
-  COVER_PAGE_TITLE = 'CLARK | Cybersecurity Labs and Resource Knowledge-base',
-  OUTCOMES_TITLE = 'Outcomes',
-  DESCRIPTION_TITLE = 'Description',
-  MATERIALS_TITLE = 'Content',
-  UNPACKED_FILES_TITLE = 'Resources',
-  UNPACKED_FILES_DESCRIPTION = 'These materials on CLARK are required to use this learning object.',
-  ASSESSMENTS_TITLE = 'Assessments',
-  INSTRUCTIONAL_STRATEGIES_TITLE = 'Instructional Strategies',
-  URLS_TITLE = 'Links',
-  NOTES_TITLE = 'Notes',
-}
-
-export type LearningObjectPDF = {
-  name: string;
-  url: string;
-};
 
 // file size is in bytes
 const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
@@ -79,6 +40,7 @@ export class LearningObjectInteractor {
    */
   public static async loadLearningObjectSummary(
     dataStore: DataStore,
+    library: LibraryCommunicator,
     username: string,
     accessUnpublished?: boolean,
     loadChildren?: boolean,
@@ -105,6 +67,7 @@ export class LearningObjectInteractor {
 
         const response = await this.searchObjects(
           dataStore,
+          library,
           {
             name: query.name,
             author: username,
@@ -141,6 +104,7 @@ export class LearningObjectInteractor {
             if (object.children && object.children.length) {
               object.children = await this.loadChildObjects(
                 dataStore,
+                library,
                 object,
                 false,
                 accessUnpublished,
@@ -154,7 +118,7 @@ export class LearningObjectInteractor {
       summary = await Promise.all(
         summary.map(async object => {
           try {
-            object.metrics = await this.loadMetrics(object.id);
+            object.metrics = await this.loadMetrics(library, object.id);
             return object;
           } catch (e) {
             console.log(e);
@@ -180,6 +144,7 @@ export class LearningObjectInteractor {
    */
   public static async loadLearningObject(
     dataStore: DataStore,
+    library: LibraryCommunicator,
     username: string,
     learningObjectName: string,
     accessUnpublished?: boolean,
@@ -190,16 +155,19 @@ export class LearningObjectInteractor {
         username,
         learningObjectName,
       );
+
       const learningObject = await dataStore.fetchLearningObject(
         learningObjectID,
         true,
         accessUnpublished,
       );
+
       learningObject.id = learningObjectID;
 
       if (learningObject.children) {
         learningObject.children = await this.loadChildObjects(
           dataStore,
+          library,
           learningObject,
           fullChildren,
           accessUnpublished,
@@ -207,7 +175,7 @@ export class LearningObjectInteractor {
       }
 
       try {
-        learningObject.metrics = await this.loadMetrics(learningObjectID);
+        learningObject.metrics = await this.loadMetrics(library, learningObjectID);
       } catch (e) {
         console.log(e);
       }
@@ -219,6 +187,7 @@ export class LearningObjectInteractor {
 
   private static async loadChildObjects(
     dataStore: DataStore,
+    library: LibraryCommunicator,
     learningObject: LearningObject,
     full?: boolean,
     accessUnpublished?: boolean,
@@ -233,7 +202,7 @@ export class LearningObjectInteractor {
       children = await Promise.all(
         children.map(async object => {
           try {
-            object.metrics = await this.loadMetrics(object.id);
+            object.metrics = await this.loadMetrics(library, object.id);
             return object;
           } catch (e) {
             console.log(e);
@@ -245,6 +214,7 @@ export class LearningObjectInteractor {
       for (let child of children) {
         child.children = await this.loadChildObjects(
           dataStore,
+          library,
           child,
           full,
           accessUnpublished,
@@ -273,6 +243,7 @@ export class LearningObjectInteractor {
 
   public static async loadFullLearningObjectByIDs(
     dataStore: DataStore,
+    library: LibraryCommunicator,
     ids: string[],
   ): Promise<LearningObject[]> {
     try {
@@ -281,10 +252,11 @@ export class LearningObjectInteractor {
       learningObjects = await Promise.all(
         learningObjects.map(async object => {
           try {
-            object.metrics = await this.loadMetrics(object.id);
+            object.metrics = await this.loadMetrics(library, object.id);
             if (object.children && object.children.length) {
               object.children = await this.loadChildObjects(
                 dataStore,
+                library,
                 object,
                 false,
                 false,
@@ -306,59 +278,7 @@ export class LearningObjectInteractor {
     }
   }
 
-  /**
-   * Add a new learning object to the database.
-   * NOTE: this function only adds basic fields;
-   *       the user.outcomes field is ignored
-   * NOTE: promise rejected if another learning object
-   *       tied to the same author and with the same 'name' field
-   *       already exists
-   *
-   * @async
-   *
-   * @param {UserID} author - database id of the parent
-   * @param {LearningObject} object - entity to add
-   *
-   * @returns {LearningObjectID} the database id of the new record
-   */
-  public static async addLearningObject(
-    dataStore: DataStore,
-    fileManager: FileManager,
-    object: LearningObject,
-  ): Promise<LearningObject> {
-    try {
-      const err = this.validateLearningObject(object);
-      if (err) {
-        return Promise.reject(err);
-      } else {
-        const learningObjectID = await dataStore.insertLearningObject(object);
-        object.id = learningObjectID;
-
-        // Generate PDF and update Learning Object with PDF meta.
-        object = await this.updateReadme({
-          fileManager,
-          object,
-          dataStore,
-        });
-        this.updateLearningObject(dataStore, fileManager, object.id, object);
-
-        return object;
-      }
-    } catch (e) {
-      // The duplicate key error is produced by Mongo, via a constraint on the authorID/name compound index
-      // FIXME: This should be an error that is encapsulated within the MongoDriver, since it is specific to Mongo's indexing functionality
-      if (/duplicate key error/gi.test(e)) {
-        return Promise.reject(
-          `Could not save Learning Object. Learning Object with name: ${
-            object.name
-          } already exists.`,
-        );
-      }
-      return Promise.reject(`Problem creating Learning Object. Error${e}`);
-    }
-  }
-
-  private static validateLearningObject(object: LearningObject): string {
+  static validateLearningObject(object: LearningObject): string {
     let error = null;
     if (object.name.trim() === '') {
       error = 'Learning Object name cannot be empty.';
@@ -395,7 +315,7 @@ export class LearningObjectInteractor {
       let loFile: LearningObjectFile;
       const uploadPath = `${params.username}/${params.id}/${
         params.file.fullPath ? params.file.fullPath : params.file.name
-      }`;
+        }`;
       const fileUpload: FileUpload = {
         path: uploadPath,
         data: params.file.buffer,
@@ -469,30 +389,28 @@ export class LearningObjectInteractor {
     fileId: string;
     dataStore: DataStore;
     fileManager: FileManager;
-    responder: Responder;
+    username: string,
   }): Promise<any> {
     try {
-      // Collect requested file metadata from datastore
-      const fileMetaData = await params.dataStore.findSingleFile({
-        learningObjectId: params.learningObjectId,
-        fileId: params.fileId,
-      });
+      const [isWhitelisted, learningObject, fileMetaData] = await Promise.all([
+        // Check if the user is on the whitelist
+        enforceWhitelist(params.username),
+        // Fetch the learning object
+        params.dataStore.fetchLearningObject(params.learningObjectId),
+        // Collect requested file metadata from datastore
+        params.dataStore.findSingleFile({
+          learningObjectId: params.learningObjectId,
+          fileId: params.fileId,
+        })]);
 
-      const url = fileMetaData.url;
+      // if the user is not on the whitelist and the LO is not released, throw access error
+      if (!isWhitelisted && learningObject.lock && learningObject.lock.restrictions.indexOf(Restriction.DOWNLOAD) !== -1) {
+        throw new Error('Invalid Access');
+      }
 
-      // Make http request using attached url in file metadata, pipe response
-      // tslint:disable-next-line:max-line-length
-      https.get(url, res => {
-        res.pipe(
-          params.responder.writeStream(
-            `${fileMetaData.name}.${
-              fileMetaData.extension ? fileMetaData.extension : ''
-            }`,
-          ),
-        );
-      });
+      return Promise.resolve(fetchFile(fileMetaData.url, fileMetaData.name));
     } catch (e) {
-      Promise.reject(e);
+      return Promise.reject(e);
     }
   }
 
@@ -724,32 +642,6 @@ export class LearningObjectInteractor {
   }
 
   /**
-   * Deletes specified file
-   *
-   * @static
-   * @param {FileManager} fileManager
-   * @param {Responder} responder
-   * @param {string} id
-   * @param {string} username
-   * @param {string} filename
-   * @returns {Promise<void>}
-   * @memberof LearningObjectInteractor
-   */
-  public static async deleteFile(
-    fileManager: FileManager,
-    id: string,
-    username: string,
-    filename: string,
-  ): Promise<void> {
-    try {
-      const path = `${username}/${id}/${filename}`;
-      return fileManager.delete({ path });
-    } catch (e) {
-      return Promise.reject(`Problem deleting file. Error: ${e}`);
-    }
-  }
-
-  /**
    * Look up a learning outcome by its source and tag.
    * @async
    *
@@ -774,143 +666,10 @@ export class LearningObjectInteractor {
     }
   }
 
-  /**
-   * Update an existing learning object record.
-   * NOTE: promise rejected if another learning object
-   *       tied to the same author and with the same 'name' field
-   *       already exists
-   *
-   * @async
-   *
-   * @param {LearningObjectID} id - database id of the record to change
-   * @param {LearningObject} object - entity with values to update to
-   */
-  public static async updateLearningObject(
-    dataStore: DataStore,
-    fileManager: FileManager,
-    id: string,
-    object: LearningObject,
-  ): Promise<void> {
-    try {
-      const err = this.validateLearningObject(object);
-      if (!err) {
-        object = await this.updateReadme({
-          dataStore,
-          fileManager,
-          object,
-        });
-        return await dataStore.editLearningObject(id, object);
-      } else {
-        throw new Error(err);
-      }
-    } catch (e) {
-      return Promise.reject(`Problem updating Learning Object. Error: ${e}`);
-    }
-  }
-
-  /**
-   * Updates Readme PDF for Learning Object
-   *
-   * @static
-   * @param {{
-   *     dataStore: DataStore;
-   *     fileManager: FileManager;
-   *     object?: LearningObject;
-   *     id?: string;
-   *   }} params
-   * @returns {Promise<LearningObject>}
-   * @memberof LearningObjectInteractor
-   */
-  public static async updateReadme(params: {
-    dataStore: DataStore;
-    fileManager: FileManager;
-    object?: LearningObject;
-    id?: string;
-  }): Promise<LearningObject> {
-    try {
-      let object = params.object;
-      const id = params.id;
-      if (!object && id) {
-        object = await params.dataStore.fetchLearningObject(id, true, true);
-      } else if (!object && !id) {
-        throw new Error(`No learning object or id provided.`);
-      }
-      const oldPDF: LearningObjectPDF = object.materials['pdf'];
-      const pdf = await this.generatePDF(params.fileManager, object);
-
-      if (oldPDF && oldPDF.name !== pdf.name) {
-        this.deleteFile(
-          params.fileManager,
-          object.id,
-          object.author.username,
-          oldPDF.name,
-        );
-      }
-
-      object.materials['pdf'] = {
-        name: pdf.name,
-        url: pdf.url,
-      };
-      return object;
-    } catch (e) {
-      return Promise.reject(
-        `Problem updating Readme for learning object. Error: ${e}`,
-      );
-    }
-  }
-
-  public static async togglePublished(
-    dataStore: DataStore,
-    username: string,
-    id: string,
-    published: boolean,
-  ): Promise<void> {
-    try {
-      const object = await dataStore.fetchLearningObject(id, true, true);
-      published ? object.publish() : object.unpublish();
-      const err = this.validateLearningObject(object);
-      if (err) {
-        return Promise.reject(err);
-      }
-      return dataStore.togglePublished(username, id, published);
-    } catch (e) {
-      return Promise.reject(`Problem toggling publish status. Error:  ${e}`);
-    }
-  }
-
-  public static async deleteLearningObject(
-    dataStore: DataStore,
-    fileManager: FileManager,
-    username: string,
-    learningObjectName: string,
-  ): Promise<void> {
-    try {
-      const learningObjectID = await dataStore.findLearningObject(
-        username,
-        learningObjectName,
-      );
-      const learningObject = await dataStore.fetchLearningObject(
-        learningObjectID,
-        false,
-        true,
-      );
-      await dataStore.deleteLearningObject(learningObjectID);
-      if (learningObject.materials.files.length) {
-        const path = `${username}/${learningObjectID}/`;
-        await fileManager.deleteAll({ path });
-      }
-      LibraryInteractor.cleanObjectsFromLibraries([learningObjectID]);
-      return Promise.resolve();
-    } catch (error) {
-      return Promise.reject(
-        `Problem deleting Learning Object. Error: ${error}`,
-      );
-    }
-  }
-
   public static async deleteMultipleLearningObjects(
     dataStore: DataStore,
     fileManager: FileManager,
+    library: LibraryCommunicator,
     username: string,
     learningObjectNames: string[],
   ): Promise<void> {
@@ -928,7 +687,7 @@ export class LearningObjectInteractor {
         const path = `${username}/${object.id}/`;
         await fileManager.deleteAll({ path });
       }
-      LibraryInteractor.cleanObjectsFromLibraries(learningObjectIDs);
+      await library.cleanObjectsFromLibraries(learningObjectIDs);
     } catch (error) {
       return Promise.reject(
         `Problem deleting Learning Objects. Error: ${error}`,
@@ -942,6 +701,7 @@ export class LearningObjectInteractor {
    */
   public static async fetchAllObjects(
     dataStore: DataStore,
+    library: LibraryCommunicator,
     currPage: number,
     limit: number,
   ): Promise<{ objects: LearningObject[]; total: number }> {
@@ -955,7 +715,7 @@ export class LearningObjectInteractor {
       response.objects = await Promise.all(
         response.objects.map(async object => {
           try {
-            object.metrics = await this.loadMetrics(object.id);
+            object.metrics = await this.loadMetrics(library, object.id);
             return object;
           } catch (e) {
             console.log(e);
@@ -978,6 +738,7 @@ export class LearningObjectInteractor {
    */
   public static async fetchMultipleObjects(
     dataStore: DataStore,
+    library: LibraryCommunicator,
     ids: { username: string; learningObjectName: string }[],
   ): Promise<LearningObject[]> {
     try {
@@ -1004,7 +765,7 @@ export class LearningObjectInteractor {
       learningObjects = await Promise.all(
         learningObjects.map(async object => {
           try {
-            object.metrics = await this.loadMetrics(object.id);
+            object.metrics = await this.loadMetrics(library, object.id);
             return object;
           } catch (e) {
             console.log(e);
@@ -1022,6 +783,7 @@ export class LearningObjectInteractor {
 
   public static async fetchObjectsByIDs(
     dataStore: DataStore,
+    library: LibraryCommunicator,
     ids: string[],
   ): Promise<LearningObject[]> {
     try {
@@ -1034,7 +796,7 @@ export class LearningObjectInteractor {
       learningObjects = await Promise.all(
         learningObjects.map(async object => {
           try {
-            object.metrics = await this.loadMetrics(object.id);
+            object.metrics = await this.loadMetrics(library, object.id);
             return object;
           } catch (e) {
             console.log(e);
@@ -1063,6 +825,7 @@ export class LearningObjectInteractor {
    */
   public static async searchObjects(
     dataStore: DataStore,
+    library: LibraryCommunicator,
     params: {
       name: string,
       author: string,
@@ -1110,7 +873,7 @@ export class LearningObjectInteractor {
       response.objects = await Promise.all(
         response.objects.map(async object => {
           try {
-            object.metrics = await this.loadMetrics(object.id);
+            object.metrics = await this.loadMetrics(library, object.id);
             return object;
           } catch (e) {
             console.log(e);
@@ -1229,9 +992,12 @@ export class LearningObjectInteractor {
    * @returns {Promise<Metrics>}
    * @memberof LearningObjectInteractor
    */
-  private static async loadMetrics(objectID: string): Promise<Metrics> {
+  private static async loadMetrics(
+    library: LibraryCommunicator,
+    objectID: string,
+  ): Promise<Metrics> {
     try {
-      return LibraryInteractor.getMetrics(objectID);
+      return library.getMetrics(objectID);
     } catch (e) {
       return Promise.reject(e);
     }
@@ -1290,537 +1056,6 @@ export class LearningObjectInteractor {
     // this means by default it must be a packageable file size
     return !(file.dztotalfilesize > MAX_PACKAGEABLE_FILE_SIZE);
   }
-
-  /**
-   * Generates PDF for Learning Object
-   *
-   * @private
-   * @static
-   * @param {FileManager} fileManager
-   * @param {LearningObject} learningObject
-   * @memberof LearningObjectInteractor
-   */
-  private static generatePDF(
-    fileManager: FileManager,
-    learningObject: LearningObject,
-  ) {
-    // Create new Doc and Track Stream
-    const doc = new PDFKit();
-    // Create array to catch Buffers
-    const buffers: Buffer[] = [];
-    // Add Event Handlers
-    const pdf = this.addEventListeners(
-      fileManager,
-      doc,
-      buffers,
-      learningObject,
-    );
-    const gradientRGB: GradientVector = [0, 0, 650, 0];
-    // MetaData
-    this.appendMetaData(doc, learningObject);
-    // Cover Page
-    this.appendGradientHeader({
-      gradientRGB,
-      doc,
-      title: PDFText.COVER_PAGE_TITLE,
-      headerYStart: 0,
-      textXStart: 100,
-      textYStart: 22,
-    });
-    this.appendCoverPage(doc, learningObject);
-    doc.addPage();
-    // Description TEMP REMOVAL
-    // if (learningObject.goals.length) {
-    //   this.appendGradientHeader({
-    //     gradientRGB,
-    //     doc,
-    //     title: PDFText.DESCRIPTION_TITLE,
-    //     headerYStart: doc.y - 75,
-    //     textYStart: doc.y - 70 + 20,
-    //   });
-    //   this.appendLearningGoals(doc, learningObject);
-    // }
-    // Outcomes
-    if (learningObject.outcomes.length) {
-      this.appendGradientHeader({
-        gradientRGB,
-        doc,
-        title: PDFText.OUTCOMES_TITLE,
-        headerYStart: doc.y - 75,
-        textYStart: doc.y - 70 + 20,
-      });
-      this.appendOutcomes(doc, learningObject);
-    }
-    // Content (Urls)
-    if (
-      learningObject.materials.urls.length ||
-      learningObject.materials.notes
-    ) {
-      this.appendGradientHeader({
-        gradientRGB,
-        doc,
-        title: PDFText.MATERIALS_TITLE,
-      });
-      this.appendTextMaterials(doc, learningObject);
-    }
-    // Unpacked Files
-    const unpackedFiles = learningObject.materials.files.filter(
-      f => !f['packageable'],
-    );
-    if (unpackedFiles.length) {
-      this.appendGradientHeader({
-        gradientRGB,
-        doc,
-        title: PDFText.UNPACKED_FILES_TITLE,
-      });
-      this.appendUnpackedFileURLs({
-        doc,
-        files: <LearningObjectFile[]>unpackedFiles,
-        id: learningObject.id,
-      });
-    }
-    doc.end();
-    return pdf;
-  }
-
-  /**
-   * Adds event listeners to PDF write process
-   *
-   * @private
-   * @static
-   * @param {FileManager} fileManager
-   * @param {PDFKit.PDFDocument} doc
-   * @param {Buffer[]} buffers
-   * @param {LearningObject} learningObject
-   * @memberof LearningObjectInteractor
-   */
-  private static addEventListeners(
-    fileManager: FileManager,
-    doc: PDFKit.PDFDocument,
-    buffers: Buffer[],
-    learningObject: LearningObject,
-  ): Promise<LearningObjectPDF> {
-    doc.on('data', (data: Buffer) => {
-      buffers.push(data);
-    });
-    doc.on('error', e => {
-      console.log(e);
-    });
-
-    return new Promise<LearningObjectPDF>(resolve => {
-      doc.on('end', async () => {
-        const buffer: Buffer = Buffer.concat(buffers);
-        const fileName = `0ReadMeFirst - ${learningObject.name}.pdf`;
-        const path = `${learningObject.author.username}/${
-          learningObject.id
-        }/${fileName}`;
-        const fileUpload: FileUpload = {
-          path,
-          data: buffer,
-        };
-        const url = await fileManager.upload({ file: fileUpload });
-        resolve({
-          url,
-          name: fileName,
-        });
-      });
-    });
-  }
-
-  /**
-   * Adds MetaData to PDF Document
-   *
-   * @private
-   * @static
-   * @param {PDFKit.PDFDocument} doc
-   * @param {LearningObject} learningObject
-   * @memberof LearningObjectInteractor
-   */
-  private static appendMetaData(
-    doc: PDFKit.PDFDocument,
-    learningObject: LearningObject,
-  ) {
-    doc.info.Title = learningObject.name;
-    doc.info.Author = learningObject.author.name;
-    doc.info.Creator = PDFText.CREATOR;
-    doc.info.CreationDate = new Date(+learningObject.date);
-    doc.info.ModDate = new Date();
-  }
-
-  /**
-   * Adds Cover Page to PDF Document
-   *
-   * @private
-   * @static
-   * @param {PDFKit.PDFDocument} doc
-   * @param {LearningObject} learningObject
-   * @memberof LearningObjectInteractor
-   */
-  private static appendCoverPage(
-    doc: PDFKit.PDFDocument,
-    learningObject: LearningObject,
-  ) {
-    doc.moveDown(8);
-    doc
-      .fontSize(PDFFontSizes.JUMBO)
-      .fillColor(PDFColors.TEXT)
-      .text(learningObject.name, { align: 'center' });
-    doc.moveDown(2);
-    doc.font(PDFFonts.REGULAR);
-    doc.fontSize(PDFFontSizes.LARGE).text(learningObject.length.toUpperCase(), {
-      align: 'center',
-    });
-    doc.moveDown(2);
-    const authorName = titleCase(learningObject.author.name);
-    doc.fontSize(PDFFontSizes.MEDIUM).text(
-      `${authorName} - ${new Date(+learningObject.date).toLocaleDateString(
-        'en-US',
-        {
-          month: 'long',
-          day: 'numeric',
-          year: 'numeric',
-        },
-      )}`,
-      { align: 'center' },
-    );
-  }
-
-  /**
-   * Adds Learning Goals to PDF Document
-   *
-   * @private
-   * @static
-   * @param {number[]} gradientRGB
-   * @param {PDFKit.PDFDocument} doc
-   * @param {LearningObject} learningObject
-   * @memberof LearningObjectInteractor
-   */
-  private static appendLearningGoals(
-    doc: PDFKit.PDFDocument,
-    learningObject: LearningObject,
-  ) {
-    doc
-      .fillColor(PDFColors.TEXT)
-      .fontSize(PDFFontSizes.REGULAR)
-      .font(PDFFonts.REGULAR);
-    // Only get first goal for 'description'
-    const goal = learningObject.goals[0];
-    // Strip html tags from rich text
-    const text = striptags(goal.text);
-    doc.text(text);
-    doc.moveDown(0.5);
-    doc.moveDown(2);
-  }
-
-  /**
-   * Appends Outcomes to PDF Document
-   *
-   * @private
-   * @static
-   * @param {number[]} gradientRGB
-   * @param {PDFKit.PDFDocument} doc
-   * @param {LearningObject} learningObject
-   * @memberof LearningObjectInteractor
-   */
-  private static appendOutcomes(
-    doc: PDFKit.PDFDocument,
-    learningObject: LearningObject,
-  ) {
-    learningObject.outcomes.forEach(outcome => {
-      this.appendOutcomeHeader(doc, outcome);
-      // Assessments
-      if (outcome.assessments.length) {
-        this.appendOutcomeAssessments(doc, outcome);
-      }
-      // Instructional Strategies
-      if (outcome.strategies.length) {
-        this.appendOutcomeStrategies(doc, outcome);
-      }
-      doc.moveDown(2);
-    });
-  }
-
-  /**
-   * Appends Header for Outcome Section
-   *
-   * @private
-   * @static
-   * @param {PDFKit.PDFDocument} doc
-   * @param {LearningOutcome} outcome
-   * @memberof LearningObjectInteractor
-   */
-  private static appendOutcomeHeader(
-    doc: PDFKit.PDFDocument,
-    outcome: LearningOutcome,
-  ) {
-    doc
-      .fillColor(PDFColors.BANNER)
-      .fontSize(PDFFontSizes.REGULAR)
-      .font(PDFFonts.BOLD);
-    doc.text(outcome.bloom);
-    doc.moveDown(0.5);
-    doc
-      .fontSize(PDFFontSizes.REGULAR)
-      .font(PDFFonts.REGULAR)
-      .fillColor(PDFColors.TEXT);
-    doc.text(
-      `Students will be able to ${outcome.verb.toLowerCase()} ${outcome.text}`,
-    );
-  }
-
-  /**
-   * Appends Outcome Assessments to PDF Document
-   *
-   * @private
-   * @static
-   * @param {PDFKit.PDFDocument} doc
-   * @param {LearningOutcome} outcome
-   * @memberof LearningObjectInteractor
-   */
-  private static appendOutcomeAssessments(
-    doc: PDFKit.PDFDocument,
-    outcome: LearningOutcome,
-  ) {
-    doc
-      .fillColor(PDFColors.BANNER)
-      .fontSize(PDFFontSizes.REGULAR)
-      .font(PDFFonts.BOLD);
-    doc.text(PDFText.ASSESSMENTS_TITLE);
-    doc.moveDown(0.5);
-    outcome.assessments.forEach(assessment => {
-      doc.fillColor(PDFColors.TEXT);
-      doc.text(assessment.plan);
-      doc.moveDown(0.5);
-      doc.font(PDFFonts.REGULAR);
-      doc.text(assessment.text);
-      doc.moveDown(0.5);
-    });
-    doc.moveDown(1);
-  }
-
-  /**
-   * Appends Outcome Strategies to PDF Document
-   *
-   * @private
-   * @static
-   * @param {PDFKit.PDFDocument} doc
-   * @param {LearningOutcome} outcome
-   * @memberof LearningObjectInteractor
-   */
-  private static appendOutcomeStrategies(
-    doc: PDFKit.PDFDocument,
-    outcome: LearningOutcome,
-  ) {
-    doc
-      .fillColor(PDFColors.BANNER)
-      .fontSize(PDFFontSizes.REGULAR)
-      .font(PDFFonts.BOLD);
-    doc.text(PDFText.INSTRUCTIONAL_STRATEGIES_TITLE);
-    doc.moveDown(0.5);
-    outcome.strategies.forEach(strategy => {
-      doc.fillColor(PDFColors.TEXT);
-      doc.text(strategy.plan);
-      doc.moveDown(0.5);
-      doc.font(PDFFonts.REGULAR);
-      doc.text(strategy.text);
-      doc.moveDown(0.5);
-    });
-    doc.moveDown(1);
-  }
-
-  /**
-   * Appends Text Based Materials to PDF Document
-   *
-   * @private
-   * @static
-   * @param {number[]} gradientRGB
-   * @param {PDFKit.PDFDocument} doc
-   * @param {LearningObject} learningObject
-   * @memberof LearningObjectInteractor
-   */
-  private static appendTextMaterials(
-    doc: PDFKit.PDFDocument,
-    learningObject: LearningObject,
-  ) {
-    // Content (URLs)
-    if (learningObject.materials.urls.length) {
-      this.appendMaterialURLs(doc, learningObject);
-    }
-    // Content (Notes)
-    if (learningObject.materials.notes) {
-      this.appendMaterialNotes(doc, learningObject);
-    }
-    doc.moveDown(2);
-  }
-
-  /**
-   * Appends Material URLs to PDF Document
-   *
-   * @private
-   * @static
-   * @param {PDFKit.PDFDocument} doc
-   * @param {LearningObject} learningObject
-   * @memberof LearningObjectInteractor
-   */
-  private static appendMaterialURLs(
-    doc: PDFKit.PDFDocument,
-    learningObject: LearningObject,
-  ) {
-    doc
-      .fillColor(PDFColors.BANNER)
-      .fontSize(PDFFontSizes.REGULAR)
-      .font(PDFFonts.BOLD);
-    doc.text(PDFText.URLS_TITLE);
-    doc.moveDown(0.5);
-    learningObject.materials.urls.forEach(url => {
-      doc.fillColor(PDFColors.DARK_TEXT);
-      doc.text(url.title);
-      doc.moveDown(0.25);
-      doc.font(PDFFonts.REGULAR).fillColor(PDFColors.LINK);
-      doc.text(`${url.url}`, doc.x, doc.y, {
-        link: url.url,
-        underline: true,
-      });
-      doc.moveDown(0.5);
-    });
-    doc.moveDown(1);
-  }
-
-  /**
-   * Appends Material Notes to PDF Document
-   *
-   * @private
-   * @static
-   * @param {PDFKit.PDFDocument} doc
-   * @param {LearningObject} learningObject
-   * @memberof LearningObjectInteractor
-   */
-  private static appendMaterialNotes(
-    doc: PDFKit.PDFDocument,
-    learningObject: LearningObject,
-  ) {
-    doc
-      .fillColor(PDFColors.BANNER)
-      .fontSize(PDFFontSizes.REGULAR)
-      .font(PDFFonts.BOLD);
-    doc.text(PDFText.NOTES_TITLE);
-    doc.moveDown(0.5);
-    doc.fillColor(PDFColors.TEXT).font(PDFFonts.REGULAR);
-    // Print lines with individual api calls to avoid malformed
-    const lines = learningObject.materials.notes
-      .split(/\n/g)
-      .filter(line => line);
-    for (const line of lines) {
-      doc.text(line);
-      doc.moveDown(0.5);
-    }
-  }
-
-  /**
-   * Appends Unpacked file URLs to PDF Document
-   *
-   * @private
-   * @static
-   * @param {GradientVector} gradientRGB
-   * @param {PDFKit.PDFDocument} doc
-   * @param {files} LearningObjectFile[]
-   * @memberof LearningObjectInteractor
-   */
-  private static appendUnpackedFileURLs(params: {
-    doc: PDFKit.PDFDocument;
-    files: LearningObjectFile[];
-    id: string;
-  }) {
-    params.doc.fillColor(PDFColors.TEXT).font(PDFFonts.REGULAR);
-    params.doc.text(PDFText.UNPACKED_FILES_DESCRIPTION, { align: 'center' });
-    params.doc.moveDown(2);
-    params.files.forEach(file => {
-      params.doc.fillColor(PDFColors.DARK_TEXT);
-      params.doc.text(file.name);
-      params.doc.moveDown(0.25);
-
-      if (file.description) {
-        params.doc.font(PDFFonts.REGULAR).fillColor(PDFColors.TEXT);
-        params.doc.text(file.description);
-        params.doc.moveDown(0.25);
-      }
-
-      params.doc.font(PDFFonts.REGULAR).fillColor(PDFColors.LINK);
-      const url = LEARNING_OBJECT_ROUTES.GET_FILE(params.id, file.id);
-      params.doc.text(`${url}`, params.doc.x, params.doc.y, {
-        link: url,
-        underline: true,
-      });
-      params.doc.moveDown(0.5);
-    });
-    params.doc.moveDown(1);
-  }
-
-  /**
-   * Appends header with gradient background to PDF
-   *
-   * @private
-   * @static
-   * @param {{
-   *     gradientRGB: GradientVector;
-   *     doc: PDFKit.PDFDocument;
-   *     title: string;
-   *   }} params
-   * @memberof LearningObjectInteractor
-   */
-  private static appendGradientHeader(params: {
-    gradientRGB: GradientVector;
-    doc: PDFKit.PDFDocument;
-    title: string;
-    align?: PDFHeaderAlignment;
-    fontSize?: number;
-    height?: number;
-    headerYStart?: number;
-    textYStart?: number;
-    textXStart?: number;
-  }) {
-    const grad = params.doc.linearGradient(...params.gradientRGB);
-    grad.stop(0, PDFColors.DARK_BLUE).stop(1, PDFColors.LIGHT_BLUE);
-    params.doc
-      .rect(
-        0,
-        params.headerYStart !== undefined ? params.headerYStart : params.doc.y,
-        650,
-        params.height ? params.height : 50,
-      )
-      .fill(grad);
-    params.doc.stroke();
-    params.doc
-      .fontSize(params.fontSize ? params.fontSize : PDFFontSizes.REGULAR)
-      .font(PDFFonts.BOLD)
-      .fillColor(PDFColors.WHITE)
-      .text(
-        params.title,
-        params.textXStart !== undefined ? params.textXStart : params.doc.x,
-        params.textYStart !== undefined ? params.textYStart : params.doc.y + 20,
-        {
-          align: params.align ? params.align : 'center',
-        },
-      );
-    params.doc.moveDown(2);
-  }
-}
-
-/**
- * Title cases string
- *
- * @export
- * @param {string} text
- * @returns {string}
- */
-export function titleCase(text: string): string {
-  const textArr = text.split(' ');
-  for (let i = 0; i < textArr.length; i++) {
-    let word = textArr[i];
-    word = word.charAt(0).toUpperCase() + word.slice(1, word.length + 1);
-    textArr[i] = word;
-  }
-  return textArr.join(' ');
 }
 
 /**

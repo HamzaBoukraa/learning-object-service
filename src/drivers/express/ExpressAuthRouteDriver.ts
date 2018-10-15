@@ -1,30 +1,31 @@
-import { ExpressResponder } from '../drivers';
-import { DataStore, Responder, FileManager } from '../../interfaces/interfaces';
-import { Router, Response } from 'express';
-import { LearningObjectInteractor } from '../../interactors/interactors';
-import { LearningObject } from '@cyber4all/clark-entity';
+import { Router } from 'express';
 import * as multer from 'multer';
-import { DZFileMetadata, DZFile } from '../../interfaces/FileManager';
-import { enforceWhitelist } from '../../middleware/whitelist';
-
+import { LearningObjectInteractor } from '../../interactors/interactors';
+import { DZFile, DZFileMetadata } from '../../interfaces/FileManager';
+import { DataStore, FileManager, LibraryCommunicator } from '../../interfaces/interfaces';
+import { deleteFile, updateLearningObject, updateReadme } from '../../LearningObjects/LearningObjectInteractor';
+import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
+import * as SubmissionRouteDriver from '../../LearningObjectSubmission/SubmissionRouteDriver';
 import { reportError } from '../SentryConnector';
+
 export class ExpressAuthRouteDriver {
   private upload = multer({ storage: multer.memoryStorage() });
 
-  constructor(private dataStore: DataStore, private fileManager: FileManager) {}
+  constructor(
+    private dataStore: DataStore,
+    private fileManager: FileManager,
+    private library: LibraryCommunicator,
+  ) {}
 
   public static buildRouter(
     dataStore: DataStore,
     fileManager: FileManager,
+    library: LibraryCommunicator,
   ): Router {
-    const e = new ExpressAuthRouteDriver(dataStore, fileManager);
+    const e = new ExpressAuthRouteDriver(dataStore, fileManager, library);
     const router: Router = Router();
     e.setRoutes(router);
     return router;
-  }
-
-  private getResponder(response: Response): Responder {
-    return new ExpressResponder(response);
   }
 
   private setRoutes(router: Router): void {
@@ -40,7 +41,7 @@ export class ExpressAuthRouteDriver {
         try {
           throw new Error(
             `${
-              req.user.username
+            req.user.username
             } was retrieved from the token. Should be lowercase`,
           );
         } catch (e) {
@@ -51,116 +52,47 @@ export class ExpressAuthRouteDriver {
       }
       next();
     });
-    router
-      .route('/learning-objects')
-      .post(async (req, res) => {
-        const responder = this.getResponder(res);
-        try {
-          const username = req.user.username;
-          const object = LearningObject.instantiate(req.body.object);
-          object.author.username = username;
-          const learningObject = await LearningObjectInteractor.addLearningObject(
-            this.dataStore,
-            this.fileManager,
-            object,
-          );
-          responder.sendObject(learningObject);
-        } catch (e) {
-          responder.sendOperationError(e);
-        }
-      })
-      .patch(async (req, res) => {
-        const responder = this.getResponder(res);
-        try {
-          const object = LearningObject.instantiate(req.body.learningObject);
-          const user = req.user;
-          if (this.hasAccess(user, 'username', object.author.username)) {
-            await LearningObjectInteractor.updateLearningObject(
-              this.dataStore,
-              this.fileManager,
-              object.id,
-              object,
-            );
-            responder.sendOperationSuccess();
-          } else {
-            responder.unauthorized('Could not update Learning Object');
-          }
-        } catch (e) {
-          responder.sendOperationError(e);
-        }
-      });
+    router.use('', SubmissionRouteDriver.initialize(this.dataStore));
+    router.use('', LearningObjectRouteHandler.initialize({ dataStore: this.dataStore, fileManager: this.fileManager, library: this.library }));
     router.get('/learning-objects/summary', async (req, res) => {
-      const responder = this.getResponder(res);
+
       try {
         const children = req.query.children;
         const objects = await LearningObjectInteractor.loadLearningObjectSummary(
           this.dataStore,
+          this.library,
           req.user.username,
           true,
           children,
           req.query,
         );
-        responder.sendObject(objects);
-      } catch (e) {
-        responder.sendOperationError(e);
-      }
-    });
-    router.patch('/learning-objects/publish', async (req, res) => {
-      const responder = this.getResponder(res);
-      try {
-        const id = req.body.id;
-        const published = req.body.published;
-
-        await LearningObjectInteractor.togglePublished(
-          this.dataStore,
-          req.user.username,
-          id,
-          published,
-        );
-        responder.sendOperationSuccess();
+        res.status(200).send(objects);
       } catch (e) {
         console.error(e);
-        responder.sendOperationError(e);
-      }
-    });
-    router.patch('/learning-objects/unpublish', async (req, res) => {
-      const responder = this.getResponder(res);
-      try {
-        const id = req.body.id;
-        const published = req.body.published;
-
-        await LearningObjectInteractor.togglePublished(
-          this.dataStore,
-          req.user.username,
-          id,
-          published,
-        );
-        responder.sendOperationSuccess();
-      } catch (e) {
-        responder.sendOperationError(e);
+        res.status(500).send(e);
       }
     });
     router.patch('/learning-objects/:learningObjectId/collections', async (req, res) => {
-        const responder = this.getResponder(res);
-        const learningObjectId = req.params.learningObjectId;
-        const collection = req.body.collection;
 
-        try {
-          LearningObjectInteractor.addToCollection(
-            this.dataStore,
-            learningObjectId,
-            collection,
-          );
-          responder.sendOperationSuccess();
-        } catch (e) {
-          console.log(e);
-          responder.sendOperationError(e);
-        }
-      });
+      const learningObjectId = req.params.learningObjectId;
+      const collection = req.body.collection;
+
+      try {
+        LearningObjectInteractor.addToCollection(
+          this.dataStore,
+          learningObjectId,
+          collection,
+        );
+        res.sendStatus(200);
+      } catch (e) {
+        console.error(e);
+        res.status(500).send(e);
+      }
+    });
     router.get(
       '/learning-objects/:username/:learningObjectName/id',
       async (req, res) => {
-        const responder = this.getResponder(res);
+
         try {
           const user = req.user;
           const username = req.params.username;
@@ -171,12 +103,13 @@ export class ExpressAuthRouteDriver {
               username,
               learningObjectName,
             );
-            responder.sendObject(id);
+            res.status(200).send(id);
           } else {
-            responder.unauthorized('Cannot fetch Learning Object ID.');
+            res.status(403).send('Invalid Access. Cannot fetch Learning Object ID.');
           }
         } catch (e) {
-          responder.sendOperationError(e);
+          console.error(e);
+          res.status(500).send(e);
         }
       },
     );
@@ -184,7 +117,7 @@ export class ExpressAuthRouteDriver {
       '/learning-objects/:id/files',
       this.upload.any(),
       async (req, res) => {
-        const responder = this.getResponder(res);
+
         try {
           const file: Express.Multer.File = req.files[0];
           const id = req.params.id;
@@ -208,19 +141,18 @@ export class ExpressAuthRouteDriver {
               file: upload,
             });
 
-            responder.sendObject(loFile);
+            res.status(200).send(loFile);
           } else {
-            responder.unauthorized(
-              'User must be verified to upload materials.',
-            );
+            res.status(403).send('Invalid Access. User must be verified to upload materials.');
           }
         } catch (e) {
-          responder.sendOperationError(e);
+          console.error(e);
+          res.status(500).send(e);
         }
       },
     );
     router.delete('/learning-objects/:id/files', async (req, res) => {
-      const responder = this.getResponder(res);
+
       try {
         const uploadStatusId = req.body.uploadId;
         await LearningObjectInteractor.cancelUpload({
@@ -229,52 +161,55 @@ export class ExpressAuthRouteDriver {
           fileManager: this.fileManager,
         });
 
-        responder.sendOperationSuccess();
+        res.sendStatus(200);
       } catch (e) {
-        responder.sendOperationError(e);
+        console.error(e);
+        res.status(500).send(e);
       }
     });
     router.delete('/files/:id/:filename', async (req, res) => {
-      const responder = this.getResponder(res);
+
       try {
         const id = req.params.id;
         const filename = req.params.filename;
         const username = req.user.username;
-        await LearningObjectInteractor.deleteFile(
+        await deleteFile(
           this.fileManager,
           id,
           username,
           filename,
         );
-        responder.sendOperationSuccess();
+        res.sendStatus(200);
       } catch (e) {
-        responder.sendOperationError(e);
+        console.error(e);
+        res.status(500).send(e);
       }
     });
     router
       .patch('/learning-objects/:id/pdf', async (req, res) => {
-        const responder = this.getResponder(res);
+
         try {
           const id = req.params.id;
-          const object = await LearningObjectInteractor.updateReadme({
+          const object = await updateReadme({
             id,
             dataStore: this.dataStore,
             fileManager: this.fileManager,
           });
-          await LearningObjectInteractor.updateLearningObject(
+          await updateLearningObject(
             this.dataStore,
             this.fileManager,
             id,
             object,
           );
-          responder.sendOperationSuccess();
+          res.sendStatus(200);
         } catch (e) {
-          responder.sendOperationError(e);
+          console.error(e);
+          res.status(500).send(e);
         }
-      })
-      .route('/learning-objects/:username/:learningObjectName/children')
+      });
+    router.route('/learning-objects/:username/:learningObjectName/children')
       .post(async (req, res) => {
-        const responder = this.getResponder(res);
+
         try {
           const username = req.params.username;
           const user = req.user;
@@ -285,16 +220,17 @@ export class ExpressAuthRouteDriver {
               parentName: req.params.learningObjectName,
               username: user.username,
             });
-            responder.sendOperationSuccess();
+            res.sendStatus(200);
           } else {
-            responder.unauthorized('Could not add child object.');
+            res.status(403).send('Invalid Access. Could not add child object.');
           }
         } catch (e) {
-          responder.sendOperationError(e);
+          console.error(e);
+          res.status(500).send(e);
         }
       })
       .delete(async (req, res) => {
-        const responder = this.getResponder(res);
+
         try {
           const user = req.user;
           const username = req.params.username;
@@ -305,47 +241,36 @@ export class ExpressAuthRouteDriver {
               parentName: req.params.learningObjectName,
               username: user.username,
             });
-          responder.sendOperationSuccess();
+          res.sendStatus(200);
         } catch (e) {
-          responder.sendOperationError(e);
+          console.error(e);
+          res.status(500).send(e);
         }
       });
-    router.delete('/learning-objects/:learningObjectName', async (req, res) => {
-      const responder = this.getResponder(res);
-      try {
-        const learningObjectName = req.params.learningObjectName;
-        await LearningObjectInteractor.deleteLearningObject(
-          this.dataStore,
-          this.fileManager,
-          req.user.username,
-          learningObjectName,
-        );
-        responder.sendOperationSuccess();
-      } catch (e) {
-        responder.sendOperationError(e);
-      }
-    });
 
     router.get(
       '/learning-objects/:learningObjectId/files/:fileId',
       async (req, res) => {
-        const responder = this.getResponder(res);
         const learningObjectId = req.params.learningObjectId;
         const fileId = req.params.fileId;
+        const username = req.user.username;
         try {
-          if (await enforceWhitelist(req.user.username)) {
-            await LearningObjectInteractor.downloadSingleFile({
+            const {fileStream, filename} = await LearningObjectInteractor.downloadSingleFile({
               learningObjectId,
               fileId,
               dataStore: this.dataStore,
               fileManager: this.fileManager,
-              responder,
+              username,
             });
-          } else {
-            responder.sendOperationError('Invalid download access');
-          }
+
+            fileStream.pipe(res.attachment(filename));
         } catch (e) {
-          responder.sendOperationError(e);
+          if (e.message === 'Invalid Access') {
+            res.status(403).send('Invalid Access. You do not have download privileges for this file');
+          } else {
+            console.error(e);
+            res.status(500).send('Internal Server Error');
+          }
         }
       },
     );
@@ -353,49 +278,55 @@ export class ExpressAuthRouteDriver {
     router.delete(
       '/learning-objects/:learningObjectNames/multiple',
       async (req, res) => {
-        const responder = this.getResponder(res);
+
         try {
           const learningObjectNames = req.params.learningObjectNames.split(',');
           await LearningObjectInteractor.deleteMultipleLearningObjects(
             this.dataStore,
             this.fileManager,
+            this.library,
             req.user.username,
             learningObjectNames,
           );
-          responder.sendOperationSuccess();
+          res.sendStatus(200);
         } catch (e) {
-          responder.sendOperationError(e);
+          console.error(e);
+          res.status(500).send(e);
         }
       },
     );
 
     // TODO: Need to validate token and that it is coming from cart service
     router.get('/cart/learning-objects/:ids/summary', async (req, res) => {
-      const responder = this.getResponder(res);
+
       try {
         const ids: string[] = req.params.ids.split(',');
         const objects = await LearningObjectInteractor.fetchObjectsByIDs(
           this.dataStore,
+          this.library,
           ids,
         );
-        responder.sendObject(objects);
+        res.status(200).send(objects);
       } catch (e) {
-        responder.sendOperationError(e);
+        console.error(e);
+        res.status(500).send(e);
       }
     });
 
     // TODO: Need to validate token and that it is coming from cart service
     router.get('/cart/learning-objects/:ids/full', async (req, res) => {
-      const responder = this.getResponder(res);
+
       try {
         const ids: string[] = req.params.ids.split(',');
         const objects = await LearningObjectInteractor.loadFullLearningObjectByIDs(
           this.dataStore,
+          this.library,
           ids,
         );
-        responder.sendObject(objects);
+        res.status(200).send(objects);
       } catch (e) {
-        responder.sendOperationError(e);
+        console.error(e);
+        res.status(500).send(e);
       }
     });
   }
