@@ -3,12 +3,21 @@ import { Request, Response, Router } from 'express';
 import { LearningObject } from '@cyber4all/clark-entity';
 import { DataStore } from '../interfaces/DataStore';
 import { FileManager, LibraryCommunicator } from '../interfaces/interfaces';
+import { UserToken, LearningObjectUpdates } from '../types';
 
 /**
  * Initializes an express router with endpoints to Create, Update, and Delete
  * a Learning Object.
  */
-export function initialize({ dataStore, fileManager, library}: { dataStore: DataStore, fileManager: FileManager, library: LibraryCommunicator}) {
+export function initialize({
+  dataStore,
+  fileManager,
+  library,
+}: {
+  dataStore: DataStore;
+  fileManager: FileManager;
+  library: LibraryCommunicator;
+}) {
   const router: Router = Router();
   const addLearningObject = async (req: Request, res: Response) => {
     try {
@@ -28,21 +37,17 @@ export function initialize({ dataStore, fileManager, library}: { dataStore: Data
   };
   const updateLearningObject = async (req: Request, res: Response) => {
     try {
-      // FIXME: Instantiate should possibly be done in the interactor
-      const object = LearningObject.instantiate(req.body.learningObject);
-      const user = req.user;
-      // FIXME: Authorization should be done in the interactor
-      if (user.username === object.author.username) {
-        await LearningObjectInteractor.updateLearningObject(
-          dataStore,
-          fileManager,
-          object.id,
-          object,
-        );
-        res.sendStatus(200);
-      } else {
-        res.status(403).send('Invalid access. Could not update Learning Object');
-      }
+      const id: string = req.body.id;
+      const updates = req.body.learningObject;
+      const user: UserToken = req.user;
+      await LearningObjectInteractor.updateLearningObject({
+        user,
+        dataStore,
+        fileManager,
+        id,
+        updates,
+      });
+      res.sendStatus(200);
     } catch (e) {
       console.error(e);
       res.status(500).send(e);
@@ -65,9 +70,9 @@ export function initialize({ dataStore, fileManager, library}: { dataStore: Data
     }
   };
   router
-      .route('/learning-objects')
-      .post(addLearningObject)
-      .patch(updateLearningObject);
+    .route('/learning-objects')
+    .post(addLearningObject)
+    .patch(updateLearningObject);
   router.delete('/learning-objects/:learningObjectName', deleteLearningObject);
   return router;
 }
