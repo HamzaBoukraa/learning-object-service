@@ -90,6 +90,11 @@ export interface DataStore {
     learningObjectId: string;
     fileId: string;
   }): Promise<LearningObjectFile>;
+  findUser(username: string): Promise<string>;
+  peek<T>(params: {
+    query: { [index: string]: string };
+    fields: { [index: string]: 0 | 1 };
+  }): Promise<T>;
 }
 
 export { Collection as LearningObjectCollection };
