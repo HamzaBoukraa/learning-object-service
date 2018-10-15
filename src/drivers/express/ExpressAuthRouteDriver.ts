@@ -190,17 +190,11 @@ export class ExpressAuthRouteDriver {
 
         try {
           const id = req.params.id;
-          const object = await updateReadme({
+        await updateReadme({
             id,
             dataStore: this.dataStore,
             fileManager: this.fileManager,
           });
-          await updateLearningObject(
-            this.dataStore,
-            this.fileManager,
-            id,
-            object,
-          );
           res.sendStatus(200);
         } catch (e) {
           console.error(e);
