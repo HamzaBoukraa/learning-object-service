@@ -6,6 +6,7 @@ import {
 } from './FileManager';
 import { LearningObjectLock } from '@cyber4all/clark-entity/dist/learning-object';
 import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
+import { LearningObjectUpdates } from '../types';
 
 export interface DataStore {
   connect(dburi: string): Promise<void>;
@@ -16,7 +17,10 @@ export interface DataStore {
     outcomeID: string,
     index: number,
   ): Promise<void>;
-  editLearningObject(id: string, object: LearningObject): Promise<void>;
+  editLearningObject(params: {
+    id: string;
+    updates: LearningObjectUpdates;
+  }): Promise<void>;
   toggleLock(id: string, lock?: LearningObjectLock): Promise<void>;
   deleteLearningObject(id: string): Promise<void>;
   deleteMultipleLearningObjects(ids: string[]): Promise<void>;
@@ -39,24 +43,22 @@ export interface DataStore {
     page?: number,
     limit?: number,
   ): Promise<{ objects: LearningObject[]; total: number }>;
-  searchObjects(
-    params: {
-      name: string,
-      author: string,
-      collection: string,
-      status: string[],
-      length: string[],
-      level: string[],
-      standardOutcomeIDs: string[],
-      text: string,
-      accessUnpublished?: boolean,
-      orderBy?: string,
-      sortType?: number,
-      page?: number,
-      limit?: number,
-      released?: boolean,
-    },
-  ): Promise<{ objects: LearningObject[]; total: number }>;
+  searchObjects(params: {
+    name: string;
+    author: string;
+    collection: string;
+    status: string[];
+    length: string[];
+    level: string[];
+    standardOutcomeIDs: string[];
+    text: string;
+    accessUnpublished?: boolean;
+    orderBy?: string;
+    sortType?: number;
+    page?: number;
+    limit?: number;
+    released?: boolean;
+  }): Promise<{ objects: LearningObject[]; total: number }>;
   fetchCollections(loadObjects?: boolean): Promise<Collection[]>;
   fetchCollection(name: string): Promise<Collection>;
   fetchCollectionMeta(name: string): Promise<any>;
