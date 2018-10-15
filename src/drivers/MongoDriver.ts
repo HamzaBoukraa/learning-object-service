@@ -32,6 +32,7 @@ import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
 import { reportError } from './SentryConnector';
 import * as ObjectMapper from './Mongo/ObjectMapper';
 import { SubmissionDatastore } from '../LearningObjectSubmission/SubmissionDatastore';
+import { LearningObjectUpdates } from '../types';
 
 export interface Collection {
   name: string;
@@ -569,79 +570,13 @@ export class MongoDriver implements DataStore {
    * @param {LearningObjectID} id which document to change
    * @param {LearningObjectEdit} record the values to change to
    */
-  async editLearningObject(id: string, object: LearningObject): Promise<void> {
-    try {
-      const old = await this.fetch<LearningObjectDocument>(
-        COLLECTIONS.LearningObject,
-        id,
-      );
-      const author = await this.fetchUser(old.authorID);
-      if (!author.emailVerified) {
-        object.unpublish();
-      }
-
-      const doc = await this.documentLearningObject(object, false, id);
-      // perform edit first, so uniqueness problems get caught BEFORE we edit outcomes
-      await this.edit(COLLECTIONS.LearningObject, id, doc);
-
-      const outcomesToAdd: LearningOutcome[] = [];
-      const oldOutcomes: Set<string> = new Set(old.outcomes);
-
-      await Promise.all(
-        object.outcomes.map(async outcome => {
-          try {
-            // Check if outcome already exists
-            const outcomeID = await this.findLearningOutcome(id, outcome.tag);
-            // Remove from array of outcomes
-            oldOutcomes.delete(outcomeID);
-            // Edit Learning Outcome
-            await this.editLearningOutcome(outcomeID, outcome, {
-              learningObjectID: id,
-              learningObjectName: doc.name,
-              authorName: object.author.name,
-            });
-          } catch (e) {
-            outcomesToAdd.push(outcome);
-          }
-        }),
-      );
-
-      // Insert new Learning Outcomes
-      if (outcomesToAdd.length) {
-        await this.insertLearningOutcomes(
-          {
-            learningObjectID: id,
-            learningObjectName: doc.name,
-            authorName: object.author.name,
-          },
-          outcomesToAdd,
-        );
-      }
-
-      // Remove deleted outcomes
-      const staleOutcomes = Array.from(oldOutcomes);
-
-      await Promise.all(
-        staleOutcomes.map((outcomeID: string) => {
-          return this.remove(COLLECTIONS.LearningOutcome, outcomeID);
-        }),
-      );
-
-      // ensure all outcomes have the right name_ and date tag
-      await this.db.collection(COLLECTIONS.LearningOutcome.name).updateMany(
-        { source: id },
-        {
-          $set: {
-            name: object.name,
-            date: object.date,
-          },
-        },
-      );
-
-      return Promise.resolve();
-    } catch (e) {
-      return Promise.reject(e);
-    }
+  async editLearningObject(params: {
+    id: string;
+    updates: LearningObjectUpdates;
+  }): Promise<void> {
+    await this.db
+      .collection(COLLECTIONS.LearningObject.name)
+      .updateOne({ _id: params.id }, { $set: params.updates });
   }
 
   public async toggleLock(
@@ -774,6 +709,24 @@ export class MongoDriver implements DataStore {
   // INFORMATION RETRIEVAL //
   ///////////////////////////
 
+  async peek<T>(params: {
+    query: { [index: string]: string };
+    fields: { [index: string]: 0 | 1 };
+  }): Promise<T> {
+    if (params.query.id) {
+      params.query._id = params.query.id;
+      delete params.query.id;
+    }
+    const doc = await this.db
+      .collection(COLLECTIONS.LearningObject.name)
+      .findOne(params.query, { projection: params.fields });
+    if (doc) {
+      doc.id = doc._id;
+      delete doc._id;
+    }
+    return doc;
+  }
+
   /**
    * Get LearningObject IDs owned by User
    *
@@ -802,24 +755,18 @@ export class MongoDriver implements DataStore {
    * @returns {UserID}
    */
   async findUser(username: string): Promise<string> {
-    try {
-      const query = {};
-      if (isEmail(username)) {
-        query['email'] = username;
-      } else {
-        query['username'] = username;
-      }
-      const userRecord = await this.db
-        .collection(COLLECTIONS.User.name)
-        .findOne<UserDocument>(query);
-      if (!userRecord)
-        return Promise.reject(
-          'No user with username or email' + username + ' exists.',
-        );
-      return `${userRecord._id}`;
-    } catch (e) {
-      return Promise.reject(e);
+    const query = {};
+    if (isEmail(username)) {
+      query['email'] = username;
+    } else {
+      query['username'] = username;
     }
+    const userRecord = await this.db
+      .collection(COLLECTIONS.User.name)
+      .findOne<UserDocument>(query, { projection: { _id: 1 } });
+    if (!userRecord)
+      throw new Error('No user with username or email' + username + ' exists.');
+    return `${userRecord._id}`;
   }
 
   /**
