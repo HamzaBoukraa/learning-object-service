@@ -1726,6 +1726,7 @@ export class MongoDriver implements DataStore {
         const rOutcome = await this.fetchLearningOutcome(outcomeID);
 
         const outcome = learningObject.addOutcome();
+        outcome.id = rOutcome.id;
         outcome.bloom = rOutcome.bloom;
         outcome.verb = rOutcome.verb;
         outcome.text = rOutcome.text;
@@ -1762,6 +1763,7 @@ export class MongoDriver implements DataStore {
   ): Promise<LearningOutcome> {
     try {
       const outcome = new LearningOutcome(new LearningObject());
+      outcome.id = record._id;
       outcome.bloom = record.bloom;
       outcome.verb = record.verb;
       outcome.text = record.text;
