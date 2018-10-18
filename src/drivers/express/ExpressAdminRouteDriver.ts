@@ -1,19 +1,20 @@
 import { LearningObject } from '@cyber4all/clark-entity';
 import { Router } from 'express';
 import { AdminLearningObjectInteractor } from '../../interactors/interactors';
-import { DataStore, FileManager } from '../../interfaces/interfaces';
+import { DataStore, FileManager, LibraryCommunicator } from '../../interfaces/interfaces';
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
 // tslint:disable-next-line:no-require-imports
 const version = require('../../../package.json').version;
 
 export class ExpressAdminRouteDriver {
-  constructor(private dataStore: DataStore, private fileManager: FileManager) { }
+  constructor(private dataStore: DataStore, private fileManager: FileManager, private library: LibraryCommunicator) { }
 
   public static buildRouter(
     dataStore: DataStore,
     fileManager: FileManager,
+    library: LibraryCommunicator,
   ): Router {
-    const e = new ExpressAdminRouteDriver(dataStore, fileManager);
+    const e = new ExpressAdminRouteDriver(dataStore, fileManager, library);
     const router: Router = Router();
     e.setRoutes(router);
     return router;
@@ -64,6 +65,7 @@ export class ExpressAdminRouteDriver {
         ) {
           learningObjects = await AdminLearningObjectInteractor.searchObjects(
             this.dataStore,
+            this.library,
             name,
             author,
             length,
