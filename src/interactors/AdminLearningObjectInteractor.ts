@@ -1,5 +1,5 @@
 import { LearningObjectInteractor } from './interactors';
-import { DataStore, FileManager } from '../interfaces/interfaces';
+import { DataStore, FileManager, LibraryCommunicator } from '../interfaces/interfaces';
 import { LearningObjectLock } from '@cyber4all/clark-entity/dist/learning-object';
 
 export class AdminLearningObjectInteractor {
@@ -41,6 +41,7 @@ export class AdminLearningObjectInteractor {
    */
   public static async searchObjects(
     dataStore: DataStore,
+    library: LibraryCommunicator,
     name: string,
     author: string,
     length: string[],
@@ -54,7 +55,7 @@ export class AdminLearningObjectInteractor {
   ): Promise<any> {
     try {
       const accessUnpublished = true;
-      return await this.learningObjectInteractor.searchObjects(dataStore, {
+      return await this.learningObjectInteractor.searchObjects(dataStore, library, {
           name,
           author,
           collection: undefined,
@@ -68,7 +69,7 @@ export class AdminLearningObjectInteractor {
           sortType,
           currPage: page,
           limit,
-        }
+        },
       );
     } catch (e) {
       return Promise.reject(`Problem searching Learning Objects. Error:${e}`);
