@@ -1227,7 +1227,7 @@ export class MongoDriver implements DataStore {
       // Files array within materials will alway contain one element
       return file;
     } catch (e) {
-      Promise.reject(e);
+      return Promise.reject(e);
     }
   }
 
