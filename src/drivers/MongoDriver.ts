@@ -139,9 +139,10 @@ export class MongoDriver implements DataStore {
   private db: Db;
 
   constructor(dburi: string) {
-    this.connect(dburi).then(
-      () => (this.submissionStore = new SubmissionDatastore(this.db)),
-    );
+    this.connect(dburi).then(() => {
+      this.submissionStore = new SubmissionDatastore(this.db);
+      this.learningOutcomeStore = new LearningOutcomeMongoDatastore(this.db);
+    });
   }
 
   /**
