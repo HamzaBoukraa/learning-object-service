@@ -33,6 +33,12 @@ import { reportError } from './SentryConnector';
 import * as ObjectMapper from './Mongo/ObjectMapper';
 import { SubmissionDatastore } from '../LearningObjectSubmission/SubmissionDatastore';
 import { LearningObjectUpdates } from '../types';
+import { LearningOutcomeMongoDatastore } from '../LearningOutcomes/LearningOutcomeMongoDatastore';
+import {
+  LearningOutcomeInput,
+  LearningOutcomeInsert,
+  LearningOutcomeUpdate,
+} from '../LearningOutcomes/types';
 
 export interface Collection {
   name: string;
