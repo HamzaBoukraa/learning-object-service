@@ -7,16 +7,12 @@ import {
 import { LearningObjectLock } from '@cyber4all/clark-entity/dist/learning-object';
 import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
 import { LearningObjectUpdates } from '../types';
+import { LearningOutcomeDatastore } from '../LearningOutcomes/LearningOutcomeInteractor';
 
-export interface DataStore {
+export interface DataStore extends LearningOutcomeDatastore {
   connect(dburi: string): Promise<void>;
   disconnect(): void;
   insertLearningObject(object: LearningObject): Promise<string>;
-  reorderOutcome(
-    objectID: string,
-    outcomeID: string,
-    index: number,
-  ): Promise<void>;
   editLearningObject(params: {
     id: string;
     updates: LearningObjectUpdates;
