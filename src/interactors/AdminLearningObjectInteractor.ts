@@ -129,6 +129,7 @@ export class AdminLearningObjectInteractor {
   public static async deleteMultipleLearningObjects(
     dataStore: DataStore,
     fileManager: FileManager,
+    library: LibraryCommunicator,
     username: string,
     learningObjectIDs: string[],
   ): Promise<void> {
@@ -136,6 +137,7 @@ export class AdminLearningObjectInteractor {
       return await this.learningObjectInteractor.deleteMultipleLearningObjects(
         dataStore,
         fileManager,
+        library,
         username,
         learningObjectIDs,
       );
