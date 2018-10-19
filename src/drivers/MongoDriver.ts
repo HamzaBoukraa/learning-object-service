@@ -127,6 +127,7 @@ COLLECTIONS_MAP.set(
 
 export class MongoDriver implements DataStore {
   submissionStore: SubmissionDatastore;
+  learningOutcomeStore: LearningOutcomeMongoDatastore;
   togglePublished(
     username: string,
     id: string,
