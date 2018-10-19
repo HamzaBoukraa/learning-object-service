@@ -184,6 +184,33 @@ export class MongoDriver implements DataStore {
   disconnect(): void {
     this.mongoClient.close();
   }
+  // LearningOutcome Ops
+  insertLearningOutcome(params: {
+    source: string;
+    outcome: LearningOutcomeInput & LearningOutcomeInsert;
+  }): Promise<string> {
+    return this.learningOutcomeStore.insertLearningOutcome(params);
+  }
+  getLearningOutcome(params: { id: string }): Promise<LearningOutcome> {
+    return this.learningOutcomeStore.getLearningOutcome(params);
+  }
+  getAllLearningOutcomes(params: {
+    source: string;
+  }): Promise<LearningOutcome[]> {
+    return this.learningOutcomeStore.getAllLearningOutcomes(params);
+  }
+  updateLearningOutcome(params: {
+    id: string;
+    updates: LearningOutcomeUpdate & LearningOutcomeInsert;
+  }): Promise<LearningOutcome> {
+    return this.learningOutcomeStore.updateLearningOutcome(params);
+  }
+  deleteLearningOutcome(params: { id: string }): Promise<void> {
+    return this.learningOutcomeStore.deleteLearningOutcome(params);
+  }
+  deleteAllLearningOutcomes(params: { source: string }): Promise<void> {
+    return this.learningOutcomeStore.deleteAllLearningOutcomes(params);
+  }
   /////////////
   // INSERTS //
   /////////////
