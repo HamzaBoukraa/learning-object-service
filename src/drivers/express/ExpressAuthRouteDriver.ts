@@ -269,6 +269,7 @@ export class ExpressAuthRouteDriver {
             res.status(403).send('Invalid Access. You do not have download privileges for this file');
           } else {
             console.error(e);
+            reportError(e);
             res.status(500).send('Internal Server Error');
           }
         }
