@@ -4,7 +4,7 @@ import {
   LearningOutcomeInsert,
   LearningOutcomeUpdate,
 } from './types';
-import { LearningOutcome } from '@cyber4all/clark-entity';
+import { LearningOutcome, StandardOutcome } from '@cyber4all/clark-entity';
 import { Db, ObjectID } from 'mongodb';
 import { COLLECTIONS } from '../drivers/MongoDriver';
 
@@ -40,10 +40,44 @@ export class LearningOutcomeMongoDatastore implements LearningOutcomeDatastore {
    * @returns {Promise<LearningOutcome>}
    * @memberof LearningOutcomeMongoDatastore
    */
-  getLearningOutcome(params: { id: string }): Promise<LearningOutcome> {
-    return this.db
-      .collection<LearningOutcome>(COLLECTIONS.LEARNING_OUTCOMES)
+  async getLearningOutcome(params: { id: string }): Promise<LearningOutcome> {
+    const outcomeDoc = await this.db
+      .collection(COLLECTIONS.LEARNING_OUTCOMES)
       .findOne({ _id: params.id });
+    if (outcomeDoc) {
+      outcomeDoc.mappings = await this.getAllStandardOutcomes({
+        ids: outcomeDoc.mappings,
+      });
+    }
+    return outcomeDoc;
+  }
+  /**
+   * Fetches Standard Outcome
+   *
+   * @param {{ id: string }} params
+   * @returns {Promise<StandardOutcome>}
+   * @memberof LearningOutcomeMongoDatastore
+   */
+  getStandardOutcome(params: { id: string }): Promise<StandardOutcome> {
+    return this.db
+      .collection<StandardOutcome>(COLLECTIONS.STANDARD_OUTCOMES)
+      .findOne({ _id: params.id });
+  }
+
+  /**
+   * Fetches all Standard Outcomes in array of ids
+   *
+   * @param {{ id: string }} params
+   * @returns {Promise<StandardOutcome[]>}
+   * @memberof LearningOutcomeMongoDatastore
+   */
+  getAllStandardOutcomes(params: {
+    ids: string[];
+  }): Promise<StandardOutcome[]> {
+    return this.db
+      .collection<StandardOutcome>(COLLECTIONS.STANDARD_OUTCOMES)
+      .find({ _id: { $in: params.ids } })
+      .toArray();
   }
 
   /**
@@ -58,10 +92,20 @@ export class LearningOutcomeMongoDatastore implements LearningOutcomeDatastore {
   async getAllLearningOutcomes(params: {
     source: string;
   }): Promise<LearningOutcome[]> {
-    return await this.db
-      .collection<LearningOutcome>(COLLECTIONS.LEARNING_OUTCOMES)
+    const outcomeDocs = await this.db
+      .collection(COLLECTIONS.LEARNING_OUTCOMES)
       .find({ source: params.source })
       .toArray();
+
+    await Promise.all(
+      outcomeDocs.map(async doc => {
+        doc.mappings = await this.getAllStandardOutcomes({
+          ids: doc.mappings,
+        });
+      }),
+    );
+
+    return outcomeDocs;
   }
 
   /**
