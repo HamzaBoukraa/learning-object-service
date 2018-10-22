@@ -1390,31 +1390,9 @@ export class MongoDriver implements DataStore {
       );
     }
     // load outcomes
-    // FIXME: Just set outcomes equal to learningObject.outcomes when entity package allows direct setting
-    const outcomes = await this.getAllLearningOutcomes({
+    learningObject.outcomes = await this.getAllLearningOutcomes({
       source: learningObject.id,
     });
-    for (const outcome of outcomes) {
-      const newOutcome = learningObject.addOutcome();
-      newOutcome.bloom = outcome.bloom;
-      newOutcome.verb = outcome.verb;
-      newOutcome.text = outcome.text;
-      for (const rAssessment of outcome.assessments) {
-        const assessment = newOutcome.addAssessment();
-        assessment.plan = rAssessment.plan;
-        assessment.text = rAssessment.text;
-      }
-      for (const rStrategy of outcome.strategies) {
-        const strategy = newOutcome.addStrategy();
-        strategy.plan = rStrategy.plan;
-        strategy.text = rStrategy.text;
-      }
-
-      // only extract the basic info for each mapped outcome
-      for (const mapping of outcome.mappings) {
-        newOutcome.mapTo(mapping);
-      }
-    }
 
     return learningObject;
   }
