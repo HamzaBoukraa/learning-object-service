@@ -73,7 +73,7 @@ export class ExpressDriver {
     this.app.use(enforceAdminAccess);
     this.app.use(
       '/admin',
-      ExpressAdminRouteDriver.buildRouter(dataStore, fileManager),
+      ExpressAdminRouteDriver.buildRouter(dataStore, fileManager, library),
     );
 
     /**
