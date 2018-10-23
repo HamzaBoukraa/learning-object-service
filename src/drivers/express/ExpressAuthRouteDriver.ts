@@ -128,7 +128,7 @@ export class ExpressAuthRouteDriver {
             encoding: file.encoding,
             buffer: file.buffer,
             mimetype: file.mimetype,
-            size: dzMetadata.dztotalfilesize,
+            size: dzMetadata.dztotalfilesize || dzMetadata.size,
           };
           const user = req.user;
 
