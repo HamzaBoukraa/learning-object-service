@@ -1,33 +1,18 @@
 
-import { togglePublished } from './SubmissionInteractor';
+import { submitForReview, cancelSubmission } from './SubmissionInteractor';
 import { MOCK_OBJECTS, SUBMITTABLE_LEARNING_OBJECT, INVALID_LEARNING_OBJECTS } from '../tests/mocks';
 import { DataStore } from '../interfaces/DataStore';
 import { MockDataStore } from '../tests/mock-drivers/MockDataStore';
 
 const dataStore: DataStore = new MockDataStore; // DataStore
 
-describe('togglePublished', () => {
-  it('should publish when given a valid username and id', async done => {
+describe('submitForReview', () => {
+  it('should submit given a valid username and id', async done => {
     try {
-      await expect(togglePublished(
+      await expect(submitForReview(
         dataStore,
         MOCK_OBJECTS.USERNAME,
         SUBMITTABLE_LEARNING_OBJECT.id,
-        true,
-      ))
-      .resolves.toBe(undefined);
-      done();
-    } catch (error) {
-      console.log(error);
-    }
-  });
-  it('should unpublish when given a valid username and id', async done => {
-    try {
-      await expect(togglePublished(
-        dataStore,
-        MOCK_OBJECTS.USERNAME,
-        SUBMITTABLE_LEARNING_OBJECT.id,
-        false,
       ))
       .resolves.toBe(undefined);
       done();
@@ -39,7 +24,7 @@ describe('togglePublished', () => {
     it('should return an error when a learning object without a name is provided', async done => {
       expect.assertions(1);
       try {
-        await togglePublished(dataStore, MOCK_OBJECTS.USERNAME, INVALID_LEARNING_OBJECTS.NO_NAME.id, true);
+        await submitForReview(dataStore, MOCK_OBJECTS.USERNAME, INVALID_LEARNING_OBJECTS.NO_NAME.id);
       } catch (e) {
         expect(typeof e).toEqual('string');
         done();
@@ -48,7 +33,7 @@ describe('togglePublished', () => {
     it('should return an error when a learning object without outcomes is provided', async done => {
       expect.assertions(1);
       try {
-        await togglePublished(dataStore, MOCK_OBJECTS.USERNAME, MOCK_OBJECTS.LEARNING_OBJECT.id, true);
+        await submitForReview(dataStore, MOCK_OBJECTS.USERNAME, MOCK_OBJECTS.LEARNING_OBJECT.id);
       } catch (e) {
         expect(typeof e).toEqual('string');
         done();
@@ -57,11 +42,27 @@ describe('togglePublished', () => {
     it('should return an error when a learning object without a description is provided', async done => {
       expect.assertions(1);
       try {
-        await togglePublished(dataStore, MOCK_OBJECTS.USERNAME, INVALID_LEARNING_OBJECTS.NO_DESCRIPTION.id, true);
+        await submitForReview(dataStore, MOCK_OBJECTS.USERNAME, INVALID_LEARNING_OBJECTS.NO_DESCRIPTION.id);
       } catch (e) {
         expect(typeof e).toEqual('string');
         done();
       }
     });
+  });
+});
+
+describe('cancelSubmission', () => {
+  it('should cancel the submission given a valid username and id', async done => {
+    try {
+      await expect(cancelSubmission(
+        dataStore,
+        MOCK_OBJECTS.USERNAME,
+        SUBMITTABLE_LEARNING_OBJECT.id,
+      ))
+      .resolves.toBe(undefined);
+      done();
+    } catch (error) {
+      console.log(error);
+    }
   });
 });
