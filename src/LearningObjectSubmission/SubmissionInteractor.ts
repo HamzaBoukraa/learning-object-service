@@ -11,12 +11,12 @@ export async function togglePublished(
     const object = await dataStore.fetchLearningObject(id, true, true);
     published ? object.publish() : object.unpublish();
     // TODO: learning object validation should be moved to the entity level
-    const err = LearningObjectInteractor.validateLearningObject(object);
-    if (err) {
-      return Promise.reject(err);
+    const errorMessage = LearningObjectInteractor.validateLearningObject(object);
+    if (errorMessage) {
+      return Promise.reject(errorMessage);
     }
     return dataStore.togglePublished(username, id, published);
   } catch (e) {
-    return Promise.reject(`Problem toggling publish status. Error:  ${e}`);
+    return Promise.reject(new Error(`Problem toggling publish status.`));
   }
 }

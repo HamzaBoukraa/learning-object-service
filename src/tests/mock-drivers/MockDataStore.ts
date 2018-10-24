@@ -7,7 +7,7 @@ import {
   MultipartFileUploadStatusUpdates,
   CompletedPart,
 } from '../../interfaces/FileManager';
-import { MOCK_OBJECTS } from '../mocks';
+import { MOCK_OBJECTS, SUBMITTABLE_LEARNING_OBJECT, INVALID_LEARNING_OBJECTS } from '../mocks';
 
 const COLLECTIONS = {
   LEARNING_OBJECTS: 'objects',
@@ -69,7 +69,16 @@ export class MockDataStore implements DataStore {
     full?: boolean,
     accessUnpublished?: boolean,
   ): Promise<any> {
-    return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT);
+    switch (id) {
+      case SUBMITTABLE_LEARNING_OBJECT.id:
+        return Promise.resolve(SUBMITTABLE_LEARNING_OBJECT);
+      case INVALID_LEARNING_OBJECTS.NO_DESCRIPTION.id:
+        return Promise.resolve(INVALID_LEARNING_OBJECTS.NO_DESCRIPTION);
+      case INVALID_LEARNING_OBJECTS.NO_NAME.id:
+        return Promise.resolve(INVALID_LEARNING_OBJECTS.NO_NAME);
+      default:
+        return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT);
+    }
   }
 
   fetchMultipleObjects(
@@ -89,7 +98,7 @@ export class MockDataStore implements DataStore {
     return Promise.resolve({ objects: [MOCK_OBJECTS.LEARNING_OBJECT], total: MOCK_OBJECTS.TOTAL_RECORDS });
   }
 
-  searchObjects(
+  searchObjects(params: {
     name: string,
     author: string,
     collection: string,
@@ -102,7 +111,7 @@ export class MockDataStore implements DataStore {
     sortType?: number,
     page?: number,
     limit?: number,
-  ): Promise<{ objects: any[]; total: number }> {
+  }): Promise<{ objects: any[]; total: number }> {
     return Promise.resolve({ objects: [MOCK_OBJECTS.LEARNING_OBJECT], total: MOCK_OBJECTS.TOTAL_RECORDS });
   }
 
