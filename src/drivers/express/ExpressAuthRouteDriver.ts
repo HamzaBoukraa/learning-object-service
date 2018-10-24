@@ -128,7 +128,7 @@ export class ExpressAuthRouteDriver {
             encoding: file.encoding,
             buffer: file.buffer,
             mimetype: file.mimetype,
-            size: dzMetadata.dztotalfilesize,
+            size: dzMetadata.dztotalfilesize || dzMetadata.size,
           };
           const user = req.user;
 
@@ -269,6 +269,7 @@ export class ExpressAuthRouteDriver {
             res.status(403).send('Invalid Access. You do not have download privileges for this file');
           } else {
             console.error(e);
+            reportError(e);
             res.status(500).send('Internal Server Error');
           }
         }

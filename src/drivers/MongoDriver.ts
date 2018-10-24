@@ -1202,26 +1202,32 @@ export class MongoDriver implements DataStore {
     fileId: string;
   }): Promise<LearningObjectFile> {
     try {
-      const fileMetaData = await this.db
+      let file;
+      const docs = await this.db
         .collection(COLLECTIONS.LearningObject.name)
-        .findOne(
-          {
+        .find({
             _id: params.learningObjectId,
             'materials.files': {
               $elemMatch: { id: params.fileId },
             },
-          },
-          {
+          })
+          .project({
             _id: 0,
             'materials.files.$': 1,
-          },
-        );
+          })
+          .toArray();
+
+      if (docs && docs.length) {
+        const doc = docs[0];
+        const materials = doc.materials;
+        file = materials.files[0];
+      }
 
       // Object contains materials property.
       // Files array within materials will alway contain one element
-      return fileMetaData.materials.files[0];
+      return file;
     } catch (e) {
-      Promise.reject(e);
+      return Promise.reject(e);
     }
   }
 

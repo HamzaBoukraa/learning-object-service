@@ -344,6 +344,9 @@ export class LearningObjectInteractor {
       }
       // If LearningObjectFile was generated, update LearningObject's materials
       if (loFile) {
+        // FIXME should be implemented in clark entity 
+        // @ts-ignore
+        loFile.size = params.file.size;
         await this.updateMaterials({
           loFile,
           dataStore: params.dataStore,

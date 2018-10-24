@@ -499,7 +499,7 @@ function appendUnpackedFileURLs(params: {
     }
 
     params.doc.font(PDFFonts.REGULAR).fillColor(PDFColors.LINK);
-    const url = LEARNING_OBJECT_ROUTES.GET_FILE(params.id, file.id);
+    const url = LEARNING_OBJECT_ROUTES.GET_FILE(params.id, file.id).trim();
     params.doc.text(`${url}`, params.doc.x, params.doc.y, {
       link: url,
       underline: true,
