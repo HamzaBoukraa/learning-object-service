@@ -666,6 +666,7 @@ export class MongoDriver implements DataStore {
       object,
       full,
     );
+
     if (!accessUnpublished && !learningObject.published)
       return Promise.reject(
         'User does not have access to the requested resource.',
@@ -1393,6 +1394,32 @@ export class MongoDriver implements DataStore {
     learningObject.outcomes = await this.getAllLearningOutcomes({
       source: learningObject.id,
     });
+
+    // for (const outcome of outcomes) {
+    //   const newOutcome = learningObject.addOutcome();
+    //   newOutcome.bloom = outcome.bloom;
+    //   newOutcome.verb = outcome.verb;
+    //   newOutcome.text = outcome.text;
+    //   newOutcome.id = outcome._id;
+
+    //   for (const rAssessment of outcome.assessments) {
+    //     const assessment = newOutcome.addAssessment();
+    //     assessment.plan = rAssessment.plan;
+    //     assessment.text = rAssessment.text;
+    //   }
+
+    //   for (const rStrategy of outcome.strategies) {
+    //     const strategy = newOutcome.addStrategy();
+    //     strategy.plan = rStrategy.plan;
+    //     strategy.text = rStrategy.text;
+    //   }
+
+    //   // only extract the basic info for each mapped outcome
+    //   for (const mapping of outcome.mappings) {
+    //     this.learningOutcomeStore.getLearningOutcome({ })
+    //     newOutcome.mapTo(mapping);
+    //   }
+    // }
 
     return learningObject;
   }
