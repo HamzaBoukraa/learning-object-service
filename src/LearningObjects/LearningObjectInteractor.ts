@@ -120,6 +120,26 @@ export async function updateLearningObject(params: {
   }
 }
 
+/**
+ * Fetches a learning object by ID
+ *
+ * @export
+ * @param {DataStore} dataStore
+ * @param {string} id the learning object's id
+ * @returns {Promise<LearningObject>}
+ */
+export async function getLearningObjectById(
+  dataStore: DataStore,
+  id: string,
+): Promise<LearningObject> {
+  try {
+    console.log('fuck', id);
+    return await dataStore.fetchLearningObject(id, true, true);
+  } catch (e) {
+    return Promise.reject(`Problem fetching Learning Object. ${e}`);
+  }
+}
+
 export async function deleteLearningObject(
   dataStore: DataStore,
   fileManager: FileManager,

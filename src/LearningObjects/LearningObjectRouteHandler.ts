@@ -6,10 +6,54 @@ import { FileManager, LibraryCommunicator } from '../interfaces/interfaces';
 import { UserToken, LearningObjectUpdates } from '../types';
 
 /**
- * Initializes an express router with endpoints to Create, Update, and Delete
+ * Initializes an express router with endpoints for public Retrieving
  * a Learning Object.
  */
-export function initialize({
+export function initializePublic({
+  dataStore,
+}: {
+  dataStore: DataStore;
+}) {
+  const router: Router = Router();
+
+  /**
+   * Retrieve a learning object by a specified ID
+   * @param {Request} req
+   * @param {Response} res
+   */
+  const getLearningObjectById = async (req: Request, res: Response) => {
+    try {
+      const id = req.params.learningObjectId;
+      const learningObject = await LearningObjectInteractor.getLearningObjectById(dataStore, id);
+      res.status(200).send(learningObject);
+    } catch (e) {
+      console.error(e);
+      res.status(500).send(e);
+    }
+  };
+
+  router.get('/learning-objects/:learningObjectId', getLearningObjectById);
+
+  return router;
+}
+
+/**
+ * Initializes an express router with endpoints for public Creating, Updating, and Deleting
+ * a Learning Object.
+ *
+ * @export
+ * @param {{
+ *   dataStore: DataStore;
+ *   fileManager: FileManager;
+ *   library: LibraryCommunicator;
+ * }} {
+ *   dataStore,
+ *   fileManager,
+ *   library,
+ * }
+ * @returns
+ */
+export function initializePrivate({
   dataStore,
   fileManager,
   library,
@@ -76,3 +120,4 @@ export function initialize({
   router.delete('/learning-objects/:learningObjectName', deleteLearningObject);
   return router;
 }
+

@@ -4,6 +4,7 @@ import { LearningObjectInteractor } from '../../interactors/interactors';
 import { LearningObject } from '@cyber4all/clark-entity';
 import * as TokenManager from '../TokenManager';
 import { LearningObjectQuery } from '../../interfaces/DataStore';
+import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
 // tslint:disable-next-line:no-require-imports
 const version = require('../../../package.json').version;
@@ -215,5 +216,12 @@ export class ExpressRouteDriver {
         res.status(500).send(e);
       }
     });
+
+    router.use(
+      '',
+      LearningObjectRouteHandler.initializePublic({
+        dataStore: this.dataStore,
+      }),
+    );
   }
 }

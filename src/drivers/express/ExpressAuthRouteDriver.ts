@@ -63,7 +63,7 @@ export class ExpressAuthRouteDriver {
     router.use('', SubmissionRouteDriver.initialize(this.dataStore));
     router.use(
       '',
-      LearningObjectRouteHandler.initialize({
+      LearningObjectRouteHandler.initializePrivate({
         dataStore: this.dataStore,
         fileManager: this.fileManager,
         library: this.library,
