@@ -1205,7 +1205,7 @@ export class MongoDriver implements DataStore {
     fileId: string;
   }): Promise<LearningObjectFile> {
     try {
-      const materials = await this.db
+      const doc = await this.db
         .collection(COLLECTIONS.LearningObject.name)
         .findOne(
           {
@@ -1221,6 +1221,7 @@ export class MongoDriver implements DataStore {
             },
           },
         );
+      const materials = doc.materials;
 
       // Object contains materials property.
       // Files array within materials will alway contain one element
