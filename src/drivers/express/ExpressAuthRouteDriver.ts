@@ -262,14 +262,16 @@ export class ExpressAuthRouteDriver {
       async (req, res) => {
         try {
           const open = req.query.open;
-          const username: string = req.params.username;
+          const author: string = req.params.username;
           const loId: string = req.params.loId;
           const fileId: string = req.params.fileId;
+          const username = req.user.username;
           const {
             filename,
             mimeType,
             stream,
           } = await LearningObjectInteractor.downloadSingleFile({
+            author,
             username,
             fileId,
             dataStore: this.dataStore,

@@ -393,6 +393,7 @@ export class LearningObjectInteractor {
     fileId: string;
     dataStore: DataStore;
     fileManager: FileManager;
+    author: string;
     username: string;
   }): Promise<{ filename: string; mimeType: string; stream: Readable }> {
     try {
@@ -417,7 +418,7 @@ export class LearningObjectInteractor {
         throw new Error('Invalid Access');
       }
 
-      const path = `${params.username}/${params.learningObjectId}/${
+      const path = `${params.author}/${params.learningObjectId}/${
         fileMetaData.fullPath ? fileMetaData.fullPath : fileMetaData.name
       }`;
       const mimeType = fileMetaData.fileType;
