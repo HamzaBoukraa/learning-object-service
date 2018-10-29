@@ -27,7 +27,7 @@ import {
   Restriction,
   Material,
 } from '@cyber4all/clark-entity/dist/learning-object';
-import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
+import { LearningObjectFile, LearningObjectInteractor } from '../interactors/LearningObjectInteractor';
 import { reportError } from './SentryConnector';
 import * as ObjectMapper from './Mongo/ObjectMapper';
 import { SubmissionDatastore } from '../LearningObjectSubmission/SubmissionDatastore';
@@ -666,6 +666,18 @@ export class MongoDriver implements DataStore {
       object,
       full,
     );
+
+    if (Array.isArray(learningObject.outcomes) && learningObject.outcomes.length) {
+        let outcomes = [];
+
+        for (let o of learningObject.outcomes) {
+          const newOutcome = LearningOutcome.instantiate(learningObject, Object.assign(o, { id: o._id }));
+          delete newOutcome._id;
+          outcomes.push(newOutcome);
+        }
+
+        learningObject.outcomes = outcomes;
+    }
 
     if (!accessUnpublished && !learningObject.published)
       return Promise.reject(

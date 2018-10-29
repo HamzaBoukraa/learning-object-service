@@ -133,7 +133,6 @@ export async function getLearningObjectById(
   id: string,
 ): Promise<LearningObject> {
   try {
-    console.log('fuck', id);
     return await dataStore.fetchLearningObject(id, true, true);
   } catch (e) {
     return Promise.reject(`Problem fetching Learning Object. ${e}`);
