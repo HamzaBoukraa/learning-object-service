@@ -70,6 +70,7 @@ export interface DataStore extends LearningOutcomeDatastore {
     query: LearningObjectQuery;
   }): Promise<LearningObject[]>;
   addToFiles(params: { id: string; loFile: LearningObjectFile }): Promise<void>;
+  removeFromFiles(params: { objectId: string; fileId: string }): Promise<void>;
   // Multipart Uploads
   insertMultipartUploadStatus(params: {
     status: MultipartFileUploadStatus;
