@@ -667,11 +667,23 @@ export class MongoDriver implements DataStore {
       full,
     );
 
+    // set outcome ids and their mappings' ids
     if (Array.isArray(learningObject.outcomes) && learningObject.outcomes.length) {
         let outcomes = [];
 
         for (let o of learningObject.outcomes) {
           const newOutcome = LearningOutcome.instantiate(learningObject, Object.assign(o, { id: o._id }));
+
+          let mappings = [];
+
+          for (let mapping of newOutcome.mappings) {
+            const newMapping = Object.assign(mapping, { id: mapping._id });
+            delete newMapping._id;
+            mappings.push(newMapping);
+          }
+
+          newOutcome.mappings = mappings;
+
           delete newOutcome._id;
           outcomes.push(newOutcome);
         }
