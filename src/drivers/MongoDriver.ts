@@ -1,6 +1,5 @@
 import { MongoClient, Db, ObjectID, Cursor } from 'mongodb';
 import { DataStore } from '../interfaces/interfaces';
-import * as dotenv from 'dotenv';
 import {
   LearningObject,
   LearningOutcome,
@@ -32,9 +31,7 @@ import {
 import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
 import { reportError } from './SentryConnector';
 import * as ObjectMapper from './Mongo/ObjectMapper';
-import { SubmissionDatastore } from './LearningObjectSubmission/SubmissionDatastore';
-
-dotenv.config();
+import { SubmissionDatastore } from '../LearningObjectSubmission/SubmissionDatastore';
 
 export interface Collection {
   name: string;
@@ -192,6 +189,7 @@ export class MongoDriver implements DataStore {
    */
   async insertLearningObject(object: LearningObject): Promise<string> {
     try {
+      // FIXME: This should be scoped to Interactor
       const authorID = await this.findUser(object.author.username);
       const author = await this.fetchUser(authorID);
       if (!author.emailVerified) {
@@ -202,6 +200,7 @@ export class MongoDriver implements DataStore {
         restrictions: [Restriction.DOWNLOAD],
       };
       const doc = await this.documentLearningObject(object, true);
+      // FIXME: WHY?? ID Is inserted in document LearningObject function
       const id = await this.insert(COLLECTIONS.LearningObject, doc);
 
       await this.insertLearningOutcomes(
@@ -212,6 +211,7 @@ export class MongoDriver implements DataStore {
         },
         object.outcomes,
       );
+      // FIXME: ID is wrong
       return id;
     } catch (e) {
       return Promise.reject(e);
@@ -1205,32 +1205,28 @@ export class MongoDriver implements DataStore {
     fileId: string;
   }): Promise<LearningObjectFile> {
     try {
-      let file;
-      const docs = await this.db
+      const materials = await this.db
         .collection(COLLECTIONS.LearningObject.name)
-        .find({
-          _id: params.learningObjectId,
-          'materials.files': {
-            $elemMatch: { id: params.fileId },
+        .findOne(
+          {
+            _id: params.learningObjectId,
+            'materials.files': {
+              $elemMatch: { id: params.fileId },
+            },
           },
-        })
-        .project({
-          _id: 0,
-          'materials.files.$': 1,
-        })
-        .toArray();
-
-      if (docs && docs.length) {
-        const doc = docs[0];
-        const materials = doc.materials;
-        file = materials.files[0];
-      }
+          {
+            projection: {
+              _id: 0,
+              'materials.files.$': 1,
+            },
+          },
+        );
 
       // Object contains materials property.
       // Files array within materials will alway contain one element
-      return file;
+      return materials.files[0];
     } catch (e) {
-      Promise.reject(e);
+      return Promise.reject(e);
     }
   }
 

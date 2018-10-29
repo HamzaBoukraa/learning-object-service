@@ -1,6 +1,6 @@
 import { FileManager } from '../interfaces/interfaces';
 import * as AWS from 'aws-sdk';
-import { AWS_SDK_CONFIG } from '../config/aws-sdk.config';
+import { AWS_SDK_CONFIG } from './aws-sdk.config';
 import {
   FileUpload,
   MultipartFileUpload,
