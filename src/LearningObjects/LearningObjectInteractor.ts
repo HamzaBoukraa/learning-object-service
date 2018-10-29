@@ -93,9 +93,10 @@ export async function updateLearningObject(params: {
     });
     if (params.updates.name) {
       await checkNameExists({
+        id: params.id,
         dataStore: params.dataStore,
-        username: params.user.username,
         name: params.updates.name,
+        username: params.user.username,
       });
     }
     updates.date = Date.now().toString();
@@ -179,12 +180,8 @@ export async function updateReadme(params: {
     const oldPDF: LearningObjectPDF = object.materials['pdf'];
     const pdf = await generatePDF(params.fileManager, object);
     if (oldPDF && oldPDF.name !== pdf.name) {
-      deleteFile(
-        params.fileManager,
-        object.id,
-        object.author.username,
-        oldPDF.name,
-      );
+      const path = `${object.author.username}/${object.id}/${oldPDF.name}`;
+      deleteFile(params.fileManager, path);
     }
 
     return await params.dataStore.editLearningObject({
@@ -204,6 +201,44 @@ export async function updateReadme(params: {
 }
 
 /**
+ * Removes file metadata and deletes from S3
+ *
+ * @static
+ * @param {FileManager} fileManager
+ * @param {string} id
+ * @param {string} username
+ * @param {string} filename
+ * @returns {Promise<void>}
+ * @memberof LearningObjectInteractor
+ */
+export async function removeFile(params: {
+  dataStore: DataStore;
+  fileManager: FileManager;
+  objectId: string;
+  username: string;
+  fileId: string;
+}): Promise<void> {
+  try {
+    const file = await params.dataStore.findSingleFile({
+      learningObjectId: params.objectId,
+      fileId: params.fileId,
+    });
+    if (file) {
+      const path = `${params.username}/${params.objectId}/${
+        file.fullPath ? file.fullPath : file.name
+      }`;
+      await params.dataStore.removeFromFiles({
+        objectId: params.objectId,
+        fileId: params.fileId,
+      });
+      return await deleteFile(params.fileManager, path);
+    }
+  } catch (e) {
+    return Promise.reject(`Problem deleting file. Error: ${e}`);
+  }
+}
+
+/**
  * Deletes specified file
  *
  * @static
@@ -216,12 +251,9 @@ export async function updateReadme(params: {
  */
 export async function deleteFile(
   fileManager: FileManager,
-  id: string,
-  username: string,
-  filename: string,
+  path: string,
 ): Promise<void> {
   try {
-    const path = `${username}/${id}/${filename}`;
     return fileManager.delete({ path });
   } catch (e) {
     return Promise.reject(`Problem deleting file. Error: ${e}`);
@@ -330,13 +362,14 @@ async function checkNameExists(params: {
   dataStore: DataStore;
   username: string;
   name: string;
+  id: string;
 }) {
   const authorId = await params.dataStore.findUser(params.username);
-  const existing = await params.dataStore.peek({
+  const existing = await params.dataStore.peek<{ _id: string }>({
     query: { authorID: authorId, name: params.name },
-    fields: { id: 1 },
+    fields: { _id: 1 },
   });
-  if (existing) {
+  if (existing && params.id !== existing._id) {
     throw new Error(
       `A learning object with name: ${params.name}, already exists.`,
     );
