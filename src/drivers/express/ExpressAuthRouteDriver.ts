@@ -260,7 +260,6 @@ export class ExpressAuthRouteDriver {
     router.get(
       '/users/:username/learning-objects/:loId/files/:fileId/download',
       async (req, res) => {
-        const responder = this.getResponder(res);
         try {
           const open = req.query.open;
           const username: string = req.params.username;
@@ -270,41 +269,18 @@ export class ExpressAuthRouteDriver {
             filename,
             mimeType,
             stream,
-          } = await FileInteractor.streamFile({
+          } = await LearningObjectInteractor.downloadSingleFile({
             username,
             fileId,
             dataStore: this.dataStore,
             fileManager: this.fileManager,
             learningObjectId: loId,
           });
-          stream.pipe(
-            responder.writeStream(!open ? filename : undefined, mimeType),
-          );
-        } catch (e) {
-          responder.sendOperationError(e);
-        }
-      },
-    );
-
-    router.get(
-      '/learning-objects/:learningObjectId/files/:fileId',
-      async (req, res) => {
-        const learningObjectId = req.params.learningObjectId;
-        const fileId = req.params.fileId;
-        const username = req.user.username;
-        try {
-          const {
-            fileStream,
-            filename,
-          } = await LearningObjectInteractor.downloadSingleFile({
-            learningObjectId,
-            fileId,
-            dataStore: this.dataStore,
-            fileManager: this.fileManager,
-            username,
-          });
-
-          fileStream.pipe(res.attachment(filename));
+          if (!open) {
+            res.attachment(filename);
+          }
+          res.contentType(mimeType);
+          stream.pipe(res);
         } catch (e) {
           if (e.message === 'Invalid Access') {
             res
