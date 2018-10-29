@@ -55,6 +55,7 @@ export interface DZFileMetadata {
   dzchunkindex?: number;
   dztotalfilesize?: number;
   dzchunksize?: number;
+  size?: number;
   dztotalchunkcount?: number;
   dzchunkbyteoffset?: number;
   fullPath: string;
