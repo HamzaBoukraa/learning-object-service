@@ -105,10 +105,7 @@ export function generatePDF(
     appendOutcomes(doc, learningObject);
   }
   // Content (Urls)
-  if (
-    learningObject.materials.urls.length ||
-    learningObject.materials.notes
-  ) {
+  if (learningObject.materials.urls.length || learningObject.materials.notes) {
     appendGradientHeader({
       gradientRGB,
       doc,
@@ -130,6 +127,7 @@ export function generatePDF(
       doc,
       files: <File[]>unpackedFiles,
       id: learningObject.id,
+      username: learningObject.author.username,
     });
   }
   doc.end();
@@ -483,6 +481,7 @@ function appendUnpackedFileURLs(params: {
   doc: PDFKit.PDFDocument;
   files: File[];
   id: string;
+  username: string;
 }) {
   params.doc.fillColor(PDFColors.TEXT).font(PDFFonts.REGULAR);
   params.doc.text(PDFText.UNPACKED_FILES_DESCRIPTION, { align: 'center' });
@@ -499,7 +498,11 @@ function appendUnpackedFileURLs(params: {
     }
 
     params.doc.font(PDFFonts.REGULAR).fillColor(PDFColors.LINK);
-    const url = LEARNING_OBJECT_ROUTES.GET_FILE(params.id, file.id).trim();
+    const url = LEARNING_OBJECT_ROUTES.GET_FILE({
+      objectId: params.id,
+      fileId: file.id,
+      username: params.username,
+    }).trim();
     params.doc.text(`${url}`, params.doc.x, params.doc.y, {
       link: url,
       underline: true,

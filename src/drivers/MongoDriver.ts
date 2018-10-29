@@ -242,6 +242,9 @@ export class MongoDriver implements DataStore {
           { arrayFilters: [{ 'element.url': params.loFile.url }] },
         );
       if (!existingDoc.value) {
+        if (!params.loFile.id) {
+          params.loFile.id = new ObjectID().toHexString();
+        }
         await this.db.collection(COLLECTIONS.LearningObject.name).updateOne(
           {
             _id: params.id,
@@ -1202,30 +1205,27 @@ export class MongoDriver implements DataStore {
     fileId: string;
   }): Promise<LearningObjectFile> {
     try {
-      let file;
-      const docs = await this.db
+      const doc = await this.db
         .collection(COLLECTIONS.LearningObject.name)
-        .find({
+        .findOne(
+          {
             _id: params.learningObjectId,
             'materials.files': {
               $elemMatch: { id: params.fileId },
             },
-          })
-          .project({
-            _id: 0,
-            'materials.files.$': 1,
-          })
-          .toArray();
-
-      if (docs && docs.length) {
-        const doc = docs[0];
-        const materials = doc.materials;
-        file = materials.files[0];
-      }
+          },
+          {
+            projection: {
+              _id: 0,
+              'materials.files.$': 1,
+            },
+          },
+        );
+      const materials = doc.materials;
 
       // Object contains materials property.
       // Files array within materials will alway contain one element
-      return file;
+      return materials.files[0];
     } catch (e) {
       return Promise.reject(e);
     }
