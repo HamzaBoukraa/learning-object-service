@@ -43,7 +43,10 @@ export async function addLearningOutcome(params: {
 }): Promise<string> {
   try {
     const outcome: LearningOutcomeInput & LearningOutcomeInsert = {
-      ...sanitizeObject<LearningOutcomeInput>({ object: params.outcomeInput }),
+      ...sanitizeObject<LearningOutcomeInput>(
+        { object: params.outcomeInput },
+        false,
+      ),
       date: Date.now().toString(),
     };
     return await params.dataStore.insertLearningOutcome({

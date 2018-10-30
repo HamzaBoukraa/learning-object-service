@@ -192,6 +192,9 @@ export class MongoDriver implements DataStore {
           { arrayFilters: [{ 'element.url': params.loFile.url }] },
         );
       if (!existingDoc.value) {
+        if (!params.loFile.id) {
+          params.loFile.id = new ObjectID().toHexString();
+        }
         await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).updateOne(
           {
             _id: params.id,
@@ -203,6 +206,21 @@ export class MongoDriver implements DataStore {
     } catch (e) {
       return Promise.reject(e);
     }
+  }
+
+  public async removeFromFiles(params: {
+    objectId: string;
+    fileId: string;
+  }): Promise<void> {
+    console.log(params.fileId);
+    await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).updateOne(
+      { _id: params.objectId },
+      {
+        $pull: {
+          'materials.files': { id: params.fileId },
+        },
+      },
+    );
   }
 
   public async insertMultipartUploadStatus(params: {

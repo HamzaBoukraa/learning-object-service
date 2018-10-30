@@ -10,6 +10,7 @@ import {
 import {
   deleteFile,
   updateReadme,
+  removeFile,
 } from '../../LearningObjects/LearningObjectInteractor';
 import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
 import * as SubmissionRouteDriver from '../../LearningObjectSubmission/SubmissionRouteDriver';
@@ -192,12 +193,18 @@ export class ExpressAuthRouteDriver {
         res.status(500).send(e);
       }
     });
-    router.delete('/files/:id/:filename', async (req, res) => {
+    router.delete('/files/:id/:fileId', async (req, res) => {
       try {
-        const id = req.params.id;
-        const filename = req.params.filename;
+        const objectId = req.params.id;
+        const fileId = req.params.fileId;
         const username = req.user.username;
-        await deleteFile(this.fileManager, id, username, filename);
+        await removeFile({
+          dataStore: this.dataStore,
+          fileManager: this.fileManager,
+          objectId,
+          username,
+          fileId,
+        });
         res.sendStatus(200);
       } catch (e) {
         console.error(e);
