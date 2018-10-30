@@ -27,7 +27,10 @@ import {
   Restriction,
   Material,
 } from '@cyber4all/clark-entity/dist/learning-object';
-import { LearningObjectFile, LearningObjectInteractor } from '../interactors/LearningObjectInteractor';
+import {
+  LearningObjectFile,
+  LearningObjectInteractor,
+} from '../interactors/LearningObjectInteractor';
 import { reportError } from './SentryConnector';
 import * as ObjectMapper from './Mongo/ObjectMapper';
 import { SubmissionDatastore } from '../LearningObjectSubmission/SubmissionDatastore';
@@ -171,7 +174,9 @@ export class MongoDriver implements DataStore {
       await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).insertOne(doc);
 
       // add the object id to the user's objects array
-      await this.db.collection(COLLECTIONS.USERS).findOneAndUpdate({ '_id': authorID }, { $push: { objects: doc._id } });
+      await this.db
+        .collection(COLLECTIONS.USERS)
+        .findOneAndUpdate({ _id: authorID }, { $push: { objects: doc._id } });
       return doc._id;
     } catch (e) {
       return Promise.reject(e);
@@ -494,10 +499,22 @@ export class MongoDriver implements DataStore {
       // remove children references to this learning object from parent
       await this.deleteLearningObjectParentReferences(id);
       await this.deleteAllLearningOutcomes({ source: id });
+
+      // get the author's id
+      const object = await this.db
+        .collection(COLLECTIONS.LEARNING_OBJECTS)
+        .findOne({ _id: id });
+      const authorID = object.authorID;
+
       // now remove the object
       await this.db
         .collection(COLLECTIONS.LEARNING_OBJECTS)
         .deleteOne({ _id: id });
+
+      // remove the object from the user's list of objects
+      await this.db
+        .collection(COLLECTIONS.USERS)
+        .findOneAndUpdate({ _id: authorID }, { $pull: { objects: id } });
     } catch (e) {
       return Promise.reject(e);
     }
@@ -696,27 +713,33 @@ export class MongoDriver implements DataStore {
     );
 
     // set outcome ids and their mappings' ids
-    if (Array.isArray(learningObject.outcomes) && learningObject.outcomes.length) {
-        let outcomes = [];
+    if (
+      Array.isArray(learningObject.outcomes) &&
+      learningObject.outcomes.length
+    ) {
+      let outcomes = [];
 
-        for (let o of learningObject.outcomes) {
-          const newOutcome = LearningOutcome.instantiate(learningObject, Object.assign(o, { id: o._id }));
+      for (let o of learningObject.outcomes) {
+        const newOutcome = LearningOutcome.instantiate(
+          learningObject,
+          Object.assign(o, { id: o._id }),
+        );
 
-          let mappings = [];
+        let mappings = [];
 
-          for (let mapping of newOutcome.mappings) {
-            const newMapping = Object.assign(mapping, { id: mapping._id });
-            delete newMapping._id;
-            mappings.push(newMapping);
-          }
-
-          newOutcome.mappings = mappings;
-
-          delete newOutcome._id;
-          outcomes.push(newOutcome);
+        for (let mapping of newOutcome.mappings) {
+          const newMapping = Object.assign(mapping, { id: mapping._id });
+          delete newMapping._id;
+          mappings.push(newMapping);
         }
 
-        learningObject.outcomes = outcomes;
+        newOutcome.mappings = mappings;
+
+        delete newOutcome._id;
+        outcomes.push(newOutcome);
+      }
+
+      learningObject.outcomes = outcomes;
     }
 
     if (!accessUnpublished && !learningObject.published)
