@@ -256,49 +256,6 @@ export class ExpressAuthRouteDriver {
           res.status(500).send(e);
         }
       });
-
-    router.get(
-      '/users/:username/learning-objects/:loId/files/:fileId/download',
-      async (req, res) => {
-        try {
-          const open = req.query.open;
-          const author: string = req.params.username;
-          const loId: string = req.params.loId;
-          const fileId: string = req.params.fileId;
-          const username = req.user.username;
-          const {
-            filename,
-            mimeType,
-            stream,
-          } = await LearningObjectInteractor.downloadSingleFile({
-            author,
-            username,
-            fileId,
-            dataStore: this.dataStore,
-            fileManager: this.fileManager,
-            learningObjectId: loId,
-          });
-          if (!open) {
-            res.attachment(filename);
-          }
-          res.contentType(mimeType);
-          stream.pipe(res);
-        } catch (e) {
-          if (e.message === 'Invalid Access') {
-            res
-              .status(403)
-              .send(
-                'Invalid Access. You do not have download privileges for this file',
-              );
-          } else {
-            console.error(e);
-            reportError(e);
-            res.status(500).send('Internal Server Error');
-          }
-        }
-      },
-    );
-
     router.delete(
       '/learning-objects/:learningObjectNames/multiple',
       async (req, res) => {
