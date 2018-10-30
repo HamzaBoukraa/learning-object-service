@@ -161,7 +161,12 @@ export class MongoDriver implements DataStore {
         restrictions: [Restriction.DOWNLOAD],
       };
       const doc = await this.documentLearningObject(object, true);
+
+      // insert object into the database
       await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).insertOne(doc);
+
+      // add the object id to the user's objects array
+      await this.db.collection(COLLECTIONS.USERS).findOneAndUpdate({ '_id': authorID }, { $push: { objects: doc._id } });
       return doc._id;
     } catch (e) {
       return Promise.reject(e);
