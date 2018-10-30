@@ -7,7 +7,8 @@ import { LearningObject } from '@cyber4all/clark-entity';
 import * as stopword from 'stopword';
 import { LearningObjectQuery } from '../interfaces/DataStore';
 import {
-  Metrics, Restriction,
+  Metrics,
+  Restriction,
 } from '@cyber4all/clark-entity/dist/learning-object';
 import { File } from '@cyber4all/clark-entity/dist/learning-object';
 import {
@@ -19,8 +20,8 @@ import {
   MultipartUploadData,
   CompletedPartList,
 } from '../interfaces/FileManager';
-import { fetchFile } from '../FileManager/fetchFile';
 import { enforceWhitelist } from '../middleware/whitelist';
+import { Readable } from 'stream';
 // TODO: Update File in clark-entity
 export interface LearningObjectFile extends File {
   packageable: boolean;
@@ -399,8 +400,9 @@ export class LearningObjectInteractor {
     fileId: string;
     dataStore: DataStore;
     fileManager: FileManager;
-    username: string,
-  }): Promise<any> {
+    author: string;
+    username: string;
+  }): Promise<{ filename: string; mimeType: string; stream: Readable }> {
     try {
       const [isWhitelisted, learningObject, fileMetaData] = await Promise.all([
         // Check if the user is on the whitelist
@@ -411,14 +413,24 @@ export class LearningObjectInteractor {
         params.dataStore.findSingleFile({
           learningObjectId: params.learningObjectId,
           fileId: params.fileId,
-        })]);
+        }),
+      ]);
 
       // if the user is not on the whitelist and the LO is not released, throw access error
-      if (!isWhitelisted && learningObject.lock && learningObject.lock.restrictions.indexOf(Restriction.DOWNLOAD) !== -1) {
+      if (
+        !isWhitelisted &&
+        learningObject.lock &&
+        learningObject.lock.restrictions.indexOf(Restriction.DOWNLOAD) !== -1
+      ) {
         throw new Error('Invalid Access');
       }
 
-      return Promise.resolve(fetchFile(fileMetaData.url, fileMetaData.name));
+      const path = `${params.author}/${params.learningObjectId}/${
+        fileMetaData.fullPath ? fileMetaData.fullPath : fileMetaData.name
+      }`;
+      const mimeType = fileMetaData.fileType;
+      const stream = params.fileManager.streamFile({ path });
+      return { mimeType, stream, filename: fileMetaData.name };
     } catch (e) {
       return Promise.reject(e);
     }
@@ -897,9 +909,7 @@ export class LearningObjectInteractor {
     }
   }
 
-  public static async fetchCollections(
-    dataStore: DataStore,
-  ): Promise<any> {
+  public static async fetchCollections(dataStore: DataStore): Promise<any> {
     try {
       const collections = await dataStore.fetchCollections();
       return collections;
