@@ -388,7 +388,8 @@ async function checkNameExists(params: {
     query: { authorID: authorId, name: params.name },
     fields: { _id: 1 },
   });
-  if (existing && params.id !== existing._id) {
+  // @ts-ignore typescript doesn't think a .id property should exist on the existing object
+  if (existing && params.id !== existing.id) {
     throw new Error(
       `A learning object with name: ${params.name}, already exists.`,
     );
