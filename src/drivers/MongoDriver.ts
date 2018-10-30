@@ -157,6 +157,11 @@ export class MongoDriver implements DataStore {
         object.unpublish();
       }
 
+      // FIXME we should be setting an actual description property
+      if (!object.goals || !object.goals.length) {
+        object.goals = [{ text: '' }];
+      }
+
       object.lock = {
         restrictions: [Restriction.DOWNLOAD],
       };
