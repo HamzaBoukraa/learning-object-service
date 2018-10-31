@@ -27,7 +27,14 @@ import {
   Restriction,
   Material,
 } from '@cyber4all/clark-entity/dist/learning-object';
+<<<<<<< HEAD
+import {
+  LearningObjectFile,
+  LearningObjectInteractor,
+} from '../interactors/LearningObjectInteractor';
+=======
 import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
+>>>>>>> f648abf5369a5e89e95f5c12c0e818a1ffac496b
 import { reportError } from './SentryConnector';
 import * as ObjectMapper from './Mongo/ObjectMapper';
 import { SubmissionDatastore } from '../LearningObjectSubmission/SubmissionDatastore';
@@ -155,6 +162,11 @@ export class MongoDriver implements DataStore {
       const author = await this.fetchUser(authorID);
       if (!author.emailVerified) {
         object.unpublish();
+      }
+
+      // FIXME we should be setting an actual description property
+      if (!object.goals || !object.goals.length) {
+        object.goals = [{ text: '' }];
       }
 
       object.lock = {
@@ -491,10 +503,22 @@ export class MongoDriver implements DataStore {
       // remove children references to this learning object from parent
       await this.deleteLearningObjectParentReferences(id);
       await this.deleteAllLearningOutcomes({ source: id });
+
+      // get the author's id
+      const object = await this.db
+        .collection(COLLECTIONS.LEARNING_OBJECTS)
+        .findOne({ _id: id });
+      const authorID = object.authorID;
+
       // now remove the object
       await this.db
         .collection(COLLECTIONS.LEARNING_OBJECTS)
         .deleteOne({ _id: id });
+
+      // remove the object from the user's list of objects
+      await this.db
+        .collection(COLLECTIONS.USERS)
+        .findOneAndUpdate({ _id: authorID }, { $pull: { objects: id } });
     } catch (e) {
       return Promise.reject(e);
     }
