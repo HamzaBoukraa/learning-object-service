@@ -69,8 +69,18 @@ export interface DataStore extends LearningOutcomeDatastore {
   findParentObjects(params: {
     query: LearningObjectQuery;
   }): Promise<LearningObject[]>;
+  findSingleFile(params: {
+    learningObjectId: string;
+    fileId: string;
+  }): Promise<LearningObjectFile>;
+  // Learning Object Files
   addToFiles(params: { id: string; loFile: LearningObjectFile }): Promise<void>;
   removeFromFiles(params: { objectId: string; fileId: string }): Promise<void>;
+  updateFileDescription(params: {
+    learningObjectId: string;
+    fileId: string;
+    description: string;
+  }): Promise<LearningObjectFile>;
   // Multipart Uploads
   insertMultipartUploadStatus(params: {
     status: MultipartFileUploadStatus;
@@ -85,10 +95,7 @@ export interface DataStore extends LearningOutcomeDatastore {
   }): Promise<void>;
   deleteMultipartUploadStatus(params: { id: string }): Promise<void>;
   addToCollection(learningObjectId: string, collection: string): Promise<void>;
-  findSingleFile(params: {
-    learningObjectId: string;
-    fileId: string;
-  }): Promise<LearningObjectFile>;
+
   findUser(username: string): Promise<string>;
   peek<T>(params: {
     query: { [index: string]: string };
