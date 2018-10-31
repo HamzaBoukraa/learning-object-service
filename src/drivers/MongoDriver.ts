@@ -690,30 +690,6 @@ export class MongoDriver implements DataStore {
       full,
     );
 
-    // set outcome ids and their mappings' ids
-    if (Array.isArray(learningObject.outcomes) && learningObject.outcomes.length) {
-        let outcomes = [];
-
-        for (let o of learningObject.outcomes) {
-          const newOutcome = LearningOutcome.instantiate(learningObject, Object.assign(o, { id: o._id }));
-
-          let mappings = [];
-
-          for (let mapping of newOutcome.mappings) {
-            const newMapping = Object.assign(mapping, { id: mapping._id });
-            delete newMapping._id;
-            mappings.push(newMapping);
-          }
-
-          newOutcome.mappings = mappings;
-
-          delete newOutcome._id;
-          outcomes.push(newOutcome);
-        }
-
-        learningObject.outcomes = outcomes;
-    }
-
     if (!accessUnpublished && !learningObject.published)
       return Promise.reject(
         'User does not have access to the requested resource.',
@@ -937,12 +913,13 @@ export class MongoDriver implements DataStore {
             },
           },
         );
+      const materials = doc.materials;
 
       // Object contains materials property.
       // Files array within materials will alway contain one element
-      return fileMetaData.materials.files[0];
+      return materials.files[0];
     } catch (e) {
-      Promise.reject(e);
+      return Promise.reject(e);
     }
   }
 

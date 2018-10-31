@@ -1,19 +1,32 @@
-import { DataStore, LibraryCommunicator } from '../../interfaces/interfaces';
+import {
+  DataStore,
+  LibraryCommunicator,
+  FileManager,
+} from '../../interfaces/interfaces';
 import { Router } from 'express';
 import { LearningObjectInteractor } from '../../interactors/interactors';
 import { LearningObject } from '@cyber4all/clark-entity';
 import * as TokenManager from '../TokenManager';
 import { LearningObjectQuery } from '../../interfaces/DataStore';
 import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
+import { reportError } from '../SentryConnector';
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
 // tslint:disable-next-line:no-require-imports
 const version = require('../../../package.json').version;
 
 export class ExpressRouteDriver {
-  constructor(private dataStore: DataStore, private library: LibraryCommunicator) {}
+  constructor(
+    private dataStore: DataStore,
+    private library: LibraryCommunicator,
+    private fileManager: FileManager,
+  ) {}
 
-  public static buildRouter(dataStore: DataStore, library: LibraryCommunicator): Router {
-    const e = new ExpressRouteDriver(dataStore, library);
+  public static buildRouter(
+    dataStore: DataStore,
+    library: LibraryCommunicator,
+    fileManager: FileManager,
+  ): Router {
+    const e = new ExpressRouteDriver(dataStore, library, fileManager);
     const router: Router = Router();
     e.setRoutes(router);
     return router;
@@ -222,6 +235,47 @@ export class ExpressRouteDriver {
       LearningObjectRouteHandler.initializePublic({
         dataStore: this.dataStore,
       }),
+    );
+    router.get(
+      '/users/:username/learning-objects/:loId/files/:fileId/download',
+      async (req, res) => {
+        try {
+          const open = req.query.open;
+          const author: string = req.params.username;
+          const loId: string = req.params.loId;
+          const fileId: string = req.params.fileId;
+          const username = req.user.username;
+          const {
+            filename,
+            mimeType,
+            stream,
+          } = await LearningObjectInteractor.downloadSingleFile({
+            author,
+            username,
+            fileId,
+            dataStore: this.dataStore,
+            fileManager: this.fileManager,
+            learningObjectId: loId,
+          });
+          if (!open) {
+            res.attachment(filename);
+          }
+          res.contentType(mimeType);
+          stream.pipe(res);
+        } catch (e) {
+          if (e.message === 'Invalid Access') {
+            res
+              .status(403)
+              .send(
+                'Invalid Access. You do not have download privileges for this file',
+              );
+          } else {
+            console.error(e);
+            reportError(e);
+            res.status(500).send('Internal Server Error');
+          }
+        }
+      },
     );
   }
 }
