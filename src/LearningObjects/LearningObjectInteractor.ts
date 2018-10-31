@@ -410,9 +410,9 @@ async function checkNameExists(params: {
   id: string;
 }) {
   const authorId = await params.dataStore.findUser(params.username);
-  const existing = await params.dataStore.peek<{ _id: string }>({
+  const existing = await params.dataStore.peek<{ id: string }>({
     query: { authorID: authorId, name: params.name },
-    fields: { _id: 1 },
+    fields: { id: 1 },
   });
   // @ts-ignore typescript doesn't think a .id property should exist on the existing object
   if (existing && params.id !== existing.id) {
