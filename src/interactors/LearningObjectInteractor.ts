@@ -394,7 +394,6 @@ export class LearningObjectInteractor {
     dataStore: DataStore;
     fileManager: FileManager;
     author: string;
-    username: string;
   }): Promise<{ filename: string; mimeType: string; stream: Readable }> {
     try {
       const [learningObject, fileMetaData] = await Promise.all([

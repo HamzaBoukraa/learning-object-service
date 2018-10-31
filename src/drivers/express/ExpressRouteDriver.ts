@@ -225,14 +225,12 @@ export class ExpressRouteDriver {
           const author: string = req.params.username;
           const loId: string = req.params.loId;
           const fileId: string = req.params.fileId;
-          const username = req.user.username;
           const {
             filename,
             mimeType,
             stream,
           } = await LearningObjectInteractor.downloadSingleFile({
             author,
-            username,
             fileId,
             dataStore: this.dataStore,
             fileManager: this.fileManager,
