@@ -27,10 +27,14 @@ import {
   Restriction,
   Material,
 } from '@cyber4all/clark-entity/dist/learning-object';
+<<<<<<< HEAD
 import {
   LearningObjectFile,
   LearningObjectInteractor,
 } from '../interactors/LearningObjectInteractor';
+=======
+import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
+>>>>>>> f648abf5369a5e89e95f5c12c0e818a1ffac496b
 import { reportError } from './SentryConnector';
 import * as ObjectMapper from './Mongo/ObjectMapper';
 import { SubmissionDatastore } from '../LearningObjectSubmission/SubmissionDatastore';
@@ -712,36 +716,6 @@ export class MongoDriver implements DataStore {
       full,
     );
 
-    // set outcome ids and their mappings' ids
-    if (
-      Array.isArray(learningObject.outcomes) &&
-      learningObject.outcomes.length
-    ) {
-      let outcomes = [];
-
-      for (let o of learningObject.outcomes) {
-        const newOutcome = LearningOutcome.instantiate(
-          learningObject,
-          Object.assign(o, { id: o._id }),
-        );
-
-        let mappings = [];
-
-        for (let mapping of newOutcome.mappings) {
-          const newMapping = Object.assign(mapping, { id: mapping._id });
-          delete newMapping._id;
-          mappings.push(newMapping);
-        }
-
-        newOutcome.mappings = mappings;
-
-        delete newOutcome._id;
-        outcomes.push(newOutcome);
-      }
-
-      learningObject.outcomes = outcomes;
-    }
-
     if (!accessUnpublished && !learningObject.published)
       return Promise.reject(
         'User does not have access to the requested resource.',
@@ -949,7 +923,7 @@ export class MongoDriver implements DataStore {
     fileId: string;
   }): Promise<LearningObjectFile> {
     try {
-      const fileMetaData = await this.db
+      const doc = await this.db
         .collection(COLLECTIONS.LEARNING_OBJECTS)
         .findOne(
           {
@@ -965,12 +939,38 @@ export class MongoDriver implements DataStore {
             },
           },
         );
+      const materials = doc.materials;
 
       // Object contains materials property.
       // Files array within materials will alway contain one element
-      return fileMetaData.materials.files[0];
+      return materials.files[0];
     } catch (e) {
-      Promise.reject(e);
+      return Promise.reject(e);
+    }
+  }
+
+  async updateFileDescription(params: {
+    learningObjectId: string;
+    fileId: string;
+    description: string;
+  }): Promise<LearningObjectFile> {
+    try {
+      await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).findOneAndUpdate(
+        { _id: params.learningObjectId, 'materials.files.id': params.fileId },
+        {
+          $set: {
+            'materials.files.$[element].description': params.description,
+          },
+        },
+        // @ts-ignore: arrayFilters is in fact a property defined by documentation. Property does not exist in type definition.
+        { arrayFilters: [{ 'element.id': params.fileId }] },
+      );
+      return this.findSingleFile({
+        learningObjectId: params.learningObjectId,
+        fileId: params.fileId,
+      });
+    } catch (e) {
+      return Promise.reject(e);
     }
   }
 

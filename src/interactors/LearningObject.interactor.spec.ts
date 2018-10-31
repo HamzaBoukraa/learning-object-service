@@ -70,23 +70,6 @@ describe('findLearningObject', () => {
   });
 });
 
-describe('togglePublished', () => {
-  it('should return error', done => {
-    return LearningObjectInteractor.togglePublished(
-      driver,
-      MOCK_OBJECTS.USERNAME,
-      MOCK_OBJECTS.EMPTY_STRING,
-      true,
-    ).then(val => {
-      expect.fail();
-      done();
-    }).catch((error) => {
-      expect(error).to.be.a('string');
-      done();
-    });
-  });
-});
-
 describe('fetchAllObjects', () => {
   it('should fetch all objects', done => {
     return LearningObjectInteractor.fetchAllObjects(

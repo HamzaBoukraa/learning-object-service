@@ -53,7 +53,7 @@ export class ExpressDriver {
     this.app.use(cookieParser());
 
     // Set our public api routes
-    this.app.use('/', ExpressRouteDriver.buildRouter(dataStore, library));
+    this.app.use('/', ExpressRouteDriver.buildRouter(dataStore, library, fileManager));
 
     // Set Validation Middleware
     this.app.use(enforceTokenAccess);
@@ -73,7 +73,7 @@ export class ExpressDriver {
     this.app.use(enforceAdminAccess);
     this.app.use(
       '/admin',
-      ExpressAdminRouteDriver.buildRouter(dataStore, fileManager),
+      ExpressAdminRouteDriver.buildRouter(dataStore, fileManager, library),
     );
 
     /**

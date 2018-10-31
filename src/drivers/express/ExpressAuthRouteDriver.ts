@@ -8,15 +8,13 @@ import {
   LibraryCommunicator,
 } from '../../interfaces/interfaces';
 import {
-  deleteFile,
   updateReadme,
   removeFile,
+  updateFileDescription,
 } from '../../LearningObjects/LearningObjectInteractor';
 import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
 import * as SubmissionRouteDriver from '../../LearningObjectSubmission/SubmissionRouteDriver';
 import { reportError } from '../SentryConnector';
-import * as LearningOutcomeRouteHandler from '../../LearningOutcomes/LearningOutcomeRouteHandler';
-
 export class ExpressAuthRouteDriver {
   private upload = multer({ storage: multer.memoryStorage() });
 
@@ -70,22 +68,18 @@ export class ExpressAuthRouteDriver {
         library: this.library,
       }),
     );
-    router.use(
-      '/learning-objects/:id',
-      LearningOutcomeRouteHandler.initialize({
-        dataStore: this.dataStore,
-      }),
-    );
     router.get('/learning-objects/summary', async (req, res) => {
       try {
         const children = req.query.children;
         const objects = await LearningObjectInteractor.loadLearningObjectSummary(
-          this.dataStore,
-          this.library,
-          req.user.username,
-          true,
-          children,
-          req.query,
+          {
+            dataStore: this.dataStore,
+            library: this.library,
+            username: req.user.username,
+            accessUnpublished: true,
+            loadChildren: children,
+            query: req.query,
+          },
         );
         res.status(200).send(objects);
       } catch (e) {
@@ -151,7 +145,7 @@ export class ExpressAuthRouteDriver {
             encoding: file.encoding,
             buffer: file.buffer,
             mimetype: file.mimetype,
-            size: dzMetadata.dztotalfilesize,
+            size: dzMetadata.dztotalfilesize || dzMetadata.size,
           };
           const user = req.user;
 
@@ -193,24 +187,43 @@ export class ExpressAuthRouteDriver {
         res.status(500).send(e);
       }
     });
-    router.delete('/files/:id/:fileId', async (req, res) => {
-      try {
-        const objectId = req.params.id;
-        const fileId = req.params.fileId;
-        const username = req.user.username;
-        await removeFile({
-          dataStore: this.dataStore,
-          fileManager: this.fileManager,
-          objectId,
-          username,
-          fileId,
-        });
-        res.sendStatus(200);
-      } catch (e) {
-        console.error(e);
-        res.status(500).send(e);
-      }
-    });
+    router
+      .route('/files/:id/:fileId')
+      .patch(async (req, res) => {
+        try {
+          const objectId = req.params.id;
+          const fileId = req.params.fileId;
+          const description = req.body.description;
+          await updateFileDescription({
+            fileId,
+            objectId,
+            description,
+            dataStore: this.dataStore,
+          });
+          res.sendStatus(200);
+        } catch (e) {
+          console.error(e);
+          res.status(500).send(e);
+        }
+      })
+      .delete(async (req, res) => {
+        try {
+          const objectId = req.params.id;
+          const fileId = req.params.fileId;
+          const username = req.user.username;
+          await removeFile({
+            dataStore: this.dataStore,
+            fileManager: this.fileManager,
+            objectId,
+            username,
+            fileId,
+          });
+          res.sendStatus(200);
+        } catch (e) {
+          console.error(e);
+          res.status(500).send(e);
+        }
+      });
     router.patch('/learning-objects/:id/pdf', async (req, res) => {
       try {
         const id = req.params.id;
@@ -264,41 +277,6 @@ export class ExpressAuthRouteDriver {
           res.status(500).send(e);
         }
       });
-
-    router.get(
-      '/learning-objects/:learningObjectId/files/:fileId',
-      async (req, res) => {
-        const learningObjectId = req.params.learningObjectId;
-        const fileId = req.params.fileId;
-        const username = req.user.username;
-        try {
-          const {
-            fileStream,
-            filename,
-          } = await LearningObjectInteractor.downloadSingleFile({
-            learningObjectId,
-            fileId,
-            dataStore: this.dataStore,
-            fileManager: this.fileManager,
-            username,
-          });
-
-          fileStream.pipe(res.attachment(filename));
-        } catch (e) {
-          if (e.message === 'Invalid Access') {
-            res
-              .status(403)
-              .send(
-                'Invalid Access. You do not have download privileges for this file',
-              );
-          } else {
-            console.error(e);
-            res.status(500).send('Internal Server Error');
-          }
-        }
-      },
-    );
-
     router.delete(
       '/learning-objects/:learningObjectNames/multiple',
       async (req, res) => {

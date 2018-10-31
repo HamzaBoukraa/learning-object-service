@@ -7,7 +7,8 @@ import { LearningObject } from '@cyber4all/clark-entity';
 import * as stopword from 'stopword';
 import { LearningObjectQuery } from '../interfaces/DataStore';
 import {
-  Metrics, Restriction,
+  Metrics,
+  Restriction,
 } from '@cyber4all/clark-entity/dist/learning-object';
 import { File } from '@cyber4all/clark-entity/dist/learning-object';
 import {
@@ -19,8 +20,8 @@ import {
   MultipartUploadData,
   CompletedPartList,
 } from '../interfaces/FileManager';
-import { fetchFile } from '../FileManager/fetchFile';
 import { enforceWhitelist } from '../middleware/whitelist';
+import { Readable } from 'stream';
 // TODO: Update File in clark-entity
 export interface LearningObjectFile extends File {
   packageable: boolean;
@@ -38,76 +39,91 @@ export class LearningObjectInteractor {
    *
    * @returns {User}
    */
-  public static async loadLearningObjectSummary(
-    dataStore: DataStore,
-    library: LibraryCommunicator,
-    username: string,
-    accessUnpublished?: boolean,
-    loadChildren?: boolean,
-    query?: LearningObjectQuery,
-  ): Promise<LearningObject[]> {
+  public static async loadLearningObjectSummary(params: {
+    dataStore: DataStore;
+    library: LibraryCommunicator;
+    username: string;
+    accessUnpublished?: boolean;
+    loadChildren?: boolean;
+    query?: LearningObjectQuery;
+  }): Promise<LearningObject[]> {
     try {
+      console.log('HIT ME');
       let total = 0;
       let summary: LearningObject[] = [];
       if (
-        query &&
-        (query.name ||
-          query.length ||
-          query.level ||
-          query.standardOutcomeIDs ||
-          query.orderBy ||
-          query.sortType ||
-          query.collection ||
-          query.status ||
-          query.text)
+        params.query &&
+        (params.query.name ||
+          params.query.length ||
+          params.query.level ||
+          params.query.standardOutcomeIDs ||
+          params.query.orderBy ||
+          params.query.sortType ||
+          params.query.collection ||
+          params.query.status ||
+          params.query.text)
       ) {
-        const level = query.level ? (Array.isArray(query.level) ? query.level : [query.level]) : undefined;
-        const length = query.length ? (Array.isArray(query.length) ? query.length : [query.length]) : undefined;
-        const status = query.status ? (Array.isArray(query.status) ? query.status : [query.status]) : undefined;
-
+        const level = params.query.level
+          ? Array.isArray(params.query.level)
+            ? params.query.level
+            : [params.query.level]
+          : undefined;
+        const length = params.query.length
+          ? Array.isArray(params.query.length)
+            ? params.query.length
+            : [params.query.length]
+          : undefined;
+        const status = params.query.status
+          ? Array.isArray(params.query.status)
+            ? params.query.status
+            : [params.query.status]
+          : undefined;
         const response = await this.searchObjects(
-          dataStore,
-          library,
+          params.dataStore,
+          params.library,
           {
-            name: query.name,
-            author: username,
-            collection: query.collection,
+            name: params.query.name,
+            author: params.username,
+            collection: params.query.collection,
             status,
             length,
             level,
-            standardOutcomeIDs: query.standardOutcomeIDs,
-            text: query.text,
-            accessUnpublished,
-            orderBy: query.orderBy,
-            sortType: query.sortType,
-            currPage: query.page,
-            limit: query.limit,
+            standardOutcomeIDs: params.query.standardOutcomeIDs,
+            text: params.query.text,
+            accessUnpublished: params.accessUnpublished,
+            orderBy: params.query.orderBy,
+            sortType: params.query.sortType,
+            currPage: params.query.page,
+            limit: params.query.limit,
           },
         );
         summary = response.objects;
         total = response.total;
       } else {
-        const objectIDs = await dataStore.getUserObjects(username);
-        summary = await dataStore.fetchMultipleObjects(
+        const objectIDs = await params.dataStore.getUserObjects(
+          params.username,
+        );
+        console.log('OBJECT: ID', objectIDs);
+        summary = await params.dataStore.fetchMultipleObjects(
           objectIDs,
           false,
-          accessUnpublished,
-          query ? query.orderBy : null,
-          query ? query.sortType : null,
+          params.accessUnpublished,
+          params.query ? params.query.orderBy : null,
+          params.query ? params.query.sortType : null,
         );
         total = summary.length;
       }
 
-      if (loadChildren) {
+      if (params.loadChildren) {
         summary = await Promise.all(
           summary.map(async object => {
             if (object.children && object.children.length) {
               object.children = await this.loadChildObjects(
-                dataStore,
-                library,
+                params.dataStore,
+                params.library,
                 object,
                 false,
-                accessUnpublished,
+                params.accessUnpublished,
               );
             }
             return object;
@@ -118,7 +134,7 @@ export class LearningObjectInteractor {
       summary = await Promise.all(
         summary.map(async object => {
           try {
-            object.metrics = await this.loadMetrics(library, object.id);
+            object.metrics = await this.loadMetrics(params.library, object.id);
             return object;
           } catch (e) {
             console.log(e);
@@ -175,7 +191,10 @@ export class LearningObjectInteractor {
       }
 
       try {
-        learningObject.metrics = await this.loadMetrics(library, learningObjectID);
+        learningObject.metrics = await this.loadMetrics(
+          library,
+          learningObjectID,
+        );
       } catch (e) {
         console.log(e);
       }
@@ -315,7 +334,7 @@ export class LearningObjectInteractor {
       let loFile: LearningObjectFile;
       const uploadPath = `${params.username}/${params.id}/${
         params.file.fullPath ? params.file.fullPath : params.file.name
-        }`;
+      }`;
       const fileUpload: FileUpload = {
         path: uploadPath,
         data: params.file.buffer,
@@ -337,6 +356,9 @@ export class LearningObjectInteractor {
       }
       // If LearningObjectFile was generated, update LearningObject's materials
       if (loFile) {
+        // FIXME should be implemented in clark entity
+        // @ts-ignore
+        loFile.size = params.file.size;
         await this.updateMaterials({
           loFile,
           dataStore: params.dataStore,
@@ -389,26 +411,34 @@ export class LearningObjectInteractor {
     fileId: string;
     dataStore: DataStore;
     fileManager: FileManager;
-    username: string,
-  }): Promise<any> {
+    author: string;
+    username: string;
+  }): Promise<{ filename: string; mimeType: string; stream: Readable }> {
     try {
-      const [isWhitelisted, learningObject, fileMetaData] = await Promise.all([
-        // Check if the user is on the whitelist
-        enforceWhitelist(params.username),
+      const [learningObject, fileMetaData] = await Promise.all([
         // Fetch the learning object
         params.dataStore.fetchLearningObject(params.learningObjectId),
         // Collect requested file metadata from datastore
         params.dataStore.findSingleFile({
           learningObjectId: params.learningObjectId,
           fileId: params.fileId,
-        })]);
+        }),
+      ]);
 
       // if the user is not on the whitelist and the LO is not released, throw access error
-      if (!isWhitelisted && learningObject.lock && learningObject.lock.restrictions.indexOf(Restriction.DOWNLOAD) !== -1) {
+      if (
+        learningObject.lock &&
+        learningObject.lock.restrictions.indexOf(Restriction.DOWNLOAD) !== -1
+      ) {
         throw new Error('Invalid Access');
       }
 
-      return Promise.resolve(fetchFile(fileMetaData.url, fileMetaData.name));
+      const path = `${params.author}/${params.learningObjectId}/${
+        fileMetaData.fullPath ? fileMetaData.fullPath : fileMetaData.name
+      }`;
+      const mimeType = fileMetaData.fileType;
+      const stream = params.fileManager.streamFile({ path });
+      return { mimeType, stream, filename: fileMetaData.name };
     } catch (e) {
       return Promise.reject(e);
     }
@@ -827,20 +857,20 @@ export class LearningObjectInteractor {
     dataStore: DataStore,
     library: LibraryCommunicator,
     params: {
-      name: string,
-      author: string,
-      collection: string,
-      status: string[],
-      length: string[],
-      level: string[],
-      standardOutcomeIDs: string[],
-      text: string,
-      accessUnpublished?: boolean,
-      orderBy?: string,
-      sortType?: number,
-      currPage?: number,
-      limit?: number,
-      released?: boolean,
+      name: string;
+      author: string;
+      collection: string;
+      status: string[];
+      length: string[];
+      level: string[];
+      standardOutcomeIDs: string[];
+      text: string;
+      accessUnpublished?: boolean;
+      orderBy?: string;
+      sortType?: number;
+      currPage?: number;
+      limit?: number;
+      released?: boolean;
     },
   ): Promise<{ total: number; objects: LearningObject[] }> {
     try {
@@ -851,24 +881,22 @@ export class LearningObjectInteractor {
           params.text = this.removeStopwords(params.text);
         }
       }
-      const response = await dataStore.searchObjects(
-        {
-          name: params.name,
-          author: params.author,
-          collection: params.collection,
-          status: params.status,
-          length: params.length,
-          level: params.level,
-          standardOutcomeIDs: params.standardOutcomeIDs,
-          text: params.text,
-          accessUnpublished: params.accessUnpublished,
-          orderBy: params.orderBy,
-          sortType: params.sortType,
-          page: params.currPage,
-          limit: params.limit,
-          released: params.released,
-        },
-      );
+      const response = await dataStore.searchObjects({
+        name: params.name,
+        author: params.author,
+        collection: params.collection,
+        status: params.status,
+        length: params.length,
+        level: params.level,
+        standardOutcomeIDs: params.standardOutcomeIDs,
+        text: params.text,
+        accessUnpublished: params.accessUnpublished,
+        orderBy: params.orderBy,
+        sortType: params.sortType,
+        page: params.currPage,
+        limit: params.limit,
+        released: params.released,
+      });
 
       response.objects = await Promise.all(
         response.objects.map(async object => {
@@ -887,9 +915,7 @@ export class LearningObjectInteractor {
     }
   }
 
-  public static async fetchCollections(
-    dataStore: DataStore,
-  ): Promise<any> {
+  public static async fetchCollections(dataStore: DataStore): Promise<any> {
     try {
       const collections = await dataStore.fetchCollections();
       return collections;

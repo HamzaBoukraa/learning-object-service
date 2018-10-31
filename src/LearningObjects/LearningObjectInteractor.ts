@@ -220,6 +220,32 @@ export async function updateReadme(params: {
 }
 
 /**
+ * Updates file description
+ *
+ * @static
+ * @param {string} objectId
+ * @param {string} fileId
+ * @returns {Promise<void>}
+ * @memberof LearningObjectInteractor
+ */
+export async function updateFileDescription(params: {
+  dataStore: DataStore;
+  objectId: string;
+  fileId: string;
+  description: string;
+}): Promise<void> {
+  try {
+    await params.dataStore.updateFileDescription({
+      learningObjectId: params.objectId,
+      fileId: params.fileId,
+      description: params.description,
+    });
+  } catch (e) {
+    return Promise.reject(`Problem updating file description. Error: ${e}`);
+  }
+}
+
+/**
  * Removes file metadata and deletes from S3
  *
  * @static
