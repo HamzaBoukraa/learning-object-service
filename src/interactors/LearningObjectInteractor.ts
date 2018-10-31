@@ -404,9 +404,7 @@ export class LearningObjectInteractor {
     username: string;
   }): Promise<{ filename: string; mimeType: string; stream: Readable }> {
     try {
-      const [isWhitelisted, learningObject, fileMetaData] = await Promise.all([
-        // Check if the user is on the whitelist
-        enforceWhitelist(params.username),
+      const [learningObject, fileMetaData] = await Promise.all([
         // Fetch the learning object
         params.dataStore.fetchLearningObject(params.learningObjectId),
         // Collect requested file metadata from datastore
@@ -418,7 +416,6 @@ export class LearningObjectInteractor {
 
       // if the user is not on the whitelist and the LO is not released, throw access error
       if (
-        !isWhitelisted &&
         learningObject.lock &&
         learningObject.lock.restrictions.indexOf(Restriction.DOWNLOAD) !== -1
       ) {

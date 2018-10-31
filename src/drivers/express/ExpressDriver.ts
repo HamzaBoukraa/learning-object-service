@@ -53,7 +53,7 @@ export class ExpressDriver {
     this.app.use(cookieParser());
 
     // Set our public api routes
-    this.app.use('/', ExpressRouteDriver.buildRouter(dataStore, library));
+    this.app.use('/', ExpressRouteDriver.buildRouter(dataStore, library, fileManager));
 
     // Set Validation Middleware
     this.app.use(enforceTokenAccess);
