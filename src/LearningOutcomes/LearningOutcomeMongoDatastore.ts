@@ -7,6 +7,7 @@ import {
 import { LearningOutcome, StandardOutcome } from '@cyber4all/clark-entity';
 import { Db, ObjectID } from 'mongodb';
 import { COLLECTIONS } from '../drivers/MongoDriver';
+import { mapId } from '../drivers/Mongo/functions';
 
 export class LearningOutcomeMongoDatastore implements LearningOutcomeDatastore {
   constructor(private db: Db) {}
@@ -41,7 +42,7 @@ export class LearningOutcomeMongoDatastore implements LearningOutcomeDatastore {
    * @memberof LearningOutcomeMongoDatastore
    */
   async getLearningOutcome(params: { id: string }): Promise<LearningOutcome> {
-    const outcomeDoc = await this.db
+    let outcomeDoc = await this.db
       .collection(COLLECTIONS.LEARNING_OUTCOMES)
       .findOne({ _id: params.id });
     if (outcomeDoc) {
@@ -49,6 +50,7 @@ export class LearningOutcomeMongoDatastore implements LearningOutcomeDatastore {
         ids: outcomeDoc.mappings,
       });
     }
+    outcomeDoc = mapId(outcomeDoc);
     return outcomeDoc;
   }
   /**
@@ -58,10 +60,12 @@ export class LearningOutcomeMongoDatastore implements LearningOutcomeDatastore {
    * @returns {Promise<StandardOutcome>}
    * @memberof LearningOutcomeMongoDatastore
    */
-  getStandardOutcome(params: { id: string }): Promise<StandardOutcome> {
-    return this.db
+  async getStandardOutcome(params: { id: string }): Promise<StandardOutcome> {
+    let outcome = await this.db
       .collection<StandardOutcome>(COLLECTIONS.STANDARD_OUTCOMES)
       .findOne({ _id: params.id });
+    outcome = mapId(outcome);
+    return outcome;
   }
 
   /**
@@ -71,13 +75,15 @@ export class LearningOutcomeMongoDatastore implements LearningOutcomeDatastore {
    * @returns {Promise<StandardOutcome[]>}
    * @memberof LearningOutcomeMongoDatastore
    */
-  getAllStandardOutcomes(params: {
+  async getAllStandardOutcomes(params: {
     ids: string[];
   }): Promise<StandardOutcome[]> {
-    return this.db
+    let outcomes = await this.db
       .collection<StandardOutcome>(COLLECTIONS.STANDARD_OUTCOMES)
       .find({ _id: { $in: params.ids } })
       .toArray();
+    outcomes = outcomes.map(mapId);
+    return outcomes;
   }
 
   /**
@@ -92,16 +98,18 @@ export class LearningOutcomeMongoDatastore implements LearningOutcomeDatastore {
   async getAllLearningOutcomes(params: {
     source: string;
   }): Promise<LearningOutcome[]> {
-    const outcomeDocs = await this.db
+    let outcomeDocs = await this.db
       .collection(COLLECTIONS.LEARNING_OUTCOMES)
       .find({ source: params.source })
       .toArray();
 
-    await Promise.all(
+    outcomeDocs = await Promise.all(
       outcomeDocs.map(async doc => {
+        doc = mapId(doc);
         doc.mappings = await this.getAllStandardOutcomes({
           ids: doc.mappings,
         });
+        return doc;
       }),
     );
 
