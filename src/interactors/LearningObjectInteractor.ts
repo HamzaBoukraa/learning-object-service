@@ -406,14 +406,6 @@ export class LearningObjectInteractor {
         }),
       ]);
 
-      // if the user is not on the whitelist and the LO is not released, throw access error
-      if (
-        learningObject.lock &&
-        learningObject.lock.restrictions.indexOf(Restriction.DOWNLOAD) !== -1
-      ) {
-        throw new Error('Invalid Access');
-      }
-
       const path = `${params.author}/${params.learningObjectId}/${
         fileMetaData.fullPath ? fileMetaData.fullPath : fileMetaData.name
       }`;
