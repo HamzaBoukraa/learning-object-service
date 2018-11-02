@@ -108,6 +108,15 @@ export class MongoDriver implements DataStore {
     this.mongoClient.close();
   }
 
+  async getLearningObjectMaterials(params: { id: string }): Promise<Material> {
+    const doc = await this.db
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .findOne({ _id: params.id }, { projection: { materials: 1 } });
+    if (doc) {
+      return doc.materials;
+    }
+  }
+
   // LearningOutcome Ops
   insertLearningOutcome(params: {
     source: string;

@@ -9,11 +9,7 @@ import { UserToken, LearningObjectUpdates } from '../types';
  * Initializes an express router with endpoints for public Retrieving
  * a Learning Object.
  */
-export function initializePublic({
-  dataStore,
-}: {
-  dataStore: DataStore;
-}) {
+export function initializePublic({ dataStore }: { dataStore: DataStore }) {
   const router: Router = Router();
 
   /**
@@ -24,7 +20,10 @@ export function initializePublic({
   const getLearningObjectById = async (req: Request, res: Response) => {
     try {
       const id = req.params.learningObjectId;
-      const learningObject = await LearningObjectInteractor.getLearningObjectById(dataStore, id);
+      const learningObject = await LearningObjectInteractor.getLearningObjectById(
+        dataStore,
+        id,
+      );
       res.status(200).send(learningObject);
     } catch (e) {
       console.error(e);
@@ -79,6 +78,19 @@ export function initializePrivate({
       res.status(500).send(e);
     }
   };
+  const getMaterials = async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id;
+      const materials = await LearningObjectInteractor.getMaterials({
+        dataStore,
+        id,
+      });
+      res.status(200).send(materials);
+    } catch (e) {
+      console.error(e);
+      res.status(500).send(e);
+    }
+  };
   const updateLearningObject = async (req: Request, res: Response) => {
     try {
       const id: string = req.body.id;
@@ -117,7 +129,7 @@ export function initializePrivate({
     .route('/learning-objects')
     .post(addLearningObject)
     .patch(updateLearningObject);
+  router.get('/learning-objects/:id/materials/all', getMaterials);
   router.delete('/learning-objects/:learningObjectName', deleteLearningObject);
   return router;
 }
-

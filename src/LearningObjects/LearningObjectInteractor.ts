@@ -306,6 +306,29 @@ export async function deleteFile(
 }
 
 /**
+ * Fetches Learning Object's materials
+ *
+ * @export
+ * @param {{
+ *   dataStore: DataStore;
+ *   id: string;
+ * }} params
+ * @returns
+ */
+export async function getMaterials(params: {
+  dataStore: DataStore;
+  id: string;
+}) {
+  try {
+    return await params.dataStore.getLearningObjectMaterials({ id: params.id });
+  } catch (e) {
+    return Promise.reject(
+      `Problem fetching materials for object: ${params.id}. Error: ${e}`,
+    );
+  }
+}
+
+/**
  * Checks to see if user has required permissions
  *
  * @param {({
