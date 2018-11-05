@@ -48,7 +48,6 @@ export class LearningObjectInteractor {
     query?: LearningObjectQuery;
   }): Promise<LearningObject[]> {
     try {
-      console.log('HIT ME');
       let total = 0;
       let summary: LearningObject[] = [];
       if (
@@ -103,7 +102,6 @@ export class LearningObjectInteractor {
         const objectIDs = await params.dataStore.getUserObjects(
           params.username,
         );
-        console.log('OBJECT: ID', objectIDs);
         summary = await params.dataStore.fetchMultipleObjects(
           objectIDs,
           false,
