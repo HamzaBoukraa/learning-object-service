@@ -92,44 +92,16 @@ export class ExpressAdminRouteDriver {
     });
     router.patch(
       '/users/:username/learning-objects/:learningObjectName/publish',
-      async (req, res) => {
-
-        try {
-          const id = req.body.id;
-          const published = req.body.published;
-
-          await AdminLearningObjectInteractor.togglePublished(
-            this.dataStore,
-            req.params.username,
-            id,
-            published,
-          );
-          res.sendStatus(200);
-        } catch (e) {
-          console.error(e);
-          res.status(500).send(e);
-        }
+      async (_, res) => {
+        // Respond to clients that this functionality is now gone
+        res.sendStatus(410);
       },
     );
     router.patch(
       '/users/:username/learning-objects/:learningObjectName/unpublish',
-      async (req, res) => {
-
-        try {
-          const id = req.body.id;
-          const published = req.body.published;
-
-          await AdminLearningObjectInteractor.togglePublished(
-            this.dataStore,
-            req.params.username,
-            id,
-            published,
-          );
-          res.sendStatus(200);
-        } catch (e) {
-          console.error(e);
-          res.status(500).send(e);
-        }
+      async (_, res) => {
+        // Respond to clients that this functionality is now gone
+        res.sendStatus(410);
       },
     );
     router.patch(
@@ -174,6 +146,7 @@ export class ExpressAdminRouteDriver {
             this.fileManager,
             req.params.username,
             learningObjectName,
+            this.library,
           );
           res.sendStatus(200);
         } catch (e) {
@@ -191,6 +164,7 @@ export class ExpressAdminRouteDriver {
           await AdminLearningObjectInteractor.deleteMultipleLearningObjects(
             this.dataStore,
             this.fileManager,
+            this.library,
             req.params.username,
             learningObjectNames,
           );
