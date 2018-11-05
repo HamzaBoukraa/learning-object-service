@@ -2,6 +2,7 @@
 FROM node:8 as builder
 
 ARG CLARK_DB_URI_TEST
+ARG WHITELIST_URI
 ARG KEY=TEST_SECRET
 ARG ISSUER=TEST_ISSUER
 ARG SERVICE_KEY=THIS_IS_A_SERVICE_KEY
@@ -31,7 +32,7 @@ ENV PATH /opt/node_modules/.bin:$PATH
 
 # Swtich working dir to opt to use node_modules for testing
 WORKDIR /opt
-RUN npm test
+RUN WHITELISTURL=WHITELIST_URI npm test
 
 FROM node:8-alpine
 # Defaults the node environment to production, however compose will override this to use development
