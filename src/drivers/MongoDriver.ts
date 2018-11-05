@@ -27,14 +27,7 @@ import {
   Restriction,
   Material,
 } from '@cyber4all/clark-entity/dist/learning-object';
-<<<<<<< HEAD
-import {
-  LearningObjectFile,
-  LearningObjectInteractor,
-} from '../interactors/LearningObjectInteractor';
-=======
 import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
->>>>>>> f648abf5369a5e89e95f5c12c0e818a1ffac496b
 import { reportError } from './SentryConnector';
 import * as ObjectMapper from './Mongo/ObjectMapper';
 import { SubmissionDatastore } from '../LearningObjectSubmission/SubmissionDatastore';

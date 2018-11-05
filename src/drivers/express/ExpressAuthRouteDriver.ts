@@ -13,6 +13,7 @@ import {
   updateFileDescription,
 } from '../../LearningObjects/LearningObjectInteractor';
 import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
+import * as LearningOutcomeRouteHandler from '../../LearningOutcomes/LearningOutcomeRouteHandler';
 import * as SubmissionRouteDriver from '../../LearningObjectSubmission/SubmissionRouteDriver';
 import { reportError } from '../SentryConnector';
 export class ExpressAuthRouteDriver {
@@ -68,6 +69,9 @@ export class ExpressAuthRouteDriver {
         library: this.library,
       }),
     );
+    router.use('/learning-objects/:id', LearningOutcomeRouteHandler.initialize({
+      dataStore: this.dataStore,
+    }));
     router.get('/learning-objects/summary', async (req, res) => {
       try {
         const children = req.query.children;
