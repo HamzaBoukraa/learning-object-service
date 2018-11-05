@@ -401,7 +401,6 @@ export class LearningObjectInteractor {
     dataStore: DataStore;
     fileManager: FileManager;
     author: string;
-    username: string;
   }): Promise<{ filename: string; mimeType: string; stream: Readable }> {
     try {
       const [learningObject, fileMetaData] = await Promise.all([
@@ -413,14 +412,6 @@ export class LearningObjectInteractor {
           fileId: params.fileId,
         }),
       ]);
-
-      // if the user is not on the whitelist and the LO is not released, throw access error
-      if (
-        learningObject.lock &&
-        learningObject.lock.restrictions.indexOf(Restriction.DOWNLOAD) !== -1
-      ) {
-        throw new Error('Invalid Access');
-      }
 
       const path = `${params.author}/${params.learningObjectId}/${
         fileMetaData.fullPath ? fileMetaData.fullPath : fileMetaData.name
