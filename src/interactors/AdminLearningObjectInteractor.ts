@@ -1,6 +1,7 @@
 import { LearningObjectInteractor } from './interactors';
 import { DataStore, FileManager, LibraryCommunicator } from '../interfaces/interfaces';
 import { LearningObjectLock } from '@cyber4all/clark-entity/dist/learning-object';
+import { deleteLearningObject } from '../LearningObjects/LearningObjectInteractor';
 
 export class AdminLearningObjectInteractor {
   private static learningObjectInteractor = LearningObjectInteractor;
@@ -76,24 +77,6 @@ export class AdminLearningObjectInteractor {
     }
   }
 
-  public static async togglePublished(
-    dataStore: DataStore,
-    username: string,
-    id: string,
-    published: boolean,
-  ): Promise<void> {
-    try {
-      return await this.learningObjectInteractor.togglePublished(
-        dataStore,
-        username,
-        id,
-        published,
-      );
-    } catch (e) {
-      return Promise.reject(`Problem toggling publish status. Error:  ${e}`);
-    }
-  }
-
   public static async toggleLock(
     dataStore: DataStore,
     id: string,
@@ -111,13 +94,15 @@ export class AdminLearningObjectInteractor {
     fileManager: FileManager,
     username: string,
     learningObjectName: string,
+    library: LibraryCommunicator,
   ): Promise<void> {
     try {
-      return await this.learningObjectInteractor.deleteLearningObject(
+      return await deleteLearningObject(
         dataStore,
         fileManager,
         username,
         learningObjectName,
+        library,
       );
     } catch (error) {
       return Promise.reject(

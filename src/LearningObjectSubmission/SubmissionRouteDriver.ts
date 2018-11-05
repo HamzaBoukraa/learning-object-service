@@ -50,7 +50,7 @@ export function initialize(dataStore: DataStore) {
     }
   }
   const router: Router = Router();
-  router.patch('/learning-objects/publish', submit);
-  router.patch('/learning-objects/unpublish', cancel);
+  router.post('/learning-objects/submission', submit);
+  router.delete('/learning-objects/submission', cancel);
   return router;
 }
