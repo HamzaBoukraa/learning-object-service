@@ -12,6 +12,19 @@ export interface FileManager {
   }): Promise<MultipartUploadData>;
   cancelMultipart(params: { path: string; uploadId: string }): Promise<void>;
   streamFile(params: { path: string }): Readable;
+
+  initMultipartUpload(params: { path: string }): Promise<string>;
+  uploadPart(params: {
+    path: string;
+    data: any;
+    partNumber: number;
+    uploadId: string;
+  }): Promise<CompletedPart>;
+  completeMultipartUpload(params: {
+    path: string;
+    uploadId: string;
+    completedPartList: CompletedPartList;
+  }): Promise<string>;
 }
 
 // Export aliased types for ease of update in the case that AWS S3 is no longer the driver used.
@@ -31,11 +44,7 @@ export interface MultipartFileUpload extends FileUpload {
 export interface MultipartFileUploadStatus {
   _id: string;
   uploadId: string;
-  partsUploaded: number;
-  totalParts: number;
-  fileSize: number;
   path: string;
-  bytesUploaded: number;
   completedParts: CompletedPartList;
   createdAt: string;
 }

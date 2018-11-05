@@ -6,6 +6,7 @@ import {
   MultipartFileUpload,
   MultipartUploadData,
   CompletedPartList,
+  CompletedPart,
 } from '../interfaces/FileManager';
 import { Readable } from 'stream';
 
@@ -37,6 +38,59 @@ export class S3Driver implements FileManager {
     } catch (e) {
       return Promise.reject(e);
     }
+  }
+
+  public async initMultipartUpload(params: { path: string }): Promise<string> {
+    const createParams = {
+      Bucket: AWS_S3_BUCKET,
+      ACL: AWS_S3_ACL,
+      Key: params.path,
+    };
+    const createdUpload = await this.s3
+      .createMultipartUpload(createParams)
+      .promise();
+    return createdUpload.UploadId;
+  }
+
+  public async uploadPart(params: {
+    path: string;
+    data: any;
+    partNumber: number;
+    uploadId: string;
+  }): Promise<CompletedPart> {
+    const partUploadParams = {
+      Bucket: AWS_S3_BUCKET,
+      Key: params.path,
+      Body: params.data,
+      PartNumber: params.partNumber,
+      UploadId: params.uploadId,
+    };
+    // Upload chunk
+    const uploadData = await this.s3.uploadPart(partUploadParams).promise();
+    return {
+      ETag: uploadData.ETag,
+      PartNumber: params.partNumber,
+    };
+  }
+
+  public async completeMultipartUpload(params: {
+    path: string;
+    uploadId: string;
+    completedPartList: CompletedPartList;
+  }): Promise<string> {
+    const completedParams = {
+      Bucket: AWS_S3_BUCKET,
+      Key: params.path,
+      UploadId: params.uploadId,
+      MultipartUpload: {
+        Parts: params.completedPartList,
+      },
+    };
+    // Finalize upload
+    const completedUploadData = await this.s3
+      .completeMultipartUpload(completedParams)
+      .promise();
+    return completedUploadData.Location;
   }
 
   /**
