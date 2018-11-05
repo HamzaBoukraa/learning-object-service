@@ -5,6 +5,7 @@ import { LearningObject } from '@cyber4all/clark-entity';
 import * as TokenManager from '../TokenManager';
 import { LearningObjectQuery } from '../../interfaces/DataStore';
 import { reportError } from '../SentryConnector';
+import { LEARNING_OBJECT_ROUTES } from '../../routes';
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
 // tslint:disable-next-line:no-require-imports
 const version = require('../../../package.json').version;
