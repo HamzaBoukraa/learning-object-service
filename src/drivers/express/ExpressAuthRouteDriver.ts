@@ -12,6 +12,7 @@ import {
   updateLearningObject,
   updateReadme,
 } from '../../LearningObjects/LearningObjectInteractor';
+import * as FileInteractor from '../../FileManager/FileInteractor';
 import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
 import * as SubmissionRouteDriver from '../../LearningObjectSubmission/SubmissionRouteDriver';
 import { reportError } from '../SentryConnector';
@@ -129,6 +130,41 @@ export class ExpressAuthRouteDriver {
         }
       },
     );
+    router
+      .route('/learning-objects/:id/files/:fileId/multipart')
+      .post(async (req, res) => {
+        try {
+          const user = req.user;
+          const objectId: string = req.params.id;
+          const fileId: string = req.params.fileId;
+          const filePath = req.body.filePath;
+          const uploadId = await FileInteractor.startMultipartUpload({
+            objectId,
+            fileId,
+            filePath,
+            user,
+            dataStore: this.dataStore,
+            fileManager: this.fileManager,
+          });
+          res.status(200).send(uploadId);
+        } catch (e) {
+          res.status(500).send(e);
+        }
+      })
+      .patch(async (req, res) => {
+        try {
+          const fileId: string = req.params.fileId;
+          await FileInteractor.finalizeMultipartUpload({
+            fileId,
+            dataStore: this.dataStore,
+            fileManager: this.fileManager,
+          });
+          res.sendStatus(200);
+        } catch (e) {
+          res.status(500).send(e);
+        }
+      });
+
     router.post(
       '/learning-objects/:id/files',
       this.upload.any(),
