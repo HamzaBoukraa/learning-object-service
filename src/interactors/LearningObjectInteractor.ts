@@ -402,16 +402,30 @@ export class LearningObjectInteractor {
     fileManager: FileManager;
     author: string;
   }): Promise<{ filename: string; mimeType: string; stream: Readable }> {
-    try {
-      const [learningObject, fileMetaData] = await Promise.all([
-        // Fetch the learning object
-        params.dataStore.fetchLearningObject(params.learningObjectId),
+    let learningObject, fileMetaData;
+
+    learningObject = await params.dataStore.fetchLearningObject(
+      params.learningObjectId,
+    );
+
+    if (!learningObject) {
+      throw new Error(
+        `Learning object ${params.learningObjectId} does not exist.`,
+      );
+    }
+
         // Collect requested file metadata from datastore
-        params.dataStore.findSingleFile({
+    fileMetaData = await params.dataStore.findSingleFile({
           learningObjectId: params.learningObjectId,
           fileId: params.fileId,
-        }),
-      ]);
+    });
+
+    if (!fileMetaData) {
+      return Promise.reject({
+        object: learningObject,
+        message: `File not found`,
+      });
+    }
 
       const path = `${params.author}/${params.learningObjectId}/${
         fileMetaData.fullPath ? fileMetaData.fullPath : fileMetaData.name
