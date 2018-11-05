@@ -279,14 +279,21 @@ export class LearningObjectInteractor {
     }
   }
 
+  /**
+   * Checks a learning object against submission criteria.
+   *
+   * @param object the learning object under question
+   * @returns {string|null} An error message describing why the learning object isn't valid or null if it is.
+   */
   static validateLearningObject(object: LearningObject): string {
+    // TODO: Move to entity
     let error = null;
     if (object.name.trim() === '') {
       error = 'Learning Object name cannot be empty.';
     } else if (object.published && !object.outcomes.length) {
-      error = 'Learning Object must have outcomes to publish.';
+      error = 'Learning Object must have outcomes to submit for review.';
     } else if (object.published && !object.goals[0].text) {
-      error = 'Learning Object must have a description to publish.';
+      error = 'Learning Object must have a description to submit for review.';
     }
     return error;
   }
