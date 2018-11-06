@@ -4,6 +4,7 @@ import { LearningObject } from '@cyber4all/clark-entity';
 import { DataStore } from '../interfaces/DataStore';
 import { FileManager, LibraryCommunicator } from '../interfaces/interfaces';
 import { UserToken, LearningObjectUpdates } from '../types';
+import { LearningObjectError } from '../errors';
 
 /**
  * Initializes an express router with endpoints for public Retrieving
@@ -64,25 +65,36 @@ export function initializePrivate({
 }) {
   const router: Router = Router();
   const addLearningObject = async (req: Request, res: Response) => {
+    let object: LearningObject;
+
     try {
-      const username = req.user.username;
-      const object = LearningObject.instantiate(req.body.object);
-      object.author.username = username;
+      object = LearningObject.instantiate(req.body.object);
       const learningObject = await LearningObjectInteractor.addLearningObject(
         dataStore,
         fileManager,
         object,
+        req.user,
       );
       res.status(200).send(learningObject);
     } catch (e) {
       console.error(e);
-      res.status(500).send(e);
+
+      let status = 500;
+
+      // if the error was that the object has a duplicate name, send a 409 error code
+      if (object && object.name && e.message === LearningObjectError.DUPLICATE_NAME(object.name)) {
+        status = 409;
+      }
+
+      res.status(status).send(e);
     }
   };
   const updateLearningObject = async (req: Request, res: Response) => {
+    let updates: any;
+
     try {
       const id: string = req.body.id;
-      const updates = req.body.learningObject;
+      updates = req.body.learningObject;
       const user: UserToken = req.user;
       await LearningObjectInteractor.updateLearningObject({
         user,
@@ -94,7 +106,15 @@ export function initializePrivate({
       res.sendStatus(200);
     } catch (e) {
       console.error(e);
-      res.status(500).send(e);
+
+      let status = 500;
+
+      // if the error was that the object has a duplicate name, send a 409 error code
+      if (updates && updates.name && e.message === LearningObjectError.DUPLICATE_NAME(updates.name)) {
+        status = 409;
+      }
+
+      res.status(status).send(e);
     }
   };
   const deleteLearningObject = async (req: Request, res: Response) => {

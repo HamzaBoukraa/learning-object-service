@@ -9,6 +9,7 @@ import {
   UserToken,
   VALID_LEARNING_OBJECT_UPDATES,
 } from '../types';
+import { LearningObjectError } from '../errors';
 
 /**
  * Add a new learning object to the database.
@@ -29,12 +30,18 @@ export async function addLearningObject(
   dataStore: DataStore,
   fileManager: FileManager,
   object: LearningObject,
+  user: UserToken,
 ): Promise<LearningObject> {
+  const err = LearningObjectInteractor.validateLearningObject(object);
+
+  await checkNameExists({ dataStore, username: user.username, name: object.name });
+
   try {
-    const err = LearningObjectInteractor.validateLearningObject(object);
     if (err) {
       return Promise.reject(err);
     } else {
+      object.author.username = user.username;
+      console.log(object.author.username);
       const learningObjectID = await dataStore.insertLearningObject(object);
       object.id = learningObjectID;
 
@@ -48,15 +55,6 @@ export async function addLearningObject(
       return object;
     }
   } catch (e) {
-    // The duplicate key error is produced by Mongo, via a constraint on the authorID/name compound index
-    // FIXME: This should be an error that is encapsulated within the MongoDriver, since it is specific to Mongo's indexing functionality
-    if (/duplicate key error/gi.test(e)) {
-      return Promise.reject(
-        `Could not save Learning Object. Learning Object with name: ${
-          object.name
-        } already exists.`,
-      );
-    }
     return Promise.reject(`Problem creating Learning Object. Error${e}`);
   }
 }
@@ -79,6 +77,15 @@ export async function updateLearningObject(params: {
   id: string;
   updates: { [index: string]: any };
 }): Promise<void> {
+  if (params.updates.name) {
+    await checkNameExists({
+      id: params.id,
+      dataStore: params.dataStore,
+      name: params.updates.name,
+      username: params.user.username,
+    });
+  }
+
   try {
     await checkAuthorization({
       dataStore: params.dataStore,
@@ -91,14 +98,6 @@ export async function updateLearningObject(params: {
       id: params.id,
       updates,
     });
-    if (params.updates.name) {
-      await checkNameExists({
-        id: params.id,
-        dataStore: params.dataStore,
-        name: params.updates.name,
-        username: params.user.username,
-      });
-    }
     updates.date = Date.now().toString();
 
     if (updates.description) {
@@ -407,7 +406,7 @@ async function checkNameExists(params: {
   dataStore: DataStore;
   username: string;
   name: string;
-  id: string;
+  id?: string;
 }) {
   const authorId = await params.dataStore.findUser(params.username);
   const existing = await params.dataStore.peek<{ id: string }>({
@@ -417,7 +416,7 @@ async function checkNameExists(params: {
   // @ts-ignore typescript doesn't think a .id property should exist on the existing object
   if (existing && params.id !== existing.id) {
     throw new Error(
-      `A learning object with name: ${params.name}, already exists.`,
+      LearningObjectError.DUPLICATE_NAME(params.name),
     );
   }
 }
