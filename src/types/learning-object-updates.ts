@@ -1,4 +1,7 @@
-import { LearningObjectPDF } from '@cyber4all/clark-entity/dist/learning-object';
+import {
+  LearningObjectPDF,
+  FolderDescription,
+} from '@cyber4all/clark-entity/dist/learning-object';
 
 export interface LearningObjectUpdates {
   name?: string;
@@ -11,6 +14,7 @@ export interface LearningObjectUpdates {
   published?: boolean;
   materials?: { [index: string]: any };
   'materials.pdf'?: LearningObjectPDF;
+  'materials.folderDescriptions'?: FolderDescription[];
 }
 const LearningObjectUpdateProps: LearningObjectUpdates = {
   name: '',

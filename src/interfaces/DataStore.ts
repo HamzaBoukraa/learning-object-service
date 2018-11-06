@@ -4,7 +4,10 @@ import {
   MultipartFileUploadStatusUpdates,
   CompletedPart,
 } from './FileManager';
-import { LearningObjectLock } from '@cyber4all/clark-entity/dist/learning-object';
+import {
+  LearningObjectLock,
+  Material,
+} from '@cyber4all/clark-entity/dist/learning-object';
 import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
 import { LearningObjectUpdates } from '../types';
 import { LearningOutcomeDatastore } from '../LearningOutcomes/LearningOutcomeInteractor';
@@ -75,6 +78,7 @@ export interface DataStore extends LearningOutcomeDatastore {
   }): Promise<LearningObjectFile>;
   // Learning Object Files
   addToFiles(params: { id: string; loFile: LearningObjectFile }): Promise<void>;
+  getLearningObjectMaterials(params: { id: string }): Promise<Material>;
   removeFromFiles(params: { objectId: string; fileId: string }): Promise<void>;
   updateFileDescription(params: {
     learningObjectId: string;
