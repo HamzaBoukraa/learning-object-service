@@ -32,7 +32,7 @@ ENV PATH /opt/node_modules/.bin:$PATH
 
 # Swtich working dir to opt to use node_modules for testing
 WORKDIR /opt
-RUN WHITELISTURL=WHITELIST_URI npm test
+RUN WHITELISTURL=$WHITELIST_URI npm test
 
 FROM node:8-alpine
 # Defaults the node environment to production, however compose will override this to use development
