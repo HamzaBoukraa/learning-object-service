@@ -2,7 +2,6 @@
 FROM node:8 as builder
 
 ARG CLARK_DB_URI_TEST
-ARG WHITELIST_URI
 ARG KEY=TEST_SECRET
 ARG ISSUER=TEST_ISSUER
 ARG SERVICE_KEY=THIS_IS_A_SERVICE_KEY
@@ -28,6 +27,7 @@ RUN npm run build
 FROM node:8 as tester
 
 COPY --from=builder . .
+ARG WHITELIST_URI
 ENV PATH /opt/node_modules/.bin:$PATH
 
 # Swtich working dir to opt to use node_modules for testing
