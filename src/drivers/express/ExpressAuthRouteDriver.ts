@@ -12,6 +12,7 @@ import {
   removeFile,
   updateFileDescription,
 } from '../../LearningObjects/LearningObjectInteractor';
+import * as FileInteractor from '../../FileManager/FileInteractor';
 import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
 import * as LearningOutcomeRouteHandler from '../../LearningOutcomes/LearningOutcomeRouteHandler';
 import * as SubmissionRouteDriver from '../../LearningObjectSubmission/SubmissionRouteDriver';
@@ -135,6 +136,49 @@ export class ExpressAuthRouteDriver {
         }
       },
     );
+    router
+      .route('/learning-objects/:id/files/:fileId/multipart')
+      .post(async (req, res) => {
+        try {
+          const user = req.user;
+          const objectId: string = req.params.id;
+          const fileId: string = req.params.fileId;
+          const filePath = req.body.filePath;
+          const uploadId = await FileInteractor.startMultipartUpload({
+            objectId,
+            fileId,
+            filePath,
+            user,
+            dataStore: this.dataStore,
+            fileManager: this.fileManager,
+          });
+          res.status(200).send({ uploadId });
+        } catch (e) {
+          res.status(500).send(e);
+        }
+      })
+      .patch(async (req, res) => {
+        try {
+          const id = req.params.id;
+          const fileId: string = req.params.fileId;
+          const fileMeta = req.body.fileMeta;
+          const url = await FileInteractor.finalizeMultipartUpload({
+            fileId,
+            dataStore: this.dataStore,
+            fileManager: this.fileManager,
+          });
+          await LearningObjectInteractor.addFileMeta({
+            id,
+            fileMeta,
+            url,
+            dataStore: this.dataStore,
+          });
+          res.sendStatus(200);
+        } catch (e) {
+          res.status(500).send(e);
+        }
+      });
+
     router.post(
       '/learning-objects/:id/files',
       this.upload.any(),

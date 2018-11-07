@@ -6,21 +6,13 @@ import {
 import { LearningObject } from '@cyber4all/clark-entity';
 import * as stopword from 'stopword';
 import { LearningObjectQuery } from '../interfaces/DataStore';
-import {
-  Metrics,
-  Restriction,
-} from '@cyber4all/clark-entity/dist/learning-object';
+import { Metrics } from '@cyber4all/clark-entity/dist/learning-object';
 import { File } from '@cyber4all/clark-entity/dist/learning-object';
 import {
-  MultipartFileUpload,
   MultipartFileUploadStatus,
-  MultipartFileUploadStatusUpdates,
   DZFile,
   FileUpload,
-  MultipartUploadData,
-  CompletedPartList,
 } from '../interfaces/FileManager';
-import { enforceWhitelist } from '../middleware/whitelist';
 import { Readable } from 'stream';
 // TODO: Update File in clark-entity
 export interface LearningObjectFile extends File {
@@ -340,7 +332,7 @@ export class LearningObjectInteractor {
       const hasChunks = +params.file.dztotalchunkcount;
       if (hasChunks) {
         // Process Multipart
-        loFile = await this.processMultipartUpload({
+        await this.processMultipartUpload({
           dataStore: params.dataStore,
           fileManager: params.fileManager,
           id: params.id,
@@ -364,6 +356,40 @@ export class LearningObjectInteractor {
         });
       }
       return loFile;
+    } catch (e) {
+      return Promise.reject(`Problem uploading file. Error: ${e}`);
+    }
+  }
+
+  /**
+   * Adds File metadata to Learning Object materials
+   *
+   * @static
+   * @param {{
+   *     dataStore: DataStore;
+   *     id: string;
+   *     fileMeta: any;
+   *     url: string;
+   *   }} params
+   * @returns {Promise<void>}
+   * @memberof LearningObjectInteractor
+   */
+  public static async addFileMeta(params: {
+    dataStore: DataStore;
+    id: string;
+    fileMeta: any;
+    url: string;
+  }): Promise<void> {
+    try {
+      let loFile: LearningObjectFile = this.generateLearningObjectFile(
+        params.fileMeta,
+        params.url,
+      );
+      await this.updateMaterials({
+        loFile,
+        dataStore: params.dataStore,
+        id: params.id,
+      });
     } catch (e) {
       return Promise.reject(`Problem uploading file. Error: ${e}`);
     }
@@ -410,7 +436,6 @@ export class LearningObjectInteractor {
     dataStore: DataStore;
     fileManager: FileManager;
     author: string;
-    username: string;
   }): Promise<{ filename: string; mimeType: string; stream: Readable }> {
     try {
       const [learningObject, fileMetaData] = await Promise.all([
@@ -422,14 +447,6 @@ export class LearningObjectInteractor {
           fileId: params.fileId,
         }),
       ]);
-
-      // if the user is not on the whitelist and the LO is not released, throw access error
-      if (
-        learningObject.lock &&
-        learningObject.lock.restrictions.indexOf(Restriction.DOWNLOAD) !== -1
-      ) {
-        throw new Error('Invalid Access');
-      }
 
       const path = `${params.author}/${params.learningObjectId}/${
         fileMetaData.fullPath ? fileMetaData.fullPath : fileMetaData.name
@@ -500,52 +517,16 @@ export class LearningObjectInteractor {
       const uploadStatus: MultipartFileUploadStatus = await params.dataStore.fetchMultipartUploadStatus(
         { id: params.file.dzuuid },
       );
-      let finish = false;
-      let completedPartList: CompletedPartList;
-      if (uploadStatus) {
-        uploadId = uploadStatus.uploadId;
-        finish = uploadStatus.partsUploaded + 1 === uploadStatus.totalParts;
-        completedPartList = uploadStatus.completedParts;
-      }
-      // Create MultipartFileUpload
-      const multipartFileUpload: MultipartFileUpload = {
-        ...params.fileUpload,
+      const completedPart = await params.fileManager.uploadPart({
+        path: uploadStatus.path,
+        data: params.fileUpload.data,
         partNumber,
-        uploadId,
-      };
-      // Upload Chunk
-      const multipartData = await params.fileManager.processMultipart({
-        finish,
-        completedPartList,
-        file: multipartFileUpload,
-      });
-      if (!finish) {
-        if (uploadStatus) {
-          await this.updateUploadStatus({
-            dataStore: params.dataStore,
-            file: params.file,
-            uploadStatus,
-            multipartData,
+        uploadId: uploadStatus.uploadId,
           });
-        } else {
-          uploadId = multipartData.uploadId;
-          await this.createUploadStatus({
-            dataStore: params.dataStore,
-            file: params.file,
-            multipartData,
-          });
-        }
-      } else {
-        const loFile = this.generateLearningObjectFile(
-          params.file,
-          multipartData.url,
-        );
-        // Delete upload data
-        params.dataStore.deleteMultipartUploadStatus({
-          id: uploadStatus._id,
+      await params.dataStore.updateMultipartUploadStatus({
+        completedPart,
+        id: params.file.dzuuid,
         });
-        return loFile;
-      }
     } catch (e) {
       this.abortMultipartUpload({
         uploadId,
@@ -590,81 +571,6 @@ export class LearningObjectInteractor {
       });
     } catch (e) {
       console.log(`Problem  aborting multipart upload. Error: ${e}`);
-      return Promise.reject(e);
-    }
-  }
-
-  /**
-   *
-   * Creates new UploadStatus
-   * @private
-   * @static
-   * @param {{
-   *     dataStore: DataStore;
-   *     file: DZFile;
-   *     multipartData: MultipartUploadData;
-   *   }} params
-   * @returns Promise<void>
-   * @memberof LearningObjectInteractor
-   */
-  private static async createUploadStatus(params: {
-    dataStore: DataStore;
-    file: DZFile;
-    multipartData: MultipartUploadData;
-  }): Promise<void> {
-    try {
-      const uploadStatus: MultipartFileUploadStatus = {
-        _id: params.file.dzuuid,
-        uploadId: params.multipartData.uploadId,
-        totalParts: +params.file.dztotalchunkcount,
-        partsUploaded: 1,
-        fileSize: +params.file.size,
-        path: params.file.fullPath ? params.file.fullPath : params.file.name,
-        bytesUploaded: +params.file.dzchunksize,
-        completedParts: [params.multipartData.completedPart],
-        createdAt: Date.now().toString(),
-      };
-      return await params.dataStore.insertMultipartUploadStatus({
-        status: uploadStatus,
-      });
-    } catch (e) {
-      return Promise.reject(e);
-    }
-  }
-
-  /**
-   * Updates UploadStatus
-   *
-   * @private
-   * @static
-   * @param {{
-   *     dataStore: DataStore;
-   *     file: DZFile;
-   *     uploadStatus: MultipartFileUploadStatus;
-   *     multipartData: MultipartUploadData;
-   *   }} params
-   * @returns {Promise<void>}
-   * @memberof LearningObjectInteractor
-   */
-  private static async updateUploadStatus(params: {
-    dataStore: DataStore;
-    file: DZFile;
-    uploadStatus: MultipartFileUploadStatus;
-    multipartData: MultipartUploadData;
-  }): Promise<void> {
-    try {
-      // Update status by incrementing parts uploaded * bytes uploaded
-      const updates: MultipartFileUploadStatusUpdates = {
-        partsUploaded: params.uploadStatus.partsUploaded + 1,
-        bytesUploaded:
-          params.uploadStatus.bytesUploaded + +params.file.dzchunksize,
-      };
-      return await params.dataStore.updateMultipartUploadStatus({
-        updates,
-        id: params.uploadStatus._id,
-        completedPart: params.multipartData.completedPart,
-      });
-    } catch (e) {
       return Promise.reject(e);
     }
   }
@@ -1064,13 +970,23 @@ export class LearningObjectInteractor {
     const learningObjectFile: LearningObjectFile = {
       url,
       date,
-      id: file.dzuuid,
+      id: undefined,
       name: file.name,
       fileType: file.mimetype,
       extension: extension,
       fullPath: file.fullPath,
+      size: file.dztotalfilesize ? file.dztotalfilesize : file.size,
       packageable: this.isPackageable(file),
     };
+
+    // Sanitize object. Remove undefined or null values
+    const keys = Object.keys(learningObjectFile);
+    for (const key of keys) {
+      const prop = learningObjectFile[key];
+      if (!prop && prop !== 0) {
+        delete learningObjectFile[key];
+      }
+    }
 
     return learningObjectFile;
   }

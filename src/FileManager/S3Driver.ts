@@ -6,6 +6,7 @@ import {
   MultipartFileUpload,
   MultipartUploadData,
   CompletedPartList,
+  CompletedPart,
 } from '../interfaces/FileManager';
 import { Readable } from 'stream';
 
@@ -39,79 +40,60 @@ export class S3Driver implements FileManager {
     }
   }
 
-  /**
-   * Processes Chunk uploads
-   * If there is trouble with the upload AWS auto aborts multipart upload
-   * @param {{
-   *     file: MultipartFileUpload;
-   *     finish?: boolean;
-   *     completedPartList?: CompletedPartList;
-   *   }} params
-   * @returns {Promise<MultipartUploadData>}
-   * @memberof S3Driver
-   */
-  public async processMultipart(params: {
-    file: MultipartFileUpload;
-    finish?: boolean;
-    completedPartList?: CompletedPartList;
-  }): Promise<MultipartUploadData> {
-    try {
-      // If uploadId doesn't exist, a multipart upload has not been created for file upload
-      if (!params.file.uploadId) {
-        const createParams = {
-          Bucket: AWS_S3_BUCKET,
-          ACL: AWS_S3_ACL,
-          Key: params.file.path,
-        };
-        // Create multipart file upload
-        const createdUpload = await this.s3
-          .createMultipartUpload(createParams)
-          .promise();
-        params.file.uploadId = createdUpload.UploadId;
-      }
-      const partUploadParams = {
-        Bucket: AWS_S3_BUCKET,
-        Key: params.file.path,
-        Body: params.file.data,
-        PartNumber: params.file.partNumber,
-        UploadId: params.file.uploadId,
-      };
-      // Upload chunk
-      const uploadData = await this.s3.uploadPart(partUploadParams).promise();
+  public async initMultipartUpload(params: { path: string }): Promise<string> {
+    const createParams = {
+      Bucket: AWS_S3_BUCKET,
+      ACL: AWS_S3_ACL,
+      Key: params.path,
+    };
+    const createdUpload = await this.s3
+      .createMultipartUpload(createParams)
+      .promise();
+    return createdUpload.UploadId;
+  }
 
-      // If last chunk is being uploaded, finalize multipart upload
-      if (params.finish) {
-        // append final part to parts list before uploading
-        params.completedPartList.push({
-          ETag: uploadData.ETag,
-          PartNumber: params.file.partNumber,
-        });
+  public async uploadPart(params: {
+    path: string;
+    data: any;
+    partNumber: number;
+    uploadId: string;
+  }): Promise<CompletedPart> {
+    const partUploadParams = {
+      Bucket: AWS_S3_BUCKET,
+      Key: params.path,
+      Body: params.data,
+      PartNumber: params.partNumber,
+      UploadId: params.uploadId,
+    };
+    // Upload chunk
+    const uploadData = await this.s3.uploadPart(partUploadParams).promise();
+    return {
+      ETag: uploadData.ETag,
+      PartNumber: params.partNumber,
+    };
+  }
 
-        const completedParams = {
-          Bucket: AWS_S3_BUCKET,
-          Key: params.file.path,
-          UploadId: params.file.uploadId,
-          MultipartUpload: {
-            Parts: params.completedPartList,
-          },
-        };
-        // Finalize upload
-        const completedUploadData = await this.s3
-          .completeMultipartUpload(completedParams)
-          .promise();
-        return { url: completedUploadData.Location };
-      }
-
-      return {
-        uploadId: params.file.uploadId,
-        completedPart: {
-          ETag: uploadData.ETag,
-          PartNumber: params.file.partNumber,
-        },
-      };
-    } catch (e) {
-      return Promise.reject(e);
-    }
+  public async completeMultipartUpload(params: {
+    path: string;
+    uploadId: string;
+    completedPartList: CompletedPartList;
+  }): Promise<string> {
+    params.completedPartList.sort(
+      (partA, partB) => partA.PartNumber - partB.PartNumber,
+    );
+    const completedParams = {
+      Bucket: AWS_S3_BUCKET,
+      Key: params.path,
+      UploadId: params.uploadId,
+      MultipartUpload: {
+        Parts: params.completedPartList,
+      },
+    };
+    // Finalize upload
+    const completedUploadData = await this.s3
+      .completeMultipartUpload(completedParams)
+      .promise();
+    return completedUploadData.Location;
   }
 
   /**

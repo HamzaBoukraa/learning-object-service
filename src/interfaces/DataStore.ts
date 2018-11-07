@@ -1,13 +1,6 @@
 import { LearningObject, Collection } from '@cyber4all/clark-entity';
-import {
-  MultipartFileUploadStatus,
-  MultipartFileUploadStatusUpdates,
-  CompletedPart,
-} from './FileManager';
-import {
-  LearningObjectLock,
-  Material,
-} from '@cyber4all/clark-entity/dist/learning-object';
+import { MultipartFileUploadStatus, CompletedPart } from './FileManager';
+import { LearningObjectLock } from '@cyber4all/clark-entity/dist/learning-object';
 import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
 import { LearningObjectUpdates } from '../types';
 import { LearningOutcomeDatastore } from '../LearningOutcomes/LearningOutcomeInteractor';
@@ -94,7 +87,6 @@ export interface DataStore extends LearningOutcomeDatastore {
   }): Promise<MultipartFileUploadStatus>;
   updateMultipartUploadStatus(params: {
     id: string;
-    updates: MultipartFileUploadStatusUpdates;
     completedPart: CompletedPart;
   }): Promise<void>;
   deleteMultipartUploadStatus(params: { id: string }): Promise<void>;
