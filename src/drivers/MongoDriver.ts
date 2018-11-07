@@ -211,7 +211,14 @@ export class MongoDriver implements DataStore {
         .collection(COLLECTIONS.LEARNING_OBJECTS)
         .findOneAndUpdate(
           { _id: params.id, 'materials.files.url': params.loFile.url },
-          { $set: { 'materials.files.$[element]': params.loFile } },
+          {
+            $set: {
+              'materials.files.$[element].date': params.loFile.date,
+              'materials.files.$[element].size': params.loFile.size,
+              'materials.files.$[element].packageable':
+                params.loFile.packageable,
+            },
+          },
           // @ts-ignore: arrayFilters is in fact a property defined by documentation. Property does not exist in type definition.
           { arrayFilters: [{ 'element.url': params.loFile.url }] },
         );
@@ -848,11 +855,11 @@ export class MongoDriver implements DataStore {
   }
 
   /* Search for objects on CuBE criteria.
-    *
-    * TODO: Efficiency very questionable.
-    *      Convert to streaming algorithm if possible.
-    *
-    */
+   *
+   * TODO: Efficiency very questionable.
+   *      Convert to streaming algorithm if possible.
+   *
+   */
   // tslint:disable-next-line:member-ordering
   async searchObjects(params: {
     name: string;
@@ -1205,8 +1212,8 @@ export class MongoDriver implements DataStore {
         skip !== undefined
           ? cursor.skip(skip).limit(filters.limit)
           : filters.limit
-            ? cursor.limit(filters.limit)
-            : cursor;
+          ? cursor.limit(filters.limit)
+          : cursor;
 
       // SortBy
       cursor = filters.orderBy
