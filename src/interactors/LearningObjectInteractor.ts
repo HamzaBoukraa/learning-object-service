@@ -354,6 +354,40 @@ export class LearningObjectInteractor {
   }
 
   /**
+   * Adds File metadata to Learning Object materials
+   *
+   * @static
+   * @param {{
+   *     dataStore: DataStore;
+   *     id: string;
+   *     fileMeta: any;
+   *     url: string;
+   *   }} params
+   * @returns {Promise<void>}
+   * @memberof LearningObjectInteractor
+   */
+  public static async addFileMeta(params: {
+    dataStore: DataStore;
+    id: string;
+    fileMeta: any;
+    url: string;
+  }): Promise<void> {
+    try {
+      let loFile: LearningObjectFile = this.generateLearningObjectFile(
+        params.fileMeta,
+        params.url,
+      );
+      await this.updateMaterials({
+        loFile,
+        dataStore: params.dataStore,
+        id: params.id,
+      });
+    } catch (e) {
+      return Promise.reject(`Problem uploading file. Error: ${e}`);
+    }
+  }
+
+  /**
    * Cancels multipart file upload
    *
    * @static
