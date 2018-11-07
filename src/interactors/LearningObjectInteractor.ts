@@ -324,7 +324,7 @@ export class LearningObjectInteractor {
       const hasChunks = +params.file.dztotalchunkcount;
       if (hasChunks) {
         // Process Multipart
-        loFile = await this.processMultipartUpload({
+        await this.processMultipartUpload({
           dataStore: params.dataStore,
           fileManager: params.fileManager,
           id: params.id,
@@ -475,52 +475,16 @@ export class LearningObjectInteractor {
       const uploadStatus: MultipartFileUploadStatus = await params.dataStore.fetchMultipartUploadStatus(
         { id: params.file.dzuuid },
       );
-      let finish = false;
-      let completedPartList: CompletedPartList;
-      if (uploadStatus) {
-        uploadId = uploadStatus.uploadId;
-        finish = uploadStatus.partsUploaded + 1 === uploadStatus.totalParts;
-        completedPartList = uploadStatus.completedParts;
-      }
-      // Create MultipartFileUpload
-      const multipartFileUpload: MultipartFileUpload = {
-        ...params.fileUpload,
+      const completedPart = await params.fileManager.uploadPart({
+        path: uploadStatus.path,
+        data: params.fileUpload.data,
         partNumber,
-        uploadId,
-      };
-      // Upload Chunk
-      const multipartData = await params.fileManager.processMultipart({
-        finish,
-        completedPartList,
-        file: multipartFileUpload,
-      });
-      if (!finish) {
-        if (uploadStatus) {
-          await this.updateUploadStatus({
-            dataStore: params.dataStore,
-            file: params.file,
-            uploadStatus,
-            multipartData,
+        uploadId: uploadStatus.uploadId,
           });
-        } else {
-          uploadId = multipartData.uploadId;
-          await this.createUploadStatus({
-            dataStore: params.dataStore,
-            file: params.file,
-            multipartData,
-          });
-        }
-      } else {
-        const loFile = this.generateLearningObjectFile(
-          params.file,
-          multipartData.url,
-        );
-        // Delete upload data
-        params.dataStore.deleteMultipartUploadStatus({
-          id: uploadStatus._id,
+      await params.dataStore.updateMultipartUploadStatus({
+        completedPart,
+        id: params.file.dzuuid,
         });
-        return loFile;
-      }
     } catch (e) {
       this.abortMultipartUpload({
         uploadId,
