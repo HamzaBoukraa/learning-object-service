@@ -256,20 +256,34 @@ export class MongoDriver implements DataStore {
     }
   }
 
+  /**
+   * Inserts metadata for Multipart upload
+   *
+   * @param {{
+   *     status: MultipartFileUploadStatus;
+   *   }} params
+   * @returns {Promise<void>}
+   * @memberof MongoDriver
+   */
   public async insertMultipartUploadStatus(params: {
     status: MultipartFileUploadStatus;
   }): Promise<void> {
-    try {
-      await this.db
-        .collection<MultipartFileUploadStatus>(
-          COLLECTIONS.MultipartUploadStatusCollection.name,
-        )
-        .insertOne(params.status);
-      return Promise.resolve();
-    } catch (e) {
-      return Promise.reject(e);
-    }
+    await this.db
+      .collection<MultipartFileUploadStatus>(
+        COLLECTIONS.MultipartUploadStatusCollection.name,
+      )
+      .insertOne(params.status);
   }
+
+  /**
+   * Fetches metadata for multipart upload
+   *
+   * @param {{
+   *     id: string;
+   *   }} params
+   * @returns {Promise<MultipartFileUploadStatus>}
+   * @memberof MongoDriver
+   */
   public async fetchMultipartUploadStatus(params: {
     id: string;
   }): Promise<MultipartFileUploadStatus> {
@@ -280,6 +294,17 @@ export class MongoDriver implements DataStore {
       .findOne({ _id: params.id });
     return status;
   }
+
+  /**
+   * Updates metadata for multipart upload
+   *
+   * @param {{
+   *     id: string;
+   *     completedPart: CompletedPart;
+   *   }} params
+   * @returns {Promise<void>}
+   * @memberof MongoDriver
+   */
   public async updateMultipartUploadStatus(params: {
     id: string;
     completedPart: CompletedPart;
@@ -295,6 +320,16 @@ export class MongoDriver implements DataStore {
         },
       );
   }
+
+  /**
+   * Deletes metadata for multipart upload
+   *
+   * @param {{
+   *     id: string;
+   *   }} params
+   * @returns {Promise<void>}
+   * @memberof MongoDriver
+   */
   public async deleteMultipartUploadStatus(params: {
     id: string;
   }): Promise<void> {
