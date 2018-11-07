@@ -1041,13 +1041,23 @@ export class LearningObjectInteractor {
     const learningObjectFile: LearningObjectFile = {
       url,
       date,
-      id: file.dzuuid,
+      id: undefined,
       name: file.name,
       fileType: file.mimetype,
       extension: extension,
       fullPath: file.fullPath,
+      size: file.dztotalfilesize ? file.dztotalfilesize : file.size,
       packageable: this.isPackageable(file),
     };
+
+    // Sanitize object. Remove undefined or null values
+    const keys = Object.keys(learningObjectFile);
+    for (const key of keys) {
+      const prop = learningObjectFile[key];
+      if (!prop && prop !== 0) {
+        delete learningObjectFile[key];
+      }
+    }
 
     return learningObjectFile;
   }
