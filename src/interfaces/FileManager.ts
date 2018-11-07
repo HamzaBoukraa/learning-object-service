@@ -1,16 +1,14 @@
 import { CompletedPartList, CompletedPart } from 'aws-sdk/clients/s3';
 import { Readable } from 'stream';
+// Export aliased types for ease of update in the case that AWS S3 is no longer the driver used.
+export type CompletedPart = CompletedPart;
+export type CompletedPartList = CompletedPartList;
 
 export interface FileManager {
   upload(params: { file: FileUpload }): Promise<string>;
   delete(params: { path: string }): Promise<void>;
   deleteAll(params: { path: string }): Promise<void>;
-  processMultipart(params: {
-    file: MultipartFileUpload;
-    finish?: boolean;
-    completedPartList?: CompletedPartList;
-  }): Promise<MultipartUploadData>;
-  cancelMultipart(params: { path: string; uploadId: string }): Promise<void>;
+
   streamFile(params: { path: string }): Readable;
 
   initMultipartUpload(params: { path: string }): Promise<string>;
@@ -25,11 +23,8 @@ export interface FileManager {
     uploadId: string;
     completedPartList: CompletedPartList;
   }): Promise<string>;
+  cancelMultipart(params: { path: string; uploadId: string }): Promise<void>;
 }
-
-// Export aliased types for ease of update in the case that AWS S3 is no longer the driver used.
-export type CompletedPartList = CompletedPartList;
-export type CompletedPart = CompletedPart;
 
 export interface FileUpload {
   path: string;
