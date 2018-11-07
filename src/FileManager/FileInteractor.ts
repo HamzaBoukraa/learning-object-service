@@ -33,12 +33,13 @@ export async function finalizeMultipartUpload(params: {
   const uploadStatus = await params.dataStore.fetchMultipartUploadStatus({
     id: params.fileId,
   });
+  params.dataStore.deleteMultipartUploadStatus({ id: params.fileId });
   const url = await params.fileManager.completeMultipartUpload({
     path: uploadStatus.path,
     uploadId: uploadStatus.uploadId,
     completedPartList: uploadStatus.completedParts,
   });
-  return null;
+  return url;
 }
 
 export async function streamFile(params: {
