@@ -81,7 +81,6 @@ export interface DataStore {
   }): Promise<MultipartFileUploadStatus>;
   updateMultipartUploadStatus(params: {
     id: string;
-    updates: MultipartFileUploadStatusUpdates;
     completedPart: CompletedPart;
   }): Promise<void>;
   deleteMultipartUploadStatus(params: { id: string }): Promise<void>;
