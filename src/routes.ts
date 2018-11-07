@@ -1,11 +1,12 @@
-
 export const LEARNING_OBJECT_ROUTES = {
-  GET_FILE(id: string, filename: string) {
+  GET_FILE(params: { objectId: string; fileId: string; username: string }) {
     return `${
       process.env.NODE_ENV === 'production'
         ? process.env.LEARNING_OBJECT_API
         : process.env.LEARNING_OBJECT_API_DEV
-    }/learning-objects/${id}/files/${encodeURIComponent(filename)}`;
+    }/users/${params.username}/learning-objects/${params.objectId}/files/${
+      params.fileId
+    }/download`;
   },
 };
 
