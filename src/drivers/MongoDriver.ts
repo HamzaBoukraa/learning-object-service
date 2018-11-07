@@ -242,9 +242,7 @@ export class MongoDriver implements DataStore {
           { arrayFilters: [{ 'element.url': params.loFile.url }] },
         );
       if (!existingDoc.value) {
-        if (!params.loFile.id) {
-          params.loFile.id = new ObjectID().toHexString();
-        }
+        params.loFile.id = new ObjectID().toHexString();
         await this.db.collection(COLLECTIONS.LearningObject.name).updateOne(
           {
             _id: params.id,
@@ -275,52 +273,36 @@ export class MongoDriver implements DataStore {
   public async fetchMultipartUploadStatus(params: {
     id: string;
   }): Promise<MultipartFileUploadStatus> {
-    try {
-      const status = await this.db
-        .collection<MultipartFileUploadStatus>(
-          COLLECTIONS.MultipartUploadStatusCollection.name,
-        )
-        .findOne({ _id: params.id });
-      return status;
-    } catch (e) {
-      return Promise.reject(e);
-    }
+    const status = await this.db
+      .collection<MultipartFileUploadStatus>(
+        COLLECTIONS.MultipartUploadStatusCollection.name,
+      )
+      .findOne({ _id: params.id });
+    return status;
   }
   public async updateMultipartUploadStatus(params: {
     id: string;
-    updates: MultipartFileUploadStatusUpdates;
     completedPart: CompletedPart;
   }): Promise<void> {
-    try {
-      await this.db
-        .collection<MultipartFileUploadStatus>(
-          COLLECTIONS.MultipartUploadStatusCollection.name,
-        )
-        .updateOne(
-          { _id: params.id },
-          {
-            $set: params.updates,
-            $push: { completedParts: params.completedPart },
-          },
-        );
-      return Promise.resolve();
-    } catch (e) {
-      return Promise.reject(e);
-    }
+    await this.db
+      .collection<MultipartFileUploadStatus>(
+        COLLECTIONS.MultipartUploadStatusCollection.name,
+      )
+      .updateOne(
+        { _id: params.id },
+        {
+          $push: { completedParts: params.completedPart },
+        },
+      );
   }
   public async deleteMultipartUploadStatus(params: {
     id: string;
   }): Promise<void> {
-    try {
-      await this.db
-        .collection<MultipartFileUploadStatus>(
-          COLLECTIONS.MultipartUploadStatusCollection.name,
-        )
-        .deleteOne({ _id: params.id });
-      return Promise.resolve();
-    } catch (e) {
-      return Promise.reject(e);
-    }
+    await this.db
+      .collection<MultipartFileUploadStatus>(
+        COLLECTIONS.MultipartUploadStatusCollection.name,
+      )
+      .deleteOne({ _id: params.id });
   }
 
   /**
