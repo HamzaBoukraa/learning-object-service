@@ -1,9 +1,5 @@
 import { LearningObject, Collection } from '@cyber4all/clark-entity';
-import {
-  MultipartFileUploadStatus,
-  MultipartFileUploadStatusUpdates,
-  CompletedPart,
-} from './FileManager';
+import { MultipartFileUploadStatus, CompletedPart } from './FileManager';
 import { LearningObjectLock } from '@cyber4all/clark-entity/dist/learning-object';
 import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
 
