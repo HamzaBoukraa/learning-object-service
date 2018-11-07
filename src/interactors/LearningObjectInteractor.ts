@@ -6,21 +6,13 @@ import {
 import { LearningObject } from '@cyber4all/clark-entity';
 import * as stopword from 'stopword';
 import { LearningObjectQuery } from '../interfaces/DataStore';
-import {
-  Metrics,
-  Restriction,
-} from '@cyber4all/clark-entity/dist/learning-object';
+import { Metrics } from '@cyber4all/clark-entity/dist/learning-object';
 import { File } from '@cyber4all/clark-entity/dist/learning-object';
 import {
-  MultipartFileUpload,
   MultipartFileUploadStatus,
-  MultipartFileUploadStatusUpdates,
   DZFile,
   FileUpload,
-  MultipartUploadData,
-  CompletedPartList,
 } from '../interfaces/FileManager';
-import { enforceWhitelist } from '../middleware/whitelist';
 import { Readable } from 'stream';
 // TODO: Update File in clark-entity
 export interface LearningObjectFile extends File {
