@@ -146,18 +146,26 @@ export class ExpressAuthRouteDriver {
             dataStore: this.dataStore,
             fileManager: this.fileManager,
           });
-          res.status(200).send(uploadId);
+          res.status(200).send({ uploadId });
         } catch (e) {
           res.status(500).send(e);
         }
       })
       .patch(async (req, res) => {
         try {
+          const id = req.params.id;
           const fileId: string = req.params.fileId;
-          await FileInteractor.finalizeMultipartUpload({
+          const fileMeta = req.body.fileMeta;
+          const url = await FileInteractor.finalizeMultipartUpload({
             fileId,
             dataStore: this.dataStore,
             fileManager: this.fileManager,
+          });
+          await LearningObjectInteractor.addFileMeta({
+            id,
+            fileMeta,
+            url,
+            dataStore: this.dataStore,
           });
           res.sendStatus(200);
         } catch (e) {
