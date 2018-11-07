@@ -78,6 +78,9 @@ export class S3Driver implements FileManager {
     uploadId: string;
     completedPartList: CompletedPartList;
   }): Promise<string> {
+    params.completedPartList.sort(
+      (partA, partB) => partA.PartNumber - partB.PartNumber,
+    );
     const completedParams = {
       Bucket: AWS_S3_BUCKET,
       Key: params.path,
