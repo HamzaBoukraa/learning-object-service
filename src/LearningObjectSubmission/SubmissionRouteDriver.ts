@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { togglePublished } from './SubmissionInteractor';
+import { submitForReview, cancelSubmission } from './SubmissionInteractor';
 import { DataStore } from '../interfaces/DataStore';
 
 /**
@@ -12,18 +12,16 @@ import { DataStore } from '../interfaces/DataStore';
  * @param dataStore
  */
 export function initialize(dataStore: DataStore) {
-  async function publish(req: Request, res: Response) {
+  async function submit(req: Request, res: Response) {
 
     try {
       const id = req.body.id;
-      const published = req.body.published;
       const username = req.user.username;
 
-      await togglePublished(
+      await submitForReview(
         dataStore,
         username,
         id,
-        published,
       );
       res.sendStatus(200);
     } catch (e) {
@@ -31,26 +29,28 @@ export function initialize(dataStore: DataStore) {
       res.status(500).send(e);
     }
   }
-  async function unpublish(req: Request, res: Response) {
+  async function cancel(req: Request, res: Response) {
     try {
       const id = req.body.id;
-      const published = req.body.published;
       const username = req.user.username;
 
-      await togglePublished(
+      await cancelSubmission(
         dataStore,
         username,
         id,
-        published,
       );
       res.sendStatus(200);
     } catch (e) {
-      console.error(e);
-      res.status(500).send(e);
+      if (e instanceof Error) {
+        console.error(e);
+        res.status(500).send(e.message);
+      } else {
+        res.status(400).send(e);
+      }
     }
   }
   const router: Router = Router();
-  router.patch('/learning-objects/publish', publish);
-  router.patch('/learning-objects/unpublish', unpublish);
+  router.patch('/learning-objects/publish', submit);
+  router.patch('/learning-objects/unpublish', cancel);
   return router;
 }

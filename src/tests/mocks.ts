@@ -15,7 +15,7 @@ export const MOCK_OBJECTS = {
             PartNumber: 101,
         },
     },
-    LEARNING_OBJECT_ID: '5a70fb5ed45bde3f9d65a88c',
+    LEARNING_OBJECT_ID: 'default_id',
     COLLECTION: {
         name: 'test',
         learningObjects: [],
@@ -31,12 +31,17 @@ export const MOCK_OBJECTS = {
         materials: {},
         metrics: {},
         published: true,
-        publish: '',
-        unpublish: '',
         children: [],
         contributors: [],
         lock: {},
         collection: 'nccp',
+        id: 'default_id',
+        publish: () => {
+            this.published = true;
+        },
+        unpublish: () => {
+            this.published = false;
+        },
       },
     TOTAL_RECORDS: 1,
     COLLECTION_META: {
@@ -70,5 +75,25 @@ export const MOCK_OBJECTS = {
     METRICS: {
         saves: 23,
         downloads: 4,
+    },
+};
+
+export const SUBMITTABLE_LEARNING_OBJECT = {
+    ...MOCK_OBJECTS.LEARNING_OBJECT,
+    id: 'submittable_id',
+    outcomes: ['notarealoutcomeid'],
+    goals: [{ text: 'a description' }],
+};
+
+export const INVALID_LEARNING_OBJECTS = {
+    NO_DESCRIPTION: {
+        ...SUBMITTABLE_LEARNING_OBJECT,
+        id: 'no_description_id',
+        goals: [{ text: '' }],
+    },
+    NO_NAME: {
+        ...SUBMITTABLE_LEARNING_OBJECT,
+        id: 'no_name_id',
+        name: '',
     },
 };

@@ -1,4 +1,5 @@
 import { CompletedPartList, CompletedPart } from 'aws-sdk/clients/s3';
+import { Readable } from 'stream';
 
 export interface FileManager {
   upload(params: { file: FileUpload }): Promise<string>;
@@ -10,6 +11,7 @@ export interface FileManager {
     completedPartList?: CompletedPartList;
   }): Promise<MultipartUploadData>;
   cancelMultipart(params: { path: string; uploadId: string }): Promise<void>;
+  streamFile(params: { path: string }): Readable;
 }
 
 // Export aliased types for ease of update in the case that AWS S3 is no longer the driver used.
@@ -53,6 +55,7 @@ export interface DZFileMetadata {
   dzchunkindex?: number;
   dztotalfilesize?: number;
   dzchunksize?: number;
+  size?: number;
   dztotalchunkcount?: number;
   dzchunkbyteoffset?: number;
   fullPath: string;
