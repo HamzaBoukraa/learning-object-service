@@ -12,12 +12,12 @@ export function initialize({
 }: {
   dataStore: LearningOutcomeInteractor.LearningOutcomeDatastore;
 }) {
-  const router: Router = Router();
+  const router: Router = Router({ mergeParams: true });
   const addLearningOutcome = async (req: Request, res: Response) => {
     try {
       const user: UserToken = req.user;
       const outcomeInput: LearningOutcomeInput = req.body.outcome;
-      const source: string = req.body.source;
+      const source: string = req.params.id;
       const id = await LearningOutcomeInteractor.addLearningOutcome({
         dataStore,
         user,
@@ -33,7 +33,7 @@ export function initialize({
   const getLearningOutcome = async (req: Request, res: Response) => {
     try {
       const user: UserToken = req.user;
-      const id: string = req.params.id;
+      const id: string = req.params.outcomeId;
       const learningOutcome = await LearningOutcomeInteractor.getLearningOutcome(
         {
           dataStore,
@@ -50,7 +50,7 @@ export function initialize({
   const updateLearningOutcome = async (req: Request, res: Response) => {
     try {
       const user: UserToken = req.user;
-      const id: string = req.params.id;
+      const id: string = req.params.outcomeId;
       const updates: LearningOutcomeUpdate = req.body.outcome;
       const outcome = await LearningOutcomeInteractor.updateLearningOutcome({
         user,
@@ -67,7 +67,7 @@ export function initialize({
   const deleteLearningOutcome = async (req: Request, res: Response) => {
     try {
       const user: UserToken = req.user;
-      const id = req.params.id;
+      const id = req.params.outcomeId;
       await LearningOutcomeInteractor.deleteLearningOutcome({
         dataStore,
         user,
@@ -82,7 +82,7 @@ export function initialize({
 
   router.route('/learning-outcomes').post(addLearningOutcome);
   router
-    .route('/learning-outcomes/:id')
+    .route('/learning-outcomes/:outcomeId')
     .get(getLearningOutcome)
     .patch(updateLearningOutcome)
     .delete(deleteLearningOutcome);
