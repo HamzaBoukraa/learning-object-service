@@ -433,10 +433,7 @@ export class LearningObjectInteractor {
       const mimeType = fileMetaData.fileType;
       const stream = params.fileManager.streamFile({ path });
       return { mimeType, stream, filename: fileMetaData.name };
-    } catch (e) {
-      return Promise.reject(e);
     }
-  }
 
   /**
    * Inserts metadata for file as LearningObjectFile
