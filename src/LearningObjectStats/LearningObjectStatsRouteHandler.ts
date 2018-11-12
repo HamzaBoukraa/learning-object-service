@@ -4,8 +4,7 @@ import { DataStore } from '../interfaces/DataStore';
 import { LibraryCommunicator } from '../interfaces/interfaces';
 
 /**
- * Initializes an express router with endpoints to Create, Update, and Delete
- * a Learning Object.
+ * Initializes an express router with endpoints to get stats for Learning Objects
  */
 export function initialize({
   dataStore,
