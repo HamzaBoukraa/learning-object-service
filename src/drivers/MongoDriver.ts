@@ -1236,11 +1236,13 @@ export class MongoDriver implements DataStore {
             },
           },
         );
-      const materials = doc.materials;
+      if (doc) {
+        const materials = doc.materials;
 
-      // Object contains materials property.
-      // Files array within materials will alway contain one element
-      return materials.files[0];
+        // Object contains materials property.
+        // Files array within materials will alway contain one element
+        return materials.files[0];
+      }
     } catch (e) {
       return Promise.reject(e);
     }
