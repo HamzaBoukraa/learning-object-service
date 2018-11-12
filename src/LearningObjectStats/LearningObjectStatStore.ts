@@ -37,10 +37,13 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
         course: 0,
       },
     };
-    statsArr.map(stat => {
-      stats.ids.push(...stat.ids);
-      stats.lengths[stat._id] = stat.count;
-    });
+    if (statsArr && statsArr.length) {
+      statsArr.map(stat => {
+        stats.ids.push(...stat.ids);
+        stats.lengths[stat._id] = stat.count;
+      });
+    }
+
     return stats;
   }
 }
