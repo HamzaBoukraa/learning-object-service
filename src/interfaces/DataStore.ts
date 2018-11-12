@@ -6,8 +6,9 @@ import {
 } from './FileManager';
 import { LearningObjectLock } from '@cyber4all/clark-entity/dist/learning-object';
 import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
+import { LearningObjectStatDatastore } from '../LearningObjectStats/LearningObjectStatsInteractor';
 
-export interface DataStore {
+export interface DataStore extends LearningObjectStatDatastore {
   connect(dburi: string): Promise<void>;
   disconnect(): void;
   insertLearningObject(object: LearningObject): Promise<string>;
@@ -39,24 +40,22 @@ export interface DataStore {
     page?: number,
     limit?: number,
   ): Promise<{ objects: LearningObject[]; total: number }>;
-  searchObjects(
-    params: {
-      name: string,
-      author: string,
-      collection: string,
-      status: string[],
-      length: string[],
-      level: string[],
-      standardOutcomeIDs: string[],
-      text: string,
-      accessUnpublished?: boolean,
-      orderBy?: string,
-      sortType?: number,
-      page?: number,
-      limit?: number,
-      released?: boolean,
-    },
-  ): Promise<{ objects: LearningObject[]; total: number }>;
+  searchObjects(params: {
+    name: string;
+    author: string;
+    collection: string;
+    status: string[];
+    length: string[];
+    level: string[];
+    standardOutcomeIDs: string[];
+    text: string;
+    accessUnpublished?: boolean;
+    orderBy?: string;
+    sortType?: number;
+    page?: number;
+    limit?: number;
+    released?: boolean;
+  }): Promise<{ objects: LearningObject[]; total: number }>;
   fetchCollections(loadObjects?: boolean): Promise<Collection[]>;
   fetchCollection(name: string): Promise<Collection>;
   fetchCollectionMeta(name: string): Promise<any>;
