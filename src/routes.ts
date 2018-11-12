@@ -8,6 +8,11 @@ export const LEARNING_OBJECT_ROUTES = {
       params.fileId
     }/download`;
   },
+  CLARK_DETAILS(params: { objectName: string; username: string }) {
+    return `${process.env.CLARK_URL}/details/${
+      params.username
+    }/${encodeURIComponent(params.objectName)}`;
+  },
 };
 
 export const LIBRARY_ROUTES = {

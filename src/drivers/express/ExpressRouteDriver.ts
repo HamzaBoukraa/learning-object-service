@@ -5,6 +5,7 @@ import { LearningObject } from '@cyber4all/clark-entity';
 import * as TokenManager from '../TokenManager';
 import { LearningObjectQuery } from '../../interfaces/DataStore';
 import { reportError } from '../SentryConnector';
+import { LEARNING_OBJECT_ROUTES } from '../../routes';
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
 // tslint:disable-next-line:no-require-imports
 const version = require('../../../package.json').version;
@@ -248,6 +249,22 @@ export class ExpressRouteDriver {
               .send(
                 'Invalid Access. You do not have download privileges for this file',
               );
+          } else if (e.message === 'File not found') {
+            const redirectUrl = LEARNING_OBJECT_ROUTES.CLARK_DETAILS({
+              objectName: e.object.name,
+              username: req.params.username,
+            });
+            res.send(`
+            <div><h1>File Not Found</h1></div>
+            <div>
+              <p>
+                The requested file does not exist.
+                <br/>
+                <br/>
+                You can find the latest materials for this learning object <a href="${redirectUrl}">here.</a>
+              </p>
+            </div>
+            `);
           } else {
             console.error(e);
             reportError(e);
