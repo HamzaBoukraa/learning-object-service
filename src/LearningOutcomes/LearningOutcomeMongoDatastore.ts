@@ -78,10 +78,13 @@ export class LearningOutcomeMongoDatastore implements LearningOutcomeDatastore {
   async getAllStandardOutcomes(params: {
     ids: string[];
   }): Promise<StandardOutcome[]> {
-    let outcomes = await this.db
-      .collection<StandardOutcome>(COLLECTIONS.STANDARD_OUTCOMES)
-      .find({ _id: { $in: params.ids } })
-      .toArray();
+    let outcomes =
+      params.ids && params.ids.length
+        ? await this.db
+            .collection<StandardOutcome>(COLLECTIONS.STANDARD_OUTCOMES)
+            .find({ _id: { $in: params.ids } })
+            .toArray()
+        : [];
     outcomes = outcomes.map(mapId);
     return outcomes;
   }
