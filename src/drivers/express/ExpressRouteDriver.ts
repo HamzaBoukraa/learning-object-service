@@ -1,19 +1,33 @@
-import { DataStore, LibraryCommunicator, FileManager } from '../../interfaces/interfaces';
+import {
+  DataStore,
+  LibraryCommunicator,
+  FileManager,
+} from '../../interfaces/interfaces';
 import { Router } from 'express';
 import { LearningObjectInteractor } from '../../interactors/interactors';
 import { LearningObject } from '@cyber4all/clark-entity';
 import * as TokenManager from '../TokenManager';
 import { LearningObjectQuery } from '../../interfaces/DataStore';
 import { reportError } from '../SentryConnector';
+import * as LearningObjectStatsRouteHandler from '../../LearningObjectStats/LearningObjectStatsRouteHandler';
 import { LEARNING_OBJECT_ROUTES } from '../../routes';
+
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
 // tslint:disable-next-line:no-require-imports
 const version = require('../../../package.json').version;
 
 export class ExpressRouteDriver {
-  constructor(private dataStore: DataStore, private library: LibraryCommunicator, private fileManager: FileManager) {}
+  constructor(
+    private dataStore: DataStore,
+    private library: LibraryCommunicator,
+    private fileManager: FileManager,
+  ) {}
 
-  public static buildRouter(dataStore: DataStore, library: LibraryCommunicator, fileManager: FileManager): Router {
+  public static buildRouter(
+    dataStore: DataStore,
+    library: LibraryCommunicator,
+    fileManager: FileManager,
+  ): Router {
     const e = new ExpressRouteDriver(dataStore, library, fileManager);
     const router: Router = Router();
     e.setRoutes(router);
@@ -272,6 +286,14 @@ export class ExpressRouteDriver {
           }
         }
       },
+    );
+
+    router.use(
+      '/learning-objects/stats',
+      LearningObjectStatsRouteHandler.initialize({
+        dataStore: this.dataStore,
+        library: this.library,
+      }),
     );
   }
 }
