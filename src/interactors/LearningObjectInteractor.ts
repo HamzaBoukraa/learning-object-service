@@ -395,41 +395,6 @@ export class LearningObjectInteractor {
     }
   }
 
-  /**
-   * Cancels multipart file upload
-   *
-   * @static
-   * @param {{
-   *     dataStore: DataStore;
-   *     fileManager: FileManager;
-   *     uploadStatusId: string;
-   *     filePath: string;
-   *   }} params
-   * @returns {Promise<void>}
-   * @memberof LearningObjectInteractor
-   */
-  public static async cancelUpload(params: {
-    dataStore: DataStore;
-    fileManager: FileManager;
-    uploadStatusId: string;
-  }): Promise<void> {
-    try {
-      const uploadStatus = await params.dataStore.fetchMultipartUploadStatus({
-        id: params.uploadStatusId,
-      });
-      await this.abortMultipartUpload({
-        uploadId: uploadStatus.uploadId,
-        uploadStatusId: params.uploadStatusId,
-        path: uploadStatus.path,
-        fileManager: params.fileManager,
-        dataStore: params.dataStore,
-      });
-      return Promise.resolve();
-    } catch (e) {
-      return Promise.reject(`Problem canceling upload. Error: ${e}`);
-    }
-  }
-
   public static async downloadSingleFile(params: {
     learningObjectId: string;
     fileId: string;
