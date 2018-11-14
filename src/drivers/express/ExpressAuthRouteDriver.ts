@@ -136,6 +136,8 @@ export class ExpressAuthRouteDriver {
         }
       },
     );
+
+    // FILE MANAGEMENT
     router
       .route('/learning-objects/:id/files/:fileId/multipart')
       .post(async (req, res) => {
