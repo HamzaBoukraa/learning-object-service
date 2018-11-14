@@ -4,6 +4,20 @@ import { Readable } from 'stream';
 import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
 import { MultipartFileUploadStatus } from '../interfaces/FileManager';
 
+/**
+ * Creates multipart upload and saves metadata for upload
+ *
+ * @export
+ * @param {{
+ *   dataStore: DataStore;
+ *   fileManager: FileManager;
+ *   objectId: string;
+ *   fileId: string;
+ *   filePath: string;
+ *   user: any;
+ * }} params
+ * @returns {Promise<string>}
+ */
 export async function startMultipartUpload(params: {
   dataStore: DataStore;
   fileManager: FileManager;
@@ -25,6 +39,17 @@ export async function startMultipartUpload(params: {
   return uploadId;
 }
 
+/**
+ * Finalizes multipart upload and returns file url;
+ *
+ * @export
+ * @param {{
+ *   dataStore: DataStore;
+ *   fileManager: FileManager;
+ *   fileId: string;
+ * }} params
+ * @returns {Promise<string>}
+ */
 export async function finalizeMultipartUpload(params: {
   dataStore: DataStore;
   fileManager: FileManager;
@@ -71,6 +96,19 @@ export async function abortMultipartUpload(params: {
   }
 }
 
+/**
+ * Fetches file stream
+ *
+ * @export
+ * @param {{
+ *   dataStore: DataStore;
+ *   fileManager: FileManager;
+ *   username: string;
+ *   learningObjectId: string;
+ *   fileId: string;
+ * }} params
+ * @returns {Promise<{ filename: string; mimeType: string; stream: Readable }>}
+ */
 export async function streamFile(params: {
   dataStore: DataStore;
   fileManager: FileManager;
@@ -94,6 +132,13 @@ export async function streamFile(params: {
   }
 }
 
+/**
+ * Gets file type
+ *
+ * @export
+ * @param {{ file: LearningObjectFile }} params
+ * @returns {string}
+ */
 export function getMimeType(params: { file: LearningObjectFile }): string {
   return params.file.fileType;
 }
