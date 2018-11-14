@@ -522,55 +522,12 @@ export class LearningObjectInteractor {
         data: params.fileUpload.data,
         partNumber,
         uploadId: uploadStatus.uploadId,
-          });
+      });
       await params.dataStore.updateMultipartUploadStatus({
         completedPart,
         id: params.file.dzuuid,
-        });
-    } catch (e) {
-      this.abortMultipartUpload({
-        uploadId,
-        fileManager: params.fileManager,
-        dataStore: params.dataStore,
-        uploadStatusId: params.file.dzuuid,
-        path: params.file.fullPath ? params.file.fullPath : params.file.name,
-      });
-      return Promise.reject(e);
-    }
-  }
-
-  /**
-   * Aborts multipart upload operation and deletes UploadStatus from DB
-   *
-   * @private
-   * @static
-   * @param {{
-   *     uploadId: string;
-   *     uploadStatusID: string;
-   *     path: string;
-   *     fileManager: FileManager;
-   *     dataStore: DataStore;
-   *   }} params
-   * @returns {Promise<void>}
-   * @memberof LearningObjectInteractor
-   */
-  private static async abortMultipartUpload(params: {
-    uploadId: string;
-    uploadStatusId: string;
-    path: string;
-    fileManager: FileManager;
-    dataStore: DataStore;
-  }): Promise<void> {
-    try {
-      await params.fileManager.cancelMultipart({
-        path: params.path,
-        uploadId: params.uploadId,
-      });
-      return await params.dataStore.deleteMultipartUploadStatus({
-        id: params.uploadStatusId,
       });
     } catch (e) {
-      console.log(`Problem  aborting multipart upload. Error: ${e}`);
       return Promise.reject(e);
     }
   }
