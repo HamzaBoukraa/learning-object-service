@@ -26,17 +26,24 @@ export async function startMultipartUpload(params: {
   filePath: string;
   user: any;
 }): Promise<string> {
-  const path = `${params.user.username}/${params.objectId}/${params.filePath}`;
-  const uploadId = await params.fileManager.initMultipartUpload({ path });
-  const status: MultipartFileUploadStatus = {
-    path,
-    uploadId,
-    _id: params.fileId,
-    completedParts: [],
-    createdAt: Date.now().toString(),
-  };
-  await params.dataStore.insertMultipartUploadStatus({ status });
-  return uploadId;
+  try {
+    const path = `${params.user.username}/${params.objectId}/${
+      params.filePath
+    }`;
+    const uploadId = await params.fileManager.initMultipartUpload({ path });
+    const status: MultipartFileUploadStatus = {
+      path,
+      uploadId,
+      _id: params.fileId,
+      completedParts: [],
+      createdAt: Date.now().toString(),
+    };
+    await params.dataStore.insertMultipartUploadStatus({ status });
+    return uploadId;
+  } catch (e) {
+    console.error(e);
+    throw `Could not start upload.`;
+  }
 }
 
 /**
@@ -55,16 +62,23 @@ export async function finalizeMultipartUpload(params: {
   fileManager: FileManager;
   fileId: string;
 }): Promise<string> {
-  const uploadStatus = await params.dataStore.fetchMultipartUploadStatus({
-    id: params.fileId,
-  });
-  params.dataStore.deleteMultipartUploadStatus({ id: params.fileId });
-  const url = await params.fileManager.completeMultipartUpload({
-    path: uploadStatus.path,
-    uploadId: uploadStatus.uploadId,
-    completedPartList: uploadStatus.completedParts,
-  });
-  return url;
+  try {
+    const uploadStatus = await params.dataStore.fetchMultipartUploadStatus({
+      id: params.fileId,
+    });
+    params.dataStore.deleteMultipartUploadStatus({ id: params.fileId });
+    const url = await params.fileManager.completeMultipartUpload({
+      path: uploadStatus.path,
+      uploadId: uploadStatus.uploadId,
+      completedPartList: uploadStatus.completedParts,
+    });
+    return url;
+  } catch (e) {
+    console.error(e);
+    throw `Could not complete upload`;
+  }
+}
+
 /**
  * Aborts multipart upload
  *
