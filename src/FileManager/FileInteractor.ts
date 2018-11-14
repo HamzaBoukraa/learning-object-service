@@ -40,6 +40,35 @@ export async function finalizeMultipartUpload(params: {
     completedPartList: uploadStatus.completedParts,
   });
   return url;
+/**
+ * Aborts multipart upload
+ *
+ * @export
+ * @param {{
+ *   dataStore: DataStore;
+ *   fileManager: FileManager;
+ *   fileId: string;
+ * }} params
+ * @returns {Promise<void>}
+ */
+export async function abortMultipartUpload(params: {
+  dataStore: DataStore;
+  fileManager: FileManager;
+  fileId: string;
+}): Promise<void> {
+  try {
+    const uploadStatus = await params.dataStore.fetchMultipartUploadStatus({
+      id: params.fileId,
+    });
+    params.dataStore.deleteMultipartUploadStatus({ id: params.fileId });
+    await params.fileManager.abortMultipartUpload({
+      path: uploadStatus.path,
+      uploadId: uploadStatus.uploadId,
+    });
+  } catch (e) {
+    console.error(e);
+    throw `Could not cancel upload`;
+  }
 }
 
 export async function streamFile(params: {
