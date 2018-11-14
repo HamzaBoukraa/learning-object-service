@@ -4,6 +4,7 @@ import {
   DataStore,
   FileManager,
   LibraryCommunicator,
+  InMemoryStore,
 } from '../../interfaces/interfaces';
 import {
   ExpressRouteDriver,
@@ -23,6 +24,7 @@ export class ExpressDriver {
 
   static start(
     dataStore: DataStore,
+    inMemoryStore: InMemoryStore,
     fileManager: FileManager,
     library: LibraryCommunicator,
   ) {
@@ -66,7 +68,12 @@ export class ExpressDriver {
     // Set our authenticated api routes
     this.app.use(
       '/',
-      ExpressAuthRouteDriver.buildRouter(dataStore, fileManager, library),
+      ExpressAuthRouteDriver.buildRouter(
+        dataStore,
+        inMemoryStore,
+        fileManager,
+        library,
+      ),
     );
 
     // Set admin api routes

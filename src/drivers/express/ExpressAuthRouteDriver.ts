@@ -17,21 +17,29 @@ import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjec
 import * as LearningOutcomeRouteHandler from '../../LearningOutcomes/LearningOutcomeRouteHandler';
 import * as SubmissionRouteDriver from '../../LearningObjectSubmission/SubmissionRouteDriver';
 import { reportError } from '../SentryConnector';
+import { InMemoryStore } from '../../interfaces/InMemoryStore';
 export class ExpressAuthRouteDriver {
   private upload = multer({ storage: multer.memoryStorage() });
 
   constructor(
     private dataStore: DataStore,
+    private inMemoryStore: InMemoryStore,
     private fileManager: FileManager,
     private library: LibraryCommunicator,
   ) {}
 
   public static buildRouter(
     dataStore: DataStore,
+    inMemoryStore: InMemoryStore,
     fileManager: FileManager,
     library: LibraryCommunicator,
   ): Router {
-    const e = new ExpressAuthRouteDriver(dataStore, fileManager, library);
+    const e = new ExpressAuthRouteDriver(
+      dataStore,
+      inMemoryStore,
+      fileManager,
+      library,
+    );
     const router: Router = Router();
     e.setRoutes(router);
     return router;
