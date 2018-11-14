@@ -14,6 +14,8 @@ import {
   FileUpload,
 } from '../interfaces/FileManager';
 import { Readable } from 'stream';
+import { InMemoryStore } from '../interfaces/InMemoryStore';
+import { processMultipartUpload } from '../FileManager/FileInteractor';
 // TODO: Update File in clark-entity
 export interface LearningObjectFile extends File {
   packageable: boolean;
@@ -316,6 +318,7 @@ export class LearningObjectInteractor {
   public static async uploadFile(params: {
     dataStore: DataStore;
     fileManager: FileManager;
+    inMemoryStore: InMemoryStore;
     id: string;
     username: string;
     file: DZFile;
@@ -332,10 +335,9 @@ export class LearningObjectInteractor {
       const hasChunks = +params.file.dztotalchunkcount;
       if (hasChunks) {
         // Process Multipart
-        await this.processMultipartUpload({
-          dataStore: params.dataStore,
+        await processMultipartUpload({
+          inMemoryStore: params.inMemoryStore,
           fileManager: params.fileManager,
-          id: params.id,
           file: params.file,
           fileUpload,
         });
@@ -446,51 +448,6 @@ export class LearningObjectInteractor {
       return await params.dataStore.addToFiles({
         id: params.id,
         loFile: params.loFile,
-      });
-    } catch (e) {
-      return Promise.reject(e);
-    }
-  }
-
-  /**
-   * Processes Multipart Uploads
-   *
-   * @private
-   * @static
-   * @param {{
-   *     dataStore: DataStore;
-   *     fileManager: FileManager;
-   *     id: string;
-   *     username: string;
-   *     file: DZFile;
-   *     fileUpload: FileUpload;
-   *   }} params
-   * @returns {Promise<LearningObjectFile>}
-   * @memberof LearningObjectInteractor
-   */
-  private static async processMultipartUpload(params: {
-    dataStore: DataStore;
-    fileManager: FileManager;
-    id: string;
-    file: DZFile;
-    fileUpload: FileUpload;
-  }): Promise<LearningObjectFile> {
-    let uploadId: string;
-    try {
-      const partNumber = +params.file.dzchunkindex + 1;
-      // Fetch Upload Status
-      const uploadStatus: MultipartFileUploadStatus = await params.dataStore.fetchMultipartUploadStatus(
-        { id: params.file.dzuuid },
-      );
-      const completedPart = await params.fileManager.uploadPart({
-        path: uploadStatus.path,
-        data: params.fileUpload.data,
-        partNumber,
-        uploadId: uploadStatus.uploadId,
-      });
-      await params.dataStore.updateMultipartUploadStatus({
-        completedPart,
-        id: params.file.dzuuid,
       });
     } catch (e) {
       return Promise.reject(e);
