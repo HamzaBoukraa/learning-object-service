@@ -177,6 +177,18 @@ export class ExpressAuthRouteDriver {
         } catch (e) {
           res.status(500).send(e);
         }
+      })
+      .delete(async (req, res) => {
+        try {
+          const fileId: string = req.params.fileId;
+          await FileInteractor.abortMultipartUpload({
+            dataStore: this.dataStore,
+            fileManager: this.fileManager,
+            fileId,
+          });
+        } catch (e) {
+          res.status(500).send(e);
+        }
       });
 
     router.post(
