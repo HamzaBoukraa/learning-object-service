@@ -106,21 +106,16 @@ export class S3Driver implements FileManager {
    * @returns {Promise<void>}
    * @memberof S3Driver
    */
-  async cancelMultipart(params: {
+  async abortMultipartUpload(params: {
     path: string;
     uploadId: string;
   }): Promise<void> {
-    try {
-      const abortUploadParams = {
-        Bucket: AWS_S3_BUCKET,
-        Key: params.path,
-        UploadId: params.uploadId,
-      };
-      await this.s3.abortMultipartUpload(abortUploadParams).promise();
-      return Promise.resolve();
-    } catch (e) {
-      return Promise.reject(e);
-    }
+    const abortUploadParams = {
+      Bucket: AWS_S3_BUCKET,
+      Key: params.path,
+      UploadId: params.uploadId,
+    };
+    await this.s3.abortMultipartUpload(abortUploadParams).promise();
   }
 
   /**

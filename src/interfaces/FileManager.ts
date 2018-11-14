@@ -23,7 +23,10 @@ export interface FileManager {
     uploadId: string;
     completedPartList: CompletedPartList;
   }): Promise<string>;
-  cancelMultipart(params: { path: string; uploadId: string }): Promise<void>;
+  abortMultipartUpload(params: {
+    path: string;
+    uploadId: string;
+  }): Promise<void>;
 }
 
 export interface FileUpload {
