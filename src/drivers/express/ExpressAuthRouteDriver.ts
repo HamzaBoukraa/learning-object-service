@@ -188,6 +188,7 @@ export class ExpressAuthRouteDriver {
             fileManager: this.fileManager,
             fileId,
           });
+          res.sendStatus(200);
         } catch (e) {
           res.status(500).send(e);
         }
