@@ -4,6 +4,7 @@ import {
   LibraryCommunicator,
 } from '../interfaces/interfaces';
 import { LearningObject } from '@cyber4all/clark-entity';
+// @ts-ignore No types exist for this package
 import * as stopword from 'stopword';
 import { LearningObjectQuery } from '../interfaces/DataStore';
 import { Metrics } from '@cyber4all/clark-entity/dist/learning-object';
