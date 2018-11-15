@@ -255,7 +255,8 @@ export class ExpressRouteDriver {
           if (!open) {
             res.attachment(filename);
           }
-          res.contentType(mimeType);
+          // Set mime type only if it is known
+          if (mimeType) res.contentType(mimeType);
           stream.pipe(res);
         } catch (e) {
           if (e.message === 'Invalid Access') {
