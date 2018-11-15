@@ -414,10 +414,10 @@ export class LearningObjectInteractor {
       );
     }
 
-        // Collect requested file metadata from datastore
+    // Collect requested file metadata from datastore
     fileMetaData = await params.dataStore.findSingleFile({
-          learningObjectId: params.learningObjectId,
-          fileId: params.fileId,
+      learningObjectId: params.learningObjectId,
+      fileId: params.fileId,
     });
 
     if (!fileMetaData) {
@@ -427,13 +427,18 @@ export class LearningObjectInteractor {
       });
     }
 
-      const path = `${params.author}/${params.learningObjectId}/${
-        fileMetaData.fullPath ? fileMetaData.fullPath : fileMetaData.name
+    const path = `${params.author}/${params.learningObjectId}/${
+      fileMetaData.fullPath ? fileMetaData.fullPath : fileMetaData.name
       }`;
-      const mimeType = fileMetaData.fileType;
-      const stream = params.fileManager.streamFile({ path });
+    const mimeType = fileMetaData.fileType;
+    // Check if the file manager has access to the resource before opening a stream
+    if (await params.fileManager.hasAccess(path)) {
+      const stream = params.fileManager.streamFile({ path, objectName: learningObject.name });
       return { mimeType, stream, filename: fileMetaData.name };
+    } else {
+      throw { message: 'File not found', object: { name: learningObject.name }};
     }
+  }
 
   /**
    * Inserts metadata for file as LearningObjectFile
