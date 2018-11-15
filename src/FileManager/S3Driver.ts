@@ -246,7 +246,7 @@ export class S3Driver implements FileManager {
         .on('finish', _ => resolve(true))
         .on('error', (e: AWSError) => {
           resolve(false);
-          console.log(e);
+          reportError(e);
         });
     });
   }
