@@ -105,7 +105,7 @@ export function initializePrivate({
     let updates: any;
 
     try {
-      const id: string = req.body.id;
+      const id: string = req.params.id;
       updates = req.body.learningObject;
       const user: UserToken = req.user;
       await LearningObjectInteractor.updateLearningObject({
@@ -147,8 +147,8 @@ export function initializePrivate({
   };
   router
     .route('/learning-objects')
-    .post(addLearningObject)
-    .patch(updateLearningObject);
+    .post(addLearningObject);
+  router.patch('/learning-objects/:id', updateLearningObject);
   router.get('/learning-objects/:id/materials/all', getMaterials);
   router.delete('/learning-objects/:learningObjectName', deleteLearningObject);
   return router;
