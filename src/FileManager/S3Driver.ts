@@ -205,7 +205,10 @@ export class S3Driver implements FileManager {
       .getObject(fetchParams)
       .createReadStream()
       .on('error', (err: AWSError) => {
-        reportError(err);
+        // TimeoutError will be thrown if the client cancels the download
+        if (err.code !== 'TimeoutError') {
+          reportError(err);
+        }
       });
     return stream;
   }
