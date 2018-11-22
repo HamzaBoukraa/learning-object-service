@@ -319,6 +319,7 @@ export class LearningObjectInteractor {
     id: string;
     username: string;
     file: DZFile;
+    uploadId: string;
   }): Promise<LearningObjectFile> {
     try {
       let loFile: LearningObjectFile;
@@ -335,8 +336,8 @@ export class LearningObjectInteractor {
         await this.processMultipartUpload({
           dataStore: params.dataStore,
           fileManager: params.fileManager,
-          id: params.id,
           file: params.file,
+          uploadId: params.uploadId,
           fileUpload,
         });
       } else {
@@ -460,37 +461,29 @@ export class LearningObjectInteractor {
    * @param {{
    *     dataStore: DataStore;
    *     fileManager: FileManager;
-   *     id: string;
-   *     username: string;
    *     file: DZFile;
    *     fileUpload: FileUpload;
    *   }} params
-   * @returns {Promise<LearningObjectFile>}
    * @memberof LearningObjectInteractor
    */
   private static async processMultipartUpload(params: {
     dataStore: DataStore;
     fileManager: FileManager;
-    id: string;
     file: DZFile;
     fileUpload: FileUpload;
+    uploadId: string;
   }): Promise<LearningObjectFile> {
-    let uploadId: string;
     try {
       const partNumber = +params.file.dzchunkindex + 1;
-      // Fetch Upload Status
-      const uploadStatus: MultipartFileUploadStatus = await params.dataStore.fetchMultipartUploadStatus(
-        { id: params.file.dzuuid },
-      );
       const completedPart = await params.fileManager.uploadPart({
-        path: uploadStatus.path,
+        path: params.fileUpload.path,
         data: params.fileUpload.data,
         partNumber,
-        uploadId: uploadStatus.uploadId,
+        uploadId: params.uploadId,
       });
       await params.dataStore.updateMultipartUploadStatus({
         completedPart,
-        id: params.file.dzuuid,
+        id: params.uploadId,
       });
     } catch (e) {
       return Promise.reject(e);

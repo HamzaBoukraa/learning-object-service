@@ -144,11 +144,9 @@ export class ExpressAuthRouteDriver {
         try {
           const user = req.user;
           const objectId: string = req.params.id;
-          const fileId: string = req.params.fileId;
           const filePath = req.body.filePath;
           const uploadId = await FileInteractor.startMultipartUpload({
             objectId,
-            fileId,
             filePath,
             user,
             dataStore: this.dataStore,
@@ -162,10 +160,10 @@ export class ExpressAuthRouteDriver {
       .patch(async (req, res) => {
         try {
           const id = req.params.id;
-          const fileId: string = req.params.fileId;
+          const uploadId: string = req.body.uploadId;
           const fileMeta = req.body.fileMeta;
           const url = await FileInteractor.finalizeMultipartUpload({
-            fileId,
+            uploadId,
             dataStore: this.dataStore,
             fileManager: this.fileManager,
           });
@@ -182,11 +180,11 @@ export class ExpressAuthRouteDriver {
       })
       .delete(async (req, res) => {
         try {
-          const fileId: string = req.params.fileId;
+          const uploadId: string = req.body.uploadId;
           await FileInteractor.abortMultipartUpload({
             dataStore: this.dataStore,
             fileManager: this.fileManager,
-            fileId,
+            uploadId,
           });
           res.sendStatus(200);
         } catch (e) {
@@ -210,6 +208,7 @@ export class ExpressAuthRouteDriver {
             mimetype: file.mimetype,
             size: dzMetadata.dztotalfilesize || dzMetadata.size,
           };
+          const uploadId = req.body.uploadId;
           const user = req.user;
 
           if (this.hasAccess(user, 'emailVerified', true)) {
@@ -219,6 +218,7 @@ export class ExpressAuthRouteDriver {
               dataStore: this.dataStore,
               fileManager: this.fileManager,
               file: upload,
+              uploadId,
             });
 
             res.status(200).send(loFile);
@@ -235,21 +235,6 @@ export class ExpressAuthRouteDriver {
         }
       },
     );
-    router.delete('/learning-objects/:id/files', async (req, res) => {
-      try {
-        const uploadStatusId = req.body.uploadId;
-        await LearningObjectInteractor.cancelUpload({
-          uploadStatusId,
-          dataStore: this.dataStore,
-          fileManager: this.fileManager,
-        });
-
-        res.sendStatus(200);
-      } catch (e) {
-        console.error(e);
-        res.status(500).send(e);
-      }
-    });
     router
       .route('/files/:id/:fileId')
       .patch(async (req, res) => {

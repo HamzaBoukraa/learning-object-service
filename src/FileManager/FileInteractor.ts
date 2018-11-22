@@ -12,7 +12,6 @@ import { MultipartFileUploadStatus } from '../interfaces/FileManager';
  *   dataStore: DataStore;
  *   fileManager: FileManager;
  *   objectId: string;
- *   fileId: string;
  *   filePath: string;
  *   user: any;
  * }} params
@@ -22,7 +21,6 @@ export async function startMultipartUpload(params: {
   dataStore: DataStore;
   fileManager: FileManager;
   objectId: string;
-  fileId: string;
   filePath: string;
   user: any;
 }): Promise<string> {
@@ -33,8 +31,7 @@ export async function startMultipartUpload(params: {
     const uploadId = await params.fileManager.initMultipartUpload({ path });
     const status: MultipartFileUploadStatus = {
       path,
-      uploadId,
-      _id: params.fileId,
+      _id: uploadId,
       completedParts: [],
       createdAt: Date.now().toString(),
     };
@@ -60,16 +57,16 @@ export async function startMultipartUpload(params: {
 export async function finalizeMultipartUpload(params: {
   dataStore: DataStore;
   fileManager: FileManager;
-  fileId: string;
+  uploadId: string;
 }): Promise<string> {
   try {
     const uploadStatus = await params.dataStore.fetchMultipartUploadStatus({
-      id: params.fileId,
+      id: params.uploadId,
     });
-    params.dataStore.deleteMultipartUploadStatus({ id: params.fileId });
+    params.dataStore.deleteMultipartUploadStatus({ id: params.uploadId });
     const url = await params.fileManager.completeMultipartUpload({
       path: uploadStatus.path,
-      uploadId: uploadStatus.uploadId,
+      uploadId: params.uploadId,
       completedPartList: uploadStatus.completedParts,
     });
     return url;
@@ -86,23 +83,23 @@ export async function finalizeMultipartUpload(params: {
  * @param {{
  *   dataStore: DataStore;
  *   fileManager: FileManager;
- *   fileId: string;
+ *   uploadId: string;
  * }} params
  * @returns {Promise<void>}
  */
 export async function abortMultipartUpload(params: {
   dataStore: DataStore;
   fileManager: FileManager;
-  fileId: string;
+  uploadId: string;
 }): Promise<void> {
   try {
     const uploadStatus = await params.dataStore.fetchMultipartUploadStatus({
-      id: params.fileId,
+      id: params.uploadId,
     });
-    params.dataStore.deleteMultipartUploadStatus({ id: params.fileId });
+    params.dataStore.deleteMultipartUploadStatus({ id: params.uploadId });
     await params.fileManager.abortMultipartUpload({
       path: uploadStatus.path,
-      uploadId: uploadStatus.uploadId,
+      uploadId: params.uploadId,
     });
   } catch (e) {
     console.error(e);
