@@ -159,7 +159,7 @@ export class ExpressAuthRouteDriver {
             fileId,
             filePath,
             user,
-            inMemoryStore: this.inMemoryStore,
+            dataStore: this.dataStore,
             fileManager: this.fileManager,
           });
           res.status(200).send({ uploadId });
@@ -174,9 +174,8 @@ export class ExpressAuthRouteDriver {
           const fileMeta = req.body.fileMeta;
           const url = await FileInteractor.finalizeMultipartUpload({
             fileId,
-            inMemoryStore: this.inMemoryStore,
+            dataStore: this.dataStore,
             fileManager: this.fileManager,
-            totalParts: fileMeta.totalParts,
           });
           await LearningObjectInteractor.addFileMeta({
             id,
@@ -192,12 +191,10 @@ export class ExpressAuthRouteDriver {
       .delete(async (req, res) => {
         try {
           const fileId: string = req.params.fileId;
-          const totalParts = +req.body.totalParts;
           await FileInteractor.abortMultipartUpload({
-            inMemoryStore: this.inMemoryStore,
+            dataStore: this.dataStore,
             fileManager: this.fileManager,
             fileId,
-            totalParts,
           });
           res.sendStatus(200);
         } catch (e) {
@@ -228,7 +225,6 @@ export class ExpressAuthRouteDriver {
               id,
               username: user.username,
               dataStore: this.dataStore,
-              inMemoryStore: this.inMemoryStore,
               fileManager: this.fileManager,
               file: upload,
             });

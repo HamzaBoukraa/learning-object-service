@@ -2,15 +2,8 @@ import { DataStore } from '../interfaces/DataStore';
 import { FileManager } from '../interfaces/interfaces';
 import { Readable } from 'stream';
 import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
-import {
-  MultipartFileUploadStatus,
-  DZFile,
-  FileUpload,
-  CompletedPartList,
-} from '../interfaces/FileManager';
-import { InMemoryStore } from '../interfaces/InMemoryStore';
+import { MultipartFileUploadStatus } from '../interfaces/FileManager';
 
-const MULTIPART_EXPIRATION = +process.env.MULTIPART_EXPIRATION;
 /**
  * Creates multipart upload and saves metadata for upload
  *
@@ -26,7 +19,7 @@ const MULTIPART_EXPIRATION = +process.env.MULTIPART_EXPIRATION;
  * @returns {Promise<string>}
  */
 export async function startMultipartUpload(params: {
-  inMemoryStore: InMemoryStore;
+  dataStore: DataStore;
   fileManager: FileManager;
   objectId: string;
   fileId: string;
@@ -39,64 +32,17 @@ export async function startMultipartUpload(params: {
     }`;
     const uploadId = await params.fileManager.initMultipartUpload({ path });
     const status: MultipartFileUploadStatus = {
-      uploadId,
       path,
+      uploadId,
+      _id: params.fileId,
+      completedParts: [],
       createdAt: Date.now().toString(),
     };
-    await params.inMemoryStore.set({
-      key: params.fileId,
-      value: status,
-      expiration: MULTIPART_EXPIRATION,
-    });
+    await params.dataStore.insertMultipartUploadStatus({ status });
     return uploadId;
   } catch (e) {
     console.error(e);
     throw `Could not start upload.`;
-  }
-}
-
-/**
- * Processes Multipart Uploads
- *
- * @private
- * @static
- * @param {{
- *     dataStore: DataStore;
- *     fileManager: FileManager;
- *     file: DZFile;
- *     fileUpload: FileUpload;
- *   }} params
- * @returns {Promise<void>}
- */
-export async function processMultipartUpload(params: {
-  inMemoryStore: InMemoryStore;
-  fileManager: FileManager;
-  file: DZFile;
-  fileUpload: FileUpload;
-}): Promise<void> {
-  try {
-    const partNumber = +params.file.dzchunkindex + 1;
-    // Fetch Upload Status
-    const uploadStatus: MultipartFileUploadStatus = await params.inMemoryStore.get(
-      {
-        key: params.file.dzuuid,
-      },
-    );
-    const completedPart = await params.fileManager.uploadPart({
-      path: uploadStatus.path,
-      data: params.fileUpload.data,
-      partNumber,
-      uploadId: uploadStatus.uploadId,
-    });
-    await params.inMemoryStore.set({
-      key: `${params.file.dzuuid}-${partNumber}`,
-      value: {
-        completedPart,
-        createdAt: Date.now(),
-      },
-    });
-  } catch (e) {
-    return Promise.reject(e);
   }
 }
 
@@ -112,35 +58,19 @@ export async function processMultipartUpload(params: {
  * @returns {Promise<string>}
  */
 export async function finalizeMultipartUpload(params: {
-  inMemoryStore: InMemoryStore;
+  dataStore: DataStore;
   fileManager: FileManager;
   fileId: string;
-  totalParts: number;
 }): Promise<string> {
   try {
-    const uploadStatus = await params.inMemoryStore.get({
-      key: params.fileId,
+    const uploadStatus = await params.dataStore.fetchMultipartUploadStatus({
+      id: params.fileId,
     });
-    params.inMemoryStore.remove({ key: params.fileId });
-    const completedPartList: CompletedPartList = [];
-    await Promise.all(
-      Array(params.totalParts)
-        .fill(1)
-        .map(async (_, index) => {
-          const completed = await params.inMemoryStore.get({
-            key: `${params.fileId}-${index + 1}`,
-          });
-          params.inMemoryStore.remove({
-            key: `${params.fileId}-${index + 1}`,
-          });
-          completedPartList.push(completed.completedPart);
-        }),
-    );
-
+    params.dataStore.deleteMultipartUploadStatus({ id: params.fileId });
     const url = await params.fileManager.completeMultipartUpload({
       path: uploadStatus.path,
       uploadId: uploadStatus.uploadId,
-      completedPartList,
+      completedPartList: uploadStatus.completedParts,
     });
     return url;
   } catch (e) {
@@ -161,23 +91,15 @@ export async function finalizeMultipartUpload(params: {
  * @returns {Promise<void>}
  */
 export async function abortMultipartUpload(params: {
-  inMemoryStore: InMemoryStore;
+  dataStore: DataStore;
   fileManager: FileManager;
   fileId: string;
-  totalParts: number;
 }): Promise<void> {
   try {
-    const uploadStatus = await params.inMemoryStore.get({
-      key: params.fileId,
+    const uploadStatus = await params.dataStore.fetchMultipartUploadStatus({
+      id: params.fileId,
     });
-    params.inMemoryStore.remove({ key: params.fileId });
-    Array(params.totalParts)
-      .fill(1)
-      .map(async (_, index) =>
-        params.inMemoryStore.remove({
-          key: `${params.fileId}-${index + 1}`,
-        }),
-      );
+    params.dataStore.deleteMultipartUploadStatus({ id: params.fileId });
     await params.fileManager.abortMultipartUpload({
       path: uploadStatus.path,
       uploadId: uploadStatus.uploadId,
