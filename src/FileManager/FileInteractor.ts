@@ -2,7 +2,7 @@ import { DataStore } from '../interfaces/DataStore';
 import { FileManager } from '../interfaces/interfaces';
 import { Readable } from 'stream';
 import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
-import { MultipartFileUploadStatus } from '../interfaces/FileManager';
+import { MultipartFileUploadStatus, DZFile, FileUpload } from '../interfaces/FileManager';
 
 /**
  * Creates multipart upload and saves metadata for upload
@@ -42,6 +42,42 @@ export async function startMultipartUpload(params: {
     throw `Could not start upload.`;
   }
 }
+
+  /**
+   * Processes Multipart Uploads
+   *
+   * @private
+   * @static
+   * @param {{
+   *     dataStore: DataStore;
+   *     fileManager: FileManager;
+   *     file: DZFile;
+   *     fileUpload: FileUpload;
+   *   }} params
+   */
+  export async function processMultipartUpload(params: {
+    dataStore: DataStore;
+    fileManager: FileManager;
+    file: DZFile;
+    fileUpload: FileUpload;
+    uploadId: string;
+  }): Promise<LearningObjectFile> {
+    try {
+      const partNumber = +params.file.dzchunkindex + 1;
+      const completedPart = await params.fileManager.uploadPart({
+        path: params.fileUpload.path,
+        data: params.fileUpload.data,
+        partNumber,
+        uploadId: params.uploadId,
+      });
+      await params.dataStore.updateMultipartUploadStatus({
+        completedPart,
+        id: params.uploadId,
+      });
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  }
 
 /**
  * Finalizes multipart upload and returns file url;

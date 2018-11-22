@@ -14,6 +14,7 @@ import {
   FileUpload,
 } from '../interfaces/FileManager';
 import { Readable } from 'stream';
+import { processMultipartUpload } from '../FileManager/FileInteractor';
 // TODO: Update File in clark-entity
 export interface LearningObjectFile extends File {
   packageable: boolean;
@@ -333,7 +334,7 @@ export class LearningObjectInteractor {
       const hasChunks = +params.file.dztotalchunkcount;
       if (hasChunks) {
         // Process Multipart
-        await this.processMultipartUpload({
+        await processMultipartUpload({
           dataStore: params.dataStore,
           fileManager: params.fileManager,
           file: params.file,
@@ -447,43 +448,6 @@ export class LearningObjectInteractor {
       return await params.dataStore.addToFiles({
         id: params.id,
         loFile: params.loFile,
-      });
-    } catch (e) {
-      return Promise.reject(e);
-    }
-  }
-
-  /**
-   * Processes Multipart Uploads
-   *
-   * @private
-   * @static
-   * @param {{
-   *     dataStore: DataStore;
-   *     fileManager: FileManager;
-   *     file: DZFile;
-   *     fileUpload: FileUpload;
-   *   }} params
-   * @memberof LearningObjectInteractor
-   */
-  private static async processMultipartUpload(params: {
-    dataStore: DataStore;
-    fileManager: FileManager;
-    file: DZFile;
-    fileUpload: FileUpload;
-    uploadId: string;
-  }): Promise<LearningObjectFile> {
-    try {
-      const partNumber = +params.file.dzchunkindex + 1;
-      const completedPart = await params.fileManager.uploadPart({
-        path: params.fileUpload.path,
-        data: params.fileUpload.data,
-        partNumber,
-        uploadId: params.uploadId,
-      });
-      await params.dataStore.updateMultipartUploadStatus({
-        completedPart,
-        id: params.uploadId,
       });
     } catch (e) {
       return Promise.reject(e);
