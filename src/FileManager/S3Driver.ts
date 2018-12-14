@@ -9,6 +9,8 @@ import {
   CompletedPart,
 } from '../interfaces/FileManager';
 import { Readable } from 'stream';
+import { reportError } from '../drivers/SentryConnector';
+import { AWSError } from 'aws-sdk';
 
 AWS.config.credentials = AWS_SDK_CONFIG.credentials;
 
@@ -16,6 +18,7 @@ const AWS_S3_BUCKET = 'neutrino-file-uploads';
 const AWS_S3_ACL = 'public-read';
 
 export class S3Driver implements FileManager {
+
   private s3 = new AWS.S3({ region: AWS_SDK_CONFIG.region });
 
   /**
@@ -170,12 +173,21 @@ export class S3Driver implements FileManager {
     }
   }
 
-  streamFile(params: { path: string }): Readable {
+  streamFile(params: { path: string, objectName: string }): Readable {
     const fetchParams = {
       Bucket: AWS_S3_BUCKET,
       Key: params.path,
     };
-    return this.s3.getObject(fetchParams).createReadStream();
+    const stream = this.s3
+      .getObject(fetchParams)
+      .createReadStream()
+      .on('error', (err: AWSError) => {
+        // TimeoutError will be thrown if the client cancels the download
+        if (err.code !== 'TimeoutError') {
+          reportError(err);
+        }
+      });
+    return stream;
   }
 
   /**
@@ -193,5 +205,29 @@ export class S3Driver implements FileManager {
     } catch (e) {
       return Promise.reject(e);
     }
+  }
+
+  /**
+   * Sends a HEAD request to fetch metadata for a given file.
+   * Resolves true if the request completes, and false if the request
+   * stream encounters an error at any point.
+   *
+   * @param path the file path in S3
+   */
+  async hasAccess(path: string): Promise<boolean> {
+    const fetchParams = {
+      Bucket: AWS_S3_BUCKET,
+      Key: path,
+    };
+    return new Promise<boolean>((resolve) => {
+      this.s3
+        .headObject(fetchParams)
+        .createReadStream()
+        .on('finish', _ => resolve(true))
+        .on('error', (e: AWSError) => {
+          resolve(false);
+          reportError(e);
+        });
+    });
   }
 }

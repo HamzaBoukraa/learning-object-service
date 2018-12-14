@@ -4,8 +4,9 @@ import { LearningObjectLock } from '@cyber4all/clark-entity/dist/learning-object
 import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
 import { LearningObjectUpdates } from '../types';
 import { LearningOutcomeDatastore } from '../LearningOutcomes/LearningOutcomeInteractor';
+import { LearningObjectStatDatastore } from '../LearningObjectStats/LearningObjectStatsInteractor';
 
-export interface DataStore extends LearningOutcomeDatastore {
+export interface DataStore extends LearningOutcomeDatastore, LearningObjectStatDatastore {
   connect(dburi: string): Promise<void>;
   disconnect(): void;
   insertLearningObject(object: LearningObject): Promise<string>;

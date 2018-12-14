@@ -288,14 +288,21 @@ export class LearningObjectInteractor {
     }
   }
 
+  /**
+   * Checks a learning object against submission criteria.
+   *
+   * @param object the learning object under question
+   * @returns {string|null} An error message describing why the learning object isn't valid or null if it is.
+   */
   static validateLearningObject(object: LearningObject): string {
+    // TODO: Move to entity
     let error = null;
     if (object.name.trim() === '') {
       error = 'Learning Object name cannot be empty.';
     } else if (object.published && !object.outcomes.length) {
-      error = 'Learning Object must have outcomes to publish.';
+      error = 'Learning Object must have outcomes to submit for review.';
     } else if (object.published && !object.goals[0].text) {
-      error = 'Learning Object must have a description to publish.';
+      error = 'Learning Object must have a description to submit for review.';
     }
     return error;
   }
@@ -404,25 +411,41 @@ export class LearningObjectInteractor {
     fileManager: FileManager;
     author: string;
   }): Promise<{ filename: string; mimeType: string; stream: Readable }> {
-    try {
-      const [learningObject, fileMetaData] = await Promise.all([
-        // Fetch the learning object
-        params.dataStore.fetchLearningObject(params.learningObjectId),
-        // Collect requested file metadata from datastore
-        params.dataStore.findSingleFile({
-          learningObjectId: params.learningObjectId,
-          fileId: params.fileId,
-        }),
-      ]);
+    let learningObject, fileMetaData;
 
-      const path = `${params.author}/${params.learningObjectId}/${
-        fileMetaData.fullPath ? fileMetaData.fullPath : fileMetaData.name
+    learningObject = await params.dataStore.fetchLearningObject(
+      params.learningObjectId,
+    );
+
+    if (!learningObject) {
+      throw new Error(
+        `Learning object ${params.learningObjectId} does not exist.`,
+      );
+    }
+
+    // Collect requested file metadata from datastore
+    fileMetaData = await params.dataStore.findSingleFile({
+      learningObjectId: params.learningObjectId,
+      fileId: params.fileId,
+    });
+
+    if (!fileMetaData) {
+      return Promise.reject({
+        object: learningObject,
+        message: `File not found`,
+      });
+    }
+
+    const path = `${params.author}/${params.learningObjectId}/${
+      fileMetaData.fullPath ? fileMetaData.fullPath : fileMetaData.name
       }`;
-      const mimeType = fileMetaData.fileType;
-      const stream = params.fileManager.streamFile({ path });
+    const mimeType = fileMetaData.fileType;
+    // Check if the file manager has access to the resource before opening a stream
+    if (await params.fileManager.hasAccess(path)) {
+      const stream = params.fileManager.streamFile({ path, objectName: learningObject.name });
       return { mimeType, stream, filename: fileMetaData.name };
-    } catch (e) {
-      return Promise.reject(e);
+    } else {
+      throw { message: 'File not found', object: { name: learningObject.name }};
     }
   }
 

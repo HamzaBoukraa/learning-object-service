@@ -38,6 +38,7 @@ import {
   LearningOutcomeInsert,
   LearningOutcomeUpdate,
 } from '../LearningOutcomes/types';
+import { LearningObjectStatStore } from '../LearningObjectStats/LearningObjectStatStore';
 
 export enum COLLECTIONS {
   USERS = 'users',
@@ -51,6 +52,7 @@ export enum COLLECTIONS {
 export class MongoDriver implements DataStore {
   submissionStore: SubmissionDatastore;
   learningOutcomeStore: LearningOutcomeMongoDatastore;
+  statStore: LearningObjectStatStore;
   togglePublished(
     username: string,
     id: string,
@@ -65,6 +67,7 @@ export class MongoDriver implements DataStore {
     this.connect(dburi).then(() => {
       this.submissionStore = new SubmissionDatastore(this.db);
       this.learningOutcomeStore = new LearningOutcomeMongoDatastore(this.db);
+      this.statStore = new LearningObjectStatStore(this.db);
     });
   }
 
@@ -602,6 +605,17 @@ export class MongoDriver implements DataStore {
   }
 
   /**
+   * Fetches Stats for Learning Objects
+   *
+   * @param {{ query: any }} params
+   * @returns {Promise<Partial<LearningObjectStats>>}
+   * @memberof MongoDriver
+   */
+  fetchStats(params: { query: any }): Promise<Partial<LearningObjectStats>> {
+    return this.statStore.fetchStats({ query: params.query });
+  }
+
+  /**
    * Get LearningObject IDs owned by User
    *
    * @param {string} username
@@ -968,11 +982,13 @@ export class MongoDriver implements DataStore {
             },
           },
         );
-      const materials = doc.materials;
+      if (doc) {
+        const materials = doc.materials;
 
-      // Object contains materials property.
-      // Files array within materials will alway contain one element
-      return materials.files[0];
+        // Object contains materials property.
+        // Files array within materials will alway contain one element
+        return materials.files[0];
+      }
     } catch (e) {
       return Promise.reject(e);
     }
