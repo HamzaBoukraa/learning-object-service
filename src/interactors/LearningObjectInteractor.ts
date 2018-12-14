@@ -4,7 +4,6 @@ import {
   LibraryCommunicator,
 } from '../interfaces/interfaces';
 import { LearningObject } from '@cyber4all/clark-entity';
-// @ts-ignore No types exist for this package
 import * as stopword from 'stopword';
 import { LearningObjectQuery } from '../interfaces/DataStore';
 import { Metrics } from '@cyber4all/clark-entity/dist/learning-object';
@@ -15,7 +14,6 @@ import {
   FileUpload,
 } from '../interfaces/FileManager';
 import { Readable } from 'stream';
-import { InMemoryStore } from '../interfaces/InMemoryStore';
 import { processMultipartUpload } from '../FileManager/FileInteractor';
 // TODO: Update File in clark-entity
 export interface LearningObjectFile extends File {
@@ -319,10 +317,10 @@ export class LearningObjectInteractor {
   public static async uploadFile(params: {
     dataStore: DataStore;
     fileManager: FileManager;
-    inMemoryStore: InMemoryStore;
     id: string;
     username: string;
     file: DZFile;
+    uploadId: string;
   }): Promise<LearningObjectFile> {
     try {
       let loFile: LearningObjectFile;
@@ -337,9 +335,10 @@ export class LearningObjectInteractor {
       if (hasChunks) {
         // Process Multipart
         await processMultipartUpload({
-          inMemoryStore: params.inMemoryStore,
+          dataStore: params.dataStore,
           fileManager: params.fileManager,
           file: params.file,
+          uploadId: params.uploadId,
           fileUpload,
         });
       } else {

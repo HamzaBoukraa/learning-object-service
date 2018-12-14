@@ -17,29 +17,21 @@ import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjec
 import * as LearningOutcomeRouteHandler from '../../LearningOutcomes/LearningOutcomeRouteHandler';
 import * as SubmissionRouteDriver from '../../LearningObjectSubmission/SubmissionRouteDriver';
 import { reportError } from '../SentryConnector';
-import { InMemoryStore } from '../../interfaces/InMemoryStore';
 export class ExpressAuthRouteDriver {
   private upload = multer({ storage: multer.memoryStorage() });
 
   constructor(
     private dataStore: DataStore,
-    private inMemoryStore: InMemoryStore,
     private fileManager: FileManager,
     private library: LibraryCommunicator,
   ) {}
 
   public static buildRouter(
     dataStore: DataStore,
-    inMemoryStore: InMemoryStore,
     fileManager: FileManager,
     library: LibraryCommunicator,
   ): Router {
-    const e = new ExpressAuthRouteDriver(
-      dataStore,
-      inMemoryStore,
-      fileManager,
-      library,
-    );
+    const e = new ExpressAuthRouteDriver(dataStore, fileManager, library);
     const router: Router = Router();
     e.setRoutes(router);
     return router;
@@ -152,14 +144,12 @@ export class ExpressAuthRouteDriver {
         try {
           const user = req.user;
           const objectId: string = req.params.id;
-          const fileId: string = req.params.fileId;
           const filePath = req.body.filePath;
           const uploadId = await FileInteractor.startMultipartUpload({
             objectId,
-            fileId,
             filePath,
             user,
-            inMemoryStore: this.inMemoryStore,
+            dataStore: this.dataStore,
             fileManager: this.fileManager,
           });
           res.status(200).send({ uploadId });
@@ -170,13 +160,12 @@ export class ExpressAuthRouteDriver {
       .patch(async (req, res) => {
         try {
           const id = req.params.id;
-          const fileId: string = req.params.fileId;
+          const uploadId: string = req.body.uploadId;
           const fileMeta = req.body.fileMeta;
           const url = await FileInteractor.finalizeMultipartUpload({
-            fileId,
-            inMemoryStore: this.inMemoryStore,
+            uploadId,
+            dataStore: this.dataStore,
             fileManager: this.fileManager,
-            totalParts: fileMeta.totalParts,
           });
           await LearningObjectInteractor.addFileMeta({
             id,
@@ -191,13 +180,11 @@ export class ExpressAuthRouteDriver {
       })
       .delete(async (req, res) => {
         try {
-          const fileId: string = req.params.fileId;
-          const totalParts = +req.body.totalParts;
+          const uploadId: string = req.body.uploadId;
           await FileInteractor.abortMultipartUpload({
-            inMemoryStore: this.inMemoryStore,
+            dataStore: this.dataStore,
             fileManager: this.fileManager,
-            fileId,
-            totalParts,
+            uploadId,
           });
           res.sendStatus(200);
         } catch (e) {
@@ -221,6 +208,7 @@ export class ExpressAuthRouteDriver {
             mimetype: file.mimetype,
             size: dzMetadata.dztotalfilesize || dzMetadata.size,
           };
+          const uploadId = req.body.uploadId;
           const user = req.user;
 
           if (this.hasAccess(user, 'emailVerified', true)) {
@@ -228,9 +216,9 @@ export class ExpressAuthRouteDriver {
               id,
               username: user.username,
               dataStore: this.dataStore,
-              inMemoryStore: this.inMemoryStore,
               fileManager: this.fileManager,
               file: upload,
+              uploadId,
             });
 
             res.status(200).send(loFile);
@@ -247,21 +235,6 @@ export class ExpressAuthRouteDriver {
         }
       },
     );
-    router.delete('/learning-objects/:id/files', async (req, res) => {
-      try {
-        const uploadStatusId = req.body.uploadId;
-        await LearningObjectInteractor.cancelUpload({
-          uploadStatusId,
-          dataStore: this.dataStore,
-          fileManager: this.fileManager,
-        });
-
-        res.sendStatus(200);
-      } catch (e) {
-        console.error(e);
-        res.status(500).send(e);
-      }
-    });
     router
       .route('/files/:id/:fileId')
       .patch(async (req, res) => {

@@ -2,13 +2,11 @@ import {
   ExpressDriver,
   MongoDriver,
   S3Driver,
-  IORedisDriver,
 } from './drivers/drivers';
 import {
   DataStore,
   FileManager,
   LibraryCommunicator,
-  InMemoryStore,
 } from './interfaces/interfaces';
 import * as dotenv from 'dotenv';
 import { LibraryDriver } from './drivers/LibraryDriver';
@@ -45,12 +43,5 @@ switch (process.env.NODE_ENV) {
 const dataStore: DataStore = new MongoDriver(dburi);
 const fileManager: FileManager = new S3Driver();
 const library: LibraryCommunicator = new LibraryDriver();
-
-const IN_MEMORY_HOST = process.env.IN_MEMORY_HOST;
-const IN_MEMORY_PORT = +process.env.IN_MEMORY_PORT;
-const inMemoryStore: InMemoryStore = new IORedisDriver(
-  IN_MEMORY_HOST,
-  IN_MEMORY_PORT,
-);
 // ----------------------------------------------------------------------------------
-ExpressDriver.start(dataStore, inMemoryStore, fileManager, library);
+ExpressDriver.start(dataStore, fileManager, library);

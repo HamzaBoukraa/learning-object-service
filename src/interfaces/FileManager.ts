@@ -40,8 +40,9 @@ export interface MultipartFileUpload extends FileUpload {
 }
 
 export interface MultipartFileUploadStatus {
-  uploadId: string;
+  _id: string;
   path: string;
+  completedParts: CompletedPartList;
   createdAt: string;
 }
 export interface MultipartFileUploadStatusUpdates {
