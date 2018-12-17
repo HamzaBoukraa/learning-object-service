@@ -185,9 +185,6 @@ export class MongoDriver implements DataStore {
       // add the object id to the user's objects array
       await this.db
         .collection(COLLECTIONS.USERS)
-        .findOneAndUpdate({ _id: authorID }, { $push: { objects: doc._id } });
-      await this.db
-        .collection(COLLECTIONS.USERS)
         .updateOne({ _id: authorID }, { $push: { objects: doc._id } });
       return doc._id;
     } catch (e) {
