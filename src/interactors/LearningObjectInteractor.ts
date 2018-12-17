@@ -9,7 +9,6 @@ import { LearningObjectQuery } from '../interfaces/DataStore';
 import { Metrics } from '@cyber4all/clark-entity/dist/learning-object';
 import { File } from '@cyber4all/clark-entity/dist/learning-object';
 import {
-  MultipartFileUploadStatus,
   DZFile,
   FileUpload,
 } from '../interfaces/FileManager';
