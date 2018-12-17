@@ -111,8 +111,6 @@ export class ExpressAdminRouteDriver {
 
         const learningObject = await AdminLearningObjectInteractor.loadFullLearningObject(
           this.dataStore,
-          this.fileManager,
-          this.library,
           id,
         );
 
