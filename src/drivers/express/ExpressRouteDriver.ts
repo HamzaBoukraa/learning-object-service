@@ -3,15 +3,13 @@ import {
   LibraryCommunicator,
   FileManager,
 } from '../../interfaces/interfaces';
-import { Router, Response, Request } from 'express';
+import { Router } from 'express';
 import { LearningObjectInteractor } from '../../interactors/interactors';
 import { LearningObject } from '@cyber4all/clark-entity';
 import * as TokenManager from '../TokenManager';
 import { LearningObjectQuery } from '../../interfaces/DataStore';
-import { reportError } from '../SentryConnector';
 import * as LearningObjectStatsRouteHandler from '../../LearningObjectStats/LearningObjectStatsRouteHandler';
-import { LEARNING_OBJECT_ROUTES } from '../../routes';
-import { fileNotFound } from '../../assets/filenotfound';
+import { initializeSingleFileDownloadRouter } from '../../SingleFileDownload/RouteHandler';
 
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
 // tslint:disable-next-line:no-require-imports
@@ -233,48 +231,7 @@ export class ExpressRouteDriver {
       }
     });
 
-    router.get(
-      '/users/:username/learning-objects/:loId/files/:fileId/download',
-      async (req, res) => {
-        try {
-          const open = req.query.open;
-          const author: string = req.params.username;
-          const loId: string = req.params.loId;
-          const fileId: string = req.params.fileId;
-          const {
-            filename,
-            mimeType,
-            stream,
-          } = await LearningObjectInteractor.downloadSingleFile({
-            author,
-            fileId,
-            dataStore: this.dataStore,
-            fileManager: this.fileManager,
-            learningObjectId: loId,
-          });
-          if (!open) {
-            res.attachment(filename);
-          }
-          // Set mime type only if it is known
-          if (mimeType) res.contentType(mimeType);
-          stream.pipe(res);
-        } catch (e) {
-          if (e.message === 'Invalid Access') {
-            res
-              .status(403)
-              .send(
-                'Invalid Access. You do not have download privileges for this file',
-              );
-          } else if (e.message === 'File not found') {
-            fileNotFoundResponse(e.object, req, res);
-          } else {
-            console.error(e);
-            reportError(e);
-            res.status(500).send('Internal Server Error');
-          }
-        }
-      },
-    );
+    initializeSingleFileDownloadRouter(router, this.dataStore, this.fileManager);
 
     router.use(
       '/learning-objects/stats',
@@ -284,12 +241,4 @@ export class ExpressRouteDriver {
       }),
     );
   }
-}
-
-function fileNotFoundResponse(object: any, req: Request, res: Response) {
-  const redirectUrl = LEARNING_OBJECT_ROUTES.CLARK_DETAILS({
-    objectName: object.name,
-    username: req.params.username,
-  });
-  res.status(404).type('text/html').send(fileNotFound(redirectUrl));
 }
