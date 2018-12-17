@@ -1,21 +1,20 @@
 import { LearningObjectInteractor } from '../interactors/interactors';
 import { expect } from 'chai';
 import { MockDataStore } from '../tests/mock-drivers/MockDataStore';
-import { MockS3Driver } from '../tests/mock-drivers/MockS3Driver';
 import { MockLibraryDriver } from '../tests/mock-drivers/MockLibraryDriver';
 import { MOCK_OBJECTS } from '../tests/mocks';
 import { DataStore } from '../interfaces/DataStore';
-import { FileManager, LibraryCommunicator } from '../interfaces/interfaces';
+import { LibraryCommunicator } from '../interfaces/interfaces';
 const driver: DataStore = new MockDataStore; // DataStore
 const library: LibraryCommunicator = new MockLibraryDriver();
 
 describe('loadLearningObjectSummary', () => {
   it('should load learning object summary', done => {
-    return LearningObjectInteractor.loadLearningObjectSummary(
-      driver,
+    return LearningObjectInteractor.loadLearningObjectSummary({
+      dataStore: driver,
       library,
-      MOCK_OBJECTS.USERNAME,
-    ).then(val => {
+      username: MOCK_OBJECTS.USERNAME,
+    }).then(val => {
       expect(val).to.be.an('array');
       done();
     }).catch((error) => {
