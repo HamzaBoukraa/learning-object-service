@@ -3,7 +3,7 @@ import { LearningObjectInteractor } from '../interactors/interactors';
 import { DataStore } from '../interfaces/DataStore';
 import { FileManager, LibraryCommunicator } from '../interfaces/interfaces';
 import { generatePDF } from './PDFKitDriver';
-import { LearningObjectPDF } from '@cyber4all/clark-entity/dist/learning-object';
+import { LearningObjectPDF, Restriction } from '@cyber4all/clark-entity/dist/learning-object';
 import {
   LearningObjectUpdates,
   UserToken,
@@ -40,7 +40,18 @@ export async function addLearningObject(
     if (err) {
       return Promise.reject(err);
     } else {
+      const authorID = await this.findUser(user.username);
       object.author.username = user.username;
+      const author = await this.fetchUser(authorID);
+      if (!author.emailVerified) {
+        object.unpublish();
+      }
+      if (!object.goals || !object.goals.length) {
+        object.goals = [{ text: '' }];
+      }
+      object.lock = {
+        restrictions: [Restriction.DOWNLOAD],
+      };
       const learningObjectID = await dataStore.insertLearningObject(object);
       object.id = learningObjectID;
 

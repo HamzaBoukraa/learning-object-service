@@ -162,23 +162,7 @@ export class MongoDriver implements DataStore {
    */
   async insertLearningObject(object: LearningObject): Promise<string> {
     try {
-      // FIXME: This should be scoped to Interactor
-      const authorID = await this.findUser(object.author.username);
-      const author = await this.fetchUser(authorID);
-      if (!author.emailVerified) {
-        object.unpublish();
-      }
-
-      // FIXME we should be setting an actual description property
-      if (!object.goals || !object.goals.length) {
-        object.goals = [{ text: '' }];
-      }
-
-      object.lock = {
-        restrictions: [Restriction.DOWNLOAD],
-      };
       const doc = await this.documentLearningObject(object, true);
-
       // insert object into the database
       await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).insertOne(doc);
 
