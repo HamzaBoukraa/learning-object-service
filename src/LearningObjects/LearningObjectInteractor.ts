@@ -41,7 +41,6 @@ export async function addLearningObject(
       return Promise.reject(err);
     } else {
       object.author.username = user.username;
-      console.log(object.author.username);
       const learningObjectID = await dataStore.insertLearningObject(object);
       object.id = learningObjectID;
 
