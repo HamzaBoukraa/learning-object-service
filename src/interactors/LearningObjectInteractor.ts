@@ -1,24 +1,17 @@
-import {
-  DataStore,
-  FileManager,
-  LibraryCommunicator,
-} from '../interfaces/interfaces';
-import { LearningObject } from '@cyber4all/clark-entity';
+import {DataStore, FileManager, LibraryCommunicator} from '../interfaces/interfaces';
+import {LearningObject} from '@cyber4all/clark-entity';
+// @ts-ignore
 import * as stopword from 'stopword';
-import { LearningObjectQuery } from '../interfaces/DataStore';
+import {LearningObjectQuery} from '../interfaces/DataStore';
+import {File, Metrics} from '@cyber4all/clark-entity/dist/learning-object';
 import {
-  Metrics,
-  Restriction,
-} from '@cyber4all/clark-entity/dist/learning-object';
-import { File } from '@cyber4all/clark-entity/dist/learning-object';
-import {
+  CompletedPartList,
+  DZFile,
+  FileUpload,
   MultipartFileUpload,
   MultipartFileUploadStatus,
   MultipartFileUploadStatusUpdates,
-  DZFile,
-  FileUpload,
   MultipartUploadData,
-  CompletedPartList,
 } from '../interfaces/FileManager';
 
 // TODO: Update File in clark-entity
@@ -31,12 +24,16 @@ const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
 
 export class LearningObjectInteractor {
   /**
-   * Load the scalar fields of a user's objects (ignore goals and outcomes).
+   * Loads Learning Object summaries for a user, optionally applying a query for filtering and sorting.
    * @async
    *
-   * @param {string} userid the user's login id
-   *
-   * @returns {User}
+   * @returns {LearningObject[]} the user's learning objects found by the query
+   * @param dataStore
+   * @param library
+   * @param username
+   * @param accessUnpublished
+   * @param loadChildren
+   * @param query
    */
   public static async loadLearningObjectSummary(
     dataStore: DataStore,
@@ -137,10 +134,13 @@ export class LearningObjectInteractor {
    * Load a learning object and all its learning outcomes.
    * @async
    *
-   * @param {UserID} author the author's database id
-   * @param {string} name the learning object's identifying string
    *
    * @returns {LearningObject}
+   * @param dataStore
+   * @param library
+   * @param username
+   * @param learningObjectName
+   * @param accessUnpublished
    */
   public static async loadLearningObject(
     dataStore: DataStore,
@@ -298,18 +298,17 @@ export class LearningObjectInteractor {
   }
 
   /**
-   * Uploads File and adds file metadata to LearningObject's materials
+   * Uploads a file and adds its metadata to the LearningObject's materials.
    *
    * @static
    * @param {{
-   *     dataStore: DataStore;
-   *     fileManager: FileManager;
-   *     id: string;
-   *     username: string;
-   *     file: DZFile;
+   *     dataStore: DataStore,
+   *     fileManager: FileManager,
+   *     id: string,
+   *     username: string,
+   *     file: DZFile
    *   }} params
-   * @returns {Promise<void>}
-   * @memberof LearningObjectInteractor
+   * @returns {Promise<LearningObjectFile>}
    */
   public static async uploadFile(params: {
     dataStore: DataStore;
@@ -344,7 +343,7 @@ export class LearningObjectInteractor {
       }
       // If LearningObjectFile was generated, update LearningObject's materials
       if (loFile) {
-        // FIXME should be implemented in clark entity 
+        // FIXME should be implemented in clark entity
         // @ts-ignore
         loFile.size = params.file.size;
         await this.updateMaterials({
@@ -364,13 +363,11 @@ export class LearningObjectInteractor {
    *
    * @static
    * @param {{
-   *     dataStore: DataStore;
-   *     fileManager: FileManager;
-   *     uploadStatusId: string;
-   *     filePath: string;
+   *     dataStore: DataStore,
+   *     fileManager: FileManager,
+   *     uploadStatusId: string
    *   }} params
    * @returns {Promise<void>}
-   * @memberof LearningObjectInteractor
    */
   public static async cancelUpload(params: {
     dataStore: DataStore;
@@ -400,12 +397,11 @@ export class LearningObjectInteractor {
    * @private
    * @static
    * @param {{
-   *     dataStore: DataStore;
-   *     id: string;
-   *     loFile: LearningObjectFile;
+   *     dataStore: DataStore,
+   *     id: string,
+   *     loFile: LearningObjectFile,
    *   }} params
    * @returns {Promise<void>}
-   * @memberof LearningObjectInteractor
    */
   private static async updateMaterials(params: {
     dataStore: DataStore;
@@ -428,15 +424,13 @@ export class LearningObjectInteractor {
    * @private
    * @static
    * @param {{
-   *     dataStore: DataStore;
-   *     fileManager: FileManager;
-   *     id: string;
-   *     username: string;
-   *     file: DZFile;
-   *     fileUpload: FileUpload;
+   *     dataStore: DataStore,
+   *     fileManager: FileManager,
+   *     id: string,
+   *     file: DZFile,
+   *     fileUpload: FileUpload
    *   }} params
    * @returns {Promise<LearningObjectFile>}
-   * @memberof LearningObjectInteractor
    */
   private static async processMultipartUpload(params: {
     dataStore: DataStore;
@@ -516,14 +510,13 @@ export class LearningObjectInteractor {
    * @private
    * @static
    * @param {{
-   *     uploadId: string;
-   *     uploadStatusID: string;
-   *     path: string;
-   *     fileManager: FileManager;
-   *     dataStore: DataStore;
+   *     uploadId: string,
+   *     uploadStatusID: string,
+   *     path: string,
+   *     fileManager: FileManager,
+   *     dataStore: DataStore
    *   }} params
    * @returns {Promise<void>}
-   * @memberof LearningObjectInteractor
    */
   private static async abortMultipartUpload(params: {
     uploadId: string;
@@ -552,12 +545,11 @@ export class LearningObjectInteractor {
    * @private
    * @static
    * @param {{
-   *     dataStore: DataStore;
-   *     file: DZFile;
-   *     multipartData: MultipartUploadData;
+   *     dataStore: DataStore,
+   *     file: DZFile,
+   *     multipartData: MultipartUploadData
    *   }} params
    * @returns Promise<void>
-   * @memberof LearningObjectInteractor
    */
   private static async createUploadStatus(params: {
     dataStore: DataStore;
@@ -590,13 +582,12 @@ export class LearningObjectInteractor {
    * @private
    * @static
    * @param {{
-   *     dataStore: DataStore;
-   *     file: DZFile;
-   *     uploadStatus: MultipartFileUploadStatus;
-   *     multipartData: MultipartUploadData;
+   *     dataStore: DataStore,
+   *     file: DZFile,
+   *     uploadStatus: MultipartFileUploadStatus,
+   *     multipartData: MultipartUploadData,
    *   }} params
    * @returns {Promise<void>}
-   * @memberof LearningObjectInteractor
    */
   private static async updateUploadStatus(params: {
     dataStore: DataStore;
@@ -622,13 +613,14 @@ export class LearningObjectInteractor {
   }
 
   /**
-   * Look up a learning outcome by its source and tag.
+   * Look up a Learning Object by its name and the user that created it.
    * @async
    *
-   * @param {LearningObjectID} source the object source's unique database id
-   * @param {number} tag the outcome's unique identifier
+   * @param dataStore the data store to be accessed
+   * @param {string} username the username of the creator
+   * @param {string} learningObjectName the name of the Learning Object
    *
-   * @returns {LearningOutcomeID}
+   * @returns {string} LearningOutcomeID
    */
   public static async findLearningObject(
     dataStore: DataStore,
@@ -636,11 +628,10 @@ export class LearningObjectInteractor {
     learningObjectName: string,
   ): Promise<string> {
     try {
-      const learningObjectID = await dataStore.findLearningObject(
+      return await dataStore.findLearningObject(
         username,
         learningObjectName,
       );
-      return learningObjectID;
     } catch (e) {
       return Promise.reject(`Problem finding LearningObject. Error: ${e}`);
     }
@@ -676,8 +667,8 @@ export class LearningObjectInteractor {
   }
 
   /**
-   * Return literally all objects. Very expensive.
-   * @returns {LearningObject[]} array of literally all objects
+   * Fetch all Learning Objects in the system.
+   * @returns {LearningObject[]} array of all objects
    */
   public static async fetchAllObjects(
     dataStore: DataStore,
@@ -686,9 +677,8 @@ export class LearningObjectInteractor {
     limit: number,
   ): Promise<{ objects: LearningObject[]; total: number }> {
     try {
-      const accessUnpublished = false;
       const response = await dataStore.fetchAllObjects(
-        accessUnpublished,
+        false,
         currPage,
         limit,
       );
@@ -712,9 +702,8 @@ export class LearningObjectInteractor {
   }
 
   /**
-   * TODO: Refactor into fetchAllObjects. DRY
    * Returns array of learning objects associated with the given ids.
-   * @returns {LearningObjectRecord[]}
+   * @returns {LearningObject[]} the Learning Objects for the supplied identifiers.
    */
   public static async fetchMultipleObjects(
     dataStore: DataStore,
@@ -795,11 +784,11 @@ export class LearningObjectInteractor {
   /**
    * Search for objects by name, author, length, level, and content.
    *
-   * @param {string} name the objects' names should closely relate
-   * @param {string} author the objects' authors' names` should closely relate
-   * @param {string} length the objects' lengths should match exactly
-   * @param {string} level the objects' levels should match exactly TODO: implement
-   * @param {boolean} ascending whether or not result should be in ascending order
+   * @param {string} params.name the objects' names should closely relate
+   * @param {string} params.author the objects' authors' names` should closely relate
+   * @param {string} params.length the objects' lengths should match exactly
+   * @param {string} params.level the objects' levels should match exactly
+   * @param {boolean} params.ascending whether or not result should be in ascending order
    *
    * @returns {Outcome[]} list of outcome suggestions, ordered by score
    */
@@ -869,8 +858,7 @@ export class LearningObjectInteractor {
 
   public static async fetchCollections(dataStore: DataStore): Promise<any> {
     try {
-      const collections = await dataStore.fetchCollections();
-      return collections;
+      return await dataStore.fetchCollections();
     } catch (e) {
       console.error(e);
       return Promise.reject(`Problem fetching collections. Error: ${e}`);
@@ -882,8 +870,7 @@ export class LearningObjectInteractor {
     name: string,
   ): Promise<any> {
     try {
-      const collection = await dataStore.fetchCollection(name);
-      return collection;
+      return await dataStore.fetchCollection(name);
     } catch (e) {
       return Promise.reject(`Problem fetching collection. Error: ${e}`);
     }
@@ -894,8 +881,7 @@ export class LearningObjectInteractor {
     name: string,
   ): Promise<any> {
     try {
-      const collectionMeta = await dataStore.fetchCollectionMeta(name);
-      return collectionMeta;
+      return await dataStore.fetchCollectionMeta(name);
     } catch (e) {
       return Promise.reject(
         `Problem fetching collection metadata. Error: ${e}`,
@@ -908,8 +894,7 @@ export class LearningObjectInteractor {
     name: string,
   ): Promise<any> {
     try {
-      const objects = await dataStore.fetchCollectionObjects(name);
-      return objects;
+      return await dataStore.fetchCollectionObjects(name);
     } catch (e) {
       return Promise.reject(`Problem fetching collection objects. Error: ${e}`);
     }
@@ -966,9 +951,9 @@ export class LearningObjectInteractor {
    *
    * @private
    * @static
+   * @param library the gateway to library data
    * @param {string} objectID
    * @returns {Promise<Metrics>}
-   * @memberof LearningObjectInteractor
    */
   private static async loadMetrics(
     library: LibraryCommunicator,
@@ -988,7 +973,6 @@ export class LearningObjectInteractor {
    * @static
    * @param {string} text
    * @returns {string}
-   * @memberof SuggestionInteractor
    */
   private static removeStopwords(text: string): string {
     const oldString = text.split(' ');
@@ -1003,9 +987,9 @@ export class LearningObjectInteractor {
    * Generates new LearningObjectFile Object
    *
    * @private
-   * @param {any} file
+   * @param {DZFile} file
+   * @param {string} url
    * @returns
-   * @memberof S3Driver
    */
   private static generateLearningObjectFile(
     file: DZFile,
@@ -1015,7 +999,7 @@ export class LearningObjectInteractor {
     const extension = extMatch ? extMatch[0] : '';
     const date = Date.now().toString();
 
-    const learningObjectFile: LearningObjectFile = {
+    return {
       url,
       date,
       id: file.dzuuid,
@@ -1025,8 +1009,6 @@ export class LearningObjectInteractor {
       fullPath: file.fullPath,
       packageable: this.isPackageable(file),
     };
-
-    return learningObjectFile;
   }
 
   private static isPackageable(file: DZFile) {
