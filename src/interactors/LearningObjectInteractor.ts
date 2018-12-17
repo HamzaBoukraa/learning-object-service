@@ -44,7 +44,6 @@ export class LearningObjectInteractor {
     query?: LearningObjectQuery,
   ): Promise<LearningObject[]> {
     try {
-      let total = 0;
       let summary: LearningObject[] = [];
       if (
         query &&
@@ -82,7 +81,6 @@ export class LearningObjectInteractor {
           },
         );
         summary = response.objects;
-        total = response.total;
       } else {
         const objectIDs = await dataStore.getUserObjects(username);
         summary = await dataStore.fetchMultipleObjects(
@@ -92,7 +90,6 @@ export class LearningObjectInteractor {
           query ? query.orderBy : null,
           query ? query.sortType : null,
         );
-        total = summary.length;
       }
 
       if (loadChildren) {
