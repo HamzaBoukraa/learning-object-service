@@ -80,8 +80,6 @@ export class AdminLearningObjectInteractor {
 
   public static async loadFullLearningObject(
     dataStore: DataStore,
-    fileManager: FileManager,
-    library: LibraryCommunicator,
     learningObjectID: string,
   ): Promise<any> {
     try {
