@@ -39,6 +39,7 @@ import {
   LearningOutcomeUpdate,
 } from '../LearningOutcomes/types';
 import { LearningObjectStatStore } from '../LearningObjectStats/LearningObjectStatStore';
+import { LearningObjectStats } from '../LearningObjectStats/LearningObjectStatsInteractor';
 
 export enum COLLECTIONS {
   USERS = 'users',
