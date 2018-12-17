@@ -90,6 +90,38 @@ export class ExpressAdminRouteDriver {
         res.status(500).send(e);
       }
     });
+    router.route('/learning-objects').patch(async(req, res) => {
+      try {
+        const learningObject = LearningObject.instantiate(req.body);
+        await AdminLearningObjectInteractor.updateLearningObject(
+            this.dataStore,
+            this.fileManager,
+            learningObject.id,
+            learningObject,
+          );
+        res.sendStatus(200);
+      } catch (e) {
+        console.error(e);
+        res.status(500).send(e);
+      }
+    });
+    router.route('/learning-objects/:learningObjectId').get(async (req, res) => {
+      try {
+        const id = req.params.learningObjectId;
+
+        const learningObject = await AdminLearningObjectInteractor.loadFullLearningObject(
+          this.dataStore,
+          this.fileManager,
+          this.library,
+          id,
+        );
+
+        res.status(200).send(learningObject);
+      } catch (e) {
+        console.error(e);
+        res.status(500).send(e);
+      }
+    });
     router.patch(
       '/users/:username/learning-objects/:learningObjectName/publish',
       async (_, res) => {

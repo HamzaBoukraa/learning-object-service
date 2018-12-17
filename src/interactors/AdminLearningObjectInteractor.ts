@@ -1,7 +1,8 @@
 import { LearningObjectInteractor } from './interactors';
+import { updateLearningObject } from '../LearningObjects/LearningObjectInteractor';
 import { DataStore, FileManager, LibraryCommunicator } from '../interfaces/interfaces';
-import { LearningObjectLock } from '@cyber4all/clark-entity/dist/learning-object';
 import { deleteLearningObject } from '../LearningObjects/LearningObjectInteractor';
+import { LearningObjectLock, LearningObject } from '@cyber4all/clark-entity/dist/learning-object';
 
 export class AdminLearningObjectInteractor {
   private static learningObjectInteractor = LearningObjectInteractor;
@@ -77,6 +78,19 @@ export class AdminLearningObjectInteractor {
     }
   }
 
+  public static async loadFullLearningObject(
+    dataStore: DataStore,
+    fileManager: FileManager,
+    library: LibraryCommunicator,
+    learningObjectID: string,
+  ): Promise<any> {
+    try {
+      return await dataStore.fetchLearningObject(learningObjectID, true, true);
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  }
+
   public static async toggleLock(
     dataStore: DataStore,
     id: string,
@@ -130,6 +144,24 @@ export class AdminLearningObjectInteractor {
       return Promise.reject(
         `Problem deleting Learning Objects. Error: ${error}`,
       );
+    }
+  }
+
+  public static async updateLearningObject(
+    dataStore: DataStore,
+    fileManager: FileManager,
+    id: string,
+    learningObject: LearningObject,
+  ): Promise<void> {
+    try {
+      return await updateLearningObject(
+        dataStore,
+        fileManager,
+        id,
+        learningObject,
+      );
+    } catch (error) {
+      return Promise.reject(error);
     }
   }
 }
