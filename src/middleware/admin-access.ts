@@ -1,6 +1,6 @@
 import * as jwt from 'jsonwebtoken';
-
-export function enforceAdminAccess(req, res, next) {
+import { Request, Response } from 'express';
+export function enforceAdminAccess(req: Request, res: Response, next: Function) {
   let user = req.user;
   const cookie = req.cookies.presence;
   if (!user && cookie) {
