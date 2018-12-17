@@ -165,11 +165,6 @@ export class MongoDriver implements DataStore {
       const doc = await this.documentLearningObject(object, true);
       // insert object into the database
       await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).insertOne(doc);
-
-      // add the object id to the user's objects array
-      await this.db
-        .collection(COLLECTIONS.USERS)
-        .updateOne({ _id: authorID }, { $push: { objects: doc._id } });
       return doc._id;
     } catch (e) {
       return Promise.reject(e);
@@ -517,21 +512,10 @@ export class MongoDriver implements DataStore {
       await this.deleteLearningObjectParentReferences(id);
       await this.deleteAllLearningOutcomes({ source: id });
 
-      // get the author's id
-      const object = await this.db
-        .collection(COLLECTIONS.LEARNING_OBJECTS)
-        .findOne({ _id: id });
-      const authorID = object.authorID;
-
       // now remove the object
       await this.db
         .collection(COLLECTIONS.LEARNING_OBJECTS)
         .deleteOne({ _id: id });
-
-      // remove the object from the user's list of objects
-      await this.db
-        .collection(COLLECTIONS.USERS)
-        .findOneAndUpdate({ _id: authorID }, { $pull: { objects: id } });
     } catch (e) {
       return Promise.reject(e);
     }
@@ -605,11 +589,9 @@ export class MongoDriver implements DataStore {
    */
   async getUserObjects(username: string): Promise<string[]> {
     try {
-      const id = await this.findUser(username);
-      const user = await this.db
-        .collection(COLLECTIONS.USERS)
-        .findOne<UserDocument>({ _id: id });
-      return user.objects;
+      const authorID = await this.findUser(username);
+      const objects = await this.db.collection<{ _id: string }>(COLLECTIONS.LEARNING_OBJECTS).find({ authorID }, { projection: { _id: 1 } }).toArray();
+      return objects.map(obj => obj._id);
     } catch (e) {
       return Promise.reject(`Problem fetch User's Objects. Error: ${e}`);
     }
