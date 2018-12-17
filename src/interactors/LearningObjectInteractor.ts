@@ -28,12 +28,12 @@ export class LearningObjectInteractor {
    * @async
    *
    * @returns {LearningObject[]} the user's learning objects found by the query
-   * @param dataStore
-   * @param library
-   * @param username
-   * @param accessUnpublished
-   * @param loadChildren
-   * @param query
+   * @param params.dataStore
+   * @param params.library
+   * @param params.username
+   * @param params.accessUnpublished
+   * @param params.loadChildren
+   * @param params.query
    */
   public static async loadLearningObjectSummary(params: {
     dataStore: DataStore;
@@ -378,8 +378,8 @@ export class LearningObjectInteractor {
    * @static
    * @param {DataStore} params.dataStore
    * @param {string} params.id the Learning Object identifier.
-   * @param fileMeta the file metadata.
-   * @param {string} url the URL for accessing the file.
+   * @param params.fileMeta the file metadata.
+   * @param {string} params.url the URL for accessing the file.
    * @returns {Promise<void>}
    */
   public static async addFileMeta(params: {
