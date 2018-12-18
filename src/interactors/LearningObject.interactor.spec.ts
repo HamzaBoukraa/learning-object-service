@@ -1,11 +1,12 @@
-import { LearningObjectInteractor } from '../interactors/interactors';
-import { expect } from 'chai';
-import { MockDataStore } from '../tests/mock-drivers/MockDataStore';
-import { MockLibraryDriver } from '../tests/mock-drivers/MockLibraryDriver';
-import { MOCK_OBJECTS } from '../tests/mocks';
-import { DataStore } from '../interfaces/DataStore';
-import { LibraryCommunicator } from '../interfaces/interfaces';
-const driver: DataStore = new MockDataStore; // DataStore
+import {LearningObjectInteractor} from '../interactors/interactors';
+import {expect} from 'chai';
+import {MockDataStore} from '../tests/mock-drivers/MockDataStore';
+import {MockLibraryDriver} from '../tests/mock-drivers/MockLibraryDriver';
+import {MOCK_OBJECTS} from '../tests/mocks';
+import {DataStore} from '../interfaces/DataStore';
+import {LibraryCommunicator} from '../interfaces/interfaces';
+
+const driver: DataStore = new MockDataStore(); // DataStore
 const library: LibraryCommunicator = new MockLibraryDriver();
 
 describe('loadLearningObjectSummary', () => {
@@ -146,33 +147,6 @@ describe('fetchObjectsByIDs', () => {
       [MOCK_OBJECTS.LEARNING_OBJECT_ID],
     ).then(val => {
       expect(val).to.be.an('array');
-      done();
-    }).catch((error) => {
-      expect.fail();
-      done();
-    });
-  });
-});
-
-describe('fetchCollections', () => {
-  it('should return an array of objects - these objects contain lo IDs', done => {
-    return LearningObjectInteractor.fetchCollections(driver).then(val => {
-      expect(val).to.be.an('array');
-      done();
-    }).catch((error) => {
-      expect.fail();
-      done();
-    });
-  });
-});
-
-describe('fetchCollection', () => {
-  it('should return an object - contains an array of learning objects ', done => {
-    return LearningObjectInteractor.fetchCollection(
-      driver,
-      MOCK_OBJECTS.COLLECTION_NAME,
-    ).then(val => {
-      expect(val).to.be.an('object');
       done();
     }).catch((error) => {
       expect.fail();
