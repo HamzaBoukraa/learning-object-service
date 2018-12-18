@@ -1,4 +1,4 @@
-import { LearningObject, Collection } from '@cyber4all/clark-entity';
+import { LearningObject, Collection, User, Material } from '@cyber4all/clark-entity';
 import { MultipartFileUploadStatus, CompletedPart } from './FileManager';
 import { LearningObjectLock } from '@cyber4all/clark-entity/dist/learning-object';
 import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
@@ -94,6 +94,7 @@ export interface DataStore extends LearningOutcomeDatastore, LearningObjectStatD
   addToCollection(learningObjectId: string, collection: string): Promise<void>;
 
   findUser(username: string): Promise<string>;
+  fetchUser(id: string): Promise<User>;
   peek<T>(params: {
     query: { [index: string]: string };
     fields: { [index: string]: 0 | 1 };

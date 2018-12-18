@@ -3,15 +3,14 @@ import { Request, Response, Router } from 'express';
 import { LearningObject } from '@cyber4all/clark-entity';
 import { DataStore } from '../interfaces/DataStore';
 import { FileManager, LibraryCommunicator } from '../interfaces/interfaces';
-import { UserToken, LearningObjectUpdates } from '../types';
+import { UserToken } from '../types';
 import { LearningObjectError } from '../errors';
 
 /**
  * Initializes an express router with endpoints for public Retrieving
  * a Learning Object.
  */
-export function initializePublic({ dataStore }: { dataStore: DataStore }) {
-  const router: Router = Router();
+export function initializePublicLearningObjectRouter({ router, dataStore }: { router: Router, dataStore: DataStore }) {
 
   /**
    * Retrieve a learning object by a specified ID
@@ -53,16 +52,18 @@ export function initializePublic({ dataStore }: { dataStore: DataStore }) {
  * }
  * @returns
  */
-export function initializePrivate({
+export function initializePrivateLearningObjectRouter({
+  router,
   dataStore,
   fileManager,
   library,
 }: {
+  router: Router,
   dataStore: DataStore;
   fileManager: FileManager;
   library: LibraryCommunicator;
 }) {
-  const router: Router = Router();
+
   const addLearningObject = async (req: Request, res: Response) => {
     let object: LearningObject;
 
@@ -151,5 +152,6 @@ export function initializePrivate({
   router.patch('/learning-objects/:id', updateLearningObject);
   router.get('/learning-objects/:id/materials/all', getMaterials);
   router.delete('/learning-objects/:learningObjectName', deleteLearningObject);
+
   return router;
 }

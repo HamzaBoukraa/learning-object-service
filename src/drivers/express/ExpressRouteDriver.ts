@@ -10,6 +10,7 @@ import * as TokenManager from '../TokenManager';
 import { LearningObjectQuery } from '../../interfaces/DataStore';
 import * as LearningObjectStatsRouteHandler from '../../LearningObjectStats/LearningObjectStatsRouteHandler';
 import { initializeSingleFileDownloadRouter } from '../../SingleFileDownload/RouteHandler';
+import { initializePublicLearningObjectRouter } from '../../LearningObjects/LearningObjectRouteHandler'
 
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
 // tslint:disable-next-line:no-require-imports
@@ -117,6 +118,7 @@ export class ExpressRouteDriver {
         res.status(500).send(e);
       }
     });
+
     router.get('/learning-objects/:id/parents', async (req, res) => {
       try {
         const query: LearningObjectQuery = req.query;
@@ -131,6 +133,7 @@ export class ExpressRouteDriver {
         res.status(500).send(e);
       }
     });
+
     router
       .route('/learning-objects/:username/:learningObjectName')
       .get(async (req, res) => {
@@ -233,6 +236,8 @@ export class ExpressRouteDriver {
         res.status(500).send(e);
       }
     });
+
+    initializePublicLearningObjectRouter({ router, dataStore: this.dataStore })
 
     initializeSingleFileDownloadRouter(router, this.dataStore, this.fileManager);
 
