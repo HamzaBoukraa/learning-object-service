@@ -8,11 +8,12 @@ import { UserToken } from '../types';
  * a Learning Outcome.
  */
 export function initialize({
+  router,
   dataStore,
 }: {
+  router: Router,
   dataStore: LearningOutcomeInteractor.LearningOutcomeDatastore;
 }) {
-  const router: Router = Router({ mergeParams: true });
   const addLearningOutcome = async (req: Request, res: Response) => {
     try {
       const user: UserToken = req.user;
@@ -80,9 +81,9 @@ export function initialize({
     }
   };
 
-  router.route('/learning-outcomes').post(addLearningOutcome);
+  router.route('/yeet/learning-objects/:id/learning-outcomes').post(addLearningOutcome);
   router
-    .route('/learning-outcomes/:outcomeId')
+    .route('/learning-objects/:id/learning-outcomes/:outcomeId')
     .get(getLearningOutcome)
     .patch(updateLearningOutcome)
     .delete(deleteLearningOutcome);

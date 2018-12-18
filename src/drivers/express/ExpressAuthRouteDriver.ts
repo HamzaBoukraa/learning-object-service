@@ -73,9 +73,9 @@ export class ExpressAuthRouteDriver {
         library: this.library,
       }),
     );
-    router.use('/learning-objects/:id', LearningOutcomeRouteHandler.initialize({
-      dataStore: this.dataStore,
-    }));
+
+    LearningOutcomeRouteHandler.initialize({router, dataStore: this.dataStore});
+
     router.get('/learning-objects/summary', async (req, res) => {
       try {
         const children = req.query.children;
