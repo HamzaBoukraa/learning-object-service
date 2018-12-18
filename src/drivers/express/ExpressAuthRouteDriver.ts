@@ -17,6 +17,8 @@ import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjec
 import * as LearningOutcomeRouteHandler from '../../LearningOutcomes/LearningOutcomeRouteHandler';
 import * as SubmissionRouteDriver from '../../LearningObjectSubmission/SubmissionRouteDriver';
 import { reportError } from '../SentryConnector';
+
+
 export class ExpressAuthRouteDriver {
   private upload = multer({ storage: multer.memoryStorage() });
 
@@ -64,7 +66,8 @@ export class ExpressAuthRouteDriver {
     router.use('', SubmissionRouteDriver.initialize(this.dataStore));
     router.use(
       '',
-      LearningObjectRouteHandler.initializePrivate({
+      LearningObjectRouteHandler.initializePrivateLearningObjectRouter({
+        router,
         dataStore: this.dataStore,
         fileManager: this.fileManager,
         library: this.library,
