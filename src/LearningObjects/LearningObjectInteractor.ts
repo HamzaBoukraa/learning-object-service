@@ -40,9 +40,9 @@ export async function addLearningObject(
     if (err) {
       return Promise.reject(err);
     } else {
-      const authorID = await this.findUser(user.username);
+      const authorID = await dataStore.findUser(user.username);
       object.author.username = user.username;
-      const author = await this.fetchUser(authorID);
+      const author = await dataStore.fetchUser(authorID);
       if (!author.emailVerified) {
         object.unpublish();
       }
