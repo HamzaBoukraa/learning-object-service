@@ -226,7 +226,7 @@ export class ExpressRouteDriver {
             dataStore: this.dataStore,
             library: this.library,
             username: req.params.username,
-            accessUnpublished: true,
+            accessUnpublished: false,
             loadChildren: true,
           },
         );
