@@ -12,11 +12,14 @@ import {
 } from '../drivers';
 import * as http from 'http';
 import * as logger from 'morgan';
-import { enforceTokenAccess } from '../../middleware/jwt.config';
 import * as cors from 'cors';
 import * as cookieParser from 'cookie-parser';
-import { enforceAdminAccess } from '../../middleware/admin-access';
 import * as raven from 'raven';
+import {
+  enforceAuthenticatedAccess,
+  enforceAdminAccess,
+  processToken,
+} from '../../middleware';
 
 export class ExpressDriver {
   static app = express();
@@ -52,11 +55,13 @@ export class ExpressDriver {
     // Set up cookie parser
     this.app.use(cookieParser());
 
+    this.app.use(processToken);
+
     // Set our public api routes
     this.app.use('/', ExpressRouteDriver.buildRouter(dataStore, library, fileManager));
 
     // Set Validation Middleware
-    this.app.use(enforceTokenAccess);
+    this.app.use(enforceAuthenticatedAccess);
     this.app.use((error: any, req: any, res: any, next: any) => {
       if (error.name === 'UnauthorizedError') {
         res.status(401).send('Invalid Access Token');
