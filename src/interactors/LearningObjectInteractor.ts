@@ -4,6 +4,7 @@ import {LearningObject} from '@cyber4all/clark-entity';
 import * as stopword from 'stopword';
 import { DZFile, FileUpload } from '../interfaces/FileManager';
 import { processMultipartUpload } from '../FileManager/FileInteractor';
+import { UserToken } from '../types';
 // TODO: Update File in clark-entity
 export interface LearningObjectFile extends File {
   packageable: boolean;
@@ -29,11 +30,23 @@ export class LearningObjectInteractor {
     dataStore: DataStore;
     library: LibraryCommunicator;
     username: string;
+    userToken: UserToken;
     accessUnpublished?: boolean;
     loadChildren?: boolean;
     query?: LearningObjectQuery;
   }): Promise<LearningObject[]> {
     try {
+      const accessUnpublished =
+        params.accessUnpublished !== undefined &&
+        params.accessUnpublished !== null
+          ? params.accessUnpublished
+          : await this.hasOwnership({
+              userToken: params.userToken,
+              resourceVal: params.username,
+              authFunction: (username: string, userToken: UserToken) => {
+                return userToken.username === username;
+              },
+            });
       let summary: LearningObject[] = [];
       if (
         params.query &&
@@ -74,7 +87,7 @@ export class LearningObjectInteractor {
             level,
             standardOutcomeIDs: params.query.standardOutcomeIDs,
             text: params.query.text,
-            accessUnpublished: params.accessUnpublished,
+            accessUnpublished,
             orderBy: params.query.orderBy,
             sortType: params.query.sortType,
             currPage: params.query.page,
@@ -89,7 +102,7 @@ export class LearningObjectInteractor {
         summary = await params.dataStore.fetchMultipleObjects(
           objectIDs,
           false,
-          params.accessUnpublished,
+          accessUnpublished,
           params.query ? params.query.orderBy : null,
           params.query ? params.query.sortType : null,
         );
@@ -104,7 +117,7 @@ export class LearningObjectInteractor {
                 params.library,
                 object,
                 false,
-                params.accessUnpublished,
+                accessUnpublished,
               );
             }
             return object;
