@@ -54,13 +54,32 @@ export class MongoDriver implements DataStore {
   submissionStore: SubmissionDatastore;
   learningOutcomeStore: LearningOutcomeMongoDatastore;
   statStore: LearningObjectStatStore;
-  togglePublished(
+
+
+  /**
+   * Submit a learning object to a specified collection
+   * @param username the username of the requester
+   * @param id the id of the learning object
+   * @param collection the abreviated name of the collection to which to submit the object
+   */
+  submitLearningObjectToCollection(
     username: string,
     id: string,
-    published: boolean,
+    collection: string
   ): Promise<void> {
-    return this.submissionStore.togglePublished(username, id, published);
+    return this.submissionStore.submitLearningObjectToCollection(username, id, collection);
   }
+
+  /**
+   * Unsubmit an object but keep it's collection property intact
+   * @param id the id of the object to unsubmit
+   */
+  unsubmitLearningObject(
+    id: string,
+  ): Promise<void> {
+    return this.submissionStore.unsubmitLearningObject(id);
+  }
+
   private mongoClient: MongoClient;
   private db: Db;
 

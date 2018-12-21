@@ -11,32 +11,35 @@ import { DataStore } from '../interfaces/DataStore';
  * a new router.
  * @param dataStore
  */
-export function initialize(dataStore: DataStore) {
-  async function submit(req: Request, res: Response) {
+export function initialize(router: Router, dataStore: DataStore) {
 
+  async function submit(req: Request, res: Response) {
     try {
-      const id = req.body.id;
+      const id = req.params.learningObjectId;
       const username = req.user.username;
+      const collection = req.body.collection;
 
       await submitForReview(
         dataStore,
         username,
         id,
+        collection
       );
+
       res.sendStatus(200);
     } catch (e) {
       console.error(e);
       res.status(500).send(e);
     }
   }
+
   async function cancel(req: Request, res: Response) {
     try {
-      const id = req.body.id;
+      const id = req.params.learningObjectId;
       const username = req.user.username;
 
       await cancelSubmission(
         dataStore,
-        username,
         id,
       );
       res.sendStatus(200);
@@ -49,8 +52,9 @@ export function initialize(dataStore: DataStore) {
       }
     }
   }
-  const router: Router = Router();
-  router.post('/learning-objects/submission', submit);
-  router.delete('/learning-objects/submission', cancel);
+
+  router.post('/learning-objects/:learningObjectId/submission', submit);
+  router.delete('/learning-objects/:learningObjectId/submission', cancel);
+
   return router;
 }

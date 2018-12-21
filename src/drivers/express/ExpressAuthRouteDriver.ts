@@ -63,17 +63,16 @@ export class ExpressAuthRouteDriver {
       }
       next();
     });
-    router.use('', SubmissionRouteDriver.initialize(this.dataStore));
-    router.use(
-      '',
-      LearningObjectRouteHandler.initializePrivateLearningObjectRouter({
+
+    SubmissionRouteDriver.initialize(router, this.dataStore);
+
+    LearningObjectRouteHandler.initializePrivate({
         router,
         dataStore: this.dataStore,
         fileManager: this.fileManager,
         library: this.library,
       }),
-    );
-
+    
     LearningOutcomeRouteHandler.initialize({router, dataStore: this.dataStore});
 
     router.get('/learning-objects/summary', async (req, res) => {

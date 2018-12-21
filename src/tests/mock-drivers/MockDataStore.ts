@@ -131,13 +131,17 @@ export class MockDataStore implements DataStore {
     return Promise.resolve([MOCK_OBJECTS.LEARNING_OBJECT]);
   }
 
-  togglePublished(
+  submitLearningObjectToCollection(
     username: string,
     id: string,
-    published: boolean,
+    collection: string
   ): Promise<void> {
     return Promise.resolve();
   }
+
+  unsubmitLearningObject(id: string): Promise<void> {
+    return Promise.resolve();
+  };
 
   setChildren(parentId: string, children: string[]): Promise<void> {
     return Promise.resolve();
