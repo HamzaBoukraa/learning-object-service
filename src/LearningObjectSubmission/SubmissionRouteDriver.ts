@@ -11,7 +11,13 @@ import { DataStore } from '../interfaces/DataStore';
  * a new router.
  * @param dataStore
  */
-export function initialize(dataStore: DataStore) {
+export function initialize({
+  router,
+  dataStore,
+}: {
+  router: Router;
+  dataStore: DataStore;
+}) {
   async function submit(req: Request, res: Response) {
 
     try {
@@ -49,7 +55,6 @@ export function initialize(dataStore: DataStore) {
       }
     }
   }
-  const router: Router = Router();
   router.post('/learning-objects/submission', submit);
   router.delete('/learning-objects/submission', cancel);
   return router;
