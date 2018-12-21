@@ -47,13 +47,3 @@ export async function fetchCollectionMeta(
   }
 }
 
-export async function fetchCollectionObjects(
-  dataStore: CollectionDataStore,
-  name: string,
-): Promise<any> {
-  try {
-    return await dataStore.fetchCollectionObjects(name);
-  } catch (e) {
-    return Promise.reject(`Problem fetching collection objects. Error: ${e}`);
-  }
-}
