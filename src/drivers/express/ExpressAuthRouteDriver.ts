@@ -18,7 +18,6 @@ import * as LearningOutcomeRouteHandler from '../../LearningOutcomes/LearningOut
 import * as SubmissionRouteDriver from '../../LearningObjectSubmission/SubmissionRouteDriver';
 import { reportError } from '../SentryConnector';
 
-
 export class ExpressAuthRouteDriver {
   private upload = multer({ storage: multer.memoryStorage() });
 
@@ -74,27 +73,11 @@ export class ExpressAuthRouteDriver {
       }),
     );
 
-    LearningOutcomeRouteHandler.initialize({router, dataStore: this.dataStore});
-
-    router.get('/learning-objects/summary', async (req, res) => {
-      try {
-        const children = req.query.children;
-        const objects = await LearningObjectInteractor.loadLearningObjectSummary(
-          {
-            dataStore: this.dataStore,
-            library: this.library,
-            username: req.user.username,
-            accessUnpublished: true,
-            loadChildren: children,
-            query: req.query,
-          },
-        );
-        res.status(200).send(objects);
-      } catch (e) {
-        console.error(e);
-        res.status(500).send(e);
-      }
+    LearningOutcomeRouteHandler.initialize({
+      router,
+      dataStore: this.dataStore,
     });
+
     router.patch(
       '/learning-objects/:learningObjectId/collections',
       async (req, res) => {
