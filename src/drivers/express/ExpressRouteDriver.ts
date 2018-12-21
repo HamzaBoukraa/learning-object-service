@@ -10,7 +10,7 @@ import * as TokenManager from '../TokenManager';
 import { LearningObjectQuery } from '../../interfaces/DataStore';
 import * as LearningObjectStatsRouteHandler from '../../LearningObjectStats/LearningObjectStatsRouteHandler';
 import { initializeSingleFileDownloadRouter } from '../../SingleFileDownload/RouteHandler';
-import { initializePublicLearningObjectRouter } from '../../LearningObjects/LearningObjectRouteHandler'
+import { initializePublicLearningObjectRouter } from '../../LearningObjects/LearningObjectRouteHandler';
 
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
 // tslint:disable-next-line:no-require-imports
@@ -237,7 +237,7 @@ export class ExpressRouteDriver {
       }
     });
 
-    initializePublicLearningObjectRouter({ router, dataStore: this.dataStore })
+    initializePublicLearningObjectRouter({ router, dataStore: this.dataStore });
 
     initializeSingleFileDownloadRouter({
       router,
@@ -245,10 +245,10 @@ export class ExpressRouteDriver {
       fileManager: this.fileManager,
     });
 
-      LearningObjectStatsRouteHandler.initialize({
-        dataStore: this.dataStore,
-        library: this.library,
-      }),
-    );
+    LearningObjectStatsRouteHandler.initialize({
+      router,
+      dataStore: this.dataStore,
+      library: this.library,
+    });
   }
 }
