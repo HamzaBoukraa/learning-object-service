@@ -55,8 +55,10 @@ export function initializeSingleFileDownloadRouter({
       }
     }
   }
-  router.get('/users/:username/learning-objects/:loId/files/:fileId/download', download);
-  return router;
+  router.get(
+    '/users/:username/learning-objects/:loId/files/:fileId/download',
+    download,
+  );
 }
 
 function fileNotFoundResponse(object: any, req: Request, res: Response) {
