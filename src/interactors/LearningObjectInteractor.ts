@@ -1,7 +1,13 @@
-import {DataStore, FileManager, LibraryCommunicator} from '../interfaces/interfaces';
-import {LearningObject} from '@cyber4all/clark-entity';
+import {
+  DataStore,
+  FileManager,
+  LibraryCommunicator,
+} from '../interfaces/interfaces';
+import { LearningObject } from '@cyber4all/clark-entity';
 // @ts-ignore
 import * as stopword from 'stopword';
+import { LearningObjectQuery } from '../interfaces/DataStore';
+import { File, Metrics } from '@cyber4all/clark-entity/dist/learning-object';
 import { DZFile, FileUpload } from '../interfaces/FileManager';
 import { processMultipartUpload } from '../FileManager/FileInteractor';
 import { UserToken } from '../types';
@@ -449,10 +455,7 @@ export class LearningObjectInteractor {
     learningObjectName: string,
   ): Promise<string> {
     try {
-      return await dataStore.findLearningObject(
-        username,
-        learningObjectName,
-      );
+      return await dataStore.findLearningObject(username, learningObjectName);
     } catch (e) {
       return Promise.reject(`Problem finding LearningObject. Error: ${e}`);
     }
@@ -498,11 +501,7 @@ export class LearningObjectInteractor {
     limit: number,
   ): Promise<{ objects: LearningObject[]; total: number }> {
     try {
-      const response = await dataStore.fetchAllObjects(
-        false,
-        currPage,
-        limit,
-      );
+      const response = await dataStore.fetchAllObjects(false, currPage, limit);
       response.objects = await Promise.all(
         response.objects.map(async object => {
           try {
