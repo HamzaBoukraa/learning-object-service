@@ -1,5 +1,9 @@
 import {CollectionDataStore} from './CollectionDataStore';
 
+/**
+ * Fetches metadata for all collections.
+ * @param dataStore
+ */
 export async function fetchCollections(dataStore: CollectionDataStore): Promise<any> {
   try {
     return await dataStore.fetchCollections();
@@ -9,6 +13,11 @@ export async function fetchCollections(dataStore: CollectionDataStore): Promise<
   }
 }
 
+/**
+ * Fetches a specific collection by name.
+ * @param dataStore
+ * @param name
+ */
 export async function fetchCollection(
   dataStore: CollectionDataStore,
   name: string,
@@ -20,6 +29,11 @@ export async function fetchCollection(
   }
 }
 
+/**
+ * Fetches metadata for a specific collection.
+ * @param dataStore
+ * @param name
+ */
 export async function fetchCollectionMeta(
   dataStore: CollectionDataStore,
   name: string,
