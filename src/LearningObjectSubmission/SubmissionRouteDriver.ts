@@ -19,16 +19,11 @@ export function initialize({
   dataStore: DataStore;
 }) {
   async function submit(req: Request, res: Response) {
-
     try {
       const id = req.body.id;
       const username = req.user.username;
 
-      await submitForReview(
-        dataStore,
-        username,
-        id,
-      );
+      await submitForReview(dataStore, username, id);
       res.sendStatus(200);
     } catch (e) {
       console.error(e);
@@ -40,11 +35,7 @@ export function initialize({
       const id = req.body.id;
       const username = req.user.username;
 
-      await cancelSubmission(
-        dataStore,
-        username,
-        id,
-      );
+      await cancelSubmission(dataStore, username, id);
       res.sendStatus(200);
     } catch (e) {
       if (e instanceof Error) {
