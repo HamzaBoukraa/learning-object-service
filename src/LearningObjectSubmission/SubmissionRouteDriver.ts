@@ -57,5 +57,4 @@ export function initialize({
   }
   router.post('/learning-objects/submission', submit);
   router.delete('/learning-objects/submission', cancel);
-  return router;
 }
