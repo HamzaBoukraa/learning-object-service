@@ -42,6 +42,7 @@ export class LearningObjectInteractor {
     query?: LearningObjectQuery;
   }): Promise<LearningObject[]> {
     try {
+      // Set accessUnpublished
       const accessUnpublished =
         params.accessUnpublished !== undefined &&
         params.accessUnpublished !== null
@@ -53,33 +54,17 @@ export class LearningObjectInteractor {
                 return userToken.username === username;
               },
             });
+
       let summary: LearningObject[] = [];
-      if (
-        params.query &&
-        (params.query.name ||
-          params.query.length ||
-          params.query.level ||
-          params.query.standardOutcomeIDs ||
-          params.query.orderBy ||
-          params.query.sortType ||
-          params.query.collection ||
-          params.query.status ||
-          params.query.text)
-      ) {
-        const level = params.query.level
-          ? Array.isArray(params.query.level)
-            ? params.query.level
-            : [params.query.level]
-          : undefined;
+
+      // Perform search on objects
+      if (params.query && Object.keys(params.query).length) {
+        const level = params.query.level ? [...params.query.level] : undefined;
         const length = params.query.length
-          ? Array.isArray(params.query.length)
-            ? params.query.length
-            : [params.query.length]
+          ? [...params.query.length]
           : undefined;
         const status = params.query.status
-          ? Array.isArray(params.query.status)
-            ? params.query.status
-            : [params.query.status]
+          ? [...params.query.status]
           : undefined;
         const response = await this.searchObjects(
           params.dataStore,
@@ -112,8 +97,24 @@ export class LearningObjectInteractor {
           params.query ? params.query.orderBy : null,
           params.query ? params.query.sortType : null,
         );
+        // Load object metrics
+        summary = await Promise.all(
+          summary.map(async object => {
+            try {
+              object.metrics = await this.loadMetrics(
+                params.library,
+                object.id,
+              );
+              return object;
+            } catch (e) {
+              console.log(e);
+              return object;
+            }
+          }),
+        );
       }
 
+      // Load children summaries
       if (params.loadChildren) {
         summary = await Promise.all(
           summary.map(async object => {
@@ -130,18 +131,6 @@ export class LearningObjectInteractor {
           }),
         );
       }
-
-      summary = await Promise.all(
-        summary.map(async object => {
-          try {
-            object.metrics = await this.loadMetrics(params.library, object.id);
-            return object;
-          } catch (e) {
-            console.log(e);
-            return object;
-          }
-        }),
-      );
 
       return summary;
     } catch (e) {
