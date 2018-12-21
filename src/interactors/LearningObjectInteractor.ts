@@ -752,6 +752,36 @@ export class LearningObjectInteractor {
       return Promise.reject(`Problem removing child. Error: ${e}`);
     }
   }
+
+  /**
+   * Uses passed authorization function to check if user has access to a resource
+   *
+   * @private
+   * @static
+   * @param {({
+   *     userToken: UserToken;
+   *     resourceVal: any;
+   *     authFunction: (
+   *       resourceVal: any,
+   *       userToken: UserToken,
+   *     ) => boolean | Promise<boolean>;
+   *   })} params
+   * @returns {Promise<boolean>}
+   * @memberof LearningObjectInteractor
+   */
+  private static async hasOwnership(params: {
+    userToken: UserToken;
+    resourceVal: any;
+    authFunction: (
+      resourceVal: any,
+      userToken: UserToken,
+    ) => boolean | Promise<boolean>;
+  }): Promise<boolean> {
+    if (!params.userToken) {
+      return false;
+    }
+    return params.authFunction(params.resourceVal, params.userToken);
+  }
   /**
    * Fetches Metrics for Learning Object
    *
