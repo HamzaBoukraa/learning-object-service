@@ -7,7 +7,15 @@ import { DataStore } from '../interfaces/DataStore';
 import { FileManager } from '../interfaces/FileManager';
 
 // TODO: Define DataStore just for this Feature Module
-export function initializeSingleFileDownloadRouter(router: Router, dataStore: DataStore, fileManager: FileManager) {
+export function initializeSingleFileDownloadRouter({
+  router,
+  dataStore,
+  fileManager,
+}: {
+  router: Router;
+  dataStore: DataStore;
+  fileManager: FileManager;
+}) {
   async function download(req: Request, res: Response) {
     try {
       const open = req.query.open;
