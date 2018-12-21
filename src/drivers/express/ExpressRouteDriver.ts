@@ -230,8 +230,6 @@ export class ExpressRouteDriver {
             dataStore: this.dataStore,
             library: this.library,
             username: req.params.username,
-            accessUnpublished: false,
-            loadChildren: true,
           },
         );
         res.status(200).send(objects);
