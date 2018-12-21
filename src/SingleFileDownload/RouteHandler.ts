@@ -22,11 +22,7 @@ export function initializeSingleFileDownloadRouter({
       const author: string = req.params.username;
       const loId: string = req.params.loId;
       const fileId: string = req.params.fileId;
-      const {
-        filename,
-        mimeType,
-        stream,
-      } = await downloadSingleFile({
+      const { filename, mimeType, stream } = await downloadSingleFile({
         author,
         fileId,
         dataStore,
@@ -66,5 +62,8 @@ function fileNotFoundResponse(object: any, req: Request, res: Response) {
     objectName: object.name,
     username: req.params.username,
   });
-  res.status(404).type('text/html').send(fileNotFound(redirectUrl));
+  res
+    .status(404)
+    .type('text/html')
+    .send(fileNotFound(redirectUrl));
 }
