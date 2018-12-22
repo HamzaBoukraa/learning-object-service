@@ -1,16 +1,13 @@
-import {
-  DataStore,
-  LibraryCommunicator,
-  FileManager,
-} from '../../interfaces/interfaces';
-import { Router } from 'express';
-import { LearningObjectInteractor } from '../../interactors/interactors';
-import { LearningObject } from '@cyber4all/clark-entity';
+import {DataStore, FileManager, LibraryCommunicator} from '../../interfaces/interfaces';
+import {Router} from 'express';
+import {LearningObjectInteractor} from '../../interactors/interactors';
+import {LearningObject} from '@cyber4all/clark-entity';
 import * as TokenManager from '../TokenManager';
-import { LearningObjectQuery } from '../../interfaces/DataStore';
+import {LearningObjectQuery} from '../../interfaces/DataStore';
 import * as LearningObjectStatsRouteHandler from '../../LearningObjectStats/LearningObjectStatsRouteHandler';
 import { initializeSingleFileDownloadRouter } from '../../SingleFileDownload/RouteHandler';
 import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler'
+import {initializeCollectionRouter} from '../../Collections/RouteHandler';
 
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
 // tslint:disable-next-line:no-require-imports
@@ -143,7 +140,7 @@ export class ExpressRouteDriver {
           const cookie = req.cookies.presence;
           if (cookie) {
             const user = await TokenManager.decode(cookie);
-            accessUnpublished = user.username === username ? true : false;
+            accessUnpublished = user.username === username;
           }
           const object = await LearningObjectInteractor.loadLearningObject(
             this.dataStore,
@@ -159,66 +156,8 @@ export class ExpressRouteDriver {
         }
       });
 
-    /**
-     * Return all collections {name: string, abvName: string, primaryColor: string, hasLogo: boolean}
-     */
-    router.get('/collections', async (req, res) => {
-      try {
-        const collections = await LearningObjectInteractor.fetchCollections(
-          this.dataStore,
-        );
-        res.status(200).send(collections);
-      } catch (e) {
-        console.error(e);
-        res.status(500).send(e);
-      }
-    });
-    /**
-     * Return a full collection {name: string, abstracts: [], learningObjects: []}
-     */
-    router.get('/collections/:name', async (req, res) => {
-      try {
-        const name = req.params.name;
-        const collection = await LearningObjectInteractor.fetchCollection(
-          this.dataStore,
-          name,
-        );
-        res.status(200).send(collection);
-      } catch (e) {
-        console.error(e);
-        res.status(500).send(e);
-      }
-    });
-    /**
-     * Return a list of learningObjects from a collection
-     */
-    router.get('/collections/:name/learning-objects', async (req, res) => {
-      try {
-        const objects = await LearningObjectInteractor.fetchCollectionObjects(
-          this.dataStore,
-          req.params.name,
-        );
-        res.status(200).send(objects);
-      } catch (e) {
-        console.error(e);
-        res.status(500).send(e);
-      }
-    });
-    /**
-     * Return the name of a collection and a list of it's abstracts
-     */
-    router.get('/collections/:name/meta', async (req, res) => {
-      try {
-        const collectionMeta = await LearningObjectInteractor.fetchCollectionMeta(
-          this.dataStore,
-          req.params.name,
-        );
-        res.status(200).send(collectionMeta);
-      } catch (e) {
-        console.error(e);
-        res.status(500).send(e);
-      }
-    });
+    initializeCollectionRouter({ router, dataStore: this.dataStore });
+
     router.get('/users/:username/learning-objects', async (req, res) => {
       try {
         const objects = await LearningObjectInteractor.loadLearningObjectSummary(
@@ -226,7 +165,7 @@ export class ExpressRouteDriver {
             dataStore: this.dataStore,
             library: this.library,
             username: req.params.username,
-            accessUnpublished: true,
+            accessUnpublished: false,
             loadChildren: true,
           },
         );
