@@ -760,14 +760,9 @@ export class LearningObjectInteractor {
    *
    * @private
    * @static
-   * @param {({
-   *     userToken: UserToken;
-   *     resourceVal: any;
-   *     authFunction: (
-   *       resourceVal: any,
-   *       userToken: UserToken,
-   *     ) => boolean | Promise<boolean>;
-   *   })} params
+   * @param {UserToken} params.userToken [Object containing information about the user requesting the resource]
+   * @param {any} params.resourceVal [Resource value to run auth function against]
+   * @param {Function} params.authFunction [Function used to check if user has ownership over resource]
    * @returns {Promise<boolean>}
    * @memberof LearningObjectInteractor
    */
