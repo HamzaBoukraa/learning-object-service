@@ -1,12 +1,13 @@
-import { LearningObject, Collection, User, Material } from '@cyber4all/clark-entity';
-import { MultipartFileUploadStatus, CompletedPart } from './FileManager';
-import { LearningObjectLock } from '@cyber4all/clark-entity/dist/learning-object';
-import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
-import { LearningObjectUpdates } from '../types';
-import { LearningOutcomeDatastore } from '../LearningOutcomes/LearningOutcomeInteractor';
-import { LearningObjectStatDatastore } from '../LearningObjectStats/LearningObjectStatsInteractor';
+import {Collection, LearningObject, Material, User} from '@cyber4all/clark-entity';
+import {CompletedPart, MultipartFileUploadStatus} from './FileManager';
+import {LearningObjectLock} from '@cyber4all/clark-entity/dist/learning-object';
+import {LearningObjectFile} from '../interactors/LearningObjectInteractor';
+import {LearningObjectUpdates} from '../types';
+import {LearningOutcomeDatastore} from '../LearningOutcomes/LearningOutcomeInteractor';
+import {LearningObjectStatDatastore} from '../LearningObjectStats/LearningObjectStatsInteractor';
+import {CollectionDataStore} from '../Collections/CollectionDataStore';
 
-export interface DataStore extends LearningOutcomeDatastore, LearningObjectStatDatastore {
+export interface DataStore extends LearningOutcomeDatastore, LearningObjectStatDatastore, CollectionDataStore {
   connect(dburi: string): Promise<void>;
   disconnect(): void;
   insertLearningObject(object: LearningObject): Promise<string>;
@@ -52,10 +53,6 @@ export interface DataStore extends LearningOutcomeDatastore, LearningObjectStatD
     limit?: number;
     released?: boolean;
   }): Promise<{ objects: LearningObject[]; total: number }>;
-  fetchCollections(loadObjects?: boolean): Promise<Collection[]>;
-  fetchCollection(name: string): Promise<Collection>;
-  fetchCollectionMeta(name: string): Promise<any>;
-  fetchCollectionObjects(name: string): Promise<LearningObject[]>;
   togglePublished(
     username: string,
     id: string,
