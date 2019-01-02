@@ -87,5 +87,4 @@ export function initialize({
     .get(getLearningOutcome)
     .patch(updateLearningOutcome)
     .delete(deleteLearningOutcome);
-  return router;
 }

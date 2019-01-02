@@ -178,14 +178,16 @@ export class ExpressRouteDriver {
 
     initializePublicLearningObjectRouter({ router, dataStore: this.dataStore });
 
-    initializeSingleFileDownloadRouter(router, this.dataStore, this.fileManager);
+    initializeSingleFileDownloadRouter({
+      router,
+      dataStore: this.dataStore,
+      fileManager: this.fileManager,
+    });
 
-    router.use(
-      '/learning-objects/stats',
-      LearningObjectStatsRouteHandler.initialize({
-        dataStore: this.dataStore,
-        library: this.library,
-      }),
-    );
+    LearningObjectStatsRouteHandler.initialize({
+      router,
+      dataStore: this.dataStore,
+      library: this.library,
+    });
   }
 }
