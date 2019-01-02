@@ -10,7 +10,7 @@ import { LearningObjectError } from '../errors';
  * Initializes an express router with endpoints for public Retrieving
  * a Learning Object.
  */
-export function initializePublicLearningObjectRouter({ router, dataStore }: { router: Router, dataStore: DataStore }) {
+export function initializePublic({ router, dataStore }: { router: Router, dataStore: DataStore }) {
 
   /**
    * Retrieve a learning object by a specified ID
@@ -52,7 +52,7 @@ export function initializePublicLearningObjectRouter({ router, dataStore }: { ro
  * }
  * @returns
  */
-export function initializePrivateLearningObjectRouter({
+export function initializePrivate({
   router,
   dataStore,
   fileManager,

@@ -14,6 +14,7 @@ export function initialize({
   router: Router,
   dataStore: LearningOutcomeInteractor.LearningOutcomeDatastore;
 }) {
+
   const addLearningOutcome = async (req: Request, res: Response) => {
     try {
       const user: UserToken = req.user;
@@ -31,6 +32,7 @@ export function initialize({
       res.status(500).send(e);
     }
   };
+
   const getLearningOutcome = async (req: Request, res: Response) => {
     try {
       const user: UserToken = req.user;
@@ -48,6 +50,7 @@ export function initialize({
       res.status(500).send(e);
     }
   };
+
   const updateLearningOutcome = async (req: Request, res: Response) => {
     try {
       const user: UserToken = req.user;
@@ -65,6 +68,7 @@ export function initialize({
       res.status(500).send(e);
     }
   };
+
   const deleteLearningOutcome = async (req: Request, res: Response) => {
     try {
       const user: UserToken = req.user;
@@ -81,7 +85,7 @@ export function initialize({
     }
   };
 
-  router.route('/yeet/learning-objects/:id/learning-outcomes').post(addLearningOutcome);
+  router.route('/learning-objects/:id/learning-outcomes').post(addLearningOutcome);
   router
     .route('/learning-objects/:id/learning-outcomes/:outcomeId')
     .get(getLearningOutcome)

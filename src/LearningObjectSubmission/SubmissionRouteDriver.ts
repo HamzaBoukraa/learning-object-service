@@ -20,22 +20,33 @@ export function initialize({
 }) {
   async function submit(req: Request, res: Response) {
     try {
-      const id = req.body.id;
+      const id = req.params.learningObjectId;
       const username = req.user.username;
+      const collection = req.body.collection;
 
-      await submitForReview(dataStore, username, id);
+      await submitForReview(
+        dataStore,
+        username,
+        id,
+        collection
+      );
+
       res.sendStatus(200);
     } catch (e) {
       console.error(e);
       res.status(500).send(e);
     }
   }
+
   async function cancel(req: Request, res: Response) {
     try {
-      const id = req.body.id;
+      const id = req.params.learningObjectId;
       const username = req.user.username;
-
-      await cancelSubmission(dataStore, username, id);
+      
+      await cancelSubmission(
+        dataStore,
+        id,
+      );
       res.sendStatus(200);
     } catch (e) {
       if (e instanceof Error) {
@@ -46,6 +57,9 @@ export function initialize({
       }
     }
   }
-  router.post('/learning-objects/submission', submit);
-  router.delete('/learning-objects/submission', cancel);
+
+
+  router.post('/learning-objects/:learningObjectId/submission', submit);
+  router.delete('/learning-objects/:learningObjectId/submission', cancel);
+
 }

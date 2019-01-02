@@ -16,38 +16,57 @@ const ERROR_MESSAGE = {
 export class SubmissionDatastore {
   constructor(private db: Db) {}
 
-  public async togglePublished(
+  public async submitLearningObjectToCollection(
     username: string,
     id: string,
-    published: boolean,
+    collection: string
   ): Promise<void> {
     try {
       const user = await this.fetchUser(username);
 
       // check if user is verified and if user is attempting to publish. If not verified and attempting to publish reject
-      if (!user.emailVerified && published)
+      if (!user.emailVerified) {
         return Promise.reject(ERROR_MESSAGE.INVALID_ACCESS);
+      }
+
       // else
       const object: { lock: LearningObjectLock } = await this.db
         .collection(COLLECTIONS.LEARNING_OBJECTS)
         .findOne({ _id: id }, { projection: { _id: 0, lock: 1 } });
+
       if (this.objectHasRestrictions(object.lock)) {
         return Promise.reject(ERROR_MESSAGE.RESTRICTED);
       }
+
       await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).update(
         { _id: id },
         {
           $set: {
-            published: published,
-            status: published ? 'waiting' : 'unpublished',
+            published: true,
+            status: 'waiting',
+            collection
           },
         },
       );
+      
       return Promise.resolve();
     } catch (e) {
       return Promise.reject(e);
     }
   }
+
+  public async unsubmitLearningObject(id: string): Promise<void> {
+    await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).findOneAndUpdate(
+      { _id: id },
+      {
+        $set: {
+          published: false,
+          status: 'unpublished'
+        }
+      }
+    );
+  }
+
   private objectHasRestrictions(lock: LearningObjectLock) {
     return (
       lock &&
@@ -55,12 +74,14 @@ export class SubmissionDatastore {
         lock.restrictions.indexOf(Restriction.PUBLISH) > -1)
     );
   }
+
   // TODO: Should this be an external helper?
   async fetchUser(username: string): Promise<User> {
     const doc = await this.fetchUserDocument(username);
     const user = ObjectMapper.generateUser(doc);
     return user;
   }
+
   private async fetchUserDocument(username: string): Promise<UserDocument> {
     const record = await this.db
       .collection(COLLECTIONS.USERS)

@@ -53,11 +53,12 @@ export interface DataStore extends LearningOutcomeDatastore, LearningObjectStatD
     limit?: number;
     released?: boolean;
   }): Promise<{ objects: LearningObject[]; total: number }>;
-  togglePublished(
+  submitLearningObjectToCollection(
     username: string,
     id: string,
-    published: boolean,
+    collection: string
   ): Promise<void>;
+  unsubmitLearningObject(id: string): Promise<void>;
   setChildren(parentId: string, children: string[]): Promise<void>;
   deleteChild(parentId: string, childId: string): Promise<void>;
   findParentObjects(params: {
