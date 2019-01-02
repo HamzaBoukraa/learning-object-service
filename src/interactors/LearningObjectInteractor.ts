@@ -6,11 +6,12 @@ import {
 import { LearningObject } from '@cyber4all/clark-entity';
 // @ts-ignore
 import * as stopword from 'stopword';
-import { LearningObjectQuery } from '../interfaces/DataStore';
-import { File, Metrics } from '@cyber4all/clark-entity/dist/learning-object';
-import { DZFile, FileUpload } from '../interfaces/FileManager';
-import { processMultipartUpload } from '../FileManager/FileInteractor';
 import { UserToken } from '../types';
+import {LearningObjectQuery} from '../interfaces/DataStore';
+import {File, Metrics} from '@cyber4all/clark-entity/dist/learning-object';
+import {DZFile, FileUpload} from '../interfaces/FileManager';
+import {processMultipartUpload} from '../FileManager/FileInteractor';
+
 // TODO: Update File in clark-entity
 export interface LearningObjectFile extends File {
   packageable: boolean;
@@ -661,50 +662,6 @@ export class LearningObjectInteractor {
       return response;
     } catch (e) {
       return Promise.reject(`Problem suggesting Learning Objects. Error:${e}`);
-    }
-  }
-
-  public static async fetchCollections(dataStore: DataStore): Promise<any> {
-    try {
-      return await dataStore.fetchCollections();
-    } catch (e) {
-      console.error(e);
-      return Promise.reject(`Problem fetching collections. Error: ${e}`);
-    }
-  }
-
-  public static async fetchCollection(
-    dataStore: DataStore,
-    name: string,
-  ): Promise<any> {
-    try {
-      return await dataStore.fetchCollection(name);
-    } catch (e) {
-      return Promise.reject(`Problem fetching collection. Error: ${e}`);
-    }
-  }
-
-  public static async fetchCollectionMeta(
-    dataStore: DataStore,
-    name: string,
-  ): Promise<any> {
-    try {
-      return await dataStore.fetchCollectionMeta(name);
-    } catch (e) {
-      return Promise.reject(
-        `Problem fetching collection metadata. Error: ${e}`,
-      );
-    }
-  }
-
-  public static async fetchCollectionObjects(
-    dataStore: DataStore,
-    name: string,
-  ): Promise<any> {
-    try {
-      return await dataStore.fetchCollectionObjects(name);
-    } catch (e) {
-      return Promise.reject(`Problem fetching collection objects. Error: ${e}`);
     }
   }
 

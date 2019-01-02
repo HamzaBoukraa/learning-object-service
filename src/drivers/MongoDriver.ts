@@ -1,45 +1,19 @@
-import { MongoClient, Db, ObjectID, Cursor } from 'mongodb';
-import { DataStore } from '../interfaces/interfaces';
-import {
-  LearningObject,
-  LearningOutcome,
-  User,
-  AcademicLevel,
-} from '@cyber4all/clark-entity';
-import {
-  LearningObjectDocument,
-  LearningOutcomeDocument,
-  UserDocument,
-  StandardOutcomeDocument,
-} from '@cyber4all/clark-schema';
-import {
-  LearningObjectCollection,
-  LearningObjectQuery,
-  Filters,
-} from '../interfaces/DataStore';
-import {
-  MultipartFileUploadStatus,
-  MultipartFileUploadStatusUpdates,
-  CompletedPart,
-} from '../interfaces/FileManager';
-import {
-  LearningObjectLock,
-  Restriction,
-  Material,
-} from '@cyber4all/clark-entity/dist/learning-object';
-import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
-import { reportError } from './SentryConnector';
+import {Cursor, Db, MongoClient, ObjectID} from 'mongodb';
+import {DataStore} from '../interfaces/interfaces';
+import {AcademicLevel, LearningObject, LearningOutcome, User,} from '@cyber4all/clark-entity';
+import {LearningObjectDocument, LearningOutcomeDocument, StandardOutcomeDocument, UserDocument,} from '@cyber4all/clark-schema';
+import {Filters, LearningObjectCollection, LearningObjectQuery,} from '../interfaces/DataStore';
+import {CompletedPart, MultipartFileUploadStatus,} from '../interfaces/FileManager';
+import {LearningObjectLock, Material, Restriction,} from '@cyber4all/clark-entity/dist/learning-object';
+import {LearningObjectFile} from '../interactors/LearningObjectInteractor';
+import {reportError} from './SentryConnector';
 import * as ObjectMapper from './Mongo/ObjectMapper';
-import { SubmissionDatastore } from '../LearningObjectSubmission/SubmissionDatastore';
-import { LearningObjectUpdates } from '../types';
-import { LearningOutcomeMongoDatastore } from '../LearningOutcomes/LearningOutcomeMongoDatastore';
-import {
-  LearningOutcomeInput,
-  LearningOutcomeInsert,
-  LearningOutcomeUpdate,
-} from '../LearningOutcomes/types';
-import { LearningObjectStatStore } from '../LearningObjectStats/LearningObjectStatStore';
-import { LearningObjectStats } from '../LearningObjectStats/LearningObjectStatsInteractor';
+import {SubmissionDatastore} from '../LearningObjectSubmission/SubmissionDatastore';
+import {LearningObjectUpdates} from '../types';
+import {LearningOutcomeMongoDatastore} from '../LearningOutcomes/LearningOutcomeMongoDatastore';
+import {LearningOutcomeInput, LearningOutcomeInsert, LearningOutcomeUpdate,} from '../LearningOutcomes/types';
+import {LearningObjectStatStore} from '../LearningObjectStats/LearningObjectStatStore';
+import {LearningObjectStats} from '../LearningObjectStats/LearningObjectStatsInteractor';
 
 export enum COLLECTIONS {
   USERS = 'users',
@@ -1321,23 +1295,6 @@ export class MongoDriver implements DataStore {
         .collection(COLLECTIONS.LO_COLLECTIONS)
         .findOne({ name }, <any>{ name: 1, abstracts: 1 });
       return meta;
-    } catch (e) {
-      return Promise.reject(e);
-    }
-  }
-
-  async fetchCollectionObjects(name: string): Promise<LearningObject[]> {
-    try {
-      const collection: any = await this.db
-        .collection(COLLECTIONS.LO_COLLECTIONS)
-        .findOne({ name }, <any>{ learningObjects: 1 });
-      const objects = await Promise.all(
-        collection.learningObjects.map((id: string) => {
-          return this.fetchLearningObject(id, false, false);
-        }),
-      );
-      collection.learningObjects = objects;
-      return collection;
     } catch (e) {
       return Promise.reject(e);
     }
