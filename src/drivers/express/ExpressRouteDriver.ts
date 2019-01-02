@@ -5,6 +5,7 @@ import {LearningObject} from '@cyber4all/clark-entity';
 import * as TokenManager from '../TokenManager';
 import {LearningObjectQuery} from '../../interfaces/DataStore';
 import * as LearningObjectStatsRouteHandler from '../../LearningObjectStats/LearningObjectStatsRouteHandler';
+import { UserToken } from '../../types';
 import { initializeSingleFileDownloadRouter } from '../../SingleFileDownload/RouteHandler';
 import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler'
 import {initializeCollectionRouter} from '../../Collections/RouteHandler';
@@ -160,13 +161,15 @@ export class ExpressRouteDriver {
 
     router.get('/users/:username/learning-objects', async (req, res) => {
       try {
+        const userToken: UserToken = req.user;
+        const loadChildren: boolean = req.query.children;
         const objects = await LearningObjectInteractor.loadLearningObjectSummary(
           {
+            userToken,
+            loadChildren,
             dataStore: this.dataStore,
             library: this.library,
             username: req.params.username,
-            accessUnpublished: false,
-            loadChildren: true,
           },
         );
         res.status(200).send(objects);

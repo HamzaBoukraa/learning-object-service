@@ -1,7 +1,12 @@
-import {DataStore, FileManager, LibraryCommunicator} from '../interfaces/interfaces';
-import {LearningObject} from '@cyber4all/clark-entity';
+import {
+  DataStore,
+  FileManager,
+  LibraryCommunicator,
+} from '../interfaces/interfaces';
+import { LearningObject } from '@cyber4all/clark-entity';
 // @ts-ignore
 import * as stopword from 'stopword';
+import { UserToken } from '../types';
 import {LearningObjectQuery} from '../interfaces/DataStore';
 import {File, Metrics} from '@cyber4all/clark-entity/dist/learning-object';
 import {DZFile, FileUpload} from '../interfaces/FileManager';
@@ -32,38 +37,36 @@ export class LearningObjectInteractor {
     dataStore: DataStore;
     library: LibraryCommunicator;
     username: string;
+    userToken: UserToken;
     accessUnpublished?: boolean;
     loadChildren?: boolean;
     query?: LearningObjectQuery;
   }): Promise<LearningObject[]> {
     try {
+      // Set accessUnpublished
+      let accessUnpublished = params.accessUnpublished;
+
+      // If accessUnpublished is unset, set equal to the result of the hasOwnership function
+      if (accessUnpublished === undefined || accessUnpublished === null) {
+        accessUnpublished = await this.hasOwnership({
+          userToken: params.userToken,
+          resourceVal: params.username,
+          authFunction: (username: string, userToken: UserToken) => {
+            return userToken.username === username;
+          },
+        });
+      }
+
       let summary: LearningObject[] = [];
-      if (
-        params.query &&
-        (params.query.name ||
-          params.query.length ||
-          params.query.level ||
-          params.query.standardOutcomeIDs ||
-          params.query.orderBy ||
-          params.query.sortType ||
-          params.query.collection ||
-          params.query.status ||
-          params.query.text)
-      ) {
-        const level = params.query.level
-          ? Array.isArray(params.query.level)
-            ? params.query.level
-            : [params.query.level]
-          : undefined;
+
+      // Perform search on objects
+      if (params.query && Object.keys(params.query).length) {
+        const level = params.query.level ? [...params.query.level] : undefined;
         const length = params.query.length
-          ? Array.isArray(params.query.length)
-            ? params.query.length
-            : [params.query.length]
+          ? [...params.query.length]
           : undefined;
         const status = params.query.status
-          ? Array.isArray(params.query.status)
-            ? params.query.status
-            : [params.query.status]
+          ? [...params.query.status]
           : undefined;
         const response = await this.searchObjects(
           params.dataStore,
@@ -77,7 +80,7 @@ export class LearningObjectInteractor {
             level,
             standardOutcomeIDs: params.query.standardOutcomeIDs,
             text: params.query.text,
-            accessUnpublished: params.accessUnpublished,
+            accessUnpublished,
             orderBy: params.query.orderBy,
             sortType: params.query.sortType,
             currPage: params.query.page,
@@ -92,12 +95,28 @@ export class LearningObjectInteractor {
         summary = await params.dataStore.fetchMultipleObjects(
           objectIDs,
           false,
-          params.accessUnpublished,
+          accessUnpublished,
           params.query ? params.query.orderBy : null,
           params.query ? params.query.sortType : null,
         );
+        // Load object metrics
+        summary = await Promise.all(
+          summary.map(async object => {
+            try {
+              object.metrics = await this.loadMetrics(
+                params.library,
+                object.id,
+              );
+              return object;
+            } catch (e) {
+              console.log(e);
+              return object;
+            }
+          }),
+        );
       }
 
+      // Load children summaries
       if (params.loadChildren) {
         summary = await Promise.all(
           summary.map(async object => {
@@ -107,25 +126,13 @@ export class LearningObjectInteractor {
                 params.library,
                 object,
                 false,
-                params.accessUnpublished,
+                accessUnpublished,
               );
             }
             return object;
           }),
         );
       }
-
-      summary = await Promise.all(
-        summary.map(async object => {
-          try {
-            object.metrics = await this.loadMetrics(params.library, object.id);
-            return object;
-          } catch (e) {
-            console.log(e);
-            return object;
-          }
-        }),
-      );
 
       return summary;
     } catch (e) {
@@ -439,10 +446,7 @@ export class LearningObjectInteractor {
     learningObjectName: string,
   ): Promise<string> {
     try {
-      return await dataStore.findLearningObject(
-        username,
-        learningObjectName,
-      );
+      return await dataStore.findLearningObject(username, learningObjectName);
     } catch (e) {
       return Promise.reject(`Problem finding LearningObject. Error: ${e}`);
     }
@@ -488,11 +492,7 @@ export class LearningObjectInteractor {
     limit: number,
   ): Promise<{ objects: LearningObject[]; total: number }> {
     try {
-      const response = await dataStore.fetchAllObjects(
-        false,
-        currPage,
-        limit,
-      );
+      const response = await dataStore.fetchAllObjects(false, currPage, limit);
       response.objects = await Promise.all(
         response.objects.map(async object => {
           try {
@@ -710,6 +710,31 @@ export class LearningObjectInteractor {
     } catch (e) {
       return Promise.reject(`Problem removing child. Error: ${e}`);
     }
+  }
+
+  /**
+   * Uses passed authorization function to check if user has access to a resource
+   *
+   * @private
+   * @static
+   * @param {UserToken} params.userToken [Object containing information about the user requesting the resource]
+   * @param {any} params.resourceVal [Resource value to run auth function against]
+   * @param {Function} params.authFunction [Function used to check if user has ownership over resource]
+   * @returns {Promise<boolean>}
+   * @memberof LearningObjectInteractor
+   */
+  private static async hasOwnership(params: {
+    userToken: UserToken;
+    resourceVal: any;
+    authFunction: (
+      resourceVal: any,
+      userToken: UserToken,
+    ) => boolean | Promise<boolean>;
+  }): Promise<boolean> {
+    if (!params.userToken) {
+      return false;
+    }
+    return params.authFunction(params.resourceVal, params.userToken);
   }
   /**
    * Fetches Metrics for Learning Object

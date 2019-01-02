@@ -42,7 +42,7 @@ export function initialize({
     try {
       const id = req.params.learningObjectId;
       const username = req.user.username;
-
+      
       await cancelSubmission(
         dataStore,
         id,
@@ -58,8 +58,8 @@ export function initialize({
     }
   }
 
+
   router.post('/learning-objects/:learningObjectId/submission', submit);
   router.delete('/learning-objects/:learningObjectId/submission', cancel);
 
-  return router;
 }

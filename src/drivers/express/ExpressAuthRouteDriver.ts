@@ -96,6 +96,7 @@ export class ExpressAuthRouteDriver {
         res.status(500).send(e);
       }
     });
+
     router.patch(
       '/learning-objects/:learningObjectId/collections',
       async (req, res) => {
