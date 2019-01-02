@@ -11,8 +11,13 @@ import { DataStore } from '../interfaces/DataStore';
  * a new router.
  * @param dataStore
  */
-export function initialize(router: Router, dataStore: DataStore) {
-
+export function initialize({
+  router,
+  dataStore,
+}: {
+  router: Router;
+  dataStore: DataStore;
+}) {
   async function submit(req: Request, res: Response) {
     try {
       const id = req.params.learningObjectId;

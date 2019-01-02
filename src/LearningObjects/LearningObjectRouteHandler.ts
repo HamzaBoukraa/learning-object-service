@@ -152,6 +152,4 @@ export function initializePrivate({
   router.patch('/learning-objects/:id', updateLearningObject);
   router.get('/learning-objects/:id/materials/all', getMaterials);
   router.delete('/learning-objects/:learningObjectName', deleteLearningObject);
-
-  return router;
 }
