@@ -43,17 +43,18 @@ export class LearningObjectInteractor {
   }): Promise<LearningObject[]> {
     try {
       // Set accessUnpublished
-      const accessUnpublished =
-        params.accessUnpublished !== undefined &&
-        params.accessUnpublished !== null
-          ? params.accessUnpublished
-          : await this.hasOwnership({
-              userToken: params.userToken,
-              resourceVal: params.username,
-              authFunction: (username: string, userToken: UserToken) => {
-                return userToken.username === username;
-              },
-            });
+      let accessUnpublished = params.accessUnpublished;
+
+      // If accessUnpublished is unset, set equal to the result of the hasOwnership function
+      if (accessUnpublished === undefined || accessUnpublished === null) {
+        accessUnpublished = await this.hasOwnership({
+          userToken: params.userToken,
+          resourceVal: params.username,
+          authFunction: (username: string, userToken: UserToken) => {
+            return userToken.username === username;
+          },
+        });
+      }
 
       let summary: LearningObject[] = [];
 
