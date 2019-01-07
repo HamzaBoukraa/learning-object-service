@@ -175,11 +175,13 @@ export class LearningObjectInteractor {
         const children = await this.loadChildObjects(
           dataStore,
           library,
-          learningObject.childrens,
+          learningObject.children,
           fullChildren,
           accessUnpublished,
         );
-        children.forEach(child => learningObject.addChild(child));
+        children.forEach((child: LearningObject) =>
+          learningObject.addChild(child),
+        );
       }
 
       try {
