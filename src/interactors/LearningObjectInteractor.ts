@@ -169,8 +169,6 @@ export class LearningObjectInteractor {
         accessUnpublished,
       );
 
-      learningObject.id = learningObjectID;
-
       if (learningObject.children && learningObject.children.length) {
         const children = await this.loadChildObjects(
           dataStore,
@@ -635,6 +633,7 @@ export class LearningObjectInteractor {
           params.text = this.removeStopwords(params.text);
         }
       }
+
       const response = await dataStore.searchObjects({
         name: params.name,
         author: params.author,
