@@ -3,7 +3,6 @@ import { LearningObjectInteractor } from '../interactors/interactors';
 import { DataStore } from '../interfaces/DataStore';
 import { FileManager, LibraryCommunicator } from '../interfaces/interfaces';
 import { generatePDF } from './PDFKitDriver';
-import { LearningObjectPDF, Restriction } from '@cyber4all/clark-entity/dist/learning-object';
 import {
   LearningObjectUpdates,
   UserToken,
@@ -34,25 +33,27 @@ export async function addLearningObject(
 ): Promise<LearningObject> {
   const err = LearningObjectInteractor.validateLearningObject(object);
 
-  await checkNameExists({ dataStore, username: user.username, name: object.name });
+  await checkNameExists({
+    dataStore,
+    username: user.username,
+    name: object.name,
+  });
 
   try {
     if (err) {
       return Promise.reject(err);
     } else {
       const authorID = await dataStore.findUser(user.username);
-      object.author.username = user.username;
       const author = await dataStore.fetchUser(authorID);
       if (!author.emailVerified) {
         object.unpublish();
       }
-      if (!object.goals || !object.goals.length) {
-        object.goals = [{ text: '' }];
-      }
       object.lock = {
-        restrictions: [Restriction.DOWNLOAD],
+        restrictions: [LearningObject.Restriction.DOWNLOAD],
       };
-      const learningObjectID = await dataStore.insertLearningObject(object);
+      const learningObjectID = await dataStore.insertLearningObject(
+        new LearningObject({ ...object, author }),
+      );
       object.id = learningObjectID;
 
       // Generate PDF and update Learning Object with PDF meta.
@@ -448,8 +449,6 @@ async function checkNameExists(params: {
   });
   // @ts-ignore typescript doesn't think a .id property should exist on the existing object
   if (existing && params.id !== existing.id) {
-    throw new Error(
-      LearningObjectError.DUPLICATE_NAME(params.name),
-    );
+    throw new Error(LearningObjectError.DUPLICATE_NAME(params.name));
   }
 }

@@ -1,12 +1,8 @@
-import { User, Collection } from '@cyber4all/clark-entity';
+import { User, Collection, LearningObject } from '@cyber4all/clark-entity';
 import { COLLECTIONS } from '../drivers/MongoDriver';
 import { Db } from 'mongodb';
 import { UserDocument } from '@cyber4all/clark-schema';
 import * as ObjectMapper from '../drivers/Mongo/ObjectMapper';
-import {
-  Restriction,
-  LearningObjectLock,
-} from '@cyber4all/clark-entity/dist/learning-object';
 
 const ERROR_MESSAGE = {
   INVALID_ACCESS: `Invalid access. User must be verified to publish Learning Objects`,
@@ -19,7 +15,7 @@ export class SubmissionDatastore {
   public async submitLearningObjectToCollection(
     username: string,
     id: string,
-    collection: string
+    collection: string,
   ): Promise<void> {
     try {
       const user = await this.fetchUser(username);
@@ -30,7 +26,7 @@ export class SubmissionDatastore {
       }
 
       // else
-      const object: { lock: LearningObjectLock } = await this.db
+      const object: { lock: LearningObject.Lock } = await this.db
         .collection(COLLECTIONS.LEARNING_OBJECTS)
         .findOne({ _id: id }, { projection: { _id: 0, lock: 1 } });
 
@@ -44,11 +40,11 @@ export class SubmissionDatastore {
           $set: {
             published: true,
             status: 'waiting',
-            collection
+            collection,
           },
         },
       );
-      
+
       return Promise.resolve();
     } catch (e) {
       return Promise.reject(e);
@@ -61,17 +57,17 @@ export class SubmissionDatastore {
       {
         $set: {
           published: false,
-          status: 'unpublished'
-        }
-      }
+          status: 'unpublished',
+        },
+      },
     );
   }
 
-  private objectHasRestrictions(lock: LearningObjectLock) {
+  private objectHasRestrictions(lock: LearningObject.Lock) {
     return (
       lock &&
-      (lock.restrictions.indexOf(Restriction.FULL) > -1 ||
-        lock.restrictions.indexOf(Restriction.PUBLISH) > -1)
+      (lock.restrictions.indexOf(LearningObject.Restriction.FULL) > -1 ||
+        lock.restrictions.indexOf(LearningObject.Restriction.PUBLISH) > -1)
     );
   }
 

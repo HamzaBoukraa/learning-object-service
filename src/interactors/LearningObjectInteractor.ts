@@ -7,15 +7,9 @@ import { LearningObject } from '@cyber4all/clark-entity';
 // @ts-ignore
 import * as stopword from 'stopword';
 import { UserToken } from '../types';
-import {LearningObjectQuery} from '../interfaces/DataStore';
-import {File, Metrics} from '@cyber4all/clark-entity/dist/learning-object';
-import {DZFile, FileUpload} from '../interfaces/FileManager';
-import {processMultipartUpload} from '../FileManager/FileInteractor';
-
-// TODO: Update File in clark-entity
-export interface LearningObjectFile extends File {
-  packageable: boolean;
-}
+import { LearningObjectQuery } from '../interfaces/DataStore';
+import { DZFile, FileUpload } from '../interfaces/FileManager';
+import { processMultipartUpload } from '../FileManager/FileInteractor';
 
 // file size is in bytes
 const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
@@ -304,7 +298,7 @@ export class LearningObjectInteractor {
       error = 'Learning Object name cannot be empty.';
     } else if (object.published && !object.outcomes.length) {
       error = 'Learning Object must have outcomes to submit for review.';
-    } else if (object.published && !object.goals[0].text) {
+    } else if (object.published && !object.description) {
       error = 'Learning Object must have a description to submit for review.';
     }
     return error;
@@ -321,7 +315,7 @@ export class LearningObjectInteractor {
    *     username: string,
    *     file: DZFile
    *   }} params
-   * @returns {Promise<LearningObjectFile>}
+   * @returns {Promise<LearningObject.Material.File>}
    */
   public static async uploadFile(params: {
     dataStore: DataStore;
@@ -330,9 +324,9 @@ export class LearningObjectInteractor {
     username: string;
     file: DZFile;
     uploadId: string;
-  }): Promise<LearningObjectFile> {
+  }): Promise<LearningObject.Material.File> {
     try {
-      let loFile: LearningObjectFile;
+      let loFile: LearningObject.Material.File;
       const uploadPath = `${params.username}/${params.id}/${
         params.file.fullPath ? params.file.fullPath : params.file.name
       }`;
@@ -355,7 +349,7 @@ export class LearningObjectInteractor {
         const url = await params.fileManager.upload({ file: fileUpload });
         loFile = this.generateLearningObjectFile(params.file, url);
       }
-      // If LearningObjectFile was generated, update LearningObject's materials
+      // If LearningObject.Material.File was generated, update LearningObject's materials
       if (loFile) {
         // FIXME should be implemented in clark entity
         // @ts-ignore
@@ -389,7 +383,7 @@ export class LearningObjectInteractor {
     url: string;
   }): Promise<void> {
     try {
-      let loFile: LearningObjectFile = this.generateLearningObjectFile(
+      let loFile: LearningObject.Material.File = this.generateLearningObjectFile(
         params.fileMeta,
         params.url,
       );
@@ -404,21 +398,21 @@ export class LearningObjectInteractor {
   }
 
   /**
-   * Inserts metadata for file as LearningObjectFile
+   * Inserts metadata for file as LearningObject.Material.File
    *
    * @private
    * @static
    * @param {{
    *     dataStore: DataStore,
    *     id: string,
-   *     loFile: LearningObjectFile,
+   *     loFile: LearningObject.Material.File,
    *   }} params
    * @returns {Promise<void>}
    */
   private static async updateMaterials(params: {
     dataStore: DataStore;
     id: string;
-    loFile: LearningObjectFile;
+    loFile: LearningObject.Material.File;
   }): Promise<void> {
     try {
       return await params.dataStore.addToFiles({
@@ -743,12 +737,12 @@ export class LearningObjectInteractor {
    * @static
    * @param library the gateway to library data
    * @param {string} objectID
-   * @returns {Promise<Metrics>}
+   * @returns {Promise<LearningObject.Metrics>}
    */
   private static async loadMetrics(
     library: LibraryCommunicator,
     objectID: string,
-  ): Promise<Metrics> {
+  ): Promise<LearningObject.Metrics> {
     try {
       return library.getMetrics(objectID);
     } catch (e) {
@@ -774,7 +768,7 @@ export class LearningObjectInteractor {
   }
 
   /**
-   * Generates new LearningObjectFile Object
+   * Generates new LearningObject.Material.File Object
    *
    * @private
    * @param {DZFile} file
@@ -784,7 +778,7 @@ export class LearningObjectInteractor {
   private static generateLearningObjectFile(
     file: DZFile,
     url: string,
-  ): LearningObjectFile {
+  ): LearningObject.Material.File {
     const extMatch = file.name.match(/(\.[^.]*$|$)/);
     const extension = extMatch ? extMatch[0] : '';
     const date = Date.now().toString();

@@ -1,13 +1,16 @@
 import { DataStore, LearningObjectQuery } from '../../interfaces/DataStore';
 import { LearningObject, Collection } from '@cyber4all/clark-entity';
-import { LearningObjectLock } from '@cyber4all/clark-entity/dist/learning-object';
-import { LearningObjectFile } from '../../interactors/LearningObjectInteractor';
 import {
   MultipartFileUploadStatus,
   MultipartFileUploadStatusUpdates,
   CompletedPart,
 } from '../../interfaces/FileManager';
-import { MOCK_OBJECTS, SUBMITTABLE_LEARNING_OBJECT, INVALID_LEARNING_OBJECTS } from '../mocks';
+import {
+  MOCK_OBJECTS,
+  SUBMITTABLE_LEARNING_OBJECT,
+  INVALID_LEARNING_OBJECTS,
+} from '../mocks';
+import { LearningObjectUpdates } from '../../types';
 
 const COLLECTIONS = {
   LEARNING_OBJECTS: 'objects',
@@ -16,7 +19,6 @@ const COLLECTIONS = {
 };
 
 export class MockDataStore implements DataStore {
-
   connect(file: string): Promise<void> {
     return Promise.resolve();
   }
@@ -29,22 +31,18 @@ export class MockDataStore implements DataStore {
     return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT_ID);
   }
 
-  reorderOutcome(
-    id: string,
-    outcomeID: string,
-    index: number,
-  ): Promise<void> {
+  reorderOutcome(id: string, outcomeID: string, index: number): Promise<void> {
     return Promise.resolve();
   }
 
-  editLearningObject(
-    id: string,
-    object: LearningObject,
-  ): Promise<void> {
+  editLearningObject(params: {
+    id: string;
+    updates: LearningObjectUpdates;
+  }): Promise<void> {
     return Promise.resolve();
   }
 
-  toggleLock(id: string, lock?: LearningObjectLock): Promise<void> {
+  toggleLock(id: string, lock?: LearningObject.Lock): Promise<void> {
     return Promise.resolve();
   }
 
@@ -95,24 +93,30 @@ export class MockDataStore implements DataStore {
     page?: number,
     limit?: number,
   ): Promise<{ objects: any[]; total: number }> {
-    return Promise.resolve({ objects: [MOCK_OBJECTS.LEARNING_OBJECT], total: MOCK_OBJECTS.TOTAL_RECORDS });
+    return Promise.resolve({
+      objects: [MOCK_OBJECTS.LEARNING_OBJECT],
+      total: MOCK_OBJECTS.TOTAL_RECORDS,
+    });
   }
 
   searchObjects(params: {
-    name: string,
-    author: string,
-    collection: string,
-    length: string[],
-    level: string[],
-    standardOutcomeIDs: string[],
-    text: string,
-    accessUnpublished?: boolean,
-    orderBy?: string,
-    sortType?: number,
-    page?: number,
-    limit?: number,
+    name: string;
+    author: string;
+    collection: string;
+    length: string[];
+    level: string[];
+    standardOutcomeIDs: string[];
+    text: string;
+    accessUnpublished?: boolean;
+    orderBy?: string;
+    sortType?: number;
+    page?: number;
+    limit?: number;
   }): Promise<{ objects: any[]; total: number }> {
-    return Promise.resolve({ objects: [MOCK_OBJECTS.LEARNING_OBJECT], total: MOCK_OBJECTS.TOTAL_RECORDS });
+    return Promise.resolve({
+      objects: [MOCK_OBJECTS.LEARNING_OBJECT],
+      total: MOCK_OBJECTS.TOTAL_RECORDS,
+    });
   }
 
   fetchCollections(loadObjects?: boolean): Promise<Collection[]> {
@@ -134,14 +138,14 @@ export class MockDataStore implements DataStore {
   submitLearningObjectToCollection(
     username: string,
     id: string,
-    collection: string
+    collection: string,
   ): Promise<void> {
     return Promise.resolve();
   }
 
   unsubmitLearningObject(id: string): Promise<void> {
     return Promise.resolve();
-  };
+  }
 
   setChildren(parentId: string, children: string[]): Promise<void> {
     return Promise.resolve();
@@ -151,15 +155,13 @@ export class MockDataStore implements DataStore {
     return Promise.resolve();
   }
 
-  findParentObjects(params: {
-    query: LearningObjectQuery;
-  }): Promise<any[]> {
+  findParentObjects(params: { query: LearningObjectQuery }): Promise<any[]> {
     return Promise.resolve([MOCK_OBJECTS.LEARNING_OBJECT]);
   }
 
   addToFiles(params: {
     id: string;
-    loFile: LearningObjectFile;
+    loFile: LearningObject.Material.File;
   }): Promise<void> {
     return Promise.resolve();
   }
@@ -195,7 +197,7 @@ export class MockDataStore implements DataStore {
   findSingleFile(params: {
     learningObjectId: string;
     fileId: string;
-  }): Promise<LearningObjectFile> {
+  }): Promise<LearningObject.Material.File> {
     return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT_FILE);
   }
 }

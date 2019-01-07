@@ -121,7 +121,9 @@ export class MongoDriver implements DataStore {
     this.mongoClient.close();
   }
 
-  async getLearningObjectMaterials(params: { id: string }): Promise<Material> {
+  async getLearningObjectMaterials(params: {
+    id: string;
+  }): Promise<LearningObject.Material> {
     const doc = await this.db
       .collection(COLLECTIONS.LEARNING_OBJECTS)
       .findOne({ _id: params.id }, { projection: { materials: 1 } });
@@ -203,7 +205,7 @@ export class MongoDriver implements DataStore {
    */
   public async addToFiles(params: {
     id: string;
-    loFile: LearningObjectFile;
+    loFile: LearningObject.Material.File;
   }): Promise<void> {
     try {
       const existingDoc = await this.db
@@ -489,7 +491,7 @@ export class MongoDriver implements DataStore {
 
   public async toggleLock(
     id: string,
-    lock?: LearningObjectLock,
+    lock?: LearningObject.Lock,
   ): Promise<void> {
     try {
       const updates: any = {
@@ -1398,11 +1400,7 @@ export class MongoDriver implements DataStore {
         date: object.date,
         length: object.length,
         levels: object.levels,
-        goals: object.goals.map(goal => {
-          return {
-            text: goal.text,
-          };
-        }),
+        description: object.description,
         materials: object.materials,
         published: object.published,
         contributors: contributorIds,
@@ -1439,78 +1437,47 @@ export class MongoDriver implements DataStore {
     full?: boolean,
   ): Promise<LearningObject> {
     // Logic for loading any learning object
-    const learningObject = new LearningObject(author, record.name);
-    learningObject.id = record._id;
-    learningObject.date = record.date;
-    learningObject.length = record.length;
-    learningObject.levels = <AcademicLevel[]>record.levels;
-    learningObject.materials = <Material>record.materials;
+    const learningObject = new LearningObject({
+      id: record._id,
+      author,
+      name: record.name,
+      date: record.date,
+      length: record.length as LearningObject.Length,
+      levels: record.levels as LearningObject.Level[],
+      lock: record.lock as LearningObject.Lock,
+      collection: record.collection,
+      status: record.status,
+      description: record.description,
+      children: record.children,
+    });
     record.published ? learningObject.publish() : learningObject.unpublish();
-    learningObject.children = record.children;
-    learningObject.lock = record.lock;
-    learningObject.collection = record.collection;
-    learningObject.status = record.status;
     for (const goal of record.goals) {
-      learningObject.addGoal(goal.text);
+      learningObject.description += goal.text;
     }
     if (!full) {
       return learningObject;
     }
 
     // Logic for loading 'full' learning objects
+    learningObject.materials = <LearningObject.Material>record.materials;
 
     // Load Contributors
     if (record.contributors && record.contributors.length) {
-      learningObject.contributors = await Promise.all(
-        record.contributors.map(async user => {
-          let id: string;
-          if (typeof user === 'string') {
-            id = user;
-          } else {
-            const obj = User.instantiate(user);
-            id = await this.findUser(obj.username);
-            reportError(
-              new Error(
-                `Learning object ${
-                  record._id
-                } contains an invalid type for contributors property.`,
-              ),
-            );
-          }
-          return this.fetchUser(id);
+      await Promise.all(
+        record.contributors.map(async userId => {
+          let id = userId;
+          const contributor = await this.fetchUser(id);
+          learningObject.addContributor(contributor);
         }),
       );
     }
     // load outcomes
-    learningObject.outcomes = await this.getAllLearningOutcomes({
+    const outcomes = await this.getAllLearningOutcomes({
       source: learningObject.id,
     });
-
-    // for (const outcome of outcomes) {
-    //   const newOutcome = learningObject.addOutcome();
-    //   newOutcome.bloom = outcome.bloom;
-    //   newOutcome.verb = outcome.verb;
-    //   newOutcome.text = outcome.text;
-    //   newOutcome.id = outcome._id;
-
-    //   for (const rAssessment of outcome.assessments) {
-    //     const assessment = newOutcome.addAssessment();
-    //     assessment.plan = rAssessment.plan;
-    //     assessment.text = rAssessment.text;
-    //   }
-
-    //   for (const rStrategy of outcome.strategies) {
-    //     const strategy = newOutcome.addStrategy();
-    //     strategy.plan = rStrategy.plan;
-    //     strategy.text = rStrategy.text;
-    //   }
-
-    //   // only extract the basic info for each mapped outcome
-    //   for (const mapping of outcome.mappings) {
-    //     this.learningOutcomeStore.getLearningOutcome({ })
-    //     newOutcome.mapTo(mapping);
-    //   }
-    // }
+    outcomes.forEach(outcome => {
+      learningObject.addOutcome(outcome);
+    });
 
     return learningObject;
   }
