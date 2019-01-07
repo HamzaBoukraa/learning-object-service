@@ -50,8 +50,7 @@ export class LearningOutcomeMongoDatastore implements LearningOutcomeDatastore {
         ids: outcomeDoc.mappings,
       });
     }
-    outcomeDoc = mapId(outcomeDoc);
-    return outcomeDoc;
+    return new LearningOutcome({ id: outcomeDoc._id, ...outcomeDoc });
   }
   /**
    * Fetches Standard Outcome
@@ -62,10 +61,9 @@ export class LearningOutcomeMongoDatastore implements LearningOutcomeDatastore {
    */
   async getStandardOutcome(params: { id: string }): Promise<StandardOutcome> {
     let outcome = await this.db
-      .collection<StandardOutcome>(COLLECTIONS.STANDARD_OUTCOMES)
+      .collection(COLLECTIONS.STANDARD_OUTCOMES)
       .findOne({ _id: params.id });
-    outcome = mapId(outcome);
-    return outcome;
+    return new StandardOutcome({ id: outcome._id, ...outcome });
   }
 
   /**
@@ -81,12 +79,11 @@ export class LearningOutcomeMongoDatastore implements LearningOutcomeDatastore {
     let outcomes =
       params.ids && params.ids.length
         ? await this.db
-            .collection<StandardOutcome>(COLLECTIONS.STANDARD_OUTCOMES)
+            .collection(COLLECTIONS.STANDARD_OUTCOMES)
             .find({ _id: { $in: params.ids } })
             .toArray()
         : [];
-    outcomes = outcomes.map(mapId);
-    return outcomes;
+    return outcomes.map(doc => new StandardOutcome({ id: doc._id, ...doc }));
   }
 
   /**
@@ -112,7 +109,7 @@ export class LearningOutcomeMongoDatastore implements LearningOutcomeDatastore {
         doc.mappings = await this.getAllStandardOutcomes({
           ids: doc.mappings,
         });
-        return doc;
+        return new LearningOutcome({ id: doc._id, ...doc });
       }),
     );
 
