@@ -933,7 +933,6 @@ export class MongoDriver implements DataStore {
       });
 
       const docs = await objectCursor.toArray();
-
       const learningObjects: LearningObject[] = await this.bulkGenerateLearningObjects(
         docs,
         false,
@@ -1436,6 +1435,7 @@ export class MongoDriver implements DataStore {
     full?: boolean,
   ): Promise<LearningObject> {
     // Logic for loading any learning object
+
     const learningObject = new LearningObject({
       id: record._id,
       author,
@@ -1447,8 +1447,9 @@ export class MongoDriver implements DataStore {
       collection: record.collection,
       status: record.status,
       description: record.description,
-      children: record.children,
+      // children: record.children,
     });
+
     record.published ? learningObject.publish() : learningObject.unpublish();
     for (const goal of record.goals) {
       learningObject.description += goal.text;
