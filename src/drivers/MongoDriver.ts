@@ -1,19 +1,34 @@
-import {Cursor, Db, MongoClient, ObjectID} from 'mongodb';
-import {DataStore} from '../interfaces/interfaces';
-import {AcademicLevel, LearningObject, LearningOutcome, User,} from '@cyber4all/clark-entity';
-import {LearningObjectDocument, LearningOutcomeDocument, StandardOutcomeDocument, UserDocument,} from '@cyber4all/clark-schema';
-import {Filters, LearningObjectCollection, LearningObjectQuery,} from '../interfaces/DataStore';
-import {CompletedPart, MultipartFileUploadStatus,} from '../interfaces/FileManager';
-import {LearningObjectLock, Material, Restriction,} from '@cyber4all/clark-entity/dist/learning-object';
-import {LearningObjectFile} from '../interactors/LearningObjectInteractor';
-import {reportError} from './SentryConnector';
+import { Cursor, Db, MongoClient, ObjectID } from 'mongodb';
+import { DataStore } from '../interfaces/interfaces';
+import { LearningObject, LearningOutcome, User } from '@cyber4all/clark-entity';
+import {
+  LearningObjectDocument,
+  LearningOutcomeDocument,
+  StandardOutcomeDocument,
+  UserDocument,
+} from '@cyber4all/clark-schema';
+import {
+  Filters,
+  LearningObjectCollection,
+  LearningObjectQuery,
+} from '../interfaces/DataStore';
+import {
+  CompletedPart,
+  MultipartFileUploadStatus,
+} from '../interfaces/FileManager';
+import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
+import { reportError } from './SentryConnector';
 import * as ObjectMapper from './Mongo/ObjectMapper';
-import {SubmissionDatastore} from '../LearningObjectSubmission/SubmissionDatastore';
-import {LearningObjectUpdates} from '../types';
-import {LearningOutcomeMongoDatastore} from '../LearningOutcomes/LearningOutcomeMongoDatastore';
-import {LearningOutcomeInput, LearningOutcomeInsert, LearningOutcomeUpdate,} from '../LearningOutcomes/types';
-import {LearningObjectStatStore} from '../LearningObjectStats/LearningObjectStatStore';
-import {LearningObjectStats} from '../LearningObjectStats/LearningObjectStatsInteractor';
+import { SubmissionDatastore } from '../LearningObjectSubmission/SubmissionDatastore';
+import { LearningObjectUpdates } from '../types';
+import { LearningOutcomeMongoDatastore } from '../LearningOutcomes/LearningOutcomeMongoDatastore';
+import {
+  LearningOutcomeInput,
+  LearningOutcomeInsert,
+  LearningOutcomeUpdate,
+} from '../LearningOutcomes/types';
+import { LearningObjectStatStore } from '../LearningObjectStats/LearningObjectStatStore';
+import { LearningObjectStats } from '../LearningObjectStats/LearningObjectStatsInteractor';
 
 export enum COLLECTIONS {
   USERS = 'users',
@@ -29,7 +44,6 @@ export class MongoDriver implements DataStore {
   learningOutcomeStore: LearningOutcomeMongoDatastore;
   statStore: LearningObjectStatStore;
 
-
   /**
    * Submit a learning object to a specified collection
    * @param username the username of the requester
@@ -39,18 +53,20 @@ export class MongoDriver implements DataStore {
   submitLearningObjectToCollection(
     username: string,
     id: string,
-    collection: string
+    collection: string,
   ): Promise<void> {
-    return this.submissionStore.submitLearningObjectToCollection(username, id, collection);
+    return this.submissionStore.submitLearningObjectToCollection(
+      username,
+      id,
+      collection,
+    );
   }
 
   /**
    * Unsubmit an object but keep it's collection property intact
    * @param id the id of the object to unsubmit
    */
-  unsubmitLearningObject(
-    id: string,
-  ): Promise<void> {
+  unsubmitLearningObject(id: string): Promise<void> {
     return this.submissionStore.unsubmitLearningObject(id);
   }
 
@@ -156,6 +172,16 @@ export class MongoDriver implements DataStore {
    */
   async insertLearningObject(object: LearningObject): Promise<string> {
     try {
+      // FIXME: This should be scoped to Interactor
+      const authorID = await this.findUser(object.author.username);
+      const author = await this.fetchUser(authorID);
+      if (!author.emailVerified) {
+        object.unpublish();
+      }
+
+      object.lock = {
+        restrictions: [LearningObject.Restriction.DOWNLOAD],
+      };
       const doc = await this.documentLearningObject(object, true);
       // insert object into the database
       await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).insertOne(doc);
@@ -472,8 +498,8 @@ export class MongoDriver implements DataStore {
 
       if (
         lock &&
-        (lock.restrictions.indexOf(Restriction.FULL) > -1 ||
-          lock.restrictions.indexOf(Restriction.PUBLISH) > -1)
+        (lock.restrictions.indexOf(LearningObject.Restriction.FULL) > -1 ||
+          lock.restrictions.indexOf(LearningObject.Restriction.PUBLISH) > -1)
       ) {
         updates.published = false;
       }
@@ -584,7 +610,10 @@ export class MongoDriver implements DataStore {
   async getUserObjects(username: string): Promise<string[]> {
     try {
       const authorID = await this.findUser(username);
-      const objects = await this.db.collection<{ _id: string }>(COLLECTIONS.LEARNING_OBJECTS).find({ authorID }, { projection: { _id: 1 } }).toArray();
+      const objects = await this.db
+        .collection<{ _id: string }>(COLLECTIONS.LEARNING_OBJECTS)
+        .find({ authorID }, { projection: { _id: 1 } })
+        .toArray();
       return objects.map(obj => obj._id);
     } catch (e) {
       return Promise.reject(`Problem fetch User's Objects. Error: ${e}`);
@@ -1009,7 +1038,9 @@ export class MongoDriver implements DataStore {
     }
     if (released) {
       // Check that the learning object does not have a download restriction
-      query['lock.restrictions'] = { $nin: [Restriction.DOWNLOAD] };
+      query['lock.restrictions'] = {
+        $nin: [LearningObject.Restriction.DOWNLOAD],
+      };
     }
     // Search By Text
     if (text || text === '') {
