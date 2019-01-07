@@ -24,12 +24,7 @@ export function initialize({
       const username = req.user.username;
       const collection = req.body.collection;
 
-      await submitForReview(
-        dataStore,
-        username,
-        id,
-        collection
-      );
+      await submitForReview(dataStore, username, id, collection);
 
       res.sendStatus(200);
     } catch (e) {
@@ -42,11 +37,8 @@ export function initialize({
     try {
       const id = req.params.learningObjectId;
       const username = req.user.username;
-      
-      await cancelSubmission(
-        dataStore,
-        id,
-      );
+
+      await cancelSubmission(dataStore, id);
       res.sendStatus(200);
     } catch (e) {
       if (e instanceof Error) {
@@ -58,8 +50,6 @@ export function initialize({
     }
   }
 
-
   router.post('/learning-objects/:learningObjectId/submission', submit);
   router.delete('/learning-objects/:learningObjectId/submission', cancel);
-
 }

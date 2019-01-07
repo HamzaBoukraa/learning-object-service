@@ -115,12 +115,15 @@ export class LearningObjectInteractor {
         summary = await Promise.all(
           summary.map(async object => {
             if (object.children && object.children.length) {
-              object.children = await this.loadChildObjects(
+              const children = await this.loadChildObjects(
                 params.dataStore,
                 params.library,
-                object,
+                object.children,
                 false,
                 accessUnpublished,
+              );
+              children.forEach((child: LearningObject) =>
+                object.addChild(child),
               );
             }
             return object;
@@ -168,14 +171,15 @@ export class LearningObjectInteractor {
 
       learningObject.id = learningObjectID;
 
-      if (learningObject.children) {
-        learningObject.children = await this.loadChildObjects(
+      if (learningObject.children && learningObject.children.length) {
+        const children = await this.loadChildObjects(
           dataStore,
           library,
-          learningObject,
+          learningObject.childrens,
           fullChildren,
           accessUnpublished,
         );
+        children.forEach(child => learningObject.addChild(child));
       }
 
       try {
@@ -195,13 +199,13 @@ export class LearningObjectInteractor {
   private static async loadChildObjects(
     dataStore: DataStore,
     library: LibraryCommunicator,
-    learningObject: LearningObject,
+    childIds: string[],
     full?: boolean,
     accessUnpublished?: boolean,
   ): Promise<LearningObject[]> {
-    if (learningObject.children) {
+    if (childIds && childIds.length) {
       let children = await dataStore.fetchMultipleObjects(
-        <string[]>learningObject.children,
+        childIds,
         full,
         accessUnpublished,
       );
@@ -218,14 +222,15 @@ export class LearningObjectInteractor {
         }),
       );
 
-      for (let child of children) {
-        child.children = await this.loadChildObjects(
+      for (const child of children) {
+        const childChildren = await this.loadChildObjects(
           dataStore,
           library,
-          child,
+          childIds,
           full,
           accessUnpublished,
         );
+        childChildren.forEach(childChild => child.addChild(childChild));
       }
       return [...children];
     }
@@ -261,12 +266,15 @@ export class LearningObjectInteractor {
           try {
             object.metrics = await this.loadMetrics(library, object.id);
             if (object.children && object.children.length) {
-              object.children = await this.loadChildObjects(
+              const children = await this.loadChildObjects(
                 dataStore,
                 library,
-                object,
+                object.children,
                 false,
                 false,
+              );
+              children.forEach((child: LearningObject) =>
+                object.addChild(child),
               );
             }
             return object;
@@ -487,7 +495,7 @@ export class LearningObjectInteractor {
   ): Promise<{ objects: LearningObject[]; total: number }> {
     try {
       const response = await dataStore.fetchAllObjects(false, currPage, limit);
-      response.objects = await Promise.all(
+      const objects = await Promise.all(
         response.objects.map(async object => {
           try {
             object.metrics = await this.loadMetrics(library, object.id);
@@ -498,7 +506,7 @@ export class LearningObjectInteractor {
           }
         }),
       );
-      return response;
+      return { objects, total: response.total };
     } catch (e) {
       return Promise.reject(
         `Problem fetching all Learning Objects. Error: ${e}`,
@@ -642,7 +650,7 @@ export class LearningObjectInteractor {
         released: params.released,
       });
 
-      response.objects = await Promise.all(
+      const objects = await Promise.all(
         response.objects.map(async object => {
           try {
             object.metrics = await this.loadMetrics(library, object.id);
@@ -653,7 +661,7 @@ export class LearningObjectInteractor {
           }
         }),
       );
-      return response;
+      return { total: response.total, objects };
     } catch (e) {
       return Promise.reject(`Problem suggesting Learning Objects. Error:${e}`);
     }

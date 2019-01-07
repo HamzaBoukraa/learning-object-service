@@ -1,4 +1,4 @@
-import { User, Collection, LearningObject } from '@cyber4all/clark-entity';
+import { User, LearningObject } from '@cyber4all/clark-entity';
 import { COLLECTIONS } from '../drivers/MongoDriver';
 import { Db } from 'mongodb';
 import { UserDocument } from '@cyber4all/clark-schema';

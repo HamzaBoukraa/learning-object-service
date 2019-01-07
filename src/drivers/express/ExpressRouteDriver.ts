@@ -1,14 +1,18 @@
-import {DataStore, FileManager, LibraryCommunicator} from '../../interfaces/interfaces';
-import {Router} from 'express';
-import {LearningObjectInteractor} from '../../interactors/interactors';
-import {LearningObject} from '@cyber4all/clark-entity';
+import {
+  DataStore,
+  FileManager,
+  LibraryCommunicator,
+} from '../../interfaces/interfaces';
+import { Router } from 'express';
+import { LearningObjectInteractor } from '../../interactors/interactors';
+import { LearningObject } from '@cyber4all/clark-entity';
 import * as TokenManager from '../TokenManager';
-import {LearningObjectQuery} from '../../interfaces/DataStore';
+import { LearningObjectQuery } from '../../interfaces/DataStore';
 import * as LearningObjectStatsRouteHandler from '../../LearningObjectStats/LearningObjectStatsRouteHandler';
 import { UserToken } from '../../types';
 import { initializeSingleFileDownloadRouter } from '../../SingleFileDownload/RouteHandler';
-import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler'
-import {initializeCollectionRouter} from '../../Collections/RouteHandler';
+import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
+import { initializeCollectionRouter } from '../../Collections/RouteHandler';
 
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
 // tslint:disable-next-line:no-require-imports
@@ -66,7 +70,10 @@ export class ExpressRouteDriver {
         const orderBy = req.query.orderBy;
         const sortType = req.query.sortType ? +req.query.sortType : null;
 
-        let learningObjects: { total: number; objects: LearningObject[] };
+        let objectResponse: {
+          total: number;
+          objects: Partial<LearningObject>[];
+        };
 
         const accessUnpublished = false;
 
@@ -82,7 +89,7 @@ export class ExpressRouteDriver {
           sortType ||
           released
         ) {
-          learningObjects = await LearningObjectInteractor.searchObjects(
+          objectResponse = await LearningObjectInteractor.searchObjects(
             this.dataStore,
             this.library,
             {
@@ -103,14 +110,17 @@ export class ExpressRouteDriver {
             },
           );
         } else {
-          learningObjects = await LearningObjectInteractor.fetchAllObjects(
+          objectResponse = await LearningObjectInteractor.fetchAllObjects(
             this.dataStore,
             this.library,
             currPage,
             limit,
           );
         }
-        res.status(200).send(learningObjects);
+        objectResponse.objects = objectResponse.objects.map(obj =>
+          obj.toPlainObject(),
+        );
+        res.status(200).send(objectResponse);
       } catch (e) {
         console.log(e);
         res.status(500).send(e);
@@ -125,7 +135,7 @@ export class ExpressRouteDriver {
           query,
           dataStore: this.dataStore,
         });
-        res.status(200).send(parents);
+        res.status(200).send(parents.map(obj => obj.toPlainObject()));
       } catch (e) {
         console.error(e);
         res.status(500).send(e);
@@ -150,7 +160,7 @@ export class ExpressRouteDriver {
             req.params.learningObjectName,
             accessUnpublished,
           );
-          res.status(200).send(object);
+          res.status(200).send(object.toPlainObject());
         } catch (e) {
           console.error(e);
           res.status(500).send(e);
@@ -172,14 +182,17 @@ export class ExpressRouteDriver {
             username: req.params.username,
           },
         );
-        res.status(200).send(objects);
+        res.status(200).send(objects.map(obj => obj.toPlainObject()));
       } catch (e) {
         console.error(e);
         res.status(500).send(e);
       }
     });
 
-    LearningObjectRouteHandler.initializePublic({ router, dataStore: this.dataStore })
+    LearningObjectRouteHandler.initializePublic({
+      router,
+      dataStore: this.dataStore,
+    });
 
     initializeSingleFileDownloadRouter({
       router,

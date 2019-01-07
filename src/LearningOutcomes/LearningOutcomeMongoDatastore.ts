@@ -29,7 +29,7 @@ export class LearningOutcomeMongoDatastore implements LearningOutcomeDatastore {
     const id = new ObjectID().toHexString();
     params.outcome['_id'] = id;
     await this.db
-      .collection<LearningOutcome>(COLLECTIONS.LEARNING_OUTCOMES)
+      .collection(COLLECTIONS.LEARNING_OUTCOMES)
       .insertOne({ ...params.outcome, source: params.source });
     return id;
   }

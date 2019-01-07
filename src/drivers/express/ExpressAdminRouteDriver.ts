@@ -1,13 +1,21 @@
 import { LearningObject } from '@cyber4all/clark-entity';
 import { Router } from 'express';
 import { AdminLearningObjectInteractor } from '../../interactors/interactors';
-import { DataStore, FileManager, LibraryCommunicator } from '../../interfaces/interfaces';
+import {
+  DataStore,
+  FileManager,
+  LibraryCommunicator,
+} from '../../interfaces/interfaces';
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
 // tslint:disable-next-line:no-require-imports
 const version = require('../../../package.json').version;
 
 export class ExpressAdminRouteDriver {
-  constructor(private dataStore: DataStore, private fileManager: FileManager, private library: LibraryCommunicator) { }
+  constructor(
+    private dataStore: DataStore,
+    private fileManager: FileManager,
+    private library: LibraryCommunicator,
+  ) {}
 
   public static buildRouter(
     dataStore: DataStore,
@@ -29,7 +37,6 @@ export class ExpressAdminRouteDriver {
     });
 
     router.route('/learning-objects').get(async (req, res) => {
-
       try {
         const page = req.query.page ? +req.query.page : null;
         const limit = req.query.limit ? +req.query.limit : null;
@@ -84,42 +91,44 @@ export class ExpressAdminRouteDriver {
             limit,
           );
         }
-        res.status(200).send(learningObjects);
+        res.status(200).send(learningObjects.map(obj => obj.toPlainObject()));
       } catch (e) {
         console.error(e);
         res.status(500).send(e);
       }
     });
-    router.route('/learning-objects').patch(async(req, res) => {
+    router.route('/learning-objects').patch(async (req, res) => {
       try {
-        const learningObject = LearningObject.instantiate(req.body);
+        const learningObject = new LearningObject(req.body);
         await AdminLearningObjectInteractor.updateLearningObject(
-            this.dataStore,
-            this.fileManager,
-            learningObject.id,
-            learningObject,
-          );
+          this.dataStore,
+          this.fileManager,
+          learningObject.id,
+          learningObject,
+        );
         res.sendStatus(200);
       } catch (e) {
         console.error(e);
         res.status(500).send(e);
       }
     });
-    router.route('/learning-objects/:learningObjectId').get(async (req, res) => {
-      try {
-        const id = req.params.learningObjectId;
+    router
+      .route('/learning-objects/:learningObjectId')
+      .get(async (req, res) => {
+        try {
+          const id = req.params.learningObjectId;
 
-        const learningObject = await AdminLearningObjectInteractor.loadFullLearningObject(
-          this.dataStore,
-          id,
-        );
+          const learningObject: LearningObject = await AdminLearningObjectInteractor.loadFullLearningObject(
+            this.dataStore,
+            id,
+          );
 
-        res.status(200).send(learningObject);
-      } catch (e) {
-        console.error(e);
-        res.status(500).send(e);
-      }
-    });
+          res.status(200).send(learningObject.toPlainObject());
+        } catch (e) {
+          console.error(e);
+          res.status(500).send(e);
+        }
+      });
     router.patch(
       '/users/:username/learning-objects/:learningObjectName/publish',
       async (_, res) => {

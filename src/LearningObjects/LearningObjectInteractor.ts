@@ -206,7 +206,7 @@ export async function updateReadme(params: {
     } else if (!object && !id) {
       throw new Error(`No learning object or id provided.`);
     }
-    const oldPDF: LearningObjectPDF = object.materials['pdf'];
+    const oldPDF: LearningObject.Material.PDF = object.materials['pdf'];
     const pdf = await generatePDF(params.fileManager, object);
     if (oldPDF && oldPDF.name !== pdf.name) {
       const path = `${object.author.username}/${object.id}/${oldPDF.name}`;
