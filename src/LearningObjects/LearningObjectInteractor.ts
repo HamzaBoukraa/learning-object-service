@@ -114,12 +114,6 @@ export async function updateLearningObject(params: {
       updates,
     });
     updates.date = Date.now().toString();
-
-    if (updates.description) {
-      // @ts-ignore
-      updates.goals = [{ text: updates.description }];
-    }
-
     await params.dataStore.editLearningObject({
       id: params.id,
       updates,
