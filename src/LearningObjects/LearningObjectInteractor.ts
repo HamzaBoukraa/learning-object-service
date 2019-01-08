@@ -51,8 +51,12 @@ export async function addLearningObject(
       object.lock = {
         restrictions: [LearningObject.Restriction.DOWNLOAD],
       };
+      const objectInsert = new LearningObject({
+        ...object.toPlainObject(),
+        author,
+      });
       const learningObjectID = await dataStore.insertLearningObject(
-        new LearningObject({ ...object, author }),
+        objectInsert,
       );
       object.id = learningObjectID;
 
