@@ -7,16 +7,15 @@ import { MockDataStore } from '../tests/mock-drivers/MockDataStore';
 const dataStore: DataStore = new MockDataStore; // DataStore
 
 describe('submitForReview', () => {
-  it('should submit given a valid username and id', async done => {
+  it('should submit given a valid username and id', async () => {
     try {
-      await expect(submitForReview(
+      expect(await submitForReview(
         dataStore,
         MOCK_OBJECTS.USERNAME,
         SUBMITTABLE_LEARNING_OBJECT.id,
-        SUBMITTABLE_LEARNING_OBJECT.collection
+        SUBMITTABLE_LEARNING_OBJECT.collection,
       ))
       .resolves.toBe(undefined);
-      done();
     } catch (error) {
       console.log(error);
     }
