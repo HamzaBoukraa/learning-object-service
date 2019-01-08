@@ -9,6 +9,7 @@ import {
   VALID_LEARNING_OBJECT_UPDATES,
 } from '../types';
 import { LearningObjectError } from '../errors';
+import { hasLearningObjectWriteAccess } from '../interactors/AuthorizationManager';
 
 /**
  * Add a new learning object to the database.
@@ -102,12 +103,13 @@ export async function updateLearningObject(params: {
   }
 
   try {
-    await checkAuthorization({
-      dataStore: params.dataStore,
-      user: params.user,
-      objectId: params.id,
-      requiredPermission: 'owner',
-    });
+    await hasLearningObjectWriteAccess(
+      params.user,
+      // TODO: fetch collection
+      'collection',
+      params.dataStore,
+      params.id,
+    );
     const updates: LearningObjectUpdates = sanitizeUpdates(params.updates);
     await validateUpdates({
       id: params.id,
@@ -333,55 +335,6 @@ export async function getMaterials(params: {
     return Promise.reject(
       `Problem fetching materials for object: ${params.id}. Error: ${e}`,
     );
-  }
-}
-
-/**
- * Checks to see if user has required permissions
- *
- * @param {({
- *     dataStore: DataStore;
- *     user: UserToken;
- *     objectId: string;
- *     requiredPermission: 'owner' | 'public';
- *   })} params
- * @param {boolean} [enforceAdminPrivileges=true]
- * @returns {Promise<void>}
- */
-async function checkAuthorization(
-  params: {
-    dataStore: DataStore;
-    user: UserToken;
-    objectId: string;
-    requiredPermission: 'owner' | 'public';
-  },
-  enforceAdminPrivileges = true,
-): Promise<void> {
-  if (params.user.accessGroups.includes('admin') && enforceAdminPrivileges) {
-    return;
-  }
-  switch (params.requiredPermission) {
-    case 'owner':
-      const userId = await params.dataStore.findUser(params.user.name);
-      const object = await params.dataStore.peek<{ authorID: string }>({
-        query: { id: params.objectId },
-        fields: { authorID: 1 },
-      });
-      if (userId !== object.authorID) {
-        throw new Error(``);
-      }
-      break;
-    case 'public':
-      const publishedDoc = await params.dataStore.peek<{ published: boolean }>({
-        query: { id: params.objectId },
-        fields: { published: 1 },
-      });
-      if (!publishedDoc.published) {
-        throw new Error(``);
-      }
-      break;
-    default:
-      break;
   }
 }
 

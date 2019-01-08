@@ -98,19 +98,8 @@ export class ExpressAdminRouteDriver {
       }
     });
     router.route('/learning-objects').patch(async (req, res) => {
-      try {
-        const learningObject = new LearningObject(req.body);
-        await AdminLearningObjectInteractor.updateLearningObject(
-          this.dataStore,
-          this.fileManager,
-          learningObject.id,
-          learningObject,
-        );
-        res.sendStatus(200);
-      } catch (e) {
-        console.error(e);
-        res.status(500).send(e);
-      }
+      const learningObject = new LearningObject(req.body);
+      res.redirect(301, req.path.replace('/admin/learning-objects', `/learning-objects/${learningObject.id}`));
     });
     router
       .route('/learning-objects/:learningObjectId')
