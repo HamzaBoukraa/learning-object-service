@@ -6,8 +6,6 @@ import {
   LibraryCommunicator,
 } from '../interfaces/interfaces';
 import { deleteLearningObject } from '../LearningObjects/LearningObjectInteractor';
-import { LearningObject } from '@cyber4all/clark-entity';
-import { UserToken } from '../types';
 
 export class AdminLearningObjectInteractor {
   private static learningObjectInteractor = LearningObjectInteractor;
@@ -152,59 +150,4 @@ export class AdminLearningObjectInteractor {
       );
     }
   }
-
-  /**
-   * Allows Admins, Collection Leads, Curators, and Editors to update a Learning Object.
-   *
-   * @param id the Learning Object identifier
-   * @param learningObject the Learning Object to be updated
-   * @param user information about the user who has initiated the operation
-   */
-  public static async updateLearningObject(
-    dataStore: DataStore,
-    fileManager: FileManager,
-    id: string,
-    learningObject: LearningObject,
-    user: UserToken,
-  ): Promise<void> {
-    if (!hasLearningObjectWriteAccess(user, learningObject.collection)) {
-      throw new Error('Invalid Access');
-    }
-    try {
-      return await updateLearningObject({
-        user,
-        dataStore,
-        fileManager,
-        id,
-        updates: learningObject,
-      });
-    } catch (error) {
-      return Promise.reject(error);
-    }
-  }
-}
-
-/**
- * Checks if a user has the authority to modify a Learning Object.
- *
- * @param user information about the user who has initiated a privelaged write operation
- * @param collection the name of the collection
- */
-function hasLearningObjectWriteAccess(user: UserToken, collection: string): boolean {
-  if (user.accessGroups) {
-    if (user.accessGroups.includes('admin') || user.accessGroups.includes('editor')) {
-      return true;
-    } else {
-      checkCollectionWriteAccess(user, collection);
-    }
-  }
-}
-/**
- * Checks if a user has the authority to update the data of a particular collection.
- *
- * @param user information about the user who has initiated a privelaged write operation
- * @param collection the name of the collection
- */
-function checkCollectionWriteAccess(user: UserToken, collection: string): boolean {
-  return user.accessGroups.includes(`lead@${collection}`) || user.accessGroups.includes(`curator@${collection}`);
 }

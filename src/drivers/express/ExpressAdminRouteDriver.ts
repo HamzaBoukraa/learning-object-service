@@ -98,24 +98,7 @@ export class ExpressAdminRouteDriver {
       }
     });
     router.route('/learning-objects').patch(async (req, res) => {
-      try {
-        const learningObject = new LearningObject(req.body);
-        await AdminLearningObjectInteractor.updateLearningObject(
-          this.dataStore,
-          this.fileManager,
-          learningObject.id,
-          learningObject,
-          req['user'],
-        );
-        res.sendStatus(200);
-      } catch (e) {
-        // TODO: Test coverage of error handler
-        if (e instanceof Error && e.message === 'Invalid Access') {
-          res.status(401).send(`${req['user'].username} does not have the authority to update ${LearningObject.name}`);
-        }
-        console.error(e);
-        res.status(500).send(e);
-      }
+      res.redirect(301, req.path.replace('/admin', ''));
     });
     router
       .route('/learning-objects/:learningObjectId')
