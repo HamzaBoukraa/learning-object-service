@@ -1,5 +1,5 @@
-import { UserDocument } from '@cyber4all/clark-schema';
 import { User } from '@cyber4all/clark-entity';
+import { UserDocument } from '../../types';
 
 /**
  * Generates User object from Document

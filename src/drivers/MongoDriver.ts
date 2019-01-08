@@ -2,12 +2,6 @@ import { Cursor, Db, MongoClient, ObjectID } from 'mongodb';
 import { DataStore } from '../interfaces/interfaces';
 import { LearningObject, LearningOutcome, User } from '@cyber4all/clark-entity';
 import {
-  LearningObjectDocument,
-  LearningOutcomeDocument,
-  StandardOutcomeDocument,
-  UserDocument,
-} from '@cyber4all/clark-schema';
-import {
   Filters,
   LearningObjectCollection,
   LearningObjectQuery,
@@ -16,11 +10,15 @@ import {
   CompletedPart,
   MultipartFileUploadStatus,
 } from '../interfaces/FileManager';
-import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
-import { reportError } from './SentryConnector';
 import * as ObjectMapper from './Mongo/ObjectMapper';
 import { SubmissionDatastore } from '../LearningObjectSubmission/SubmissionDatastore';
-import { LearningObjectUpdates } from '../types';
+import {
+  LearningObjectUpdates,
+  LearningObjectDocument,
+  UserDocument,
+  LearningOutcomeDocument,
+  StandardOutcomeDocument,
+} from '../types';
 import { LearningOutcomeMongoDatastore } from '../LearningOutcomes/LearningOutcomeMongoDatastore';
 import {
   LearningOutcomeInput,
@@ -29,6 +27,7 @@ import {
 } from '../LearningOutcomes/types';
 import { LearningObjectStatStore } from '../LearningObjectStats/LearningObjectStatStore';
 import { LearningObjectStats } from '../LearningObjectStats/LearningObjectStatsInteractor';
+import { lengths } from '@cyber4all/clark-taxonomy';
 
 export enum COLLECTIONS {
   USERS = 'users',
@@ -381,8 +380,6 @@ export class MongoDriver implements DataStore {
     parent: LearningObject,
     children: LearningObject[],
   ): boolean {
-    // FIXME: These lengths should be retrieved from a standardized source such as a npm module
-    const lengths = ['nanomodule', 'micromodule', 'module', 'unit', 'course'];
     const maxLengthIndex = lengths.indexOf(parent.length);
 
     for (let i = 0, l = children.length; i < l; i++) {
@@ -939,7 +936,7 @@ export class MongoDriver implements DataStore {
   async findSingleFile(params: {
     learningObjectId: string;
     fileId: string;
-  }): Promise<LearningObjectFile> {
+  }): Promise<LearningObject.Material.File> {
     try {
       const doc = await this.db
         .collection(COLLECTIONS.LEARNING_OBJECTS)
@@ -973,7 +970,7 @@ export class MongoDriver implements DataStore {
     learningObjectId: string;
     fileId: string;
     description: string;
-  }): Promise<LearningObjectFile> {
+  }): Promise<LearningObject.Material.File> {
     try {
       await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).findOneAndUpdate(
         { _id: params.learningObjectId, 'materials.files.id': params.fileId },
@@ -1370,7 +1367,7 @@ export class MongoDriver implements DataStore {
     object: LearningObject,
     isNew?: boolean,
     id?: string,
-  ): Promise<LearningObjectDocument> {
+  ): Promise<Partial<LearningObjectDocument>> {
     try {
       const authorID = await this.findUser(object.author.username);
       let contributorIds: string[] = [];
@@ -1381,7 +1378,8 @@ export class MongoDriver implements DataStore {
         );
       }
 
-      const doc: LearningObjectDocument = {
+      const doc: Partial<LearningObjectDocument> = {
+        _id: id,
         authorID: authorID,
         name: object.name,
         date: object.date,
@@ -1397,9 +1395,6 @@ export class MongoDriver implements DataStore {
       };
       if (isNew) {
         doc._id = new ObjectID().toHexString();
-      } else {
-        doc._id = id;
-        delete doc.outcomes;
       }
       return doc;
     } catch (e) {
@@ -1438,7 +1433,6 @@ export class MongoDriver implements DataStore {
       status: record.status,
       description: record.description,
       published: record.published || false,
-      // children: record.children,
     });
 
     if (!full) {

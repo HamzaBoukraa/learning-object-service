@@ -1,8 +1,8 @@
 import { User, LearningObject } from '@cyber4all/clark-entity';
 import { COLLECTIONS } from '../drivers/MongoDriver';
 import { Db } from 'mongodb';
-import { UserDocument } from '@cyber4all/clark-schema';
 import * as ObjectMapper from '../drivers/Mongo/ObjectMapper';
+import { UserDocument } from '../types';
 
 const ERROR_MESSAGE = {
   INVALID_ACCESS: `Invalid access. User must be verified to publish Learning Objects`,

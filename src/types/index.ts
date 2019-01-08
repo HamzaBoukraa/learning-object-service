@@ -11,6 +11,8 @@ import {
   UrlDocument,
 } from './learning-object-document';
 import { UserDocument } from './user-document';
+import { LearningOutcomeDocument } from './learning-outcome-document';
+import { StandardOutcomeDocument } from './standard-outcome-document';
 
 export {
   UserToken,
@@ -22,4 +24,6 @@ export {
   FileDocument,
   LearningObjectLockDocument,
   UrlDocument,
+  LearningOutcomeDocument,
+  StandardOutcomeDocument,
 };
