@@ -39,50 +39,6 @@ function checkCollectionWriteAccess(user: UserToken, collection: string): boolea
 }
 
 /**
- * Checks to see if user has required permissions
- *
- * @param {({
- *     dataStore: DataStore;
- *     user: UserToken;
- *     objectId: string;
- *     requiredPermission: 'owner' | 'public';
- *   })} params
- * @param {boolean} [enforceAdminPrivileges=true]
- * @returns {Promise<void>}
- */
-export async function checkAuthorization(
-  params: {
-    dataStore: DataStore;
-    user: UserToken;
-    objectId: string;
-    requiredPermission: 'owner' | 'public';
-  },
-): Promise<void> {
-  // If the user is an admin, and we want to provide admins privileged access THEN return successfully
-  if (params.user.accessGroups.includes('admin')) {
-    return;
-  }
-  switch (params.requiredPermission) {
-    case 'owner':
-      if (!(await userIsOwner(params))) {
-        throw new Error('');
-      }
-      break;
-    case 'public':
-      const publishedDoc = await params.dataStore.peek<{ published: boolean }>({
-        query: { id: params.objectId },
-        fields: { published: 1 },
-      });
-      if (!publishedDoc.published) {
-        throw new Error(``);
-      }
-      break;
-    default:
-      break;
-  }
-}
-
-/**
  * Checks if the user is the owner of a Learning Object.
  *
  * @param params.user the information for the user in question
