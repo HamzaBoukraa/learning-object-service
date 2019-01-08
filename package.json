@@ -86,7 +86,7 @@
   },
   "jest": {
     "transform": {
-      "\\.(ts|tsx)$": "<rootDir>/node_modules/ts-jest/preprocessor.js"
+      "\\.(ts|tsx)$": "./node_modules/ts-jest/preprocessor.js"
     },
     "testRegex": "(dist)/.*/.*(spec).(ts|tsx|js)$",
     "moduleFileExtensions": [
