@@ -25,7 +25,7 @@
   "dependencies": {
     "@cyber4all/clark-entity": "^4.0.0-rc.11.0",
     "@cyber4all/clark-schema": "^1.1.0",
-    "@cyber4all/clark-taxonomy": "2.0.2",
+    "@cyber4all/clark-taxonomy": "^4.0.0",
     "aws-sdk": "^2.211.0",
     "chai": "^4.1.2",
     "cookie-parser": "^1.4.3",
