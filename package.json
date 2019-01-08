@@ -7,6 +7,7 @@
     "start": "npm run gulp-tsc",
     "build": "node_modules/.bin/gulp tsc",
     "test": "node_modules/.bin/jest --verbose  --coverage",
+    "pretest": "npm run build",
     "gulp-tsc": "node_modules/.bin/gulp start",
     "pack": "npm run build && cp ./package.json ./dist && cp -r ./.ebextensions ./dist && cd ./dist && zip -r ../dist.zip  ./* & cd ..",
     "zip": "cp ./package.json ./dist && cp -r ./.ebextensions ./dist && cd ./dist && zip -r ../dist.zip  ./* & cd ..",
