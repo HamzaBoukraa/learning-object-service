@@ -73,16 +73,16 @@ export function generatePDF(
   appendCoverPage(doc, learningObject);
   doc.addPage();
   // Description TEMP REMOVAL
-  // if (learningObject.goals.length) {
-  //   appendGradientHeader({
-  //     gradientRGB,
-  //     doc,
-  //     title: PDFText.DESCRIPTION_TITLE,
-  //     headerYStart: doc.y - 75,
-  //     textYStart: doc.y - 70 + 20,
-  //   });
-  //   appendLearningGoals(doc, learningObject);
-  // }
+  if (learningObject.description) {
+    appendGradientHeader({
+      gradientRGB,
+      doc,
+      title: PDFText.DESCRIPTION_TITLE,
+      headerYStart: doc.y - 75,
+      textYStart: doc.y - 70 + 20,
+    });
+    appendDescription(doc, learningObject.description);
+  }
   // Outcomes
   if (learningObject.outcomes.length) {
     appendGradientHeader({
@@ -236,16 +236,13 @@ function appendCoverPage(
  * @param {LearningObject} learningObject
  * @memberof LearningObjectInteractor
  */
-function appendLearningGoals(
-  doc: PDFKit.PDFDocument,
-  learningObject: LearningObject,
-) {
+function appendDescription(doc: PDFKit.PDFDocument, description: string) {
   doc
     .fillColor(PDFColors.TEXT)
     .fontSize(PDFFontSizes.REGULAR)
     .font(PDFFonts.REGULAR);
   // Strip html tags from rich text
-  const text = striptags(learningObject.description);
+  const text = striptags(description);
   doc.text(text);
   doc.moveDown(0.5);
   doc.moveDown(2);

@@ -9,13 +9,14 @@ const dataStore: DataStore = new MockDataStore; // DataStore
 describe('submitForReview', () => {
   it('should submit given a valid username and id', async () => {
     try {
-      expect(await submitForReview(
+      expect(
+        await submitForReview(
         dataStore,
         MOCK_OBJECTS.USERNAME,
         SUBMITTABLE_LEARNING_OBJECT.id,
-        SUBMITTABLE_LEARNING_OBJECT.collection,
-      ))
-      .resolves.toBe(undefined);
+          SUBMITTABLE_LEARNING_OBJECT.collection,
+        ),
+      ).resolves.toBe(undefined);
     } catch (error) {
       console.log(error);
     }

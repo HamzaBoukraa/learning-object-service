@@ -174,16 +174,6 @@ export class MongoDriver implements DataStore {
    */
   async insertLearningObject(object: LearningObject): Promise<string> {
     try {
-      // FIXME: This should be scoped to Interactor
-      const authorID = await this.findUser(object.author.username);
-      const author = await this.fetchUser(authorID);
-      if (!author.emailVerified) {
-        object.unpublish();
-      }
-
-      object.lock = {
-        restrictions: [LearningObject.Restriction.DOWNLOAD],
-      };
       const doc = await this.documentLearningObject(object, true);
       // insert object into the database
       await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).insertOne(doc);
@@ -918,7 +908,6 @@ export class MongoDriver implements DataStore {
         .sort({ score: { $meta: 'textScore' } });
 
       const totalRecords = await objectCursor.count();
-
       if (typeof params.sortType === 'string') {
         // @ts-ignore
         sortType = parseInt(sortType, 10) || 1;
@@ -1404,6 +1393,7 @@ export class MongoDriver implements DataStore {
         contributors: contributorIds,
         collection: object.collection,
         lock: object.lock,
+        status: object.status,
       };
       if (isNew) {
         doc._id = new ObjectID().toHexString();
@@ -1447,13 +1437,10 @@ export class MongoDriver implements DataStore {
       collection: record.collection,
       status: record.status,
       description: record.description,
+      published: record.published || false,
       // children: record.children,
     });
 
-    record.published ? learningObject.publish() : learningObject.unpublish();
-    for (const goal of record.goals) {
-      learningObject.description += goal.text;
-    }
     if (!full) {
       return learningObject;
     }
