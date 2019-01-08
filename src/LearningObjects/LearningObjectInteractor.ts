@@ -359,6 +359,7 @@ async function checkAuthorization(
   },
   enforceAdminPrivileges = true,
 ): Promise<void> {
+  // If the user is an admin, and we want to provide admins privileged access THEN return successfully
   if (params.user.accessGroups.includes('admin') && enforceAdminPrivileges) {
     return;
   }
