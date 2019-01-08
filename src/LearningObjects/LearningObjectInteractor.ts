@@ -9,7 +9,7 @@ import {
   VALID_LEARNING_OBJECT_UPDATES,
 } from '../types';
 import { LearningObjectError } from '../errors';
-import { checkAuthorization, hasLearningObjectWriteAccess } from '../interactors/AuthorizationManager';
+import { hasLearningObjectWriteAccess } from '../interactors/AuthorizationManager';
 
 /**
  * Add a new learning object to the database.
