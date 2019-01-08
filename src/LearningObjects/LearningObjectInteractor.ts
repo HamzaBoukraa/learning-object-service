@@ -52,8 +52,12 @@ export async function addLearningObject(
       object.lock = {
         restrictions: [LearningObject.Restriction.DOWNLOAD],
       };
+      const objectInsert = new LearningObject({
+        ...object.toPlainObject(),
+        author,
+      });
       const learningObjectID = await dataStore.insertLearningObject(
-        new LearningObject({ ...object, author }),
+        objectInsert,
       );
       object.id = learningObjectID;
 
@@ -112,12 +116,6 @@ export async function updateLearningObject(params: {
       updates,
     });
     updates.date = Date.now().toString();
-
-    if (updates.description) {
-      // @ts-ignore
-      updates.goals = [{ text: updates.description }];
-    }
-
     await params.dataStore.editLearningObject({
       id: params.id,
       updates,
