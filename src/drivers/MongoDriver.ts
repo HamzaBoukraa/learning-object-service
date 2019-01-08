@@ -1440,11 +1440,7 @@ export class MongoDriver implements DataStore {
       published: record.published || false,
       // children: record.children,
     });
-    if (record.goals && record.length) {
-      for (const goal of record.goals) {
-        learningObject.description += goal.text;
-      }
-    }
+
     if (!full) {
       return learningObject;
     }
