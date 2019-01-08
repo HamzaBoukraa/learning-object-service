@@ -27,12 +27,11 @@ RUN npm run build
 FROM node:8 as tester
 
 COPY --from=builder . .
-ARG WHITELIST_URI
 ENV PATH /opt/node_modules/.bin:$PATH
 
 # Swtich working dir to opt to use node_modules for testing
-WORKDIR /opt
-RUN WHITELISTURL=$WHITELIST_URI npm test
+WORKDIR /opt/app
+RUN npm test
 
 FROM node:8-alpine
 # Defaults the node environment to production, however compose will override this to use development
