@@ -10,6 +10,11 @@ export interface LearningObjectStats {
     module: number;
     unit: number;
     course: number;
+  }
+  blooms_distribution: {
+    apply: number; 
+    evaluate: number; 
+    remember: number; 
   };
 }
 export interface LearningObjectStatDatastore {
@@ -29,7 +34,9 @@ export async function getStats(params: {
       const metrics = await params.library.getMetrics(id);
       stats.downloads += metrics.downloads;
       stats.saves += metrics.saves;
+      
     }),
+    
   );
   delete stats.ids;
   return stats as LearningObjectStats;
