@@ -65,6 +65,11 @@ export interface DataStore
   findParentObjects(params: {
     query: LearningObjectQuery;
   }): Promise<LearningObject[]>;
+  loadChildObjects(params: {
+    id: string;
+    full?: boolean;
+    accessUnreleased?: boolean;
+  }): Promise<LearningObject[]>;
   findSingleFile(params: {
     learningObjectId: string;
     fileId: string;
