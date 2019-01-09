@@ -118,7 +118,7 @@ export class LearningObjectInteractor {
               const children = await this.loadChildObjects(
                 params.dataStore,
                 params.library,
-                object.children,
+                object.id,
                 false,
                 accessUnpublished,
               );
@@ -169,18 +169,16 @@ export class LearningObjectInteractor {
         accessUnpublished,
       );
 
-      if (learningObject.children && learningObject.children.length) {
-        const children = await this.loadChildObjects(
-          dataStore,
-          library,
-          learningObject.children,
-          fullChildren,
-          accessUnpublished,
-        );
-        children.forEach((child: LearningObject) =>
-          learningObject.addChild(child),
-        );
-      }
+      const children = await this.loadChildObjects(
+        dataStore,
+        library,
+        learningObject.id,
+        fullChildren,
+        accessUnpublished,
+      );
+      children.forEach((child: LearningObject) =>
+        learningObject.addChild(child),
+      );
 
       try {
         learningObject.metrics = await this.loadMetrics(
@@ -188,7 +186,7 @@ export class LearningObjectInteractor {
           learningObjectID,
         );
       } catch (e) {
-        console.log(e);
+        console.error(e);
       }
       return learningObject;
     } catch (e) {
@@ -196,45 +194,60 @@ export class LearningObjectInteractor {
     }
   }
 
+  /**
+   * Returns parent object's children
+   *
+   * @private
+   * @static
+   * @param {DataStore} dataStore
+   * @param {LibraryCommunicator} library
+   * @param {string} parentId
+   * @param {boolean} [full]
+   * @param {boolean} [accessUnreleased]
+   * @returns {Promise<LearningObject[]>}
+   * @memberof LearningObjectInteractor
+   */
   private static async loadChildObjects(
     dataStore: DataStore,
     library: LibraryCommunicator,
-    childIds: string[],
+    parentId: string,
     full?: boolean,
-    accessUnpublished?: boolean,
+    accessUnreleased?: boolean,
   ): Promise<LearningObject[]> {
-    if (childIds && childIds.length) {
-      let children = await dataStore.fetchMultipleObjects(
-        childIds,
-        full,
-        accessUnpublished,
-      );
-
-      children = await Promise.all(
-        children.map(async object => {
-          try {
-            object.metrics = await this.loadMetrics(library, object.id);
-            return object;
-          } catch (e) {
-            console.log(e);
-            return object;
-          }
-        }),
-      );
-
-      for (const child of children) {
-        const childChildren = await this.loadChildObjects(
+    // Load Parent's children
+    const objects = await dataStore.loadChildObjects({
+      id: parentId,
+      full,
+      accessUnreleased,
+    });
+    // For each child object
+    return Promise.all(
+      objects.map(async obj => {
+        // Load their children
+        const children = await this.loadChildObjects(
           dataStore,
           library,
-          childIds,
+          obj.id,
           full,
-          accessUnpublished,
+          accessUnreleased,
         );
-        childChildren.forEach(childChild => child.addChild(childChild));
-      }
-      return [...children];
-    }
-    return null;
+        // For each of the Child's children
+        await Promise.all(
+          children.map(async child => {
+            // Load child metrics
+            try {
+              child.metrics = await this.loadMetrics(library, child.id);
+            } catch (e) {
+              console.error(e);
+            }
+            // Add Child
+            obj.addChild(child);
+          }),
+        );
+
+        return obj;
+      }),
+    );
   }
 
   public static async fetchParents(params: {
@@ -265,23 +278,18 @@ export class LearningObjectInteractor {
         learningObjects.map(async object => {
           try {
             object.metrics = await this.loadMetrics(library, object.id);
-            if (object.children && object.children.length) {
-              const children = await this.loadChildObjects(
-                dataStore,
-                library,
-                object.children,
-                false,
-                false,
-              );
-              children.forEach((child: LearningObject) =>
-                object.addChild(child),
-              );
-            }
-            return object;
           } catch (e) {
-            console.log(e);
-            return object;
+            console.error(e);
           }
+          const children = await this.loadChildObjects(
+            dataStore,
+            library,
+            object.id,
+            false,
+            false,
+          );
+          children.forEach((child: LearningObject) => object.addChild(child));
+          return object;
         }),
       );
 
