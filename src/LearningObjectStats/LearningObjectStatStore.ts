@@ -48,7 +48,7 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
       if(bloomsData[i]._id === 'Apply and Analyze'){
         stats.blooms_distribution.apply = bloomsData[i].value; 
       }
-      if(bloomsData[i]._id === 'Evaluate and Synthesiz'){
+      if(bloomsData[i]._id === 'Evaluate and Synthesize'){
         stats.blooms_distribution.evaluate = bloomsData[i].value; 
       }
       if(bloomsData[i]._id === 'Remember and Understand'){
