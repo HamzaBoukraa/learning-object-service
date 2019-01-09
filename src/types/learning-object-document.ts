@@ -2,7 +2,7 @@
  * Define the database schema for learning objects.
  */
 export interface LearningObjectDocument {
-  _id?: string;
+  _id: string;
   authorID: string;
   name: string;
   description: string;
