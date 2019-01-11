@@ -5,7 +5,14 @@ import {
 import { Db } from 'mongodb';
 import { COLLECTIONS } from '../drivers/MongoDriver';
 
-const ONION_BLOOMS= 'blooms_outcome_distribution'
+const BLOOMS_DISTRIBUTION_COLLECTION = 'blooms_outcome_distribution';
+
+const BLOOMS = {
+  APPLY: 'Apply and Analyze',
+  EVALUATE: 'Evaluate and Synthesize',
+  REMEMBER: 'Remember and Understand',
+};
+
 export class LearningObjectStatStore implements LearningObjectStatDatastore {
   constructor(private db: Db) {}
   async fetchStats(params: {
@@ -23,7 +30,12 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
           },
         },
       ]);
-      const bloomsData = await this.db.collection<{_id:string, value:number}>(ONION_BLOOMS).find().toArray()
+    const bloomsData = await this.db
+      .collection<{ _id: string; value: number }>(
+        BLOOMS_DISTRIBUTION_COLLECTION,
+      )
+      .find()
+      .toArray();
     const statsArr: {
       _id: string;
       ids: string[];
@@ -40,23 +52,30 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
       },
       blooms_distribution: {
         apply: 0,
-        evaluate: 0, 
+        evaluate: 0,
         remember: 0,
-      }
+      },
     };
-    for(var i=0; i<bloomsData.length; i++){
-      if(bloomsData[i]._id === 'Apply and Analyze'){
-        stats.blooms_distribution.apply = bloomsData[i].value; 
+
+    if (bloomsData && bloomsData.length) {
+      for (let i = 0; i < bloomsData.length; i++) {
+        switch (bloomsData[i]._id) {
+          case BLOOMS.APPLY:
+            stats.blooms_distribution.apply = bloomsData[i].value;
+            break;
+          case BLOOMS.EVALUATE:
+            stats.blooms_distribution.evaluate = bloomsData[i].value;
+            break;
+          case BLOOMS.REMEMBER:
+            stats.blooms_distribution.remember = bloomsData[i].value;
+            break;
+          default:
+        }
       }
-      if(bloomsData[i]._id === 'Evaluate and Synthesize'){
-        stats.blooms_distribution.evaluate = bloomsData[i].value; 
-      }
-      if(bloomsData[i]._id === 'Remember and Understand'){
-        stats.blooms_distribution.remember = bloomsData[i].value; 
-      }
-      
-      
+    } else {
+      console.log('BLOOMS_DATA is undefined. ');
     }
+
     if (statsArr && statsArr.length) {
       statsArr.map(stat => {
         stats.ids.push(...stat.ids);
