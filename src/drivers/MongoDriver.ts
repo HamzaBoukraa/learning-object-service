@@ -120,6 +120,50 @@ export class MongoDriver implements DataStore {
     this.mongoClient.close();
   }
 
+  /**
+   *  Fetches all child objects for object with given id
+   *
+   * @param {string} id
+   * @returns {Promise<LearningObject[]>}
+   * @memberof MongoDriver
+   */
+  async loadChildObjects(params: {
+    id: string;
+    full?: boolean;
+    accessUnreleased?: boolean;
+  }): Promise<LearningObject[]> {
+    const matchQuery: { [index: string]: any } = {
+      $match: { _id: params.id },
+    };
+    if (!params.accessUnreleased) {
+      matchQuery.$match.status = LearningObject.Status.RELEASED;
+    }
+    const docs = await this.db
+      .collection<{ objects: LearningObjectDocument[] }>(
+        COLLECTIONS.LEARNING_OBJECTS,
+      )
+      .aggregate([
+        matchQuery,
+        {
+          $graphLookup: {
+            from: COLLECTIONS.LEARNING_OBJECTS,
+            startWith: '$children',
+            connectFromField: 'children',
+            connectToField: '_id',
+            as: 'objects',
+            maxDepth: 0,
+          },
+        },
+        { $project: { _id: 0, objects: '$objects' } },
+      ])
+      .toArray();
+    if (docs[0]) {
+      const objects = docs[0].objects;
+      return this.bulkGenerateLearningObjects(objects, params.full);
+    }
+    return [];
+  }
+
   async getLearningObjectMaterials(params: {
     id: string;
   }): Promise<LearningObject.Material> {
@@ -1367,7 +1411,7 @@ export class MongoDriver implements DataStore {
     object: LearningObject,
     isNew?: boolean,
     id?: string,
-  ): Promise<Partial<LearningObjectDocument>> {
+  ): Promise<LearningObjectDocument> {
     try {
       const authorID = await this.findUser(object.author.username);
       let contributorIds: string[] = [];
@@ -1378,8 +1422,8 @@ export class MongoDriver implements DataStore {
         );
       }
 
-      const doc: Partial<LearningObjectDocument> = {
-        _id: id,
+      const doc: LearningObjectDocument = {
+        _id: new ObjectID().toHexString(),
         authorID: authorID,
         name: object.name,
         date: object.date,
@@ -1392,10 +1436,9 @@ export class MongoDriver implements DataStore {
         collection: object.collection,
         lock: object.lock,
         status: object.status,
+        children: object.children.map(obj => obj.id),
       };
-      if (isNew) {
-        doc._id = new ObjectID().toHexString();
-      }
+
       return doc;
     } catch (e) {
       return Promise.reject(
@@ -1430,7 +1473,7 @@ export class MongoDriver implements DataStore {
       levels: record.levels as LearningObject.Level[],
       lock: record.lock as LearningObject.Lock,
       collection: record.collection,
-      status: record.status,
+      status: record.status as LearningObject.Status,
       description: record.description,
       published: record.published || false,
     });
