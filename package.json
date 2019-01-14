@@ -23,11 +23,7 @@
   },
   "homepage": "https://github.com/Cyber4All/learning-object-service#readme",
   "dependencies": {
-<<<<<<< HEAD
-    "@cyber4all/clark-entity": "^4.0.0-rc.122.0",
-=======
     "@cyber4all/clark-entity": "^4.0.0-rc.13.0",
->>>>>>> 81e81ff84114a6b9c18f69169b1fee205c6bd102
     "@cyber4all/clark-taxonomy": "^4.0.0",
     "aws-sdk": "^2.211.0",
     "chai": "^4.1.2",
