@@ -57,7 +57,7 @@ export class SubmissionDatastore {
       {
         $set: {
           published: false,
-          status: 'unpublished',
+          status: 'unreleased',
         },
       },
     );
