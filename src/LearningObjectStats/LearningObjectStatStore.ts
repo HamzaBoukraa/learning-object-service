@@ -34,7 +34,11 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
             count: { $sum: 1 },
             released: {
               $sum: {
-                $cond: [{ $eq: ['$status', 'released'] }, 1, 0],
+                $cond: [
+                  { $eq: ['$status', 'released'] },
+                  1,
+                  { $cond: [{ $eq: ['$status', 'published'] }, 1, 0] },
+                ],
               },
             },
             ids: { $push: '$_id' },
