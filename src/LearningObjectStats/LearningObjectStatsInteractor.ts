@@ -4,12 +4,19 @@ export interface LearningObjectStats {
   ids: string[];
   downloads: number;
   saves: number;
+  total: number;
+  released: number;
   lengths: {
     nanomodule: number;
     micromodule: number;
     module: number;
     unit: number;
     course: number;
+  };
+  blooms_distribution: {
+    apply: number;
+    evaluate: number;
+    remember: number;
   };
 }
 export interface LearningObjectStatDatastore {
