@@ -81,6 +81,10 @@ export class MockDataStore implements DataStore {
     }
   }
 
+  createChangelog(learningObjectId: String, userId: String, changelogText: String): Promise<void> {
+    return Promise.resolve();
+  }
+
   fetchMultipleObjects(
     ids: string[],
     full?: boolean,

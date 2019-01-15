@@ -18,12 +18,11 @@ export class LearningObjectDataStore {
                         $project: 
                         {
                             learningObjectId: 1,
-                            recentChangelog: { $arrayElemAt: [ "$logs", -1] }
+                            recentChangelog: { $arrayElemAt: [ "$logs", -1 ] }
                         }
                     }
                 ])
             const documents = await cursor.toArray();
-            console.log(documents);
             const changelog = documents[0];
             return changelog;
         } catch (e) {

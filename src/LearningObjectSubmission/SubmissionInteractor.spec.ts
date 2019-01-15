@@ -1,8 +1,9 @@
 
-import { submitForReview, cancelSubmission } from './SubmissionInteractor';
+import { submitForReview, cancelSubmission, createChangelog } from './SubmissionInteractor';
 import { MOCK_OBJECTS, SUBMITTABLE_LEARNING_OBJECT, INVALID_LEARNING_OBJECTS } from '../tests/mocks';
 import { DataStore } from '../interfaces/DataStore';
 import { MockDataStore } from '../tests/mock-drivers/MockDataStore';
+import { createReadStream } from 'fs';
 
 const dataStore: DataStore = new MockDataStore; // DataStore
 
@@ -66,3 +67,20 @@ describe('cancelSubmission', () => {
     }
   });
 });
+
+describe('createChangelog', () => {
+  it('should create a new changelog', async done => {
+    try {
+      await expect(createChangelog(
+        dataStore,
+        MOCK_OBJECTS.LEARNING_OBJECT_ID,
+        MOCK_OBJECTS.USER_ID,
+        MOCK_OBJECTS.CHANGELOG_TEXT
+      ))
+      .resolves.toBe(undefined);
+      done();
+    } catch (error) {
+      console.error(error);
+    }
+  });
+})

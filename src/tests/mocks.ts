@@ -2,6 +2,8 @@
 
 export const MOCK_OBJECTS = {
     USERNAME: 'cypress',
+    USER_ID: '123456789',
+    CHANGELOG_TEXT: 'lorem fdhjskafjhakfjh',
     EMPTY_STRING: '',
     CURR_PAGE: 1,
     LIMIT: 3,
