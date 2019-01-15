@@ -65,6 +65,7 @@ export interface DataStore
   findParentObjects(params: {
     query: LearningObjectQuery;
   }): Promise<LearningObject[]>;
+  findParentObjectIds(params: { childId: string }): Promise<string[]>;
   loadChildObjects(params: {
     id: string;
     full?: boolean;
