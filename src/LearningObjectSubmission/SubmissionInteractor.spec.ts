@@ -3,7 +3,6 @@ import { submitForReview, cancelSubmission, createChangelog } from './Submission
 import { MOCK_OBJECTS, SUBMITTABLE_LEARNING_OBJECT, INVALID_LEARNING_OBJECTS } from '../tests/mocks';
 import { DataStore } from '../interfaces/DataStore';
 import { MockDataStore } from '../tests/mock-drivers/MockDataStore';
-import { createReadStream } from 'fs';
 
 const dataStore: DataStore = new MockDataStore; // DataStore
 
