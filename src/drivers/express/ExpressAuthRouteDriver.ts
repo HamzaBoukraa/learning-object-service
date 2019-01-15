@@ -15,6 +15,7 @@ import {
 import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
 import * as SubmissionRouteDriver from '../../LearningObjectSubmission/SubmissionRouteDriver';
 import { reportError } from '../SentryConnector';
+
 export class ExpressAuthRouteDriver {
   private upload = multer({ storage: multer.memoryStorage() });
 
@@ -37,6 +38,16 @@ export class ExpressAuthRouteDriver {
 
   private setRoutes(router: Router): void {
     router.use((req, res, next) => {
+      if(!req.user) {
+        try {
+          throw new Error(
+            'The user property must be defined on the request object to access these routes.',
+          );
+        } catch (e) {
+          console.log(e.message);
+          reportError(e);
+        }
+      }
       // If the username in the cookie is not lowercase and error will be reported
       // and the value adjusted to be lowercase
       if (

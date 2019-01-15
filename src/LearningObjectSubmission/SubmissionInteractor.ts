@@ -1,5 +1,6 @@
 import { DataStore } from '../interfaces/DataStore';
 import { LearningObjectInteractor } from '../interactors/interactors';
+import { MockDataStore } from '../tests/mock-drivers/MockDataStore';
 
 export async function submitForReview(
   dataStore: DataStore,
@@ -26,4 +27,18 @@ export async function cancelSubmission(
   id: string,
 ): Promise<void> {
   return dataStore.togglePublished(username, id, false);
+}
+
+export async function createChangelog(
+  dataStore: DataStore,
+  learningObjectId: String,
+  userId: String,
+  changelogText: String
+): Promise<void> {
+  try {
+      await dataStore.createChangelog(learningObjectId, userId, changelogText);
+  } catch (e) { 
+    console.error(e);
+    Promise.reject(e);
+  }
 }

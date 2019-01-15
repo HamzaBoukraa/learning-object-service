@@ -109,6 +109,7 @@ export async function deleteLearningObject(
       true,
     );
     await dataStore.deleteLearningObject(learningObjectID);
+    await dataStore.deleteChangelog(learningObjectID);
     if (learningObject.materials.files.length) {
       const path = `${username}/${learningObjectID}/`;
       await fileManager.deleteAll({ path });
@@ -195,5 +196,16 @@ export async function deleteFile(
     return fileManager.delete({ path });
   } catch (e) {
     return Promise.reject(`Problem deleting file. Error: ${e}`);
+  }
+}
+export async function getRecentChangelog(
+  dataStore: DataStore,
+  learningObjectId: String
+): Promise<any> {
+  try { 
+    const changelog = await dataStore.fetchRecentChangelog(learningObjectId);
+    return changelog;
+  } catch (e) {
+    return Promise.reject(`Problem fetching recent changelog for learning object: ` + learningObjectId + `. Error: ${e}`);
   }
 }

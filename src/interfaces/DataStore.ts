@@ -89,6 +89,9 @@ export interface DataStore extends LearningObjectStatDatastore {
     learningObjectId: string;
     fileId: string;
   }): Promise<LearningObjectFile>;
+  createChangelog(learningObjectId: String, userId: String, changelogText: String): Promise<void>;
+  fetchRecentChangelog(learningObjectId: String): Promise<any>;
+  deleteChangelog(learningObjectId: String): Promise<void>;
 }
 
 export { Collection as LearningObjectCollection };

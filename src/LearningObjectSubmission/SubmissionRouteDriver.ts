@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { submitForReview, cancelSubmission } from './SubmissionInteractor';
+import { submitForReview, cancelSubmission, createChangelog } from './SubmissionInteractor';
 import { DataStore } from '../interfaces/DataStore';
 
 /**
@@ -49,8 +49,23 @@ export function initialize(dataStore: DataStore) {
       }
     }
   }
+
+  async function createLog(req: Request, res: Response) {
+    const learningObjectId = req.params.learningObjectId;
+    const userId = req.body.userId;
+    const changelogText = req.body.changelogText;
+    try {
+      await createChangelog(dataStore, learningObjectId, userId, changelogText);
+      res.status(200).json({message: 'Changelog added'});
+    } catch (e) {
+      res.status(400).json({message: 'An error has occured'});
+    }
+   
+  }
+
   const router: Router = Router();
   router.patch('/learning-objects/publish', submit);
   router.patch('/learning-objects/unpublish', cancel);
+  router.post('/learning-objects/:learningObjectId/changelog', createLog);
   return router;
 }

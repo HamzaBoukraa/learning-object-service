@@ -1,6 +1,6 @@
-import { User, Collection } from '@cyber4all/clark-entity';
+import { User, Collection, LearningOutcome } from '@cyber4all/clark-entity';
 import { COLLECTIONS } from '../drivers/MongoDriver';
-import { Db } from 'mongodb';
+import { Db, ObjectId } from 'mongodb';
 import { UserDocument } from '@cyber4all/clark-schema';
 import * as ObjectMapper from '../drivers/Mongo/ObjectMapper';
 import { Restriction, LearningObjectLock } from '@cyber4all/clark-entity/dist/learning-object';
@@ -66,5 +66,85 @@ export class SubmissionDatastore {
         JSON.stringify(username),
       );
     return Promise.resolve(record);
+  }
+
+  public async createChangelog (
+    learningObjectId: String,
+    userId: String,
+    changelogText: String
+  ):Promise<void> {
+    try {
+      // Check if the specified learning object already has existing changelogs
+      const record = await this.fetchChangelog(learningObjectId);
+      // If it does not exist, create a new document in the changelogs collection
+      if(!record)
+        return this.insertChangelog(learningObjectId, userId, changelogText);
+      // Otherwise, append a new log object to the existing array of objects
+      return this.editChangelog(record._id, learningObjectId, userId, changelogText);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  private async fetchChangelog(learningObjectId: String) {
+    try {
+      const record = await this.db 
+        .collection('changelogs')
+        .findOne({learningObjectId: learningObjectId});
+      return record;
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  private async insertChangelog(
+    learningObjectId: String,
+    userId: String,
+    changelogText: String
+  ): Promise<void> {
+    try { 
+      const id = new ObjectId();
+      const _id   = id.toHexString();
+      const date  = id.getTimestamp();
+      await this.db
+        .collection('changelogs')
+        .insertOne({
+          _id: _id,
+          learningObjectId: learningObjectId,
+          logs: [
+            {
+              userId: userId,
+              date: date,
+              text: changelogText
+            }
+          ]
+        });
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  private async editChangelog(
+    id: String,
+    learningObjectId: String,
+    userId: String,
+    changelogText: String
+  ): Promise<void> {
+    try {
+      await this.db
+        .collection('changelogs')
+        .findOneAndUpdate(
+          { learningObjectId: learningObjectId },
+          { $push: {
+            logs: {
+              userId: userId,
+              date: new ObjectId().getTimestamp(),
+              text: changelogText
+            }
+          }}
+        )
+    } catch (e) {
+      console.log(e);
+    }
   }
 }

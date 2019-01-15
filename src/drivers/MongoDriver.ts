@@ -34,6 +34,8 @@ import * as ObjectMapper from './Mongo/ObjectMapper';
 import { SubmissionDatastore } from '../LearningObjectSubmission/SubmissionDatastore';
 import { LearningObjectStats } from '../LearningObjectStats/LearningObjectStatsInteractor';
 import { LearningObjectStatStore } from '../LearningObjectStats/LearningObjectStatStore';
+import { ConfigurationServicePlaceholders } from 'aws-sdk/lib/config_service_placeholders';
+import { LearningObjectDataStore } from '../LearningObjects/LearningObjectDatastore';
 
 export interface Collection {
   name: string;
@@ -123,6 +125,7 @@ COLLECTIONS_MAP.set(
 export class MongoDriver implements DataStore {
   submissionStore: SubmissionDatastore;
   statStore: LearningObjectStatStore;
+  learningObjectStore: LearningObjectDataStore;
   togglePublished(
     username: string,
     id: string,
@@ -137,6 +140,7 @@ export class MongoDriver implements DataStore {
     this.connect(dburi).then(() => {
       this.submissionStore = new SubmissionDatastore(this.db);
       this.statStore = new LearningObjectStatStore(this.db);
+      this.learningObjectStore = new LearningObjectDataStore(this.db);
     });
   }
 
@@ -220,6 +224,14 @@ export class MongoDriver implements DataStore {
     } catch (e) {
       return Promise.reject(e);
     }
+  }
+
+  async fetchRecentChangelog(learningObjectId: string): Promise<any> {
+    return this.learningObjectStore.getRecentChangelog(learningObjectId);
+  }
+
+  async deleteChangelog(learningObjectId: string): Promise<void> {
+    return this.learningObjectStore.deleteChangelog(learningObjectId);
   }
 
   /**
@@ -832,7 +844,7 @@ export class MongoDriver implements DataStore {
         .findOne<UserDocument>(query);
       if (!userRecord)
         return Promise.reject(
-          'No user with username or email' + username + ' exists.',
+          'No user with username or email ' + username + ' exists.',
         );
       return `${userRecord._id}`;
     } catch (e) {
@@ -1620,6 +1632,14 @@ export class MongoDriver implements DataStore {
     } catch (e) {
       return Promise.reject(e);
     }
+  }
+
+  async createChangelog(
+    learningObjectId: String,
+    userId: String,
+    changelogText: String
+  ): Promise<void> {
+    return this.submissionStore.createChangelog(learningObjectId, userId, changelogText);
   }
 
   ////////////////////////////////////////////////

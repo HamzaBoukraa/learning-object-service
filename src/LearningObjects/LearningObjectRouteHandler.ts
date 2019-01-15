@@ -3,6 +3,7 @@ import { Request, Response, Router } from 'express';
 import { LearningObject } from '@cyber4all/clark-entity';
 import { DataStore } from '../interfaces/DataStore';
 import { FileManager, LibraryCommunicator } from '../interfaces/interfaces';
+import { MockLibraryDriver } from '../tests/mock-drivers/MockLibraryDriver';
 
 /**
  * Initializes an express router with endpoints to Create, Update, and Delete
@@ -64,10 +65,28 @@ export function initialize({ dataStore, fileManager, library}: { dataStore: Data
       res.status(500).send(e);
     }
   };
+
+  const getRecentChangelog = async (req: Request, res: Response) => {
+    try {
+      console.log('hello');
+      const learningObjectId = req.params.learningObjectId;
+      const changelog = await LearningObjectInteractor.getRecentChangelog(
+        dataStore,
+        learningObjectId
+      );
+      console.log('changelog', changelog);
+      res.status(200).send(changelog);
+    } catch (e) {
+      console.error(e);
+      res.status(400).send(e);
+    }
+  }
+
   router
       .route('/learning-objects')
       .post(addLearningObject)
       .patch(updateLearningObject);
   router.delete('/learning-objects/:learningObjectName', deleteLearningObject);
+  router.get('/learning-objects/:learningObjectId/changelog/:changelogId', getRecentChangelog);
   return router;
 }
