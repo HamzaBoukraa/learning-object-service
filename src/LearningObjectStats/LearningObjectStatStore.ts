@@ -5,6 +5,7 @@ import {
 import { Db } from 'mongodb';
 import { COLLECTIONS } from '../drivers/MongoDriver';
 
+const USAGE_STATS_COLLECTION = 'usage-stats';
 const BLOOMS_DISTRIBUTION_COLLECTION = 'blooms_outcome_distribution';
 
 const BLOOMS = {
@@ -15,9 +16,7 @@ const BLOOMS = {
 
 export class LearningObjectStatStore implements LearningObjectStatDatastore {
   constructor(private db: Db) {}
-  async fetchStats(params: {
-    query: any;
-  }): Promise<Partial<LearningObjectStats>> {
+  async fetchStats(params: { query: any }): Promise<LearningObjectStats> {
     // Perform aggregation on Learning Objects collection to get length distribution, total number of objects, and number of released objects
     const statCursor = this.db
       .collection(COLLECTIONS.LearningObject.name)
@@ -46,6 +45,11 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
         },
       ]);
     // Fetch blooms distribution data
+    const downloadSaves = this.db
+      .collection<{ downloads: number; saves: number }>(USAGE_STATS_COLLECTION)
+      .findOne({ _id: 'learning-object-stats' });
+
+    // Fetch blooms distribution data
     const bloomsCursor = await this.db
       .collection<{ _id: string; value: number }>(
         BLOOMS_DISTRIBUTION_COLLECTION,
@@ -53,14 +57,14 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
       .find();
 
     // Convert cursors to arrays
-    const [objectStats, bloomsData] = await Promise.all([
+    const [objectStats, bloomsData, downloadSavesData] = await Promise.all([
       statCursor.toArray(),
       bloomsCursor.toArray(),
+      downloadSaves,
     ]);
 
     // Create stats object with default values
-    const stats: Partial<LearningObjectStats> = {
-      ids: [],
+    const stats: LearningObjectStats = {
       lengths: {
         nanomodule: 0,
         micromodule: 0,
@@ -75,13 +79,13 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
       },
       total: 0,
       released: 0,
+      downloads: 0,
+      saves: 0,
     };
     // If objectStats is defined and is iterable
     if (objectStats && objectStats.length) {
       // For each stats grouped by length
       objectStats.forEach(stat => {
-        // Add object ids to stat's ids array
-        stats.ids.push(...stat.ids);
         // Set stat.lengths[nanomodule | micromodule | module | unit | course] equal to count from aggregation
         stats.lengths[stat._id] = stat.count;
         // Increment total by number in count
@@ -89,6 +93,11 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
         // Increment released by number in released
         stats.released += stat.released;
       });
+    }
+    // If downloadSavesData update stats
+    if (downloadSavesData) {
+      stats.downloads = downloadSavesData.downloads;
+      stats.saves = downloadSavesData.saves;
     }
     // If bloomsData is defined and is iterable
     if (bloomsData && bloomsData.length) {
