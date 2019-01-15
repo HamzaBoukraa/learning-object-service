@@ -4,17 +4,19 @@ export interface LearningObjectStats {
   ids: string[];
   downloads: number;
   saves: number;
+  total: number;
+  released: number;
   lengths: {
     nanomodule: number;
     micromodule: number;
     module: number;
     unit: number;
     course: number;
-  }
+  };
   blooms_distribution: {
-    apply: number; 
-    evaluate: number; 
-    remember: number; 
+    apply: number;
+    evaluate: number;
+    remember: number;
   };
 }
 export interface LearningObjectStatDatastore {
@@ -34,9 +36,7 @@ export async function getStats(params: {
       const metrics = await params.library.getMetrics(id);
       stats.downloads += metrics.downloads;
       stats.saves += metrics.saves;
-      
     }),
-    
   );
   delete stats.ids;
   return stats as LearningObjectStats;
