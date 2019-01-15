@@ -9,11 +9,12 @@ import { LibraryCommunicator } from '../interfaces/interfaces';
 export function initialize({
   dataStore,
   library,
+  router,
 }: {
   dataStore: DataStore;
   library: LibraryCommunicator;
+  router: Router;
 }) {
-  const router: Router = Router();
   const getStats = async (req: Request, res: Response) => {
     try {
       const query = req.query;
@@ -31,6 +32,5 @@ export function initialize({
     }
   };
 
-  router.route('').get(getStats);
-  return router;
+  router.route('/learning-objects/stats').get(getStats);
 }
