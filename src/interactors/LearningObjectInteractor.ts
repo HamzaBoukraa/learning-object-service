@@ -474,20 +474,45 @@ export class LearningObjectInteractor {
     learningObjectNames: string[],
   ): Promise<void> {
     try {
-      const learningObjectIDs: string[] = await Promise.all(
-        learningObjectNames.map((name: string) => {
-          return dataStore.findLearningObject(username, name);
+      // Get LearningObject ids
+      const objectRefs: {
+        id: string;
+        parentIds: string[];
+      }[] = await Promise.all(
+        learningObjectNames.map(async (name: string) => {
+          const id = await dataStore.findLearningObject(username, name);
+          const parentIds = await dataStore.findParentObjectIds({
+            childId: id,
+          });
+          return { id, parentIds };
         }),
       );
-      await dataStore.deleteMultipleLearningObjects(learningObjectIDs);
-      const learningObjectsWithFiles = await dataStore.fetchMultipleObjects(
-        learningObjectIDs,
+      const objectIds = objectRefs.map(obj => obj.id);
+      // Delete objects from datastore
+      await dataStore.deleteMultipleLearningObjects(objectIds);
+      // For each object id
+      await Promise.all(
+        objectRefs.map(async obj => {
+          // Attempt to delete files
+          try {
+            const path = `${username}/${obj.id}/`;
+            await fileManager.deleteAll({ path });
+          } catch (error) {
+            console.error(
+              `Could not delete files for object ${obj.id}. ${error}`,
       );
-      for (let object of learningObjectsWithFiles) {
-        const path = `${username}/${object.id}/`;
-        await fileManager.deleteAll({ path });
       }
-      await library.cleanObjectsFromLibraries(learningObjectIDs);
+          // Update parents' dates
+          await updateParentsDate({
+            dataStore,
+            parentIds: obj.parentIds,
+            childId: obj.id,
+            date: Date.now().toString(),
+          });
+        }),
+      );
+      // Remove objects from library
+      await library.cleanObjectsFromLibraries(objectIds);
     } catch (error) {
       return Promise.reject(
         `Problem deleting Learning Objects. Error: ${error}`,
