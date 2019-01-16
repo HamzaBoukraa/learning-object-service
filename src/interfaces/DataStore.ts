@@ -16,6 +16,10 @@ export interface DataStore
     id: string;
     updates: LearningObjectUpdates;
   }): Promise<void>;
+  updateMultipleLearningObjects(params: {
+    ids: string[];
+    updates: LearningObjectUpdates;
+  }): Promise<void>;
   toggleLock(id: string, lock?: LearningObject.Lock): Promise<void>;
   deleteLearningObject(id: string): Promise<void>;
   deleteMultipleLearningObjects(ids: string[]): Promise<void>;
