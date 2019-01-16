@@ -374,7 +374,11 @@ export async function removeFile(params: {
         objectId: params.objectId,
         fileId: params.fileId,
       });
-      return await deleteFile(params.fileManager, path);
+      await deleteFile(params.fileManager, path);
+      await updateObjectLastModifiedDate({
+        dataStore: params.dataStore,
+        id: params.objectId,
+      });
     }
   } catch (e) {
     return Promise.reject(`Problem deleting file. Error: ${e}`);
