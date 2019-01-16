@@ -139,6 +139,27 @@ export class MongoDriver implements DataStore {
       .update({ _id: { $in: params.ids } }, { $set: params.updates });
   }
   /**
+   * Returns array of ids associated with child's parent objects
+   *
+   * @param {{ childId: string }} params
+   * @returns {Promise<string[]>}
+   * @memberof MongoDriver
+   */
+  async findParentObjectIds(params: { childId: string }): Promise<string[]> {
+    const docs = await this.db
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .find<{ _id: string }>(
+        { children: params.childId },
+        { projection: { _id: 1 } },
+      )
+      .toArray();
+    if (docs) {
+      return docs.map(doc => doc._id);
+    }
+    return [];
+  }
+
+  /**
    *  Fetches all child objects for object with given id
    *
    * @param {string} id
