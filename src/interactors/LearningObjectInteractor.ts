@@ -431,9 +431,13 @@ export class LearningObjectInteractor {
     loFile: LearningObject.Material.File;
   }): Promise<void> {
     try {
-      return await params.dataStore.addToFiles({
+      await params.dataStore.addToFiles({
         id: params.id,
         loFile: params.loFile,
+      });
+      await updateObjectLastModifiedDate({
+        dataStore: params.dataStore,
+        id: params.id,
       });
     } catch (e) {
       return Promise.reject(e);
