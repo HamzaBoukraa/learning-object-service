@@ -24,7 +24,6 @@ export interface LearningObjectStatDatastore {
 
 export async function getStats(params: {
   dataStore: LearningObjectStatDatastore;
-  library: LibraryCommunicator;
   query: any;
 }): Promise<LearningObjectStats> {
   return params.dataStore.fetchStats({ query: params.query });
