@@ -12,6 +12,32 @@ import { LearningObjectError } from '../errors';
 import { hasLearningObjectWriteAccess } from '../interactors/AuthorizationManager';
 
 /**
+ * Performs update operation on learning object's date
+ *
+ * @param {{
+ *   dataStore: DataStore;
+ *   id: string;
+ *   date?: string;
+ * }} params
+ */
+export async function updateObjectLastModifiedDate(params: {
+  dataStore: DataStore;
+  id: string;
+  date?: string;
+}) {
+  const lastModified = params.date || Date.now().toString();
+  await params.dataStore.editLearningObject({
+    id: params.id,
+    updates: { date: lastModified },
+  });
+  await updateParentsDate({
+    dataStore: params.dataStore,
+    childId: params.id,
+    date: lastModified,
+  });
+}
+
+/**
  * Add a new learning object to the database.
  * NOTE: this function only adds basic fields;
  *       the user.outcomes field is ignored
