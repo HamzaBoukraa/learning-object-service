@@ -38,6 +38,47 @@ export async function updateObjectLastModifiedDate(params: {
 }
 
 /**
+ * Recursively updates parent objects' dates
+ *
+ * @param {{
+ *   dataStore: DataStore;
+ *   childId: string;
+ *   parentIds?: string[];
+ *   date: string;
+ * }} params
+ * @returns {Promise<void>}
+ */
+export async function updateParentsDate(params: {
+  dataStore: DataStore;
+  childId: string;
+  parentIds?: string[];
+  date: string;
+}): Promise<void> {
+  const parentIds =
+    params.parentIds ||
+    (await params.dataStore.findParentObjectIds({
+      childId: params.childId,
+    }));
+  if (parentIds && parentIds.length) {
+    await Promise.all([
+      // Perform update of all parent dates
+      params.dataStore.updateMultipleLearningObjects({
+        ids: parentIds,
+        updates: { date: params.date },
+      }),
+      // Perform update parents' parents' dates
+      ...parentIds.map(id =>
+        updateParentsDate({
+          dataStore: params.dataStore,
+          childId: id,
+          date: params.date,
+        }),
+      ),
+    ]);
+  }
+}
+
+/**
  * Add a new learning object to the database.
  * NOTE: this function only adds basic fields;
  *       the user.outcomes field is ignored
