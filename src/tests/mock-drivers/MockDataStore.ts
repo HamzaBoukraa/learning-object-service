@@ -16,6 +16,14 @@ const COLLECTIONS = {
 };
 
 export class MockDataStore implements DataStore {
+  
+  fetchStats(params: { query: any; }): Promise<Partial<import("/Users/nick/Documents/clark/CLARK-DevBox/learning-object-service/src/LearningObjectStats/LearningObjectStatsInteractor").LearningObjectStats>> {
+    throw new Error("Method not implemented.");
+  }
+
+  deleteChangelog(learningObjectId: String): Promise<void> {
+    return Promise.resolve();
+  }
 
   connect(file: string): Promise<void> {
     return Promise.resolve();
