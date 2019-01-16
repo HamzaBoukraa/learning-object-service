@@ -241,13 +241,23 @@ export async function deleteLearningObject(
       false,
       true,
     );
+    const parentIds = await dataStore.findParentObjectIds({
+      childId: learningObjectID,
+    });
     await dataStore.deleteLearningObject(learningObjectID);
     if (learningObject.materials.files.length) {
       const path = `${username}/${learningObjectID}/`;
       await fileManager.deleteAll({ path });
     }
-    library.cleanObjectsFromLibraries([learningObjectID]);
-    return Promise.resolve();
+    await Promise.all([
+      library.cleanObjectsFromLibraries([learningObjectID]),
+      updateParentsDate({
+        dataStore,
+        parentIds,
+        childId: learningObjectID,
+        date: Date.now().toString(),
+      }),
+    ]);
   } catch (error) {
     return Promise.reject(`Problem deleting Learning Object. Error: ${error}`);
   }
