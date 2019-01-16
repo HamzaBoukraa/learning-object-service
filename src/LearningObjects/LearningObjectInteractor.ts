@@ -190,14 +190,14 @@ export async function updateLearningObject(params: {
 
     await Promise.all([
       updateParentsDate({
-      dataStore: params.dataStore,
+        dataStore: params.dataStore,
         childId: params.id,
         date: updates.date,
       }),
       updateReadme({
         dataStore: params.dataStore,
-      fileManager: params.fileManager,
-      id: params.id,
+        fileManager: params.fileManager,
+        id: params.id,
       }),
     ]);
   } catch (e) {
@@ -396,7 +396,7 @@ export async function removeFile(params: {
  * @returns {Promise<void>}
  * @memberof LearningObjectInteractor
  */
-export async function deleteFile(
+async function deleteFile(
   fileManager: FileManager,
   path: string,
 ): Promise<void> {
