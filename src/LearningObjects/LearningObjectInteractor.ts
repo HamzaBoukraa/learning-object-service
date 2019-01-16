@@ -188,11 +188,18 @@ export async function updateLearningObject(params: {
       updates,
     });
 
-    await updateReadme({
+    await Promise.all([
+      updateParentsDate({
       dataStore: params.dataStore,
+        childId: params.id,
+        date: updates.date,
+      }),
+      updateReadme({
+        dataStore: params.dataStore,
       fileManager: params.fileManager,
       id: params.id,
-    });
+      }),
+    ]);
   } catch (e) {
     return Promise.reject(`Problem updating Learning Object. ${e}`);
   }
