@@ -10,6 +10,10 @@ import { UserToken } from '../types';
 import { LearningObjectQuery } from '../interfaces/DataStore';
 import { DZFile, FileUpload } from '../interfaces/FileManager';
 import { processMultipartUpload } from '../FileManager/FileInteractor';
+import {
+  updateObjectLastModifiedDate,
+  updateParentsDate,
+} from '../LearningObjects/LearningObjectInteractor';
 
 // file size is in bytes
 const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
@@ -130,7 +134,6 @@ export class LearningObjectInteractor {
           }),
         );
       }
-
       return summary;
     } catch (e) {
       return Promise.reject(`Problem loading summary. Error: ${e}`);
@@ -500,8 +503,8 @@ export class LearningObjectInteractor {
           } catch (error) {
             console.error(
               `Could not delete files for object ${obj.id}. ${error}`,
-      );
-      }
+            );
+          }
           // Update parents' dates
           await updateParentsDate({
             dataStore,
