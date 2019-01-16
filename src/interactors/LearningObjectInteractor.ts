@@ -729,7 +729,12 @@ export class LearningObjectInteractor {
         params.username,
         params.parentName,
       );
-      return params.dataStore.setChildren(parentID, params.children);
+      await params.dataStore.setChildren(parentID, params.children);
+      await updateObjectLastModifiedDate({
+        dataStore: params.dataStore,
+        id: parentID,
+        date: Date.now().toString(),
+      });
     } catch (e) {
       return Promise.reject(`Problem adding child. Error: ${e}`);
     }
