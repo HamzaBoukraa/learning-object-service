@@ -334,6 +334,10 @@ export async function updateFileDescription(params: {
       fileId: params.fileId,
       description: params.description,
     });
+    await updateObjectLastModifiedDate({
+      dataStore: params.dataStore,
+      id: params.objectId,
+    });
   } catch (e) {
     return Promise.reject(`Problem updating file description. Error: ${e}`);
   }
