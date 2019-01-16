@@ -1,5 +1,3 @@
-import { LibraryCommunicator } from '../interfaces/interfaces';
-
 export interface LearningObjectStats {
   downloads: number;
   saves: number;
