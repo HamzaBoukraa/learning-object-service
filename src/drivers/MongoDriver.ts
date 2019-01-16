@@ -121,6 +121,24 @@ export class MongoDriver implements DataStore {
   }
 
   /**
+   * Performs update on multiple LearningObject documents
+   *
+   * @param {{
+   *     ids: string[];
+   *     updates: LearningObjectUpdates;
+   *   }} params
+   * @returns {Promise<void>}
+   * @memberof MongoDriver
+   */
+  async updateMultipleLearningObjects(params: {
+    ids: string[];
+    updates: LearningObjectUpdates;
+  }): Promise<void> {
+    await this.db
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .update({ _id: { $in: params.ids } }, { $set: params.updates });
+  }
+  /**
    *  Fetches all child objects for object with given id
    *
    * @param {string} id
