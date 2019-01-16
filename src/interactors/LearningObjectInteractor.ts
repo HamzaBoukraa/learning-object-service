@@ -751,7 +751,12 @@ export class LearningObjectInteractor {
         params.username,
         params.parentName,
       );
-      return params.dataStore.deleteChild(parentID, params.childId);
+      await params.dataStore.deleteChild(parentID, params.childId);
+      await updateObjectLastModifiedDate({
+        dataStore: params.dataStore,
+        id: parentID,
+        date: Date.now().toString(),
+      });
     } catch (e) {
       return Promise.reject(`Problem removing child. Error: ${e}`);
     }
