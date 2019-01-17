@@ -13,6 +13,9 @@ import { UserToken } from '../../types';
 import { initializeSingleFileDownloadRouter } from '../../SingleFileDownload/RouteHandler';
 import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
 import { initializeCollectionRouter } from '../../Collections/RouteHandler';
+import { LEARNING_OBJECT_ROUTES } from '../../routes';
+import { Request, Response } from 'express';
+import { fileNotFound } from '../../assets/filenotfound';
 
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
 // tslint:disable-next-line:no-require-imports
@@ -203,7 +206,17 @@ export class ExpressRouteDriver {
     LearningObjectStatsRouteHandler.initialize({
       router,
       dataStore: this.dataStore,
-      library: this.library,
     });
   }
+}
+
+function fileNotFoundResponse(object: any, req: Request, res: Response) {
+  const redirectUrl = LEARNING_OBJECT_ROUTES.CLARK_DETAILS({
+    objectName: object.name,
+    username: req.params.username,
+  });
+  res
+    .status(404)
+    .type('text/html')
+    .send(fileNotFound(redirectUrl));
 }
