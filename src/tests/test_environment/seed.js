@@ -71,7 +71,7 @@ const USER_MOCK = {
 const SECJ_COLLECTION_MOCK = {
     _id: "5b967621f7a3ce2f6cbf5b78",
     name:"Security Injections", 
-    learningObjects:[objects.ops[0]._id],
+    learningObjects:['5ad8f5a6824dd17351adf1e1'],
     abvName:"secinj",
     hasLogo:true
 }
