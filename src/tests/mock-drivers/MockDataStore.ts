@@ -61,7 +61,7 @@ export class MockDataStore implements DataStore {
     throw new Error("Method not implemented.");
   }
   
-  fetchStats(params: { query: any; }): Promise<Partial<LearningObjectStats>> {
+  fetchStats(params: { query: any; }): Promise<LearningObjectStats> {
     throw new Error("Method not implemented.");
   }
 
