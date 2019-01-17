@@ -75,13 +75,20 @@ export class MongoDriver implements DataStore {
   private mongoClient: MongoClient;
   private db: Db;
 
-  constructor(dburi: string) {
-    this.connect(dburi).then(() => {
-      this.submissionStore = new SubmissionDatastore(this.db);
-      this.learningOutcomeStore = new LearningOutcomeMongoDatastore(this.db);
-      this.statStore = new LearningObjectStatStore(this.db);
-      this.learningObjectStore = new LearningObjectDataStore(this.db);
-    });
+  constructor() {}
+
+  static async build(dburi: string) {
+    const driver = new MongoDriver();
+    await driver.connect(dburi);
+    await driver.initializeModules();
+    return driver;
+  }
+
+  async initializeModules() {
+    this.submissionStore = new SubmissionDatastore(this.db);
+    this.learningOutcomeStore = new LearningOutcomeMongoDatastore(this.db);
+    this.statStore = new LearningObjectStatStore(this.db);
+    this.learningObjectStore = new LearningObjectDataStore(this.db);
   }
 
   /**
