@@ -37,6 +37,7 @@ export enum COLLECTIONS {
   STANDARD_OUTCOMES = 'outcomes',
   LO_COLLECTIONS = 'collections',
   MULTIPART_STATUSES = 'multipart-upload-statuses',
+  CHANGLOG = 'changelogs'
 }
 
 export class MongoDriver implements DataStore {

@@ -324,6 +324,8 @@ export async function getRecentChangelog(
     return changelog;
   } catch (e) {
     return Promise.reject(`Problem fetching recent changelog for learning object: ` + learningObjectId + `. Error: ${e}`);
+  }
+}
 
 /**
  * Fetches Learning Object's materials
@@ -413,3 +415,4 @@ async function checkNameExists(params: {
     throw new Error(LearningObjectError.DUPLICATE_NAME(params.name));
   }
 }
+

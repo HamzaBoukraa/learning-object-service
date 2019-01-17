@@ -213,6 +213,7 @@ export class ExpressAuthRouteDriver {
               dataStore: this.dataStore,
               fileManager: this.fileManager,
               file: upload,
+              uploadId,
             });
 
             res.status(200).send(loFile);

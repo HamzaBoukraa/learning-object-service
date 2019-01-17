@@ -1,6 +1,6 @@
 import { User, LearningObject } from '@cyber4all/clark-entity';
 import { COLLECTIONS } from '../drivers/MongoDriver';
-import { Db } from 'mongodb';
+import { Db, ObjectId } from 'mongodb';
 import * as ObjectMapper from '../drivers/Mongo/ObjectMapper';
 import { UserDocument } from '../types';
 
@@ -112,7 +112,7 @@ export class SubmissionDatastore {
   private async fetchChangelog(learningObjectId: string) {
     try {
       const record = await this.db 
-        .collection(COLLECTIONS.ChangelogCollection.name)
+        .collection(COLLECTIONS.CHANGLOG)
         .findOne({learningObjectId: learningObjectId});
       return record;
     } catch (e) {
@@ -130,7 +130,7 @@ export class SubmissionDatastore {
       const _id   = id.toHexString();
       const date  = id.getTimestamp();
       await this.db
-        .collection(COLLECTIONS.ChangelogCollection.name)
+        .collection(COLLECTIONS.CHANGLOG)
         .insertOne({
           _id: _id,
           learningObjectId: learningObjectId,
@@ -155,7 +155,7 @@ export class SubmissionDatastore {
   ): Promise<void> {
     try {
       await this.db
-        .collection(COLLECTIONS.ChangelogCollection.name)
+        .collection(COLLECTIONS.CHANGLOG)
         .findOneAndUpdate(
           { learningObjectId: learningObjectId },
           { $push: {

@@ -8,7 +8,7 @@ export class LearningObjectDataStore {
     async getRecentChangelog(learningObjectId: string): Promise<any> {
         try {
             const cursor = await this.db
-                .collection(COLLECTIONS.ChangelogCollection.name)
+                .collection(COLLECTIONS.CHANGLOG)
                 .aggregate([
                     {
                         $match: {
@@ -32,10 +32,10 @@ export class LearningObjectDataStore {
         }
     }
 
-    async deleteChanglog(learningObjectId: string): Promise<void> {
+    async deleteChangelog(learningObjectId: string): Promise<void> {
         try {
             await this.db  
-                .collection(COLLECTIONS.ChangelogCollection.name)
+                .collection(COLLECTIONS.CHANGLOG)
                 .remove({learningObjectId: learningObjectId});
         } catch(e) {
             console.error(e);
