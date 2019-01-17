@@ -276,13 +276,10 @@ export class ExpressRouteDriver {
       },
     );
 
-    router.use(
-      '/learning-objects/stats',
-      LearningObjectStatsRouteHandler.initialize({
-        dataStore: this.dataStore,
-        library: this.library,
-      }),
-    );
+    LearningObjectStatsRouteHandler.initialize({
+      router,
+      dataStore: this.dataStore,
+    });
   }
 }
 
@@ -291,5 +288,8 @@ function fileNotFoundResponse(object: any, req: Request, res: Response) {
     objectName: object.name,
     username: req.params.username,
   });
-  res.status(404).type('text/html').send(fileNotFound(redirectUrl));
+  res
+    .status(404)
+    .type('text/html')
+    .send(fileNotFound(redirectUrl));
 }
