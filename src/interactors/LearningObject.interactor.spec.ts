@@ -5,6 +5,7 @@ import {MockLibraryDriver} from '../tests/mock-drivers/MockLibraryDriver';
 import {MOCK_OBJECTS} from '../tests/mocks';
 import {DataStore} from '../interfaces/DataStore';
 import {LibraryCommunicator} from '../interfaces/interfaces';
+import { UserToken } from '../types';
 
 const driver: DataStore = new MockDataStore(); // DataStore
 const library: LibraryCommunicator = new MockLibraryDriver();
@@ -15,6 +16,7 @@ describe('loadLearningObjectSummary', () => {
       dataStore: driver,
       library,
       username: MOCK_OBJECTS.USERNAME,
+      userToken: MOCK_OBJECTS.USERTOKEN
     }).then(val => {
       expect(val).to.be.an('array');
       done();

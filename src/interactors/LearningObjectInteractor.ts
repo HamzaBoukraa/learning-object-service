@@ -803,7 +803,6 @@ export class LearningObjectInteractor {
     const learningObjectFile = {
       url,
       date,
-      id: undefined,
       name: file.name,
       fileType: file.mimetype,
       extension: extension,
@@ -821,7 +820,7 @@ export class LearningObjectInteractor {
       }
     }
 
-    return learningObjectFile;
+    return learningObjectFile as LearningObject.Material.File;
   }
 
   private static isPackageable(file: DZFile) {

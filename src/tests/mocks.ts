@@ -78,6 +78,14 @@ export const MOCK_OBJECTS = {
         saves: 23,
         downloads: 4,
     },
+    USERTOKEN: {
+        username: 'unittest',
+        name: 'unit test',
+        email: 'unit@test.com',
+        organization: 'unittesting',
+        emailVerified: 'true',
+        accessGroups: ['']
+      }
 };
 
 export const SUBMITTABLE_LEARNING_OBJECT = {
