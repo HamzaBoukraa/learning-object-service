@@ -1667,6 +1667,8 @@ export class MongoDriver implements DataStore {
         contributors: contributorIds,
         collection: object.collection,
         lock: object.lock,
+        // @ts-ignore
+        status: object.status,
       };
       if (isNew) {
         doc._id = new ObjectID().toHexString();

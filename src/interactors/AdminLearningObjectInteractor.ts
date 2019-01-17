@@ -166,7 +166,7 @@ export class AdminLearningObjectInteractor {
     dataStore: DataStore,
     fileManager: FileManager,
     id: string,
-    learningObject: LearningObject;
+    learningObject: LearningObject,
   ): Promise<void> {
     try {
       return await updateLearningObject(
