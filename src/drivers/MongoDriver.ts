@@ -103,6 +103,7 @@ export class COLLECTIONS {
   };
   public static StandardOutcome: Collection = { name: 'outcomes' };
   public static LearningObjectCollection: Collection = { name: 'collections' };
+  public static ChangelogCollection: Collection = { name: 'changelogs' };
   public static MultipartUploadStatusCollection: Collection = {
     name: 'multipart-upload-statuses',
   };

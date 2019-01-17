@@ -67,18 +67,16 @@ export function initialize({ dataStore, fileManager, library}: { dataStore: Data
   };
 
   const getRecentChangelog = async (req: Request, res: Response) => {
+    const learningObjectId = req.params.learningObjectId;
     try {
-      console.log('hello');
-      const learningObjectId = req.params.learningObjectId;
       const changelog = await LearningObjectInteractor.getRecentChangelog(
         dataStore,
         learningObjectId
       );
-      console.log('changelog', changelog);
       res.status(200).send(changelog);
     } catch (e) {
       console.error(e);
-      res.status(400).send(e);
+      res.status(417).json({message: 'Could not find recent changelog for learning object: ' + learningObjectId});
     }
   }
 

@@ -58,9 +58,8 @@ export function initialize(dataStore: DataStore) {
       await createChangelog(dataStore, learningObjectId, userId, changelogText);
       res.status(200).json({message: 'Changelog added'});
     } catch (e) {
-      res.status(400).json({message: 'An error has occured'});
+      res.status(417).json({message: 'Could not create changelog for learning object ' + learningObjectId});
     }
-   
   }
 
   const router: Router = Router();

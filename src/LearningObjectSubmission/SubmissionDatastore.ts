@@ -69,9 +69,9 @@ export class SubmissionDatastore {
   }
 
   public async createChangelog (
-    learningObjectId: String,
-    userId: String,
-    changelogText: String
+    learningObjectId: string,
+    userId: string,
+    changelogText: string
   ):Promise<void> {
     try {
       // Check if the specified learning object already has existing changelogs
@@ -86,10 +86,10 @@ export class SubmissionDatastore {
     }
   }
 
-  private async fetchChangelog(learningObjectId: String) {
+  private async fetchChangelog(learningObjectId: string) {
     try {
       const record = await this.db 
-        .collection('changelogs')
+        .collection(COLLECTIONS.ChangelogCollection.name)
         .findOne({learningObjectId: learningObjectId});
       return record;
     } catch (e) {
@@ -107,7 +107,7 @@ export class SubmissionDatastore {
       const _id   = id.toHexString();
       const date  = id.getTimestamp();
       await this.db
-        .collection('changelogs')
+        .collection(COLLECTIONS.ChangelogCollection.name)
         .insertOne({
           _id: _id,
           learningObjectId: learningObjectId,
@@ -132,7 +132,7 @@ export class SubmissionDatastore {
   ): Promise<void> {
     try {
       await this.db
-        .collection('changelogs')
+        .collection(COLLECTIONS.ChangelogCollection.name)
         .findOneAndUpdate(
           { learningObjectId: learningObjectId },
           { $push: {

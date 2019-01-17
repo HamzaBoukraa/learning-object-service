@@ -1,4 +1,5 @@
 import { Db } from "mongodb";
+import { COLLECTIONS } from "../drivers/MongoDriver";
 
 export class LearningObjectDataStore {
     
@@ -7,7 +8,7 @@ export class LearningObjectDataStore {
     async getRecentChangelog(learningObjectId: string): Promise<any> {
         try {
             const cursor = await this.db
-                .collection('changelogs')
+                .collection(COLLECTIONS.ChangelogCollection.name)
                 .aggregate([
                     {
                         $match: {
@@ -26,6 +27,7 @@ export class LearningObjectDataStore {
             const changelog = documents[0];
             return changelog;
         } catch (e) {
+            console.error(e);
             return Promise.reject(e);
         }
     }
@@ -33,7 +35,7 @@ export class LearningObjectDataStore {
     async deleteChanglog(learningObjectId: string): Promise<void> {
         try {
             await this.db  
-                .collection('changelogs')
+                .collection(COLLECTIONS.ChangelogCollection.name)
                 .remove({learningObjectId: learningObjectId});
         } catch(e) {
             console.error(e);
