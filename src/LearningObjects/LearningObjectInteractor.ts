@@ -16,21 +16,21 @@ import { hasLearningObjectWriteAccess } from '../interactors/AuthorizationManage
  *
  * @param {{
  *   dataStore: DataStore;
- *   id: string;
- *   date?: string;
+ *   id: string; [Id of the LearningObject being updated]
+ *   date?: string; [Timestamp to replace LearningObjects' current date with]
  * }} params
  */
 export async function updateObjectLastModifiedDate(params: {
   dataStore: DataStore;
   id: string;
   date?: string;
-}) {
+}): Promise<void> {
   const lastModified = params.date || Date.now().toString();
   await params.dataStore.editLearningObject({
     id: params.id,
     updates: { date: lastModified },
   });
-  await updateParentsDate({
+  return updateParentsDate({
     dataStore: params.dataStore,
     childId: params.id,
     date: lastModified,
@@ -42,9 +42,9 @@ export async function updateObjectLastModifiedDate(params: {
  *
  * @param {{
  *   dataStore: DataStore;
- *   childId: string;
- *   parentIds?: string[];
- *   date: string;
+ *   childId: string; [Id of child LearningObject]
+ *   parentIds?: string[]; [Ids of parent LearningObjects]
+ *   date: string; [Timestamp to replace LearningObjects' current date with]
  * }} params
  * @returns {Promise<void>}
  */
