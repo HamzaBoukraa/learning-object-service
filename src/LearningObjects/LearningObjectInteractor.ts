@@ -3,7 +3,13 @@ import { LearningObjectInteractor } from '../interactors/interactors';
 import { DataStore } from '../interfaces/DataStore';
 import { FileManager, LibraryCommunicator } from '../interfaces/interfaces';
 import { generatePDF } from './PDFKitDriver';
-import { LearningObjectPDF } from '@cyber4all/clark-entity/dist/learning-object';
+import {
+  LearningObjectUpdates,
+  UserToken,
+  VALID_LEARNING_OBJECT_UPDATES,
+} from '../types';
+import { LearningObjectError } from '../errors';
+import { hasLearningObjectWriteAccess } from '../interactors/AuthorizationManager';
 
 /**
  * Add a new learning object to the database.
@@ -24,35 +30,47 @@ export async function addLearningObject(
   dataStore: DataStore,
   fileManager: FileManager,
   object: LearningObject,
+  user: UserToken,
 ): Promise<LearningObject> {
+  const err = LearningObjectInteractor.validateLearningObject(object);
+
+  await checkNameExists({
+    dataStore,
+    username: user.username,
+    name: object.name,
+  });
+
   try {
-    const err = LearningObjectInteractor.validateLearningObject(object);
     if (err) {
       return Promise.reject(err);
     } else {
-      const learningObjectID = await dataStore.insertLearningObject(object);
+      const authorID = await dataStore.findUser(user.username);
+      const author = await dataStore.fetchUser(authorID);
+      if (!author.emailVerified) {
+        object.unpublish();
+      }
+      object.lock = {
+        restrictions: [LearningObject.Restriction.DOWNLOAD],
+      };
+      const objectInsert = new LearningObject({
+        ...object.toPlainObject(),
+        author,
+      });
+      const learningObjectID = await dataStore.insertLearningObject(
+        objectInsert,
+      );
       object.id = learningObjectID;
 
       // Generate PDF and update Learning Object with PDF meta.
-      object = await updateReadme({
+      await updateReadme({
         fileManager,
         object,
         dataStore,
       });
-      updateLearningObject(dataStore, fileManager, object.id, object);
 
       return object;
     }
   } catch (e) {
-    // The duplicate key error is produced by Mongo, via a constraint on the authorID/name compound index
-    // FIXME: This should be an error that is encapsulated within the MongoDriver, since it is specific to Mongo's indexing functionality
-    if (/duplicate key error/gi.test(e)) {
-      return Promise.reject(
-        `Could not save Learning Object. Learning Object with name: ${
-        object.name
-        } already exists.`,
-      );
-    }
     return Promise.reject(`Problem creating Learning Object. Error${e}`);
   }
 }
@@ -68,26 +86,67 @@ export async function addLearningObject(
  * @param {LearningObjectID} id - database id of the record to change
  * @param {LearningObject} object - entity with values to update to
  */
-export async function updateLearningObject(
-  dataStore: DataStore,
-  fileManager: FileManager,
-  id: string,
-  object: LearningObject,
-): Promise<void> {
+export async function updateLearningObject(params: {
+  user: UserToken;
+  dataStore: DataStore;
+  fileManager: FileManager;
+  id: string;
+  updates: { [index: string]: any };
+}): Promise<void> {
+  if (params.updates.name) {
+    await checkNameExists({
+      id: params.id,
+      dataStore: params.dataStore,
+      name: params.updates.name,
+      username: params.user.username,
+    });
+  }
+
   try {
-    const err = LearningObjectInteractor.validateLearningObject(object);
-    if (!err) {
-      object = await updateReadme({
-        dataStore,
-        fileManager,
-        object,
-      });
-      return await dataStore.editLearningObject(id, object);
-    } else {
-      throw new Error(err);
-    }
+    await hasLearningObjectWriteAccess(
+      params.user,
+      // TODO: fetch collection
+      'collection',
+      params.dataStore,
+      params.id,
+    );
+    const updates: LearningObjectUpdates = sanitizeUpdates(params.updates);
+    await validateUpdates({
+      id: params.id,
+      updates,
+    });
+    updates.date = Date.now().toString();
+    await params.dataStore.editLearningObject({
+      id: params.id,
+      updates,
+    });
+
+    await updateReadme({
+      dataStore: params.dataStore,
+      fileManager: params.fileManager,
+      id: params.id,
+    });
   } catch (e) {
-    return Promise.reject(`Problem updating Learning Object. Error: ${e}`);
+    return Promise.reject(`Problem updating Learning Object. ${e}`);
+  }
+}
+
+/**
+ * Fetches a learning object by ID
+ *
+ * @export
+ * @param {DataStore} dataStore
+ * @param {string} id the learning object's id
+ * @returns {Promise<LearningObject>}
+ */
+export async function getLearningObjectById(
+  dataStore: DataStore,
+  id: string,
+): Promise<LearningObject> {
+  try {
+    return await dataStore.fetchLearningObject(id, true, true);
+  } catch (e) {
+    return Promise.reject(`Problem fetching Learning Object. ${e}`);
   }
 }
 
@@ -117,9 +176,7 @@ export async function deleteLearningObject(
     library.cleanObjectsFromLibraries([learningObjectID]);
     return Promise.resolve();
   } catch (error) {
-    return Promise.reject(
-      `Problem deleting Learning Object. Error: ${error}`,
-    );
+    return Promise.reject(`Problem deleting Learning Object. Error: ${error}`);
   }
 }
 
@@ -141,7 +198,7 @@ export async function updateReadme(params: {
   fileManager: FileManager;
   object?: LearningObject;
   id?: string;
-}): Promise<LearningObject> {
+}): Promise<void> {
   try {
     let object = params.object;
     const id = params.id;
@@ -150,27 +207,90 @@ export async function updateReadme(params: {
     } else if (!object && !id) {
       throw new Error(`No learning object or id provided.`);
     }
-    const oldPDF: LearningObjectPDF = object.materials['pdf'];
+    const oldPDF: LearningObject.Material.PDF = object.materials['pdf'];
     const pdf = await generatePDF(params.fileManager, object);
-
     if (oldPDF && oldPDF.name !== pdf.name) {
-      deleteFile(
-        params.fileManager,
-        object.id,
-        object.author.username,
-        oldPDF.name,
-      );
+      const path = `${object.author.username}/${object.id}/${oldPDF.name}`;
+      deleteFile(params.fileManager, path);
     }
 
-    object.materials['pdf'] = {
-      name: pdf.name,
-      url: pdf.url,
-    };
-    return object;
+    return await params.dataStore.editLearningObject({
+      id: object.id,
+      updates: {
+        'materials.pdf': {
+          name: pdf.name,
+          url: pdf.url,
+        },
+      },
+    });
   } catch (e) {
     return Promise.reject(
       `Problem updating Readme for learning object. Error: ${e}`,
     );
+  }
+}
+
+/**
+ * Updates file description
+ *
+ * @static
+ * @param {string} objectId
+ * @param {string} fileId
+ * @returns {Promise<void>}
+ * @memberof LearningObjectInteractor
+ */
+export async function updateFileDescription(params: {
+  dataStore: DataStore;
+  objectId: string;
+  fileId: string;
+  description: string;
+}): Promise<void> {
+  try {
+    await params.dataStore.updateFileDescription({
+      learningObjectId: params.objectId,
+      fileId: params.fileId,
+      description: params.description,
+    });
+  } catch (e) {
+    return Promise.reject(`Problem updating file description. Error: ${e}`);
+  }
+}
+
+/**
+ * Removes file metadata and deletes from S3
+ *
+ * @static
+ * @param {FileManager} fileManager
+ * @param {string} id
+ * @param {string} username
+ * @param {string} filename
+ * @returns {Promise<void>}
+ * @memberof LearningObjectInteractor
+ */
+export async function removeFile(params: {
+  dataStore: DataStore;
+  fileManager: FileManager;
+  objectId: string;
+  username: string;
+  fileId: string;
+}): Promise<void> {
+  try {
+    const file = await params.dataStore.findSingleFile({
+      learningObjectId: params.objectId,
+      fileId: params.fileId,
+    });
+    if (file) {
+      const path = `${params.username}/${params.objectId}/${
+        file.fullPath ? file.fullPath : file.name
+      }`;
+      await params.dataStore.removeFromFiles({
+        objectId: params.objectId,
+        fileId: params.fileId,
+      });
+      return await deleteFile(params.fileManager, path);
+    }
+  } catch (e) {
+    return Promise.reject(`Problem deleting file. Error: ${e}`);
   }
 }
 
@@ -187,12 +307,9 @@ export async function updateReadme(params: {
  */
 export async function deleteFile(
   fileManager: FileManager,
-  id: string,
-  username: string,
-  filename: string,
+  path: string,
 ): Promise<void> {
   try {
-    const path = `${username}/${id}/${filename}`;
     return fileManager.delete({ path });
   } catch (e) {
     return Promise.reject(`Problem deleting file. Error: ${e}`);
@@ -207,5 +324,92 @@ export async function getRecentChangelog(
     return changelog;
   } catch (e) {
     return Promise.reject(`Problem fetching recent changelog for learning object: ` + learningObjectId + `. Error: ${e}`);
+
+/**
+ * Fetches Learning Object's materials
+ *
+ * @export
+ * @param {{
+ *   dataStore: DataStore;
+ *   id: string;
+ * }} params
+ * @returns
+ */
+export async function getMaterials(params: {
+  dataStore: DataStore;
+  id: string;
+}) {
+  try {
+    return await params.dataStore.getLearningObjectMaterials({ id: params.id });
+  } catch (e) {
+    return Promise.reject(
+      `Problem fetching materials for object: ${params.id}. Error: ${e}`,
+    );
+  }
+}
+
+/**
+ * Sanitizes object containing updates to be stored by cloning valid properties and trimming strings
+ *
+ * @param {{
+ *   [index: string]: any;
+ * }} object
+ * @returns {LearningObjectUpdates}
+ */
+function sanitizeUpdates(object: {
+  [index: string]: any;
+}): LearningObjectUpdates {
+  const updates: LearningObjectUpdates = {};
+  for (const key of VALID_LEARNING_OBJECT_UPDATES) {
+    if (object[key]) {
+      const value = object[key];
+      updates[key] = typeof value === 'string' ? value.trim() : value;
+    }
+  }
+  return updates;
+}
+
+/**
+ * Verifies update object contains valid update values
+ *
+ * @param {{
+ *   id: string;
+ *   updates: LearningObjectUpdates;
+ * }} params
+ */
+function validateUpdates(params: {
+  id: string;
+  updates: LearningObjectUpdates;
+}): void {
+  if (params.updates.name) {
+    if (params.updates.name.trim() === '') {
+      throw new Error('Learning Object name cannot be empty.');
+    }
+  }
+}
+
+/**
+ * Checks if user has a learning object with a particular name
+ *
+ * @param {{
+ *   dataStore: DataStore;
+ *   username: string;
+ *   name: string;
+ * }} params
+ */
+async function checkNameExists(params: {
+  dataStore: DataStore;
+  username: string;
+  name: string;
+  id?: string;
+}) {
+  const authorId = await params.dataStore.findUser(params.username);
+  const existing = await params.dataStore.peek<{ id: string }>({
+    query: { authorID: authorId, name: params.name },
+    fields: { id: 1 },
+  });
+  // @ts-ignore typescript doesn't think a .id property should exist on the existing object
+  if (existing && params.id !== existing.id) {
+    throw new Error(LearningObjectError.DUPLICATE_NAME(params.name));
   }
 }

@@ -7,13 +7,14 @@ import { LibraryCommunicator } from '../interfaces/interfaces';
  * Initializes an express router with endpoints to get stats for Learning Objects
  */
 export function initialize({
+  router,
   dataStore,
   library,
 }: {
+  router: Router;
   dataStore: DataStore;
   library: LibraryCommunicator;
 }) {
-  const router: Router = Router();
   const getStats = async (req: Request, res: Response) => {
     try {
       const query = req.query;
@@ -31,6 +32,5 @@ export function initialize({
     }
   };
 
-  router.route('').get(getStats);
-  return router;
+  router.route('/learning-objects/stats').get(getStats);
 }
