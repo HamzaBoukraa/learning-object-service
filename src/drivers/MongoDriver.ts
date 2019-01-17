@@ -43,41 +43,16 @@ export class MongoDriver implements DataStore {
   learningOutcomeStore: LearningOutcomeMongoDatastore;
   statStore: LearningObjectStatStore;
 
-  /**
-   * Submit a learning object to a specified collection
-   * @param username the username of the requester
-   * @param id the id of the learning object
-   * @param collection the abreviated name of the collection to which to submit the object
-   */
-  submitLearningObjectToCollection(
-    username: string,
-    id: string,
-    collection: string,
-  ): Promise<void> {
-    return this.submissionStore.submitLearningObjectToCollection(
-      username,
-      id,
-      collection,
-    );
-  }
-
-  /**
-   * Unsubmit an object but keep it's collection property intact
-   * @param id the id of the object to unsubmit
-   */
-  unsubmitLearningObject(id: string): Promise<void> {
-    return this.submissionStore.unsubmitLearningObject(id);
-  }
-
   private mongoClient: MongoClient;
   private db: Db;
 
-  constructor(dburi: string) {
-    this.connect(dburi).then(() => {
-      this.submissionStore = new SubmissionDatastore(this.db);
-      this.learningOutcomeStore = new LearningOutcomeMongoDatastore(this.db);
-      this.statStore = new LearningObjectStatStore(this.db);
-    });
+  private constructor() {}
+
+  static async build(dburi: string) {
+    const driver = new MongoDriver();
+    await driver.connect(dburi);
+    await driver.initializeModules();
+    return driver;
   }
 
   /**
@@ -111,6 +86,7 @@ export class MongoDriver implements DataStore {
       }
     }
   }
+
   /**
    * Close the database. Note that this will affect all services
    * and scripts using the database, so only do this if it's very
@@ -118,6 +94,43 @@ export class MongoDriver implements DataStore {
    */
   disconnect(): void {
     this.mongoClient.close();
+  }
+
+  /**
+   * Initializes module stores
+   *
+   * @memberof MongoDriver
+   */
+  initializeModules() {
+    this.submissionStore = new SubmissionDatastore(this.db);
+    this.learningOutcomeStore = new LearningOutcomeMongoDatastore(this.db);
+    this.statStore = new LearningObjectStatStore(this.db);
+  }
+
+  /**
+   * Submit a learning object to a specified collection
+   * @param username the username of the requester
+   * @param id the id of the learning object
+   * @param collection the abreviated name of the collection to which to submit the object
+   */
+  submitLearningObjectToCollection(
+    username: string,
+    id: string,
+    collection: string,
+  ): Promise<void> {
+    return this.submissionStore.submitLearningObjectToCollection(
+      username,
+      id,
+      collection,
+    );
+  }
+
+  /**
+   * Unsubmit an object but keep it's collection property intact
+   * @param id the id of the object to unsubmit
+   */
+  unsubmitLearningObject(id: string): Promise<void> {
+    return this.submissionStore.unsubmitLearningObject(id);
   }
 
   /**
