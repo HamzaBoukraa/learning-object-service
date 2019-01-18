@@ -1,26 +1,23 @@
 import * as LearningObjectStatsInteractor from './LearningObjectStatsInteractor';
 import { Request, Response, Router } from 'express';
 import { DataStore } from '../interfaces/DataStore';
-import { LibraryCommunicator } from '../interfaces/interfaces';
 
 /**
  * Initializes an express router with endpoints to get stats for Learning Objects
  */
 export function initialize({
   dataStore,
-  library,
+  router,
 }: {
   dataStore: DataStore;
-  library: LibraryCommunicator;
+  router: Router;
 }) {
-  const router: Router = Router();
   const getStats = async (req: Request, res: Response) => {
     try {
       const query = req.query;
 
       const stats = await LearningObjectStatsInteractor.getStats({
         dataStore,
-        library,
         query,
       });
 
@@ -31,6 +28,5 @@ export function initialize({
     }
   };
 
-  router.route('').get(getStats);
-  return router;
+  router.route('/learning-objects/stats').get(getStats);
 }
