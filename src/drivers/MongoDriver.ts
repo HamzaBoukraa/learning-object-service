@@ -1667,6 +1667,9 @@ export class MongoDriver implements DataStore {
         contributors: contributorIds,
         collection: object.collection,
         lock: object.lock,
+        // FIXME after clark-entity is upgraded to include the status property, this tsignore should be removed.
+        // @ts-ignore
+        status: object.status,
       };
       if (isNew) {
         doc._id = new ObjectID().toHexString();
