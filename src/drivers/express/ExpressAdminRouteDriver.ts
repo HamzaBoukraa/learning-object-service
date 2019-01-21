@@ -223,6 +223,7 @@ export class ExpressAdminRouteDriver {
           await AdminLearningObjectInteractor.deleteMultipleLearningObjects(
             this.dataStore,
             this.fileManager,
+            this.library,
             req.params.username,
             learningObjectNames,
           );

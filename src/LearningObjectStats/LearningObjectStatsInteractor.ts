@@ -17,12 +17,12 @@ export interface LearningObjectStats {
   };
 }
 export interface LearningObjectStatDatastore {
-  fetchStats(params: { query: any }): Promise<LearningObjectStats>;
+  fetchStats(params: { query: any }): Promise<Partial<LearningObjectStats>>;
 }
 
 export async function getStats(params: {
   dataStore: LearningObjectStatDatastore;
   query: any;
-}): Promise<LearningObjectStats> {
+}): Promise<Partial<LearningObjectStats>> {
   return params.dataStore.fetchStats({ query: params.query });
 }
