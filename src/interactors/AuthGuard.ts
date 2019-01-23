@@ -11,12 +11,11 @@ export function verifyAccessGroup(userAccessGroups: string[], requiredAccessGrou
    
     let hasAccess = false;
     userAccessGroups.forEach(userGroup => {
-        requiredAccessGroups.forEach(requiredGroup => {
-            if (userGroup === requiredGroup) {
-                hasAccess = true;
-            }
-        })
+        if (requiredAccessGroups.indexOf(userGroup) > -1 ) {
+            hasAccess = true;
+        }
     })
+
 
     if (!hasAccess) {
         throw new Error('The user does not have permission to perform this action');
