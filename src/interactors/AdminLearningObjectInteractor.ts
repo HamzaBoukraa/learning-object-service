@@ -6,6 +6,9 @@ import {
   LibraryCommunicator,
 } from '../interfaces/interfaces';
 import { deleteLearningObject } from '../LearningObjects/LearningObjectInteractor';
+import { LearningObject } from '@cyber4all/clark-entity';
+import { UserToken } from '../types';
+
 
 export class AdminLearningObjectInteractor {
   private static learningObjectInteractor = LearningObjectInteractor;
@@ -148,6 +151,26 @@ export class AdminLearningObjectInteractor {
       return Promise.reject(
         `Problem deleting Learning Objects. Error: ${error}`,
       );
+    }
+  }
+
+  public static async updateLearningObject(
+    user: UserToken,
+    dataStore: DataStore,
+    fileManager: FileManager,
+    id: string,
+    updates: object,
+  ): Promise<void> {
+    try {
+      return await updateLearningObject({
+        user,
+        dataStore,
+        fileManager,
+        id,
+        updates,
+      });
+    } catch (error) {
+      return Promise.reject(error);
     }
   }
 }

@@ -2,6 +2,8 @@ import 'dotenv/config';
 import * as jwt from 'jsonwebtoken';
 import { Request, Response } from 'express';
 import { getBearerToken } from './functions';
+import * as dotenv from 'dotenv';
+dotenv.config();
 
 /**
  * Checks if decoded token is set in request.
