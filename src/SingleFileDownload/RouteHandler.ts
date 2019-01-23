@@ -5,6 +5,7 @@ import { LEARNING_OBJECT_ROUTES } from '../routes';
 import { reportError } from '../drivers/SentryConnector';
 import { DataStore } from '../interfaces/DataStore';
 import { FileManager } from '../interfaces/FileManager';
+import { LearningObjectError } from '../errors';
 
 // TODO: Define DataStore just for this Feature Module
 export function initializeSingleFileDownloadRouter({
@@ -36,13 +37,7 @@ export function initializeSingleFileDownloadRouter({
       if (mimeType) res.contentType(mimeType);
       stream.pipe(res);
     } catch (e) {
-      if (e.message === 'Invalid Access') {
-        res
-          .status(403)
-          .send(
-            'Invalid Access. You do not have download privileges for this file',
-          );
-      } else if (e.message === 'File not found') {
+      if (e.message === 'File not found') {
         fileNotFoundResponse(e.object, req, res);
       } else {
         console.error(e);
