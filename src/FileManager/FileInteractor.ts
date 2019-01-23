@@ -27,7 +27,7 @@ export async function startMultipartUpload(params: {
   try {
     const path = `${params.user.username}/${params.objectId}/${
       params.filePath
-    }`;
+      }`;
     const uploadId = await params.fileManager.initMultipartUpload({ path });
     const status: MultipartFileUploadStatus = {
       path,
@@ -43,41 +43,41 @@ export async function startMultipartUpload(params: {
   }
 }
 
-  /**
-   * Processes Multipart Uploads
-   *
-   * @private
-   * @static
-   * @param {{
-   *     dataStore: DataStore;
-   *     fileManager: FileManager;
-   *     file: DZFile;
-   *     fileUpload: FileUpload;
-   *   }} params
-   */
-  export async function processMultipartUpload(params: {
-    dataStore: DataStore;
-    fileManager: FileManager;
-    file: DZFile;
-    fileUpload: FileUpload;
-    uploadId: string;
-  }): Promise<LearningObjectFile> {
-    try {
-      const partNumber = +params.file.dzchunkindex + 1;
-      const completedPart = await params.fileManager.uploadPart({
-        path: params.fileUpload.path,
-        data: params.fileUpload.data,
-        partNumber,
-        uploadId: params.uploadId,
-      });
-      await params.dataStore.updateMultipartUploadStatus({
-        completedPart,
-        id: params.uploadId,
-      });
-    } catch (e) {
-      return Promise.reject(e);
-    }
+/**
+ * Processes Multipart Uploads
+ *
+ * @private
+ * @static
+ * @param {{
+ *     dataStore: DataStore;
+ *     fileManager: FileManager;
+ *     file: DZFile;
+ *     fileUpload: FileUpload;
+ *   }} params
+ */
+export async function processMultipartUpload(params: {
+  dataStore: DataStore;
+  fileManager: FileManager;
+  file: DZFile;
+  fileUpload: FileUpload;
+  uploadId: string;
+}): Promise<LearningObjectFile> {
+  try {
+    const partNumber = +params.file.dzchunkindex + 1;
+    const completedPart = await params.fileManager.uploadPart({
+      path: params.fileUpload.path,
+      data: params.fileUpload.data,
+      partNumber,
+      uploadId: params.uploadId,
+    });
+    await params.dataStore.updateMultipartUploadStatus({
+      completedPart,
+      id: params.uploadId,
+    });
+  } catch (e) {
+    return Promise.reject(e);
   }
+}
 
 /**
  * Finalizes multipart upload and returns file url;
@@ -170,7 +170,7 @@ export async function streamFile(params: {
     });
     const path = `${params.username}/${params.learningObjectId}/${
       file.fullPath ? file.fullPath : file.name
-    }`;
+      }`;
     const mimeType = getMimeType({ file });
     const stream = params.fileManager.streamFile({ path });
     return { mimeType, stream, filename: file.name };

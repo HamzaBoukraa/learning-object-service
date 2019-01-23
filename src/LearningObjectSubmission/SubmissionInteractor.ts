@@ -5,7 +5,7 @@ export async function submitForReview(
   dataStore: DataStore,
   username: string,
   id: string,
-  collection: string
+  collection: string,
 ): Promise<void> {
   try {
     const object = await dataStore.fetchLearningObject(id, true, true);
@@ -15,7 +15,7 @@ export async function submitForReview(
     if (errorMessage) {
       return Promise.reject(errorMessage);
     }
-    
+
     await dataStore.submitLearningObjectToCollection(username, id, collection);
   } catch (e) {
     console.log(e);
