@@ -1,17 +1,17 @@
 import {Cursor, Db, MongoClient, ObjectID} from 'mongodb';
 import {DataStore} from '../interfaces/interfaces';
-import {AcademicLevel, LearningObject, LearningOutcome, User,} from '@cyber4all/clark-entity';
-import {LearningObjectDocument, LearningOutcomeDocument, StandardOutcomeDocument, UserDocument,} from '@cyber4all/clark-schema';
-import {Filters, LearningObjectCollection, LearningObjectQuery,} from '../interfaces/DataStore';
-import {CompletedPart, MultipartFileUploadStatus,} from '../interfaces/FileManager';
-import {LearningObjectLock, Material, Restriction,} from '@cyber4all/clark-entity/dist/learning-object';
+import {AcademicLevel, LearningObject, LearningOutcome, User } from '@cyber4all/clark-entity';
+import {LearningObjectDocument, LearningOutcomeDocument, StandardOutcomeDocument, UserDocument } from '@cyber4all/clark-schema';
+import {Filters, LearningObjectCollection, LearningObjectQuery } from '../interfaces/DataStore';
+import {CompletedPart, MultipartFileUploadStatus } from '../interfaces/FileManager';
+import {LearningObjectLock, Material, Restriction } from '@cyber4all/clark-entity/dist/learning-object';
 import {LearningObjectFile} from '../interactors/LearningObjectInteractor';
 import {reportError} from './SentryConnector';
 import * as ObjectMapper from './Mongo/ObjectMapper';
 import {SubmissionDatastore} from '../LearningObjectSubmission/SubmissionDatastore';
 import {LearningObjectUpdates} from '../types';
 import {LearningOutcomeMongoDatastore} from '../LearningOutcomes/LearningOutcomeMongoDatastore';
-import {LearningOutcomeInput, LearningOutcomeInsert, LearningOutcomeUpdate,} from '../LearningOutcomes/types';
+import {LearningOutcomeInput, LearningOutcomeInsert, LearningOutcomeUpdate } from '../LearningOutcomes/types';
 import {LearningObjectStatStore} from '../LearningObjectStats/LearningObjectStatStore';
 import {LearningObjectStats} from '../LearningObjectStats/LearningObjectStatsInteractor';
 
@@ -39,7 +39,7 @@ export class MongoDriver implements DataStore {
   submitLearningObjectToCollection(
     username: string,
     id: string,
-    collection: string
+    collection: string,
   ): Promise<void> {
     return this.submissionStore.submitLearningObjectToCollection(username, id, collection);
   }

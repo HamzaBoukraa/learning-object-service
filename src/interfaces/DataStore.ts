@@ -1,4 +1,4 @@
-import {Collection, LearningObject, Material, User} from '@cyber4all/clark-entity';
+import {Collection, LearningObject, Material, User } from '@cyber4all/clark-entity';
 import {CompletedPart, MultipartFileUploadStatus} from './FileManager';
 import {LearningObjectLock} from '@cyber4all/clark-entity/dist/learning-object';
 import {LearningObjectFile} from '../interactors/LearningObjectInteractor';
@@ -56,7 +56,7 @@ export interface DataStore extends LearningOutcomeDatastore, LearningObjectStatD
   submitLearningObjectToCollection(
     username: string,
     id: string,
-    collection: string
+    collection: string,
   ): Promise<void>;
   unsubmitLearningObject(id: string): Promise<void>;
   setChildren(parentId: string, children: string[]): Promise<void>;
