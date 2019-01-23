@@ -19,16 +19,4 @@ export class MockS3Driver implements FileManager {
     deleteAll(params: { path: string; }): Promise<void> {
         return Promise.resolve();
     }
-
-    processMultipart(params: {
-        file: MultipartFileUpload,
-        finish?: boolean,
-        completedPartList?: CompletedPartList,
-    }): Promise<MultipartUploadData> {
-        return Promise.resolve(MOCK_OBJECTS.S3_MULTIPART_UPLOAD_DATA);
-    }
-
-    cancelMultipart(params: { path: string; uploadId: string; }): Promise<void> {
-        return Promise.resolve();
-    }
 }
