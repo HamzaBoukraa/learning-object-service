@@ -126,9 +126,9 @@ export class SubmissionDatastore {
     changelogText: String
   ): Promise<void> {
     try { 
-      const id = new ObjectId();
+      const id    = new ObjectId();
       const _id   = id.toHexString();
-      const date  = id.getTimestamp();
+      const date  = Date.now();
       await this.db
         .collection(COLLECTIONS.CHANGLOG)
         .insertOne({
@@ -154,6 +154,7 @@ export class SubmissionDatastore {
     changelogText: String
   ): Promise<void> {
     try {
+      const date = Date.now();
       await this.db
         .collection(COLLECTIONS.CHANGLOG)
         .findOneAndUpdate(
@@ -161,7 +162,7 @@ export class SubmissionDatastore {
           { $push: {
             logs: {
               userId: userId,
-              date: new ObjectId().getTimestamp(),
+              date: date,
               text: changelogText
             }
           }}
