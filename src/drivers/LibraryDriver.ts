@@ -1,8 +1,8 @@
-import * as request from 'request-promise';
-import { LIBRARY_ROUTES } from '../routes';
 import { Metrics } from '@cyber4all/clark-entity/dist/learning-object';
-import { generateServiceToken } from './TokenManager';
+import * as request from 'request-promise';
 import { LibraryCommunicator } from '../interfaces/LibraryCommunicator';
+import { LIBRARY_ROUTES } from '../routes';
+import { generateServiceToken } from './TokenManager';
 
 export class LibraryDriver implements LibraryCommunicator {
   private options = {

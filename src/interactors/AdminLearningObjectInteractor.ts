@@ -1,8 +1,7 @@
-import { LearningObjectInteractor } from './interactors';
-import { updateLearningObject } from '../LearningObjects/LearningObjectInteractor';
+import { LearningObject, LearningObjectLock } from '@cyber4all/clark-entity/dist/learning-object';
 import { DataStore, FileManager, LibraryCommunicator } from '../interfaces/interfaces';
-import { deleteLearningObject } from '../LearningObjects/LearningObjectInteractor';
-import { LearningObjectLock, LearningObject } from '@cyber4all/clark-entity/dist/learning-object';
+import { deleteLearningObject, updateLearningObject } from '../LearningObjects/LearningObjectInteractor';
+import { LearningObjectInteractor } from './interactors';
 
 export class AdminLearningObjectInteractor {
   private static learningObjectInteractor = LearningObjectInteractor;

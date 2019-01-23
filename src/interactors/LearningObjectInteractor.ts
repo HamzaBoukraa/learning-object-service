@@ -1,16 +1,12 @@
-import {
-  DataStore,
-  FileManager,
-  LibraryCommunicator,
-} from '../interfaces/interfaces';
 import { LearningObject } from '@cyber4all/clark-entity';
+import { File, Metrics } from '@cyber4all/clark-entity/dist/learning-object';
 // @ts-ignore
 import * as stopword from 'stopword';
+import { processMultipartUpload } from '../FileManager/FileInteractor';
+import { LearningObjectQuery } from '../interfaces/DataStore';
+import { DZFile, FileUpload } from '../interfaces/FileManager';
+import { DataStore, FileManager, LibraryCommunicator } from '../interfaces/interfaces';
 import { UserToken } from '../types';
-import {LearningObjectQuery} from '../interfaces/DataStore';
-import {File, Metrics} from '@cyber4all/clark-entity/dist/learning-object';
-import {DZFile, FileUpload} from '../interfaces/FileManager';
-import {processMultipartUpload} from '../FileManager/FileInteractor';
 
 // TODO: Update File in clark-entity
 export interface LearningObjectFile extends File {

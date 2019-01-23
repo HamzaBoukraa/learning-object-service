@@ -1,8 +1,7 @@
-import { DataStore } from '../interfaces/DataStore';
-import { FileManager } from '../interfaces/interfaces';
-import { Readable } from 'stream';
 import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
-import { MultipartFileUploadStatus, DZFile, FileUpload } from '../interfaces/FileManager';
+import { DataStore } from '../interfaces/DataStore';
+import { DZFile, FileUpload, MultipartFileUploadStatus } from '../interfaces/FileManager';
+import { FileManager } from '../interfaces/interfaces';
 
 /**
  * Creates multipart upload and saves metadata for upload

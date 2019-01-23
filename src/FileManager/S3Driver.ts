@@ -1,16 +1,10 @@
-import { FileManager } from '../interfaces/interfaces';
 import * as AWS from 'aws-sdk';
-import { AWS_SDK_CONFIG } from './aws-sdk.config';
-import {
-  FileUpload,
-  MultipartFileUpload,
-  MultipartUploadData,
-  CompletedPartList,
-  CompletedPart,
-} from '../interfaces/FileManager';
+import { AWSError } from 'aws-sdk';
 import { Readable } from 'stream';
 import { reportError } from '../drivers/SentryConnector';
-import { AWSError } from 'aws-sdk';
+import { CompletedPart, CompletedPartList, FileUpload } from '../interfaces/FileManager';
+import { FileManager } from '../interfaces/interfaces';
+import { AWS_SDK_CONFIG } from './aws-sdk.config';
 
 AWS.config.credentials = AWS_SDK_CONFIG.credentials;
 

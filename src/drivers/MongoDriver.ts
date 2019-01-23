@@ -1,19 +1,19 @@
-import {Cursor, Db, MongoClient, ObjectID} from 'mongodb';
-import {DataStore} from '../interfaces/interfaces';
-import {AcademicLevel, LearningObject, LearningOutcome, User } from '@cyber4all/clark-entity';
-import {LearningObjectDocument, LearningOutcomeDocument, StandardOutcomeDocument, UserDocument } from '@cyber4all/clark-schema';
-import {Filters, LearningObjectCollection, LearningObjectQuery } from '../interfaces/DataStore';
-import {CompletedPart, MultipartFileUploadStatus } from '../interfaces/FileManager';
-import {LearningObjectLock, Material, Restriction } from '@cyber4all/clark-entity/dist/learning-object';
-import {LearningObjectFile} from '../interactors/LearningObjectInteractor';
-import {reportError} from './SentryConnector';
+import { AcademicLevel, LearningObject, LearningOutcome, User } from '@cyber4all/clark-entity';
+import { LearningObjectLock, Material, Restriction } from '@cyber4all/clark-entity/dist/learning-object';
+import { LearningObjectDocument, LearningOutcomeDocument, StandardOutcomeDocument, UserDocument } from '@cyber4all/clark-schema';
+import { Cursor, Db, MongoClient, ObjectID } from 'mongodb';
+import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
+import { Filters, LearningObjectCollection, LearningObjectQuery } from '../interfaces/DataStore';
+import { CompletedPart, MultipartFileUploadStatus } from '../interfaces/FileManager';
+import { DataStore } from '../interfaces/interfaces';
+import { LearningObjectStats } from '../LearningObjectStats/LearningObjectStatsInteractor';
+import { LearningObjectStatStore } from '../LearningObjectStats/LearningObjectStatStore';
+import { SubmissionDatastore } from '../LearningObjectSubmission/SubmissionDatastore';
+import { LearningOutcomeMongoDatastore } from '../LearningOutcomes/LearningOutcomeMongoDatastore';
+import { LearningOutcomeInput, LearningOutcomeInsert, LearningOutcomeUpdate } from '../LearningOutcomes/types';
+import { LearningObjectUpdates } from '../types';
 import * as ObjectMapper from './Mongo/ObjectMapper';
-import {SubmissionDatastore} from '../LearningObjectSubmission/SubmissionDatastore';
-import {LearningObjectUpdates} from '../types';
-import {LearningOutcomeMongoDatastore} from '../LearningOutcomes/LearningOutcomeMongoDatastore';
-import {LearningOutcomeInput, LearningOutcomeInsert, LearningOutcomeUpdate } from '../LearningOutcomes/types';
-import {LearningObjectStatStore} from '../LearningObjectStats/LearningObjectStatStore';
-import {LearningObjectStats} from '../LearningObjectStats/LearningObjectStatsInteractor';
+import { reportError } from './SentryConnector';
 
 export enum COLLECTIONS {
   USERS = 'users',
