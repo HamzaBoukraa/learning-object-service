@@ -34,9 +34,9 @@ export async function cancelSubmission(
 
 export async function createChangelog(
   dataStore: DataStore,
-  learningObjectId: String,
-  userId: String,
-  changelogText: String
+  learningObjectId: string,
+  userId: string,
+  changelogText: string
 ): Promise<void> {
   try {
       await dataStore.createChangelog(learningObjectId, userId, changelogText);
