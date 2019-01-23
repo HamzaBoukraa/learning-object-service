@@ -29,6 +29,7 @@ import { LearningObjectStatStore } from '../LearningObjectStats/LearningObjectSt
 import { LearningObjectStats } from '../LearningObjectStats/LearningObjectStatsInteractor';
 import { lengths } from '@cyber4all/clark-taxonomy';
 import { LearningObjectDataStore } from '../LearningObjects/LearningObjectDatastore';
+import { ChangeLogDocument } from '../types/Changelog';
 
 export enum COLLECTIONS {
   USERS = 'users',
@@ -282,7 +283,7 @@ export class MongoDriver implements DataStore {
     }
   }
 
-  async fetchRecentChangelog(learningObjectId: string): Promise<any> {
+  async fetchRecentChangelog(learningObjectId: string): Promise<ChangeLogDocument> {
     return this.learningObjectStore.getRecentChangelog(learningObjectId);
   }
 

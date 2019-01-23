@@ -4,6 +4,7 @@ import { LearningObjectUpdates } from '../types';
 import { LearningOutcomeDatastore } from '../LearningOutcomes/LearningOutcomeInteractor';
 import { LearningObjectStatDatastore } from '../LearningObjectStats/LearningObjectStatsInteractor';
 import { CollectionDataStore } from '../Collections/CollectionDataStore';
+import { ChangeLogDocument } from '../types/Changelog';
 
 export interface DataStore
   extends LearningOutcomeDatastore,
@@ -101,9 +102,9 @@ export interface DataStore
   }): Promise<void>;
   deleteMultipartUploadStatus(params: { id: string }): Promise<void>;
   addToCollection(learningObjectId: string, collection: string): Promise<void>;
-  createChangelog(learningObjectId: String, userId: String, changelogText: String): Promise<void>;
-  fetchRecentChangelog(learningObjectId: String): Promise<any>;
-  deleteChangelog(learningObjectId: String): Promise<void>;
+  createChangelog(learningObjectId: string, userId: string, changelogText: string): Promise<void>;
+  fetchRecentChangelog(learningObjectId: string): Promise<ChangeLogDocument>;
+  deleteChangelog(learningObjectId: string): Promise<void>;
   findUser(username: string): Promise<string>;
   fetchUser(id: string): Promise<User>;
   peek<T>(params: {
