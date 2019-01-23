@@ -54,7 +54,7 @@ export class ExpressAdminRouteDriver {
 
         const accessGroups = req.user.accessGroups;
 
-        let learningObjects: LearningObject[];
+        let learningObjects: { total: number; objects: LearningObject[] } | Error;
 
         if (
           name ||
@@ -92,6 +92,9 @@ export class ExpressAdminRouteDriver {
         res.status(200).send(learningObjects);
       } catch (e) {
         console.error(e);
+        if (e instanceof Error) {
+          res.status(401).send(e);
+        }
         res.status(500).send(e);
       }
     });
@@ -138,16 +141,21 @@ export class ExpressAdminRouteDriver {
         try {
           const id = req.body.id;
           const published = req.body.published;
+          const accessGroups = req.user.accessGroups;
 
           await AdminLearningObjectInteractor.togglePublished(
             this.dataStore,
             req.params.username,
             id,
             published,
+            accessGroups
           );
           res.sendStatus(200);
         } catch (e) {
           console.error(e);
+          if (e instanceof Error) {
+            res.status(401).send(e);
+          }
           res.status(500).send(e);
         }
       },
@@ -159,16 +167,21 @@ export class ExpressAdminRouteDriver {
         try {
           const id = req.body.id;
           const published = req.body.published;
+          const accessGroups = req.user.accessGroups;
 
           await AdminLearningObjectInteractor.togglePublished(
             this.dataStore,
             req.params.username,
             id,
             published,
+            accessGroups
           );
           res.sendStatus(200);
         } catch (e) {
           console.error(e);
+          if (e instanceof Error) {
+            res.status(401).send(e);
+          }
           res.status(500).send(e);
         }
       },
@@ -188,6 +201,9 @@ export class ExpressAdminRouteDriver {
           res.sendStatus(200);
         } catch (e) {
           console.error(e);
+          if (e instanceof Error) {
+            res.status(401).send(e);
+          }
           res.status(500).send(e);
         }
       },
@@ -201,6 +217,9 @@ export class ExpressAdminRouteDriver {
           res.sendStatus(200);
         } catch (e) {
           console.error(e);
+          if (e instanceof Error) {
+            res.status(401).send(e);
+          }
           res.status(500).send(e);
         }
       },
@@ -222,6 +241,9 @@ export class ExpressAdminRouteDriver {
           res.sendStatus(200);
         } catch (e) {
           console.error(e);
+          if (e instanceof Error) {
+            res.status(401).send(e);
+          }
           res.status(500).send(e);
         }
       },
@@ -244,6 +266,9 @@ export class ExpressAdminRouteDriver {
           res.sendStatus(200);
         } catch (e) {
           console.error(e);
+          if (e instanceof Error) {
+            res.status(401).send(e);
+          }
           res.status(500).send(e);
         }
       },

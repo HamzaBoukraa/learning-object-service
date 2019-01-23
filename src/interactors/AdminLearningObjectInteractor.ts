@@ -16,7 +16,7 @@ export class AdminLearningObjectInteractor {
     userAccessGroups: string[],
     currPage?: number,
     limit?: number,
-  ): Promise<any> {
+  ): Promise<{ total: number; objects: LearningObject[] } | Error> {
     try {
       const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR]
       verifyAccessGroup(userAccessGroups, requiredAccessGroups)
@@ -28,9 +28,13 @@ export class AdminLearningObjectInteractor {
       );
       return response;
     } catch (e) {
-      return Promise.reject(
-        `Problem fetching all Learning Objects. ${e}`,
-      );
+      if (e instanceof Error) {
+        return e;
+      } else {
+        return Promise.reject(
+          `Problem fetching all Learning Objects. ${e}`,
+        );
+      }
     }
   }
   /**
@@ -58,7 +62,7 @@ export class AdminLearningObjectInteractor {
     sortType?: number,
     page?: number,
     limit?: number,
-  ): Promise<any> {
+  ): Promise<{ total: number; objects: LearningObject[] } | Error> {
     try {
       const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR, accessGroups.CURATOR, accessGroups.REVIEWER]
       verifyAccessGroup(userAccessGroups, requiredAccessGroups);
@@ -80,7 +84,11 @@ export class AdminLearningObjectInteractor {
         },
       );
     } catch (e) {
-      return Promise.reject(`Problem searching Learning Objects. Error:${e}`);
+      if (e instanceof Error) {
+        return e;
+      } else {
+        return Promise.reject(`Problem searching Learning Objects. Error:${e}`);
+      }
     }
   }
 
@@ -90,13 +98,17 @@ export class AdminLearningObjectInteractor {
     library: LibraryCommunicator,
     learningObjectID: string,
     userAccessGroups: string[]
-  ): Promise<any> {
+  ): Promise<LearningObject | Error> {
     try {
       const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR, accessGroups.CURATOR]
       verifyAccessGroup(userAccessGroups, requiredAccessGroups);
       return await dataStore.fetchLearningObject(learningObjectID, true, true);
     } catch (e) {
-      return Promise.reject(e);
+      if (e instanceof Error) {
+        return e;
+      } else {
+        return Promise.reject(e);
+      }
     }
   }
 
@@ -105,15 +117,22 @@ export class AdminLearningObjectInteractor {
     username: string,
     id: string,
     published: boolean,
-  ): Promise<void> {
+    userAccessGroups: string[]
+  ): Promise<void | Error> {
     try {
+      const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR]
+      verifyAccessGroup(userAccessGroups, requiredAccessGroups);
       return await dataStore.togglePublished(
         username,
         id,
         published,
       );
     } catch (e) {
-      return Promise.reject(`Problem toggling publish status. Error:  ${e}`);
+      if (e instanceof Error) {
+        return e;
+      } else {
+        return Promise.reject(`Problem toggling publish status. Error:  ${e}`);
+      }
     }
   }
 
@@ -136,7 +155,7 @@ export class AdminLearningObjectInteractor {
     learningObjectName: string,
     library: LibraryCommunicator,
     userAccessGroups: string[]
-  ): Promise<void> {
+  ): Promise<void | Error> {
     try {
       const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR, accessGroups.CURATOR]
       verifyAccessGroup(userAccessGroups, requiredAccessGroups);
@@ -147,10 +166,14 @@ export class AdminLearningObjectInteractor {
         learningObjectName,
         library
       );
-    } catch (error) {
-      return Promise.reject(
-        `Problem deleting Learning Object. Error: ${error}`,
-      );
+    } catch (e) {
+      if (e instanceof Error) {
+        return e;
+      } else {
+        return Promise.reject(
+          `Problem deleting Learning Object. Error: ${e}`,
+        );
+      }
     }
   }
 
@@ -161,7 +184,7 @@ export class AdminLearningObjectInteractor {
     username: string,
     learningObjectIDs: string[],
     userAccessGroups: string[]
-  ): Promise<void> {
+  ): Promise<void  | Error> {
     try {
       const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.CURATOR]
       verifyAccessGroup(userAccessGroups, requiredAccessGroups);
@@ -172,10 +195,14 @@ export class AdminLearningObjectInteractor {
         username,
         learningObjectIDs,
       );
-    } catch (error) {
-      return Promise.reject(
-        `Problem deleting Learning Objects. Error: ${error}`,
-      );
+    } catch (e) {
+      if (e instanceof Error) {
+        return e;
+      } else {
+        return Promise.reject(
+          `Problem deleting Learning Objects. Error: ${e}`,
+        );
+      }
     }
   }
 
@@ -185,7 +212,7 @@ export class AdminLearningObjectInteractor {
     id: string,
     learningObject: LearningObject,
     userAccessGroups: string[]
-  ): Promise<void> {
+  ): Promise<void | Error> {
     try {
       const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR, accessGroups.CURATOR]
       verifyAccessGroup(userAccessGroups, requiredAccessGroups);
@@ -195,8 +222,12 @@ export class AdminLearningObjectInteractor {
         id,
         learningObject,
       );
-    } catch (error) {
-      return Promise.reject(error);
+    } catch (e) {
+      if (e instanceof Error) {
+        return e;
+      } else {
+        return Promise.reject(`Error updating learning object:  ${e}`);
+      }
     }
   }
 }

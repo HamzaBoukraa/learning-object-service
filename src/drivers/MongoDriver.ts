@@ -1073,7 +1073,7 @@ export class MongoDriver implements DataStore {
           doc,
           full,
         );
-        learningObject.id = doc._id
+        learningObject.id = doc._id;
         return learningObject;
       }),
     );
