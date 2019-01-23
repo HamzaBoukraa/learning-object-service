@@ -7,7 +7,7 @@ import {LearningObjectQuery} from '../../interfaces/DataStore';
 import * as LearningObjectStatsRouteHandler from '../../LearningObjectStats/LearningObjectStatsRouteHandler';
 import { UserToken } from '../../types';
 import { initializeSingleFileDownloadRouter } from '../../SingleFileDownload/RouteHandler';
-import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler'
+import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
 import {initializeCollectionRouter} from '../../Collections/RouteHandler';
 
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
@@ -179,7 +179,7 @@ export class ExpressRouteDriver {
       }
     });
 
-    LearningObjectRouteHandler.initializePublic({ router, dataStore: this.dataStore })
+    LearningObjectRouteHandler.initializePublic({ router, dataStore: this.dataStore });
 
     initializeSingleFileDownloadRouter({
       router,
@@ -190,7 +190,7 @@ export class ExpressRouteDriver {
     LearningObjectStatsRouteHandler.initialize({
       router,
       dataStore: this.dataStore,
-      library: this.library,
     });
   }
 }
+
