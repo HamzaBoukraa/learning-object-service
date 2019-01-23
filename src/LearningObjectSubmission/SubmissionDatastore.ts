@@ -9,8 +9,8 @@ import {
 } from '@cyber4all/clark-entity/dist/learning-object';
 
 const ERROR_MESSAGE = {
-  INVALID_ACCESS: `Invalid access. User must be verified to publish Learning Objects`,
-  RESTRICTED: `Unable to publish. Learning Object locked by reviewer.`,
+  INVALID_ACCESS: `Invalid access. User must be verified to release Learning Objects`,
+  RESTRICTED: `Unable to release Learning Object. It is locked by reviewer.`,
 };
 
 export class SubmissionDatastore {
