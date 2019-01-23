@@ -51,14 +51,14 @@ export function initialize({
   }
 
   async function createLog(req: Request, res: Response) {
-    const learningObjectId = req.params.learningObjectId;
-    const userId = req.body.userId;
-    const changelogText = req.body.changelogText;
     try {
+      const learningObjectId = req.params.learningObjectId;
+      const userId = req.body.userId;
+      const changelogText = req.body.changelogText;
       await createChangelog(dataStore, learningObjectId, userId, changelogText);
       res.status(200).json({message: 'Changelog added'});
     } catch (e) {
-      res.status(417).json({message: 'Could not create changelog for learning object ' + learningObjectId});
+      res.status(417).json({message: 'Could not create changelog for specified learning object'});
     }
   }
 
