@@ -2,6 +2,7 @@ import { LearningObject } from '@cyber4all/clark-entity';
 import { Router } from 'express';
 import { AdminLearningObjectInteractor } from '../../interactors/interactors';
 import { DataStore, FileManager, LibraryCommunicator } from '../../interfaces/interfaces';
+import { access } from 'fs';
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
 // tslint:disable-next-line:no-require-imports
 const version = require('../../../package.json').version;
@@ -51,6 +52,8 @@ export class ExpressAdminRouteDriver {
         const orderBy = req.query.orderBy;
         const sortType = req.query.sortType ? +req.query.sortType : null;
 
+        const accessGroups = req.user.accessGroups;
+
         let learningObjects: LearningObject[];
 
         if (
@@ -72,6 +75,7 @@ export class ExpressAdminRouteDriver {
             level,
             standardOutcomes,
             text,
+            accessGroups,
             orderBy,
             sortType,
             page,
@@ -80,6 +84,7 @@ export class ExpressAdminRouteDriver {
         } else {
           learningObjects = await AdminLearningObjectInteractor.fetchAllObjects(
             this.dataStore,
+            accessGroups,
             page,
             limit,
           );
@@ -93,11 +98,13 @@ export class ExpressAdminRouteDriver {
     router.route('/learning-objects').patch(async(req, res) => {
       try {
         const learningObject = LearningObject.instantiate(req.body);
+        const accessGroups = req.user.accessGroups;
         await AdminLearningObjectInteractor.updateLearningObject(
             this.dataStore,
             this.fileManager,
             learningObject.id,
             learningObject,
+            accessGroups
           );
         res.sendStatus(200);
       } catch (e) {
@@ -108,11 +115,13 @@ export class ExpressAdminRouteDriver {
     router.route('/learning-objects/:learningObjectId').get(async (req, res) => {
       try {
         const id = req.params.learningObjectId;
+        const accessGroups = req.user.accessGroups;
 
         const learningObject = await AdminLearningObjectInteractor.loadFullLearningObject(
           this.dataStore,
           this.fileManager,
           this.library,
+          accessGroups,
           id,
         );
 
@@ -200,12 +209,14 @@ export class ExpressAdminRouteDriver {
       '/users/:username/learning-objects/:learningObjectName',
       async (req, res) => {
         try {
+          const accessGroups = req.user.accessGroups;
           const learningObjectName = req.params.learningObjectName;
           await AdminLearningObjectInteractor.deleteLearningObject(
             this.dataStore,
             this.fileManager,
             req.params.username,
             learningObjectName,
+            accessGroups
           );
           res.sendStatus(200);
         } catch (e) {
@@ -219,6 +230,7 @@ export class ExpressAdminRouteDriver {
       '/learning-objects/:learningObjectNames/multiple',
       async (req, res) => {
         try {
+          const accessGroups = req.user.accessGroups;
           const learningObjectNames = req.params.learningObjectNames.split(',');
           await AdminLearningObjectInteractor.deleteMultipleLearningObjects(
             this.dataStore,
@@ -226,6 +238,7 @@ export class ExpressAdminRouteDriver {
             this.library,
             req.params.username,
             learningObjectNames,
+            accessGroups
           );
           res.sendStatus(200);
         } catch (e) {

@@ -1,7 +1,8 @@
 import { LearningObjectInteractor } from './interactors';
 import { updateLearningObject } from '../LearningObjects/LearningObjectInteractor';
 import { DataStore, FileManager, LibraryCommunicator } from '../interfaces/interfaces';
-import { LearningObjectLock, LearningObject } from '@cyber4all/clark-entity/dist/learning-object';
+import { LearningObjectLock, LearningObject,  } from '@cyber4all/clark-entity/dist/learning-object';
+import { verifyAccessGroup, accessGroups } from './authGuard';
 
 export class AdminLearningObjectInteractor {
   private static learningObjectInteractor = LearningObjectInteractor;
@@ -12,10 +13,13 @@ export class AdminLearningObjectInteractor {
    */
   public static async fetchAllObjects(
     dataStore: DataStore,
+    userAccessGroups: string[],
     currPage?: number,
     limit?: number,
   ): Promise<any> {
     try {
+      const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR]
+      verifyAccessGroup(userAccessGroups, requiredAccessGroups)
       const accessUnpublished = true;
       const response = await dataStore.fetchAllObjects(
         accessUnpublished,
@@ -25,7 +29,7 @@ export class AdminLearningObjectInteractor {
       return response;
     } catch (e) {
       return Promise.reject(
-        `Problem fetching all Learning Objects. Error: ${e}`,
+        `Problem fetching all Learning Objects. ${e}`,
       );
     }
   }
@@ -49,12 +53,15 @@ export class AdminLearningObjectInteractor {
     level: string[],
     standardOutcomeIDs: string[],
     text: string,
+    userAccessGroups: string[],
     orderBy?: string,
     sortType?: number,
     page?: number,
     limit?: number,
   ): Promise<any> {
     try {
+      const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR, accessGroups.CURATOR, accessGroups.REVIEWER]
+      verifyAccessGroup(userAccessGroups, requiredAccessGroups);
       const accessUnpublished = true;
       return await this.learningObjectInteractor.searchObjects(dataStore, library, {
           name,
@@ -82,8 +89,11 @@ export class AdminLearningObjectInteractor {
     fileManager: FileManager,
     library: LibraryCommunicator,
     learningObjectID: string,
+    userAccessGroups: string[]
   ): Promise<any> {
     try {
+      const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR, accessGroups.CURATOR]
+      verifyAccessGroup(userAccessGroups, requiredAccessGroups);
       return await dataStore.fetchLearningObject(learningObjectID, true, true);
     } catch (e) {
       return Promise.reject(e);
@@ -125,8 +135,11 @@ export class AdminLearningObjectInteractor {
     fileManager: FileManager,
     username: string,
     learningObjectName: string,
+    userAccessGroups: string[]
   ): Promise<void> {
     try {
+      const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR, accessGroups.CURATOR]
+      verifyAccessGroup(userAccessGroups, requiredAccessGroups);
       return await this.learningObjectInteractor.deleteLearningObject(
         dataStore,
         fileManager,
@@ -146,8 +159,11 @@ export class AdminLearningObjectInteractor {
     library: LibraryCommunicator,
     username: string,
     learningObjectIDs: string[],
+    userAccessGroups: string[]
   ): Promise<void> {
     try {
+      const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.CURATOR]
+      verifyAccessGroup(userAccessGroups, requiredAccessGroups);
       return await this.learningObjectInteractor.deleteMultipleLearningObjects(
         dataStore,
         fileManager,
@@ -167,8 +183,11 @@ export class AdminLearningObjectInteractor {
     fileManager: FileManager,
     id: string,
     learningObject: LearningObject,
+    userAccessGroups: string[]
   ): Promise<void> {
     try {
+      const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR, accessGroups.CURATOR]
+      verifyAccessGroup(userAccessGroups, requiredAccessGroups);
       return await updateLearningObject(
         dataStore,
         fileManager,
