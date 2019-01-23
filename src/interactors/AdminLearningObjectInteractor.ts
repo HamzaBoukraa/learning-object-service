@@ -1,5 +1,5 @@
 import { LearningObjectInteractor } from './interactors';
-import { updateLearningObject } from '../LearningObjects/LearningObjectInteractor';
+import { updateLearningObject, deleteLearningObject } from '../LearningObjects/LearningObjectInteractor';
 import { DataStore, FileManager, LibraryCommunicator } from '../interfaces/interfaces';
 import { LearningObjectLock, LearningObject,  } from '@cyber4all/clark-entity/dist/learning-object';
 import { verifyAccessGroup, accessGroups } from './authGuard';
@@ -107,8 +107,7 @@ export class AdminLearningObjectInteractor {
     published: boolean,
   ): Promise<void> {
     try {
-      return await this.learningObjectInteractor.togglePublished(
-        dataStore,
+      return await dataStore.togglePublished(
         username,
         id,
         published,
@@ -135,16 +134,18 @@ export class AdminLearningObjectInteractor {
     fileManager: FileManager,
     username: string,
     learningObjectName: string,
+    library: LibraryCommunicator,
     userAccessGroups: string[]
   ): Promise<void> {
     try {
       const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR, accessGroups.CURATOR]
       verifyAccessGroup(userAccessGroups, requiredAccessGroups);
-      return await this.learningObjectInteractor.deleteLearningObject(
+      return await deleteLearningObject(
         dataStore,
         fileManager,
         username,
         learningObjectName,
+        library
       );
     } catch (error) {
       return Promise.reject(

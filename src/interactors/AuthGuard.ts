@@ -19,7 +19,7 @@ export function verifyAccessGroup(userAccessGroups: string[], requiredAccessGrou
     })
 
     if (!hasAccess) {
-        throw new Error('the user does not have permission to perform this action');
+        throw new Error('The user does not have permission to perform this action');
     }
 }
 

@@ -216,6 +216,7 @@ export class ExpressAdminRouteDriver {
             this.fileManager,
             req.params.username,
             learningObjectName,
+            this.library,
             accessGroups
           );
           res.sendStatus(200);
