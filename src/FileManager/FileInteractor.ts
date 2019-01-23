@@ -139,7 +139,7 @@ export async function abortMultipartUpload(params: {
     });
   } catch (e) {
     console.error(e);
-    throw `Could not cancel upload`;
+    throw new Error(`Could not cancel upload`);
   }
 }
 
