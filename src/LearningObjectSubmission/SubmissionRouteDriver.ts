@@ -58,7 +58,7 @@ export function initialize({
       await createChangelog(dataStore, learningObjectId, userId, changelogText);
       res.status(200).json({message: 'Changelog added'});
     } catch (e) {
-      res.status(417).json({message: 'Could not create changelog for specified learning object'});
+      res.status(500).json({message: 'Could not create changelog for specified learning object'});
     }
   }
 

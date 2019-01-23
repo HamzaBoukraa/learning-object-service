@@ -10,6 +10,7 @@ import {
 } from '../types';
 import { LearningObjectError } from '../errors';
 import { hasLearningObjectWriteAccess } from '../interactors/AuthorizationManager';
+import { ChangeLogDocument } from '../types/Changelog';
 
 /**
  * Add a new learning object to the database.
@@ -315,10 +316,19 @@ export async function deleteFile(
     return Promise.reject(`Problem deleting file. Error: ${e}`);
   }
 }
+
+/**
+ * Instruct the datastore to fetch a changelog object with only the last element in the logs array
+ *
+ * @param {DataStore} dataStore An instance of DataStore
+ * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
+ *
+ * @returns {void} 
+ */
 export async function getRecentChangelog(
   dataStore: DataStore,
-  learningObjectId: String
-): Promise<any> {
+  learningObjectId: string
+): Promise<ChangeLogDocument> {
   try { 
     const changelog = await dataStore.fetchRecentChangelog(learningObjectId);
     return changelog;

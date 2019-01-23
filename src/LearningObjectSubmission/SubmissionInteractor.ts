@@ -32,6 +32,16 @@ export async function cancelSubmission(
   await dataStore.unsubmitLearningObject(id);
 }
 
+/**
+ * Instruct the datastore to create a new log in the changelogs collection
+ *
+ * @param {DataStore} dataStore An instance of DataStore
+ * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
+ * @param {string} userId The id of the user that wrote the incoming changelog
+ * @param {string} changelogText The contents of the incoming changelog
+ *
+ * @returns {void} 
+ */
 export async function createChangelog(
   dataStore: DataStore,
   learningObjectId: string,
@@ -39,7 +49,7 @@ export async function createChangelog(
   changelogText: string
 ): Promise<void> {
   try {
-      await dataStore.createChangelog(learningObjectId, userId, changelogText);
+    await dataStore.createChangelog(learningObjectId, userId, changelogText);
   } catch (e) { 
     console.error(e);
     Promise.reject(e);
