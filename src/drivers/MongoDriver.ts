@@ -1067,7 +1067,7 @@ export class MongoDriver implements DataStore {
   ): Promise<LearningObject[]> {
     return await Promise.all(
       docs.map(async doc => {
-        const author = await this.fetchUser(doc.authorID)
+        const author = await this.fetchUser(doc.authorID);
         const learningObject = await this.generateLearningObject(
           author,
           doc,
