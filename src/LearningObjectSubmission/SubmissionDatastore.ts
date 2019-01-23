@@ -100,8 +100,9 @@ export class SubmissionDatastore {
       // Check if the specified learning object already has existing changelogs
       const record = await this.fetchChangelog(learningObjectId);
       // If it does not exist, create a new document in the changelogs collection
-      if(!record)
+      if(!record) {
         return this.insertChangelog(learningObjectId, userId, changelogText);
+      }
       // Otherwise, append a new log object to the existing array of objects
       return this.editChangelog(record._id, learningObjectId, userId, changelogText);
     } catch (e) {

@@ -1,6 +1,5 @@
 import { DataStore } from '../interfaces/DataStore';
 import { LearningObjectInteractor } from '../interactors/interactors';
-import { MockDataStore } from '../tests/mock-drivers/MockDataStore';
 
 export async function submitForReview(
   dataStore: DataStore,
