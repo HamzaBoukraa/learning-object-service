@@ -202,10 +202,12 @@ export class ExpressAdminRouteDriver {
         try {
           const id = req.body.id;
           const lock = req.body.lock;
+          const accessGroups = req.user.accessGroups;
 
           await AdminLearningObjectInteractor.toggleLock(
             this.dataStore,
             id,
+            accessGroups,
             lock,
           );
           res.sendStatus(200);
@@ -224,7 +226,8 @@ export class ExpressAdminRouteDriver {
       async (req, res) => {
         try {
           const id = req.body.id;
-          await AdminLearningObjectInteractor.toggleLock(this.dataStore, id);
+          const accessGroups = req.user.accessGroups;
+          await AdminLearningObjectInteractor.toggleLock(this.dataStore, id, accessGroups);
           res.sendStatus(200);
         } catch (e) {
           console.error(e);

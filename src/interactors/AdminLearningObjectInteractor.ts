@@ -139,9 +139,12 @@ export class AdminLearningObjectInteractor {
   public static async toggleLock(
     dataStore: DataStore,
     id: string,
+    userAccessGroups: string[],
     lock?: LearningObjectLock,
   ): Promise<void> {
     try {
+      const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR]
+      verifyAccessGroup(userAccessGroups, requiredAccessGroups);
       return await dataStore.toggleLock(id, lock);
     } catch (e) {
       return Promise.reject(`Problem toggling lock. Error:  ${e}`);
