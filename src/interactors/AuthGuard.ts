@@ -12,11 +12,12 @@ export enum accessGroups {
 export function verifyAccessGroup(userAccessGroups: string[], requiredAccessGroups: string[]) {
    
     let hasAccess = false;
-    userAccessGroups.forEach(userGroup => {
+    for (let userGroup of userAccessGroups) {
         if (requiredAccessGroups.indexOf(userGroup) > -1 ) {
             hasAccess = true;
+            break;
         }
-    })
+    }
 
     if (!hasAccess) {
         throw new Error(LearningObjectError.INVALID_ACCESS(userAccessGroups, requiredAccessGroups));
