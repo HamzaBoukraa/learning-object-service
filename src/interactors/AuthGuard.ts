@@ -1,4 +1,4 @@
-import { LearningObjectError } from "../errors";
+import { LearningObjectError } from '../errors';
 
 // TODO export from new entity after new builder merge
 export enum accessGroups {
@@ -10,7 +10,7 @@ export enum accessGroups {
 }
 
 export function verifyAccessGroup(userAccessGroups: string[], requiredAccessGroups: string[]) {
-   
+
     let hasAccess = false;
     for (let userGroup of userAccessGroups) {
         if (requiredAccessGroups.indexOf(userGroup) > -1 ) {
