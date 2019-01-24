@@ -16,7 +16,7 @@ export class AdminLearningObjectInteractor {
     userAccessGroups: string[],
     currPage?: number,
     limit?: number,
-  ): Promise<{ total: number; objects: LearningObject[] } | Error> {
+  ): Promise<{ total: number; objects: LearningObject[] }> {
     try {
       const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR]
       verifyAccessGroup(userAccessGroups, requiredAccessGroups)
@@ -62,7 +62,7 @@ export class AdminLearningObjectInteractor {
     sortType?: number,
     page?: number,
     limit?: number,
-  ): Promise<{ total: number; objects: LearningObject[] } | Error> {
+  ): Promise<{ total: number; objects: LearningObject[] }> {
     try {
       const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR, accessGroups.CURATOR, accessGroups.REVIEWER]
       verifyAccessGroup(userAccessGroups, requiredAccessGroups);
@@ -98,7 +98,7 @@ export class AdminLearningObjectInteractor {
     library: LibraryCommunicator,
     learningObjectID: string,
     userAccessGroups: string[]
-  ): Promise<LearningObject | Error> {
+  ): Promise<LearningObject> {
     try {
       const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR, accessGroups.CURATOR]
       verifyAccessGroup(userAccessGroups, requiredAccessGroups);
@@ -118,7 +118,7 @@ export class AdminLearningObjectInteractor {
     id: string,
     published: boolean,
     userAccessGroups: string[]
-  ): Promise<void | Error> {
+  ): Promise<void> {
     try {
       const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR]
       verifyAccessGroup(userAccessGroups, requiredAccessGroups);
@@ -158,7 +158,7 @@ export class AdminLearningObjectInteractor {
     learningObjectName: string,
     library: LibraryCommunicator,
     userAccessGroups: string[]
-  ): Promise<void | Error> {
+  ): Promise<void> {
     try {
       const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR, accessGroups.CURATOR]
       verifyAccessGroup(userAccessGroups, requiredAccessGroups);
@@ -187,7 +187,7 @@ export class AdminLearningObjectInteractor {
     username: string,
     learningObjectIDs: string[],
     userAccessGroups: string[]
-  ): Promise<void  | Error> {
+  ): Promise<void> {
     try {
       const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.CURATOR]
       verifyAccessGroup(userAccessGroups, requiredAccessGroups);
@@ -215,7 +215,7 @@ export class AdminLearningObjectInteractor {
     id: string,
     learningObject: LearningObject,
     userAccessGroups: string[]
-  ): Promise<void | Error> {
+  ): Promise<void> {
     try {
       const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR, accessGroups.CURATOR]
       verifyAccessGroup(userAccessGroups, requiredAccessGroups);

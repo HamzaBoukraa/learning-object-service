@@ -53,7 +53,7 @@ export class ExpressAdminRouteDriver {
 
         const accessGroups = req.user.accessGroups;
 
-        let learningObjects: { total: number; objects: LearningObject[] } | Error;
+        let learningObjects: { total: number; objects: LearningObject[] };
 
         if (
           name ||
