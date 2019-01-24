@@ -51,7 +51,6 @@ export async function startMultipartUpload(params: {
  * Processes Multipart Uploads
  *
  * @private
- * @static
  * @param {{
  *     dataStore: DataStore;
  *     fileManager: FileManager;
