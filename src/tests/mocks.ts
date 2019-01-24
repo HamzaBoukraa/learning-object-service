@@ -85,7 +85,18 @@ export const MOCK_OBJECTS = {
         organization: 'unittesting',
         emailVerified: 'true',
         accessGroups: ['']
-      }
+    }, 
+    CHANGELOG: {
+        _id: '1234',
+        learningObjectId: '1223',
+        logs: [
+            {
+                userId: '123',
+                date: new Date(),
+                text: 'hello'
+            }
+        ]
+    }
 };
 
 export const SUBMITTABLE_LEARNING_OBJECT = {

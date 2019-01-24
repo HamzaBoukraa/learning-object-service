@@ -13,6 +13,7 @@ import {
 import { LearningObjectUpdates } from '../../types';
 import { LearningObjectStats } from '../../LearningObjectStats/LearningObjectStatsInteractor';
 import { LearningOutcomeInsert } from '../../LearningOutcomes/types';
+import { ChangeLogDocument } from '../../types/Changelog';
 
 const COLLECTIONS = {
   LEARNING_OBJECTS: 'objects',
@@ -133,8 +134,8 @@ export class MockDataStore implements DataStore {
     return Promise.resolve();
   }
 
-  fetchRecentChangelog(learningObjectId: string): Promise<any> {
-    return Promise.resolve();
+  fetchRecentChangelog(learningObjectId: string): Promise<ChangeLogDocument> {
+    return Promise.resolve(MOCK_OBJECTS.CHANGELOG);
   }
 
   fetchMultipleObjects(

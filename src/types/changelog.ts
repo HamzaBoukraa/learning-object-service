@@ -4,7 +4,7 @@
 export interface ChangeLogDocument {
     _id: string;
     learningObjectId: string,
-    log: Log[]
+    logs: Log[]
 }
 
 export interface Log {
