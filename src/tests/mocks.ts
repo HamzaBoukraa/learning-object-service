@@ -76,6 +76,7 @@ export const MOCK_OBJECTS = {
         saves: 23,
         downloads: 4,
     },
+    ACCESS_GROUPS: ['admin', 'editor', 'curator'],
 };
 
 export const SUBMITTABLE_LEARNING_OBJECT = {

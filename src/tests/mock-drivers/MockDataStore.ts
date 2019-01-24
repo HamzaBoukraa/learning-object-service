@@ -8,6 +8,7 @@ import {
   CompletedPart,
 } from '../../interfaces/FileManager';
 import { MOCK_OBJECTS, SUBMITTABLE_LEARNING_OBJECT, INVALID_LEARNING_OBJECTS } from '../mocks';
+import { LearningObjectStats } from '../../LearningObjectStats/LearningObjectStatsInteractor';
 
 const COLLECTIONS = {
   LEARNING_OBJECTS: 'objects',
@@ -16,6 +17,9 @@ const COLLECTIONS = {
 };
 
 export class MockDataStore implements DataStore {
+  fetchStats(params: { query: any; }): Promise<LearningObjectStats> {
+    throw new Error("Method not implemented.");
+  }
 
   connect(file: string): Promise<void> {
     return Promise.resolve();
