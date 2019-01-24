@@ -18,7 +18,7 @@ export class AdminLearningObjectInteractor {
     limit?: number,
   ): Promise<{ total: number; objects: LearningObject[] }> {
     try {
-      const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR]
+      const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR];
       verifyAccessGroup(userAccessGroups, requiredAccessGroups);
       const accessUnpublished = true;
       const response = await dataStore.fetchAllObjects(
@@ -160,7 +160,7 @@ export class AdminLearningObjectInteractor {
     userAccessGroups: string[]
   ): Promise<void> {
     try {
-      const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR, accessGroups.CURATOR]
+      const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR, accessGroups.CURATOR];
       verifyAccessGroup(userAccessGroups, requiredAccessGroups);
       return await deleteLearningObject(
         dataStore,
@@ -217,7 +217,7 @@ export class AdminLearningObjectInteractor {
     userAccessGroups: string[]
   ): Promise<void> {
     try {
-      const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR, accessGroups.CURATOR]
+      const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR, accessGroups.CURATOR];
       verifyAccessGroup(userAccessGroups, requiredAccessGroups);
       return await updateLearningObject(
         dataStore,

@@ -18,7 +18,7 @@ const COLLECTIONS = {
 
 export class MockDataStore implements DataStore {
   fetchStats(params: { query: any; }): Promise<LearningObjectStats> {
-    throw new Error("Method not implemented.");
+    return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT_STATS);
   }
 
   connect(file: string): Promise<void> {

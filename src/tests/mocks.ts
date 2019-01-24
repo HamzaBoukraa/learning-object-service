@@ -77,6 +77,24 @@ export const MOCK_OBJECTS = {
         downloads: 4,
     },
     ACCESS_GROUPS: ['admin', 'editor', 'curator'],
+    LEARNING_OBJECT_STATS: {
+        downloads: 1,
+        saves: 1,
+        total: 1,
+        released: 1,
+        lengths: {
+          nanomodule: 1,
+          micromodule: 1,
+          module: 1,
+          unit: 1,
+          course: 1,
+        },
+        blooms_distribution: {
+          apply: 1,
+          evaluate: 1,
+          remember: 1
+        }
+      }
 };
 
 export const SUBMITTABLE_LEARNING_OBJECT = {
