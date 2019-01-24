@@ -29,7 +29,7 @@ export class AdminLearningObjectInteractor {
       return response;
     } catch (e) {
       if (e instanceof Error) {
-        return e;
+        return Promise.reject(e.message);
       } else {
         return Promise.reject(
           `Problem fetching all Learning Objects. ${e}`,
@@ -105,7 +105,7 @@ export class AdminLearningObjectInteractor {
       return await dataStore.fetchLearningObject(learningObjectID, true, true);
     } catch (e) {
       if (e instanceof Error) {
-        return e;
+        return Promise.reject(e.message);
       } else {
         return Promise.reject(e);
       }
@@ -129,7 +129,7 @@ export class AdminLearningObjectInteractor {
       );
     } catch (e) {
       if (e instanceof Error) {
-        return e;
+        return Promise.reject(e.message);
       } else {
         return Promise.reject(`Problem toggling publish status. Error:  ${e}`);
       }
@@ -168,7 +168,7 @@ export class AdminLearningObjectInteractor {
       );
     } catch (e) {
       if (e instanceof Error) {
-        return e;
+        return Promise.reject(e.message);
       } else {
         return Promise.reject(
           `Problem deleting Learning Object. Error: ${e}`,
@@ -197,7 +197,7 @@ export class AdminLearningObjectInteractor {
       );
     } catch (e) {
       if (e instanceof Error) {
-        return e;
+        return Promise.reject(e.message);
       } else {
         return Promise.reject(
           `Problem deleting Learning Objects. Error: ${e}`,
@@ -224,7 +224,7 @@ export class AdminLearningObjectInteractor {
       );
     } catch (e) {
       if (e instanceof Error) {
-        return e;
+        return Promise.reject(e.message);
       } else {
         return Promise.reject(`Error updating learning object:  ${e}`);
       }
