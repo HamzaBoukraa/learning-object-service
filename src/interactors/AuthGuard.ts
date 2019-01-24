@@ -1,3 +1,5 @@
+import { LearningObjectError } from "../errors";
+
 // TODO export from new entity after new builder merge
 export enum accessGroups {
   ADMIN = 'admin',
@@ -16,9 +18,8 @@ export function verifyAccessGroup(userAccessGroups: string[], requiredAccessGrou
         }
     })
 
-
     if (!hasAccess) {
-        throw new Error('The user does not have permission to perform this action');
+        throw new Error(LearningObjectError.INVALID_ACCESS(userAccessGroups, requiredAccessGroups));
     }
 }
 

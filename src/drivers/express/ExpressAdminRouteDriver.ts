@@ -2,7 +2,6 @@ import { LearningObject } from '@cyber4all/clark-entity';
 import { Router } from 'express';
 import { AdminLearningObjectInteractor } from '../../interactors/interactors';
 import { DataStore, FileManager, LibraryCommunicator } from '../../interfaces/interfaces';
-import { access } from 'fs';
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
 // tslint:disable-next-line:no-require-imports
 const version = require('../../../package.json').version;
@@ -92,10 +91,11 @@ export class ExpressAdminRouteDriver {
         res.status(200).send(learningObjects);
       } catch (e) {
         console.error(e);
-        if (e instanceof Error) {
+        if (e.includes('Invalid Access')) {
           res.status(401).send(e);
+        } else {
+          res.status(500).send(e);
         }
-        res.status(500).send(e);
       }
     });
     router.route('/learning-objects').patch(async(req, res) => {
@@ -112,7 +112,11 @@ export class ExpressAdminRouteDriver {
         res.sendStatus(200);
       } catch (e) {
         console.error(e);
-        res.status(500).send(e);
+        if (e.includes('Invalid Access')) {
+          res.status(401).send(e);
+        } else {
+          res.status(500).send(e);
+        }
       }
     });
     router.route('/learning-objects/:learningObjectId').get(async (req, res) => {
@@ -131,7 +135,11 @@ export class ExpressAdminRouteDriver {
         res.status(200).send(learningObject);
       } catch (e) {
         console.error(e);
-        res.status(500).send(e);
+        if (e.includes('Invalid Access')) {
+          res.status(401).send(e);
+        } else {
+          res.status(500).send(e);
+        }
       }
     });
     router.patch(
@@ -153,10 +161,11 @@ export class ExpressAdminRouteDriver {
           res.sendStatus(200);
         } catch (e) {
           console.error(e);
-          if (e instanceof Error) {
+          if (e.includes('Invalid Access')) {
             res.status(401).send(e);
+          } else {
+            res.status(500).send(e);
           }
-          res.status(500).send(e);
         }
       },
     );
@@ -179,10 +188,11 @@ export class ExpressAdminRouteDriver {
           res.sendStatus(200);
         } catch (e) {
           console.error(e);
-          if (e instanceof Error) {
+          if (e.includes('Invalid Access')) {
             res.status(401).send(e);
+          } else {
+            res.status(500).send(e);
           }
-          res.status(500).send(e);
         }
       },
     );
@@ -201,10 +211,11 @@ export class ExpressAdminRouteDriver {
           res.sendStatus(200);
         } catch (e) {
           console.error(e);
-          if (e instanceof Error) {
+          if (e.includes('Invalid Access')) {
             res.status(401).send(e);
+          } else {
+            res.status(500).send(e);
           }
-          res.status(500).send(e);
         }
       },
     );
@@ -217,10 +228,11 @@ export class ExpressAdminRouteDriver {
           res.sendStatus(200);
         } catch (e) {
           console.error(e);
-          if (e instanceof Error) {
+          if (e.includes('Invalid Access')) {
             res.status(401).send(e);
+          } else {
+            res.status(500).send(e);
           }
-          res.status(500).send(e);
         }
       },
     );
@@ -241,10 +253,11 @@ export class ExpressAdminRouteDriver {
           res.sendStatus(200);
         } catch (e) {
           console.error(e);
-          if (e instanceof Error) {
+          if (e.includes('Invalid Access')) {
             res.status(401).send(e);
+          } else {
+            res.status(500).send(e);
           }
-          res.status(500).send(e);
         }
       },
     );
@@ -266,10 +279,11 @@ export class ExpressAdminRouteDriver {
           res.sendStatus(200);
         } catch (e) {
           console.error(e);
-          if (e instanceof Error) {
+          if (e.includes('Invalid Access')) {
             res.status(401).send(e);
+          } else {
+            res.status(500).send(e);
           }
-          res.status(500).send(e);
         }
       },
     );

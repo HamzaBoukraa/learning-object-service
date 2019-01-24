@@ -85,7 +85,7 @@ export class AdminLearningObjectInteractor {
       );
     } catch (e) {
       if (e instanceof Error) {
-        return e;
+        return Promise.reject(e.message);
       } else {
         return Promise.reject(`Problem searching Learning Objects. Error:${e}`);
       }
