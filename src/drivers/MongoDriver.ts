@@ -1,19 +1,33 @@
-import { AcademicLevel, LearningObject, LearningOutcome, User } from '@cyber4all/clark-entity';
-import { LearningObjectLock, Material, Restriction } from '@cyber4all/clark-entity/dist/learning-object';
-import { LearningObjectDocument, LearningOutcomeDocument, StandardOutcomeDocument, UserDocument } from '@cyber4all/clark-schema';
 import { Cursor, Db, MongoClient, ObjectID } from 'mongodb';
-import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
-import { Filters, LearningObjectCollection, LearningObjectQuery } from '../interfaces/DataStore';
-import { CompletedPart, MultipartFileUploadStatus } from '../interfaces/FileManager';
 import { DataStore } from '../interfaces/interfaces';
-import { LearningObjectStats } from '../LearningObjectStats/LearningObjectStatsInteractor';
-import { LearningObjectStatStore } from '../LearningObjectStats/LearningObjectStatStore';
-import { SubmissionDatastore } from '../LearningObjectSubmission/SubmissionDatastore';
-import { LearningOutcomeMongoDatastore } from '../LearningOutcomes/LearningOutcomeMongoDatastore';
-import { LearningOutcomeInput, LearningOutcomeInsert, LearningOutcomeUpdate } from '../LearningOutcomes/types';
-import { LearningObjectUpdates } from '../types';
+import { LearningObject, LearningOutcome, User } from '@cyber4all/clark-entity';
+import {
+  Filters,
+  LearningObjectCollection,
+  LearningObjectQuery,
+} from '../interfaces/DataStore';
+import {
+  CompletedPart,
+  MultipartFileUploadStatus,
+} from '../interfaces/FileManager';
 import * as ObjectMapper from './Mongo/ObjectMapper';
-import { reportError } from './SentryConnector';
+import { SubmissionDatastore } from '../LearningObjectSubmission/SubmissionDatastore';
+import {
+  LearningObjectUpdates,
+  LearningObjectDocument,
+  UserDocument,
+  LearningOutcomeDocument,
+  StandardOutcomeDocument,
+} from '../types';
+import { LearningOutcomeMongoDatastore } from '../LearningOutcomes/LearningOutcomeMongoDatastore';
+import {
+  LearningOutcomeInput,
+  LearningOutcomeInsert,
+  LearningOutcomeUpdate,
+} from '../LearningOutcomes/types';
+import { LearningObjectStatStore } from '../LearningObjectStats/LearningObjectStatStore';
+import { LearningObjectStats } from '../LearningObjectStats/LearningObjectStatsInteractor';
+import { lengths } from '@cyber4all/clark-taxonomy';
 
 export enum COLLECTIONS {
   USERS = 'users',
@@ -29,7 +43,6 @@ export class MongoDriver implements DataStore {
   learningOutcomeStore: LearningOutcomeMongoDatastore;
   statStore: LearningObjectStatStore;
 
-
   /**
    * Submit a learning object to a specified collection
    * @param username the username of the requester
@@ -41,16 +54,18 @@ export class MongoDriver implements DataStore {
     id: string,
     collection: string,
   ): Promise<void> {
-    return this.submissionStore.submitLearningObjectToCollection(username, id, collection);
+    return this.submissionStore.submitLearningObjectToCollection(
+      username,
+      id,
+      collection,
+    );
   }
 
   /**
    * Unsubmit an object but keep it's collection property intact
    * @param id the id of the object to unsubmit
    */
-  unsubmitLearningObject(
-    id: string,
-  ): Promise<void> {
+  unsubmitLearningObject(id: string): Promise<void> {
     return this.submissionStore.unsubmitLearningObject(id);
   }
 
@@ -105,7 +120,53 @@ export class MongoDriver implements DataStore {
     this.mongoClient.close();
   }
 
-  async getLearningObjectMaterials(params: { id: string }): Promise<Material> {
+  /**
+   *  Fetches all child objects for object with given id
+   *
+   * @param {string} id
+   * @returns {Promise<LearningObject[]>}
+   * @memberof MongoDriver
+   */
+  async loadChildObjects(params: {
+    id: string;
+    full?: boolean;
+    accessUnreleased?: boolean;
+  }): Promise<LearningObject[]> {
+    const matchQuery: { [index: string]: any } = {
+      $match: { _id: params.id },
+    };
+    if (!params.accessUnreleased) {
+      matchQuery.$match.status = LearningObject.Status.RELEASED;
+    }
+    const docs = await this.db
+      .collection<{ objects: LearningObjectDocument[] }>(
+        COLLECTIONS.LEARNING_OBJECTS,
+      )
+      .aggregate([
+        matchQuery,
+        {
+          $graphLookup: {
+            from: COLLECTIONS.LEARNING_OBJECTS,
+            startWith: '$children',
+            connectFromField: 'children',
+            connectToField: '_id',
+            as: 'objects',
+            maxDepth: 0,
+          },
+        },
+        { $project: { _id: 0, objects: '$objects' } },
+      ])
+      .toArray();
+    if (docs[0]) {
+      const objects = docs[0].objects;
+      return this.bulkGenerateLearningObjects(objects, params.full);
+    }
+    return [];
+  }
+
+  async getLearningObjectMaterials(params: {
+    id: string;
+  }): Promise<LearningObject.Material> {
     const doc = await this.db
       .collection(COLLECTIONS.LEARNING_OBJECTS)
       .findOne({ _id: params.id }, { projection: { materials: 1 } });
@@ -177,7 +238,7 @@ export class MongoDriver implements DataStore {
    */
   public async addToFiles(params: {
     id: string;
-    loFile: LearningObjectFile;
+    loFile: LearningObject.Material.File;
   }): Promise<void> {
     try {
       const existingDoc = await this.db
@@ -363,8 +424,6 @@ export class MongoDriver implements DataStore {
     parent: LearningObject,
     children: LearningObject[],
   ): boolean {
-    // FIXME: These lengths should be retrieved from a standardized source such as a npm module
-    const lengths = ['nanomodule', 'micromodule', 'module', 'unit', 'course'];
     const maxLengthIndex = lengths.indexOf(parent.length);
 
     for (let i = 0, l = children.length; i < l; i++) {
@@ -463,7 +522,7 @@ export class MongoDriver implements DataStore {
 
   public async toggleLock(
     id: string,
-    lock?: LearningObjectLock,
+    lock?: LearningObject.Lock,
   ): Promise<void> {
     try {
       const updates: any = {
@@ -472,8 +531,8 @@ export class MongoDriver implements DataStore {
 
       if (
         lock &&
-        (lock.restrictions.indexOf(Restriction.FULL) > -1 ||
-          lock.restrictions.indexOf(Restriction.PUBLISH) > -1)
+        (lock.restrictions.indexOf(LearningObject.Restriction.FULL) > -1 ||
+          lock.restrictions.indexOf(LearningObject.Restriction.PUBLISH) > -1)
       ) {
         updates.published = false;
       }
@@ -570,7 +629,7 @@ export class MongoDriver implements DataStore {
    * @returns {Promise<Partial<LearningObjectStats>>}
    * @memberof MongoDriver
    */
-  fetchStats(params: { query: any }): Promise<Partial<LearningObjectStats>> {
+  fetchStats(params: { query: any }): Promise<LearningObjectStats> {
     return this.statStore.fetchStats({ query: params.query });
   }
 
@@ -584,7 +643,10 @@ export class MongoDriver implements DataStore {
   async getUserObjects(username: string): Promise<string[]> {
     try {
       const authorID = await this.findUser(username);
-      const objects = await this.db.collection<{ _id: string }>(COLLECTIONS.LEARNING_OBJECTS).find({ authorID }, { projection: { _id: 1 } }).toArray();
+      const objects = await this.db
+        .collection<{ _id: string }>(COLLECTIONS.LEARNING_OBJECTS)
+        .find({ authorID }, { projection: { _id: 1 } })
+        .toArray();
       return objects.map(obj => obj._id);
     } catch (e) {
       return Promise.reject(`Problem fetch User's Objects. Error: ${e}`);
@@ -778,7 +840,6 @@ export class MongoDriver implements DataStore {
           doc,
           full,
         );
-        learningObject.id = doc._id;
         return learningObject;
       }),
     );
@@ -888,7 +949,6 @@ export class MongoDriver implements DataStore {
         .sort({ score: { $meta: 'textScore' } });
 
       const totalRecords = await objectCursor.count();
-
       if (typeof params.sortType === 'string') {
         // @ts-ignore
         sortType = parseInt(sortType, 10) || 1;
@@ -903,7 +963,6 @@ export class MongoDriver implements DataStore {
       });
 
       const docs = await objectCursor.toArray();
-
       const learningObjects: LearningObject[] = await this.bulkGenerateLearningObjects(
         docs,
         false,
@@ -921,7 +980,7 @@ export class MongoDriver implements DataStore {
   async findSingleFile(params: {
     learningObjectId: string;
     fileId: string;
-  }): Promise<LearningObjectFile> {
+  }): Promise<LearningObject.Material.File> {
     try {
       const doc = await this.db
         .collection(COLLECTIONS.LEARNING_OBJECTS)
@@ -955,7 +1014,7 @@ export class MongoDriver implements DataStore {
     learningObjectId: string;
     fileId: string;
     description: string;
-  }): Promise<LearningObjectFile> {
+  }): Promise<LearningObject.Material.File> {
     try {
       await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).findOneAndUpdate(
         { _id: params.learningObjectId, 'materials.files.id': params.fileId },
@@ -1009,7 +1068,9 @@ export class MongoDriver implements DataStore {
     }
     if (released) {
       // Check that the learning object does not have a download restriction
-      query['lock.restrictions'] = { $nin: [Restriction.DOWNLOAD] };
+      query['lock.restrictions'] = {
+        $nin: [LearningObject.Restriction.DOWNLOAD],
+      };
     }
     // Search By Text
     if (text || text === '') {
@@ -1362,28 +1423,22 @@ export class MongoDriver implements DataStore {
       }
 
       const doc: LearningObjectDocument = {
+        _id: new ObjectID().toHexString(),
         authorID: authorID,
         name: object.name,
         date: object.date,
         length: object.length,
         levels: object.levels,
-        goals: object.goals.map(goal => {
-          return {
-            text: goal.text,
-          };
-        }),
+        description: object.description,
         materials: object.materials,
         published: object.published,
         contributors: contributorIds,
         collection: object.collection,
         lock: object.lock,
+        status: object.status,
+        children: object.children.map(obj => obj.id),
       };
-      if (isNew) {
-        doc._id = new ObjectID().toHexString();
-      } else {
-        doc._id = id;
-        delete doc.outcomes;
-      }
+
       return doc;
     } catch (e) {
       return Promise.reject(
@@ -1408,78 +1463,45 @@ export class MongoDriver implements DataStore {
     full?: boolean,
   ): Promise<LearningObject> {
     // Logic for loading any learning object
-    const learningObject = new LearningObject(author, record.name);
-    learningObject.id = record._id;
-    learningObject.date = record.date;
-    learningObject.length = record.length;
-    learningObject.levels = <AcademicLevel[]>record.levels;
-    learningObject.materials = <Material>record.materials;
-    record.published ? learningObject.publish() : learningObject.unpublish();
-    learningObject.children = record.children;
-    learningObject.lock = record.lock;
-    learningObject.collection = record.collection;
-    learningObject.status = record.status;
-    for (const goal of record.goals) {
-      learningObject.addGoal(goal.text);
-    }
+
+    const learningObject = new LearningObject({
+      id: record._id,
+      author,
+      name: record.name,
+      date: record.date,
+      length: record.length as LearningObject.Length,
+      levels: record.levels as LearningObject.Level[],
+      lock: record.lock as LearningObject.Lock,
+      collection: record.collection,
+      status: record.status as LearningObject.Status,
+      description: record.description,
+      published: record.published || false,
+    });
+
     if (!full) {
       return learningObject;
     }
 
     // Logic for loading 'full' learning objects
+    learningObject.materials = <LearningObject.Material>record.materials;
 
     // Load Contributors
     if (record.contributors && record.contributors.length) {
-      learningObject.contributors = await Promise.all(
-        record.contributors.map(async user => {
-          let id: string;
-          if (typeof user === 'string') {
-            id = user;
-          } else {
-            const obj = User.instantiate(user);
-            id = await this.findUser(obj.username);
-            reportError(
-              new Error(
-                `Learning object ${
-                  record._id
-                } contains an invalid type for contributors property.`,
-              ),
-            );
-          }
-          return this.fetchUser(id);
+      await Promise.all(
+        record.contributors.map(async userId => {
+          let id = userId;
+          const contributor = await this.fetchUser(id);
+          learningObject.addContributor(contributor);
         }),
       );
     }
     // load outcomes
-    learningObject.outcomes = await this.getAllLearningOutcomes({
+    const outcomes = await this.getAllLearningOutcomes({
       source: learningObject.id,
     });
-
-    // for (const outcome of outcomes) {
-    //   const newOutcome = learningObject.addOutcome();
-    //   newOutcome.bloom = outcome.bloom;
-    //   newOutcome.verb = outcome.verb;
-    //   newOutcome.text = outcome.text;
-    //   newOutcome.id = outcome._id;
-
-    //   for (const rAssessment of outcome.assessments) {
-    //     const assessment = newOutcome.addAssessment();
-    //     assessment.plan = rAssessment.plan;
-    //     assessment.text = rAssessment.text;
-    //   }
-
-    //   for (const rStrategy of outcome.strategies) {
-    //     const strategy = newOutcome.addStrategy();
-    //     strategy.plan = rStrategy.plan;
-    //     strategy.text = rStrategy.text;
-    //   }
-
-    //   // only extract the basic info for each mapped outcome
-    //   for (const mapping of outcome.mappings) {
-    //     this.learningOutcomeStore.getLearningOutcome({ })
-    //     newOutcome.mapTo(mapping);
-    //   }
-    // }
+    outcomes.forEach(outcome => {
+      learningObject.addOutcome(outcome);
+    });
 
     return learningObject;
   }

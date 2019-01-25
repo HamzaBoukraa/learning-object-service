@@ -1,17 +1,15 @@
 import { LearningObject } from '@cyber4all/clark-entity';
-import { File, Metrics } from '@cyber4all/clark-entity/dist/learning-object';
 // @ts-ignore
 import * as stopword from 'stopword';
-import { processMultipartUpload } from '../FileManager/FileInteractor';
+import {
+  DataStore,
+  FileManager,
+  LibraryCommunicator,
+} from '../interfaces/interfaces';
+import { UserToken } from '../types';
 import { LearningObjectQuery } from '../interfaces/DataStore';
 import { DZFile, FileUpload } from '../interfaces/FileManager';
-import { DataStore, FileManager, LibraryCommunicator } from '../interfaces/interfaces';
-import { UserToken } from '../types';
-
-// TODO: Update File in clark-entity
-export interface LearningObjectFile extends File {
-  packageable: boolean;
-}
+import { processMultipartUpload } from '../FileManager/FileInteractor';
 
 // file size is in bytes
 const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
@@ -117,12 +115,15 @@ export class LearningObjectInteractor {
         summary = await Promise.all(
           summary.map(async object => {
             if (object.children && object.children.length) {
-              object.children = await this.loadChildObjects(
+              const children = await this.loadChildObjects(
                 params.dataStore,
                 params.library,
-                object,
+                object.id,
                 false,
                 accessUnpublished,
+              );
+              children.forEach((child: LearningObject) =>
+                object.addChild(child),
               );
             }
             return object;
@@ -168,17 +169,16 @@ export class LearningObjectInteractor {
         accessUnpublished,
       );
 
-      learningObject.id = learningObjectID;
-
-      if (learningObject.children) {
-        learningObject.children = await this.loadChildObjects(
-          dataStore,
-          library,
-          learningObject,
-          fullChildren,
-          accessUnpublished,
-        );
-      }
+      const children = await this.loadChildObjects(
+        dataStore,
+        library,
+        learningObject.id,
+        fullChildren,
+        accessUnpublished,
+      );
+      children.forEach((child: LearningObject) =>
+        learningObject.addChild(child),
+      );
 
       try {
         learningObject.metrics = await this.loadMetrics(
@@ -186,7 +186,7 @@ export class LearningObjectInteractor {
           learningObjectID,
         );
       } catch (e) {
-        console.log(e);
+        console.error(e);
       }
       return learningObject;
     } catch (e) {
@@ -194,44 +194,60 @@ export class LearningObjectInteractor {
     }
   }
 
+  /**
+   * Returns parent object's children
+   *
+   * @private
+   * @static
+   * @param {DataStore} dataStore
+   * @param {LibraryCommunicator} library
+   * @param {string} parentId
+   * @param {boolean} [full]
+   * @param {boolean} [accessUnreleased]
+   * @returns {Promise<LearningObject[]>}
+   * @memberof LearningObjectInteractor
+   */
   private static async loadChildObjects(
     dataStore: DataStore,
     library: LibraryCommunicator,
-    learningObject: LearningObject,
+    parentId: string,
     full?: boolean,
-    accessUnpublished?: boolean,
+    accessUnreleased?: boolean,
   ): Promise<LearningObject[]> {
-    if (learningObject.children) {
-      let children = await dataStore.fetchMultipleObjects(
-        <string[]>learningObject.children,
-        full,
-        accessUnpublished,
-      );
-
-      children = await Promise.all(
-        children.map(async object => {
-          try {
-            object.metrics = await this.loadMetrics(library, object.id);
-            return object;
-          } catch (e) {
-            console.log(e);
-            return object;
-          }
-        }),
-      );
-
-      for (let child of children) {
-        child.children = await this.loadChildObjects(
+    // Load Parent's children
+    const objects = await dataStore.loadChildObjects({
+      id: parentId,
+      full,
+      accessUnreleased,
+    });
+    // For each child object
+    return Promise.all(
+      objects.map(async obj => {
+        // Load their children
+        const children = await this.loadChildObjects(
           dataStore,
           library,
-          child,
+          obj.id,
           full,
-          accessUnpublished,
+          accessUnreleased,
         );
-      }
-      return [...children];
-    }
-    return null;
+        // For each of the Child's children
+        await Promise.all(
+          children.map(async child => {
+            // Load child metrics
+            try {
+              child.metrics = await this.loadMetrics(library, child.id);
+            } catch (e) {
+              console.error(e);
+            }
+            // Add Child
+            obj.addChild(child);
+          }),
+        );
+
+        return obj;
+      }),
+    );
   }
 
   public static async fetchParents(params: {
@@ -262,20 +278,18 @@ export class LearningObjectInteractor {
         learningObjects.map(async object => {
           try {
             object.metrics = await this.loadMetrics(library, object.id);
-            if (object.children && object.children.length) {
-              object.children = await this.loadChildObjects(
-                dataStore,
-                library,
-                object,
-                false,
-                false,
-              );
-            }
-            return object;
           } catch (e) {
-            console.log(e);
-            return object;
+            console.error(e);
           }
+          const children = await this.loadChildObjects(
+            dataStore,
+            library,
+            object.id,
+            false,
+            false,
+          );
+          children.forEach((child: LearningObject) => object.addChild(child));
+          return object;
         }),
       );
 
@@ -300,7 +314,7 @@ export class LearningObjectInteractor {
       error = 'Learning Object name cannot be empty.';
     } else if (object.published && !object.outcomes.length) {
       error = 'Learning Object must have outcomes to submit for review.';
-    } else if (object.published && !object.goals[0].text) {
+    } else if (object.published && !object.description) {
       error = 'Learning Object must have a description to submit for review.';
     }
     return error;
@@ -317,7 +331,7 @@ export class LearningObjectInteractor {
    *     username: string,
    *     file: DZFile
    *   }} params
-   * @returns {Promise<LearningObjectFile>}
+   * @returns {Promise<LearningObject.Material.File>}
    */
   public static async uploadFile(params: {
     dataStore: DataStore;
@@ -326,9 +340,9 @@ export class LearningObjectInteractor {
     username: string;
     file: DZFile;
     uploadId: string;
-  }): Promise<LearningObjectFile> {
+  }): Promise<LearningObject.Material.File> {
     try {
-      let loFile: LearningObjectFile;
+      let loFile: LearningObject.Material.File;
       const uploadPath = `${params.username}/${params.id}/${
         params.file.fullPath ? params.file.fullPath : params.file.name
       }`;
@@ -351,7 +365,7 @@ export class LearningObjectInteractor {
         const url = await params.fileManager.upload({ file: fileUpload });
         loFile = this.generateLearningObjectFile(params.file, url);
       }
-      // If LearningObjectFile was generated, update LearningObject's materials
+      // If LearningObject.Material.File was generated, update LearningObject's materials
       if (loFile) {
         // FIXME should be implemented in clark entity
         // @ts-ignore
@@ -385,7 +399,7 @@ export class LearningObjectInteractor {
     url: string;
   }): Promise<void> {
     try {
-      let loFile: LearningObjectFile = this.generateLearningObjectFile(
+      let loFile: LearningObject.Material.File = this.generateLearningObjectFile(
         params.fileMeta,
         params.url,
       );
@@ -400,21 +414,21 @@ export class LearningObjectInteractor {
   }
 
   /**
-   * Inserts metadata for file as LearningObjectFile
+   * Inserts metadata for file as LearningObject.Material.File
    *
    * @private
    * @static
    * @param {{
    *     dataStore: DataStore,
    *     id: string,
-   *     loFile: LearningObjectFile,
+   *     loFile: LearningObject.Material.File,
    *   }} params
    * @returns {Promise<void>}
    */
   private static async updateMaterials(params: {
     dataStore: DataStore;
     id: string;
-    loFile: LearningObjectFile;
+    loFile: LearningObject.Material.File;
   }): Promise<void> {
     try {
       return await params.dataStore.addToFiles({
@@ -489,7 +503,7 @@ export class LearningObjectInteractor {
   ): Promise<{ objects: LearningObject[]; total: number }> {
     try {
       const response = await dataStore.fetchAllObjects(false, currPage, limit);
-      response.objects = await Promise.all(
+      const objects = await Promise.all(
         response.objects.map(async object => {
           try {
             object.metrics = await this.loadMetrics(library, object.id);
@@ -500,7 +514,7 @@ export class LearningObjectInteractor {
           }
         }),
       );
-      return response;
+      return { objects, total: response.total };
     } catch (e) {
       return Promise.reject(
         `Problem fetching all Learning Objects. Error: ${e}`,
@@ -627,6 +641,7 @@ export class LearningObjectInteractor {
           params.text = this.removeStopwords(params.text);
         }
       }
+
       const response = await dataStore.searchObjects({
         name: params.name,
         author: params.author,
@@ -644,7 +659,7 @@ export class LearningObjectInteractor {
         released: params.released,
       });
 
-      response.objects = await Promise.all(
+      const objects = await Promise.all(
         response.objects.map(async object => {
           try {
             object.metrics = await this.loadMetrics(library, object.id);
@@ -655,7 +670,7 @@ export class LearningObjectInteractor {
           }
         }),
       );
-      return response;
+      return { total: response.total, objects };
     } catch (e) {
       return Promise.reject(`Problem suggesting Learning Objects. Error:${e}`);
     }
@@ -739,12 +754,12 @@ export class LearningObjectInteractor {
    * @static
    * @param library the gateway to library data
    * @param {string} objectID
-   * @returns {Promise<Metrics>}
+   * @returns {Promise<LearningObject.Metrics>}
    */
   private static async loadMetrics(
     library: LibraryCommunicator,
     objectID: string,
-  ): Promise<Metrics> {
+  ): Promise<LearningObject.Metrics> {
     try {
       return library.getMetrics(objectID);
     } catch (e) {
@@ -770,7 +785,7 @@ export class LearningObjectInteractor {
   }
 
   /**
-   * Generates new LearningObjectFile Object
+   * Generates new LearningObject.Material.File Object
    *
    * @private
    * @param {DZFile} file
@@ -780,15 +795,14 @@ export class LearningObjectInteractor {
   private static generateLearningObjectFile(
     file: DZFile,
     url: string,
-  ): LearningObjectFile {
+  ): LearningObject.Material.File {
     const extMatch = file.name.match(/(\.[^.]*$|$)/);
     const extension = extMatch ? extMatch[0] : '';
     const date = Date.now().toString();
 
-    const learningObjectFile = {
+    const learningObjectFile: Partial<LearningObject.Material.File> = {
       url,
       date,
-      id: undefined,
       name: file.name,
       fileType: file.mimetype,
       extension: extension,
@@ -806,7 +820,7 @@ export class LearningObjectInteractor {
       }
     }
 
-    return learningObjectFile;
+    return learningObjectFile as LearningObject.Material.File;
   }
 
   private static isPackageable(file: DZFile) {

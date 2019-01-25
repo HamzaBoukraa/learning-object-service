@@ -7,7 +7,7 @@ import { CompletedPart } from 'aws-sdk/clients/s3';
 
 
 export class MockS3Driver implements FileManager {
-    streamFile(params: { path: string; objectName: string; }): import('stream').Readable {
+    streamFile(params: { path: string }): import('stream').Readable {
         throw new Error('Method not implemented.');
     }
     hasAccess(path: string): Promise<boolean> {

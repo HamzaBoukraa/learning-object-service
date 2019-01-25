@@ -4,5 +4,5 @@ export interface UserToken {
   email: string;
   organization: string;
   emailVerified: string;
-  accessGroups: string;
+  accessGroups: string[];
 }

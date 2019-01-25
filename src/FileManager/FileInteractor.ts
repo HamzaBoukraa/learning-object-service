@@ -1,7 +1,11 @@
-import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
 import { DataStore } from '../interfaces/DataStore';
-import { DZFile, FileUpload, MultipartFileUploadStatus } from '../interfaces/FileManager';
+import {
+  DZFile,
+  FileUpload,
+  MultipartFileUploadStatus,
+} from '../interfaces/FileManager';
 import { FileManager } from '../interfaces/interfaces';
+import { LearningObject } from '@cyber4all/clark-entity';
 
 /**
  * Creates multipart upload and saves metadata for upload
@@ -26,7 +30,7 @@ export async function startMultipartUpload(params: {
   try {
     const path = `${params.user.username}/${params.objectId}/${
       params.filePath
-      }`;
+    }`;
     const uploadId = await params.fileManager.initMultipartUpload({ path });
     const status: MultipartFileUploadStatus = {
       path,
@@ -60,7 +64,7 @@ export async function processMultipartUpload(params: {
   file: DZFile;
   fileUpload: FileUpload;
   uploadId: string;
-}): Promise<LearningObjectFile> {
+}): Promise<LearningObject.Material.File> {
   try {
     const partNumber = +params.file.dzchunkindex + 1;
     const completedPart = await params.fileManager.uploadPart({
@@ -146,9 +150,11 @@ export async function abortMultipartUpload(params: {
  * Gets file type
  *
  * @export
- * @param {{ file: LearningObjectFile }} params
+ * @param {{ file: LearningObject.Material.File }} params
  * @returns {string}
  */
-export function getMimeType(params: { file: LearningObjectFile }): string {
+export function getMimeType(params: {
+  file: LearningObject.Material.File;
+}): string {
   return params.file.fileType;
 }

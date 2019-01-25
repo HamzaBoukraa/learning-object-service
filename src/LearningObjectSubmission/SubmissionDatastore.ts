@@ -1,12 +1,8 @@
-import { User, Collection } from '@cyber4all/clark-entity';
+import { User, LearningObject } from '@cyber4all/clark-entity';
 import { COLLECTIONS } from '../drivers/MongoDriver';
 import { Db } from 'mongodb';
-import { UserDocument } from '@cyber4all/clark-schema';
 import * as ObjectMapper from '../drivers/Mongo/ObjectMapper';
-import {
-  Restriction,
-  LearningObjectLock,
-} from '@cyber4all/clark-entity/dist/learning-object';
+import { UserDocument } from '../types';
 
 const ERROR_MESSAGE = {
   INVALID_ACCESS: `Invalid access. User must be verified to release Learning Objects`,
@@ -36,7 +32,8 @@ export class SubmissionDatastore {
         return Promise.reject(ERROR_MESSAGE.INVALID_ACCESS);
       }
 
-      const object: { lock: LearningObjectLock } = await this.db
+      // else
+      const object: { lock: LearningObject.Lock } = await this.db
         .collection(COLLECTIONS.LEARNING_OBJECTS)
         .findOne({ _id: id }, { projection: { _id: 0, lock: 1 } });
 
@@ -73,23 +70,17 @@ export class SubmissionDatastore {
       {
         $set: {
           published: false,
-          status: 'unpublished',
+          status: LearningObject.Status.UNRELEASED,
         },
       },
     );
   }
 
-  /**
-   * Identifies if a Learning Object has restrictions placed on it.
-   *
-   * @param lock the Learning Object's lock
-   * @returns {boolean} whether or not there are restrictions
-   */
-  private objectHasRestrictions(lock: LearningObjectLock): boolean {
+  private objectHasRestrictions(lock: LearningObject.Lock) {
     return (
       lock &&
-      (lock.restrictions.indexOf(Restriction.FULL) > -1 ||
-        lock.restrictions.indexOf(Restriction.PUBLISH) > -1)
+      (lock.restrictions.indexOf(LearningObject.Restriction.FULL) > -1 ||
+        lock.restrictions.indexOf(LearningObject.Restriction.PUBLISH) > -1)
     );
   }
 

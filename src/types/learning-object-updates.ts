@@ -1,8 +1,4 @@
-import {
-  LearningObjectPDF,
-  FolderDescription,
-  Url,
-} from '@cyber4all/clark-entity/dist/learning-object';
+import { LearningObject } from '@cyber4all/clark-entity';
 
 export interface LearningObjectUpdates {
   name?: string;
@@ -14,10 +10,10 @@ export interface LearningObjectUpdates {
   status?: string;
   published?: boolean;
   materials?: { [index: string]: any };
-  'materials.pdf'?: LearningObjectPDF;
+  'materials.pdf'?: LearningObject.Material.PDF;
   'materials.notes'?: string;
-  'materials.urls'?: Url[];
-  'materials.folderDescriptions'?: FolderDescription[];
+  'materials.urls'?: LearningObject.Material.Url[];
+  'materials.folderDescriptions'?: LearningObject.Material.FolderDescription[];
 }
 const LearningObjectUpdateProps: LearningObjectUpdates = {
   name: '',

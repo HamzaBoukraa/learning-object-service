@@ -3,13 +3,13 @@ import { LearningObjectInteractor } from '../interactors/interactors';
 import { DataStore } from '../interfaces/DataStore';
 import { FileManager, LibraryCommunicator } from '../interfaces/interfaces';
 import { generatePDF } from './PDFKitDriver';
-import { LearningObjectPDF, Restriction } from '@cyber4all/clark-entity/dist/learning-object';
 import {
   LearningObjectUpdates,
   UserToken,
   VALID_LEARNING_OBJECT_UPDATES,
 } from '../types';
 import { LearningObjectError } from '../errors';
+import { hasLearningObjectWriteAccess } from '../interactors/AuthorizationManager';
 
 /**
  * Add a new learning object to the database.
@@ -34,25 +34,31 @@ export async function addLearningObject(
 ): Promise<LearningObject> {
   const err = LearningObjectInteractor.validateLearningObject(object);
 
-  await checkNameExists({ dataStore, username: user.username, name: object.name });
+  await checkNameExists({
+    dataStore,
+    username: user.username,
+    name: object.name,
+  });
 
   try {
     if (err) {
       return Promise.reject(err);
     } else {
       const authorID = await dataStore.findUser(user.username);
-      object.author.username = user.username;
       const author = await dataStore.fetchUser(authorID);
       if (!author.emailVerified) {
         object.unpublish();
       }
-      if (!object.goals || !object.goals.length) {
-        object.goals = [{ text: '' }];
-      }
       object.lock = {
-        restrictions: [Restriction.DOWNLOAD],
+        restrictions: [LearningObject.Restriction.DOWNLOAD],
       };
-      const learningObjectID = await dataStore.insertLearningObject(object);
+      const objectInsert = new LearningObject({
+        ...object.toPlainObject(),
+        author,
+      });
+      const learningObjectID = await dataStore.insertLearningObject(
+        objectInsert,
+      );
       object.id = learningObjectID;
 
       // Generate PDF and update Learning Object with PDF meta.
@@ -97,24 +103,19 @@ export async function updateLearningObject(params: {
   }
 
   try {
-    await checkAuthorization({
-      dataStore: params.dataStore,
-      user: params.user,
-      objectId: params.id,
-      requiredPermission: 'owner',
-    });
+    await hasLearningObjectWriteAccess(
+      params.user,
+      // TODO: fetch collection
+      'collection',
+      params.dataStore,
+      params.id,
+    );
     const updates: LearningObjectUpdates = sanitizeUpdates(params.updates);
     await validateUpdates({
       id: params.id,
       updates,
     });
     updates.date = Date.now().toString();
-
-    if (updates.description) {
-      // @ts-ignore
-      updates.goals = [{ text: updates.description }];
-    }
-
     await params.dataStore.editLearningObject({
       id: params.id,
       updates,
@@ -205,7 +206,7 @@ export async function updateReadme(params: {
     } else if (!object && !id) {
       throw new Error(`No learning object or id provided.`);
     }
-    const oldPDF: LearningObjectPDF = object.materials['pdf'];
+    const oldPDF: LearningObject.Material.PDF = object.materials['pdf'];
     const pdf = await generatePDF(params.fileManager, object);
     if (oldPDF && oldPDF.name !== pdf.name) {
       const path = `${object.author.username}/${object.id}/${oldPDF.name}`;
@@ -338,55 +339,6 @@ export async function getMaterials(params: {
 }
 
 /**
- * Checks to see if user has required permissions
- *
- * @param {({
- *     dataStore: DataStore;
- *     user: UserToken;
- *     objectId: string;
- *     requiredPermission: 'owner' | 'public';
- *   })} params
- * @param {boolean} [enforceAdminPrivileges=true]
- * @returns {Promise<void>}
- */
-async function checkAuthorization(
-  params: {
-    dataStore: DataStore;
-    user: UserToken;
-    objectId: string;
-    requiredPermission: 'owner' | 'public';
-  },
-  enforceAdminPrivileges = true,
-): Promise<void> {
-  if (params.user.accessGroups.includes('admin') && enforceAdminPrivileges) {
-    return;
-  }
-  switch (params.requiredPermission) {
-    case 'owner':
-      const userId = await params.dataStore.findUser(params.user.name);
-      const object = await params.dataStore.peek<{ authorID: string }>({
-        query: { id: params.objectId },
-        fields: { authorID: 1 },
-      });
-      if (userId !== object.authorID) {
-        throw new Error(``);
-      }
-      break;
-    case 'public':
-      const publishedDoc = await params.dataStore.peek<{ published: boolean }>({
-        query: { id: params.objectId },
-        fields: { published: 1 },
-      });
-      if (!publishedDoc.published) {
-        throw new Error(``);
-      }
-      break;
-    default:
-      break;
-  }
-}
-
-/**
  * Sanitizes object containing updates to be stored by cloning valid properties and trimming strings
  *
  * @param {{
@@ -448,8 +400,6 @@ async function checkNameExists(params: {
   });
   // @ts-ignore typescript doesn't think a .id property should exist on the existing object
   if (existing && params.id !== existing.id) {
-    throw new Error(
-      LearningObjectError.DUPLICATE_NAME(params.name),
-    );
+    throw new Error(LearningObjectError.DUPLICATE_NAME(params.name));
   }
 }

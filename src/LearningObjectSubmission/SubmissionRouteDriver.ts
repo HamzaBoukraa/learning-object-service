@@ -25,12 +25,7 @@ export function initialize({
       const username = req.user.username;
       const collection = req.body.collection;
 
-      await submitForReview(
-        dataStore,
-        username,
-        id,
-        collection,
-      );
+      await submitForReview(dataStore, username, id, collection);
 
       res.sendStatus(200);
     } catch (e) {
