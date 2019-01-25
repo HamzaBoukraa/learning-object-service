@@ -16,7 +16,7 @@ export async function submitForReview(
     console.log(e);
     // TODO: Convey that this is an internal server error
     return Promise.reject(
-      new Error(`Problem submitting learning object. ${e}`),
+      e instanceof Error ? e : new Error(`Problem submitting learning object.`),
     );
   }
 }
