@@ -1,5 +1,10 @@
 import { DataStore, LearningObjectQuery } from '../../interfaces/DataStore';
-import { LearningObject, Collection } from '@cyber4all/clark-entity';
+import {
+  LearningObject,
+  Collection,
+  LearningOutcome,
+  User,
+} from '@cyber4all/clark-entity';
 import {
   MultipartFileUploadStatus,
   MultipartFileUploadStatusUpdates,
@@ -11,6 +16,11 @@ import {
   INVALID_LEARNING_OBJECTS,
 } from '../mocks';
 import { LearningObjectUpdates } from '../../types';
+import {
+  LearningOutcomeInsert,
+  LearningOutcomeUpdate,
+} from '../../LearningOutcomes/types';
+import { LearningObjectStats } from '../../LearningObjectStats/LearningObjectStatsInteractor';
 
 const COLLECTIONS = {
   LEARNING_OBJECTS: 'objects',
@@ -25,6 +35,71 @@ export class MockDataStore implements DataStore {
 
   disconnect(): void {
     return;
+  }
+  fetchUser(id: string): Promise<User> {
+    return Promise.resolve(MOCK_OBJECTS.USER);
+  }
+
+  getLearningOutcome(params: { id: string }): Promise<LearningOutcome> {
+    return Promise.resolve(MOCK_OBJECTS.OUTCOME);
+  }
+  getAllLearningOutcomes(params: {
+    source: string;
+  }): Promise<LearningOutcome[]> {
+    return Promise.resolve([]);
+  }
+
+  loadChildObjects(params: {
+    id: string;
+    full?: boolean;
+    accessUnreleased?: boolean;
+  }): Promise<LearningObject[]> {
+    return Promise.resolve([]);
+  }
+  getLearningObjectMaterials(params: {
+    id: string;
+  }): Promise<LearningObject.Material> {
+    return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT.materials as any);
+  }
+  removeFromFiles(params: { objectId: string; fileId: string }): Promise<void> {
+    return Promise.resolve();
+  }
+  updateFileDescription(params: {
+    learningObjectId: string;
+    fileId: string;
+    description: string;
+  }): Promise<LearningObject.Material.File> {
+    return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT_FILE);
+  }
+  findUser(username: string): Promise<string> {
+    return Promise.resolve(MOCK_OBJECTS.USER.id);
+  }
+  peek<T>(params: {
+    query: { [index: string]: string };
+    fields: { [index: string]: 0 | 1 };
+  }): Promise<T> {
+    return Promise.resolve({} as T);
+  }
+  insertLearningOutcome(params: {
+    source: string;
+    outcome: LearningOutcomeInsert;
+  }): Promise<string> {
+    return Promise.resolve(MOCK_OBJECTS.OUTCOME.id);
+  }
+  updateLearningOutcome(params: {
+    id: string;
+    updates: LearningOutcomeUpdate & LearningOutcomeInsert;
+  }): Promise<LearningOutcome> {
+    return Promise.resolve(MOCK_OBJECTS.OUTCOME);
+  }
+  deleteLearningOutcome(params: { id: string }): Promise<void> {
+    return Promise.resolve();
+  }
+  deleteAllLearningOutcomes(params: { source: string }): Promise<void> {
+    return Promise.resolve();
+  }
+  fetchStats(params: { query: any }): Promise<LearningObjectStats> {
+    return Promise.resolve({} as any);
   }
 
   insertLearningObject(object: LearningObject): Promise<string> {
