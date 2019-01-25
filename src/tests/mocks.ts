@@ -18,21 +18,21 @@ export const MOCK_OBJECTS = {
     LEARNING_OBJECT_ID: 'default_id',
     COLLECTION: {
         name: 'test',
-        learningObjects: [],
+        learningObjects: <any>[],
     },
     LEARNING_OBJECT: {
         author: '5a70fb5ed45bde3f9d65agfd',
         name: 'Input Validation - CS0 - C',
         date: '1523479539862',
         length: 'nanomodule',
-        levels: [],
-        goals: [],
-        outcomes: [],
+        levels: <any>[],
+        goals: <any>[],
+        outcomes: <any>[],
         materials: {},
         metrics: {},
         published: true,
-        children: [],
-        contributors: [],
+        children: <any>[],
+        contributors: <any>[],
         lock: {},
         collection: 'nccp',
         id: 'default_id',
@@ -46,7 +46,7 @@ export const MOCK_OBJECTS = {
     TOTAL_RECORDS: 1,
     COLLECTION_META: {
         name: 'test',
-        abstracts: [],
+        abstracts: <any>[],
     },
     COLLECTION_NAME: 'test',
     MULTIPART_UPLOAD_STATUS: {
@@ -57,7 +57,7 @@ export const MOCK_OBJECTS = {
         fileSize: 134,
         path: 'path',
         bytesUploaded: 132,
-        completedParts: [],
+        completedParts: <any>[],
         createdAt: 'time',
     },
     LEARNING_OBJECT_FILE: {
@@ -76,7 +76,13 @@ export const MOCK_OBJECTS = {
         saves: 23,
         downloads: 4,
     },
-    ACCESS_GROUPS: ['admin', 'editor', 'curator'],
+    REQUIRED_ACCESS_GROUPS_CURATOR: ['admin', 'editor', 'curator'],
+    REQUIRED_ACCESS_GROUPS_REVIEWER: ['admin', 'editor', 'reviewer'],
+    ACCESS_GROUPS: ['admin', 'editor', 'curator@secj'],
+    ACCESS_GROUPS_CURATOR: ['curator@secj'],
+    ACCESS_GROUPS_REVIEWER_SECJ: ['reviewer@secj'],
+    ACCESS_GROUPS_REVIEWER_NCCP: ['reviewer@nccp'],
+    ABV_COLLECTION_NAME: 'nccp',
     LEARNING_OBJECT_STATS: {
         downloads: 1,
         saves: 1,
@@ -94,7 +100,7 @@ export const MOCK_OBJECTS = {
           evaluate: 1,
           remember: 1
         }
-      }
+    },
 };
 
 export const SUBMITTABLE_LEARNING_OBJECT = {
