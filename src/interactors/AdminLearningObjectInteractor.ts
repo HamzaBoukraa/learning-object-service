@@ -1,5 +1,4 @@
 import { LearningObjectInteractor } from './interactors';
-import { updateLearningObject } from '../LearningObjects/LearningObjectInteractor';
 import {
   DataStore,
   FileManager,

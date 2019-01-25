@@ -4,7 +4,7 @@ import {CollectionDataStore} from './CollectionDataStore';
 
 export function initializeCollectionRouter({ router, dataStore }: { router: Router, dataStore: CollectionDataStore}) {
   /**
-   * Return all collections {name: string, abvName: string, primaryColor: string, hasLogo: boolean}
+   * Gets the metadata for all collections
    */
   const getAllCollections = async (req: Request, res: Response) => {
     try {

@@ -1,8 +1,7 @@
-import { DataStore } from '../interfaces/DataStore';
-import { FileManager } from '../interfaces/interfaces';
-import { Readable } from 'stream';
 import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
-import { MultipartFileUploadStatus, DZFile, FileUpload } from '../interfaces/FileManager';
+import { DataStore } from '../interfaces/DataStore';
+import { DZFile, FileUpload, MultipartFileUploadStatus } from '../interfaces/FileManager';
+import { FileManager } from '../interfaces/interfaces';
 
 /**
  * Creates multipart upload and saves metadata for upload
@@ -27,7 +26,7 @@ export async function startMultipartUpload(params: {
   try {
     const path = `${params.user.username}/${params.objectId}/${
       params.filePath
-    }`;
+      }`;
     const uploadId = await params.fileManager.initMultipartUpload({ path });
     const status: MultipartFileUploadStatus = {
       path,
@@ -43,41 +42,41 @@ export async function startMultipartUpload(params: {
   }
 }
 
-  /**
-   * Processes Multipart Uploads
-   *
-   * @private
-   * @static
-   * @param {{
-   *     dataStore: DataStore;
-   *     fileManager: FileManager;
-   *     file: DZFile;
-   *     fileUpload: FileUpload;
-   *   }} params
-   */
-  export async function processMultipartUpload(params: {
-    dataStore: DataStore;
-    fileManager: FileManager;
-    file: DZFile;
-    fileUpload: FileUpload;
-    uploadId: string;
-  }): Promise<LearningObjectFile> {
-    try {
-      const partNumber = +params.file.dzchunkindex + 1;
-      const completedPart = await params.fileManager.uploadPart({
-        path: params.fileUpload.path,
-        data: params.fileUpload.data,
-        partNumber,
-        uploadId: params.uploadId,
-      });
-      await params.dataStore.updateMultipartUploadStatus({
-        completedPart,
-        id: params.uploadId,
-      });
-    } catch (e) {
-      return Promise.reject(e);
-    }
+/**
+ * Processes Multipart Uploads
+ *
+ * @private
+ * @static
+ * @param {{
+ *     dataStore: DataStore;
+ *     fileManager: FileManager;
+ *     file: DZFile;
+ *     fileUpload: FileUpload;
+ *   }} params
+ */
+export async function processMultipartUpload(params: {
+  dataStore: DataStore;
+  fileManager: FileManager;
+  file: DZFile;
+  fileUpload: FileUpload;
+  uploadId: string;
+}): Promise<LearningObjectFile> {
+  try {
+    const partNumber = +params.file.dzchunkindex + 1;
+    const completedPart = await params.fileManager.uploadPart({
+      path: params.fileUpload.path,
+      data: params.fileUpload.data,
+      partNumber,
+      uploadId: params.uploadId,
+    });
+    await params.dataStore.updateMultipartUploadStatus({
+      completedPart,
+      id: params.uploadId,
+    });
+  } catch (e) {
+    return Promise.reject(e);
   }
+}
 
 /**
  * Finalizes multipart upload and returns file url;
@@ -139,43 +138,7 @@ export async function abortMultipartUpload(params: {
     });
   } catch (e) {
     console.error(e);
-    throw `Could not cancel upload`;
-  }
-}
-
-/**
- * Fetches file stream
- *
- * @export
- * @param {{
- *   dataStore: DataStore;
- *   fileManager: FileManager;
- *   username: string;
- *   learningObjectId: string;
- *   fileId: string;
- * }} params
- * @returns {Promise<{ filename: string; mimeType: string; stream: Readable }>}
- */
-export async function streamFile(params: {
-  dataStore: DataStore;
-  fileManager: FileManager;
-  username: string;
-  learningObjectId: string;
-  fileId: string;
-}): Promise<{ filename: string; mimeType: string; stream: Readable }> {
-  try {
-    const file = await params.dataStore.findSingleFile({
-      learningObjectId: params.learningObjectId,
-      fileId: params.fileId,
-    });
-    const path = `${params.username}/${params.learningObjectId}/${
-      file.fullPath ? file.fullPath : file.name
-    }`;
-    const mimeType = getMimeType({ file });
-    const stream = params.fileManager.streamFile({ path });
-    return { mimeType, stream, filename: file.name };
-  } catch (e) {
-    return Promise.reject(e);
+    throw new Error(`Could not cancel upload`);
   }
 }
 

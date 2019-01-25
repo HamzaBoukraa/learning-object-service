@@ -203,7 +203,7 @@ export class ExpressRouteDriver {
     LearningObjectStatsRouteHandler.initialize({
       router,
       dataStore: this.dataStore,
-      library: this.library,
     });
   }
 }
+

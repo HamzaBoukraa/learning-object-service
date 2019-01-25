@@ -6,9 +6,10 @@ import { DataStore } from '../interfaces/DataStore';
  * Initializes an express router with endpoints to publish and unpublish a learning object.
  *
  * A closure pattern is used here in order to create named functions for the route handlers.
- * This pattern allows easier code tracibility through the used of named fucntions. It
+ * This pattern allows easier code tracibility through the use of named fucntions. It
  * also eliminates the need to create an object that will stick around in memory when creating
  * a new router.
+ *
  * @param dataStore
  */
 export function initialize({
@@ -36,9 +37,11 @@ export function initialize({
   async function cancel(req: Request, res: Response) {
     try {
       const id = req.params.learningObjectId;
-      const username = req.user.username;
 
-      await cancelSubmission(dataStore, id);
+      await cancelSubmission(
+        dataStore,
+        id,
+      );
       res.sendStatus(200);
     } catch (e) {
       if (e instanceof Error) {
