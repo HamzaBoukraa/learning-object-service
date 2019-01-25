@@ -629,7 +629,7 @@ export class MongoDriver implements DataStore {
    * @returns {Promise<Partial<LearningObjectStats>>}
    * @memberof MongoDriver
    */
-  fetchStats(params: { query: any }): Promise<Partial<LearningObjectStats>> {
+  fetchStats(params: { query: any }): Promise<LearningObjectStats> {
     return this.statStore.fetchStats({ query: params.query });
   }
 

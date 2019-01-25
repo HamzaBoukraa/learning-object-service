@@ -2,6 +2,7 @@ import * as request from 'request-promise';
 import { LibraryCommunicator } from '../interfaces/LibraryCommunicator';
 import { LIBRARY_ROUTES } from '../routes';
 import { generateServiceToken } from './TokenManager';
+import { LearningObject } from '@cyber4all/clark-entity';
 
 export class LibraryDriver implements LibraryCommunicator {
   private options = {

@@ -1,10 +1,11 @@
 import { LearningObject } from '@cyber4all/clark-entity';
 // @ts-ignore
 import * as stopword from 'stopword';
-import { processMultipartUpload } from '../FileManager/FileInteractor';
-import { LearningObjectQuery } from '../interfaces/DataStore';
-import { DZFile, FileUpload } from '../interfaces/FileManager';
-import { DataStore, FileManager, LibraryCommunicator } from '../interfaces/interfaces';
+import {
+  DataStore,
+  FileManager,
+  LibraryCommunicator,
+} from '../interfaces/interfaces';
 import { UserToken } from '../types';
 import { LearningObjectQuery } from '../interfaces/DataStore';
 import { DZFile, FileUpload } from '../interfaces/FileManager';
@@ -799,10 +800,9 @@ export class LearningObjectInteractor {
     const extension = extMatch ? extMatch[0] : '';
     const date = Date.now().toString();
 
-    const learningObjectFile = {
+    const learningObjectFile: Partial<LearningObject.Material.File> = {
       url,
       date,
-      id: undefined,
       name: file.name,
       fileType: file.mimetype,
       extension: extension,
@@ -820,7 +820,7 @@ export class LearningObjectInteractor {
       }
     }
 
-    return learningObjectFile;
+    return learningObjectFile as LearningObject.Material.File;
   }
 
   private static isPackageable(file: DZFile) {
