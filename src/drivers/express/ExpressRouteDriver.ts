@@ -189,6 +189,11 @@ export class ExpressRouteDriver {
       }
     });
 
+    LearningObjectStatsRouteHandler.initialize({
+      router,
+      dataStore: this.dataStore,
+    });
+
     LearningObjectRouteHandler.initializePublic({
       router,
       dataStore: this.dataStore,
@@ -199,11 +204,5 @@ export class ExpressRouteDriver {
       dataStore: this.dataStore,
       fileManager: this.fileManager,
     });
-
-    LearningObjectStatsRouteHandler.initialize({
-      router,
-      dataStore: this.dataStore,
-    });
   }
 }
-
