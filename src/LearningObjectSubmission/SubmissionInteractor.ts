@@ -1,5 +1,6 @@
 import { DataStore } from '../interfaces/DataStore';
 import { LearningObjectInteractor } from '../interactors/interactors';
+import { SubmittableLearningObject } from '@cyber4all/clark-entity';
 
 export async function submitForReview(
   dataStore: DataStore,
@@ -9,20 +10,14 @@ export async function submitForReview(
 ): Promise<void> {
   try {
     const object = await dataStore.fetchLearningObject(id, true, true);
-    // TODO: learning object validation should be moved to the entity level
-    const errorMessage = LearningObjectInteractor.validateLearningObject(
-      object,
-    );
-
-    if (errorMessage) {
-      return Promise.reject(errorMessage);
-    }
-
+    const _ = new SubmittableLearningObject(object);
     await dataStore.submitLearningObjectToCollection(username, id, collection);
   } catch (e) {
     console.log(e);
     // TODO: Convey that this is an internal server error
-    return Promise.reject(new Error(`Problem submitting learning object.`));
+    return Promise.reject(
+      new Error(`Problem submitting learning object. ${e}`),
+    );
   }
 }
 export async function cancelSubmission(
