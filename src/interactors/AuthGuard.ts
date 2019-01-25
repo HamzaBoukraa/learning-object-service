@@ -34,6 +34,12 @@ export function verifyAccessGroup(
     const sortedUserAccessGroups = mergeSort(userAccessGroups);
     const sortedRequiredAccessGroups = mergeSort(requiredAccessGroups);
 
+    console.log(userAccessGroups);
+    console.log(sortedUserAccessGroups);
+    console.log('==========');
+    console.log(sortedRequiredAccessGroups);
+    console.log(requiredAccessGroups);
+
     for (let userGroup of sortedUserAccessGroups) {
         if (userGroup.includes(accessGroups.REVIEWER)) {
             if(sortedRequiredAccessGroups.indexOf(accessGroups.REVIEWER) > -1) {
@@ -109,7 +115,12 @@ function merge(
     const results = [];
 
     while (left.length && right.length) {
-        if (accessGroups[left[0].toUpperCase()] < accessGroups[right[0].toUpperCase()]) {
+        const formatted = formatSortString(left[0], right[0]);
+        const leftElement = formatted[0];
+        const rightElement = formatted[1];
+        console.log(accessGroups[leftElement.toUpperCase()], accessGroups[rightElement.toUpperCase()]);
+        console.log(accessGroups[leftElement.toUpperCase()] < accessGroups[rightElement.toUpperCase()]);
+        if (accessGroups[leftElement.toUpperCase()] < accessGroups[rightElement.toUpperCase()]) {
             results.push(left.shift());
         } else {
             results.push(right.shift());
@@ -154,4 +165,25 @@ function parseCollectionName(userGroup: string): string {
     const collectionName = list[1];
     return collectionName;
 }   
+
+function formatSortString(left: string, right: string): string[] {
+    let copyLeft = left;
+    let copyRight = right;
+
+    if (left[0].includes('curator') || left[0].includes('reviewer')) {
+        copyLeft = parseRoleName(left[0]);
+    } 
+
+    if (right[0].includes('curator') || right[0].includes('reviewer')) {
+        copyRight = parseRoleName(right[0]);
+    }
+
+    return [copyLeft, copyRight];
+}
+
+function parseRoleName(userGroup: string): string {
+    const list = userGroup.split('@');
+    const collectionName = list[0];
+    return collectionName;
+}
 

@@ -42,5 +42,10 @@ describe('verifyAccessGroup', () => {
         verifyAccessGroup(MOCK_OBJECTS.ACCESS_GROUPS_REVIEWER_NCCP, MOCK_OBJECTS.REQUIRED_ACCESS_GROUPS_REVIEWER, MOCK_OBJECTS.ABV_COLLECTION_NAME);
     }).not.toThrow();
   });
+  it('Should allow access (given two curators with one correct collection)', () => {
+    expect(() => {
+        verifyAccessGroup(MOCK_OBJECTS.ACCESS_GROUPS_MULTIPLE_CURATORS_UNSORTED, MOCK_OBJECTS.REQUIRED_ACCESS_GROUPS_CURATOR_UNSORTED, MOCK_OBJECTS.ABV_COLLECTION_NAME);
+    }).not.toThrow();
+  });
 });
 
