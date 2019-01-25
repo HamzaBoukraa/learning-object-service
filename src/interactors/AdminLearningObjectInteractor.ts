@@ -4,7 +4,9 @@ import {
   FileManager,
   LibraryCommunicator,
 } from '../interfaces/interfaces';
-import { deleteLearningObject } from '../LearningObjects/LearningObjectInteractor';
+import {
+  deleteLearningObject,
+} from '../LearningObjects/LearningObjectInteractor';
 import { LearningObject } from '@cyber4all/clark-entity';
 
 export class AdminLearningObjectInteractor {
