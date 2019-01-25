@@ -2,7 +2,11 @@ import * as AWS from 'aws-sdk';
 import { AWSError } from 'aws-sdk';
 import { Readable } from 'stream';
 import { reportError } from '../drivers/SentryConnector';
-import { CompletedPart, CompletedPartList, FileUpload } from '../interfaces/FileManager';
+import {
+  CompletedPart,
+  CompletedPartList,
+  FileUpload,
+} from '../interfaces/FileManager';
 import { FileManager } from '../interfaces/interfaces';
 import { AWS_SDK_CONFIG } from './aws-sdk.config';
 
@@ -12,7 +16,6 @@ const AWS_S3_BUCKET = 'neutrino-file-uploads';
 const AWS_S3_ACL = 'public-read';
 
 export class S3Driver implements FileManager {
-
   private s3 = new AWS.S3({ region: AWS_SDK_CONFIG.region });
 
   /**
@@ -167,7 +170,7 @@ export class S3Driver implements FileManager {
     }
   }
 
-  streamFile(params: { path: string, objectName: string }): Readable {
+  streamFile(params: { path: string }): Readable {
     const fetchParams = {
       Bucket: AWS_S3_BUCKET,
       Key: params.path,
@@ -213,7 +216,7 @@ export class S3Driver implements FileManager {
       Bucket: AWS_S3_BUCKET,
       Key: path,
     };
-    return new Promise<boolean>((resolve) => {
+    return new Promise<boolean>(resolve => {
       this.s3
         .headObject(fetchParams)
         .createReadStream()
