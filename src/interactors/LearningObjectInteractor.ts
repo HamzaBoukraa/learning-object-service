@@ -55,13 +55,9 @@ export class LearningObjectInteractor {
 
       // Perform search on objects
       if (params.query && Object.keys(params.query).length) {
-        const level = params.query.level ? [...params.query.level] : undefined;
-        const length = params.query.length
-          ? [...params.query.length]
-          : undefined;
-        const status = params.query.status
-          ? [...params.query.status]
-          : undefined;
+        const level = toArray<string>(params.query.level);
+        const length = toArray<string>(params.query.length);
+        const status = toArray<string>(params.query.status);
         const response = await this.searchObjects(
           params.dataStore,
           params.library,
@@ -846,4 +842,21 @@ export function sanitizeFileName(name: string): string {
     clean = clean.slice(0, MAX_CHAR);
   }
   return clean;
+}
+
+/**
+ * Returns new array with element(s) from value param or undefined if value was not defined
+ *
+ * @template T
+ * @param {*} value
+ * @returns {T[]}
+ */
+function toArray<T>(value: any): T[] {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  if (value && Array.isArray(value)) {
+    return [...value];
+  }
+  return [value];
 }

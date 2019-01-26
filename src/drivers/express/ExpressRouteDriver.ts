@@ -171,10 +171,13 @@ export class ExpressRouteDriver {
 
     router.get('/users/:username/learning-objects', async (req, res) => {
       try {
+        const query = req.query;
         const userToken: UserToken = req.user;
-        const loadChildren: boolean = req.query.children;
+        const loadChildren: boolean = query.children;
+        delete query.children;
         const objects = await LearningObjectInteractor.loadLearningObjectSummary(
           {
+            query,
             userToken,
             loadChildren,
             dataStore: this.dataStore,
