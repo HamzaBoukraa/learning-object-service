@@ -285,8 +285,8 @@ export class LearningObjectInteractor {
             dataStore,
             library,
             object.id,
-            false,
-            false,
+            true,
+            true,
           );
           children.forEach((child: LearningObject) => object.addChild(child));
           return object;
