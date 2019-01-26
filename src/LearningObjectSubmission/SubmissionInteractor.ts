@@ -1,5 +1,4 @@
 import { DataStore } from '../interfaces/DataStore';
-import { LearningObjectInteractor } from '../interactors/interactors';
 import { SubmittableLearningObject } from '@cyber4all/clark-entity';
 
 export async function submitForReview(
