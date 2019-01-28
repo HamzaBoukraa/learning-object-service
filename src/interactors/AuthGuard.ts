@@ -9,6 +9,14 @@ export enum accessGroups {
   USER = 'user'
 }
 
+const accessList = [
+    'admin',
+    'editor',
+    'curator',
+    'reviewer',
+    'user'
+]
+
 /**
    * Compares two string arrays and checks for a matching pair
    * If a matching pair exists, access to the requested function is granted
@@ -35,11 +43,11 @@ export function verifyAccessGroup(
     const sortedRequiredAccessGroups = mergeSort(requiredAccessGroups);
 
     console.log(userAccessGroups);
-    console.log(sortedUserAccessGroups);
+    console.log('sorted', sortedUserAccessGroups);
     console.log('==========');
-    console.log(sortedRequiredAccessGroups);
     console.log(requiredAccessGroups);
-
+    console.log('sorted', sortedRequiredAccessGroups);
+    
     for (let userGroup of sortedUserAccessGroups) {
         if (userGroup.includes(accessGroups.REVIEWER)) {
             if(sortedRequiredAccessGroups.indexOf(accessGroups.REVIEWER) > -1) {
@@ -118,9 +126,7 @@ function merge(
         const formatted = formatSortString(left[0], right[0]);
         const leftElement = formatted[0];
         const rightElement = formatted[1];
-        console.log(accessGroups[leftElement.toUpperCase()], accessGroups[rightElement.toUpperCase()]);
-        console.log(accessGroups[leftElement.toUpperCase()] < accessGroups[rightElement.toUpperCase()]);
-        if (accessGroups[leftElement.toUpperCase()] < accessGroups[rightElement.toUpperCase()]) {
+        if (accessList.indexOf(accessGroups[leftElement.toUpperCase()]) < accessList.indexOf(accessGroups[rightElement.toUpperCase()])) {
             results.push(left.shift());
         } else {
             results.push(right.shift());
@@ -166,24 +172,40 @@ function parseCollectionName(userGroup: string): string {
     return collectionName;
 }   
 
+/**
+   * Takes a string and parses the collection name out of it. The userGroup is assumed to be
+   * curator or reviewer
+   *
+   * @param {string} userGroup the access group that belong to the current user
+   *
+   * @returns {string} the collection name 
+   */
 function formatSortString(left: string, right: string): string[] {
     let copyLeft = left;
     let copyRight = right;
 
-    if (left[0].includes('curator') || left[0].includes('reviewer')) {
-        copyLeft = parseRoleName(left[0]);
+    if (left.includes('curator') || left.includes('reviewer')) {
+        copyLeft = parseRoleName(left);
     } 
 
-    if (right[0].includes('curator') || right[0].includes('reviewer')) {
-        copyRight = parseRoleName(right[0]);
+    if (right.includes('curator') || right.includes('reviewer')) {
+        copyRight = parseRoleName(right);
     }
 
     return [copyLeft, copyRight];
 }
 
+/**
+   * Takes a string and parses the collection name out of it. The userGroup is assumed to be
+   * curator or reviewer
+   *
+   * @param {string} userGroup the access group that belong to the current user
+   *
+   * @returns {string} the collection name 
+   */
 function parseRoleName(userGroup: string): string {
     const list = userGroup.split('@');
-    const collectionName = list[0];
-    return collectionName;
+    const roleName = list[0];
+    return roleName;
 }
 

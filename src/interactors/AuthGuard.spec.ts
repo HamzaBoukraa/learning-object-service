@@ -4,7 +4,7 @@ import { verifyAccessGroup } from './authGuard';
 describe('verifyAccessGroup', () => {
   it('should deny access (given user with no access groups)', () => {
     expect(() => {
-        verifyAccessGroup([''], MOCK_OBJECTS.REQUIRED_ACCESS_GROUPS_CURATOR);
+        verifyAccessGroup(['user'], MOCK_OBJECTS.REQUIRED_ACCESS_GROUPS_CURATOR);
     }).toThrow();
   });
   it('Should allow access (given exact matching arrays)', () => {
