@@ -41,12 +41,6 @@ export function verifyAccessGroup(
     // Sort both arrays so that higher access groups appear first
     const sortedUserAccessGroups = mergeSort(userAccessGroups);
     const sortedRequiredAccessGroups = mergeSort(requiredAccessGroups);
-
-    console.log(userAccessGroups);
-    console.log('sorted', sortedUserAccessGroups);
-    console.log('==========');
-    console.log(requiredAccessGroups);
-    console.log('sorted', sortedRequiredAccessGroups);
     
     for (let userGroup of sortedUserAccessGroups) {
         if (userGroup.includes(accessGroups.REVIEWER)) {
