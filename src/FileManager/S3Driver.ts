@@ -144,29 +144,23 @@ export class S3Driver implements FileManager {
    * @memberof S3Driver
    */
   public async deleteAll(params: { path: string }): Promise<void> {
-    try {
-      const listParams = {
-        Bucket: AWS_S3_BUCKET,
-        Prefix: params.path,
-      };
+    const listParams = {
+      Bucket: AWS_S3_BUCKET,
+      Prefix: params.path,
+    };
 
-      const listedObjects = await this.s3.listObjectsV2(listParams).promise();
-
+    const listedObjects = await this.s3.listObjectsV2(listParams).promise();
+    if (listedObjects.Contents && listedObjects.Contents.length) {
       const deleteParams = {
         Bucket: AWS_S3_BUCKET,
         Delete: {
           Objects: listedObjects.Contents.map(({ Key }) => ({ Key })),
         },
       };
-
       await this.s3.deleteObjects(deleteParams).promise();
-
       if (listedObjects.IsTruncated) {
         return await this.deleteAll(params);
       }
-      return Promise.resolve();
-    } catch (e) {
-      return Promise.reject(e);
     }
   }
 

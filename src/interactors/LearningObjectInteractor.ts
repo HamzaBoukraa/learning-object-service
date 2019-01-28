@@ -471,15 +471,15 @@ export class LearningObjectInteractor {
           return dataStore.findLearningObject(username, name);
         }),
       );
-      await dataStore.deleteMultipleLearningObjects(learningObjectIDs);
-      const learningObjectsWithFiles = await dataStore.fetchMultipleObjects(
-        learningObjectIDs,
-      );
-      for (let object of learningObjectsWithFiles) {
-        const path = `${username}/${object.id}/`;
-        await fileManager.deleteAll({ path });
-      }
       await library.cleanObjectsFromLibraries(learningObjectIDs);
+      await dataStore.deleteMultipleLearningObjects(learningObjectIDs);
+
+      learningObjectIDs.forEach(id => {
+        const path = `${username}/${id}/`;
+        fileManager.deleteAll({ path }).catch(e => {
+          console.error(`Problem deleting files at ${path}. ${e}`);
+        });
+      });
     } catch (error) {
       return Promise.reject(
         `Problem deleting Learning Objects. Error: ${error}`,
