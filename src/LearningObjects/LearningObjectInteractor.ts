@@ -58,9 +58,8 @@ export async function addLearningObject(
       const learningObjectID = await dataStore.insertLearningObject(
         objectInsert,
       );
-      object.id = learningObjectID;
-
-      return object;
+      objectInsert.id = learningObjectID;
+      return objectInsert;
     }
   } catch (e) {
     return Promise.reject(`Problem creating Learning Object. Error${e}`);
