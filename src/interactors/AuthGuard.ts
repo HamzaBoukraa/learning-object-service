@@ -167,12 +167,13 @@ function parseCollectionName(userGroup: string): string {
 }   
 
 /**
-   * Takes a string and parses the collection name out of it. The userGroup is assumed to be
-   * curator or reviewer
+   * Checks for strings containing 'curator' or 'reviwer'. Parses the role name out 
+   * of those strings and returns them in an array format
    *
-   * @param {string} userGroup the access group that belong to the current user
+   * @param {string} left string representing access group
+   * @param {string} right string representing access group
    *
-   * @returns {string} the collection name 
+   * @returns {string[]} string array containing formatted access group strings
    */
 function formatSortString(left: string, right: string): string[] {
     let copyLeft = left;
@@ -190,12 +191,12 @@ function formatSortString(left: string, right: string): string[] {
 }
 
 /**
-   * Takes a string and parses the collection name out of it. The userGroup is assumed to be
+   * Takes a string and parses the role name out of it. The userGroup is assumed to be
    * curator or reviewer
    *
    * @param {string} userGroup the access group that belong to the current user
    *
-   * @returns {string} the collection name 
+   * @returns {string} the role name 
    */
 function parseRoleName(userGroup: string): string {
     const list = userGroup.split('@');
