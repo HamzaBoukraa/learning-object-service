@@ -28,7 +28,6 @@ import { hasLearningObjectWriteAccess } from '../interactors/AuthorizationManage
  */
 export async function addLearningObject(
   dataStore: DataStore,
-  fileManager: FileManager,
   object: LearningObject,
   user: UserToken,
 ): Promise<LearningObject> {
@@ -61,13 +60,6 @@ export async function addLearningObject(
       );
       object.id = learningObjectID;
 
-      // Generate PDF and update Learning Object with PDF meta.
-      await updateReadme({
-        fileManager,
-        object,
-        dataStore,
-      });
-
       return object;
     }
   } catch (e) {
@@ -89,7 +81,6 @@ export async function addLearningObject(
 export async function updateLearningObject(params: {
   user: UserToken;
   dataStore: DataStore;
-  fileManager: FileManager;
   id: string;
   updates: { [index: string]: any };
 }): Promise<void> {
@@ -111,7 +102,7 @@ export async function updateLearningObject(params: {
       params.id,
     );
     const updates: LearningObjectUpdates = sanitizeUpdates(params.updates);
-    await validateUpdates({
+    validateUpdates({
       id: params.id,
       updates,
     });
@@ -119,12 +110,6 @@ export async function updateLearningObject(params: {
     await params.dataStore.editLearningObject({
       id: params.id,
       updates,
-    });
-
-    await updateReadme({
-      dataStore: params.dataStore,
-      fileManager: params.fileManager,
-      id: params.id,
     });
   } catch (e) {
     return Promise.reject(`Problem updating Learning Object. ${e}`);
@@ -167,13 +152,16 @@ export async function deleteLearningObject(
       false,
       true,
     );
+    await library.cleanObjectsFromLibraries([learningObjectID]);
     await dataStore.deleteLearningObject(learningObjectID);
     if (learningObject.materials.files.length) {
       const path = `${username}/${learningObjectID}/`;
-      await fileManager.deleteAll({ path });
+      fileManager.deleteAll({ path }).catch(e => {
+        console.error(
+          `Error deleting files for ${learningObjectName}: ${path}`,
+        );
+      });
     }
-    library.cleanObjectsFromLibraries([learningObjectID]);
-    return Promise.resolve();
   } catch (error) {
     return Promise.reject(`Problem deleting Learning Object. Error: ${error}`);
   }

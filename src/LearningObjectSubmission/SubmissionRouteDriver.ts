@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { submitForReview, cancelSubmission } from './SubmissionInteractor';
 import { DataStore } from '../interfaces/DataStore';
+import { FileManager } from '../interfaces/interfaces';
 
 /**
  * Initializes an express router with endpoints to publish and unpublish a learning object.
@@ -15,9 +16,11 @@ import { DataStore } from '../interfaces/DataStore';
 export function initialize({
   router,
   dataStore,
+  fileManager,
 }: {
   router: Router;
   dataStore: DataStore;
+  fileManager: FileManager;
 }) {
   async function submit(req: Request, res: Response) {
     try {
@@ -25,7 +28,13 @@ export function initialize({
       const username = req.user.username;
       const collection = req.body.collection;
 
-      await submitForReview(dataStore, username, id, collection);
+      await submitForReview({
+        dataStore,
+        fileManager,
+        username,
+        id,
+        collection,
+      });
 
       res.sendStatus(200);
     } catch (e) {
@@ -38,10 +47,7 @@ export function initialize({
     try {
       const id = req.params.learningObjectId;
 
-      await cancelSubmission(
-        dataStore,
-        id,
-      );
+      await cancelSubmission(dataStore, id);
       res.sendStatus(200);
     } catch (e) {
       if (e instanceof Error) {
