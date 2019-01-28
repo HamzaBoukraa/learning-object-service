@@ -1,7 +1,13 @@
 import { LearningObjectInteractor } from './interactors';
-import { updateLearningObject } from '../LearningObjects/LearningObjectInteractor';
-import { DataStore, FileManager, LibraryCommunicator } from '../interfaces/interfaces';
-import { LearningObjectLock, LearningObject } from '@cyber4all/clark-entity/dist/learning-object';
+import {
+  DataStore,
+  FileManager,
+  LibraryCommunicator,
+} from '../interfaces/interfaces';
+import {
+  deleteLearningObject,
+} from '../LearningObjects/LearningObjectInteractor';
+import { LearningObject } from '@cyber4all/clark-entity';
 
 export class AdminLearningObjectInteractor {
   private static learningObjectInteractor = LearningObjectInteractor;
@@ -56,7 +62,10 @@ export class AdminLearningObjectInteractor {
   ): Promise<any> {
     try {
       const accessUnpublished = true;
-      return await this.learningObjectInteractor.searchObjects(dataStore, library, {
+      return await this.learningObjectInteractor.searchObjects(
+        dataStore,
+        library,
+        {
           name,
           author,
           collection: undefined,
@@ -79,8 +88,6 @@ export class AdminLearningObjectInteractor {
 
   public static async loadFullLearningObject(
     dataStore: DataStore,
-    fileManager: FileManager,
-    library: LibraryCommunicator,
     learningObjectID: string,
   ): Promise<any> {
     try {
@@ -90,28 +97,10 @@ export class AdminLearningObjectInteractor {
     }
   }
 
-  public static async togglePublished(
-    dataStore: DataStore,
-    username: string,
-    id: string,
-    published: boolean,
-  ): Promise<void> {
-    try {
-      return await this.learningObjectInteractor.togglePublished(
-        dataStore,
-        username,
-        id,
-        published,
-      );
-    } catch (e) {
-      return Promise.reject(`Problem toggling publish status. Error:  ${e}`);
-    }
-  }
-
   public static async toggleLock(
     dataStore: DataStore,
     id: string,
-    lock?: LearningObjectLock,
+    lock?: LearningObject.Lock,
   ): Promise<void> {
     try {
       return await dataStore.toggleLock(id, lock);
@@ -125,13 +114,15 @@ export class AdminLearningObjectInteractor {
     fileManager: FileManager,
     username: string,
     learningObjectName: string,
+    library: LibraryCommunicator,
   ): Promise<void> {
     try {
-      return await this.learningObjectInteractor.deleteLearningObject(
+      return await deleteLearningObject(
         dataStore,
         fileManager,
         username,
         learningObjectName,
+        library,
       );
     } catch (error) {
       return Promise.reject(
@@ -159,24 +150,6 @@ export class AdminLearningObjectInteractor {
       return Promise.reject(
         `Problem deleting Learning Objects. Error: ${error}`,
       );
-    }
-  }
-
-  public static async updateLearningObject(
-    dataStore: DataStore,
-    fileManager: FileManager,
-    id: string,
-    learningObject: LearningObject,
-  ): Promise<void> {
-    try {
-      return await updateLearningObject(
-        dataStore,
-        fileManager,
-        id,
-        learningObject,
-      );
-    } catch (error) {
-      return Promise.reject(error);
     }
   }
 }

@@ -1,24 +1,22 @@
-import { LearningObject, Collection } from '@cyber4all/clark-entity';
-import {
-  MultipartFileUploadStatus,
-  MultipartFileUploadStatusUpdates,
-  CompletedPart,
-} from './FileManager';
-import { LearningObjectLock } from '@cyber4all/clark-entity/dist/learning-object';
-import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
+import { Collection, LearningObject, User } from '@cyber4all/clark-entity';
+import { CompletedPart, MultipartFileUploadStatus } from './FileManager';
+import { LearningObjectUpdates } from '../types';
+import { LearningOutcomeDatastore } from '../LearningOutcomes/LearningOutcomeInteractor';
 import { LearningObjectStatDatastore } from '../LearningObjectStats/LearningObjectStatsInteractor';
+import { CollectionDataStore } from '../Collections/CollectionDataStore';
 
-export interface DataStore extends LearningObjectStatDatastore {
+export interface DataStore
+  extends LearningOutcomeDatastore,
+    LearningObjectStatDatastore,
+    CollectionDataStore {
   connect(dburi: string): Promise<void>;
   disconnect(): void;
   insertLearningObject(object: LearningObject): Promise<string>;
-  reorderOutcome(
-    objectID: string,
-    outcomeID: string,
-    index: number,
-  ): Promise<void>;
-  editLearningObject(id: string, object: LearningObject): Promise<void>;
-  toggleLock(id: string, lock?: LearningObjectLock): Promise<void>;
+  editLearningObject(params: {
+    id: string;
+    updates: LearningObjectUpdates;
+  }): Promise<void>;
+  toggleLock(id: string, lock?: LearningObject.Lock): Promise<void>;
   deleteLearningObject(id: string): Promise<void>;
   deleteMultipleLearningObjects(ids: string[]): Promise<void>;
   getUserObjects(username: string): Promise<string[]>;
@@ -56,21 +54,40 @@ export interface DataStore extends LearningObjectStatDatastore {
     limit?: number;
     released?: boolean;
   }): Promise<{ objects: LearningObject[]; total: number }>;
-  fetchCollections(loadObjects?: boolean): Promise<Collection[]>;
-  fetchCollection(name: string): Promise<Collection>;
-  fetchCollectionMeta(name: string): Promise<any>;
-  fetchCollectionObjects(name: string): Promise<LearningObject[]>;
-  togglePublished(
+  submitLearningObjectToCollection(
     username: string,
     id: string,
-    published: boolean,
+    collection: string,
   ): Promise<void>;
+  unsubmitLearningObject(id: string): Promise<void>;
   setChildren(parentId: string, children: string[]): Promise<void>;
   deleteChild(parentId: string, childId: string): Promise<void>;
   findParentObjects(params: {
     query: LearningObjectQuery;
   }): Promise<LearningObject[]>;
-  addToFiles(params: { id: string; loFile: LearningObjectFile }): Promise<void>;
+  loadChildObjects(params: {
+    id: string;
+    full?: boolean;
+    accessUnreleased?: boolean;
+  }): Promise<LearningObject[]>;
+  findSingleFile(params: {
+    learningObjectId: string;
+    fileId: string;
+  }): Promise<LearningObject.Material.File>;
+  // Learning Object Files
+  addToFiles(params: {
+    id: string;
+    loFile: LearningObject.Material.File;
+  }): Promise<void>;
+  getLearningObjectMaterials(params: {
+    id: string;
+  }): Promise<LearningObject.Material>;
+  removeFromFiles(params: { objectId: string; fileId: string }): Promise<void>;
+  updateFileDescription(params: {
+    learningObjectId: string;
+    fileId: string;
+    description: string;
+  }): Promise<LearningObject.Material.File>;
   // Multipart Uploads
   insertMultipartUploadStatus(params: {
     status: MultipartFileUploadStatus;
@@ -80,15 +97,17 @@ export interface DataStore extends LearningObjectStatDatastore {
   }): Promise<MultipartFileUploadStatus>;
   updateMultipartUploadStatus(params: {
     id: string;
-    updates: MultipartFileUploadStatusUpdates;
     completedPart: CompletedPart;
   }): Promise<void>;
   deleteMultipartUploadStatus(params: { id: string }): Promise<void>;
   addToCollection(learningObjectId: string, collection: string): Promise<void>;
-  findSingleFile(params: {
-    learningObjectId: string;
-    fileId: string;
-  }): Promise<LearningObjectFile>;
+
+  findUser(username: string): Promise<string>;
+  fetchUser(id: string): Promise<User>;
+  peek<T>(params: {
+    query: { [index: string]: string };
+    fields: { [index: string]: 0 | 1 };
+  }): Promise<T>;
 }
 
 export { Collection as LearningObjectCollection };
