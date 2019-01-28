@@ -2,20 +2,20 @@ import { LearningObjectError } from '../errors';
 
 // TODO export from new entity after new builder merge
 export enum accessGroups {
-  ADMIN = 'admin',
-  EDITOR = 'editor',
-  CURATOR = 'curator',
-  REVIEWER = 'reviewer',
-  USER = 'user'
+  ADMIN,
+  EDITOR,
+  CURATOR,
+  REVIEWER,
+  USER
 }
 
-const accessList = [
-    'admin',
-    'editor',
-    'curator',
-    'reviewer',
-    'user'
-]
+const groups = { 
+    ADMIN: 'admin',
+    EDITOR: 'editor',
+    CURATOR: 'curator',
+    REVIEWER: 'reviewer',
+    USER: 'user'
+}
 
 /**
    * Compares two string arrays and checks for a matching pair
@@ -43,8 +43,8 @@ export function verifyAccessGroup(
     const sortedRequiredAccessGroups = mergeSort(requiredAccessGroups);
     
     for (let userGroup of sortedUserAccessGroups) {
-        if (userGroup.includes(accessGroups.REVIEWER)) {
-            if(sortedRequiredAccessGroups.indexOf(accessGroups.REVIEWER) > -1) {
+        if (userGroup.includes(groups.REVIEWER)) {
+            if(sortedRequiredAccessGroups.indexOf(groups.REVIEWER) > -1) {
                 if(requestedCollection) {
                     hasAccess = verifyCollectionAccess(userGroup, requestedCollection);
                     if (hasAccess) {
@@ -55,8 +55,8 @@ export function verifyAccessGroup(
                     break;
                 }
             }
-        } else if (userGroup.includes(accessGroups.CURATOR)) {
-            if(sortedRequiredAccessGroups.indexOf(accessGroups.CURATOR) > -1) {
+        } else if (userGroup.includes(groups.CURATOR)) {
+            if(sortedRequiredAccessGroups.indexOf(groups.CURATOR) > -1) {
                 if(requestedCollection) {
                     hasAccess = verifyCollectionAccess(userGroup, requestedCollection);
                     if (hasAccess) {
@@ -120,7 +120,7 @@ function merge(
         const formatted = formatSortString(left[0], right[0]);
         const leftElement = formatted[0];
         const rightElement = formatted[1];
-        if (accessList.indexOf(accessGroups[leftElement.toUpperCase()]) < accessList.indexOf(accessGroups[rightElement.toUpperCase()])) {
+        if (accessGroups[leftElement.toUpperCase()] < accessGroups[rightElement.toUpperCase()]) {
             results.push(left.shift());
         } else {
             results.push(right.shift());
