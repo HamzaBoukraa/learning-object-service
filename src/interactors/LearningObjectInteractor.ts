@@ -106,22 +106,17 @@ export class LearningObjectInteractor {
         );
       }
 
-      // Load children summaries
       if (params.loadChildren) {
         summary = await Promise.all(
           summary.map(async object => {
-            if (object.children && object.children.length) {
-              const children = await this.loadChildObjects(
-                params.dataStore,
-                params.library,
-                object.id,
-                false,
-                accessUnpublished,
-              );
-              children.forEach((child: LearningObject) =>
-                object.addChild(child),
-              );
-            }
+            const children = await this.loadChildObjects(
+              params.dataStore,
+              params.library,
+              object.id,
+              false,
+              accessUnpublished,
+            );
+            children.forEach((child: LearningObject) => object.addChild(child));
             return object;
           }),
         );
