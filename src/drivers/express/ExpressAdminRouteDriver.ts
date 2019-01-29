@@ -114,10 +114,12 @@ export class ExpressAdminRouteDriver {
       .get(async (req, res) => {
         try {
           const id = req.params.learningObjectId;
+          const accessGroups = req.user.accessGroups;
 
           const learningObject: LearningObject = await AdminLearningObjectInteractor.loadFullLearningObject(
             this.dataStore,
             id,
+            accessGroups
           );
 
           res.status(200).send(learningObject.toPlainObject());

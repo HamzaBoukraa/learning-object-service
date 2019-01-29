@@ -8,7 +8,7 @@ import {
   deleteLearningObject,
 } from '../LearningObjects/LearningObjectInteractor';
 import { LearningObject } from '@cyber4all/clark-entity';
-import { accessGroups, verifyAccessGroup } from './authGuard';
+import { accessGroups, verifyAccessGroup, groups } from './authGuard';
 
 export class AdminLearningObjectInteractor {
   private static learningObjectInteractor = LearningObjectInteractor;
@@ -24,7 +24,7 @@ export class AdminLearningObjectInteractor {
     limit?: number,
   ): Promise<{ total: number; objects: LearningObject[] }> {
     try {
-      const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR];
+      const requiredAccessGroups = [groups.ADMIN, groups.EDITOR];
       verifyAccessGroup(userAccessGroups, requiredAccessGroups);
       const accessUnpublished = true;
       const response = await dataStore.fetchAllObjects(
@@ -70,7 +70,7 @@ export class AdminLearningObjectInteractor {
     limit?: number,
   ): Promise<{ total: number; objects: LearningObject[] }> {
     try {
-      const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR, accessGroups.CURATOR, accessGroups.REVIEWER];
+      const requiredAccessGroups = [groups.ADMIN, groups.EDITOR, groups.CURATOR, groups.REVIEWER];
       verifyAccessGroup(userAccessGroups, requiredAccessGroups);
       const accessUnpublished = true;
       return await this.learningObjectInteractor.searchObjects(
@@ -107,7 +107,7 @@ export class AdminLearningObjectInteractor {
     userAccessGroups: string[]
   ): Promise<LearningObject> {
     try {
-      const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR, accessGroups.CURATOR];
+      const requiredAccessGroups = [groups.ADMIN, groups.EDITOR, groups.CURATOR];
       verifyAccessGroup(userAccessGroups, requiredAccessGroups);
       return await dataStore.fetchLearningObject(learningObjectID, true, true);
     } catch (e) {
@@ -121,11 +121,12 @@ export class AdminLearningObjectInteractor {
 
   public static async toggleLock(
     dataStore: DataStore,
+    userAccessGroups: string[],
     id: string,
     lock?: LearningObject.Lock,
   ): Promise<void> {
     try {
-      const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR];
+      const requiredAccessGroups = [groups.ADMIN, groups.EDITOR];
       verifyAccessGroup(userAccessGroups, requiredAccessGroups);
       return await dataStore.toggleLock(id, lock);
     } catch (e) {
@@ -142,7 +143,7 @@ export class AdminLearningObjectInteractor {
     userAccessGroups: string[]
   ): Promise<void> {
     try {
-      const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR, accessGroups.CURATOR];
+      const requiredAccessGroups = [groups.ADMIN, groups.EDITOR, groups.CURATOR];
       verifyAccessGroup(userAccessGroups, requiredAccessGroups);
       return await deleteLearningObject(
         dataStore,
@@ -171,7 +172,7 @@ export class AdminLearningObjectInteractor {
     userAccessGroups: string[]
   ): Promise<void> {
     try {
-      const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.CURATOR];
+      const requiredAccessGroups = [groups.ADMIN, groups.CURATOR];
       verifyAccessGroup(userAccessGroups, requiredAccessGroups);
       return await this.learningObjectInteractor.deleteMultipleLearningObjects(
         dataStore,

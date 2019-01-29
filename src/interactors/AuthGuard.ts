@@ -9,7 +9,7 @@ export enum accessGroups {
   USER
 }
 
-const groups = { 
+export const groups = { 
     ADMIN: 'admin',
     EDITOR: 'editor',
     CURATOR: 'curator',
