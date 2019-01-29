@@ -1,15 +1,14 @@
-import { FileManager } from '../interfaces/interfaces';
 import * as AWS from 'aws-sdk';
-import { AWS_SDK_CONFIG } from './aws-sdk.config';
-import {
-  FileUpload,
-  MultipartFileUpload,
-  MultipartUploadData,
-  CompletedPartList,
-} from '../interfaces/FileManager';
+import { AWSError } from 'aws-sdk';
 import { Readable } from 'stream';
 import { reportError } from '../drivers/SentryConnector';
-import { AWSError } from 'aws-sdk';
+import {
+  CompletedPart,
+  CompletedPartList,
+  FileUpload,
+} from '../interfaces/FileManager';
+import { FileManager } from '../interfaces/interfaces';
+import { AWS_SDK_CONFIG } from './aws-sdk.config';
 
 AWS.config.credentials = AWS_SDK_CONFIG.credentials;
 
@@ -17,7 +16,6 @@ const AWS_S3_BUCKET = 'neutrino-file-uploads';
 const AWS_S3_ACL = 'public-read';
 
 export class S3Driver implements FileManager {
-
   private s3 = new AWS.S3({ region: AWS_SDK_CONFIG.region });
 
   /**
@@ -42,79 +40,60 @@ export class S3Driver implements FileManager {
     }
   }
 
-  /**
-   * Processes Chunk uploads
-   * If there is trouble with the upload AWS auto aborts multipart upload
-   * @param {{
-   *     file: MultipartFileUpload;
-   *     finish?: boolean;
-   *     completedPartList?: CompletedPartList;
-   *   }} params
-   * @returns {Promise<MultipartUploadData>}
-   * @memberof S3Driver
-   */
-  public async processMultipart(params: {
-    file: MultipartFileUpload;
-    finish?: boolean;
-    completedPartList?: CompletedPartList;
-  }): Promise<MultipartUploadData> {
-    try {
-      // If uploadId doesn't exist, a multipart upload has not been created for file upload
-      if (!params.file.uploadId) {
-        const createParams = {
-          Bucket: AWS_S3_BUCKET,
-          ACL: AWS_S3_ACL,
-          Key: params.file.path,
-        };
-        // Create multipart file upload
-        const createdUpload = await this.s3
-          .createMultipartUpload(createParams)
-          .promise();
-        params.file.uploadId = createdUpload.UploadId;
-      }
-      const partUploadParams = {
-        Bucket: AWS_S3_BUCKET,
-        Key: params.file.path,
-        Body: params.file.data,
-        PartNumber: params.file.partNumber,
-        UploadId: params.file.uploadId,
-      };
-      // Upload chunk
-      const uploadData = await this.s3.uploadPart(partUploadParams).promise();
+  public async initMultipartUpload(params: { path: string }): Promise<string> {
+    const createParams = {
+      Bucket: AWS_S3_BUCKET,
+      ACL: AWS_S3_ACL,
+      Key: params.path,
+    };
+    const createdUpload = await this.s3
+      .createMultipartUpload(createParams)
+      .promise();
+    return createdUpload.UploadId;
+  }
 
-      // If last chunk is being uploaded, finalize multipart upload
-      if (params.finish) {
-        // append final part to parts list before uploading
-        params.completedPartList.push({
-          ETag: uploadData.ETag,
-          PartNumber: params.file.partNumber,
-        });
+  public async uploadPart(params: {
+    path: string;
+    data: any;
+    partNumber: number;
+    uploadId: string;
+  }): Promise<CompletedPart> {
+    const partUploadParams = {
+      Bucket: AWS_S3_BUCKET,
+      Key: params.path,
+      Body: params.data,
+      PartNumber: params.partNumber,
+      UploadId: params.uploadId,
+    };
+    // Upload chunk
+    const uploadData = await this.s3.uploadPart(partUploadParams).promise();
+    return {
+      ETag: uploadData.ETag,
+      PartNumber: params.partNumber,
+    };
+  }
 
-        const completedParams = {
-          Bucket: AWS_S3_BUCKET,
-          Key: params.file.path,
-          UploadId: params.file.uploadId,
-          MultipartUpload: {
-            Parts: params.completedPartList,
-          },
-        };
-        // Finalize upload
-        const completedUploadData = await this.s3
-          .completeMultipartUpload(completedParams)
-          .promise();
-        return { url: completedUploadData.Location };
-      }
-
-      return {
-        uploadId: params.file.uploadId,
-        completedPart: {
-          ETag: uploadData.ETag,
-          PartNumber: params.file.partNumber,
-        },
-      };
-    } catch (e) {
-      return Promise.reject(e);
-    }
+  public async completeMultipartUpload(params: {
+    path: string;
+    uploadId: string;
+    completedPartList: CompletedPartList;
+  }): Promise<string> {
+    params.completedPartList.sort(
+      (partA, partB) => partA.PartNumber - partB.PartNumber,
+    );
+    const completedParams = {
+      Bucket: AWS_S3_BUCKET,
+      Key: params.path,
+      UploadId: params.uploadId,
+      MultipartUpload: {
+        Parts: params.completedPartList,
+      },
+    };
+    // Finalize upload
+    const completedUploadData = await this.s3
+      .completeMultipartUpload(completedParams)
+      .promise();
+    return completedUploadData.Location;
   }
 
   /**
@@ -127,21 +106,16 @@ export class S3Driver implements FileManager {
    * @returns {Promise<void>}
    * @memberof S3Driver
    */
-  async cancelMultipart(params: {
+  async abortMultipartUpload(params: {
     path: string;
     uploadId: string;
   }): Promise<void> {
-    try {
-      const abortUploadParams = {
-        Bucket: AWS_S3_BUCKET,
-        Key: params.path,
-        UploadId: params.uploadId,
-      };
-      await this.s3.abortMultipartUpload(abortUploadParams).promise();
-      return Promise.resolve();
-    } catch (e) {
-      return Promise.reject(e);
-    }
+    const abortUploadParams = {
+      Bucket: AWS_S3_BUCKET,
+      Key: params.path,
+      UploadId: params.uploadId,
+    };
+    await this.s3.abortMultipartUpload(abortUploadParams).promise();
   }
 
   /**
@@ -170,33 +144,27 @@ export class S3Driver implements FileManager {
    * @memberof S3Driver
    */
   public async deleteAll(params: { path: string }): Promise<void> {
-    try {
-      const listParams = {
-        Bucket: AWS_S3_BUCKET,
-        Prefix: params.path,
-      };
+    const listParams = {
+      Bucket: AWS_S3_BUCKET,
+      Prefix: params.path,
+    };
 
-      const listedObjects = await this.s3.listObjectsV2(listParams).promise();
-
+    const listedObjects = await this.s3.listObjectsV2(listParams).promise();
+    if (listedObjects.Contents && listedObjects.Contents.length) {
       const deleteParams = {
         Bucket: AWS_S3_BUCKET,
         Delete: {
           Objects: listedObjects.Contents.map(({ Key }) => ({ Key })),
         },
       };
-
       await this.s3.deleteObjects(deleteParams).promise();
-
       if (listedObjects.IsTruncated) {
         return await this.deleteAll(params);
       }
-      return Promise.resolve();
-    } catch (e) {
-      return Promise.reject(e);
     }
   }
 
-  streamFile(params: { path: string, objectName: string }): Readable {
+  streamFile(params: { path: string }): Readable {
     const fetchParams = {
       Bucket: AWS_S3_BUCKET,
       Key: params.path,
@@ -242,7 +210,7 @@ export class S3Driver implements FileManager {
       Bucket: AWS_S3_BUCKET,
       Key: path,
     };
-    return new Promise<boolean>((resolve) => {
+    return new Promise<boolean>(resolve => {
       this.s3
         .headObject(fetchParams)
         .createReadStream()

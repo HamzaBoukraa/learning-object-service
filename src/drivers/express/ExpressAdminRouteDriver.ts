@@ -1,13 +1,21 @@
 import { LearningObject } from '@cyber4all/clark-entity';
 import { Router } from 'express';
 import { AdminLearningObjectInteractor } from '../../interactors/interactors';
-import { DataStore, FileManager, LibraryCommunicator } from '../../interfaces/interfaces';
+import {
+  DataStore,
+  FileManager,
+  LibraryCommunicator,
+} from '../../interfaces/interfaces';
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
 // tslint:disable-next-line:no-require-imports
 const version = require('../../../package.json').version;
 
 export class ExpressAdminRouteDriver {
-  constructor(private dataStore: DataStore, private fileManager: FileManager, private library: LibraryCommunicator) { }
+  constructor(
+    private dataStore: DataStore,
+    private fileManager: FileManager,
+    private library: LibraryCommunicator,
+  ) {}
 
   public static buildRouter(
     dataStore: DataStore,
@@ -29,7 +37,6 @@ export class ExpressAdminRouteDriver {
     });
 
     router.route('/learning-objects').get(async (req, res) => {
-
       try {
         const page = req.query.page ? +req.query.page : null;
         const limit = req.query.limit ? +req.query.limit : null;
@@ -88,7 +95,7 @@ export class ExpressAdminRouteDriver {
             limit,
           );
         }
-        res.status(200).send(learningObjects);
+        res.status(200).send(learningObjects.map(obj => obj.toPlainObject()));
       } catch (e) {
         console.error(e);
         if (e.includes('Invalid Access')) {
@@ -98,67 +105,22 @@ export class ExpressAdminRouteDriver {
         }
       }
     });
-    router.route('/learning-objects').patch(async(req, res) => {
-      try {
-        const learningObject = LearningObject.instantiate(req.body);
-        const accessGroups = req.user.accessGroups;
-        await AdminLearningObjectInteractor.updateLearningObject(
-            this.dataStore,
-            this.fileManager,
-            learningObject.id,
-            learningObject,
-            accessGroups
-          );
-        res.sendStatus(200);
-      } catch (e) {
-        console.error(e);
-        if (e.includes('Invalid Access')) {
-          res.status(401).send(e);
-        } else {
-          res.status(500).send(e);
-        }
-      }
+    router.route('/learning-objects').patch(async (req, res) => {
+      const learningObject = new LearningObject(req.body);
+      res.redirect(301, req.path.replace('/admin/learning-objects', `/learning-objects/${learningObject.id}`));
     });
-    router.route('/learning-objects/:learningObjectId').get(async (req, res) => {
-      try {
-        const id = req.params.learningObjectId;
-        const accessGroups = req.user.accessGroups;
-
-        const learningObject = await AdminLearningObjectInteractor.loadFullLearningObject(
-          this.dataStore,
-          this.fileManager,
-          this.library,
-          accessGroups,
-          id,
-        );
-
-        res.status(200).send(learningObject);
-      } catch (e) {
-        console.error(e);
-        if (e.includes('Invalid Access')) {
-          res.status(401).send(e);
-        } else {
-          res.status(500).send(e);
-        }
-      }
-    });
-    router.patch(
-      '/users/:username/learning-objects/:learningObjectName/publish',
-      async (req, res) => {
-
+    router
+      .route('/learning-objects/:learningObjectId')
+      .get(async (req, res) => {
         try {
-          const id = req.body.id;
-          const published = req.body.published;
-          const accessGroups = req.user.accessGroups;
+          const id = req.params.learningObjectId;
 
-          await AdminLearningObjectInteractor.togglePublished(
+          const learningObject: LearningObject = await AdminLearningObjectInteractor.loadFullLearningObject(
             this.dataStore,
-            req.params.username,
             id,
-            published,
-            accessGroups
           );
-          res.sendStatus(200);
+
+          res.status(200).send(learningObject.toPlainObject());
         } catch (e) {
           console.error(e);
           if (e.includes('Invalid Access')) {
@@ -167,33 +129,19 @@ export class ExpressAdminRouteDriver {
             res.status(500).send(e);
           }
         }
+      });
+    router.patch(
+      '/users/:username/learning-objects/:learningObjectName/publish',
+      async (req, res) => {
+        // Respond to clients that this functionality is now gone
+        res.sendStatus(410);
       },
     );
     router.patch(
       '/users/:username/learning-objects/:learningObjectName/unpublish',
-      async (req, res) => {
-
-        try {
-          const id = req.body.id;
-          const published = req.body.published;
-          const accessGroups = req.user.accessGroups;
-
-          await AdminLearningObjectInteractor.togglePublished(
-            this.dataStore,
-            req.params.username,
-            id,
-            published,
-            accessGroups
-          );
-          res.sendStatus(200);
-        } catch (e) {
-          console.error(e);
-          if (e.includes('Invalid Access')) {
-            res.status(401).send(e);
-          } else {
-            res.status(500).send(e);
-          }
-        }
+      async (_, res) => {
+        // Respond to clients that this functionality is now gone
+        res.sendStatus(410);
       },
     );
     router.patch(

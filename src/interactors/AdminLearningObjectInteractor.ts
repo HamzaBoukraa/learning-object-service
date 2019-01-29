@@ -1,8 +1,14 @@
 import { LearningObjectInteractor } from './interactors';
-import { updateLearningObject, deleteLearningObject } from '../LearningObjects/LearningObjectInteractor';
-import { DataStore, FileManager, LibraryCommunicator } from '../interfaces/interfaces';
-import { LearningObjectLock, LearningObject,  } from '@cyber4all/clark-entity/dist/learning-object';
-import { verifyAccessGroup, accessGroups } from './authGuard';
+import {
+  DataStore,
+  FileManager,
+  LibraryCommunicator,
+} from '../interfaces/interfaces';
+import {
+  deleteLearningObject,
+} from '../LearningObjects/LearningObjectInteractor';
+import { LearningObject } from '@cyber4all/clark-entity';
+import { accessGroups, verifyAccessGroup } from './authGuard';
 
 export class AdminLearningObjectInteractor {
   private static learningObjectInteractor = LearningObjectInteractor;
@@ -67,7 +73,10 @@ export class AdminLearningObjectInteractor {
       const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR, accessGroups.CURATOR, accessGroups.REVIEWER];
       verifyAccessGroup(userAccessGroups, requiredAccessGroups);
       const accessUnpublished = true;
-      return await this.learningObjectInteractor.searchObjects(dataStore, library, {
+      return await this.learningObjectInteractor.searchObjects(
+        dataStore,
+        library,
+        {
           name,
           author,
           collection: undefined,
@@ -94,8 +103,6 @@ export class AdminLearningObjectInteractor {
 
   public static async loadFullLearningObject(
     dataStore: DataStore,
-    fileManager: FileManager,
-    library: LibraryCommunicator,
     learningObjectID: string,
     userAccessGroups: string[]
   ): Promise<LearningObject> {
@@ -112,35 +119,10 @@ export class AdminLearningObjectInteractor {
     }
   }
 
-  public static async togglePublished(
-    dataStore: DataStore,
-    username: string,
-    id: string,
-    published: boolean,
-    userAccessGroups: string[]
-  ): Promise<void> {
-    try {
-      const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR];
-      verifyAccessGroup(userAccessGroups, requiredAccessGroups);
-      return await dataStore.togglePublished(
-        username,
-        id,
-        published,
-      );
-    } catch (e) {
-      if (e instanceof Error) {
-        return Promise.reject(e.message);
-      } else {
-        return Promise.reject(`Problem toggling publish status. Error:  ${e}`);
-      }
-    }
-  }
-
   public static async toggleLock(
     dataStore: DataStore,
     id: string,
-    userAccessGroups: string[],
-    lock?: LearningObjectLock,
+    lock?: LearningObject.Lock,
   ): Promise<void> {
     try {
       const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR];
@@ -167,7 +149,7 @@ export class AdminLearningObjectInteractor {
         fileManager,
         username,
         learningObjectName,
-        library
+        library,
       );
     } catch (e) {
       if (e instanceof Error) {
@@ -205,31 +187,6 @@ export class AdminLearningObjectInteractor {
         return Promise.reject(
           `Problem deleting Learning Objects. Error: ${e}`,
         );
-      }
-    }
-  }
-
-  public static async updateLearningObject(
-    dataStore: DataStore,
-    fileManager: FileManager,
-    id: string,
-    learningObject: LearningObject,
-    userAccessGroups: string[]
-  ): Promise<void> {
-    try {
-      const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR, accessGroups.CURATOR];
-      verifyAccessGroup(userAccessGroups, requiredAccessGroups);
-      return await updateLearningObject(
-        dataStore,
-        fileManager,
-        id,
-        learningObject,
-      );
-    } catch (e) {
-      if (e instanceof Error) {
-        return Promise.reject(e.message);
-      } else {
-        return Promise.reject(`Error updating learning object:  ${e}`);
       }
     }
   }

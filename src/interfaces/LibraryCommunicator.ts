@@ -1,6 +1,6 @@
-import { Metrics } from '@cyber4all/clark-entity/dist/learning-object';
+import { LearningObject } from '@cyber4all/clark-entity';
 
 export interface LibraryCommunicator {
-    getMetrics(objectID: string): Promise<Metrics>;
-    cleanObjectsFromLibraries(ids: Array<string>): Promise<void>;
+  getMetrics(objectID: string): Promise<LearningObject.Metrics>;
+  cleanObjectsFromLibraries(ids: Array<string>): Promise<void>;
 }
