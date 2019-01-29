@@ -771,7 +771,6 @@ export class MongoDriver implements DataStore {
       .collection<LearningObjectDocument>(COLLECTIONS.LEARNING_OBJECTS)
       .findOne({ _id: id });
     const author = await this.fetchUser(object.authorID);
-
     const learningObject = await this.generateLearningObject(
       author,
       object,
@@ -1463,7 +1462,27 @@ export class MongoDriver implements DataStore {
     full?: boolean,
   ): Promise<LearningObject> {
     // Logic for loading any learning object
+    let materials: LearningObject.Material;
+    let contributors: User[] = [];
+    let outcomes: LearningOutcome[] = [];
 
+    // If full object requested, load up non-summary properties
+    if (full) {
+      // Logic for loading 'full' learning objects
+      materials = <LearningObject.Material>record.materials;
+
+      // load outcomes
+      outcomes = await this.getAllLearningOutcomes({
+        source: record._id,
+      });
+
+      // Load Contributors
+      if (record.contributors && record.contributors.length) {
+        contributors = await Promise.all(
+          record.contributors.map(userId => this.fetchUser(userId)),
+        );
+      }
+    }
     const learningObject = new LearningObject({
       id: record._id,
       author,
@@ -1476,31 +1495,9 @@ export class MongoDriver implements DataStore {
       status: record.status as LearningObject.Status,
       description: record.description,
       published: record.published || false,
-    });
-
-    if (!full) {
-      return learningObject;
-    }
-
-    // Logic for loading 'full' learning objects
-    learningObject.materials = <LearningObject.Material>record.materials;
-
-    // Load Contributors
-    if (record.contributors && record.contributors.length) {
-      await Promise.all(
-        record.contributors.map(async userId => {
-          let id = userId;
-          const contributor = await this.fetchUser(id);
-          learningObject.addContributor(contributor);
-        }),
-      );
-    }
-    // load outcomes
-    const outcomes = await this.getAllLearningOutcomes({
-      source: learningObject.id,
-    });
-    outcomes.forEach(outcome => {
-      learningObject.addOutcome(outcome);
+      materials,
+      contributors,
+      outcomes,
     });
 
     return learningObject;
