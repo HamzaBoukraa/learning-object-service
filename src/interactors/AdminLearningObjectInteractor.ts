@@ -53,13 +53,14 @@ export class AdminLearningObjectInteractor {
     sortType?: number,
     page?: number,
     limit?: number,
+    collection?: string
   ): Promise<any> {
     try {
       const accessUnpublished = true;
       return await this.learningObjectInteractor.searchObjects(dataStore, library, {
           name,
           author,
-          collection: undefined,
+          collection: collection,
           status: undefined,
           length,
           level,

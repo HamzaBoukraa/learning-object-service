@@ -1,5 +1,6 @@
 import * as jwt from 'express-jwt';
-
+import * as dotenv from 'dotenv';
+dotenv.config();
 /**
  * Configuration for JWT middleware.
  *
