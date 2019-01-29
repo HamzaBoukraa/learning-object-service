@@ -116,8 +116,7 @@ export class LearningObjectInteractor {
               false,
               accessUnpublished,
             );
-            children.forEach((child: LearningObject) => object.addChild(child));
-            return object;
+            return new LearningObject({ ...object.toPlainObject(), children });
           }),
         );
       }
@@ -154,7 +153,7 @@ export class LearningObjectInteractor {
         learningObjectName,
       );
 
-      const learningObject = await dataStore.fetchLearningObject(
+      let learningObject = await dataStore.fetchLearningObject(
         learningObjectID,
         true,
         accessUnpublished,
@@ -167,9 +166,10 @@ export class LearningObjectInteractor {
         fullChildren,
         accessUnpublished,
       );
-      children.forEach((child: LearningObject) =>
-        learningObject.addChild(child),
-      );
+      learningObject = new LearningObject({
+        ...learningObject.toPlainObject(),
+        children,
+      });
 
       try {
         learningObject.metrics = await this.loadMetrics(
@@ -215,7 +215,7 @@ export class LearningObjectInteractor {
     return Promise.all(
       objects.map(async obj => {
         // Load their children
-        const children = await this.loadChildObjects(
+        let children = await this.loadChildObjects(
           dataStore,
           library,
           obj.id,
@@ -223,7 +223,7 @@ export class LearningObjectInteractor {
           accessUnreleased,
         );
         // For each of the Child's children
-        await Promise.all(
+        children = await Promise.all(
           children.map(async child => {
             // Load child metrics
             try {
@@ -231,12 +231,11 @@ export class LearningObjectInteractor {
             } catch (e) {
               console.error(e);
             }
-            // Add Child
-            obj.addChild(child);
+            return child;
           }),
         );
 
-        return obj;
+        return new LearningObject({ ...obj.toPlainObject(), children });
       }),
     );
   }
@@ -279,8 +278,7 @@ export class LearningObjectInteractor {
             true,
             true,
           );
-          children.forEach((child: LearningObject) => object.addChild(child));
-          return object;
+          return new LearningObject({ ...object.toPlainObject(), children });
         }),
       );
 
