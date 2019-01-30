@@ -1,4 +1,4 @@
-import { AdminLearningObjectInteractor } from '../interactors/interactors';
+import { AdminLearningObjectInteractor } from './interactors';
 import { expect } from 'chai';
 import { MockDataStore } from '../tests/mock-drivers/MockDataStore';
 import { MOCK_OBJECTS } from '../tests/mocks';
@@ -19,17 +19,3 @@ describe('fetchAllObjects', () => {
   });
 });
 
-describe('toggleLock', () => {
-  it('should toggle the lock status', done => {
-    return AdminLearningObjectInteractor.toggleLock(driver, MOCK_OBJECTS.LEARNING_OBJECT_ID, MOCK_OBJECTS.ACCESS_GROUPS)
-      .then(val => {
-        expect(val).to.be.an('undefined');
-        done();
-      })
-      .catch(error => {
-        console.log(error);
-        expect.fail();
-        done();
-      });
-  });
-});
