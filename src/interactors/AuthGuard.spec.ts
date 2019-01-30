@@ -1,5 +1,5 @@
 import { MOCK_OBJECTS } from '../tests/mocks';
-import { verifyAccessGroup } from './authGuard';
+import { verifyAccessGroup } from './AuthGuard';
 
 describe('verifyAccessGroup', () => {
   it('should deny access (given user with no access groups)', () => {
