@@ -29,81 +29,9 @@ export class ExpressAdminRouteDriver {
   }
 
   private setRoutes(router: Router): void {
-    router.get('/', async (req, res) => {
-      res.json({
-        version,
-        message: `Welcome to the Learning Objects' Admin API v${version}`,
-      });
-    });
 
     router.route('/learning-objects').get(async (req, res) => {
-      try {
-        const page = req.query.page ? +req.query.page : null;
-        const limit = req.query.limit ? +req.query.limit : null;
-
-        const name = req.query.name;
-        const author = req.query.author;
-        let length = req.query.length;
-        length = length && !Array.isArray(length) ? [length] : length;
-        let level = req.query.level;
-        level = level && !Array.isArray(level) ? [level] : level;
-        let standardOutcomes = req.query.standardOutcomes;
-        standardOutcomes =
-          standardOutcomes && !Array.isArray(standardOutcomes)
-            ? [standardOutcomes]
-            : standardOutcomes;
-
-        // For broad searching | Search all fields to match inputed text
-        const text = req.query.text;
-        const orderBy = req.query.orderBy;
-        const sortType = req.query.sortType ? +req.query.sortType : null;
-
-        const accessGroups = req.user.accessGroups;
-
-        let learningObjects: { total: number; objects: LearningObject[] };
-
-        if (
-          name ||
-          author ||
-          length ||
-          level ||
-          standardOutcomes ||
-          text ||
-          orderBy ||
-          sortType
-        ) {
-          learningObjects = await AdminLearningObjectInteractor.searchObjects(
-            this.dataStore,
-            this.library,
-            name,
-            author,
-            length,
-            level,
-            standardOutcomes,
-            text,
-            accessGroups,
-            orderBy,
-            sortType,
-            page,
-            limit,
-          );
-        } else {
-          learningObjects = await AdminLearningObjectInteractor.fetchAllObjects(
-            this.dataStore,
-            accessGroups,
-            page,
-            limit,
-          );
-        }
-        res.status(200).send(learningObjects.map(obj => obj.toPlainObject()));
-      } catch (e) {
-        console.error(e);
-        if (e.includes('Invalid Access')) {
-          res.status(401).send(e);
-        } else {
-          res.status(500).send(e);
-        }
-      }
+      res.redirect(301, req.originalUrl.replace('/admin/learning-objects', `/learning-objects`));
     });
     router.route('/learning-objects').patch(async (req, res) => {
       const learningObject = new LearningObject(req.body);
@@ -112,25 +40,8 @@ export class ExpressAdminRouteDriver {
     router
       .route('/learning-objects/:learningObjectId')
       .get(async (req, res) => {
-        try {
-          const id = req.params.learningObjectId;
-          const accessGroups = req.user.accessGroups;
-
-          const learningObject: LearningObject = await AdminLearningObjectInteractor.loadFullLearningObject(
-            this.dataStore,
-            id,
-            accessGroups
-          );
-
-          res.status(200).send(learningObject.toPlainObject());
-        } catch (e) {
-          console.error(e);
-          if (e.includes('Invalid Access')) {
-            res.status(401).send(e);
-          } else {
-            res.status(500).send(e);
-          }
-        }
+        console.log('full object');
+        res.redirect(301, req.originalUrl.replace('/admin/learning-objects', '/learning-objects'));
       });
     router.patch(
       '/users/:username/learning-objects/:learningObjectName/publish',
@@ -192,52 +103,15 @@ export class ExpressAdminRouteDriver {
     router.delete(
       '/users/:username/learning-objects/:learningObjectName',
       async (req, res) => {
-        try {
-          const accessGroups = req.user.accessGroups;
-          const learningObjectName = req.params.learningObjectName;
-          await AdminLearningObjectInteractor.deleteLearningObject(
-            this.dataStore,
-            this.fileManager,
-            req.params.username,
-            learningObjectName,
-            this.library,
-            accessGroups
-          );
-          res.sendStatus(200);
-        } catch (e) {
-          console.error(e);
-          if (e.includes('Invalid Access')) {
-            res.status(401).send(e);
-          } else {
-            res.status(500).send(e);
-          }
-        }
-      },
+        const learningObjectName = req.params.learningObjectName;
+        res.redirect(301, req.originalUrl.replace(req.originalUrl, `/learning-objects/${learningObjectName}`));
+      }
     );
 
     router.delete(
       '/learning-objects/:learningObjectNames/multiple',
       async (req, res) => {
-        try {
-          const accessGroups = req.user.accessGroups;
-          const learningObjectNames = req.params.learningObjectNames.split(',');
-          await AdminLearningObjectInteractor.deleteMultipleLearningObjects(
-            this.dataStore,
-            this.fileManager,
-            this.library,
-            req.params.username,
-            learningObjectNames,
-            accessGroups
-          );
-          res.sendStatus(200);
-        } catch (e) {
-          console.error(e);
-          if (e.includes('Invalid Access')) {
-            res.status(401).send(e);
-          } else {
-            res.status(500).send(e);
-          }
-        }
+        res.redirect(301, req.originalUrl.replace('/admin/learning-objects', `/learning-objects`));
       },
     );
   }
