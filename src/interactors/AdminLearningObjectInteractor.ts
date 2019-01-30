@@ -8,7 +8,9 @@ import {
   deleteLearningObject,
 } from '../LearningObjects/LearningObjectInteractor';
 import { LearningObject } from '@cyber4all/clark-entity';
-import { accessGroups, verifyAccessGroup, groups } from './authGuard';
+import { verifyAccessGroup } from './AuthGuard';
+import { accessGroups } from '../types/user-token';
+
 
 export class AdminLearningObjectInteractor {
   private static learningObjectInteractor = LearningObjectInteractor;
@@ -24,7 +26,7 @@ export class AdminLearningObjectInteractor {
     limit?: number,
   ): Promise<{ total: number; objects: LearningObject[] }> {
     try {
-      const requiredAccessGroups = [groups.ADMIN, groups.EDITOR];
+      const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR];
       verifyAccessGroup(userAccessGroups, requiredAccessGroups);
       const accessUnpublished = true;
       const response = await dataStore.fetchAllObjects(
@@ -45,6 +47,9 @@ export class AdminLearningObjectInteractor {
   }
   /**
    * Search for objects by name, author, length, level, and content.
+   * 
+   *         *** Access Groups ***
+   * *** Admin, Editor, Curator, Reviewer ***
    *
    * @param {string} name the objects' names should closely relate
    * @param {string} author the objects' authors' names` should closely relate
@@ -70,7 +75,7 @@ export class AdminLearningObjectInteractor {
     limit?: number,
   ): Promise<{ total: number; objects: LearningObject[] }> {
     try {
-      const requiredAccessGroups = [groups.ADMIN, groups.EDITOR, groups.CURATOR, groups.REVIEWER];
+      const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR, accessGroups.CURATOR, accessGroups.REVIEWER];
       verifyAccessGroup(userAccessGroups, requiredAccessGroups);
       const accessUnpublished = true;
       return await this.learningObjectInteractor.searchObjects(
@@ -101,13 +106,25 @@ export class AdminLearningObjectInteractor {
     }
   }
 
+  /**
+   * Obtain a full learning object (object includes all properties)
+   * 
+   *     *** Access Groups ***
+   * *** Admin, Editor, Curator ***
+   *
+   * @param {DataStore} dataStore an instance of datastore
+   * @param {string} learningObjectID the id of the target learning object
+   * @param {string[]} userAccessGroups list of current user's access groups
+   *
+   * @returns {LearningObject} a full learning object
+   */
   public static async loadFullLearningObject(
     dataStore: DataStore,
     learningObjectID: string,
     userAccessGroups: string[]
   ): Promise<LearningObject> {
     try {
-      const requiredAccessGroups = [groups.ADMIN, groups.EDITOR, groups.CURATOR];
+      const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR, accessGroups.CURATOR];
       verifyAccessGroup(userAccessGroups, requiredAccessGroups);
       return await dataStore.fetchLearningObject(learningObjectID, true, true);
     } catch (e) {
@@ -119,6 +136,9 @@ export class AdminLearningObjectInteractor {
     }
   }
 
+  /**
+   * *** Function to phase out ***
+   */
   public static async toggleLock(
     dataStore: DataStore,
     userAccessGroups: string[],
@@ -126,7 +146,7 @@ export class AdminLearningObjectInteractor {
     lock?: LearningObject.Lock,
   ): Promise<void> {
     try {
-      const requiredAccessGroups = [groups.ADMIN, groups.EDITOR];
+      const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR];
       verifyAccessGroup(userAccessGroups, requiredAccessGroups);
       return await dataStore.toggleLock(id, lock);
     } catch (e) {
@@ -134,6 +154,21 @@ export class AdminLearningObjectInteractor {
     }
   }
 
+  /**
+   * Delete a specified learning object
+   * 
+   *     *** Access Groups ***
+   * *** Admin, Editor, Curator ***
+   *
+   * @param {DataStore} dataStore an instance of datastore
+   * @param {FileManager} fileManager an instance of filemanager
+   * @param {string} username username of current user
+   * @param {string} learningObjectName name of the learning object being deleted
+   * @param {LibraryCommunicator} library an instance of library communicator
+   * @param {string[]} userAccessGroups list of current user's access groups
+   *
+   * @returns {void} 
+   */
   public static async deleteLearningObject(
     dataStore: DataStore,
     fileManager: FileManager,
@@ -143,7 +178,7 @@ export class AdminLearningObjectInteractor {
     userAccessGroups: string[]
   ): Promise<void> {
     try {
-      const requiredAccessGroups = [groups.ADMIN, groups.EDITOR, groups.CURATOR];
+      const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR, accessGroups.CURATOR];
       verifyAccessGroup(userAccessGroups, requiredAccessGroups);
       return await deleteLearningObject(
         dataStore,
@@ -163,6 +198,21 @@ export class AdminLearningObjectInteractor {
     }
   }
 
+  /**
+   * Delete multiple specified learning objects
+   * 
+   *  *** Access Groups ***
+   * *** Admin, Curator ***
+   *
+   * @param {DataStore} dataStore an instance of datastore
+   * @param {FileManager} fileManager an instance of filemanager
+   * @param {LibraryCommunicator} library an instance of library communicator
+   * @param {string} username username of current user
+   * @param {string[]} learningObjectIDs list of learning object ids to be deleted
+   * @param {string[]} userAccessGroups list of current user's access groups
+   *
+   * @returns {void} 
+   */
   public static async deleteMultipleLearningObjects(
     dataStore: DataStore,
     fileManager: FileManager,
@@ -172,7 +222,7 @@ export class AdminLearningObjectInteractor {
     userAccessGroups: string[]
   ): Promise<void> {
     try {
-      const requiredAccessGroups = [groups.ADMIN, groups.CURATOR];
+      const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.CURATOR];
       verifyAccessGroup(userAccessGroups, requiredAccessGroups);
       return await this.learningObjectInteractor.deleteMultipleLearningObjects(
         dataStore,
