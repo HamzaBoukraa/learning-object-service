@@ -5,7 +5,8 @@ import { LearningOutcomeInput, LearningOutcomeInsert, LearningOutcomeUpdate } fr
 import { LearningOutcome } from '@cyber4all/clark-entity';
 import * as supertest from 'supertest';
 import * as LearningOutcomeRouteHandler from './LearningOutcomeRouteHandler';
-import { init_streaming_mode } from 'striptags';
+
+const validOutcome = new LearningOutcome({ verb: 'remember', bloom: 'remember and understand', text: 'to brush your teeth' });
 
 const dataStore: LearningOutcomeDatastore = {
   async insertLearningOutcome(params: { source: string, outcome: LearningOutcomeInput & LearningOutcomeInsert }) {
@@ -13,15 +14,15 @@ const dataStore: LearningOutcomeDatastore = {
   },
 
   async getLearningOutcome(params: { id: string }) {
-    return Promise.resolve({} as LearningOutcome);
+    return Promise.resolve(validOutcome);
   },
 
   async getAllLearningOutcomes(params: { source: string }) {
-    return Promise.resolve([{} as LearningOutcome]);
+    return Promise.resolve([validOutcome, validOutcome]);
   },
 
   async updateLearningOutcome(params: { id: string, updates: LearningOutcomeUpdate & LearningOutcomeInsert }) {
-    return Promise.resolve({} as LearningOutcome);
+    return Promise.resolve(validOutcome);
   },
 
   async deleteLearningOutcome(params: { id: string }) {
@@ -56,7 +57,7 @@ describe('POST /learning-objects/:id/learning-outcomes', () => {
       .expect(200, (err, res) => {
         expect(res.text).toBe('someid');
         done();
-      })
+      });
   });
 });
 
@@ -66,31 +67,35 @@ describe('GET /learning-objects/:id/learning-outcomes/:outcomeId', () => {
     request.get('/learning-objects/someObjectId/learning-outcomes/someLearningOutcomeId')
     .expect('Content-Type', /json/)
     .expect(200, (err, res)  => {
-      expect(res.body).toBeDefined();
+      expect(() => {
+        const _ = new LearningOutcome(res.body);
+      }).not.toThrow();
       done();
-    })
-  })
+    });
+  });
 })
 
 describe('PATCH /learning-objects/:id/learning-outcomes/:outcomeId', () => {
   
   it('should return a status of 200 and a Learning Outcome', (done) => {
     request.patch('/learning-objects/someObjectId/learning-outcomes/someLearningOutcomeId')
-    .send({ outcome: { bloom: 'bloom', verb: 'verb' } })
-    .expect('Content-Type', /json/)
-    .expect(200, (err, res) => {
-      expect(res.body).toBeDefined();
-      done();
-    })
-  })
+      .send({ outcome: { bloom: 'bloom', verb: 'verb' } })
+      .expect('Content-Type', /json/)
+      .expect(200, (err, res) => {
+        expect(() => {
+          const _ = new LearningOutcome(res.body);
+        }).not.toThrow();
+        done();
+      });
+  });
 })
 
 describe('DELETE /learning-objects/:id/learning-outcomes/:outcomeId', () => {
   
   it('should return a status of 200', (done) => {
     request.delete('/learning-objects/:id/learning-outcomes/:outcomeId')
-    .expect(200, (err, res) => {
-      done();
-    })
-  })
+      .expect(200, (err, res) => {
+        done();
+      });
+  });
 })
