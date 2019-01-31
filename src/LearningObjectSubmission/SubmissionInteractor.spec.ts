@@ -11,6 +11,7 @@ import { MockS3Driver } from '../tests/mock-drivers/MockS3Driver';
 
 const dataStore: DataStore = new MockDataStore(); // DataStore
 const fileManager: FileManager = new MockS3Driver();
+
 describe('submitForReview', () => {
   it('should submit given a valid username and id', async () => {
     try {
@@ -35,8 +36,8 @@ describe('submitForReview', () => {
           dataStore,
           fileManager,
           username: MOCK_OBJECTS.USERNAME,
-          id: INVALID_LEARNING_OBJECTS.NO_NAME.id,
-          collection: MOCK_OBJECTS.COLLECTION_NAME,
+          id: SUBMITTABLE_LEARNING_OBJECT.id,
+          collection: SUBMITTABLE_LEARNING_OBJECT.collection,
         });
       } catch (e) {
         expect(e instanceof Error).toBeTruthy();
@@ -50,8 +51,8 @@ describe('submitForReview', () => {
           dataStore,
           fileManager,
           username: MOCK_OBJECTS.USERNAME,
-          id: MOCK_OBJECTS.LEARNING_OBJECT.id,
-          collection: MOCK_OBJECTS.COLLECTION_NAME,
+          id: SUBMITTABLE_LEARNING_OBJECT.id,
+          collection: SUBMITTABLE_LEARNING_OBJECT.collection,
         });
       } catch (e) {
         expect(e instanceof Error).toBeTruthy();
@@ -65,8 +66,8 @@ describe('submitForReview', () => {
           dataStore,
           fileManager,
           username: MOCK_OBJECTS.USERNAME,
-          id: INVALID_LEARNING_OBJECTS.NO_DESCRIPTION.id,
-          collection: MOCK_OBJECTS.COLLECTION_NAME,
+          id: SUBMITTABLE_LEARNING_OBJECT.id,
+          collection: SUBMITTABLE_LEARNING_OBJECT.collection,
         });
       } catch (e) {
         expect(e instanceof Error).toBeTruthy();
