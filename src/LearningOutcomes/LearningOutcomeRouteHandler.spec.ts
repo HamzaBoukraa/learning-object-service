@@ -1,5 +1,5 @@
 import * as express from 'express';
-import bodyParser = require('body-parser');
+import * as bodyParser from 'body-parser';
 import { LearningOutcomeDatastore } from './LearningOutcomeInteractor';
 import { LearningOutcomeInput, LearningOutcomeInsert, LearningOutcomeUpdate } from './types';
 import { LearningOutcome } from '@cyber4all/clark-entity';
