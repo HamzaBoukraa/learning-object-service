@@ -1,3 +1,5 @@
+import { User, LearningOutcome } from '@cyber4all/clark-entity';
+
 export const MOCK_OBJECTS = {
   USERNAME: 'cypress',
   EMPTY_STRING: '',
@@ -74,6 +76,8 @@ export const MOCK_OBJECTS = {
     saves: 23,
     downloads: 4,
   },
+  USER: new User({ id: '123' }),
+  OUTCOME: new LearningOutcome({ id: '123' }),
 };
 
 export const SUBMITTABLE_LEARNING_OBJECT = {

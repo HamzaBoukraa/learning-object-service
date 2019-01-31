@@ -2,6 +2,17 @@ import { DataStore } from '../interfaces/DataStore';
 import { FileManager } from '../interfaces/FileManager';
 import { Readable } from 'stream';
 
+/**
+ * Sends a file back to the caller as a readable stream.
+ *
+ * @param params.learningObjectId the identifier of the Learning Object that the file belongs to
+ * @param params.fileId the identifier of the file to be downloaded
+ * @param params.dataStore the gateway for data operations
+ * @param params.fileManager the gateway for file operations
+ * @param params.author the username of the Learning Object's author
+ *
+ * @returns a Promise with the filename, mimeType, and readable stream of file data.
+ */
 export async function downloadSingleFile(params: {
   learningObjectId: string;
   fileId: string;

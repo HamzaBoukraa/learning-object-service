@@ -1,11 +1,10 @@
 import { DataStore } from '../interfaces/DataStore';
-import { FileManager } from '../interfaces/interfaces';
-import { Readable } from 'stream';
 import {
-  MultipartFileUploadStatus,
   DZFile,
   FileUpload,
+  MultipartFileUploadStatus,
 } from '../interfaces/FileManager';
+import { FileManager } from '../interfaces/interfaces';
 import { LearningObject } from '@cyber4all/clark-entity';
 
 /**
@@ -51,6 +50,7 @@ export async function startMultipartUpload(params: {
  * Processes Multipart Uploads
  *
  * @private
+ * @static
  * @param {{
  *     dataStore: DataStore;
  *     fileManager: FileManager;
@@ -142,43 +142,7 @@ export async function abortMultipartUpload(params: {
     });
   } catch (e) {
     console.error(e);
-    throw `Could not cancel upload`;
-  }
-}
-
-/**
- * Fetches file stream
- *
- * @export
- * @param {{
- *   dataStore: DataStore;
- *   fileManager: FileManager;
- *   username: string;
- *   learningObjectId: string;
- *   fileId: string;
- * }} params
- * @returns {Promise<{ filename: string; mimeType: string; stream: Readable }>}
- */
-export async function streamFile(params: {
-  dataStore: DataStore;
-  fileManager: FileManager;
-  username: string;
-  learningObjectId: string;
-  fileId: string;
-}): Promise<{ filename: string; mimeType: string; stream: Readable }> {
-  try {
-    const file = await params.dataStore.findSingleFile({
-      learningObjectId: params.learningObjectId,
-      fileId: params.fileId,
-    });
-    const path = `${params.username}/${params.learningObjectId}/${
-      file.fullPath ? file.fullPath : file.name
-    }`;
-    const mimeType = getMimeType({ file });
-    const stream = params.fileManager.streamFile({ path });
-    return { mimeType, stream, filename: file.name };
-  } catch (e) {
-    return Promise.reject(e);
+    throw new Error(`Could not cancel upload`);
   }
 }
 

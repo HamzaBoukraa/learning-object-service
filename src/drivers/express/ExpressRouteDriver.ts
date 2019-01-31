@@ -173,10 +173,13 @@ export class ExpressRouteDriver {
 
     router.get('/users/:username/learning-objects', async (req, res) => {
       try {
+        const query = req.query;
         const userToken: UserToken = req.user;
-        const loadChildren: boolean = req.query.children;
+        const loadChildren: boolean = query.children;
+        delete query.children;
         const objects = await LearningObjectInteractor.loadLearningObjectSummary(
           {
+            query,
             userToken,
             loadChildren,
             dataStore: this.dataStore,
@@ -191,6 +194,11 @@ export class ExpressRouteDriver {
       }
     });
 
+    LearningObjectStatsRouteHandler.initialize({
+      router,
+      dataStore: this.dataStore,
+    });
+
     LearningObjectRouteHandler.initializePublic({
       router,
       dataStore: this.dataStore,
@@ -201,21 +209,5 @@ export class ExpressRouteDriver {
       dataStore: this.dataStore,
       fileManager: this.fileManager,
     });
-
-    LearningObjectStatsRouteHandler.initialize({
-      router,
-      dataStore: this.dataStore,
-    });
   }
-}
-
-function fileNotFoundResponse(object: any, req: Request, res: Response) {
-  const redirectUrl = LEARNING_OBJECT_ROUTES.CLARK_DETAILS({
-    objectName: object.name,
-    username: req.params.username,
-  });
-  res
-    .status(404)
-    .type('text/html')
-    .send(fileNotFound(redirectUrl));
 }

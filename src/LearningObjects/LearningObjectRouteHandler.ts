@@ -75,7 +75,6 @@ export function initializePrivate({
       object = new LearningObject(req.body.object);
       const learningObject = await LearningObjectInteractor.addLearningObject(
         dataStore,
-        fileManager,
         object,
         req.user,
       );
@@ -120,7 +119,6 @@ export function initializePrivate({
       await LearningObjectInteractor.updateLearningObject({
         user,
         dataStore,
-        fileManager,
         id,
         updates,
       });

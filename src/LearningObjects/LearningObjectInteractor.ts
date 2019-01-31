@@ -95,7 +95,6 @@ export async function updateParentsDate(params: {
  */
 export async function addLearningObject(
   dataStore: DataStore,
-  fileManager: FileManager,
   object: LearningObject,
   user: UserToken,
 ): Promise<LearningObject> {
@@ -126,16 +125,8 @@ export async function addLearningObject(
       const learningObjectID = await dataStore.insertLearningObject(
         objectInsert,
       );
-      object.id = learningObjectID;
-
-      // Generate PDF and update Learning Object with PDF meta.
-      await updateReadme({
-        fileManager,
-        object,
-        dataStore,
-      });
-
-      return object;
+      objectInsert.id = learningObjectID;
+      return objectInsert;
     }
   } catch (e) {
     return Promise.reject(`Problem creating Learning Object. Error${e}`);
@@ -156,7 +147,6 @@ export async function addLearningObject(
 export async function updateLearningObject(params: {
   user: UserToken;
   dataStore: DataStore;
-  fileManager: FileManager;
   id: string;
   updates: { [index: string]: any };
 }): Promise<void> {
@@ -178,7 +168,7 @@ export async function updateLearningObject(params: {
       params.id,
     );
     const updates: LearningObjectUpdates = sanitizeUpdates(params.updates);
-    await validateUpdates({
+    validateUpdates({
       id: params.id,
       updates,
     });
@@ -187,19 +177,6 @@ export async function updateLearningObject(params: {
       id: params.id,
       updates,
     });
-
-    await Promise.all([
-      updateParentsDate({
-        dataStore: params.dataStore,
-        childId: params.id,
-        date: updates.date,
-      }),
-      updateReadme({
-        dataStore: params.dataStore,
-        fileManager: params.fileManager,
-        id: params.id,
-      }),
-    ]);
   } catch (e) {
     return Promise.reject(`Problem updating Learning Object. ${e}`);
   }
@@ -236,28 +213,15 @@ export async function deleteLearningObject(
       username,
       learningObjectName,
     );
-    const learningObject = await dataStore.fetchLearningObject(
-      learningObjectID,
-      false,
-      true,
-    );
-    const parentIds = await dataStore.findParentObjectIds({
-      childId: learningObjectID,
-    });
+    await library.cleanObjectsFromLibraries([learningObjectID]);
     await dataStore.deleteLearningObject(learningObjectID);
-    if (learningObject.materials.files.length) {
-      const path = `${username}/${learningObjectID}/`;
-      await fileManager.deleteAll({ path });
-    }
-    await Promise.all([
-      library.cleanObjectsFromLibraries([learningObjectID]),
-      updateParentsDate({
-        dataStore,
-        parentIds,
-        childId: learningObjectID,
-        date: Date.now().toString(),
-      }),
-    ]);
+
+    const path = `${username}/${learningObjectID}/`;
+    fileManager.deleteAll({ path }).catch(e => {
+      console.error(
+        `Problem deleting files for ${learningObjectName}: ${path}. ${e}`,
+      );
+    });
   } catch (error) {
     return Promise.reject(`Problem deleting Learning Object. Error: ${error}`);
   }

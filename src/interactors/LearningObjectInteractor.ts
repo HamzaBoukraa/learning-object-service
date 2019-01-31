@@ -1,11 +1,11 @@
+import { LearningObject } from '@cyber4all/clark-entity';
+// @ts-ignore
+import * as stopword from 'stopword';
 import {
   DataStore,
   FileManager,
   LibraryCommunicator,
 } from '../interfaces/interfaces';
-import { LearningObject } from '@cyber4all/clark-entity';
-// @ts-ignore
-import * as stopword from 'stopword';
 import { UserToken } from '../types';
 import { LearningObjectQuery } from '../interfaces/DataStore';
 import { DZFile, FileUpload } from '../interfaces/FileManager';
@@ -59,13 +59,9 @@ export class LearningObjectInteractor {
 
       // Perform search on objects
       if (params.query && Object.keys(params.query).length) {
-        const level = params.query.level ? [...params.query.level] : undefined;
-        const length = params.query.length
-          ? [...params.query.length]
-          : undefined;
-        const status = params.query.status
-          ? [...params.query.status]
-          : undefined;
+        const level = toArray<string>(params.query.level);
+        const length = toArray<string>(params.query.length);
+        const status = toArray<string>(params.query.status);
         const response = await this.searchObjects(
           params.dataStore,
           params.library,
@@ -114,22 +110,17 @@ export class LearningObjectInteractor {
         );
       }
 
-      // Load children summaries
       if (params.loadChildren) {
         summary = await Promise.all(
           summary.map(async object => {
-            if (object.children && object.children.length) {
-              const children = await this.loadChildObjects(
-                params.dataStore,
-                params.library,
-                object.id,
-                false,
-                accessUnpublished,
-              );
-              children.forEach((child: LearningObject) =>
-                object.addChild(child),
-              );
-            }
+            const children = await this.loadChildObjects(
+              params.dataStore,
+              params.library,
+              object.id,
+              false,
+              accessUnpublished,
+            );
+            children.forEach((child: LearningObject) => object.addChild(child));
             return object;
           }),
         );
@@ -288,8 +279,8 @@ export class LearningObjectInteractor {
             dataStore,
             library,
             object.id,
-            false,
-            false,
+            true,
+            true,
           );
           children.forEach((child: LearningObject) => object.addChild(child));
           return object;
@@ -491,31 +482,25 @@ export class LearningObjectInteractor {
         }),
       );
       const objectIds = objectRefs.map(obj => obj.id);
+      // Remove objects from library
+      await library.cleanObjectsFromLibraries(objectIds);
       // Delete objects from datastore
       await dataStore.deleteMultipleLearningObjects(objectIds);
       // For each object id
-      await Promise.all(
-        objectRefs.map(async obj => {
-          // Attempt to delete files
-          try {
-            const path = `${username}/${obj.id}/`;
-            await fileManager.deleteAll({ path });
-          } catch (error) {
-            console.error(
-              `Could not delete files for object ${obj.id}. ${error}`,
-            );
-          }
-          // Update parents' dates
-          await updateParentsDate({
-            dataStore,
-            parentIds: obj.parentIds,
-            childId: obj.id,
-            date: Date.now().toString(),
-          });
-        }),
-      );
-      // Remove objects from library
-      await library.cleanObjectsFromLibraries(objectIds);
+      objectRefs.forEach(async obj => {
+        // Attempt to delete files
+        const path = `${username}/${obj.id}/`;
+        fileManager.deleteAll({ path }).catch(e => {
+          console.error(`Problem deleting files at ${path}. ${e}`);
+        });
+        // Update parents' dates
+        updateParentsDate({
+          dataStore,
+          parentIds: obj.parentIds,
+          childId: obj.id,
+          date: Date.now().toString(),
+        });
+      });
     } catch (error) {
       return Promise.reject(
         `Problem deleting Learning Objects. Error: ${error}`,
@@ -842,10 +827,9 @@ export class LearningObjectInteractor {
     const extension = extMatch ? extMatch[0] : '';
     const date = Date.now().toString();
 
-    const learningObjectFile = {
+    const learningObjectFile: Partial<LearningObject.Material.File> = {
       url,
       date,
-      id: undefined,
       name: file.name,
       fileType: file.mimetype,
       extension: extension,
@@ -863,7 +847,7 @@ export class LearningObjectInteractor {
       }
     }
 
-    return learningObjectFile;
+    return learningObjectFile as LearningObject.Material.File;
   }
 
   private static isPackageable(file: DZFile) {
@@ -889,4 +873,21 @@ export function sanitizeFileName(name: string): string {
     clean = clean.slice(0, MAX_CHAR);
   }
   return clean;
+}
+
+/**
+ * Returns new array with element(s) from value param or undefined if value was not defined
+ *
+ * @template T
+ * @param {*} value
+ * @returns {T[]}
+ */
+function toArray<T>(value: any): T[] {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  if (value && Array.isArray(value)) {
+    return [...value];
+  }
+  return [value];
 }
