@@ -35,7 +35,8 @@ export class ExpressAdminRouteDriver {
     });
     router.route('/learning-objects').patch(async (req, res) => {
       const learningObject = new LearningObject(req.body.learningObject);
-      const newRoute = `/users/nvisal1/learning-objects/${encodeURIComponent(learningObject.id)}`;
+      const username = req.user.username;
+      const newRoute = `/users/${username}/learning-objects/${encodeURIComponent(learningObject.id)}`;
       res.redirect(301, req.originalUrl.replace('/admin/learning-objects', newRoute));
     });
     router
@@ -105,7 +106,8 @@ export class ExpressAdminRouteDriver {
       async (req, res) => {
         console.log(req.originalUrl);
         const learningObjectName = req.params.learningObjectName;
-        res.redirect(301, req.originalUrl.replace(req.originalUrl, `/users/nvisal1/learning-objects/${learningObjectName}`));
+        const username = req.user.username;
+        res.redirect(301, req.originalUrl.replace(req.originalUrl, `/users/${username}/learning-objects/${learningObjectName}`));
       }
     );
 
