@@ -30,7 +30,6 @@ export function verifyAccessGroup(
     userAccessGroups: string[],
     requiredAccessGroups: string[],
     requestedCollection?: string,
-    canBeUser?: boolean
 ): boolean {
 
     let hasAccess = false;
@@ -72,7 +71,7 @@ export function verifyAccessGroup(
         }
     }
 
-    return canBeUser || hasAccess;
+    return hasAccess;
 }
 
 /**

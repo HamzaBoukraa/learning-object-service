@@ -704,6 +704,33 @@ export class MongoDriver implements DataStore {
     }
   }
 
+  async findObjectAuthor(learningObjectName: string): Promise<any> {
+    try {
+      const result =  await this.db.collection(COLLECTIONS.LEARNING_OBJECTS)
+        .aggregate([
+          {
+            $match: { name: learningObjectName }
+          },
+          {
+            $lookup:
+              {
+                from: COLLECTIONS.USERS,
+                localField: "authorID",
+                foreignField: "_id",
+                as: "user"
+              }
+          }
+        ]).toArray();
+      
+      const learningObjectId = result[0]['_id'];
+      const user = result[0]['user'];
+      const username = user[0]['username'];
+      return { username, learningObjectId };
+    } catch(error) {
+      return Promise.reject(`Problem finding author for ${learningObjectName}. ${error}`);
+    }
+  }
+
   /**
    * Look up a standard outcome by its tag.
    * @async

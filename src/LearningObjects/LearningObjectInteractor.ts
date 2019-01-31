@@ -10,6 +10,8 @@ import {
 } from '../types';
 import { LearningObjectError } from '../errors';
 import { hasLearningObjectWriteAccess } from '../interactors/AuthorizationManager';
+import { verifyAccessGroup } from '../interactors/authGuard';
+import { accessGroups } from '../types/user-token';
 
 /**
  * Add a new learning object to the database.
@@ -137,18 +139,62 @@ export async function getLearningObjectById(
 export async function deleteLearningObject(
   dataStore: DataStore,
   fileManager: FileManager,
+  username: string, // username of the current user
+  learningObjectName: string,
+  library: LibraryCommunicator,
+  userAccessGroups: string[]
+): Promise<void> {
+  try {
+    const requiredAccessGroups = [accessGroups.ADMIN];
+    const hasAccess = verifyAccessGroup(userAccessGroups, requiredAccessGroups);
+    // check if user is learning object owner
+    if (!hasAccess) {
+      const result = await dataStore.findObjectAuthor(learningObjectName);
+      console.log(result);
+      if (result.username === username) {
+        await performLearningObjectDeletion(
+          dataStore,
+          username,
+          learningObjectName,
+          library,
+          fileManager,
+          result.learningObjectID
+        );
+      } else {
+        return Promise.reject('Must be author to delete this object');
+      }
+    } else {
+      await performLearningObjectDeletion(
+        dataStore,
+        username,
+        learningObjectName,
+        library,
+        fileManager
+      );
+    }
+  } catch (error) {
+    return Promise.reject(`Problem deleting Learning Object. Error: ${error}`);
+  }
+}
+
+async function performLearningObjectDeletion(
+  dataStore: DataStore,
   username: string,
   learningObjectName: string,
   library: LibraryCommunicator,
+  fileManager: FileManager,
+  learningObjectID?: string,
 ): Promise<void> {
   try {
-    const learningObjectID = await dataStore.findLearningObject(
-      username,
-      learningObjectName,
-    );
+    if (!learningObjectID) {
+      learningObjectID = await dataStore.findLearningObject(
+        username,
+        learningObjectName,
+      );
+    }
     await library.cleanObjectsFromLibraries([learningObjectID]);
     await dataStore.deleteLearningObject(learningObjectID);
-
+  
     const path = `${username}/${learningObjectID}/`;
     fileManager.deleteAll({ path }).catch(e => {
       console.error(
@@ -159,7 +205,6 @@ export async function deleteLearningObject(
     return Promise.reject(`Problem deleting Learning Object. Error: ${error}`);
   }
 }
-
 /**
  * Updates Readme PDF for Learning Object
  *

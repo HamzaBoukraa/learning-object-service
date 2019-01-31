@@ -10,6 +10,8 @@ import { UserToken } from '../types';
 import { LearningObjectQuery } from '../interfaces/DataStore';
 import { DZFile, FileUpload } from '../interfaces/FileManager';
 import { processMultipartUpload } from '../FileManager/FileInteractor';
+import { verifyAccessGroup } from './authGuard';
+import { accessGroups } from '../types/user-token';
 
 // file size is in bytes
 const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
@@ -148,6 +150,7 @@ export class LearningObjectInteractor {
     accessUnpublished?: boolean,
   ): Promise<LearningObject> {
     try {
+
       const fullChildren = false;
       const learningObjectID = await dataStore.findLearningObject(
         username,
@@ -459,8 +462,11 @@ export class LearningObjectInteractor {
     library: LibraryCommunicator,
     username: string,
     learningObjectNames: string[],
+    userAccessGroups: string[]
   ): Promise<void> {
     try {
+      const requiredAccessGroups = [accessGroups.USER, accessGroups.ADMIN];
+      verifyAccessGroup(userAccessGroups, requiredAccessGroups);
       const learningObjectIDs: string[] = await Promise.all(
         learningObjectNames.map((name: string) => {
           return dataStore.findLearningObject(username, name);
