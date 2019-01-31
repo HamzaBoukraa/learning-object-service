@@ -34,13 +34,13 @@ export class ExpressAdminRouteDriver {
       res.redirect(301, req.originalUrl.replace('/admin/learning-objects', `/learning-objects`));
     });
     router.route('/learning-objects').patch(async (req, res) => {
-      const learningObject = new LearningObject(req.body);
-      res.redirect(301, req.path.replace('/admin/learning-objects', `/learning-objects/${learningObject.id}`));
+      const learningObject = new LearningObject(req.body.learningObject);
+      const newRoute = `/users/nvisal1/learning-objects/${encodeURIComponent(learningObject.id)}`;
+      res.redirect(301, req.originalUrl.replace('/admin/learning-objects', newRoute));
     });
     router
       .route('/learning-objects/:learningObjectId')
       .get(async (req, res) => {
-        console.log('full object');
         res.redirect(301, req.originalUrl.replace('/admin/learning-objects', '/learning-objects'));
       });
     router.patch(
@@ -103,8 +103,9 @@ export class ExpressAdminRouteDriver {
     router.delete(
       '/users/:username/learning-objects/:learningObjectName',
       async (req, res) => {
+        console.log(req.originalUrl);
         const learningObjectName = req.params.learningObjectName;
-        res.redirect(301, req.originalUrl.replace(req.originalUrl, `/learning-objects/${learningObjectName}`));
+        res.redirect(301, req.originalUrl.replace(req.originalUrl, `/users/nvisal1/learning-objects/${learningObjectName}`));
       }
     );
 
