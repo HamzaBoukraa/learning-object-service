@@ -31,8 +31,8 @@ const dataStore: LearningOutcomeDatastore = {
 
   async deleteAllLearningOutcomes(params: { source: string }) {
     return Promise.resolve();
-  }
-}
+  },
+};
 
 const app = express();
 const router = express.Router();
@@ -62,7 +62,7 @@ describe('POST /learning-objects/:id/learning-outcomes', () => {
 });
 
 describe('GET /learning-objects/:id/learning-outcomes/:outcomeId', () => {
-  
+
   it('should return a status of 200 and a Learning Outcome', (done) => {
     request.get('/learning-objects/someObjectId/learning-outcomes/someLearningOutcomeId')
     .expect('Content-Type', /json/)
@@ -73,10 +73,10 @@ describe('GET /learning-objects/:id/learning-outcomes/:outcomeId', () => {
       done();
     });
   });
-})
+});
 
 describe('PATCH /learning-objects/:id/learning-outcomes/:outcomeId', () => {
-  
+
   it('should return a status of 200 and a Learning Outcome', (done) => {
     request.patch('/learning-objects/someObjectId/learning-outcomes/someLearningOutcomeId')
       .send({ outcome: { bloom: 'bloom', verb: 'verb' } })
@@ -88,14 +88,14 @@ describe('PATCH /learning-objects/:id/learning-outcomes/:outcomeId', () => {
         done();
       });
   });
-})
+});
 
 describe('DELETE /learning-objects/:id/learning-outcomes/:outcomeId', () => {
-  
+
   it('should return a status of 200', (done) => {
     request.delete('/learning-objects/:id/learning-outcomes/:outcomeId')
       .expect(200, (err, res) => {
         done();
       });
   });
-})
+});
