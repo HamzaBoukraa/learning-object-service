@@ -1,8 +1,13 @@
 import { LearningObjectInteractor } from './interactors';
-import { updateLearningObject } from '../LearningObjects/LearningObjectInteractor';
-import { DataStore, FileManager, LibraryCommunicator } from '../interfaces/interfaces';
-import { deleteLearningObject } from '../LearningObjects/LearningObjectInteractor';
-import { LearningObjectLock, LearningObject } from '@cyber4all/clark-entity/dist/learning-object';
+import {
+  DataStore,
+  FileManager,
+  LibraryCommunicator,
+} from '../interfaces/interfaces';
+import {
+  deleteLearningObject,
+} from '../LearningObjects/LearningObjectInteractor';
+import { LearningObject } from '@cyber4all/clark-entity';
 
 export class AdminLearningObjectInteractor {
   private static learningObjectInteractor = LearningObjectInteractor;
@@ -57,7 +62,10 @@ export class AdminLearningObjectInteractor {
   ): Promise<any> {
     try {
       const accessUnpublished = true;
-      return await this.learningObjectInteractor.searchObjects(dataStore, library, {
+      return await this.learningObjectInteractor.searchObjects(
+        dataStore,
+        library,
+        {
           name,
           author,
           collection: undefined,
@@ -92,7 +100,7 @@ export class AdminLearningObjectInteractor {
   public static async toggleLock(
     dataStore: DataStore,
     id: string,
-    lock?: LearningObjectLock,
+    lock?: LearningObject.Lock,
   ): Promise<void> {
     try {
       return await dataStore.toggleLock(id, lock);
@@ -142,24 +150,6 @@ export class AdminLearningObjectInteractor {
       return Promise.reject(
         `Problem deleting Learning Objects. Error: ${error}`,
       );
-    }
-  }
-
-  public static async updateLearningObject(
-    dataStore: DataStore,
-    fileManager: FileManager,
-    id: string,
-    learningObject: LearningObject,
-  ): Promise<void> {
-    try {
-      return await updateLearningObject(
-        dataStore,
-        fileManager,
-        id,
-        learningObject,
-      );
-    } catch (error) {
-      return Promise.reject(error);
     }
   }
 }

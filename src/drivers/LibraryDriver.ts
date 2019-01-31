@@ -1,8 +1,8 @@
 import * as request from 'request-promise';
-import { LIBRARY_ROUTES } from '../routes';
-import { Metrics } from '@cyber4all/clark-entity/dist/learning-object';
-import { generateServiceToken } from './TokenManager';
 import { LibraryCommunicator } from '../interfaces/LibraryCommunicator';
+import { LIBRARY_ROUTES } from '../routes';
+import { generateServiceToken } from './TokenManager';
+import { LearningObject } from '@cyber4all/clark-entity';
 
 export class LibraryDriver implements LibraryCommunicator {
   private options = {
@@ -14,7 +14,7 @@ export class LibraryDriver implements LibraryCommunicator {
     method: 'GET',
   };
 
-  public async getMetrics(objectID: string): Promise<Metrics> {
+  public async getMetrics(objectID: string): Promise<LearningObject.Metrics> {
     try {
       const options = { ...this.options };
       options.uri = LIBRARY_ROUTES.METRICS(objectID);
@@ -29,9 +29,7 @@ export class LibraryDriver implements LibraryCommunicator {
    * Removes learning object ids from all carts that reference them
    * @param ids Array of string ids
    */
-  public async cleanObjectsFromLibraries(
-    ids: Array<string>,
-  ): Promise<void> {
+  public async cleanObjectsFromLibraries(ids: Array<string>): Promise<void> {
     const options = { ...this.options };
     options.uri = LIBRARY_ROUTES.CLEAN(ids);
     options.method = 'PATCH';

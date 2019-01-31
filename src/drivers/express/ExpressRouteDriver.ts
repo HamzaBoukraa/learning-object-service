@@ -1,7 +1,7 @@
 import {
   DataStore,
-  LibraryCommunicator,
   FileManager,
+  LibraryCommunicator,
 } from '../../interfaces/interfaces';
 import { Router } from 'express';
 import { LearningObjectInteractor } from '../../interactors/interactors';
@@ -9,8 +9,10 @@ import { LearningObject } from '@cyber4all/clark-entity';
 import * as TokenManager from '../TokenManager';
 import { LearningObjectQuery } from '../../interfaces/DataStore';
 import * as LearningObjectStatsRouteHandler from '../../LearningObjectStats/LearningObjectStatsRouteHandler';
+import { UserToken } from '../../types';
 import { initializeSingleFileDownloadRouter } from '../../SingleFileDownload/RouteHandler';
-import { initializePublicLearningObjectRouter } from '../../LearningObjects/LearningObjectRouteHandler'
+import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
+import { initializeCollectionRouter } from '../../Collections/RouteHandler';
 
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
 // tslint:disable-next-line:no-require-imports
@@ -68,7 +70,10 @@ export class ExpressRouteDriver {
         const orderBy = req.query.orderBy;
         const sortType = req.query.sortType ? +req.query.sortType : null;
 
-        let learningObjects: { total: number; objects: LearningObject[] };
+        let objectResponse: {
+          total: number;
+          objects: Partial<LearningObject>[];
+        };
 
         const accessUnpublished = false;
 
@@ -84,7 +89,7 @@ export class ExpressRouteDriver {
           sortType ||
           released
         ) {
-          learningObjects = await LearningObjectInteractor.searchObjects(
+          objectResponse = await LearningObjectInteractor.searchObjects(
             this.dataStore,
             this.library,
             {
@@ -105,14 +110,17 @@ export class ExpressRouteDriver {
             },
           );
         } else {
-          learningObjects = await LearningObjectInteractor.fetchAllObjects(
+          objectResponse = await LearningObjectInteractor.fetchAllObjects(
             this.dataStore,
             this.library,
             currPage,
             limit,
           );
         }
-        res.status(200).send(learningObjects);
+        objectResponse.objects = objectResponse.objects.map(obj =>
+          obj.toPlainObject(),
+        );
+        res.status(200).send(objectResponse);
       } catch (e) {
         console.log(e);
         res.status(500).send(e);
@@ -127,7 +135,7 @@ export class ExpressRouteDriver {
           query,
           dataStore: this.dataStore,
         });
-        res.status(200).send(parents);
+        res.status(200).send(parents.map(obj => obj.toPlainObject()));
       } catch (e) {
         console.error(e);
         res.status(500).send(e);
@@ -143,7 +151,7 @@ export class ExpressRouteDriver {
           const cookie = req.cookies.presence;
           if (cookie) {
             const user = await TokenManager.decode(cookie);
-            accessUnpublished = user.username === username ? true : false;
+            accessUnpublished = user.username === username;
           }
           const object = await LearningObjectInteractor.loadLearningObject(
             this.dataStore,
@@ -152,101 +160,52 @@ export class ExpressRouteDriver {
             req.params.learningObjectName,
             accessUnpublished,
           );
-          res.status(200).send(object);
+          res.status(200).send(object.toPlainObject());
         } catch (e) {
           console.error(e);
           res.status(500).send(e);
         }
       });
 
-    /**
-     * Return all collections {name: string, abvName: string, primaryColor: string, hasLogo: boolean}
-     */
-    router.get('/collections', async (req, res) => {
-      try {
-        const collections = await LearningObjectInteractor.fetchCollections(
-          this.dataStore,
-        );
-        res.status(200).send(collections);
-      } catch (e) {
-        console.error(e);
-        res.status(500).send(e);
-      }
-    });
-    /**
-     * Return a full collection {name: string, abstracts: [], learningObjects: []}
-     */
-    router.get('/collections/:name', async (req, res) => {
-      try {
-        const name = req.params.name;
-        const collection = await LearningObjectInteractor.fetchCollection(
-          this.dataStore,
-          name,
-        );
-        res.status(200).send(collection);
-      } catch (e) {
-        console.error(e);
-        res.status(500).send(e);
-      }
-    });
-    /**
-     * Return a list of learningObjects from a collection
-     */
-    router.get('/collections/:name/learning-objects', async (req, res) => {
-      try {
-        const objects = await LearningObjectInteractor.fetchCollectionObjects(
-          this.dataStore,
-          req.params.name,
-        );
-        res.status(200).send(objects);
-      } catch (e) {
-        console.error(e);
-        res.status(500).send(e);
-      }
-    });
-    /**
-     * Return the name of a collection and a list of it's abstracts
-     */
-    router.get('/collections/:name/meta', async (req, res) => {
-      try {
-        const collectionMeta = await LearningObjectInteractor.fetchCollectionMeta(
-          this.dataStore,
-          req.params.name,
-        );
-        res.status(200).send(collectionMeta);
-      } catch (e) {
-        console.error(e);
-        res.status(500).send(e);
-      }
-    });
+    initializeCollectionRouter({ router, dataStore: this.dataStore });
+
     router.get('/users/:username/learning-objects', async (req, res) => {
       try {
+        const query = req.query;
+        const userToken: UserToken = req.user;
+        const loadChildren: boolean = query.children;
+        delete query.children;
         const objects = await LearningObjectInteractor.loadLearningObjectSummary(
           {
+            query,
+            userToken,
+            loadChildren,
             dataStore: this.dataStore,
             library: this.library,
             username: req.params.username,
-            accessUnpublished: true,
-            loadChildren: true,
           },
         );
-        res.status(200).send(objects);
+        res.status(200).send(objects.map(obj => obj.toPlainObject()));
       } catch (e) {
         console.error(e);
         res.status(500).send(e);
       }
     });
 
-    initializePublicLearningObjectRouter({ router, dataStore: this.dataStore })
+    LearningObjectStatsRouteHandler.initialize({
+      router,
+      dataStore: this.dataStore,
+    });
 
-    initializeSingleFileDownloadRouter(router, this.dataStore, this.fileManager);
+    LearningObjectRouteHandler.initializePublic({
+      router,
+      dataStore: this.dataStore,
+    });
 
-    router.use(
-      '/learning-objects/stats',
-      LearningObjectStatsRouteHandler.initialize({
-        dataStore: this.dataStore,
-        library: this.library,
-      }),
-    );
+    initializeSingleFileDownloadRouter({
+      router,
+      dataStore: this.dataStore,
+      fileManager: this.fileManager,
+    });
   }
 }

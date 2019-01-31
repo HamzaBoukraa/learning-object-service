@@ -1,15 +1,10 @@
 import * as PDFKit from 'pdfkit';
 import { LEARNING_OBJECT_ROUTES } from '../routes';
 import { LearningObject, LearningOutcome } from '@cyber4all/clark-entity';
-import { File as OutdatedFile, LearningObjectPDF } from '@cyber4all/clark-entity/dist/learning-object';
 import { FileManager } from '../interfaces/interfaces';
 import { FileUpload } from '../interfaces/FileManager';
 import * as striptags from 'striptags';
 
-// FIXME: clark-entity should add packageable
-interface File extends OutdatedFile {
-  packageable: boolean;
-}
 type GradientVector = [number, number, number, number];
 type PDFHeaderAlignment = 'left' | 'right' | 'center' | 'justify';
 enum PDFFonts {
@@ -62,12 +57,7 @@ export function generatePDF(
   // Create array to catch Buffers
   const buffers: Buffer[] = [];
   // Add Event Handlers
-  const pdf = addEventListeners(
-    fileManager,
-    doc,
-    buffers,
-    learningObject,
-  );
+  const pdf = addEventListeners(fileManager, doc, buffers, learningObject);
   const gradientRGB: GradientVector = [0, 0, 650, 0];
   // MetaData
   appendMetaData(doc, learningObject);
@@ -83,16 +73,16 @@ export function generatePDF(
   appendCoverPage(doc, learningObject);
   doc.addPage();
   // Description TEMP REMOVAL
-  // if (learningObject.goals.length) {
-  //   appendGradientHeader({
-  //     gradientRGB,
-  //     doc,
-  //     title: PDFText.DESCRIPTION_TITLE,
-  //     headerYStart: doc.y - 75,
-  //     textYStart: doc.y - 70 + 20,
-  //   });
-  //   appendLearningGoals(doc, learningObject);
-  // }
+  if (learningObject.description) {
+    appendGradientHeader({
+      gradientRGB,
+      doc,
+      title: PDFText.DESCRIPTION_TITLE,
+      headerYStart: doc.y - 75,
+      textYStart: doc.y - 70 + 20,
+    });
+    appendDescription(doc, learningObject.description);
+  }
   // Outcomes
   if (learningObject.outcomes.length) {
     appendGradientHeader({
@@ -125,7 +115,7 @@ export function generatePDF(
     });
     appendUnpackedFileURLs({
       doc,
-      files: <File[]>unpackedFiles,
+      files: <LearningObject.Material.File[]>unpackedFiles,
       id: learningObject.id,
       username: learningObject.author.username,
     });
@@ -150,7 +140,7 @@ function addEventListeners(
   doc: PDFKit.PDFDocument,
   buffers: Buffer[],
   learningObject: LearningObject,
-): Promise<LearningObjectPDF> {
+): Promise<LearningObject.Material.PDF> {
   doc.on('data', (data: Buffer) => {
     buffers.push(data);
   });
@@ -158,13 +148,13 @@ function addEventListeners(
     console.log(e);
   });
 
-  return new Promise<LearningObjectPDF>(resolve => {
+  return new Promise<LearningObject.Material.PDF>(resolve => {
     doc.on('end', async () => {
       const buffer: Buffer = Buffer.concat(buffers);
       const fileName = `0ReadMeFirst - ${learningObject.name}.pdf`;
       const path = `${learningObject.author.username}/${
         learningObject.id
-        }/${fileName}`;
+      }/${fileName}`;
       const fileUpload: FileUpload = {
         path,
         data: buffer,
@@ -246,18 +236,13 @@ function appendCoverPage(
  * @param {LearningObject} learningObject
  * @memberof LearningObjectInteractor
  */
-function appendLearningGoals(
-  doc: PDFKit.PDFDocument,
-  learningObject: LearningObject,
-) {
+function appendDescription(doc: PDFKit.PDFDocument, description: string) {
   doc
     .fillColor(PDFColors.TEXT)
     .fontSize(PDFFontSizes.REGULAR)
     .font(PDFFonts.REGULAR);
-  // Only get first goal for 'description'
-  const goal = learningObject.goals[0];
   // Strip html tags from rich text
-  const text = striptags(goal.text);
+  const text = striptags(description);
   doc.text(text);
   doc.moveDown(0.5);
   doc.moveDown(2);
@@ -279,14 +264,6 @@ function appendOutcomes(
 ) {
   learningObject.outcomes.forEach(outcome => {
     appendOutcomeHeader(doc, outcome);
-    // Assessments
-    if (outcome.assessments.length) {
-      appendOutcomeAssessments(doc, outcome);
-    }
-    // Instructional Strategies
-    if (outcome.strategies.length) {
-      appendOutcomeStrategies(doc, outcome);
-    }
     doc.moveDown(2);
   });
 }
@@ -317,66 +294,6 @@ function appendOutcomeHeader(
   doc.text(
     `Students will be able to ${outcome.verb.toLowerCase()} ${outcome.text}`,
   );
-}
-
-/**
- * Appends Outcome Assessments to PDF Document
- *
- * @private
- * @static
- * @param {PDFKit.PDFDocument} doc
- * @param {LearningOutcome} outcome
- * @memberof LearningObjectInteractor
- */
-function appendOutcomeAssessments(
-  doc: PDFKit.PDFDocument,
-  outcome: LearningOutcome,
-) {
-  doc
-    .fillColor(PDFColors.BANNER)
-    .fontSize(PDFFontSizes.REGULAR)
-    .font(PDFFonts.BOLD);
-  doc.text(PDFText.ASSESSMENTS_TITLE);
-  doc.moveDown(0.5);
-  outcome.assessments.forEach(assessment => {
-    doc.fillColor(PDFColors.TEXT);
-    doc.text(assessment.plan);
-    doc.moveDown(0.5);
-    doc.font(PDFFonts.REGULAR);
-    doc.text(assessment.text);
-    doc.moveDown(0.5);
-  });
-  doc.moveDown(1);
-}
-
-/**
- * Appends Outcome Strategies to PDF Document
- *
- * @private
- * @static
- * @param {PDFKit.PDFDocument} doc
- * @param {LearningOutcome} outcome
- * @memberof LearningObjectInteractor
- */
-function appendOutcomeStrategies(
-  doc: PDFKit.PDFDocument,
-  outcome: LearningOutcome,
-) {
-  doc
-    .fillColor(PDFColors.BANNER)
-    .fontSize(PDFFontSizes.REGULAR)
-    .font(PDFFonts.BOLD);
-  doc.text(PDFText.INSTRUCTIONAL_STRATEGIES_TITLE);
-  doc.moveDown(0.5);
-  outcome.strategies.forEach(strategy => {
-    doc.fillColor(PDFColors.TEXT);
-    doc.text(strategy.plan);
-    doc.moveDown(0.5);
-    doc.font(PDFFonts.REGULAR);
-    doc.text(strategy.text);
-    doc.moveDown(0.5);
-  });
-  doc.moveDown(1);
 }
 
 /**
@@ -474,12 +391,12 @@ function appendMaterialNotes(
  * @static
  * @param {GradientVector} gradientRGB
  * @param {PDFKit.PDFDocument} doc
- * @param {files} LearningObjectFile[]
+ * @param {files} LearningObject.Material.File[]
  * @memberof LearningObjectInteractor
  */
 function appendUnpackedFileURLs(params: {
   doc: PDFKit.PDFDocument;
-  files: File[];
+  files: LearningObject.Material.File[];
   id: string;
   username: string;
 }) {

@@ -1,6 +1,6 @@
 {
   "name": "learning-object-service",
-  "version": "1.9.4",
+  "version": "2.0.0",
   "description": "Learning Object Microservice.",
   "main": "app.ts",
   "scripts": {
@@ -24,9 +24,8 @@
   },
   "homepage": "https://github.com/Cyber4All/learning-object-service#readme",
   "dependencies": {
-    "@cyber4all/clark-entity": "^3.2.1-dev",
-    "@cyber4all/clark-schema": "^1.1.0",
-    "@cyber4all/clark-taxonomy": "2.0.2",
+    "@cyber4all/clark-entity": "^4.0.0",
+    "@cyber4all/clark-taxonomy": "^4.0.0",
     "aws-sdk": "^2.211.0",
     "chai": "^4.1.2",
     "cookie-parser": "^1.4.3",
@@ -90,7 +89,7 @@
   },
   "jest": {
     "transform": {
-      "\\.(ts|tsx)$": "<rootDir>/node_modules/ts-jest/preprocessor.js"
+      "\\.(ts|tsx)$": "./node_modules/ts-jest/preprocessor.js"
     },
     "testRegex": "(dist)/.*/.*(spec).(ts|tsx|js)$",
     "moduleFileExtensions": [

@@ -11,7 +11,7 @@ export function initialize({
   router,
   dataStore,
 }: {
-  router: Router,
+  router: Router;
   dataStore: LearningOutcomeInteractor.LearningOutcomeDatastore;
 }) {
   const addLearningOutcome = async (req: Request, res: Response) => {
@@ -31,6 +31,7 @@ export function initialize({
       res.status(500).send(e);
     }
   };
+
   const getLearningOutcome = async (req: Request, res: Response) => {
     try {
       const user: UserToken = req.user;
@@ -42,12 +43,13 @@ export function initialize({
           user,
         },
       );
-      res.status(200).send(learningOutcome);
+      res.status(200).send(learningOutcome.toPlainObject());
     } catch (e) {
       console.error(e);
       res.status(500).send(e);
     }
   };
+
   const updateLearningOutcome = async (req: Request, res: Response) => {
     try {
       const user: UserToken = req.user;
@@ -59,12 +61,13 @@ export function initialize({
         id,
         updates,
       });
-      res.status(200).send(outcome);
+      res.status(200).send(outcome.toPlainObject());
     } catch (e) {
       console.error(e);
       res.status(500).send(e);
     }
   };
+
   const deleteLearningOutcome = async (req: Request, res: Response) => {
     try {
       const user: UserToken = req.user;
@@ -81,11 +84,13 @@ export function initialize({
     }
   };
 
-  router.route('/learning-objects/:id/learning-outcomes').post(addLearningOutcome);
+  router
+    .route('/learning-objects/:id/learning-outcomes')
+    .post(addLearningOutcome);
+
   router
     .route('/learning-objects/:id/learning-outcomes/:outcomeId')
     .get(getLearningOutcome)
     .patch(updateLearningOutcome)
     .delete(deleteLearningOutcome);
-  return router;
 }

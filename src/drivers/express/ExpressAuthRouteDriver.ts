@@ -17,7 +17,7 @@ import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjec
 import * as LearningOutcomeRouteHandler from '../../LearningOutcomes/LearningOutcomeRouteHandler';
 import * as SubmissionRouteDriver from '../../LearningObjectSubmission/SubmissionRouteDriver';
 import { reportError } from '../SentryConnector';
-
+import { UserToken } from '../../types';
 
 export class ExpressAuthRouteDriver {
   private upload = multer({ storage: multer.memoryStorage() });
@@ -63,38 +63,25 @@ export class ExpressAuthRouteDriver {
       }
       next();
     });
-    router.use('', SubmissionRouteDriver.initialize(this.dataStore));
-    router.use(
-      '',
-      LearningObjectRouteHandler.initializePrivateLearningObjectRouter({
-        router,
-        dataStore: this.dataStore,
-        fileManager: this.fileManager,
-        library: this.library,
-      }),
-    );
 
-    LearningOutcomeRouteHandler.initialize({router, dataStore: this.dataStore});
-
-    router.get('/learning-objects/summary', async (req, res) => {
-      try {
-        const children = req.query.children;
-        const objects = await LearningObjectInteractor.loadLearningObjectSummary(
-          {
-            dataStore: this.dataStore,
-            library: this.library,
-            username: req.user.username,
-            accessUnpublished: true,
-            loadChildren: children,
-            query: req.query,
-          },
-        );
-        res.status(200).send(objects);
-      } catch (e) {
-        console.error(e);
-        res.status(500).send(e);
-      }
+    SubmissionRouteDriver.initialize({
+      router,
+      dataStore: this.dataStore,
+      fileManager: this.fileManager,
     });
+
+    LearningObjectRouteHandler.initializePrivate({
+      router,
+      dataStore: this.dataStore,
+      fileManager: this.fileManager,
+      library: this.library,
+    });
+
+    LearningOutcomeRouteHandler.initialize({
+      router,
+      dataStore: this.dataStore,
+    });
+
     router.patch(
       '/learning-objects/:learningObjectId/collections',
       async (req, res) => {
@@ -357,7 +344,7 @@ export class ExpressAuthRouteDriver {
           this.library,
           ids,
         );
-        res.status(200).send(objects);
+        res.status(200).send(objects.map(obj => obj.toPlainObject()));
       } catch (e) {
         console.error(e);
         res.status(500).send(e);
@@ -373,7 +360,7 @@ export class ExpressAuthRouteDriver {
           this.library,
           ids,
         );
-        res.status(200).send(objects);
+        res.status(200).send(objects.map(obj => obj.toPlainObject()));
       } catch (e) {
         console.error(e);
         res.status(500).send(e);

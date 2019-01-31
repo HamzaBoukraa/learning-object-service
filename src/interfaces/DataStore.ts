@@ -1,12 +1,14 @@
-import { LearningObject, Collection, User, Material } from '@cyber4all/clark-entity';
-import { MultipartFileUploadStatus, CompletedPart } from './FileManager';
-import { LearningObjectLock } from '@cyber4all/clark-entity/dist/learning-object';
-import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
+import { Collection, LearningObject, User } from '@cyber4all/clark-entity';
+import { CompletedPart, MultipartFileUploadStatus } from './FileManager';
 import { LearningObjectUpdates } from '../types';
 import { LearningOutcomeDatastore } from '../LearningOutcomes/LearningOutcomeInteractor';
 import { LearningObjectStatDatastore } from '../LearningObjectStats/LearningObjectStatsInteractor';
+import { CollectionDataStore } from '../Collections/CollectionDataStore';
 
-export interface DataStore extends LearningOutcomeDatastore, LearningObjectStatDatastore {
+export interface DataStore
+  extends LearningOutcomeDatastore,
+    LearningObjectStatDatastore,
+    CollectionDataStore {
   connect(dburi: string): Promise<void>;
   disconnect(): void;
   insertLearningObject(object: LearningObject): Promise<string>;
@@ -14,7 +16,7 @@ export interface DataStore extends LearningOutcomeDatastore, LearningObjectStatD
     id: string;
     updates: LearningObjectUpdates;
   }): Promise<void>;
-  toggleLock(id: string, lock?: LearningObjectLock): Promise<void>;
+  toggleLock(id: string, lock?: LearningObject.Lock): Promise<void>;
   deleteLearningObject(id: string): Promise<void>;
   deleteMultipleLearningObjects(ids: string[]): Promise<void>;
   getUserObjects(username: string): Promise<string[]>;
@@ -52,33 +54,40 @@ export interface DataStore extends LearningOutcomeDatastore, LearningObjectStatD
     limit?: number;
     released?: boolean;
   }): Promise<{ objects: LearningObject[]; total: number }>;
-  fetchCollections(loadObjects?: boolean): Promise<Collection[]>;
-  fetchCollection(name: string): Promise<Collection>;
-  fetchCollectionMeta(name: string): Promise<any>;
-  fetchCollectionObjects(name: string): Promise<LearningObject[]>;
-  togglePublished(
+  submitLearningObjectToCollection(
     username: string,
     id: string,
-    published: boolean,
+    collection: string,
   ): Promise<void>;
+  unsubmitLearningObject(id: string): Promise<void>;
   setChildren(parentId: string, children: string[]): Promise<void>;
   deleteChild(parentId: string, childId: string): Promise<void>;
   findParentObjects(params: {
     query: LearningObjectQuery;
   }): Promise<LearningObject[]>;
+  loadChildObjects(params: {
+    id: string;
+    full?: boolean;
+    accessUnreleased?: boolean;
+  }): Promise<LearningObject[]>;
   findSingleFile(params: {
     learningObjectId: string;
     fileId: string;
-  }): Promise<LearningObjectFile>;
+  }): Promise<LearningObject.Material.File>;
   // Learning Object Files
-  addToFiles(params: { id: string; loFile: LearningObjectFile }): Promise<void>;
-  getLearningObjectMaterials(params: { id: string }): Promise<Material>;
+  addToFiles(params: {
+    id: string;
+    loFile: LearningObject.Material.File;
+  }): Promise<void>;
+  getLearningObjectMaterials(params: {
+    id: string;
+  }): Promise<LearningObject.Material>;
   removeFromFiles(params: { objectId: string; fileId: string }): Promise<void>;
   updateFileDescription(params: {
     learningObjectId: string;
     fileId: string;
     description: string;
-  }): Promise<LearningObjectFile>;
+  }): Promise<LearningObject.Material.File>;
   // Multipart Uploads
   insertMultipartUploadStatus(params: {
     status: MultipartFileUploadStatus;

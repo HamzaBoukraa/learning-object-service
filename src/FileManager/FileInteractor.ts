@@ -1,8 +1,11 @@
 import { DataStore } from '../interfaces/DataStore';
+import {
+  DZFile,
+  FileUpload,
+  MultipartFileUploadStatus,
+} from '../interfaces/FileManager';
 import { FileManager } from '../interfaces/interfaces';
-import { Readable } from 'stream';
-import { LearningObjectFile } from '../interactors/LearningObjectInteractor';
-import { MultipartFileUploadStatus, DZFile, FileUpload } from '../interfaces/FileManager';
+import { LearningObject } from '@cyber4all/clark-entity';
 
 /**
  * Creates multipart upload and saves metadata for upload
@@ -43,41 +46,41 @@ export async function startMultipartUpload(params: {
   }
 }
 
-  /**
-   * Processes Multipart Uploads
-   *
-   * @private
-   * @static
-   * @param {{
-   *     dataStore: DataStore;
-   *     fileManager: FileManager;
-   *     file: DZFile;
-   *     fileUpload: FileUpload;
-   *   }} params
-   */
-  export async function processMultipartUpload(params: {
-    dataStore: DataStore;
-    fileManager: FileManager;
-    file: DZFile;
-    fileUpload: FileUpload;
-    uploadId: string;
-  }): Promise<LearningObjectFile> {
-    try {
-      const partNumber = +params.file.dzchunkindex + 1;
-      const completedPart = await params.fileManager.uploadPart({
-        path: params.fileUpload.path,
-        data: params.fileUpload.data,
-        partNumber,
-        uploadId: params.uploadId,
-      });
-      await params.dataStore.updateMultipartUploadStatus({
-        completedPart,
-        id: params.uploadId,
-      });
-    } catch (e) {
-      return Promise.reject(e);
-    }
+/**
+ * Processes Multipart Uploads
+ *
+ * @private
+ * @static
+ * @param {{
+ *     dataStore: DataStore;
+ *     fileManager: FileManager;
+ *     file: DZFile;
+ *     fileUpload: FileUpload;
+ *   }} params
+ */
+export async function processMultipartUpload(params: {
+  dataStore: DataStore;
+  fileManager: FileManager;
+  file: DZFile;
+  fileUpload: FileUpload;
+  uploadId: string;
+}): Promise<LearningObject.Material.File> {
+  try {
+    const partNumber = +params.file.dzchunkindex + 1;
+    const completedPart = await params.fileManager.uploadPart({
+      path: params.fileUpload.path,
+      data: params.fileUpload.data,
+      partNumber,
+      uploadId: params.uploadId,
+    });
+    await params.dataStore.updateMultipartUploadStatus({
+      completedPart,
+      id: params.uploadId,
+    });
+  } catch (e) {
+    return Promise.reject(e);
   }
+}
 
 /**
  * Finalizes multipart upload and returns file url;
@@ -139,43 +142,7 @@ export async function abortMultipartUpload(params: {
     });
   } catch (e) {
     console.error(e);
-    throw `Could not cancel upload`;
-  }
-}
-
-/**
- * Fetches file stream
- *
- * @export
- * @param {{
- *   dataStore: DataStore;
- *   fileManager: FileManager;
- *   username: string;
- *   learningObjectId: string;
- *   fileId: string;
- * }} params
- * @returns {Promise<{ filename: string; mimeType: string; stream: Readable }>}
- */
-export async function streamFile(params: {
-  dataStore: DataStore;
-  fileManager: FileManager;
-  username: string;
-  learningObjectId: string;
-  fileId: string;
-}): Promise<{ filename: string; mimeType: string; stream: Readable }> {
-  try {
-    const file = await params.dataStore.findSingleFile({
-      learningObjectId: params.learningObjectId,
-      fileId: params.fileId,
-    });
-    const path = `${params.username}/${params.learningObjectId}/${
-      file.fullPath ? file.fullPath : file.name
-    }`;
-    const mimeType = getMimeType({ file });
-    const stream = params.fileManager.streamFile({ path });
-    return { mimeType, stream, filename: file.name };
-  } catch (e) {
-    return Promise.reject(e);
+    throw new Error(`Could not cancel upload`);
   }
 }
 
@@ -183,9 +150,11 @@ export async function streamFile(params: {
  * Gets file type
  *
  * @export
- * @param {{ file: LearningObjectFile }} params
+ * @param {{ file: LearningObject.Material.File }} params
  * @returns {string}
  */
-export function getMimeType(params: { file: LearningObjectFile }): string {
+export function getMimeType(params: {
+  file: LearningObject.Material.File;
+}): string {
   return params.file.fileType;
 }

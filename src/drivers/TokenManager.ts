@@ -1,5 +1,5 @@
+import 'dotenv/config';
 import * as jwt from 'jsonwebtoken';
-
 /**
  * Accepts a JWT and verifies that the token has been properly issued
  *

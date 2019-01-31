@@ -10,8 +10,13 @@ import { LearningObjectError } from '../errors';
  * Initializes an express router with endpoints for public Retrieving
  * a Learning Object.
  */
-export function initializePublicLearningObjectRouter({ router, dataStore }: { router: Router, dataStore: DataStore }) {
-
+export function initializePublic({
+  router,
+  dataStore,
+}: {
+  router: Router;
+  dataStore: DataStore;
+}) {
   /**
    * Retrieve a learning object by a specified ID
    * @param {Request} req
@@ -24,7 +29,7 @@ export function initializePublicLearningObjectRouter({ router, dataStore }: { ro
         dataStore,
         id,
       );
-      res.status(200).send(learningObject);
+      res.status(200).send(learningObject.toPlainObject());
     } catch (e) {
       console.error(e);
       res.status(500).send(e);
@@ -52,37 +57,39 @@ export function initializePublicLearningObjectRouter({ router, dataStore }: { ro
  * }
  * @returns
  */
-export function initializePrivateLearningObjectRouter({
+export function initializePrivate({
   router,
   dataStore,
   fileManager,
   library,
 }: {
-  router: Router,
+  router: Router;
   dataStore: DataStore;
   fileManager: FileManager;
   library: LibraryCommunicator;
 }) {
-
   const addLearningObject = async (req: Request, res: Response) => {
     let object: LearningObject;
 
     try {
-      object = LearningObject.instantiate(req.body.object);
+      object = new LearningObject(req.body.object);
       const learningObject = await LearningObjectInteractor.addLearningObject(
         dataStore,
-        fileManager,
         object,
         req.user,
       );
-      res.status(200).send(learningObject);
+      res.status(200).send(learningObject.toPlainObject());
     } catch (e) {
       console.error(e);
 
       let status = 500;
 
       // if the error was that the object has a duplicate name, send a 409 error code
-      if (object && object.name && e.message === LearningObjectError.DUPLICATE_NAME(object.name)) {
+      if (
+        object &&
+        object.name &&
+        e.message === LearningObjectError.DUPLICATE_NAME(object.name)
+      ) {
         status = 409;
       }
 
@@ -112,7 +119,6 @@ export function initializePrivateLearningObjectRouter({
       await LearningObjectInteractor.updateLearningObject({
         user,
         dataStore,
-        fileManager,
         id,
         updates,
       });
@@ -123,7 +129,11 @@ export function initializePrivateLearningObjectRouter({
       let status = 500;
 
       // if the error was that the object has a duplicate name, send a 409 error code
-      if (updates && updates.name && e.message === LearningObjectError.DUPLICATE_NAME(updates.name)) {
+      if (
+        updates &&
+        updates.name &&
+        e.message === LearningObjectError.DUPLICATE_NAME(updates.name)
+      ) {
         status = 409;
       }
 
@@ -146,12 +156,8 @@ export function initializePrivateLearningObjectRouter({
       res.status(500).send(e);
     }
   };
-  router
-    .route('/learning-objects')
-    .post(addLearningObject);
+  router.route('/learning-objects').post(addLearningObject);
   router.patch('/learning-objects/:id', updateLearningObject);
   router.get('/learning-objects/:id/materials/all', getMaterials);
   router.delete('/learning-objects/:learningObjectName', deleteLearningObject);
-
-  return router;
 }
