@@ -17,6 +17,9 @@ export enum accessGroupsComparison {
    * 
    * Curator and Reviewer strings are structured differently (i.e. curator@abvCollectionName). Because of this,
    * they require a special case
+   * 
+   * If canBeUser, a signed in user can perform the action. Return true so that the caller can handle the case of a user 
+   * without throwing an error
    *
    * @param {string[]} userAccessGroups the access groups that belong to the current user
    * @param {string[]} requiredAccessGroups the access groups that required for the needed function
@@ -26,8 +29,9 @@ export enum accessGroupsComparison {
 export function verifyAccessGroup(
     userAccessGroups: string[],
     requiredAccessGroups: string[],
-    requestedCollection?: string
-): void | Error {
+    requestedCollection?: string,
+    canBeUser?: boolean
+): void | Error | boolean {
 
     let hasAccess = false;
 
@@ -66,6 +70,10 @@ export function verifyAccessGroup(
                 break;
             }
         }
+    }
+
+    if(canBeUser) {
+        return true;
     }
 
     if (!hasAccess) {
