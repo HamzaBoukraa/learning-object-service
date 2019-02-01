@@ -11,9 +11,9 @@ const validOutcome = new LearningOutcome({ verb: 'remember', bloom: 'remember an
 const dataStore: LearningOutcomeDatastore = {
   async insertLearningOutcome(params: { source: string, outcome: LearningOutcomeInput & LearningOutcomeInsert }) {
     try {
-      const _ = new LearningOutcome(Object.assign(params.outcome))
+      const _ = new LearningOutcome(Object.assign(params.outcome));
       return Promise.resolve('someid');
-    } catch(error) {
+    } catch (error) {
       return Promise.reject(error);
     }
   },
@@ -78,7 +78,7 @@ describe('POST /learning-objects/:id/learning-outcomes', () => {
       .expect('Content-Type', /text/)
       .expect(500)
       .then(res => {
-        expect(res.text).toMatch('Problem')
+        expect(res.text).toMatch('Problem');
         done();
       });
   });
