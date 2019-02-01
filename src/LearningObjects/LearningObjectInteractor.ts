@@ -9,7 +9,6 @@ import {
   VALID_LEARNING_OBJECT_UPDATES,
 } from '../types';
 import { LearningObjectError } from '../errors';
-import { hasLearningObjectWriteAccess } from '../interactors/AuthorizationManager';
 import { verifyAccessGroup } from '../interactors/authGuard';
 import { accessGroups } from '../types/user-token';
 
@@ -95,13 +94,38 @@ export async function updateLearningObject(params: {
   }
 
   try {
-    await hasLearningObjectWriteAccess(
-      params.user,
-      // TODO: fetch collection
-      'collection',
-      params.dataStore,
-      params.id,
-    );
+    const requiredAccessGroups = [accessGroups.REVIEWER, accessGroups.EDITOR, accessGroups.CURATOR, accessGroups.ADMIN];
+    const userAccessGroups = params.user.accessGroups;
+    const hasAccess = verifyAccessGroup(userAccessGroups, requiredAccessGroups);
+    if(!hasAccess) {
+      const result = await params.dataStore.findObjectAuthor(undefined, params.id);
+      if(result.username === params.user.username) {
+        await performLearningObjectUpdate({
+          dataStore: params.dataStore,
+          id: params.id,
+          updates: params.updates
+        });
+      } else {
+        return Promise.reject('Must be author to update this object');
+      }
+    } else {
+      await performLearningObjectUpdate({
+        dataStore: params.dataStore,
+        id: params.id,
+        updates: params.updates
+      });
+    }
+  } catch (e) {
+    return Promise.reject(`Problem updating Learning Object. ${e}`);
+  }
+}
+
+async function performLearningObjectUpdate(params: {
+  dataStore: DataStore;
+  id: string;
+  updates: { [index: string]: any };
+}): Promise<void> {
+  try {
     const updates: LearningObjectUpdates = sanitizeUpdates(params.updates);
     validateUpdates({
       id: params.id,
