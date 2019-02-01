@@ -139,7 +139,7 @@ function verifyCollectionAccess(
     userGroup: string,
     requestedCollection: string
 ): boolean {
-    if (!userGroup.includes('reviewer') || !userGroup.includes('curator')) {
+    if (!userGroup.includes('reviewer') && !userGroup.includes('curator')) {
         throw new Error('Invalid string');
     }
     const collectionName = parseUserGroup(userGroup, true);
