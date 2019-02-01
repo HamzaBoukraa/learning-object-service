@@ -174,7 +174,6 @@ export async function deleteLearningObject(
     // check if user is learning object owner
     if (!hasAccess) {
       const result = await dataStore.findObjectAuthor(learningObjectName);
-      console.log(result);
       if (result.username === username) {
         await performLearningObjectDeletion(
           dataStore,
