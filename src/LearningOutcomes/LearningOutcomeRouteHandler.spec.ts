@@ -8,6 +8,7 @@ import * as LearningOutcomeRouteHandler from './LearningOutcomeRouteHandler';
 
 const validOutcome = new LearningOutcome({ verb: 'remember', bloom: 'remember and understand', text: 'to brush your teeth' });
 
+// FIXME instead of mocking out a datastore, we should implement the MongoDB Memory Server so that our tests hit the real datastore
 const dataStore: LearningOutcomeDatastore = {
   async insertLearningOutcome(params: { source: string, outcome: LearningOutcomeInput & LearningOutcomeInsert }) {
     try {
