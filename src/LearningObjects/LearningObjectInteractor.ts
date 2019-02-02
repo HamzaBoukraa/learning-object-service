@@ -142,14 +142,16 @@ export async function deleteLearningObject(params: {
   try {
     const hasAccess = await hasLearningObjectWriteAccess(params.user, params.dataStore, params.learningObjectName); 
     if (hasAccess) {
-      const learningObjectID = await params.dataStore.findLearningObject(
-        params.user.username,
-        params.learningObjectName,
-      );
-      await params.library.cleanObjectsFromLibraries([learningObjectID]);
-      await params.dataStore.deleteLearningObject(learningObjectID);
+      const object = await params.dataStore.peek<{
+        id: string;
+      }>({
+        query: { 'name': params.learningObjectName },
+        fields: {},
+      });
+      await params.library.cleanObjectsFromLibraries([object.id]);
+      await params.dataStore.deleteLearningObject(object.id);
     
-      const path = `${params.user.username}/${learningObjectID}/`;
+      const path = `${params.user.username}/${object.id}/`;
       params.fileManager.deleteAll({ path }).catch(e => {
         console.error(
           `Problem deleting files for ${params.learningObjectName}: ${path}. ${e}`,

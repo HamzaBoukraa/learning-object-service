@@ -465,8 +465,14 @@ export class LearningObjectInteractor {
         const hasAccess = await hasMultipleLearningObjectWriteAccesses(params.user, params.dataStore, params.learningObjectNames); 
         if (hasAccess) {
           const learningObjectIDs: string[] = await Promise.all(
-            params.learningObjectNames.map((name: string) => {
-              return params.dataStore.findLearningObject(params.user.username, name);
+            params.learningObjectNames.map(async (name: string) => {
+              const object = await params.dataStore.peek<{
+                id: string;
+              }>({
+                query: { 'name': name },
+                fields: {},
+              });
+              return object.id;
             }),
           );
           await params.library.cleanObjectsFromLibraries(learningObjectIDs);
