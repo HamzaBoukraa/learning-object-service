@@ -10,8 +10,7 @@ import { UserToken } from '../types';
 import { LearningObjectQuery } from '../interfaces/DataStore';
 import { DZFile, FileUpload } from '../interfaces/FileManager';
 import { processMultipartUpload } from '../FileManager/FileInteractor';
-import { verifyAccessGroup } from './authGuard';
-import { accessGroups } from '../types/user-token';
+import { hasLearningObjectWriteAccess, hasMultipleLearningObjectWriteAccesses } from './AuthorizationManager';
 
 // file size is in bytes
 const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
@@ -142,30 +141,29 @@ export class LearningObjectInteractor {
    * @param learningObjectName
    * @param accessUnpublished
    */
-  public static async loadLearningObject(
+  public static async loadLearningObject(params: {
     dataStore: DataStore,
     library: LibraryCommunicator,
-    username: string,
+    user: UserToken,
     learningObjectName: string,
-    accessUnpublished?: boolean,
-  ): Promise<LearningObject> {
+  }): Promise<LearningObject> {
     try {
-
+      const accessUnpublished = await hasLearningObjectWriteAccess(params.user, params.dataStore, params.learningObjectName)
       const fullChildren = false;
-      const learningObjectID = await dataStore.findLearningObject(
-        username,
-        learningObjectName,
+      const learningObjectID = await params.dataStore.findLearningObject(
+        params.user.username,
+        params.learningObjectName,
       );
 
-      const learningObject = await dataStore.fetchLearningObject(
+      const learningObject = await params.dataStore.fetchLearningObject(
         learningObjectID,
         true,
         accessUnpublished,
       );
 
       const children = await this.loadChildObjects(
-        dataStore,
-        library,
+        params.dataStore,
+        params.library,
         learningObject.id,
         fullChildren,
         accessUnpublished,
@@ -176,7 +174,7 @@ export class LearningObjectInteractor {
 
       try {
         learningObject.metrics = await this.loadMetrics(
-          library,
+          params.library,
           learningObjectID,
         );
       } catch (e) {
@@ -456,31 +454,33 @@ export class LearningObjectInteractor {
     }
   }
 
-  public static async deleteMultipleLearningObjects(
+  public static async deleteMultipleLearningObjects(params: {
     dataStore: DataStore,
     fileManager: FileManager,
     library: LibraryCommunicator,
-    username: string,
     learningObjectNames: string[],
-    userAccessGroups: string[]
-  ): Promise<void> {
+    user: UserToken
+  }): Promise<void> {
     try {
-      const requiredAccessGroups = [accessGroups.USER, accessGroups.ADMIN];
-      verifyAccessGroup(userAccessGroups, requiredAccessGroups);
-      const learningObjectIDs: string[] = await Promise.all(
-        learningObjectNames.map((name: string) => {
-          return dataStore.findLearningObject(username, name);
-        }),
-      );
-      await library.cleanObjectsFromLibraries(learningObjectIDs);
-      await dataStore.deleteMultipleLearningObjects(learningObjectIDs);
+        const hasAccess = await hasMultipleLearningObjectWriteAccesses(params.user, params.dataStore, params.learningObjectNames); 
+        if (hasAccess) {
+          const learningObjectIDs: string[] = await Promise.all(
+            params.learningObjectNames.map((name: string) => {
+              return params.dataStore.findLearningObject(params.user.username, name);
+            }),
+          );
+          await params.library.cleanObjectsFromLibraries(learningObjectIDs);
+          await params.dataStore.deleteMultipleLearningObjects(learningObjectIDs);
 
-      learningObjectIDs.forEach(id => {
-        const path = `${username}/${id}/`;
-        fileManager.deleteAll({ path }).catch(e => {
-          console.error(`Problem deleting files at ${path}. ${e}`);
-        });
-      });
+          learningObjectIDs.forEach(id => {
+            const path = `${params.user.username}/${id}/`;
+            params.fileManager.deleteAll({ path }).catch(e => {
+              console.error(`Problem deleting files at ${path}. ${e}`);
+            });
+          });
+      } else {
+        return Promise.reject('Must be author to delete this object');
+      }
     } catch (error) {
       return Promise.reject(
         `Problem deleting Learning Objects. Error: ${error}`,

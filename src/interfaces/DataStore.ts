@@ -108,7 +108,6 @@ export interface DataStore
     query: { [index: string]: string };
     fields: { [index: string]: 0 | 1 };
   }): Promise<T>;
-  findObjectAuthor(learningObjectName: string, learningObjectId?: string): Promise<any>;
 }
 
 export { Collection as LearningObjectCollection };

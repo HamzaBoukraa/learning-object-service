@@ -9,8 +9,7 @@ import {
   VALID_LEARNING_OBJECT_UPDATES,
 } from '../types';
 import { LearningObjectError } from '../errors';
-import { verifyAccessGroup } from '../interactors/authGuard';
-import { accessGroups } from '../types/user-token';
+import { hasLearningObjectWriteAccess } from '../interactors/AuthorizationManager';
 
 /**
  * Add a new learning object to the database.
@@ -94,52 +93,25 @@ export async function updateLearningObject(params: {
   }
 
   try {
-    const requiredAccessGroups = [accessGroups.REVIEWER, accessGroups.EDITOR, accessGroups.CURATOR, accessGroups.ADMIN];
-    const userAccessGroups = params.user.accessGroups;
-    const hasAccess = verifyAccessGroup(userAccessGroups, requiredAccessGroups);
-    if(!hasAccess) {
-      const result = await params.dataStore.findObjectAuthor(undefined, params.id);
-      if(result.username === params.user.username) {
-        await performLearningObjectUpdate({
-          dataStore: params.dataStore,
-          id: params.id,
-          updates: params.updates
-        });
+      const hasAccess = await hasLearningObjectWriteAccess(params.user, params.dataStore, params.id); 
+      if(hasAccess) {
+          const updates: LearningObjectUpdates = sanitizeUpdates(params.updates);
+          validateUpdates({
+            id: params.id,
+            updates,
+          });
+          updates.date = Date.now().toString();
+          await params.dataStore.editLearningObject({
+            id: params.id,
+            updates,
+          });
       } else {
         return Promise.reject('Must be author to update this object');
       }
-    } else {
-      await performLearningObjectUpdate({
-        dataStore: params.dataStore,
-        id: params.id,
-        updates: params.updates
-      });
+    } catch (e) {
+      return Promise.reject(`Problem updating learning object ${params.id}. ${e}`);
     }
-  } catch (e) {
-    return Promise.reject(`Problem updating Learning Object. ${e}`);
   }
-}
-
-async function performLearningObjectUpdate(params: {
-  dataStore: DataStore;
-  id: string;
-  updates: { [index: string]: any };
-}): Promise<void> {
-  try {
-    const updates: LearningObjectUpdates = sanitizeUpdates(params.updates);
-    validateUpdates({
-      id: params.id,
-      updates,
-    });
-    updates.date = Date.now().toString();
-    await params.dataStore.editLearningObject({
-      id: params.id,
-      updates,
-    });
-  } catch (e) {
-    return Promise.reject(`Problem updating Learning Object. ${e}`);
-  }
-}
 
 /**
  * Fetches a learning object by ID
@@ -166,68 +138,32 @@ export async function deleteLearningObject(
   username: string, // username of the current user
   learningObjectName: string,
   library: LibraryCommunicator,
-  userAccessGroups: string[]
+  user: UserToken
 ): Promise<void> {
   try {
-    const requiredAccessGroups = [accessGroups.ADMIN];
-    const hasAccess = verifyAccessGroup(userAccessGroups, requiredAccessGroups);
-    // check if user is learning object owner
-    if (!hasAccess) {
-      const result = await dataStore.findObjectAuthor(learningObjectName);
-      if (result.username === username) {
-        await performLearningObjectDeletion(
-          dataStore,
-          username,
-          learningObjectName,
-          library,
-          fileManager,
-          result.learningObjectID
-        );
-      } else {
-        return Promise.reject('Must be author to delete this object');
-      }
-    } else {
-      await performLearningObjectDeletion(
-        dataStore,
+    const hasAccess = await hasLearningObjectWriteAccess(user, dataStore, learningObjectName); 
+    if (hasAccess) {
+      const learningObjectID = await dataStore.findLearningObject(
         username,
         learningObjectName,
-        library,
-        fileManager
       );
-    }
+      await library.cleanObjectsFromLibraries([learningObjectID]);
+      await dataStore.deleteLearningObject(learningObjectID);
+    
+      const path = `${username}/${learningObjectID}/`;
+      fileManager.deleteAll({ path }).catch(e => {
+        console.error(
+          `Problem deleting files for ${learningObjectName}: ${path}. ${e}`,
+        );
+      });
+    } else {
+      return Promise.reject('Must be author to delete this object');
+    } 
   } catch (error) {
     return Promise.reject(`Problem deleting Learning Object. Error: ${error}`);
   }
 }
 
-async function performLearningObjectDeletion(
-  dataStore: DataStore,
-  username: string,
-  learningObjectName: string,
-  library: LibraryCommunicator,
-  fileManager: FileManager,
-  learningObjectID?: string,
-): Promise<void> {
-  try {
-    if (!learningObjectID) {
-      learningObjectID = await dataStore.findLearningObject(
-        username,
-        learningObjectName,
-      );
-    }
-    await library.cleanObjectsFromLibraries([learningObjectID]);
-    await dataStore.deleteLearningObject(learningObjectID);
-  
-    const path = `${username}/${learningObjectID}/`;
-    fileManager.deleteAll({ path }).catch(e => {
-      console.error(
-        `Problem deleting files for ${learningObjectName}: ${path}. ${e}`,
-      );
-    });
-  } catch (error) {
-    return Promise.reject(`Problem deleting Learning Object. Error: ${error}`);
-  }
-}
 /**
  * Updates Readme PDF for Learning Object
  *
