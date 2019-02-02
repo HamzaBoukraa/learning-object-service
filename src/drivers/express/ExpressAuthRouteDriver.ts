@@ -320,13 +320,13 @@ export class ExpressAuthRouteDriver {
       async (req, res) => {
         try {
           const learningObjectNames = req.params.learningObjectNames.split(',');
-          await LearningObjectInteractor.deleteMultipleLearningObjects(
-            this.dataStore,
-            this.fileManager,
-            this.library,
-            req.user.username,
+          await LearningObjectInteractor.deleteMultipleLearningObjects({
+            dataStore: this.dataStore,
+            fileManager: this.fileManager,
+            library: this.library,
+            user: req.user,
             learningObjectNames,
-          );
+          });
           res.sendStatus(200);
         } catch (e) {
           console.error(e);

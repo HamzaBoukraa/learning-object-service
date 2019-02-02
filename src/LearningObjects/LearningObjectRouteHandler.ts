@@ -142,16 +142,15 @@ export function initializePrivate({
   };
   const deleteLearningObject = async (req: Request, res: Response) => {
     try {
-      const userAccessGroups = req.user.accessGroups;
+      const user: UserToken = req.user;
       const learningObjectName = req.params.learningObjectName;
-      await LearningObjectInteractor.deleteLearningObject(
+      await LearningObjectInteractor.deleteLearningObject({
         dataStore,
         fileManager,
-        req.user.username,
         learningObjectName,
         library,
-        userAccessGroups
-      );
+        user
+      });
       res.sendStatus(200);
     } catch (e) {
       console.error(e);

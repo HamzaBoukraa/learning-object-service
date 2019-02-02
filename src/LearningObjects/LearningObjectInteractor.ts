@@ -132,28 +132,27 @@ export async function getLearningObjectById(
   }
 }
 
-export async function deleteLearningObject(
+export async function deleteLearningObject(params: {
   dataStore: DataStore,
   fileManager: FileManager,
-  username: string, // username of the current user
   learningObjectName: string,
   library: LibraryCommunicator,
   user: UserToken
-): Promise<void> {
+}): Promise<void> {
   try {
-    const hasAccess = await hasLearningObjectWriteAccess(user, dataStore, learningObjectName); 
+    const hasAccess = await hasLearningObjectWriteAccess(params.user, params.dataStore, params.learningObjectName); 
     if (hasAccess) {
-      const learningObjectID = await dataStore.findLearningObject(
-        username,
-        learningObjectName,
+      const learningObjectID = await params.dataStore.findLearningObject(
+        params.user.username,
+        params.learningObjectName,
       );
-      await library.cleanObjectsFromLibraries([learningObjectID]);
-      await dataStore.deleteLearningObject(learningObjectID);
+      await params.library.cleanObjectsFromLibraries([learningObjectID]);
+      await params.dataStore.deleteLearningObject(learningObjectID);
     
-      const path = `${username}/${learningObjectID}/`;
-      fileManager.deleteAll({ path }).catch(e => {
+      const path = `${params.user.username}/${learningObjectID}/`;
+      params.fileManager.deleteAll({ path }).catch(e => {
         console.error(
-          `Problem deleting files for ${learningObjectName}: ${path}. ${e}`,
+          `Problem deleting files for ${params.learningObjectName}: ${path}. ${e}`,
         );
       });
     } else {
