@@ -144,21 +144,21 @@ export class LearningObjectInteractor {
   public static async loadLearningObject(params: {
     dataStore: DataStore,
     library: LibraryCommunicator,
-    user: UserToken,
+    username: string
     learningObjectName: string,
+    accessUnpublished: boolean
   }): Promise<LearningObject> {
     try {
-      const accessUnpublished = await hasLearningObjectWriteAccess(params.user, params.dataStore, params.learningObjectName)
       const fullChildren = false;
       const learningObjectID = await params.dataStore.findLearningObject(
-        params.user.username,
+        params.username,
         params.learningObjectName,
       );
 
       const learningObject = await params.dataStore.fetchLearningObject(
         learningObjectID,
         true,
-        accessUnpublished,
+        params.accessUnpublished,
       );
 
       const children = await this.loadChildObjects(
@@ -166,7 +166,7 @@ export class LearningObjectInteractor {
         params.library,
         learningObject.id,
         fullChildren,
-        accessUnpublished,
+        params.accessUnpublished,
       );
       children.forEach((child: LearningObject) =>
         learningObject.addChild(child),

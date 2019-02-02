@@ -17,7 +17,6 @@ import * as cookieParser from 'cookie-parser';
 import * as raven from 'raven';
 import {
   enforceAuthenticatedAccess,
-  enforceAdminAccess,
   processToken,
 } from '../../middleware';
 
