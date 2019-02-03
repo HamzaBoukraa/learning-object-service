@@ -115,6 +115,9 @@ export function initializePrivate({
     try {
       const id: string = req.params.id;
       updates = req.body.learningObject;
+      if(updates.id) {
+        delete updates.id;
+      }
       const user: UserToken = req.user;
       await LearningObjectInteractor.updateLearningObject({
         user,
