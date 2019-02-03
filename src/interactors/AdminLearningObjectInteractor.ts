@@ -8,8 +8,8 @@ import {
   deleteLearningObject,
 } from '../LearningObjects/LearningObjectInteractor';
 import { LearningObject } from '@cyber4all/clark-entity';
-import { verifyAccessGroup } from './AuthGuard';
-import { accessGroups } from '../types/user-token';
+import { accessGroups, UserToken } from '../types/user-token';
+import { hasLearningObjectWriteAccess } from './AuthorizationManager';
 
 
 export class AdminLearningObjectInteractor {
@@ -48,14 +48,17 @@ export class AdminLearningObjectInteractor {
    */
   public static async toggleLock(
     dataStore: DataStore,
-    userAccessGroups: string[],
+    user: UserToken,
     id: string,
     lock?: LearningObject.Lock,
   ): Promise<void> {
     try {
-      const requiredAccessGroups = [accessGroups.ADMIN, accessGroups.EDITOR];
-      verifyAccessGroup(userAccessGroups, requiredAccessGroups);
-      return await dataStore.toggleLock(id, lock);
+      const hasAccess = await hasLearningObjectWriteAccess(user, dataStore, id);
+      if(hasAccess) {
+        return await dataStore.toggleLock(id, lock);
+      } else {
+        return Promise.reject('User does not have permission to update this object');
+      }
     } catch (e) {
       return Promise.reject(`Problem toggling lock. Error:  ${e}`);
     }
