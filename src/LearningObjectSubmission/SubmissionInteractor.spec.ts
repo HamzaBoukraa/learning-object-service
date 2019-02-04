@@ -17,13 +17,12 @@ describe('submitForReview', () => {
     try {
       expect(
         await submitForReview({
-            dataStore,
-            fileManager,
-            username: MOCK_OBJECTS.USERNAME,
-            id: SUBMITTABLE_LEARNING_OBJECT.id,
-            collection: SUBMITTABLE_LEARNING_OBJECT.collection
-          }
-        ),
+          dataStore,
+          fileManager,
+          username: MOCK_OBJECTS.USERNAME,
+          id: SUBMITTABLE_LEARNING_OBJECT.id,
+          collection: SUBMITTABLE_LEARNING_OBJECT.collection,
+        }),
       ).resolves.toBe(undefined);
     } catch (error) {
       console.log(error);
@@ -34,13 +33,12 @@ describe('submitForReview', () => {
       expect.assertions(1);
       try {
         await submitForReview({
-            dataStore,
-            fileManager,
-            username: MOCK_OBJECTS.USERNAME,
-            id: INVALID_LEARNING_OBJECTS.NO_NAME.id,
-            collection: MOCK_OBJECTS.COLLECTION_NAME,
-          }
-        );
+          dataStore,
+          fileManager,
+          username: MOCK_OBJECTS.USERNAME,
+          id: SUBMITTABLE_LEARNING_OBJECT.id,
+          collection: SUBMITTABLE_LEARNING_OBJECT.collection,
+        });
       } catch (e) {
         expect(e instanceof Error).toBeTruthy();
         done();
@@ -50,13 +48,12 @@ describe('submitForReview', () => {
       expect.assertions(1);
       try {
         await submitForReview({
-            dataStore,
-            fileManager,
-            username: MOCK_OBJECTS.USERNAME,
-            id: MOCK_OBJECTS.LEARNING_OBJECT.id,
-            collection: MOCK_OBJECTS.COLLECTION_NAME,
-          }
-        );
+          dataStore,
+          fileManager,
+          username: MOCK_OBJECTS.USERNAME,
+          id: SUBMITTABLE_LEARNING_OBJECT.id,
+          collection: SUBMITTABLE_LEARNING_OBJECT.collection,
+        });
       } catch (e) {
         expect(e instanceof Error).toBeTruthy();
         done();
@@ -66,13 +63,12 @@ describe('submitForReview', () => {
       expect.assertions(1);
       try {
         await submitForReview({
-            dataStore,
-            fileManager,
-            username: MOCK_OBJECTS.USERNAME,
-            id: INVALID_LEARNING_OBJECTS.NO_DESCRIPTION.id,
-            collection: MOCK_OBJECTS.COLLECTION_NAME,
-          }
-        );
+          dataStore,
+          fileManager,
+          username: MOCK_OBJECTS.USERNAME,
+          id: SUBMITTABLE_LEARNING_OBJECT.id,
+          collection: SUBMITTABLE_LEARNING_OBJECT.collection,
+        });
       } catch (e) {
         expect(e instanceof Error).toBeTruthy();
         done();
