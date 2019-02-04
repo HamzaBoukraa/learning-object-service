@@ -3,7 +3,7 @@ import {
   FileManager,
   LibraryCommunicator,
 } from '../../interfaces/interfaces';
-import { Router, Request, Response } from 'express';
+import { Router } from 'express';
 import { LearningObjectInteractor } from '../../interactors/interactors';
 import { LearningObject } from '@cyber4all/clark-entity';
 import * as TokenManager from '../TokenManager';
@@ -13,8 +13,6 @@ import { UserToken } from '../../types';
 import { initializeSingleFileDownloadRouter } from '../../SingleFileDownload/RouteHandler';
 import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
 import { initializeCollectionRouter } from '../../Collections/RouteHandler';
-import { LEARNING_OBJECT_ROUTES } from '../../routes';
-import { fileNotFound } from '../../assets/filenotfound';
 
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
 // tslint:disable-next-line:no-require-imports
