@@ -14,9 +14,9 @@ export async function hasLearningObjectWriteAccess(user: UserToken, dataStore: D
 }
 
 /**
- * Checks if a user has the authority to modify a Learning Object.
- * If they have privileged access, immediately return true. Otherwise,
- * check if they are the owner of the Learning Object.
+ * Checks if a user has the authority to modify a multiple Learning Objects.
+ * return false on the first object that the user cannot access.
+ * otherwise return true
  *
  * @param user information about the user who has initiated a privileged write operation
  * @param collection the name of the collection
@@ -40,7 +40,7 @@ export async function hasMultipleLearningObjectWriteAccesses(user: UserToken, da
  */
 function hasPrivilegedAccess(user: UserToken, dataStore: DataStore, objectId: string) {
   if (user.accessGroups) {
-    if (user.accessGroups.indexOf('admin') > -1 || user.accessGroups.indexOf('editor') > -1) {
+    if (user.accessGroups.includes('admin') || user.accessGroups.includes('editor')) {
       return true;
     } else {
       return checkCollectionWriteAccess({user, dataStore, objectId});
@@ -50,10 +50,12 @@ function hasPrivilegedAccess(user: UserToken, dataStore: DataStore, objectId: st
 /**
  * Checks if a user has the authority to update the data of a particular collection.
  *
- * @param user information about the user who has initiated a privileged write operation
- * @param collection the name of the collection
+ * @param user UserToken
+ * @param dataStore Instance of datastore
+ * @param objectId Can be a learning object id or learning name
  */
 async function checkCollectionWriteAccess(params: { user: UserToken, dataStore: DataStore, objectId: string }): Promise<boolean> {
+  // Regex checks to see if the given objectId string contains an id or a name
   const regexp = new RegExp('/^[a-f\d]{24}$/i');
   let key = '_id';
   if (!regexp.test(params.objectId)) {

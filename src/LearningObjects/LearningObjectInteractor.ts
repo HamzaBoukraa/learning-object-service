@@ -10,6 +10,7 @@ import {
 } from '../types';
 import { LearningObjectError } from '../errors';
 import { hasLearningObjectWriteAccess } from '../interactors/AuthorizationManager';
+import { reportError } from '../drivers/SentryConnector';
 
 /**
  * Add a new learning object to the database.
@@ -91,7 +92,7 @@ export async function updateLearningObject(params: {
       username: params.user.username,
     });
   }
-
+  let error;
   try {
       const hasAccess = await hasLearningObjectWriteAccess(params.user, params.dataStore, params.id); 
       if(hasAccess) {
@@ -106,10 +107,12 @@ export async function updateLearningObject(params: {
             updates,
           });
       } else {
-        return Promise.reject('Must be author to update this object');
+        error = new Error('User does not has authorization to perform this action');
+        return Promise.reject(error);
       }
     } catch (e) {
-      return Promise.reject(`Problem updating learning object ${params.id}. ${e}`);
+      error = new Error(`Problem updating learning object ${params.id}. ${e}`)
+      return Promise.reject(error);
     }
   }
 
@@ -139,6 +142,7 @@ export async function deleteLearningObject(params: {
   library: LibraryCommunicator,
   user: UserToken
 }): Promise<void> {
+  let error;
   try {
     const hasAccess = await hasLearningObjectWriteAccess(params.user, params.dataStore, params.learningObjectName); 
     if (hasAccess) {
@@ -153,15 +157,20 @@ export async function deleteLearningObject(params: {
     
       const path = `${params.user.username}/${object.id}/`;
       params.fileManager.deleteAll({ path }).catch(e => {
-        console.error(
-          `Problem deleting files for ${params.learningObjectName}: ${path}. ${e}`,
+        reportError(
+          new Error(`Problem deleting files for ${params.learningObjectName}: ${path}. ${e}`),
         );
       });
     } else {
-      return Promise.reject('Must be author to delete this object');
+      error = new Error('User does not has authorization to perform this action');
+      reportError(error);
+      return Promise.reject(error);
+
     } 
-  } catch (error) {
-    return Promise.reject(`Problem deleting Learning Object. Error: ${error}`);
+  } catch (e) {
+    error = new Error(`Problem deleting Learning Object. Error: ${e}`);
+    reportError(error);
+    return Promise.reject(error);
   }
 }
 

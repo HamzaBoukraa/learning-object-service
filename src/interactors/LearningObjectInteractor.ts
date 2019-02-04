@@ -11,6 +11,7 @@ import { LearningObjectQuery } from '../interfaces/DataStore';
 import { DZFile, FileUpload } from '../interfaces/FileManager';
 import { processMultipartUpload } from '../FileManager/FileInteractor';
 import { hasLearningObjectWriteAccess, hasMultipleLearningObjectWriteAccesses } from './AuthorizationManager';
+import { reportError } from '../drivers/SentryConnector';
 
 // file size is in bytes
 const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
@@ -461,6 +462,7 @@ export class LearningObjectInteractor {
     learningObjectNames: string[],
     user: UserToken
   }): Promise<void> {
+    let error;
     try {
         const hasAccess = await hasMultipleLearningObjectWriteAccesses(params.user, params.dataStore, params.learningObjectNames); 
         if (hasAccess) {
@@ -481,16 +483,18 @@ export class LearningObjectInteractor {
           learningObjectIDs.forEach(id => {
             const path = `${params.user.username}/${id}/`;
             params.fileManager.deleteAll({ path }).catch(e => {
-              console.error(`Problem deleting files at ${path}. ${e}`);
+              reportError(new Error(`Problem deleting files at ${path}. ${e}`));
             });
           });
       } else {
-        return Promise.reject('Must be author to delete this object');
+        error = new Error('User does not has authorization to perform this action');
+        reportError(error);
+        return Promise.reject(error);
       }
-    } catch (error) {
-      return Promise.reject(
-        `Problem deleting Learning Objects. Error: ${error}`,
-      );
+    } catch (e) {
+      error = new Error(`Problem deleting Learning Objects. Error: ${e}`);
+      reportError(error);
+      return Promise.reject(error);
     }
   }
 
