@@ -54,24 +54,26 @@ export async function updateParentsDate(params: {
   parentIds?: string[];
   date: string;
 }): Promise<void> {
-  const parentIds =
-    params.parentIds ||
-    (await params.dataStore.findParentObjectIds({
-      childId: params.childId,
-    }));
+  let { dataStore, childId, parentIds, date } = params;
+  if (parentIds == null) {
+    parentIds = await params.dataStore.findParentObjectIds({
+      childId,
+    });
+  }
+
   if (parentIds && parentIds.length) {
     await Promise.all([
       // Perform update of all parent dates
-      params.dataStore.updateMultipleLearningObjects({
+      dataStore.updateMultipleLearningObjects({
         ids: parentIds,
-        updates: { date: params.date },
+        updates: { date },
       }),
       // Perform update parents' parents' dates
       ...parentIds.map(id =>
         updateParentsDate({
-          dataStore: params.dataStore,
+          dataStore,
+          date,
           childId: id,
-          date: params.date,
         }),
       ),
     ]);
