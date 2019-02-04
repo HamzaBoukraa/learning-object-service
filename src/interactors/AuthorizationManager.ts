@@ -59,12 +59,22 @@ async function checkCollectionWriteAccess(params: { user: UserToken, dataStore: 
   if (!regexp.test(params.objectId)) {
     property = 'name';
   } 
-  const object = await params.dataStore.peek<{
-    collection: string;
-  }>({
-    query: { property: params.objectId },
-    fields: { collection: 1 },
-  });
+  let object;
+  if(property === 'name') {
+    object = await params.dataStore.peek<{
+      collection: string;
+    }>({
+      query: { name: params.objectId },
+      fields: { collection: 1 },
+    });
+  } else {
+    object = await params.dataStore.peek<{
+      collection: string;
+    }>({
+      query: { _id: params.objectId },
+      fields: { collection: 1 },
+    });
+  }
   return (params.user.accessGroups.indexOf(`reviewer@${object.collection}`) > -1 || params.user.accessGroups.indexOf(`curator@${object.collection}`) > -1);
 }
 
