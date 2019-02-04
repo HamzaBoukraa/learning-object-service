@@ -18,6 +18,7 @@ export const MOCK_OBJECTS = {
   LEARNING_OBJECT_ID: 'default_id',
   COLLECTION: {
     name: 'test',
+    // @ts-ignore
     learningObjects: [],
   },
   LEARNING_OBJECT: {
@@ -25,13 +26,18 @@ export const MOCK_OBJECTS = {
     name: 'Input Validation - CS0 - C',
     date: '1523479539862',
     length: 'nanomodule',
+    // @ts-ignore
     levels: [],
+    // @ts-ignore
     goals: [],
+    // @ts-ignore
     outcomes: [],
     materials: {},
     metrics: {},
     published: true,
+    // @ts-ignore
     children: [],
+    // @ts-ignore
     contributors: [],
     lock: {},
     collection: 'nccp',
@@ -46,6 +52,7 @@ export const MOCK_OBJECTS = {
   TOTAL_RECORDS: 1,
   COLLECTION_META: {
     name: 'test',
+    // @ts-ignore
     abstracts: [],
   },
   COLLECTION_NAME: 'test',
@@ -57,6 +64,7 @@ export const MOCK_OBJECTS = {
     fileSize: 134,
     path: 'path',
     bytesUploaded: 132,
+    // @ts-ignore
     completedParts: [],
     createdAt: 'time',
   },
