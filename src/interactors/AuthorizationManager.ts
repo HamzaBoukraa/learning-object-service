@@ -55,12 +55,13 @@ function hasPrivilegedAccess(user: UserToken, dataStore: DataStore, objectId: st
  */
 async function checkCollectionWriteAccess(params: { user: UserToken, dataStore: DataStore, objectId: string }): Promise<boolean> {
   const regexp = new RegExp('/^[a-f\d]{24}$/i');
-  let property = '_id';
+  let key = '_id';
   if (!regexp.test(params.objectId)) {
-    property = 'name';
+    key = 'name';
   } 
+  console.log(key);
   let object;
-  if(property === 'name') {
+  if(key === 'name') {
     object = await params.dataStore.peek<{
       collection: string;
     }>({
