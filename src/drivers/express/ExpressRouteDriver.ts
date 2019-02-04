@@ -75,7 +75,7 @@ export class ExpressRouteDriver {
           objects: Partial<LearningObject>[];
         };
 
-        const accessUnpublished = false;
+        const accessUnreleased = false;
 
         if (
           name ||
@@ -101,7 +101,7 @@ export class ExpressRouteDriver {
               level,
               standardOutcomeIDs: standardOutcomes,
               text,
-              accessUnpublished,
+              accessUnreleased,
               orderBy,
               sortType,
               currPage,
@@ -146,19 +146,19 @@ export class ExpressRouteDriver {
       .route('/learning-objects/:username/:learningObjectName')
       .get(async (req, res) => {
         try {
-          let accessUnpublished = false;
+          let accessUnreleased = false;
           const username = req.params.username;
           const cookie = req.cookies.presence;
           if (cookie) {
             const user = await TokenManager.decode(cookie);
-            accessUnpublished = user.username === username;
+            accessUnreleased = user.username === username;
           }
           const object = await LearningObjectInteractor.loadLearningObject(
             this.dataStore,
             this.library,
             username,
             req.params.learningObjectName,
-            accessUnpublished,
+            accessUnreleased,
           );
           res.status(200).send(object.toPlainObject());
         } catch (e) {

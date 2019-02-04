@@ -22,9 +22,9 @@ export class AdminLearningObjectInteractor {
     limit?: number,
   ): Promise<any> {
     try {
-      const accessUnpublished = true;
+      const accessUnreleased = true;
       const response = await dataStore.fetchAllObjects(
-        accessUnpublished,
+        accessUnreleased,
         currPage,
         limit,
       );
@@ -61,7 +61,7 @@ export class AdminLearningObjectInteractor {
     limit?: number,
   ): Promise<any> {
     try {
-      const accessUnpublished = true;
+      const accessUnreleased = true;
       return await this.learningObjectInteractor.searchObjects(
         dataStore,
         library,
@@ -74,7 +74,7 @@ export class AdminLearningObjectInteractor {
           level,
           standardOutcomeIDs,
           text,
-          accessUnpublished,
+          accessUnreleased,
           orderBy,
           sortType,
           currPage: page,

@@ -23,7 +23,7 @@ export class LearningObjectInteractor {
    * @param params.dataStore
    * @param params.library
    * @param params.username
-   * @param params.accessUnpublished
+   * @param params.accessUnreleased
    * @param params.loadChildren
    * @param params.query
    */
@@ -32,17 +32,17 @@ export class LearningObjectInteractor {
     library: LibraryCommunicator;
     username: string;
     userToken: UserToken;
-    accessUnpublished?: boolean;
+    accessUnreleased?: boolean;
     loadChildren?: boolean;
     query?: LearningObjectQuery;
   }): Promise<LearningObject[]> {
     try {
-      // Set accessUnpublished
-      let accessUnpublished = params.accessUnpublished;
+      // Set accessUnreleased
+      let accessUnreleased = params.accessUnreleased;
 
-      // If accessUnpublished is unset, set equal to the result of the hasOwnership function
-      if (accessUnpublished === undefined || accessUnpublished === null) {
-        accessUnpublished = await this.hasOwnership({
+      // If accessUnreleased is unset, set equal to the result of the hasOwnership function
+      if (accessUnreleased === undefined || accessUnreleased === null) {
+        accessUnreleased = await this.hasOwnership({
           userToken: params.userToken,
           resourceVal: params.username,
           authFunction: (username: string, userToken: UserToken) => {
@@ -70,7 +70,7 @@ export class LearningObjectInteractor {
             level,
             standardOutcomeIDs: params.query.standardOutcomeIDs,
             text: params.query.text,
-            accessUnpublished,
+            accessUnreleased,
             orderBy: params.query.orderBy,
             sortType: params.query.sortType,
             currPage: params.query.page,
@@ -85,7 +85,7 @@ export class LearningObjectInteractor {
         summary = await params.dataStore.fetchMultipleObjects(
           objectIDs,
           false,
-          accessUnpublished,
+          accessUnreleased,
           params.query ? params.query.orderBy : null,
           params.query ? params.query.sortType : null,
         );
@@ -114,7 +114,7 @@ export class LearningObjectInteractor {
               params.library,
               object.id,
               false,
-              accessUnpublished,
+              accessUnreleased,
             );
             children.forEach((child: LearningObject) => object.addChild(child));
             return object;
@@ -138,14 +138,14 @@ export class LearningObjectInteractor {
    * @param library
    * @param username
    * @param learningObjectName
-   * @param accessUnpublished
+   * @param accessUnreleased
    */
   public static async loadLearningObject(
     dataStore: DataStore,
     library: LibraryCommunicator,
     username: string,
     learningObjectName: string,
-    accessUnpublished?: boolean,
+    accessUnreleased?: boolean,
   ): Promise<LearningObject> {
     try {
       const fullChildren = false;
@@ -157,7 +157,7 @@ export class LearningObjectInteractor {
       const learningObject = await dataStore.fetchLearningObject(
         learningObjectID,
         true,
-        accessUnpublished,
+        accessUnreleased,
       );
 
       const children = await this.loadChildObjects(
@@ -165,7 +165,7 @@ export class LearningObjectInteractor {
         library,
         learningObject.id,
         fullChildren,
-        accessUnpublished,
+        accessUnreleased,
       );
       children.forEach((child: LearningObject) =>
         learningObject.addChild(child),
@@ -616,7 +616,7 @@ export class LearningObjectInteractor {
       level: string[];
       standardOutcomeIDs: string[];
       text: string;
-      accessUnpublished?: boolean;
+      accessUnreleased?: boolean;
       orderBy?: string;
       sortType?: number;
       currPage?: number;
@@ -642,7 +642,7 @@ export class LearningObjectInteractor {
         level: params.level,
         standardOutcomeIDs: params.standardOutcomeIDs,
         text: params.text,
-        accessUnpublished: params.accessUnpublished,
+        accessUnreleased: params.accessUnreleased,
         orderBy: params.orderBy,
         sortType: params.sortType,
         page: params.currPage,

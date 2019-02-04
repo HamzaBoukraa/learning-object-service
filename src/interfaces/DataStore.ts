@@ -24,17 +24,17 @@ export interface DataStore
   fetchLearningObject(
     id: string,
     full?: boolean,
-    accessUnpublished?: boolean,
+    accessUnreleased?: boolean,
   ): Promise<LearningObject>;
   fetchMultipleObjects(
     ids: string[],
     full?: boolean,
-    accessUnpublished?: boolean,
+    accessUnreleased?: boolean,
     orderBy?: string,
     sortType?: number,
   ): Promise<LearningObject[]>;
   fetchAllObjects(
-    accessUnpublished?: boolean,
+    accessUnreleased?: boolean,
     page?: number,
     limit?: number,
   ): Promise<{ objects: LearningObject[]; total: number }>;
@@ -47,7 +47,7 @@ export interface DataStore
     level: string[];
     standardOutcomeIDs: string[];
     text: string;
-    accessUnpublished?: boolean;
+    accessUnreleased?: boolean;
     orderBy?: string;
     sortType?: number;
     page?: number;

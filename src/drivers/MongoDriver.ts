@@ -37,6 +37,7 @@ export enum COLLECTIONS {
   LO_COLLECTIONS = 'collections',
   MULTIPART_STATUSES = 'multipart-upload-statuses',
 }
+const RELEASED = 'released'; 
 
 export class MongoDriver implements DataStore {
   submissionStore: SubmissionDatastore;
@@ -765,7 +766,7 @@ export class MongoDriver implements DataStore {
   async fetchLearningObject(
     id: string,
     full?: boolean,
-    accessUnpublished?: boolean,
+    accessUnreleased?: boolean,
   ): Promise<LearningObject> {
     const object = await this.db
       .collection<LearningObjectDocument>(COLLECTIONS.LEARNING_OBJECTS)
@@ -777,7 +778,7 @@ export class MongoDriver implements DataStore {
       full,
     );
 
-    if (!accessUnpublished && !learningObject.published)
+    if (!accessUnreleased && !learningObject.published)
       return Promise.reject(
         'User does not have access to the requested resource.',
       );
@@ -789,15 +790,15 @@ export class MongoDriver implements DataStore {
    * @returns {Cursor<LearningObjectRecord>[]} cursor of literally all objects
    */
   async fetchAllObjects(
-    accessUnpublished?: boolean,
+    accessUnreleased?: boolean,
     page?: number,
     limit?: number,
   ): Promise<{ objects: LearningObject[]; total: number }> {
     try {
       const query: any = {};
 
-      if (!accessUnpublished) {
-        query.published = true;
+      if (!accessUnreleased) {
+        query.status = RELEASED;
       }
 
       let objectCursor = await this.db
@@ -854,13 +855,13 @@ export class MongoDriver implements DataStore {
   async fetchMultipleObjects(
     ids: string[],
     full?: boolean,
-    accessUnpublished?: boolean,
+    accessUnreleased?: boolean,
     orderBy?: string,
     sortType?: 1 | -1,
   ): Promise<LearningObject[]> {
     try {
       const query: any = { _id: { $in: ids } };
-      if (!accessUnpublished) query.published = true;
+      if (!accessUnreleased) query.published = true;
       let objectCursor = await this.db
         .collection(COLLECTIONS.LEARNING_OBJECTS)
         .find<LearningObjectDocument>(query);
@@ -901,7 +902,7 @@ export class MongoDriver implements DataStore {
     level: string[];
     standardOutcomeIDs: string[];
     text: string;
-    accessUnpublished?: boolean;
+    accessUnreleased?: boolean;
     orderBy?: string;
     sortType?: 1 | -1;
     page?: number;
@@ -928,7 +929,7 @@ export class MongoDriver implements DataStore {
       }
 
       let query: any = this.buildSearchQuery(
-        params.accessUnpublished,
+        params.accessUnreleased,
         params.text,
         authorRecords,
         params.status,
@@ -1038,7 +1039,7 @@ export class MongoDriver implements DataStore {
    * Builds query object for Learning Object search
    *
    * @private
-   * @param {boolean} accessUnpublished
+   * @param {boolean} accessUnreleased
    * @param {string} text
    * @param {string[]} authorIDs
    * @param {string[]} length
@@ -1049,7 +1050,7 @@ export class MongoDriver implements DataStore {
    * @memberof MongoDriver
    */
   private buildSearchQuery(
-    accessUnpublished: boolean,
+    accessUnreleased: boolean,
     text: string,
     authors: { _id: string; username: string }[],
     status: string[],
@@ -1062,14 +1063,8 @@ export class MongoDriver implements DataStore {
     released?: boolean,
   ) {
     let query: any = <any>{};
-    if (!accessUnpublished) {
-      query.published = true;
-    }
-    if (released) {
-      // Check that the learning object does not have a download restriction
-      query['lock.restrictions'] = {
-        $nin: [LearningObject.Restriction.DOWNLOAD],
-      };
+    if (!accessUnreleased) {
+      query.status = RELEASED;
     }
     // Search By Text
     if (text || text === '') {

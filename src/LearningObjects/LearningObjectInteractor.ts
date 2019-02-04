@@ -48,9 +48,6 @@ export async function addLearningObject(
       if (!author.emailVerified) {
         object.unpublish();
       }
-      object.lock = {
-        restrictions: [LearningObject.Restriction.DOWNLOAD],
-      };
       const objectInsert = new LearningObject({
         ...object.toPlainObject(),
         author,

@@ -140,7 +140,7 @@ export class MockDataStore implements DataStore {
   fetchLearningObject(
     id: string,
     full?: boolean,
-    accessUnpublished?: boolean,
+    accessUnreleased?: boolean,
   ): Promise<any> {
     switch (id) {
       case SUBMITTABLE_LEARNING_OBJECT.id:
@@ -157,14 +157,14 @@ export class MockDataStore implements DataStore {
   fetchMultipleObjects(
     ids: string[],
     full?: boolean,
-    accessUnpublished?: boolean,
+    accessUnreleased?: boolean,
     orderBy?: string,
     sortType?: number,
   ): Promise<any[]> {
     return Promise.resolve([MOCK_OBJECTS.LEARNING_OBJECT]);
   }
   fetchAllObjects(
-    accessUnpublished?: boolean,
+    accessUnreleased?: boolean,
     page?: number,
     limit?: number,
   ): Promise<{ objects: any[]; total: number }> {
@@ -182,7 +182,7 @@ export class MockDataStore implements DataStore {
     level: string[];
     standardOutcomeIDs: string[];
     text: string;
-    accessUnpublished?: boolean;
+    accessUnreleased?: boolean;
     orderBy?: string;
     sortType?: number;
     page?: number;
