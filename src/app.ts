@@ -1,8 +1,4 @@
-import {
-  ExpressDriver,
-  MongoDriver,
-  S3Driver,
-} from './drivers/drivers';
+import { ExpressDriver, MongoDriver, S3Driver } from './drivers/drivers';
 import {
   DataStore,
   FileManager,
@@ -39,9 +35,8 @@ switch (process.env.NODE_ENV) {
   default:
     break;
 }
-
-const dataStore: DataStore = new MongoDriver(dburi);
 const fileManager: FileManager = new S3Driver();
 const library: LibraryCommunicator = new LibraryDriver();
-// ----------------------------------------------------------------------------------
-ExpressDriver.start(dataStore, fileManager, library);
+MongoDriver.build(dburi).then(dataStore => {
+  ExpressDriver.start(dataStore, fileManager, library);
+});
