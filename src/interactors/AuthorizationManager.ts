@@ -59,7 +59,6 @@ async function checkCollectionWriteAccess(params: { user: UserToken, dataStore: 
   if (!regexp.test(params.objectId)) {
     key = 'name';
   } 
-  console.log(key);
   let object;
   if(key === 'name') {
     object = await params.dataStore.peek<{
