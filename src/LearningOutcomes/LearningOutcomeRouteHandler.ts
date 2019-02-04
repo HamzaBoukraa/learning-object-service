@@ -87,6 +87,7 @@ export function initialize({
   router
     .route('/learning-objects/:id/learning-outcomes')
     .post(addLearningOutcome);
+
   router
     .route('/learning-objects/:id/learning-outcomes/:outcomeId')
     .get(getLearningOutcome)
