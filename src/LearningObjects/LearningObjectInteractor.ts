@@ -108,10 +108,12 @@ export async function updateLearningObject(params: {
           });
       } else {
         error = new Error('User does not has authorization to perform this action');
+        reportError(error);
         return Promise.reject(error);
       }
     } catch (e) {
-      error = new Error(`Problem updating learning object ${params.id}. ${e}`)
+      error = new Error(`Problem updating learning object ${params.id}. ${e}`);
+      reportError(error);
       return Promise.reject(error);
     }
   }
