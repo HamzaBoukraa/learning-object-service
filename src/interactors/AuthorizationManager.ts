@@ -47,7 +47,7 @@ function checkCollectionWriteAccess(user: UserToken, collection: string): boolea
  * @returns if the user is the owner or the object or not
  */
 async function userIsOwner(params: { dataStore: DataStore; user: UserToken; objectId: string; }) {
-  const userId = await params.dataStore.findUser(params.user.name);
+  const userId = await params.dataStore.findUser(params.user.username);
   const object = await params.dataStore.peek<{
     authorID: string;
   }>({

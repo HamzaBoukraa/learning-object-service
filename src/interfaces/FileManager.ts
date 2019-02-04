@@ -8,12 +8,6 @@ export interface FileManager {
   upload(params: { file: FileUpload }): Promise<string>;
   delete(params: { path: string }): Promise<void>;
   deleteAll(params: { path: string }): Promise<void>;
-  processMultipart(params: {
-    file: MultipartFileUpload;
-    finish?: boolean;
-    completedPartList?: CompletedPartList;
-  }): Promise<MultipartUploadData>;
-  cancelMultipart(params: { path: string; uploadId: string }): Promise<void>;
   streamFile(params: { path: string }): Readable;
   hasAccess(path: string): Promise<boolean>;
   initMultipartUpload(params: { path: string }): Promise<string>;

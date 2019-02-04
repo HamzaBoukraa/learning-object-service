@@ -1,6 +1,6 @@
 {
   "name": "learning-object-service",
-  "version": "1.11.0",
+  "version": "2.1.0",
   "description": "Learning Object Microservice.",
   "main": "app.ts",
   "scripts": {
@@ -23,8 +23,8 @@
   },
   "homepage": "https://github.com/Cyber4All/learning-object-service#readme",
   "dependencies": {
-    "@cyber4all/clark-entity": "^4.0.0-rc.14.0",
-    "@cyber4all/clark-taxonomy": "^4.0.0",
+    "@cyber4all/clark-entity": "^4.0.0",
+    "@cyber4all/clark-taxonomy": "^4.0.2",
     "aws-sdk": "^2.211.0",
     "chai": "^4.1.2",
     "cookie-parser": "^1.4.3",
@@ -68,6 +68,7 @@
     "@types/request-promise": "^4.1.39",
     "@types/stemmer": "^1.0.1",
     "@types/striptags": "^3.1.1",
+    "@types/supertest": "^2.0.7",
     "@types/tape": "^4.2.31",
     "@types/uuid": "^3.4.4",
     "gulp": "^3.9.1",
@@ -75,6 +76,7 @@
     "gulp-typescript": "^4.0.2",
     "jest": "^23.4.0",
     "mongodb-memory-server": "^2.7.4",
+    "supertest": "^3.3.0",
     "tape": "^4.8.0",
     "ts-jest": "^23.0.0",
     "tslint": "^5.8.0",

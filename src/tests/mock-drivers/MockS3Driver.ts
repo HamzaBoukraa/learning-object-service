@@ -1,13 +1,24 @@
 import { FileManager } from '../../interfaces/interfaces';
 import {
-    MultipartFileUpload,
     FileUpload, CompletedPartList,
-    MultipartUploadData,
 } from '../../interfaces/FileManager';
 import { MOCK_OBJECTS } from '../mocks';
+import { CompletedPart } from 'aws-sdk/clients/s3';
 
 
 export class MockS3Driver implements FileManager {
+    streamFile(params: { path: string }): import('stream').Readable {
+        throw new Error('Method not implemented.');
+    }
+    hasAccess(path: string): Promise<boolean> {
+        throw new Error('Method not implemented.');
+    }
+    initMultipartUpload(params: { path: string; }): Promise<string> {
+        throw new Error('Method not implemented.');
+    }
+    abortMultipartUpload(params: { path: string; uploadId: string; }): Promise<void> {
+        throw new Error('Method not implemented.');
+    }
     upload(params: { file: FileUpload; }): Promise<string> {
         return Promise.resolve(MOCK_OBJECTS.S3_LOCATION);
     }
@@ -19,16 +30,19 @@ export class MockS3Driver implements FileManager {
     deleteAll(params: { path: string; }): Promise<void> {
         return Promise.resolve();
     }
-
-    processMultipart(params: {
-        file: MultipartFileUpload,
-        finish?: boolean,
-        completedPartList?: CompletedPartList,
-    }): Promise<MultipartUploadData> {
-        return Promise.resolve(MOCK_OBJECTS.S3_MULTIPART_UPLOAD_DATA);
-    }
-
-    cancelMultipart(params: { path: string; uploadId: string; }): Promise<void> {
-        return Promise.resolve();
-    }
+    uploadPart(params: {
+        path: string;
+        data: any;
+        partNumber: number;
+        uploadId: string;
+      }): Promise<CompletedPart> {
+        throw new Error('Method not implemented.');
+      }
+      completeMultipartUpload(params: {
+        path: string;
+        uploadId: string;
+        completedPartList: CompletedPartList;
+      }): Promise<string> {
+        throw new Error('Method not implemented.');
+      }
 }

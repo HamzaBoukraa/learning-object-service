@@ -120,7 +120,7 @@ export class ExpressAdminRouteDriver {
       });
     router.patch(
       '/users/:username/learning-objects/:learningObjectName/publish',
-      async (_, res) => {
+      async (req, res) => {
         // Respond to clients that this functionality is now gone
         res.sendStatus(410);
       },
