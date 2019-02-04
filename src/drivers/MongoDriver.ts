@@ -778,7 +778,7 @@ export class MongoDriver implements DataStore {
       full,
     );
 
-    if (!accessUnreleased && !learningObject.published)
+    if (!accessUnreleased && learningObject.status!==RELEASED)
       return Promise.reject(
         'User does not have access to the requested resource.',
       );
