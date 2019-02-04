@@ -150,19 +150,14 @@ export async function deleteLearningObject(
     await library.cleanObjectsFromLibraries([learningObjectID]);
     await dataStore.deleteLearningObject(learningObjectID);
     await dataStore.deleteChangelog(learningObjectID);
-    if (learningObject.materials.files.length) {
-      const path = `${username}/${learningObjectID}/`;
-      await fileManager.deleteAll({ path });
-    }
-    library.cleanObjectsFromLibraries([learningObjectID]);
-    return Promise.resolve();
-
     const path = `${username}/${learningObjectID}/`;
     fileManager.deleteAll({ path }).catch(e => {
       console.error(
         `Problem deleting files for ${learningObjectName}: ${path}. ${e}`,
       );
     });
+    library.cleanObjectsFromLibraries([learningObjectID]);
+    return Promise.resolve();   
   } catch (error) {
     return Promise.reject(`Problem deleting Learning Object. Error: ${error}`);
   }

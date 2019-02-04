@@ -196,7 +196,6 @@ export class ExpressRouteDriver {
     });
 
     LearningObjectStatsRouteHandler.initialize({
-      router,
       dataStore: this.dataStore,
     });
 
