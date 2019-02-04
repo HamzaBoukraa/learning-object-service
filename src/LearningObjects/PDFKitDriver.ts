@@ -452,6 +452,7 @@ function appendGradientHeader(params: {
   textYStart?: number;
   textXStart?: number;
 }) {
+  // @ts-ignore gradientRGB is guaranteed to match params required in linearGradient call signature
   const grad = params.doc.linearGradient(...params.gradientRGB);
   grad.stop(0, PDFColors.DARK_BLUE).stop(1, PDFColors.LIGHT_BLUE);
   params.doc

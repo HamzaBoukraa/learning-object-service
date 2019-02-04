@@ -8,14 +8,14 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "lib": [
-      "es2017",
+      "es7",
       "dom"
     ],
     "noImplicitAny": true,
     "suppressImplicitAnyIndexErrors": true,
     "downlevelIteration": true,
     "allowUnusedLabels": false,
-    "types": [ "jest" ]
+    "types": ["jest"]
   }
-  
+
 }

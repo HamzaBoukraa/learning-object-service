@@ -10,8 +10,11 @@ import { UserToken } from '../types';
 import { LearningObjectQuery } from '../interfaces/DataStore';
 import { DZFile, FileUpload } from '../interfaces/FileManager';
 import { processMultipartUpload } from '../FileManager/FileInteractor';
-import { hasLearningObjectWriteAccess, hasMultipleLearningObjectWriteAccesses } from './AuthorizationManager';
+import { hasMultipleLearningObjectWriteAccesses } from './AuthorizationManager';
 import { reportError } from '../drivers/SentryConnector';
+import {
+  updateObjectLastModifiedDate, updateParentsDate
+} from '../LearningObjects/LearningObjectInteractor';
 
 // file size is in bytes
 const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
@@ -123,7 +126,6 @@ export class LearningObjectInteractor {
           }),
         );
       }
-
       return summary;
     } catch (e) {
       return Promise.reject(`Problem loading summary. Error: ${e}`);
@@ -424,9 +426,13 @@ export class LearningObjectInteractor {
     loFile: LearningObject.Material.File;
   }): Promise<void> {
     try {
-      return await params.dataStore.addToFiles({
+      await params.dataStore.addToFiles({
         id: params.id,
         loFile: params.loFile,
+      });
+      await updateObjectLastModifiedDate({
+        dataStore: params.dataStore,
+        id: params.id,
       });
     } catch (e) {
       return Promise.reject(e);
@@ -463,34 +469,47 @@ export class LearningObjectInteractor {
     user: UserToken
   }): Promise<void> {
     try {
-        const hasAccess = await hasMultipleLearningObjectWriteAccesses(params.user, params.dataStore, params.learningObjectNames); 
-        if (hasAccess) {
-          const learningObjectIDs: string[] = await Promise.all(
-            params.learningObjectNames.map(async (name: string) => {
-              const object = await params.dataStore.peek<{
-                id: string;
-              }>({
-                query: { 'name': name },
-                fields: {},
-              });
-              return object.id;
-            }),
-          );
-          await params.library.cleanObjectsFromLibraries(learningObjectIDs);
-          await params.dataStore.deleteMultipleLearningObjects(learningObjectIDs);
-
-          learningObjectIDs.forEach(id => {
-            const path = `${params.user.username}/${id}/`;
-            params.fileManager.deleteAll({ path }).catch(e => {
-              reportError(new Error(`Problem deleting files at ${path}. ${e}`));
+      const hasAccess = await hasMultipleLearningObjectWriteAccesses(params.user, params.dataStore, params.learningObjectNames); 
+      if (hasAccess) {
+        // Get LearningObject ids
+        const objectRefs: {
+          id: string;
+          parentIds: string[];
+        }[] = await Promise.all(
+          params.learningObjectNames.map(async (name: string) => {
+            const id = await params.dataStore.findLearningObject(params.user.username, name);
+            const parentIds = await params.dataStore.findParentObjectIds({
+              childId: id,
             });
+            return { id, parentIds };
+          }),
+        );
+        const objectIds = objectRefs.map(obj => obj.id);
+        // Remove objects from library
+        await params.library.cleanObjectsFromLibraries(objectIds);
+        // Delete objects from datastore
+        await params.dataStore.deleteMultipleLearningObjects(objectIds);
+        // For each object id
+        objectRefs.forEach(async obj => {
+          // Attempt to delete files
+          const path = `${params.user.username}/${obj.id}/`;
+          params.fileManager.deleteAll({ path }).catch(e => {
+            console.error(`Problem deleting files at ${path}. ${e}`);
           });
-      } else {
+          // Update parents' dates
+          updateParentsDate({
+            dataStore: params.dataStore,
+            parentIds: obj.parentIds,
+            childId: obj.id,
+            date: Date.now().toString(),
+          });
+        });
+      } else { 
         return Promise.reject(new Error('User does not have authorization to perform this action'));
       }
-    } catch (e) {
-      reportError(e);
-      return Promise.reject(new Error(`Problem deleting Learning Objects. Error: ${e}`));
+    } catch (error) {
+      reportError(error);
+      return Promise.reject(new Error(`Problem deleting Learning Objects. Error: ${error}`));
     }
   }
 
@@ -703,7 +722,12 @@ export class LearningObjectInteractor {
         params.username,
         params.parentName,
       );
-      return params.dataStore.setChildren(parentID, params.children);
+      await params.dataStore.setChildren(parentID, params.children);
+      await updateObjectLastModifiedDate({
+        dataStore: params.dataStore,
+        id: parentID,
+        date: Date.now().toString(),
+      });
     } catch (e) {
       return Promise.reject(`Problem adding child. Error: ${e}`);
     }
@@ -720,7 +744,12 @@ export class LearningObjectInteractor {
         params.username,
         params.parentName,
       );
-      return params.dataStore.deleteChild(parentID, params.childId);
+      await params.dataStore.deleteChild(parentID, params.childId);
+      await updateObjectLastModifiedDate({
+        dataStore: params.dataStore,
+        id: parentID,
+        date: Date.now().toString(),
+      });
     } catch (e) {
       return Promise.reject(`Problem removing child. Error: ${e}`);
     }

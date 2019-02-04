@@ -63,16 +63,6 @@ export const MOCK_OBJECTS = {
     unpublish: () => {
       this.published = false;
     },
-    REQUIRED_ACCESS_GROUPS_CURATOR: ['admin', 'editor', 'curator'],
-    REQUIRED_ACCESS_GROUPS_CURATOR_UNSORTED: ['curator', 'editor', 'admin'],
-    REQUIRED_ACCESS_GROUPS_REVIEWER: ['admin', 'editor', 'reviewer'],
-    REQUIRED_ACCESS_GROUPS_REVIEWER_UNSORTED: ['reviewer', 'editor', 'admin'],
-    ACCESS_GROUPS: ['admin', 'editor', 'curator@secj'],
-    ACCESS_GROUPS_MULTIPLE_CURATORS_UNSORTED: ['curator@secj', 'editor', 'curator@nccp'],
-    ACCESS_GROUPS_CURATOR: ['curator@secj'],
-    ACCESS_GROUPS_REVIEWER_SECJ: ['reviewer@secj'],
-    ACCESS_GROUPS_REVIEWER_NCCP: ['reviewer@nccp'],
-    ABV_COLLECTION_NAME: 'nccp',
     LEARNING_OBJECT_STATS: {
         downloads: 1,
         saves: 1,
