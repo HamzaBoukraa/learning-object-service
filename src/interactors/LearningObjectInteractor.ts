@@ -488,12 +488,11 @@ export class LearningObjectInteractor {
           });
       } else {
         error = new Error('User does not have authorization to perform this action');
-        reportError(error);
         return Promise.reject(error);
       }
     } catch (e) {
       error = new Error(`Problem deleting Learning Objects. Error: ${e}`);
-      reportError(error);
+      reportError(e);
       return Promise.reject(error);
     }
   }

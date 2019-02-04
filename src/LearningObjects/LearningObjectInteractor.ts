@@ -108,12 +108,11 @@ export async function updateLearningObject(params: {
           });
       } else {
         error = new Error('User does not have authorization to perform this action');
-        reportError(error);
         return Promise.reject(error);
       }
     } catch (e) {
       error = new Error(`Problem updating learning object ${params.id}. ${e}`);
-      reportError(error);
+      reportError(e);
       return Promise.reject(error);
     }
   }
@@ -165,13 +164,12 @@ export async function deleteLearningObject(params: {
       });
     } else {
       error = new Error('User does not have authorization to perform this action');
-      reportError(error);
       return Promise.reject(error);
 
     } 
   } catch (e) {
     error = new Error(`Problem deleting Learning Object. Error: ${e}`);
-    reportError(error);
+    reportError(e);
     return Promise.reject(error);
   }
 }
