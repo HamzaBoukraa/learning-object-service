@@ -487,7 +487,7 @@ export class LearningObjectInteractor {
             });
           });
       } else {
-        error = new Error('User does not has authorization to perform this action');
+        error = new Error('User does not have authorization to perform this action');
         reportError(error);
         return Promise.reject(error);
       }
