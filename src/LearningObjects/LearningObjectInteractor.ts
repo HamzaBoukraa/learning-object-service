@@ -92,7 +92,6 @@ export async function updateLearningObject(params: {
       username: params.user.username,
     });
   }
-  let error;
   try {
       const hasAccess = await hasLearningObjectWriteAccess(params.user, params.dataStore, params.id); 
       if(hasAccess) {
@@ -107,13 +106,11 @@ export async function updateLearningObject(params: {
             updates,
           });
       } else {
-        error = new Error('User does not have authorization to perform this action');
-        return Promise.reject(error);
+        return Promise.reject(new Error('User does not have authorization to perform this action'));
       }
     } catch (e) {
-      error = new Error(`Problem updating learning object ${params.id}. ${e}`);
       reportError(e);
-      return Promise.reject(error);
+      return Promise.reject(new Error(`Problem updating learning object ${params.id}. ${e}`));
     }
   }
 
@@ -143,7 +140,6 @@ export async function deleteLearningObject(params: {
   library: LibraryCommunicator,
   user: UserToken
 }): Promise<void> {
-  let error;
   try {
     const hasAccess = await hasLearningObjectWriteAccess(params.user, params.dataStore, params.learningObjectName); 
     if (hasAccess) {
@@ -163,14 +159,12 @@ export async function deleteLearningObject(params: {
         );
       });
     } else {
-      error = new Error('User does not have authorization to perform this action');
-      return Promise.reject(error);
+      return Promise.reject(new Error('User does not have authorization to perform this action'));
 
     } 
   } catch (e) {
-    error = new Error(`Problem deleting Learning Object. Error: ${e}`);
     reportError(e);
-    return Promise.reject(error);
+    return Promise.reject(new Error(`Problem deleting Learning Object. Error: ${e}`));
   }
 }
 

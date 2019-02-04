@@ -462,7 +462,6 @@ export class LearningObjectInteractor {
     learningObjectNames: string[],
     user: UserToken
   }): Promise<void> {
-    let error;
     try {
         const hasAccess = await hasMultipleLearningObjectWriteAccesses(params.user, params.dataStore, params.learningObjectNames); 
         if (hasAccess) {
@@ -487,13 +486,11 @@ export class LearningObjectInteractor {
             });
           });
       } else {
-        error = new Error('User does not have authorization to perform this action');
-        return Promise.reject(error);
+        return Promise.reject(new Error('User does not have authorization to perform this action'));
       }
     } catch (e) {
-      error = new Error(`Problem deleting Learning Objects. Error: ${e}`);
       reportError(e);
-      return Promise.reject(error);
+      return Promise.reject(new Error(`Problem deleting Learning Objects. Error: ${e}`));
     }
   }
 
