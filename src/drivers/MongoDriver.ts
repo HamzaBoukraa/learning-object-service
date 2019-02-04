@@ -37,7 +37,7 @@ export enum COLLECTIONS {
   LO_COLLECTIONS = 'collections',
   MULTIPART_STATUSES = 'multipart-upload-statuses',
 }
-const RELEASED = 'released'; 
+const RELEASED = 'released';
 
 export class MongoDriver implements DataStore {
   submissionStore: SubmissionDatastore;
@@ -455,9 +455,9 @@ export class MongoDriver implements DataStore {
           return res.result.nModified > 0
             ? Promise.resolve()
             : Promise.reject({
-                message: `${childId} is not a child of Object ${parentId}`,
-                status: 404,
-              });
+              message: `${childId} is not a child of Object ${parentId}`,
+              status: 404,
+            });
         });
     } catch (error) {
       if (error.message && error.status) {
@@ -806,7 +806,7 @@ export class MongoDriver implements DataStore {
         .find<LearningObjectDocument>(query);
       const totalRecords = await objectCursor.count();
       objectCursor = this.applyCursorFilters(objectCursor, { page, limit });
-
+      console.log(query)
       const docs = await objectCursor.toArray();
       const learningObjects: LearningObject[] = await this.bulkGenerateLearningObjects(
         docs,
@@ -861,7 +861,7 @@ export class MongoDriver implements DataStore {
   ): Promise<LearningObject[]> {
     try {
       const query: any = { _id: { $in: ids } };
-      if (!accessUnreleased) query.published = true;
+      if (!accessUnreleased) query.status = RELEASED;
       let objectCursor = await this.db
         .collection(COLLECTIONS.LEARNING_OBJECTS)
         .find<LearningObjectDocument>(query);
@@ -1240,8 +1240,8 @@ export class MongoDriver implements DataStore {
         skip !== undefined
           ? cursor.skip(skip).limit(filters.limit)
           : filters.limit
-          ? cursor.limit(filters.limit)
-          : cursor;
+            ? cursor.limit(filters.limit)
+            : cursor;
 
       // SortBy
       cursor = filters.orderBy
@@ -1265,11 +1265,11 @@ export class MongoDriver implements DataStore {
   ): Promise<LearningOutcomeDocument[]> {
     return standardOutcomeIDs
       ? await this.db
-          .collection(COLLECTIONS.LEARNING_OUTCOMES)
-          .find<LearningOutcomeDocument>({
-            mappings: { $all: standardOutcomeIDs },
-          })
-          .toArray()
+        .collection(COLLECTIONS.LEARNING_OUTCOMES)
+        .find<LearningOutcomeDocument>({
+          mappings: { $all: standardOutcomeIDs },
+        })
+        .toArray()
       : null;
   }
   /**
@@ -1298,15 +1298,15 @@ export class MongoDriver implements DataStore {
     }
     return author || text
       ? await this.db
-          .collection(COLLECTIONS.USERS)
-          .find<{ _id: string; username: string }>(query)
-          .project({
-            _id: 1,
-            username: 1,
-            score: { $meta: 'textScore' },
-          })
-          .sort({ score: { $meta: 'textScore' } })
-          .toArray()
+        .collection(COLLECTIONS.USERS)
+        .find<{ _id: string; username: string }>(query)
+        .project({
+          _id: 1,
+          username: 1,
+          score: { $meta: 'textScore' },
+        })
+        .sort({ score: { $meta: 'textScore' } })
+        .toArray()
       : Promise.resolve(null);
   }
   /**
