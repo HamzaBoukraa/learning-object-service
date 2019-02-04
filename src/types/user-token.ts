@@ -3,6 +3,6 @@ export interface UserToken {
   name: string;
   email: string;
   organization: string;
-  emailVerified: string;
+  emailVerified: boolean;
   accessGroups: string[];
 }

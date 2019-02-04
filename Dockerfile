@@ -1,9 +1,13 @@
 # Anything beyond local dev should pin this to a specific version at https://hub.docker.com/_/node/
 FROM node:8 as builder
 
+ARG UNIT_TEST=0
+
 ARG CLARK_DB_URI_TEST
+ARG CLARK_DB_NAME
 ARG KEY=TEST_SECRET
 ARG ISSUER=TEST_ISSUER
+ARG LEARNING_OBJECT_SERVICE_URI
 ARG SERVICE_KEY=THIS_IS_A_SERVICE_KEY
 
 RUN mkdir -p /opt/app
@@ -13,7 +17,9 @@ RUN mkdir -p /opt/app
 
 # install dependencies in a different location for easier app bind mounting for local development
 WORKDIR /opt
-COPY package.json package-lock.json* ./
+COPY package.json package-lock.json* jest.config.js tsconfig.json ./
+RUN mkdir test_environment
+COPY test_environment ./test_environment
 RUN npm install && npm cache clean --force
 ENV PATH /opt/node_modules/.bin:$PATH
 
@@ -25,6 +31,9 @@ COPY . /opt/app
 RUN npm run build
 
 FROM node:8 as tester
+
+ARG KEY=TEST_SECRET
+ARG ISSUER=TEST_ISSUER
 
 COPY --from=builder . .
 ENV PATH /opt/node_modules/.bin:$PATH
@@ -52,5 +61,5 @@ RUN npm uninstall --only=dev
 
 WORKDIR /opt/app/dist
 # Run the container! Using the node command instead of npm allows for better passing of signals
-# and graceful shutdown. Further examination would be useful here
+# and graceful shutdown. Further examination would be useful here.
 CMD [ "node", "app.js" ] 

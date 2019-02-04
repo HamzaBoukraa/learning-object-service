@@ -12,6 +12,75 @@ import { LearningObjectError } from '../errors';
 import { hasLearningObjectWriteAccess } from '../interactors/AuthorizationManager';
 
 /**
+ * Performs update operation on learning object's date
+ *
+ * @param {{
+ *   dataStore: DataStore;
+ *   id: string; [Id of the LearningObject being updated]
+ *   date?: string; [Timestamp to replace LearningObjects' current date with]
+ * }} params
+ */
+export async function updateObjectLastModifiedDate(params: {
+  dataStore: DataStore;
+  id: string;
+  date?: string;
+}): Promise<void> {
+  const lastModified = params.date || Date.now().toString();
+  await params.dataStore.editLearningObject({
+    id: params.id,
+    updates: { date: lastModified },
+  });
+  return updateParentsDate({
+    dataStore: params.dataStore,
+    childId: params.id,
+    date: lastModified,
+  });
+}
+
+/**
+ * Recursively updates parent objects' dates
+ *
+ * @param {{
+ *   dataStore: DataStore;
+ *   childId: string; [Id of child LearningObject]
+ *   parentIds?: string[]; [Ids of parent LearningObjects]
+ *   date: string; [Timestamp to replace LearningObjects' current date with]
+ * }} params
+ * @returns {Promise<void>}
+ */
+export async function updateParentsDate(params: {
+  dataStore: DataStore;
+  childId: string;
+  parentIds?: string[];
+  date: string;
+}): Promise<void> {
+  let { dataStore, childId, parentIds, date } = params;
+  if (parentIds == null) {
+    parentIds = await params.dataStore.findParentObjectIds({
+      childId,
+    });
+  }
+
+  if (parentIds && parentIds.length) {
+    await Promise.all([
+      // Perform update of all parent dates
+      dataStore.updateMultipleLearningObjects({
+        ids: parentIds,
+        updates: { date },
+      }),
+      // Perform update of each object's parents' dates
+      ...parentIds.map(id =>
+        updateParentsDate({
+          dataStore,
+          date,
+          childId: id,
+        }),
+      ),
+    ]);
+  }
+}
+
+/**
  * Add a new learning object to the database.
  * NOTE: this function only adds basic fields;
  *       the user.outcomes field is ignored
@@ -231,6 +300,10 @@ export async function updateFileDescription(params: {
       fileId: params.fileId,
       description: params.description,
     });
+    await updateObjectLastModifiedDate({
+      dataStore: params.dataStore,
+      id: params.objectId,
+    });
   } catch (e) {
     return Promise.reject(`Problem updating file description. Error: ${e}`);
   }
@@ -267,7 +340,11 @@ export async function removeFile(params: {
         objectId: params.objectId,
         fileId: params.fileId,
       });
-      return await deleteFile(params.fileManager, path);
+      await deleteFile(params.fileManager, path);
+      await updateObjectLastModifiedDate({
+        dataStore: params.dataStore,
+        id: params.objectId,
+      });
     }
   } catch (e) {
     return Promise.reject(`Problem deleting file. Error: ${e}`);
@@ -285,7 +362,7 @@ export async function removeFile(params: {
  * @returns {Promise<void>}
  * @memberof LearningObjectInteractor
  */
-export async function deleteFile(
+async function deleteFile(
   fileManager: FileManager,
   path: string,
 ): Promise<void> {

@@ -9,7 +9,7 @@ describe('#hasLearningObjectWriteAccess', () => {
     name: '',
     email: '',
     organization: '',
-    emailVerified: '',
+    emailVerified: true,
     accessGroups: [],
   };
   it('should return true for a user with an accessGroup of admin', () => {
