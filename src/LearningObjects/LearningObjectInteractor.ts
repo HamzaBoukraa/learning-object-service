@@ -106,7 +106,7 @@ export async function updateLearningObject(params: {
             updates,
           });
       } else {
-        return Promise.reject('Must be author to update this object');
+        return Promise.reject(new Error('Must be author to update this object'));
       }
     } catch (e) {
       return Promise.reject(`Problem updating learning object ${params.id}. ${e}`);
