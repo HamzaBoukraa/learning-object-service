@@ -53,6 +53,7 @@ export class ExpressDriver {
     // Set up cookie parser
     this.app.use(cookieParser());
 
+    // Handles any errors that may occur when processing the token by passing execution to the next handler. This prevents this error from being passed to other error handlers.
     this.app.use(processToken, (error: any, req: any, res: any, next: any) =>
       next(),
     );
