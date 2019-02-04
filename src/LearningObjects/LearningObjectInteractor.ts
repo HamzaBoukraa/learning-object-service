@@ -68,7 +68,7 @@ export async function updateParentsDate(params: {
         ids: parentIds,
         updates: { date },
       }),
-      // Perform update parents' parents' dates
+      // Perform update of each object's parents' dates
       ...parentIds.map(id =>
         updateParentsDate({
           dataStore,
