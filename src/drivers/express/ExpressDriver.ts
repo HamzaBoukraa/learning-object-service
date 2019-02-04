@@ -29,9 +29,7 @@ export class ExpressDriver {
     fileManager: FileManager,
     library: LibraryCommunicator,
   ) {
-    raven
-      .config(process.env.SENTRY_DSN)
-      .install();
+    raven.config(process.env.SENTRY_DSN).install();
 
     this.app.use(raven.requestHandler());
     this.app.use(raven.errorHandler());
@@ -55,10 +53,16 @@ export class ExpressDriver {
     // Set up cookie parser
     this.app.use(cookieParser());
 
-    this.app.use(processToken);
+    // Handles any errors that may occur when processing the token by passing execution to the next handler. This prevents this error from being passed to other error handlers.
+    this.app.use(processToken, (error: any, req: any, res: any, next: any) =>
+      next(),
+    );
 
     // Set our public api routes
-    this.app.use('/', ExpressRouteDriver.buildRouter(dataStore, library, fileManager));
+    this.app.use(
+      '/',
+      ExpressRouteDriver.buildRouter(dataStore, library, fileManager),
+    );
 
     // Set Validation Middleware
     this.app.use(enforceAuthenticatedAccess);
