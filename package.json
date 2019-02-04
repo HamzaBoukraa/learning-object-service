@@ -1,12 +1,12 @@
 {
   "name": "learning-object-service",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "description": "Learning Object Microservice.",
   "main": "app.ts",
   "scripts": {
     "start": "npm run gulp-tsc",
     "build": "node_modules/.bin/gulp tsc",
-    "test": "node_modules/.bin/jest --verbose  --coverage",
+    "test": "node_modules/.bin/jest --verbose  --coverage --detectOpenHandles",
     "gulp-tsc": "node_modules/.bin/gulp start",
     "pack": "npm run build && cp ./package.json ./dist && cp -r ./.ebextensions ./dist && cd ./dist && zip -r ../dist.zip  ./* & cd ..",
     "zip": "cp ./package.json ./dist && cp -r ./.ebextensions ./dist && cd ./dist && zip -r ../dist.zip  ./* & cd ..",
@@ -75,6 +75,7 @@
     "gulp-nodemon": "^2.2.1",
     "gulp-typescript": "^4.0.2",
     "jest": "^23.4.0",
+    "mongodb-memory-server": "^2.7.4",
     "supertest": "^3.3.0",
     "tape": "^4.8.0",
     "ts-jest": "^23.0.0",

@@ -16,6 +16,14 @@ const BLOOMS = {
 
 export class LearningObjectStatStore implements LearningObjectStatDatastore {
   constructor(private db: Db) {}
+
+  /**
+   * Aggregates stats for all learning objects into an object with total downloads, saves, released, length distribution, and bloom distribution
+   *
+   * @param {{ query: any }} params
+   * @returns {Promise<LearningObjectStats>}
+   * @memberof LearningObjectStatStore
+   */
   async fetchStats(params: { query: any }): Promise<LearningObjectStats> {
     // Perform aggregation on Learning Objects collection to get length distribution, total number of objects, and number of released objects
     const statCursor = this.db
