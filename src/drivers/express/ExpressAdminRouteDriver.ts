@@ -43,6 +43,7 @@ export class ExpressAdminRouteDriver {
 
         const name = req.query.name;
         const author = req.query.author;
+        const collection = req.query.collection;
         let length = req.query.length;
         length = length && !Array.isArray(length) ? [length] : length;
         let level = req.query.level;
@@ -68,7 +69,8 @@ export class ExpressAdminRouteDriver {
           standardOutcomes ||
           text ||
           orderBy ||
-          sortType
+          sortType ||
+          collection
         ) {
           learningObjects = await AdminLearningObjectInteractor.searchObjects(
             this.dataStore,
@@ -83,6 +85,7 @@ export class ExpressAdminRouteDriver {
             sortType,
             page,
             limit,
+            collection
           );
         } else {
           learningObjects = await AdminLearningObjectInteractor.fetchAllObjects(
