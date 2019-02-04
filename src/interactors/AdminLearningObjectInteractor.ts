@@ -59,6 +59,7 @@ export class AdminLearningObjectInteractor {
     sortType?: number,
     page?: number,
     limit?: number,
+    collection?: string
   ): Promise<any> {
     try {
       const accessUnpublished = true;
@@ -68,7 +69,7 @@ export class AdminLearningObjectInteractor {
         {
           name,
           author,
-          collection: undefined,
+          collection: collection,
           status: undefined,
           length,
           level,
