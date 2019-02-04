@@ -84,6 +84,10 @@ export async function updateLearningObject(params: {
   id: string;
   updates: { [index: string]: any };
 }): Promise<void> {
+  if(params.updates.id) {
+    delete params.updates.id;
+  }
+  
   if (params.updates.name) {
     await checkNameExists({
       id: params.id,
