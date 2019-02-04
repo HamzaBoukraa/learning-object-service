@@ -12,11 +12,14 @@ import {
 } from '../drivers';
 import * as http from 'http';
 import * as logger from 'morgan';
-import { enforceTokenAccess } from '../../middleware/jwt.config';
 import * as cors from 'cors';
 import * as cookieParser from 'cookie-parser';
-import { enforceAdminAccess } from '../../middleware/admin-access';
 import * as raven from 'raven';
+import {
+  enforceAuthenticatedAccess,
+  enforceAdminAccess,
+  processToken,
+} from '../../middleware';
 
 export class ExpressDriver {
   static app = express();
@@ -26,9 +29,7 @@ export class ExpressDriver {
     fileManager: FileManager,
     library: LibraryCommunicator,
   ) {
-    raven
-      .config(process.env.SENTRY_DSN)
-      .install();
+    raven.config(process.env.SENTRY_DSN).install();
 
     this.app.use(raven.requestHandler());
     this.app.use(raven.errorHandler());
@@ -52,11 +53,19 @@ export class ExpressDriver {
     // Set up cookie parser
     this.app.use(cookieParser());
 
+    // Handles any errors that may occur when processing the token by passing execution to the next handler. This prevents this error from being passed to other error handlers.
+    this.app.use(processToken, (error: any, req: any, res: any, next: any) =>
+      next(),
+    );
+
     // Set our public api routes
-    this.app.use('/', ExpressRouteDriver.buildRouter(dataStore, library, fileManager));
+    this.app.use(
+      '/',
+      ExpressRouteDriver.buildRouter(dataStore, library, fileManager),
+    );
 
     // Set Validation Middleware
-    this.app.use(enforceTokenAccess);
+    this.app.use(enforceAuthenticatedAccess);
     this.app.use((error: any, req: any, res: any, next: any) => {
       if (error.name === 'UnauthorizedError') {
         res.status(401).send('Invalid Access Token');
