@@ -1,6 +1,6 @@
 {
   "name": "learning-object-service",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Learning Object Microservice.",
   "main": "app.ts",
   "scripts": {
@@ -24,7 +24,7 @@
   "homepage": "https://github.com/Cyber4All/learning-object-service#readme",
   "dependencies": {
     "@cyber4all/clark-entity": "^4.0.0",
-    "@cyber4all/clark-taxonomy": "^4.0.0",
+    "@cyber4all/clark-taxonomy": "^4.0.2",
     "aws-sdk": "^2.211.0",
     "chai": "^4.1.2",
     "cookie-parser": "^1.4.3",
