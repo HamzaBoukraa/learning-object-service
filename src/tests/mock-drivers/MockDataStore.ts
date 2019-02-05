@@ -11,9 +11,7 @@ import {
   CompletedPart,
 } from '../../interfaces/FileManager';
 import {
-  MOCK_OBJECTS,
-  SUBMITTABLE_LEARNING_OBJECT,
-  INVALID_LEARNING_OBJECTS,
+  MOCK_OBJECTS, SUBMITTABLE_LEARNING_OBJECT, INVALID_LEARNING_OBJECTS,
 } from '../mocks';
 import { LearningObjectUpdates } from '../../types';
 import {

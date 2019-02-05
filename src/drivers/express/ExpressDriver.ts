@@ -17,7 +17,6 @@ import * as cookieParser from 'cookie-parser';
 import * as raven from 'raven';
 import {
   enforceAuthenticatedAccess,
-  enforceAdminAccess,
   processToken,
 } from '../../middleware';
 
@@ -79,7 +78,6 @@ export class ExpressDriver {
     );
 
     // Set admin api routes
-    this.app.use(enforceAdminAccess);
     this.app.use(
       '/admin',
       ExpressAdminRouteDriver.buildRouter(dataStore, fileManager, library),
