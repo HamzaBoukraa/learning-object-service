@@ -137,6 +137,10 @@ export function initializePrivate({
         status = 409;
       }
 
+      if (e.message === LearningObjectError.INVALID_ACCESS) {
+        status = 401;
+      }
+
       res.status(status).send(e);
     }
   };
@@ -154,7 +158,13 @@ export function initializePrivate({
       res.sendStatus(200);
     } catch (e) {
       console.error(e);
-      res.status(500).send(e);
+
+      let status = 500;
+
+      if (e.message === LearningObjectError.INVALID_ACCESS) {
+        status = 401;
+      }
+      res.status(status).send(e);
     }
   };
   router.route('/learning-objects').post(addLearningObject);
