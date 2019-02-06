@@ -16,8 +16,14 @@ enum UserRole {
  * @param user information about the user who has initiated a privileged write operation
  * @param collection the name of the collection
  */
-export async function hasLearningObjectWriteAccess(user: UserToken, dataStore: DataStore, objectId: string): Promise<boolean> {
-  return hasPrivilegedAccess(user, dataStore, objectId) ? true : await userIsOwner({dataStore, user, objectId});
+export async function hasLearningObjectWriteAccess(
+  user: UserToken,
+  dataStore: DataStore,
+  objectId: string,
+): Promise<boolean> {
+  return hasPrivilegedWriteAccess(user, dataStore, objectId)
+    ? true
+    : await userIsOwner({ dataStore, user, objectId });
 }
 
 /**
@@ -45,12 +51,16 @@ export async function hasMultipleLearningObjectWriteAccesses(user: UserToken, da
  * @param user information about the user who has initiated a privileged write operation
  * @param collection the name of the collection
  */
-function hasPrivilegedAccess(user: UserToken, dataStore: DataStore, objectId: string) {
+function hasPrivilegedWriteAccess(
+  user: UserToken,
+  dataStore: DataStore,
+  objectId: string,
+) {
   if (user.accessGroups) {
-    if (user.accessGroups.includes('admin') || user.accessGroups.includes('editor')) {
+    if (isAdminOrEditor(user.accessGroups)) {
       return true;
     } else {
-      return checkCollectionWriteAccess({user, dataStore, objectId});
+      return checkCollectionWriteAccess({ user, dataStore, objectId });
     }
   }
 }
