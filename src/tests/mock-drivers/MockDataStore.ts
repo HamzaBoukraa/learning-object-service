@@ -11,9 +11,7 @@ import {
   CompletedPart,
 } from '../../interfaces/FileManager';
 import {
-  MOCK_OBJECTS,
-  SUBMITTABLE_LEARNING_OBJECT,
-  INVALID_LEARNING_OBJECTS,
+  MOCK_OBJECTS, SUBMITTABLE_LEARNING_OBJECT, INVALID_LEARNING_OBJECTS,
 } from '../mocks';
 import { LearningObjectUpdates } from '../../types';
 import {
@@ -171,7 +169,9 @@ export class MockDataStore implements DataStore {
     orderBy?: string,
     sortType?: number,
   ): Promise<any[]> {
-    return Promise.resolve([MOCK_OBJECTS.LEARNING_OBJECT]);
+    return Promise.resolve([
+      new LearningObject(MOCK_OBJECTS.LEARNING_OBJECT as any),
+    ]);
   }
   fetchAllObjects(
     accessUnpublished?: boolean,
@@ -179,7 +179,7 @@ export class MockDataStore implements DataStore {
     limit?: number,
   ): Promise<{ objects: any[]; total: number }> {
     return Promise.resolve({
-      objects: [MOCK_OBJECTS.LEARNING_OBJECT],
+      objects: [new LearningObject(MOCK_OBJECTS.LEARNING_OBJECT as any)],
       total: MOCK_OBJECTS.TOTAL_RECORDS,
     });
   }
@@ -199,7 +199,7 @@ export class MockDataStore implements DataStore {
     limit?: number;
   }): Promise<{ objects: any[]; total: number }> {
     return Promise.resolve({
-      objects: [MOCK_OBJECTS.LEARNING_OBJECT],
+      objects: [new LearningObject(MOCK_OBJECTS.LEARNING_OBJECT as any)],
       total: MOCK_OBJECTS.TOTAL_RECORDS,
     });
   }
@@ -217,7 +217,7 @@ export class MockDataStore implements DataStore {
   }
 
   fetchCollectionObjects(name: string): Promise<any[]> {
-    return Promise.resolve([MOCK_OBJECTS.LEARNING_OBJECT]);
+    return Promise.resolve([new LearningObject(MOCK_OBJECTS.LEARNING_OBJECT as any)]);
   }
 
   submitLearningObjectToCollection(
@@ -241,7 +241,7 @@ export class MockDataStore implements DataStore {
   }
 
   findParentObjects(params: { query: LearningObjectQuery }): Promise<any[]> {
-    return Promise.resolve([MOCK_OBJECTS.LEARNING_OBJECT]);
+    return Promise.resolve([new LearningObject(MOCK_OBJECTS.LEARNING_OBJECT as any)]);
   }
 
   addToFiles(params: {
