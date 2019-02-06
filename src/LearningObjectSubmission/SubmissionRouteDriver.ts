@@ -61,6 +61,7 @@ export function initialize({
 
   async function createLog(req: Request, res: Response) {
     try {
+      console.log('test');
       const learningObjectId = req.params.learningObjectId;
       const userId = req.body.userId;
       const changelogText = req.body.changelogText;
