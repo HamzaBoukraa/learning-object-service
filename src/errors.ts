@@ -3,6 +3,6 @@ export const LearningObjectError = {
       return `A learning object with name '${name}' already exists.`;
     },
     INVALID_ACCESS: (userAccessGroups: string[], requiredAccessGroups: string[]): string => {
-        return `Invalid Access. Current user access groups: ${userAccessGroups.join()}. Required access groups: ${requiredAccessGroups.join()}.`;
+        return 'User does not have authorization to perform this action';
     }
   };

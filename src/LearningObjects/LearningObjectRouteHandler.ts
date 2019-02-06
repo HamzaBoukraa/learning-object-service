@@ -137,25 +137,34 @@ export function initializePrivate({
         status = 409;
       }
 
+      if (e.message === LearningObjectError.INVALID_ACCESS) {
+        status = 401;
+      }
+
       res.status(status).send(e);
     }
   };
   const deleteLearningObject = async (req: Request, res: Response) => {
     try {
-      const userAccessGroups = req.user.accessGroups;
+      const user: UserToken = req.user;
       const learningObjectName = req.params.learningObjectName;
-      await LearningObjectInteractor.deleteLearningObject(
+      await LearningObjectInteractor.deleteLearningObject({
         dataStore,
         fileManager,
-        req.user.username,
         learningObjectName,
         library,
-        userAccessGroups
-      );
+        user
+      });
       res.sendStatus(200);
     } catch (e) {
       console.error(e);
-      res.status(500).send(e);
+
+      let status = 500;
+
+      if (e.message === LearningObjectError.INVALID_ACCESS) {
+        status = 401;
+      }
+      res.status(status).send(e);
     }
   };
   router.route('/learning-objects').post(addLearningObject);

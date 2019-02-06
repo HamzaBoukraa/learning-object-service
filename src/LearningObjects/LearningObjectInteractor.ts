@@ -9,8 +9,77 @@ import {
   VALID_LEARNING_OBJECT_UPDATES,
 } from '../types';
 import { LearningObjectError } from '../errors';
-import { verifyAccessGroup } from '../interactors/authGuard';
-import { accessGroups } from '../types/user-token';
+import { hasLearningObjectWriteAccess } from '../interactors/AuthorizationManager';
+import { reportError } from '../drivers/SentryConnector';
+
+/**
+ * Performs update operation on learning object's date
+ *
+ * @param {{
+ *   dataStore: DataStore;
+ *   id: string; [Id of the LearningObject being updated]
+ *   date?: string; [Timestamp to replace LearningObjects' current date with]
+ * }} params
+ */
+export async function updateObjectLastModifiedDate(params: {
+  dataStore: DataStore;
+  id: string;
+  date?: string;
+}): Promise<void> {
+  const lastModified = params.date || Date.now().toString();
+  await params.dataStore.editLearningObject({
+    id: params.id,
+    updates: { date: lastModified },
+  });
+  return updateParentsDate({
+    dataStore: params.dataStore,
+    childId: params.id,
+    date: lastModified,
+  });
+}
+
+/**
+ * Recursively updates parent objects' dates
+ *
+ * @param {{
+ *   dataStore: DataStore;
+ *   childId: string; [Id of child LearningObject]
+ *   parentIds?: string[]; [Ids of parent LearningObjects]
+ *   date: string; [Timestamp to replace LearningObjects' current date with]
+ * }} params
+ * @returns {Promise<void>}
+ */
+export async function updateParentsDate(params: {
+  dataStore: DataStore;
+  childId: string;
+  parentIds?: string[];
+  date: string;
+}): Promise<void> {
+  let { dataStore, childId, parentIds, date } = params;
+  if (parentIds == null) {
+    parentIds = await params.dataStore.findParentObjectIds({
+      childId,
+    });
+  }
+
+  if (parentIds && parentIds.length) {
+    await Promise.all([
+      // Perform update of all parent dates
+      dataStore.updateMultipleLearningObjects({
+        ids: parentIds,
+        updates: { date },
+      }),
+      // Perform update of each object's parents' dates
+      ...parentIds.map(id =>
+        updateParentsDate({
+          dataStore,
+          date,
+          childId: id,
+        }),
+      ),
+    ]);
+  }
+}
 
 /**
  * Add a new learning object to the database.
@@ -84,6 +153,10 @@ export async function updateLearningObject(params: {
   id: string;
   updates: { [index: string]: any };
 }): Promise<void> {
+  if(params.updates.id) {
+    delete params.updates.id;
+  }
+  
   if (params.updates.name) {
     await checkNameExists({
       id: params.id,
@@ -92,54 +165,27 @@ export async function updateLearningObject(params: {
       username: params.user.username,
     });
   }
-
   try {
-    const requiredAccessGroups = [accessGroups.REVIEWER, accessGroups.EDITOR, accessGroups.CURATOR, accessGroups.ADMIN];
-    const userAccessGroups = params.user.accessGroups;
-    const hasAccess = verifyAccessGroup(userAccessGroups, requiredAccessGroups);
-    if(!hasAccess) {
-      const result = await params.dataStore.findObjectAuthor(undefined, params.id);
-      if(result.username === params.user.username) {
-        await performLearningObjectUpdate({
-          dataStore: params.dataStore,
-          id: params.id,
-          updates: params.updates
-        });
+      const hasAccess = await hasLearningObjectWriteAccess(params.user, params.dataStore, params.id); 
+      if(hasAccess) {
+          const updates: LearningObjectUpdates = sanitizeUpdates(params.updates);
+          validateUpdates({
+            id: params.id,
+            updates,
+          });
+          updates.date = Date.now().toString();
+          await params.dataStore.editLearningObject({
+            id: params.id,
+            updates,
+          });
       } else {
-        return Promise.reject('Must be author to update this object');
+        return Promise.reject(new Error('User does not have authorization to perform this action'));
       }
-    } else {
-      await performLearningObjectUpdate({
-        dataStore: params.dataStore,
-        id: params.id,
-        updates: params.updates
-      });
+    } catch (e) {
+      reportError(e);
+      return Promise.reject(new Error(`Problem updating learning object ${params.id}. ${e}`));
     }
-  } catch (e) {
-    return Promise.reject(`Problem updating Learning Object. ${e}`);
   }
-}
-
-async function performLearningObjectUpdate(params: {
-  dataStore: DataStore;
-  id: string;
-  updates: { [index: string]: any };
-}): Promise<void> {
-  try {
-    const updates: LearningObjectUpdates = sanitizeUpdates(params.updates);
-    validateUpdates({
-      id: params.id,
-      updates,
-    });
-    updates.date = Date.now().toString();
-    await params.dataStore.editLearningObject({
-      id: params.id,
-      updates,
-    });
-  } catch (e) {
-    return Promise.reject(`Problem updating Learning Object. ${e}`);
-  }
-}
 
 /**
  * Fetches a learning object by ID
@@ -160,74 +206,41 @@ export async function getLearningObjectById(
   }
 }
 
-export async function deleteLearningObject(
+export async function deleteLearningObject(params: {
   dataStore: DataStore,
   fileManager: FileManager,
-  username: string, // username of the current user
   learningObjectName: string,
   library: LibraryCommunicator,
-  userAccessGroups: string[]
-): Promise<void> {
+  user: UserToken
+}): Promise<void> {
   try {
-    const requiredAccessGroups = [accessGroups.ADMIN];
-    const hasAccess = verifyAccessGroup(userAccessGroups, requiredAccessGroups);
-    // check if user is learning object owner
-    if (!hasAccess) {
-      const result = await dataStore.findObjectAuthor(learningObjectName);
-      if (result.username === username) {
-        await performLearningObjectDeletion(
-          dataStore,
-          username,
-          learningObjectName,
-          library,
-          fileManager,
-          result.learningObjectID
+    const hasAccess = await hasLearningObjectWriteAccess(params.user, params.dataStore, params.learningObjectName); 
+    if (hasAccess) {
+      const object = await params.dataStore.peek<{
+        id: string;
+      }>({
+        query: { 'name': params.learningObjectName },
+        fields: {},
+      });
+      await params.library.cleanObjectsFromLibraries([object.id]);
+      await params.dataStore.deleteLearningObject(object.id);
+    
+      const path = `${params.user.username}/${object.id}/`;
+      params.fileManager.deleteAll({ path }).catch(e => {
+        reportError(
+          new Error(`Problem deleting files for ${params.learningObjectName}: ${path}. ${e}`),
         );
-      } else {
-        return Promise.reject('Must be author to delete this object');
-      }
+      });
     } else {
-      await performLearningObjectDeletion(
-        dataStore,
-        username,
-        learningObjectName,
-        library,
-        fileManager
-      );
-    }
-  } catch (error) {
-    return Promise.reject(`Problem deleting Learning Object. Error: ${error}`);
+      return Promise.reject(new Error('User does not have authorization to perform this action'));
+
+    } 
+  } catch (e) {
+    reportError(e);
+    return Promise.reject(new Error(`Problem deleting Learning Object. Error: ${e}`));
   }
 }
 
-async function performLearningObjectDeletion(
-  dataStore: DataStore,
-  username: string,
-  learningObjectName: string,
-  library: LibraryCommunicator,
-  fileManager: FileManager,
-  learningObjectID?: string,
-): Promise<void> {
-  try {
-    if (!learningObjectID) {
-      learningObjectID = await dataStore.findLearningObject(
-        username,
-        learningObjectName,
-      );
-    }
-    await library.cleanObjectsFromLibraries([learningObjectID]);
-    await dataStore.deleteLearningObject(learningObjectID);
-  
-    const path = `${username}/${learningObjectID}/`;
-    fileManager.deleteAll({ path }).catch(e => {
-      console.error(
-        `Problem deleting files for ${learningObjectName}: ${path}. ${e}`,
-      );
-    });
-  } catch (error) {
-    return Promise.reject(`Problem deleting Learning Object. Error: ${error}`);
-  }
-}
 /**
  * Updates Readme PDF for Learning Object
  *
@@ -299,6 +312,10 @@ export async function updateFileDescription(params: {
       fileId: params.fileId,
       description: params.description,
     });
+    await updateObjectLastModifiedDate({
+      dataStore: params.dataStore,
+      id: params.objectId,
+    });
   } catch (e) {
     return Promise.reject(`Problem updating file description. Error: ${e}`);
   }
@@ -335,7 +352,11 @@ export async function removeFile(params: {
         objectId: params.objectId,
         fileId: params.fileId,
       });
-      return await deleteFile(params.fileManager, path);
+      await deleteFile(params.fileManager, path);
+      await updateObjectLastModifiedDate({
+        dataStore: params.dataStore,
+        id: params.objectId,
+      });
     }
   } catch (e) {
     return Promise.reject(`Problem deleting file. Error: ${e}`);
@@ -353,7 +374,7 @@ export async function removeFile(params: {
  * @returns {Promise<void>}
  * @memberof LearningObjectInteractor
  */
-export async function deleteFile(
+async function deleteFile(
   fileManager: FileManager,
   path: string,
 ): Promise<void> {

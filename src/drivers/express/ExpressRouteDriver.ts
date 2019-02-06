@@ -152,18 +152,19 @@ export class ExpressRouteDriver {
         try {
           let accessUnpublished = false;
           const username = req.params.username;
+          const learningObjectName = req.params.learningObjectName;
           const cookie = req.cookies.presence;
           if (cookie) {
             const user = await TokenManager.decode(cookie);
             accessUnpublished = user.username === username;
           }
-          const object = await LearningObjectInteractor.loadLearningObject(
-            this.dataStore,
-            this.library,
+          const object = await LearningObjectInteractor.loadLearningObject({
+            dataStore: this.dataStore,
+            library: this.library,
             username,
-            req.params.learningObjectName,
-            accessUnpublished,
-          );
+            learningObjectName,
+            accessUnpublished
+          });
           res.status(200).send(object.toPlainObject());
         } catch (e) {
           console.error(e);

@@ -34,6 +34,16 @@ export class MockDataStore implements DataStore {
   disconnect(): void {
     return;
   }
+
+  updateMultipleLearningObjects(params: {
+    ids: string[];
+    updates: LearningObjectUpdates;
+  }): Promise<void> {
+    return Promise.resolve();
+  }
+  findParentObjectIds(params: { childId: string }): Promise<string[]> {
+    return Promise.resolve([]);
+  }
   fetchUser(id: string): Promise<User> {
     return Promise.resolve(MOCK_OBJECTS.USER);
   }
