@@ -129,7 +129,6 @@ export class LearningObjectInteractor {
       return summary;
     } catch (e) {
       if (e instanceof Error && e.message === 'User not found') {
-        console.log('hello?');
         throw e;
       }
       reportError(e);
