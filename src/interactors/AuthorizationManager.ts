@@ -34,15 +34,23 @@ export async function hasLearningObjectWriteAccess(
  * @param user information about the user who has initiated a privileged write operation
  * @param collection the name of the collection
  */
-export async function hasMultipleLearningObjectWriteAccesses(user: UserToken, dataStore: DataStore, objectIds: string[]): Promise<boolean> {
+export async function hasMultipleLearningObjectWriteAccesses(
+  user: UserToken,
+  dataStore: DataStore,
+  objectIds: string[],
+): Promise<boolean> {
   let hasAccess = false;
-  for(let i = 0; i < objectIds.length; i++) {
-    hasAccess = await hasLearningObjectWriteAccess(user, dataStore, objectIds[i]);
+  for (let i = 0; i < objectIds.length; i++) {
+    hasAccess = await hasLearningObjectWriteAccess(
+      user,
+      dataStore,
+      objectIds[i],
+    );
     if (!hasAccess) {
       return hasAccess;
     }
   }
-  return hasAccess
+  return hasAccess;
 }
 
 /**
@@ -71,15 +79,19 @@ function hasPrivilegedWriteAccess(
  * @param dataStore Instance of datastore
  * @param objectId Can be a learning object id or learning name
  */
-async function checkCollectionWriteAccess(params: { user: UserToken, dataStore: DataStore, objectId: string }): Promise<boolean> {
+async function checkCollectionWriteAccess(params: {
+  user: UserToken;
+  dataStore: DataStore;
+  objectId: string;
+}): Promise<boolean> {
   // Regex checks to see if the given objectId string contains an id or a name
-  const regexp = new RegExp('/^[a-f\d]{24}$/i');
+  const regexp = new RegExp('/^[a-fd]{24}$/i');
   let key = '_id';
   if (!regexp.test(params.objectId)) {
     key = 'name';
-  } 
+  }
   let object;
-  if(key === 'name') {
+  if (key === 'name') {
     object = await params.dataStore.peek<{
       collection: string;
     }>({
@@ -112,7 +124,11 @@ async function checkCollectionWriteAccess(params: { user: UserToken, dataStore: 
  *
  * @returns if the user is the owner or the object or not
  */
-async function userIsOwner(params: { dataStore: DataStore; user: UserToken; objectId: string;}) {
+async function userIsOwner(params: {
+  dataStore: DataStore;
+  user: UserToken;
+  objectId: string;
+}) {
   const userId = await params.dataStore.findUser(params.user.username);
   const object = await params.dataStore.peek<{
     authorID: string;
