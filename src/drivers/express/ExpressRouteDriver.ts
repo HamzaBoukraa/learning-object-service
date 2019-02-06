@@ -13,9 +13,6 @@ import { UserToken } from '../../types';
 import { initializeSingleFileDownloadRouter } from '../../SingleFileDownload/RouteHandler';
 import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
 import { initializeCollectionRouter } from '../../Collections/RouteHandler';
-import { LEARNING_OBJECT_ROUTES } from '../../routes';
-import { Request, Response } from 'express';
-import { fileNotFound } from '../../assets/filenotfound';
 
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
 // tslint:disable-next-line:no-require-imports
@@ -162,7 +159,7 @@ export class ExpressRouteDriver {
             library: this.library,
             username,
             learningObjectName,
-            accessUnpublished
+            accessUnpublished,
           });
           res.status(200).send(object.toPlainObject());
         } catch (e) {

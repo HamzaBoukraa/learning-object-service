@@ -3,12 +3,12 @@
  */
 export interface ChangeLogDocument {
     _id: string;
-    learningObjectId: string,
-    logs: Log[]
+    learningObjectId: string;
+    logs: Log[];
 }
 
 export interface Log {
-    userId: string,
-    date: Date,
-    text: string
+    userId: string;
+    date: Date;
+    text: string;
 }

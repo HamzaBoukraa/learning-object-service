@@ -33,7 +33,7 @@ describe('Interactor: LearningObjectInteractor', () => {
     try {
       await expect(getRecentChangelog(
         dataStore,
-        MOCK_OBJECTS.LEARNING_OBJECT_ID
+        MOCK_OBJECTS.LEARNING_OBJECT_ID,
       ))
       .resolves.toEqual({
         _id: '1234',
@@ -42,9 +42,9 @@ describe('Interactor: LearningObjectInteractor', () => {
             {
                 userId: '123',
                 date: '2019-02-06T15:52:10.894Z',
-                text: 'hello'
-            }
-        ]
+                text: 'hello',
+            },
+        ],
     });
     } catch (error) {
       console.log(error);

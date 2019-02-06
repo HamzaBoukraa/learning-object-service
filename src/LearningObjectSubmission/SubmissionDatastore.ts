@@ -119,13 +119,13 @@ export class SubmissionDatastore {
   public async createChangelog (
     learningObjectId: string,
     userId: string,
-    changelogText: string
-  ):Promise<void> {
+    changelogText: string,
+  ): Promise<void> {
     try {
       // Check if the specified learning object already has existing changelogs
       const record = await this.fetchChangelog(learningObjectId);
       // If it does not exist, create a new document in the changelogs collection
-      if(!record) {
+      if (!record) {
         return this.insertChangelog(learningObjectId, userId, changelogText);
       }
       // Otherwise, append a new log object to the existing array of objects
@@ -137,7 +137,7 @@ export class SubmissionDatastore {
 
   private async fetchChangelog(learningObjectId: string) {
     try {
-      const record = await this.db 
+      const record = await this.db
         .collection(COLLECTIONS.CHANGLOG)
         .findOne({learningObjectId: learningObjectId});
       return record;
@@ -147,11 +147,11 @@ export class SubmissionDatastore {
   }
 
   private async insertChangelog(
-    learningObjectId: String,
-    userId: String,
-    changelogText: String
+    learningObjectId: string,
+    userId: string,
+    changelogText: string,
   ): Promise<void> {
-    try { 
+    try {
       const id    = new ObjectId();
       const _id   = id.toHexString();
       const date  = Date.now();
@@ -164,9 +164,9 @@ export class SubmissionDatastore {
             {
               userId: userId,
               date: date,
-              text: changelogText
-            }
-          ]
+              text: changelogText,
+            },
+          ],
         });
     } catch (e) {
       console.error(e);
@@ -174,10 +174,10 @@ export class SubmissionDatastore {
   }
 
   private async editChangelog(
-    id: String,
-    learningObjectId: String,
-    userId: String,
-    changelogText: String
+    id: string,
+    learningObjectId: string,
+    userId: string,
+    changelogText: string,
   ): Promise<void> {
     try {
       const date = Date.now();
@@ -189,10 +189,10 @@ export class SubmissionDatastore {
             logs: {
               userId: userId,
               date: date,
-              text: changelogText
-            }
-          }}
-        )
+              text: changelogText,
+            },
+          }},
+        );
     } catch (e) {
       console.log(e);
     }

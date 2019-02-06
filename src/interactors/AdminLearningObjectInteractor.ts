@@ -1,21 +1,12 @@
-import { LearningObjectInteractor } from './interactors';
 import {
   DataStore,
-  FileManager,
-  LibraryCommunicator,
 } from '../interfaces/interfaces';
-import {
-  deleteLearningObject,
-} from '../LearningObjects/LearningObjectInteractor';
 import { LearningObject } from '@cyber4all/clark-entity';
-import { accessGroups, UserToken } from '../types/user-token';
+import { UserToken } from '../types/user-token';
 import { hasLearningObjectWriteAccess } from './AuthorizationManager';
 
 
 export class AdminLearningObjectInteractor {
-  private static learningObjectInteractor = LearningObjectInteractor;
-  
-
 
   /**
    * *** Function to phase out ***

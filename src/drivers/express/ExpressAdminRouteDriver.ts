@@ -108,7 +108,7 @@ export class ExpressAdminRouteDriver {
         const learningObjectName = req.params.learningObjectName;
         const username = req.user.username;
         res.redirect(301, req.originalUrl.replace(req.originalUrl, `/users/${username}/learning-objects/${learningObjectName}`));
-      }
+      },
     );
 
     router.delete(

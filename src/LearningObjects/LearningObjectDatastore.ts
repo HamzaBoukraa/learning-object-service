@@ -1,13 +1,13 @@
-import { Db } from "mongodb";
-import { COLLECTIONS } from "../drivers/MongoDriver";
-import { ChangeLogDocument } from "../types/Changelog";
+import { Db } from 'mongodb';
+import { COLLECTIONS } from '../drivers/MongoDriver';
+import { ChangeLogDocument } from '../types/Changelog';
 
 export class LearningObjectDataStore {
-    
+
     constructor(private db: Db) { }
 
-    /**
-   * Get a changelog object with the last element in the logs array 
+  /**
+   * Get a changelog object with the last element in the logs array
    * The last element in the logs array is the most recent changelog
    *
    * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
@@ -22,16 +22,16 @@ export class LearningObjectDataStore {
                     {
                         $match: {
                             learningObjectId: learningObjectId,
-                        }
+                        },
                     },
                     {
-                        $project: 
+                        $project:
                         {
                             learningObjectId: 1,
-                            recentChangelog: { $arrayElemAt: [ "$logs", -1 ] }
-                        }
-                    }
-                ])
+                            recentChangelog: { $arrayElemAt: [ '$logs', -1 ] },
+                        },
+                    },
+                ]);
             const documents = await cursor.toArray();
             const changelog = documents[0];
             return changelog;
@@ -41,20 +41,20 @@ export class LearningObjectDataStore {
         }
     }
 
-    /**
-   * Removes an entire document from the changelogs collection. This function is only triggered when its 
+  /**
+   * Removes an entire document from the changelogs collection. This function is only triggered when its
    * corresponding learning object is deleted.
    *
    * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
    *
-   * @returns {void} 
+   * @returns {void}
    */
     async deleteChangelog(learningObjectId: string): Promise<void> {
         try {
-            await this.db  
+            await this.db
                 .collection(COLLECTIONS.CHANGLOG)
                 .remove({learningObjectId: learningObjectId});
-        } catch(e) {
+        } catch (e) {
             console.error(e);
             return Promise.reject(e);
         }

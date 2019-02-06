@@ -69,18 +69,18 @@ export const MOCK_OBJECTS = {
       email: 'unit@test.com',
       organization: 'unittesting',
       emailVerified: true,
-      accessGroups: ['']
-  }, 
+      accessGroups: [''],
+  },
   CHANGELOG: {
       _id: '1234',
       learningObjectId: '1223',
       logs: [
           {
               userId: '123',
-              date: '2019-02-06T15:52:10.894Z',
-              text: 'hello'
-          }
-      ]
+              date: Date.now,
+              text: 'hello',
+          },
+      ],
   },
     LEARNING_OBJECT_STATS: {
         downloads: 1,

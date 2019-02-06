@@ -41,7 +41,7 @@ export class ExpressAuthRouteDriver {
 
   private setRoutes(router: Router): void {
     router.use((req, res, next) => {
-      if(!req.user) {
+      if (!req.user) {
         try {
           throw new Error(
             'The user property must be defined on the request object to access these routes.',
@@ -345,10 +345,9 @@ export class ExpressAuthRouteDriver {
           if (e.message === LearningObjectError.INVALID_ACCESS) {
             status = 401;
           }
-          
           res.status(status).send(e);
         }
-      }
+      },
     );
 
     // TODO: Need to validate token and that it is coming from cart service
