@@ -122,3 +122,23 @@ export function isAdminOrEditor(accessGroups: string[]): boolean {
   return false;
 }
 
+/**
+ * Checks if accessGroups contains a privileged user role
+ *
+ * @param {string[]} accessGroups
+ * @returns {boolean}
+ */
+export function isPrivilegedUser(accessGroups: string[]): boolean {
+  if (isAdminOrEditor(accessGroups)) {
+    return true;
+  }
+  for (const group of accessGroups) {
+    const access = group.split('@');
+    const role = access[1] ? access[1].toLowerCase() : null;
+    if (role === UserRole.CURATOR || role === UserRole.REVIEWER) {
+      return true;
+    }
+  }
+  return false;
+}
+
