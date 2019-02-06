@@ -10,7 +10,12 @@ import { UserToken } from '../types';
 import { LearningObjectQuery } from '../interfaces/DataStore';
 import { DZFile, FileUpload } from '../interfaces/FileManager';
 import { processMultipartUpload } from '../FileManager/FileInteractor';
-import { hasMultipleLearningObjectWriteAccesses } from './AuthorizationManager';
+import {
+  hasMultipleLearningObjectWriteAccesses,
+  isAdminOrEditor,
+  isPrivilegedUser,
+  getAccessGroupCollections,
+} from './AuthorizationManager';
 import { reportError } from '../drivers/SentryConnector';
 import {
   updateObjectLastModifiedDate,
@@ -637,61 +642,72 @@ export class LearningObjectInteractor {
   }
 
   /**
-   * Search for objects by name, author, length, level, and content.
+   * Searches LearningObjects based on query
    *
-   * @param {string} params.name the objects' names should closely relate
-   * @param {string} params.author the objects' authors' names` should closely relate
-   * @param {string} params.length the objects' lengths should match exactly
-   * @param {string} params.level the objects' levels should match exactly
-   * @param {boolean} params.ascending whether or not result should be in ascending order
-   *
-   * @returns {Outcome[]} list of outcome suggestions, ordered by score
+   * @static
+   * @param {DataStore} dataStore
+   * @param {LibraryCommunicator} library
+   * @param {LearningObjectQuery} query
+   * @param {UserToken} userToken
+   * @returns {Promise<{ total: number; objects: LearningObject[] }>}
+   * @memberof LearningObjectInteractor
    */
-  public static async searchObjects(
-    dataStore: DataStore,
-    library: LibraryCommunicator,
-    params: {
-      name: string;
-      author: string;
-      collection: string;
-      status: string[];
-      length: string[];
-      level: string[];
-      standardOutcomeIDs: string[];
-      text: string;
-      accessUnreleased?: boolean;
-      orderBy?: string;
-      sortType?: number;
-      currPage?: number;
-      limit?: number;
-      released?: boolean;
-    },
-  ): Promise<{ total: number; objects: LearningObject[] }> {
+  public static async searchObjects(params: {
+    dataStore: DataStore;
+    library: LibraryCommunicator;
+    query: LearningObjectQuery;
+    userToken: UserToken;
+  }): Promise<{ total: number; objects: LearningObject[] }> {
     try {
-      if (params.text) {
-        const firstChar = params.text.charAt(0);
-        const lastChar = params.text.charAt(params.text.length - 1);
-        if (firstChar !== `"` && lastChar !== `"`) {
-          params.text = this.removeStopwords(params.text);
-        }
-      }
+      const { dataStore, library, query, userToken } = params;
+      let {
+        name,
+        author,
+        collection,
+        status,
+        length,
+        level,
+        standardOutcomeIDs,
+        text,
+        orderBy,
+        sortType,
+        page,
+        limit,
+      } = this.formatSearchQuery(query);
 
-      const response = await dataStore.searchObjects({
-        name: params.name,
-        author: params.author,
-        collection: params.collection,
-        status: params.status,
-        length: params.length,
-        level: params.level,
-        standardOutcomeIDs: params.standardOutcomeIDs,
-        text: params.text,
-        accessUnreleased: params.accessUnreleased,
-        orderBy: params.orderBy,
-        sortType: params.sortType,
-        page: params.currPage,
-        limit: params.limit,
-        released: params.released,
-      });
+      status = this.getAuthorizedStatuses(userToken, status);
+
+      let response;
+
+      if (
+        isPrivilegedUser(userToken.accessGroups) &&
+        !isAdminOrEditor(userToken.accessGroups)
+      ) {
+        const privilegedCollections = getAccessGroupCollections(userToken);
+        if (collection && collection.length) {
+          const { releasedOnly, privilegedAccess } = getCollectionAccess(
+            collection,
+            privilegedCollections,
+          );
+        } else {
+          // Get all released and all unreleased in privilegedCollection
+        }
+      } else {
+        response = await dataStore.searchObjects({
+          name,
+          author,
+          collection,
+          status,
+          length,
+          level,
+          standardOutcomeIDs,
+          text,
+          orderBy,
+          sortType,
+          page,
+          limit,
+        });
+      }
 
       const objects = await Promise.all(
         response.objects.map(async object => {
@@ -708,6 +724,76 @@ export class LearningObjectInteractor {
     } catch (e) {
       return Promise.reject(`Problem suggesting Learning Objects. Error:${e}`);
     }
+  }
+
+  /**
+   * Returns statuses of objects a user has access to based on authorization level and requested statuses
+   *
+   * @private
+   * @static
+   * @param {UserToken} userToken
+   * @param {string[]} status
+   * @returns
+   * @memberof LearningObjectInteractor
+   */
+  private static getAuthorizedStatuses(
+    userToken: UserToken,
+    status: string[],
+  ): string[] {
+    if (
+      isAdminOrEditor(userToken.accessGroups) &&
+      (!status || (status && !status.length))
+    ) {
+      status = [
+        LearningObject.Status.WAITING,
+        LearningObject.Status.REVIEW,
+        LearningObject.Status.PROOFING,
+        LearningObject.Status.RELEASED,
+      ];
+    } else {
+      status = [LearningObject.Status.RELEASED];
+    }
+    return status;
+  }
+
+  /**
+   * Formats search query to verify params are the appropriate types
+   *
+   * @private
+   * @static
+   * @param {LearningObjectQuery} query
+   * @returns {LearningObjectQuery}
+   * @memberof LearningObjectInteractor
+   */
+  private static formatSearchQuery(
+    query: LearningObjectQuery,
+  ): LearningObjectQuery {
+    const formattedQuery = { ...query };
+    formattedQuery.status = toArray(formattedQuery.status);
+    formattedQuery.length = toArray(formattedQuery.length);
+    formattedQuery.level = toArray(formattedQuery.level);
+    formattedQuery.collection = toArray(formattedQuery.collection);
+    formattedQuery.standardOutcomeIDs = toArray(
+      formattedQuery.standardOutcomeIDs,
+    );
+    formattedQuery.page = toNumber(formattedQuery.page);
+    formattedQuery.limit = toNumber(formattedQuery.limit);
+    formattedQuery.sortType = <1 | -1>toNumber(formattedQuery.sortType);
+    formattedQuery.sortType =
+      formattedQuery.sortType === 1 || formattedQuery.sortType === -1
+        ? formattedQuery.sortType
+        : 1;
+
+    if (formattedQuery.text) {
+      const firstChar = formattedQuery.text.charAt(0);
+      const lastChar = formattedQuery.text.charAt(
+        formattedQuery.text.length - 1,
+      );
+      if (firstChar !== `"` && lastChar !== `"`) {
+        formattedQuery.text = this.removeStopwords(formattedQuery.text);
+      }
+    }
+    return formattedQuery;
   }
 
   public static async addToCollection(
@@ -907,4 +993,34 @@ function toArray<T>(value: any): T[] {
     return [...value];
   }
   return [value];
+}
+
+/**
+ *
+ * Converts non-number value to number if defined else returns null
+ * @param {*} value
+ * @returns {number}
+ */
+function toNumber(value: any): number {
+  const num = parseInt(`${value}`, 10);
+  if (!isNaN(num)) {
+    return +value;
+  }
+  return null;
+}
+
+function getCollectionAccess(
+  collectionFilters: string[],
+  privilegedCollections: string[],
+): { releasedOnly: string[]; privilegedAccess: string[] } {
+  const releasedOnly = [...collectionFilters];
+  const privilegedAccess = [];
+  for (const filter of collectionFilters) {
+    if (privilegedCollections.includes(filter)) {
+      privilegedAccess.push(filter);
+      const index = releasedOnly.indexOf(filter);
+      releasedOnly.splice(index, 1);
+    }
+  }
+  return { releasedOnly, privilegedAccess };
 }
