@@ -1127,14 +1127,14 @@ export class MongoDriver implements DataStore {
     released?: boolean,
   ) {
     let query: any = <any>{};
+
     if (!accessUnpublished) {
       query.published = true;
     }
+
     if (released) {
       // Check that the learning object does not have a download restriction
-      query['lock.restrictions'] = {
-        $nin: [LearningObject.Restriction.DOWNLOAD],
-      };
+      query.status = LearningObject.Status.RELEASED;
     }
     // Search By Text
     if (text || text === '') {

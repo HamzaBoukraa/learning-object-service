@@ -1,12 +1,34 @@
-
-import { getRecentChangelog } from './LearningObjectInteractor';
-import { MOCK_OBJECTS, SUBMITTABLE_LEARNING_OBJECT, INVALID_LEARNING_OBJECTS } from '../tests/mocks';
 import { DataStore } from '../interfaces/DataStore';
 import { MockDataStore } from '../tests/mock-drivers/MockDataStore';
+import { MOCK_OBJECTS } from '../tests/mocks';
+import {
+  updateObjectLastModifiedDate,
+  updateParentsDate,
+  getRecentChangelog,
+} from './LearningObjectInteractor';
 
-const dataStore: DataStore = new MockDataStore; // DataStore
+const dataStore: DataStore = new MockDataStore(); // DataStore
 
-describe('getRecentChanglog', () => {
+describe('Interactor: LearningObjectInteractor', () => {
+  it(`should update an object's last modified date and recursively update the child's parents' last modified date`, async () => {
+    expect.assertions(1);
+    await expect(
+      updateObjectLastModifiedDate({
+        dataStore,
+        id: MOCK_OBJECTS.LEARNING_OBJECT_ID,
+      }),
+    ).resolves.toBe(undefined);
+  });
+  it(`should recursively update parent objects' last modified date`, async () => {
+    expect.assertions(1);
+    await expect(
+      updateParentsDate({
+        dataStore,
+        childId: MOCK_OBJECTS.LEARNING_OBJECT_ID,
+        date: Date.now().toString(),
+      }),
+    ).resolves.toBe(undefined);
+  });
   it('should get latest changelog for a learning object', async done => {
     try {
       await expect(getRecentChangelog(
@@ -20,5 +42,3 @@ describe('getRecentChanglog', () => {
     }
   });
 });
-
-
