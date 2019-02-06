@@ -5,27 +5,25 @@ import { MockLibraryDriver } from '../tests/mock-drivers/MockLibraryDriver';
 import { MOCK_OBJECTS } from '../tests/mocks';
 import { DataStore } from '../interfaces/DataStore';
 import { LibraryCommunicator } from '../interfaces/interfaces';
+import { UserToken } from '../types';
 
 const driver: DataStore = new MockDataStore(); // DataStore
 const library: LibraryCommunicator = new MockLibraryDriver();
-
-const userToken = {
-  username: MOCK_OBJECTS.USERNAME,
+const userToken: UserToken = {
   name: '',
+  username: MOCK_OBJECTS.USERNAME,
   email: '',
+  emailVerified: true,
   organization: '',
-  emailVerified: 'true',
-  // @ts-ignore
   accessGroups: [],
 };
-
 describe('loadLearningObjectSummary', () => {
   it('should load learning object summary', done => {
     return LearningObjectInteractor.loadLearningObjectSummary({
       dataStore: driver,
       library,
-      username: MOCK_OBJECTS.USERNAME,
       userToken,
+      username: MOCK_OBJECTS.USERNAME,
     })
       .then(val => {
         expect(val).to.be.an('array');

@@ -4,6 +4,7 @@ import {
 } from './LearningObjectStatsInteractor';
 import { Db } from 'mongodb';
 import { COLLECTIONS } from '../drivers/MongoDriver';
+import { LearningObject } from '@cyber4all/clark-entity';
 
 const USAGE_STATS_COLLECTION = 'usage-stats';
 const BLOOMS_DISTRIBUTION_COLLECTION = 'blooms_outcome_distribution';
@@ -16,6 +17,14 @@ const BLOOMS = {
 
 export class LearningObjectStatStore implements LearningObjectStatDatastore {
   constructor(private db: Db) {}
+
+  /**
+   * Aggregates stats for all learning objects into an object with total downloads, saves, released, length distribution, and bloom distribution
+   *
+   * @param {{ query: any }} params
+   * @returns {Promise<LearningObjectStats>}
+   * @memberof LearningObjectStatStore
+   */
   async fetchStats(params: { query: any }): Promise<LearningObjectStats> {
     // Perform aggregation on Learning Objects collection to get length distribution, total number of objects, and number of released objects
     const statCursor = this.db
@@ -34,12 +43,7 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
             released: {
               $sum: {
                 $cond: [
-                  {
-                    $and: [
-                      { $eq: ['$published', true] },
-                      { $eq: ['$lock', null] },
-                    ],
-                  },
+                  { $eq: ['$status', LearningObject.Status.RELEASED] },
                   1,
                   0,
                 ],

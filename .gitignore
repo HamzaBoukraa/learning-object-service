@@ -7,3 +7,4 @@ dist.zip
 /db
 npm-debug.log
 .idea
+test_environment/globalConfig.json

@@ -17,7 +17,7 @@ import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjec
 import * as LearningOutcomeRouteHandler from '../../LearningOutcomes/LearningOutcomeRouteHandler';
 import * as SubmissionRouteDriver from '../../LearningObjectSubmission/SubmissionRouteDriver';
 import { reportError } from '../SentryConnector';
-import { UserToken } from '../../types';
+import { LearningObjectError } from '../../errors';
 
 export class ExpressAuthRouteDriver {
   private upload = multer({ storage: multer.memoryStorage() });
@@ -320,19 +320,25 @@ export class ExpressAuthRouteDriver {
       async (req, res) => {
         try {
           const learningObjectNames = req.params.learningObjectNames.split(',');
-          await LearningObjectInteractor.deleteMultipleLearningObjects(
-            this.dataStore,
-            this.fileManager,
-            this.library,
-            req.user.username,
+          await LearningObjectInteractor.deleteMultipleLearningObjects({
+            dataStore: this.dataStore,
+            fileManager: this.fileManager,
+            library: this.library,
+            user: req.user,
             learningObjectNames,
-          );
+          });
           res.sendStatus(200);
         } catch (e) {
           console.error(e);
-          res.status(500).send(e);
+          let status = 500;
+
+          if (e.message === LearningObjectError.INVALID_ACCESS) {
+            status = 401;
+          }
+          
+          res.status(status).send(e);
         }
-      },
+      }
     );
 
     // TODO: Need to validate token and that it is coming from cart service
