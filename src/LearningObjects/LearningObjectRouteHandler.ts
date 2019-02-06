@@ -142,6 +142,7 @@ export function initializePrivate({
   };
   const deleteLearningObject = async (req: Request, res: Response) => {
     try {
+      const userAccessGroups = req.user.accessGroups;
       const learningObjectName = req.params.learningObjectName;
       await LearningObjectInteractor.deleteLearningObject(
         dataStore,
@@ -149,6 +150,7 @@ export function initializePrivate({
         req.user.username,
         learningObjectName,
         library,
+        userAccessGroups
       );
       res.sendStatus(200);
     } catch (e) {
