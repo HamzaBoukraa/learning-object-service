@@ -77,7 +77,7 @@ export const MOCK_OBJECTS = {
       logs: [
           {
               userId: '123',
-              date: new Date(),
+              date: '2019-02-06T15:52:10.894Z',
               text: 'hello'
           }
       ]

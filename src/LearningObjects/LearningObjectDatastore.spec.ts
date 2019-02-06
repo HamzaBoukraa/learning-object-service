@@ -1,4 +1,4 @@
-import { MongoDriver } from '../drivers//MongoDriver';
+import { MongoDriver } from '../drivers/MongoDriver';
 
 describe('MongoDriver', () => {
   let driver: MongoDriver;
@@ -9,12 +9,12 @@ describe('MongoDriver', () => {
   
   describe('getRecentChangelog', () => {
     
-    it('The function should return the last element of the logs array', async done => {
-        const learningObjectId = '5ad8f5a6824dd17351adf1e1';
+    it('The function should return the last element of the logs array', async () => {
+        const learningObjectId = 'default_id';
         const changelog = await driver.fetchRecentChangelog(learningObjectId);
         expect(changelog).toEqual({
             _id: "5c3e2cab7da238008fcd771c",
-            learningObjectId: "5ad8f5a6824dd17351adf1e1",
+            learningObjectId: "default_id",
             recentChangelog:
                 {
                     userId:"5678",
@@ -22,7 +22,6 @@ describe('MongoDriver', () => {
                     text:"hello two"
                 }
         });
-        done();
     });
   });
 

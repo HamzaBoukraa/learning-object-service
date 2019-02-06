@@ -6,8 +6,10 @@ import { DataStore } from '../interfaces/DataStore';
  * Initializes an express router with endpoints to get stats for Learning Objects
  */
 export function initialize({
+  router,
   dataStore,
 }: {
+  router: Router;
   dataStore: DataStore;
 }) {
   const getStats = async (req: Request, res: Response) => {

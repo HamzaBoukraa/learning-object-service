@@ -4,7 +4,7 @@ let connection;
 let db;
 
 const LEARNING_OBJECT_MOCK = { 
-    _id: "5ad8f5a6824dd17351adf1e1",
+    _id: "default_id",
     authorID: "5b967621f7a3ce2f6cbf5ba1",
     date:"1520530093085",
     goals:[
@@ -87,7 +87,7 @@ const C5_COLLECTION_MOCK = {
 
 const CHANGELOG_MOCK = {
     _id: "5c3e2cab7da238008fcd771c",
-    learningObjectId: "5ad8f5a6824dd17351adf1e1",
+    learningObjectId: "default_id",
     logs:[
         {
             userId:"1234",

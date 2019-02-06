@@ -29,14 +29,23 @@ describe('Interactor: LearningObjectInteractor', () => {
       }),
     ).resolves.toBe(undefined);
   });
-  it('should get latest changelog for a learning object', async done => {
+  it('should get latest changelog for a learning object', async () => {
     try {
       await expect(getRecentChangelog(
         dataStore,
         MOCK_OBJECTS.LEARNING_OBJECT_ID
       ))
-      .resolves.toBe(undefined);
-      done();
+      .resolves.toEqual({
+        _id: '1234',
+        learningObjectId: '1223',
+        logs: [
+            {
+                userId: '123',
+                date: '2019-02-06T15:52:10.894Z',
+                text: 'hello'
+            }
+        ]
+    });
     } catch (error) {
       console.log(error);
     }
