@@ -2,6 +2,7 @@ import { DataStore } from '../interfaces/DataStore';
 import { SubmittableLearningObject } from '@cyber4all/clark-entity';
 import { updateReadme } from '../LearningObjects/LearningObjectInteractor';
 import { FileManager } from '../interfaces/interfaces';
+import { reportError } from '../drivers/SentryConnector';
 
 export async function submitForReview(params: {
   dataStore: DataStore;
@@ -61,7 +62,7 @@ export async function createChangelog(
   try {
     await dataStore.createChangelog(learningObjectId, userId, changelogText);
   } catch (e) {
-    console.error(e);
-    Promise.reject(e);
+    reportError(e);
+    Promise.reject(new Error(e));
   }
 }

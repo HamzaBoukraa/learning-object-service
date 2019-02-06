@@ -401,7 +401,8 @@ export async function getRecentChangelog(
     const changelog = await dataStore.fetchRecentChangelog(learningObjectId);
     return changelog;
   } catch (e) {
-    return Promise.reject(`Problem fetching recent changelog for learning object: ` + learningObjectId + `. Error: ${e}`);
+    reportError(e);
+    return Promise.reject(new Error(`Problem fetching recent changelog for learning object: ` + learningObjectId + `. Error: ${e}`));
   }
 }
 
