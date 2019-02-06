@@ -142,3 +142,18 @@ export function isPrivilegedUser(accessGroups: string[]): boolean {
   return false;
 }
 
+/**
+ * Returns collections within user's accessGroups
+ *
+ * @export
+ * @param {UserToken} userToken
+ * @returns
+ */
+export function getAccessGroupCollections(userToken: UserToken) {
+  const collections = [];
+  for (const group of userToken.accessGroups) {
+    const access = group.split('@');
+    collections.push(access[1]);
+  }
+  return collections.filter(collection => !!collection);
+}
