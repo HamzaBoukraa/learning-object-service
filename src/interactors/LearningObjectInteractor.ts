@@ -45,7 +45,7 @@ export class LearningObjectInteractor {
       let accessUnpublished = params.accessUnpublished;
 
       // If accessUnpublished is unset, set equal to the result of the hasOwnership function
-      if (accessUnpublished === undefined || accessUnpublished === null) {
+      if (accessUnpublished == null) {
         accessUnpublished = await this.hasOwnership({
           userToken: params.userToken,
           resourceVal: params.username,
