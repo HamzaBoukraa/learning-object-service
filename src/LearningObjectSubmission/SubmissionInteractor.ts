@@ -50,17 +50,17 @@ export async function cancelSubmission(
  * @param {string} userId The id of the user that wrote the incoming changelog
  * @param {string} changelogText The contents of the incoming changelog
  *
- * @returns {void} 
+ * @returns {void}
  */
 export async function createChangelog(
   dataStore: DataStore,
   learningObjectId: string,
   userId: string,
-  changelogText: string
+  changelogText: string,
 ): Promise<void> {
   try {
     await dataStore.createChangelog(learningObjectId, userId, changelogText);
-  } catch (e) { 
+  } catch (e) {
     console.error(e);
     Promise.reject(e);
   }

@@ -391,13 +391,13 @@ async function deleteFile(
  * @param {DataStore} dataStore An instance of DataStore
  * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
  *
- * @returns {void} 
+ * @returns {void}
  */
 export async function getRecentChangelog(
   dataStore: DataStore,
-  learningObjectId: string
+  learningObjectId: string,
 ): Promise<ChangeLogDocument> {
-  try { 
+  try {
     const changelog = await dataStore.fetchRecentChangelog(learningObjectId);
     return changelog;
   } catch (e) {

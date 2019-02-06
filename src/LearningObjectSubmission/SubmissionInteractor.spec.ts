@@ -96,7 +96,7 @@ describe('createChangelog', () => {
         dataStore,
         MOCK_OBJECTS.LEARNING_OBJECT_ID,
         MOCK_OBJECTS.USER_ID,
-        MOCK_OBJECTS.CHANGELOG_TEXT
+        MOCK_OBJECTS.CHANGELOG_TEXT,
       ))
       .resolves.toBe(undefined);
       done();
@@ -104,4 +104,5 @@ describe('createChangelog', () => {
       console.error(error);
     }
   });
-})
+});
+

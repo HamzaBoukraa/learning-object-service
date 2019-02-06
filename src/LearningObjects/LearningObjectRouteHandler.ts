@@ -153,7 +153,7 @@ export function initializePrivate({
         fileManager,
         learningObjectName,
         library,
-        user
+        user,
       });
       res.sendStatus(200);
     } catch (e) {
@@ -173,18 +173,18 @@ export function initializePrivate({
     try {
       const changelog = await LearningObjectInteractor.getRecentChangelog(
         dataStore,
-        learningObjectId
+        learningObjectId,
       );
       res.status(200).send(changelog);
     } catch (e) {
       console.error(e);
       res.status(417).json({message: 'Could not find recent changelog for learning object: ' + learningObjectId});
     }
-  }
+  };
 
   router
       .route('/learning-objects')
-      .post(addLearningObject)
+      .post(addLearningObject);
   router.patch('/learning-objects/:id', updateLearningObject);
   router.delete('/learning-objects/:learningObjectName', deleteLearningObject);
   router.get('/learning-objects/:learningObjectId/changelog/:changelogId', getRecentChangelog);

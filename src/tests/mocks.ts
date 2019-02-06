@@ -97,8 +97,8 @@ export const MOCK_OBJECTS = {
         blooms_distribution: {
           apply: 1,
           evaluate: 1,
-          remember: 1
-        }
+          remember: 1,
+        },
     },
   LEARNING_OBJECT_FILE: {
     id: '123456789',
@@ -119,7 +119,7 @@ export const MOCK_OBJECTS = {
   USER: new User({ id: '123' }),
   OUTCOME: new LearningOutcome({ id: '123' }),
   USER_ID: '5a9583401405cb053272ced1',
-  CHANGELOG_TEXT: 'Hello'
+  CHANGELOG_TEXT: 'Hello',
 };
 
 
