@@ -1,6 +1,13 @@
 import { UserToken } from '../types';
 import { DataStore } from '../interfaces/DataStore';
 
+enum UserRole {
+  ADMIN = 'admin',
+  EDITOR = 'editor',
+  CURATOR = 'curator',
+  REVIEWER = 'reviewer',
+}
+
 /**
  * Checks if a user has the authority to modify a Learning Object.
  * If they have privileged access, immediately return true. Otherwise,
