@@ -6,7 +6,6 @@ import {
 import { Router } from 'express';
 import { LearningObjectInteractor } from '../../interactors/interactors';
 import { LearningObject } from '@cyber4all/clark-entity';
-import * as TokenManager from '../TokenManager';
 import { LearningObjectQuery } from '../../interfaces/DataStore';
 import * as LearningObjectStatsRouteHandler from '../../LearningObjectStats/LearningObjectStatsRouteHandler';
 import { UserToken } from '../../types';
@@ -75,8 +74,6 @@ export class ExpressRouteDriver {
           objects: Partial<LearningObject>[];
         };
 
-        const accessUnreleased = false;
-
         if (
           name ||
           author ||
@@ -101,7 +98,6 @@ export class ExpressRouteDriver {
               level,
               standardOutcomeIDs: standardOutcomes,
               text,
-              accessUnreleased,
               orderBy,
               sortType,
               currPage,
@@ -146,20 +142,14 @@ export class ExpressRouteDriver {
       .route('/learning-objects/:username/:learningObjectName')
       .get(async (req, res) => {
         try {
-          let accessUnreleased = false;
           const username = req.params.username;
-          const cookie = req.cookies.presence;
-          if (cookie) {
-            const user = await TokenManager.decode(cookie);
-            accessUnreleased = user.username === username;
-          }
-          const object = await LearningObjectInteractor.loadLearningObject(
-            this.dataStore,
-            this.library,
+          const learningObjectName = req.params.learningObjectName;
+          const object = await LearningObjectInteractor.loadLearningObject({
+            dataStore: this.dataStore,
+            library: this.library,
             username,
-            req.params.learningObjectName,
-            accessUnreleased,
-          );
+            learningObjectName,
+          });
           res.status(200).send(object.toPlainObject());
         } catch (e) {
           console.error(e);

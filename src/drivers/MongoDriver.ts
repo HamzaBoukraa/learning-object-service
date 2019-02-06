@@ -44,6 +44,67 @@ export class MongoDriver implements DataStore {
   learningOutcomeStore: LearningOutcomeMongoDatastore;
   statStore: LearningObjectStatStore;
 
+  private mongoClient: MongoClient;
+  private db: Db;
+
+  private constructor() {}
+
+  static async build(dburi: string) {
+    const driver = new MongoDriver();
+    await driver.connect(dburi);
+    await driver.initializeModules();
+    return driver;
+  }
+
+  /**
+   * Connect to the database. Must be called before any other functions.
+   * @async
+   *
+   * NOTE: This function will attempt to connect to the database every
+   *       time it is called, but since it assigns the result to a local
+   *       variable which can only ever be created once, only one
+   *       connection will ever be active at a time.
+   *
+   * TODO: Verify that connections are automatically closed
+   *       when they no longer have a reference.
+   *
+   * @param {string} dbIP the host and port on which mongodb is running
+   */
+  async connect(dbURI: string, retryAttempt?: number): Promise<void> {
+    try {
+      this.mongoClient = await MongoClient.connect(dbURI);
+      this.db = this.mongoClient.db();
+    } catch (e) {
+      if (!retryAttempt) {
+        this.connect(dbURI, 1);
+      } else {
+        return Promise.reject(
+          'Problem connecting to database at ' + dbURI + ':\n\t' + e,
+        );
+      }
+    }
+  }
+
+  /**
+   * Close the database. Note that this will affect all services
+   * and scripts using the database, so only do this if it's very
+   * important or if you are sure that *everything* is finished.
+   */
+  disconnect(): void {
+    this.mongoClient.close();
+  }
+
+  /**
+   * Initializes module stores
+   *
+   * @memberof MongoDriver
+   */
+  initializeModules() {
+    this.submissionStore = new SubmissionDatastore(this.db);
+    this.learningOutcomeStore = new LearningOutcomeMongoDatastore(this.db);
+    this.statStore = new LearningObjectStatStore(this.db);
+  }
+
   /**
    * Submit a learning object to a specified collection
    * @param username the username of the requester
@@ -70,55 +131,43 @@ export class MongoDriver implements DataStore {
     return this.submissionStore.unsubmitLearningObject(id);
   }
 
-  private mongoClient: MongoClient;
-  private db: Db;
-
-  constructor(dburi: string) {
-    this.connect(dburi).then(() => {
-      this.submissionStore = new SubmissionDatastore(this.db);
-      this.learningOutcomeStore = new LearningOutcomeMongoDatastore(this.db);
-      this.statStore = new LearningObjectStatStore(this.db);
-    });
-  }
-
   /**
-   * Connect to the database. Must be called before any other functions.
-   * @async
+   * Performs update on multiple LearningObject documents
    *
-   * NOTE: This function will attempt to connect to the database every
-   *       time it is called, but since it assigns the result to a local
-   *       variable which can only ever be created once, only one
-   *       connection will ever be active at a time.
-   *
-   * TODO: Verify that connections are automatically closed
-   *       when they no longer have a reference.
-   *
-   * @param {string} dbIP the host and port on which mongodb is running
+   * @param {{
+   *     ids: string[];
+   *     updates: LearningObjectUpdates;
+   *   }} params
+   * @returns {Promise<void>}
+   * @memberof MongoDriver
    */
-  async connect(dbURI: string, retryAttempt?: number): Promise<void> {
-    try {
-      this.mongoClient = await MongoClient.connect(dbURI);
-      this.db = this.mongoClient.db();
-    } catch (e) {
-      if (!retryAttempt) {
-        this.connect(
-          dbURI,
-          1,
-        );
-      } else {
-        return Promise.reject(
-          'Problem connecting to database at ' + dbURI + ':\n\t' + e,
-        );
-      }
+  async updateMultipleLearningObjects(params: {
+    ids: string[];
+    updates: LearningObjectUpdates;
+  }): Promise<void> {
+    await this.db
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .update({ _id: { $in: params.ids } }, { $set: params.updates });
+  }
+  /**
+   * Returns array of ids associated with child's parent objects
+   *
+   * @param {{ childId: string }} params
+   * @returns {Promise<string[]>}
+   * @memberof MongoDriver
+   */
+  async findParentObjectIds(params: { childId: string }): Promise<string[]> {
+    const docs = await this.db
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .find<{ _id: string }>(
+        { children: params.childId },
+        { projection: { _id: 1 } },
+      )
+      .toArray();
+    if (docs) {
+      return docs.map(doc => doc._id);
     }
-  }
-  /**
-   * Close the database. Note that this will affect all services
-   * and scripts using the database, so only do this if it's very
-   * important or if you are sure that *everything* is finished.
-   */
-  disconnect(): void {
-    this.mongoClient.close();
+    return [];
   }
 
   /**
@@ -455,9 +504,9 @@ export class MongoDriver implements DataStore {
           return res.result.nModified > 0
             ? Promise.resolve()
             : Promise.reject({
-              message: `${childId} is not a child of Object ${parentId}`,
-              status: 404,
-            });
+                message: `${childId} is not a child of Object ${parentId}`,
+                status: 404,
+              });
         });
     } catch (error) {
       if (error.message && error.status) {
@@ -778,7 +827,7 @@ export class MongoDriver implements DataStore {
       full,
     );
 
-    if (!accessUnreleased && learningObject.status!==RELEASED)
+    if (!accessUnreleased && learningObject.status !== RELEASED)
       return Promise.reject(
         'User does not have access to the requested resource.',
       );
@@ -806,7 +855,7 @@ export class MongoDriver implements DataStore {
         .find<LearningObjectDocument>(query);
       const totalRecords = await objectCursor.count();
       objectCursor = this.applyCursorFilters(objectCursor, { page, limit });
-      console.log(query)
+      console.log(query);
       const docs = await objectCursor.toArray();
       const learningObjects: LearningObject[] = await this.bulkGenerateLearningObjects(
         docs,
@@ -902,7 +951,6 @@ export class MongoDriver implements DataStore {
     level: string[];
     standardOutcomeIDs: string[];
     text: string;
-    accessUnreleased?: boolean;
     orderBy?: string;
     sortType?: 1 | -1;
     page?: number;
@@ -929,7 +977,6 @@ export class MongoDriver implements DataStore {
       }
 
       let query: any = this.buildSearchQuery(
-        params.accessUnreleased,
         params.text,
         authorRecords,
         params.status,
@@ -1039,7 +1086,6 @@ export class MongoDriver implements DataStore {
    * Builds query object for Learning Object search
    *
    * @private
-   * @param {boolean} accessUnreleased
    * @param {string} text
    * @param {string[]} authorIDs
    * @param {string[]} length
@@ -1050,7 +1096,6 @@ export class MongoDriver implements DataStore {
    * @memberof MongoDriver
    */
   private buildSearchQuery(
-    accessUnreleased: boolean,
     text: string,
     authors: { _id: string; username: string }[],
     status: string[],
@@ -1063,8 +1108,10 @@ export class MongoDriver implements DataStore {
     released?: boolean,
   ) {
     let query: any = <any>{};
-    if (!accessUnreleased) {
-      query.status = RELEASED;
+
+    if (released) {
+      // Check that the learning object does not have a download restriction
+      query.status = LearningObject.Status.RELEASED;
     }
     // Search By Text
     if (text || text === '') {
@@ -1240,8 +1287,8 @@ export class MongoDriver implements DataStore {
         skip !== undefined
           ? cursor.skip(skip).limit(filters.limit)
           : filters.limit
-            ? cursor.limit(filters.limit)
-            : cursor;
+          ? cursor.limit(filters.limit)
+          : cursor;
 
       // SortBy
       cursor = filters.orderBy
@@ -1265,11 +1312,11 @@ export class MongoDriver implements DataStore {
   ): Promise<LearningOutcomeDocument[]> {
     return standardOutcomeIDs
       ? await this.db
-        .collection(COLLECTIONS.LEARNING_OUTCOMES)
-        .find<LearningOutcomeDocument>({
-          mappings: { $all: standardOutcomeIDs },
-        })
-        .toArray()
+          .collection(COLLECTIONS.LEARNING_OUTCOMES)
+          .find<LearningOutcomeDocument>({
+            mappings: { $all: standardOutcomeIDs },
+          })
+          .toArray()
       : null;
   }
   /**
@@ -1298,15 +1345,15 @@ export class MongoDriver implements DataStore {
     }
     return author || text
       ? await this.db
-        .collection(COLLECTIONS.USERS)
-        .find<{ _id: string; username: string }>(query)
-        .project({
-          _id: 1,
-          username: 1,
-          score: { $meta: 'textScore' },
-        })
-        .sort({ score: { $meta: 'textScore' } })
-        .toArray()
+          .collection(COLLECTIONS.USERS)
+          .find<{ _id: string; username: string }>(query)
+          .project({
+            _id: 1,
+            username: 1,
+            score: { $meta: 'textScore' },
+          })
+          .sort({ score: { $meta: 'textScore' } })
+          .toArray()
       : Promise.resolve(null);
   }
   /**

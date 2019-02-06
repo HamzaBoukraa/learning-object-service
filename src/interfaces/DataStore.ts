@@ -16,6 +16,10 @@ export interface DataStore
     id: string;
     updates: LearningObjectUpdates;
   }): Promise<void>;
+  updateMultipleLearningObjects(params: {
+    ids: string[];
+    updates: LearningObjectUpdates;
+  }): Promise<void>;
   toggleLock(id: string, lock?: LearningObject.Lock): Promise<void>;
   deleteLearningObject(id: string): Promise<void>;
   deleteMultipleLearningObjects(ids: string[]): Promise<void>;
@@ -65,6 +69,7 @@ export interface DataStore
   findParentObjects(params: {
     query: LearningObjectQuery;
   }): Promise<LearningObject[]>;
+  findParentObjectIds(params: { childId: string }): Promise<string[]>;
   loadChildObjects(params: {
     id: string;
     full?: boolean;
