@@ -36,22 +36,9 @@ export interface DataStore
     page?: number,
     limit?: number,
   ): Promise<{ objects: LearningObject[]; total: number }>;
-  searchObjects(params: {
-    name: string;
-    author: string;
-    collection: string;
-    status: string[];
-    length: string[];
-    level: string[];
-    standardOutcomeIDs: string[];
-    text: string;
-    accessUnreleased?: boolean;
-    orderBy?: string;
-    sortType?: number;
-    page?: number;
-    limit?: number;
-    released?: boolean;
-  }): Promise<{ objects: LearningObject[]; total: number }>;
+  searchObjects(
+    params: LearningObjectQuery,
+  ): Promise<{ objects: LearningObject[]; total: number }>;
   submitLearningObjectToCollection(
     username: string,
     id: string,
