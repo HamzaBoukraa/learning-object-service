@@ -13,7 +13,8 @@ import { processMultipartUpload } from '../FileManager/FileInteractor';
 import { hasMultipleLearningObjectWriteAccesses } from './AuthorizationManager';
 import { reportError } from '../drivers/SentryConnector';
 import {
-  updateObjectLastModifiedDate, updateParentsDate
+  updateObjectLastModifiedDate,
+  updateParentsDate,
 } from '../LearningObjects/LearningObjectInteractor';
 
 // file size is in bytes
@@ -121,8 +122,7 @@ export class LearningObjectInteractor {
               false,
               accessUnpublished,
             );
-            children.forEach((child: LearningObject) => object.addChild(child));
-            return object;
+            return new LearningObject({ ...object.toPlainObject(), children });
           }),
         );
       }
@@ -145,11 +145,11 @@ export class LearningObjectInteractor {
    * @param accessUnpublished
    */
   public static async loadLearningObject(params: {
-    dataStore: DataStore,
-    library: LibraryCommunicator,
-    username: string
-    learningObjectName: string,
-    accessUnpublished: boolean
+    dataStore: DataStore;
+    library: LibraryCommunicator;
+    username: string;
+    learningObjectName: string;
+    accessUnpublished: boolean;
   }): Promise<LearningObject> {
     try {
       const fullChildren = false;
@@ -158,7 +158,7 @@ export class LearningObjectInteractor {
         params.learningObjectName,
       );
 
-      const learningObject = await params.dataStore.fetchLearningObject(
+      let learningObject = await params.dataStore.fetchLearningObject(
         learningObjectID,
         true,
         params.accessUnpublished,
@@ -171,9 +171,10 @@ export class LearningObjectInteractor {
         fullChildren,
         params.accessUnpublished,
       );
-      children.forEach((child: LearningObject) =>
-        learningObject.addChild(child),
-      );
+      learningObject = new LearningObject({
+        ...learningObject.toPlainObject(),
+        children,
+      });
 
       try {
         learningObject.metrics = await this.loadMetrics(
@@ -219,7 +220,7 @@ export class LearningObjectInteractor {
     return Promise.all(
       objects.map(async obj => {
         // Load their children
-        const children = await this.loadChildObjects(
+        let children = await this.loadChildObjects(
           dataStore,
           library,
           obj.id,
@@ -227,7 +228,7 @@ export class LearningObjectInteractor {
           accessUnreleased,
         );
         // For each of the Child's children
-        await Promise.all(
+        children = await Promise.all(
           children.map(async child => {
             // Load child metrics
             try {
@@ -235,12 +236,11 @@ export class LearningObjectInteractor {
             } catch (e) {
               console.error(e);
             }
-            // Add Child
-            obj.addChild(child);
+            return child;
           }),
         );
 
-        return obj;
+        return new LearningObject({ ...obj.toPlainObject(), children });
       }),
     );
   }
@@ -283,8 +283,7 @@ export class LearningObjectInteractor {
             true,
             true,
           );
-          children.forEach((child: LearningObject) => object.addChild(child));
-          return object;
+          return new LearningObject({ ...object.toPlainObject(), children });
         }),
       );
 
@@ -462,14 +461,18 @@ export class LearningObjectInteractor {
   }
 
   public static async deleteMultipleLearningObjects(params: {
-    dataStore: DataStore,
-    fileManager: FileManager,
-    library: LibraryCommunicator,
-    learningObjectNames: string[],
-    user: UserToken
+    dataStore: DataStore;
+    fileManager: FileManager;
+    library: LibraryCommunicator;
+    learningObjectNames: string[];
+    user: UserToken;
   }): Promise<void> {
     try {
-      const hasAccess = await hasMultipleLearningObjectWriteAccesses(params.user, params.dataStore, params.learningObjectNames); 
+      const hasAccess = await hasMultipleLearningObjectWriteAccesses(
+        params.user,
+        params.dataStore,
+        params.learningObjectNames,
+      );
       if (hasAccess) {
         // Get LearningObject ids
         const objectRefs: {
@@ -477,7 +480,10 @@ export class LearningObjectInteractor {
           parentIds: string[];
         }[] = await Promise.all(
           params.learningObjectNames.map(async (name: string) => {
-            const id = await params.dataStore.findLearningObject(params.user.username, name);
+            const id = await params.dataStore.findLearningObject(
+              params.user.username,
+              name,
+            );
             const parentIds = await params.dataStore.findParentObjectIds({
               childId: id,
             });
@@ -504,12 +510,16 @@ export class LearningObjectInteractor {
             date: Date.now().toString(),
           });
         });
-      } else { 
-        return Promise.reject(new Error('User does not have authorization to perform this action'));
+      } else {
+        return Promise.reject(
+          new Error('User does not have authorization to perform this action'),
+        );
       }
     } catch (error) {
       reportError(error);
-      return Promise.reject(new Error(`Problem deleting Learning Objects. Error: ${error}`));
+      return Promise.reject(
+        new Error(`Problem deleting Learning Objects. Error: ${error}`),
+      );
     }
   }
 
