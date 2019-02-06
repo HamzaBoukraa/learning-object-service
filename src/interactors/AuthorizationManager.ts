@@ -94,7 +94,14 @@ async function checkCollectionWriteAccess(params: { user: UserToken, dataStore: 
       fields: { collection: 1 },
     });
   }
-  return (params.user.accessGroups.indexOf(`reviewer@${object.collection}`) > -1 || params.user.accessGroups.indexOf(`curator@${object.collection}`) > -1);
+  return (
+    params.user.accessGroups.indexOf(
+      `${UserRole.REVIEWER}@${object.collection}`,
+    ) > -1 ||
+    params.user.accessGroups.indexOf(
+      `${UserRole.CURATOR}@${object.collection}`,
+    ) > -1
+  );
 }
 
 /**
