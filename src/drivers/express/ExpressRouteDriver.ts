@@ -187,7 +187,9 @@ export class ExpressRouteDriver {
         );
         res.status(200).send(objects.map(obj => obj.toPlainObject()));
       } catch (e) {
-        console.error(e);
+        if (e instanceof Error && e.message === 'User not found') {
+          res.status(404).send(`No user with username ${req.params.username}.`);
+        }
         res.status(500).send(e);
       }
     });

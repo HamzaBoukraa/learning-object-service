@@ -14,6 +14,7 @@ import {
   updateObjectLastModifiedDate,
   updateParentsDate,
 } from '../LearningObjects/LearningObjectInteractor';
+import { reportError } from '../drivers/SentryConnector';
 
 // file size is in bytes
 const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
@@ -127,7 +128,12 @@ export class LearningObjectInteractor {
       }
       return summary;
     } catch (e) {
-      return Promise.reject(`Problem loading summary. Error: ${e}`);
+      if (e instanceof Error && e.message === 'User not found') {
+        console.log('hello?');
+        throw e;
+      }
+      reportError(e);
+      throw new Error('Internal Server Error');
     }
   }
 

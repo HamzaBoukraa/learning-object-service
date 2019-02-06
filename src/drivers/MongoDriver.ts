@@ -701,7 +701,10 @@ export class MongoDriver implements DataStore {
         .toArray();
       return objects.map(obj => obj._id);
     } catch (e) {
-      return Promise.reject(`Problem fetch User's Objects. Error: ${e}`);
+      if (e instanceof Error && e.message === `No user with username or email ${username} exists.`) {
+        throw new Error('User not found');
+      }
+      throw new Error(`Problem fetch User's Objects. Error: ${e}`);
     }
   }
 
@@ -724,7 +727,7 @@ export class MongoDriver implements DataStore {
       .collection(COLLECTIONS.USERS)
       .findOne<UserDocument>(query, { projection: { _id: 1 } });
     if (!userRecord)
-      throw new Error('No user with username or email' + username + ' exists.');
+      throw new Error('No user with username or email ' + username + ' exists.');
     return `${userRecord._id}`;
   }
 
