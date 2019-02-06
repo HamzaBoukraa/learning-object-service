@@ -92,6 +92,11 @@ const CHANGELOG_MOCK = {
         {
             userId:"1234",
             date:"2019-01-15T18:55:39.000Z",
+            text:"hello"
+        },
+        {
+            userId:"5678",
+            date:"2019-01-15T18:55:39.000Z",
             text:"hello two"
         }
     ]
@@ -138,7 +143,7 @@ async function seedDatabase(uri){
     await db.collection('objects').insertOne(LEARNING_OBJECT_MOCK);
     await db.collection('users').insertOne(USER_MOCK);
     await db.collection('collections').insertOne(C5_COLLECTION_MOCK);
-    await db.collection('changlogs').insertOne(CHANGELOG_MOCK);
+    await db.collection('changelogs').insertOne(CHANGELOG_MOCK);
     await db.collection('outcomes').insertOne(OUTCOME_MOCK);
     await db.collection('learning-outcomes').insertOne(LEARNING_OUTCOME_MOCK);
 }
