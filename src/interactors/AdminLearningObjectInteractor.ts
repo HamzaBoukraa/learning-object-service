@@ -19,7 +19,7 @@ export class AdminLearningObjectInteractor {
   ): Promise<void> {
     try {
       const hasAccess = await hasLearningObjectWriteAccess(user, dataStore, id);
-      if(hasAccess) {
+      if (hasAccess) {
         return await dataStore.toggleLock(id, lock);
       } else {
         return Promise.reject('User does not have permission to update this object');
