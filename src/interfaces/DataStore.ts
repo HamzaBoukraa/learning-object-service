@@ -113,6 +113,6 @@ export interface LearningObjectQuery extends Filters {
   standardOutcomeIDs?: string[];
   text?: string;
   full?: boolean;
-  collection?: string;
+  collection?: string[];
   status?: string[];
 }
