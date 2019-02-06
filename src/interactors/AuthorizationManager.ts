@@ -106,3 +106,19 @@ async function userIsOwner(params: { dataStore: DataStore; user: UserToken; obje
   return userId === object.authorID;
 }
 
+/**
+ * Checks if accessGroups contains admin or editor
+ *
+ * @param {string[]} accessGroups
+ * @returns {boolean}
+ */
+export function isAdminOrEditor(accessGroups: string[]): boolean {
+  if (
+    accessGroups.includes(UserRole.ADMIN) ||
+    accessGroups.includes(UserRole.EDITOR)
+  ) {
+    return true;
+  }
+  return false;
+}
+
