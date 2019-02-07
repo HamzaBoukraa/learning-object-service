@@ -563,34 +563,37 @@ export class LearningObjectInteractor {
   }
 
   /**
-   * Returns array of learning objects associated with the given ids.
-   * @returns {LearningObject[]} the Learning Objects for the supplied identifiers.
+   * Fetches objects by id
+   *
+   * @static
+   * @param {{
+   *     dataStore: DataStore;
+   *     library: LibraryCommunicator;
+   *     ids: string[];
+   *     full?: boolean;
+   *   }} params
+   * @returns {Promise<LearningObject[]>}
+   * @memberof LearningObjectInteractor
    */
-  public static async fetchMultipleObjects(
-    dataStore: DataStore,
-    library: LibraryCommunicator,
-    ids: { username: string; learningObjectName: string }[],
-  ): Promise<LearningObject[]> {
+  public static async fetchObjectsByIDs(params: {
+    dataStore: DataStore;
+    library: LibraryCommunicator;
+    ids: string[];
+    full?: boolean;
+  }): Promise<LearningObject[]> {
     try {
-      // Get IDs associated with LearningObjects
-      const learningObjectIDs = await Promise.all(
-        ids.map(id => {
-          return new Promise<string>((resolve, reject) => {
-            dataStore
-              .findLearningObject(id.username, id.learningObjectName)
-              .then(
-                learningObjectID => resolve(learningObjectID),
-                err => reject(err),
-              );
+      const { dataStore, library, ids, full } = params;
+      let learningObjects = await dataStore.fetchMultipleObjects({
+        ids,
+        full,
+        status: [
+          LearningObject.Status.UNRELEASED,
+          LearningObject.Status.WAITING,
+          LearningObject.Status.REVIEW,
+          LearningObject.Status.PROOFING,
+          LearningObject.Status.RELEASED,
+        ],
           });
-        }),
-      );
-
-      let learningObjects: LearningObject[] = await dataStore.fetchMultipleObjects(
-        learningObjectIDs,
-        false,
-        true,
-      );
 
       learningObjects = await Promise.all(
         learningObjects.map(async object => {
@@ -599,37 +602,24 @@ export class LearningObjectInteractor {
             return object;
           } catch (e) {
             console.log(e);
+            if (!full) {
             return object;
           }
-        }),
-      );
-      return learningObjects;
-    } catch (e) {
-      return Promise.reject(
-        `Problem fetching multiple Learning Objects. Error: ${e}`,
-      );
     }
-  }
-
-  public static async fetchObjectsByIDs(
-    dataStore: DataStore,
-    library: LibraryCommunicator,
-    ids: string[],
-  ): Promise<LearningObject[]> {
-    try {
-      let learningObjects = await dataStore.fetchMultipleObjects(
-        ids,
-        true,
-        true,
-      );
-
-      learningObjects = await Promise.all(
-        learningObjects.map(async object => {
-          try {
-            object.metrics = await this.loadMetrics(library, object.id);
-            return object;
-          } catch (e) {
-            console.log(e);
+          if (full) {
+            const children = await this.loadChildObjects({
+              dataStore,
+              library,
+              parentId: object.id,
+              full: true,
+              status: [
+                LearningObject.Status.WAITING,
+                LearningObject.Status.REVIEW,
+                LearningObject.Status.PROOFING,
+                LearningObject.Status.RELEASED,
+              ],
+            });
+            children.forEach((child: LearningObject) => object.addChild(child));
             return object;
           }
         }),
