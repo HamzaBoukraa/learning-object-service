@@ -533,20 +533,23 @@ export class LearningObjectInteractor {
   }
 
   /**
-   * Fetch all released Learning Objects in the system.
+   * Fetch all Learning Objects in the system.
    * @returns {LearningObject[]} array of all objects
    */
-  public static async fetchAllObjects(
-    dataStore: DataStore,
-    library: LibraryCommunicator,
-    page: number,
-    limit: number,
-  ): Promise<{ objects: LearningObject[]; total: number }> {
+  public static async fetchAllObjects(params: {
+    dataStore: DataStore;
+    library: LibraryCommunicator;
+    page: number;
+    limit: number;
+    userToken: UserToken;
+  }): Promise<{ objects: LearningObject[]; total: number }> {
     try {
+      const { dataStore, library, page, limit, userToken } = params;
+      const status = this.getAuthorizedStatuses(userToken);
       const response = await dataStore.fetchAllObjects({
-        status: [LearningObject.Status.RELEASED],
-        page,
-        limit,
+        status,
+        page: toNumber(page),
+        limit: toNumber(limit),
       });
       const objects = await Promise.all(
         response.objects.map(async object => {
