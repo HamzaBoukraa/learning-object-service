@@ -98,6 +98,21 @@ export interface DataStore
     query: { [index: string]: string };
     fields: { [index: string]: 0 | 1 };
   }): Promise<T>;
+
+  searchObjectsByCollection(params: {
+    name?: string;
+    author?: string;
+    length?: string[];
+    level?: string[];
+    standardOutcomeIDs?: string[];
+    text?: string;
+    collections: {
+      [index: string]: string[];
+    };
+  }): Promise<{
+    total: number;
+    objects: LearningObject[];
+  }>;
 }
 
 export { Collection as LearningObjectCollection };
