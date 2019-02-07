@@ -167,7 +167,7 @@ export function isPrivilegedUser(accessGroups: string[]): boolean {
   }
   for (const group of accessGroups) {
     const access = group.split('@');
-    const role = access[1] ? access[1].toLowerCase() : null;
+    const role = access[0] ? access[0].toLowerCase() : null;
     if (role === UserRole.CURATOR || role === UserRole.REVIEWER) {
       return true;
     }
