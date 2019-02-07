@@ -1,5 +1,4 @@
 import { MongoDriver } from '../drivers/MongoDriver';
-import { resolveSoa } from 'dns';
 
 describe('MongoDriver', () => {
   let driver: MongoDriver;
