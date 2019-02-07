@@ -604,35 +604,6 @@ export class MongoDriver implements DataStore {
       .updateOne({ _id: params.id }, { $set: params.updates });
   }
 
-  public async toggleLock(
-    id: string,
-    lock?: LearningObject.Lock,
-  ): Promise<void> {
-    try {
-      const updates: any = {
-        lock,
-      };
-
-      if (
-        lock &&
-        (lock.restrictions.indexOf(LearningObject.Restriction.FULL) > -1 ||
-          lock.restrictions.indexOf(LearningObject.Restriction.PUBLISH) > -1)
-      ) {
-        updates.published = false;
-      }
-
-      await this.db
-        .collection(COLLECTIONS.LEARNING_OBJECTS)
-        .update(
-          { _id: id },
-          lock ? { $set: updates } : { $unset: { lock: null } },
-        );
-      return Promise.resolve();
-    } catch (e) {
-      return Promise.reject(e);
-    }
-  }
-
   //////////////////////////////////////////
   // DELETIONS - will cascade to children //
   //////////////////////////////////////////
