@@ -1,9 +1,9 @@
-import { Router, Request, Response } from 'express';
-import { submitForReview, cancelSubmission, createChangelog } from './SubmissionInteractor';
+import { Request, Response, Router } from 'express';
+import { LearningObjectError } from '../errors';
 import { DataStore } from '../interfaces/DataStore';
 import { FileManager } from '../interfaces/interfaces';
 import { UserToken } from '../types';
-import { LearningObjectError } from '../errors';
+import { cancelSubmission, createChangelog, submitForReview } from './SubmissionInteractor';
 
 /**
  * Initializes an express router with endpoints to publish and unpublish a learning object.
@@ -67,7 +67,7 @@ export function initialize({
       const user: UserToken = req.user;
       const changelogText = req.body.changelogText;
       await createChangelog({dataStore, learningObjectId, user, changelogText});
-      res.status(200).json({message: 'Changelog added'});
+      res.status(200);
     } catch (e) {
       if (e instanceof Error) {
         switch (e.message) {

@@ -1,5 +1,4 @@
 import { MongoDriver } from './MongoDriver';
-import { IoTJobsDataPlane } from 'aws-sdk';
 
 describe('MongoDriver', () => {
   let driver: MongoDriver;
