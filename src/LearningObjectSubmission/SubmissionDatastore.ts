@@ -116,85 +116,39 @@ export class SubmissionDatastore {
     return Promise.resolve(record);
   }
 
+  /**
+   * Upsert document in changelog collection
+   *
+   * @param {string} learningObjectId The id of the specified learning object
+   * @param {string} userId The id of the changelog author
+   * @param {string} changelogText The contents of the incoming changelog
+   *
+   * @returns {void \ Error}
+   */
   public async createChangelog (
     learningObjectId: string,
     userId: string,
     changelogText: string,
   ): Promise<void> {
     try {
-      // Check if the specified learning object already has existing changelogs
-      const record = await this.fetchChangelog(learningObjectId);
-      // If it does not exist, create a new document in the changelogs collection
-      if (!record) {
-        return this.insertChangelog(learningObjectId, userId, changelogText);
-      }
-      // Otherwise, append a new log object to the existing array of objects
-      return this.editChangelog(record._id, learningObjectId, userId, changelogText);
-    } catch (e) {
-      console.error(e);
-    }
-  }
-
-  private async fetchChangelog(learningObjectId: string) {
-    try {
-      const record = await this.db
-        .collection(COLLECTIONS.CHANGLOG)
-        .findOne({learningObjectId: learningObjectId});
-      return record;
-    } catch (e) {
-      console.error(e);
-    }
-  }
-
-  private async insertChangelog(
-    learningObjectId: string,
-    userId: string,
-    changelogText: string,
-  ): Promise<void> {
-    try {
-      const id    = new ObjectId();
-      const _id   = id.toHexString();
-      const date  = Date.now();
       await this.db
         .collection(COLLECTIONS.CHANGLOG)
-        .insertOne({
-          _id: _id,
-          learningObjectId: learningObjectId,
-          logs: [
-            {
-              userId: userId,
-              date: date,
-              text: changelogText,
-            },
-          ],
-        });
-    } catch (e) {
-      console.error(e);
-    }
-  }
-
-  private async editChangelog(
-    id: string,
-    learningObjectId: string,
-    userId: string,
-    changelogText: string,
-  ): Promise<void> {
-    try {
-      const date = Date.now();
-      await this.db
-        .collection(COLLECTIONS.CHANGLOG)
-        .findOneAndUpdate(
+        .update(
           { learningObjectId: learningObjectId },
           { $push: {
             logs: {
               userId: userId,
-              date: date,
+              date: Date.now(),
               text: changelogText,
             },
           }},
+          {
+            upsert: true,
+          },
         );
     } catch (e) {
-      console.log(e);
+      return Promise.reject(new Error(`${e}`));
     }
   }
 }
+

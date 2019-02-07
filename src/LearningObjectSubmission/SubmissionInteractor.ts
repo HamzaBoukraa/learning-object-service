@@ -63,6 +63,6 @@ export async function createChangelog(
     await dataStore.createChangelog(learningObjectId, userId, changelogText);
   } catch (e) {
     reportError(e);
-    Promise.reject(new Error(e));
+    return Promise.reject(new Error(e));
   }
 }
