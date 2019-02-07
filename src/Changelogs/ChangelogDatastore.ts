@@ -51,14 +51,12 @@ export class ChangelogDataStore {
    */
     async getRecentChangelog(learningObjectId: string): Promise<ChangeLogDocument> {
         try {
-            const cursor = await this.db
+            const changelog = await this.db
                 .collection(COLLECTIONS.CHANGLOG)
-                .find(
+                .findOne(
                   { _id: learningObjectId },
                   { logs: { $slice: -1 } },
                 );
-            const documents = await cursor.toArray();
-            const changelog = documents[0];
             return changelog;
         } catch (e) {
             return Promise.reject(new Error(`${e}`));
