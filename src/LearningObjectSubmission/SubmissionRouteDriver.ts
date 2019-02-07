@@ -2,6 +2,8 @@ import { Router, Request, Response } from 'express';
 import { submitForReview, cancelSubmission, createChangelog } from './SubmissionInteractor';
 import { DataStore } from '../interfaces/DataStore';
 import { FileManager } from '../interfaces/interfaces';
+import { UserToken } from '../types';
+import { LearningObjectError } from '../errors';
 
 /**
  * Initializes an express router with endpoints to publish and unpublish a learning object.
@@ -62,11 +64,16 @@ export function initialize({
   async function createLog(req: Request, res: Response) {
     try {
       const learningObjectId = req.params.learningObjectId;
-      const userId = req.body.userId;
+      const user: UserToken = req.user;
       const changelogText = req.body.changelogText;
-      await createChangelog(dataStore, learningObjectId, userId, changelogText);
+      await createChangelog({dataStore, learningObjectId, user, changelogText});
       res.status(200).json({message: 'Changelog added'});
     } catch (e) {
+      if (e instanceof Error) {
+        if (e.message === LearningObjectError.INVALID_ACCESS()) {
+          res.status(401).json({message: `{e.message}`});
+        }
+      }
       res.status(500).json({message: 'Could not create changelog for specified learning object'});
     }
   }

@@ -3,6 +3,8 @@ import { SubmittableLearningObject } from '@cyber4all/clark-entity';
 import { updateReadme } from '../LearningObjects/LearningObjectInteractor';
 import { FileManager } from '../interfaces/interfaces';
 import { reportError } from '../drivers/SentryConnector';
+import { hasLearningObjectWriteAccess } from '../interactors/AuthorizationManager';
+import { UserToken } from '../types';
 
 export async function submitForReview(params: {
   dataStore: DataStore;
@@ -53,14 +55,21 @@ export async function cancelSubmission(
  *
  * @returns {void}
  */
-export async function createChangelog(
+export async function createChangelog(params: {
   dataStore: DataStore,
   learningObjectId: string,
-  userId: string,
+  user: UserToken,
   changelogText: string,
-): Promise<void> {
+}): Promise<void> {
   try {
-    await dataStore.createChangelog(learningObjectId, userId, changelogText);
+    console.log(params.user);
+    const hasAccess = hasLearningObjectWriteAccess(params.user, params.dataStore, params.learningObjectId);
+    if (hasAccess) {
+      const authorID = await params.dataStore.findUser(params.user.username);
+      await params.dataStore.createChangelog(params.learningObjectId, authorID, params.changelogText);
+    } else {
+      return Promise.reject(new Error('User does not have authorization to perform this action'));
+    }
   } catch (e) {
     reportError(e);
     return Promise.reject(e instanceof Error ? e : new Error(e));
