@@ -402,7 +402,7 @@ export async function getRecentChangelog(
     return changelog;
   } catch (e) {
     reportError(e);
-    return Promise.reject(new Error(`Problem fetching recent changelog for learning object: ` + learningObjectId + `. Error: ${e}`));
+    return Promise.reject(e instanceof Error ? e : new Error(`Problem fetching recent changelog for learning object: ` + learningObjectId + `. Error: ${e}`));
   }
 }
 

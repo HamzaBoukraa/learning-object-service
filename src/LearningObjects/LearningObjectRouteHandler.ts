@@ -178,7 +178,7 @@ export function initializePrivate({
       res.status(200).send(changelog);
     } catch (e) {
       console.error(e);
-      res.status(417).json({message: 'Could not find recent changelog for learning object: ' + learningObjectId});
+      res.status(404).json({message: 'Could not find recent changelog for learning object: ' + learningObjectId});
     }
   };
 
