@@ -969,22 +969,12 @@ export class MongoDriver implements DataStore {
         orderBy,
         full,
       } = params;
-      // Query for users
-      const authors: {
-        _id: string;
-        username: string;
-      }[] = await this.matchUsers(author, text);
 
-      const exactAuthor = author && authors && authors.length ? true : false;
+      // Query for users
+      const authors = await this.matchUsers(author, text);
 
       // Query by LearningOutcomes' mappings
-      let outcomeIDs;
-      if (standardOutcomeIDs) {
-        const outcomeRecords: LearningOutcomeDocument[] = await this.matchOutcomes(
-          standardOutcomeIDs,
-        );
-        outcomeIDs = outcomeRecords ? outcomeRecords.map(doc => doc._id) : null;
-      }
+      const outcomeIDs: string[] = await this.matchOutcomes(standardOutcomeIDs);
 
       let query: any = this.buildSearchQuery({
         text,
@@ -995,7 +985,6 @@ export class MongoDriver implements DataStore {
         outcomeIDs,
         name,
         collection,
-        exactAuthor,
       });
 
       let objectCursor = await this.db
@@ -1101,15 +1090,14 @@ export class MongoDriver implements DataStore {
    * @memberof MongoDriver
    */
   private buildSearchQuery(params: {
-    text: string;
-    authors: { _id: string; username: string }[];
-    status: string[];
-    length: string[];
-    level: string[];
-    outcomeIDs: string[];
-    name: string;
-    collection: string[];
-    exactAuthor?: boolean;
+    text?: string;
+    authors?: { _id: string; username: string }[];
+    status?: string[];
+    length?: string[];
+    level?: string[];
+    outcomeIDs?: string[];
+    name?: string;
+    collection?: string[];
   }) {
     let query: any = <any>{};
 
@@ -1118,7 +1106,7 @@ export class MongoDriver implements DataStore {
       query = this.buildTextSearchQuery({
         query,
         ...params,
-      });
+      } as any);
     } else {
       // Search by fields
       query = this.buildFieldSearchQuery({
@@ -1151,7 +1139,6 @@ export class MongoDriver implements DataStore {
     level?: string[];
     outcomeIDs?: string[];
     collection?: string[];
-    exactAuthor?: boolean;
   }) {
     const {
       query,
@@ -1162,15 +1149,11 @@ export class MongoDriver implements DataStore {
       level,
       outcomeIDs,
       collection,
-      exactAuthor,
     } = params;
     if (name) {
       query.$text = { $search: name };
     }
     if (authors) {
-      if (exactAuthor) {
-        query.authorID = authors[0]._id;
-      } else {
         query.$or.push(
           <any>{
             authorID: { $in: authors.map(author => author._id) },
@@ -1180,7 +1163,6 @@ export class MongoDriver implements DataStore {
           },
         );
       }
-    }
 
     if (length) {
       query.length = { $in: length };
@@ -1208,7 +1190,6 @@ export class MongoDriver implements DataStore {
    * @param {*} query
    * @param {string} text
    * @param {{ _id: string; username: string }[]} authors
-   * @param {boolean} exactAuthor
    * @param {string[]} length
    * @param {string[]} level
    * @param {string[]} outcomeIDs
@@ -1219,7 +1200,6 @@ export class MongoDriver implements DataStore {
     query: any;
     text: string;
     authors?: { _id: string; username: string }[];
-    exactAuthor?: boolean;
     status?: string[];
     length?: string[];
     level?: string[];
@@ -1235,7 +1215,6 @@ export class MongoDriver implements DataStore {
       level,
       outcomeIDs,
       collection,
-      exactAuthor,
     } = params;
     const regex = new RegExp(sanitizeRegex(text));
     query.$or = [
@@ -1244,9 +1223,6 @@ export class MongoDriver implements DataStore {
       { contributors: { $regex: regex } },
     ];
     if (authors && authors.length) {
-      if (exactAuthor) {
-        query.authorID = authors[0]._id;
-      } else {
         query.$or.push(
           <any>{
             authorID: { $in: authors.map(author => author._id) },
@@ -1256,7 +1232,6 @@ export class MongoDriver implements DataStore {
           },
         );
       }
-    }
     if (length) {
       query.length = { $in: length };
     }
