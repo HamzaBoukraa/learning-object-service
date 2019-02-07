@@ -21,6 +21,7 @@ import {
   updateObjectLastModifiedDate,
   updateParentsDate,
 } from '../LearningObjects/LearningObjectInteractor';
+import { sanitizeText } from '../functions';
 
 // file size is in bytes
 const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
@@ -693,6 +694,7 @@ export class LearningObjectInteractor {
           collections: collectionAccessMap,
         });
       } else {
+        console.log('REGULAR', this.formatSearchQuery(query));
         response = await dataStore.searchObjects({
           name,
           author,
@@ -767,6 +769,9 @@ export class LearningObjectInteractor {
     query: LearningObjectQuery,
   ): LearningObjectQuery {
     const formattedQuery = { ...query };
+    formattedQuery.text = sanitizeText(formattedQuery.text) || null;
+    formattedQuery.orderBy =
+      sanitizeText(formattedQuery.orderBy, false) || null;
     formattedQuery.status = toArray(formattedQuery.status);
     formattedQuery.length = toArray(formattedQuery.length);
     formattedQuery.level = toArray(formattedQuery.level);
@@ -984,13 +989,23 @@ export function sanitizeFileName(name: string): string {
  * @returns {T[]}
  */
 function toArray<T>(value: any): T[] {
-  if (value === undefined || value === null) {
-    return undefined;
+  if (value == null || value === '') {
+    return null;
   }
   if (value && Array.isArray(value)) {
-    return [...value];
+    return [...value].filter(isEmptyValue);
   }
-  return [value];
+  return [value].filter(isEmptyValue);
+}
+
+function isEmptyValue(value: any): boolean {
+  if (value == null || value === '') {
+    return true;
+  }
+  if (typeof value === 'string') {
+    return sanitizeText(value) === '';
+  }
+  return false;
 }
 
 /**
