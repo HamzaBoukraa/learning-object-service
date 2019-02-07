@@ -740,20 +740,18 @@ export class LearningObjectInteractor {
     userToken: UserToken,
     status: string[],
   ): string[] {
-    if (
-      isAdminOrEditor(userToken.accessGroups) &&
-      (!status || (status && !status.length))
-    ) {
-      status = [
+    if (userToken && isAdminOrEditor(userToken.accessGroups)) {
+      if (status && status.length) {
+        return status;
+      }
+      return [
         LearningObject.Status.WAITING,
         LearningObject.Status.REVIEW,
         LearningObject.Status.PROOFING,
         LearningObject.Status.RELEASED,
       ];
-    } else {
-      status = [LearningObject.Status.RELEASED];
     }
-    return status;
+    return [LearningObject.Status.RELEASED];
   }
 
   /**
