@@ -1048,3 +1048,16 @@ function getCollectionAccessMap(
 
   return accessMap;
 }
+
+/**
+ * Checks if requester is admin or username matches the username provided
+ *
+ * @param {string} username
+ * @param {UserToken} userToken
+ * @returns
+ */
+const checkAuthByUsername = (username: string, userToken: UserToken) => {
+  return (
+    isAdminOrEditor(userToken.accessGroups) || userToken.username === username
+  );
+};
