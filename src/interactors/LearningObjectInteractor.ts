@@ -239,34 +239,35 @@ export class LearningObjectInteractor {
    * @param {LibraryCommunicator} library
    * @param {string} parentId
    * @param {boolean} [full]
-   * @param {boolean} [accessUnreleased]
+   * @param {string[]} [status]
    * @returns {Promise<LearningObject[]>}
    * @memberof LearningObjectInteractor
    */
-  private static async loadChildObjects(
-    dataStore: DataStore,
-    library: LibraryCommunicator,
-    parentId: string,
-    full?: boolean,
-    accessUnreleased?: boolean,
-  ): Promise<LearningObject[]> {
+  private static async loadChildObjects(params: {
+    dataStore: DataStore;
+    library: LibraryCommunicator;
+    parentId: string;
+    full?: boolean;
+    status?: string[];
+  }): Promise<LearningObject[]> {
+    const { dataStore, library, parentId, full, status } = params;
     // Load Parent's children
     const objects = await dataStore.loadChildObjects({
       id: parentId,
       full,
-      accessUnreleased,
+      status,
     });
     // For each child object
     return Promise.all(
       objects.map(async obj => {
         // Load their children
-        const children = await this.loadChildObjects(
+        const children = await this.loadChildObjects({
           dataStore,
           library,
-          obj.id,
+          parentId: obj.id,
           full,
-          accessUnreleased,
-        );
+          status,
+        });
         // For each of the Child's children
         await Promise.all(
           children.map(async child => {
