@@ -116,6 +116,7 @@ export interface DataStore
     query: { [index: string]: string };
     fields: { [index: string]: 0 | 1 };
   }): Promise<T>;
+  checkLearningObjectExistence(learningObjectId: string): Promise<string[]>;
 }
 
 export { Collection as LearningObjectCollection };

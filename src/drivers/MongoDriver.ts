@@ -849,6 +849,19 @@ export class MongoDriver implements DataStore {
     return learningObject;
   }
 
+  async checkLearningObjectExistence(learningObjectId: string): Promise<string[]> {
+    try {
+      const arr = await this.db
+        .collection(COLLECTIONS.LEARNING_OBJECTS)
+        .find({ _id: learningObjectId })
+        .project({_id: 1 })
+        .toArray();
+      return arr;
+    } catch (e) {
+      return Promise.reject(new Error(`${e}`));
+    }
+  }
+
   /**
    * Return literally all objects. Very expensive.
    * @returns {Cursor<LearningObjectRecord>[]} cursor of literally all objects

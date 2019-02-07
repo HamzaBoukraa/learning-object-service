@@ -5,6 +5,7 @@ import { FileManager } from '../interfaces/interfaces';
 import { reportError } from '../drivers/SentryConnector';
 import { hasLearningObjectWriteAccess } from '../interactors/AuthorizationManager';
 import { UserToken } from '../types';
+import { LearningObjectError } from '../errors';
 
 export async function submitForReview(params: {
   dataStore: DataStore;
@@ -62,13 +63,17 @@ export async function createChangelog(params: {
   changelogText: string,
 }): Promise<void> {
   try {
-    console.log(params.user);
     const hasAccess = hasLearningObjectWriteAccess(params.user, params.dataStore, params.learningObjectId);
     if (hasAccess) {
       const authorID = await params.dataStore.findUser(params.user.username);
-      await params.dataStore.createChangelog(params.learningObjectId, authorID, params.changelogText);
+      const objectId = await params.dataStore.checkLearningObjectExistence(params.learningObjectId);
+      if (objectId && objectId.length > 0) {
+        await params.dataStore.createChangelog(params.learningObjectId, authorID, params.changelogText);
+      } else {
+        return Promise.reject(new Error(LearningObjectError.LEARNING_OBJECT_NOT_FOUND()));
+      }
     } else {
-      return Promise.reject(new Error('User does not have authorization to perform this action'));
+      return Promise.reject(new Error(LearningObjectError.INVALID_ACCESS()));
     }
   } catch (e) {
     reportError(e);

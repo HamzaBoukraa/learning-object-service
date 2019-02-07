@@ -28,6 +28,9 @@ const COLLECTIONS = {
 };
 
 export class MockDataStore implements DataStore {
+  checkLearningObjectExistence(learningObjectId: string): Promise<string[]> {
+    return Promise.resolve([MOCK_OBJECTS.LEARNING_OBJECT_ID]);
+  }
 
   deleteChangelog(learningObjectId: String): Promise<void> {
     return Promise.resolve();

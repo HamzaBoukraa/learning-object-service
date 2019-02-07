@@ -5,4 +5,7 @@ export const LearningObjectError = {
     INVALID_ACCESS: (): string => {
         return 'User does not have authorization to perform this action';
     },
+    LEARNING_OBJECT_NOT_FOUND: (): string => {
+      return 'The requested learning object does not exist';
+    },
   };
