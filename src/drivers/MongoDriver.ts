@@ -105,6 +105,40 @@ export class MongoDriver implements DataStore {
     this.statStore = new LearningObjectStatStore(this.db);
   }
 
+  async searchObjectsByCollection(params: {
+    name?: string;
+    author?: string;
+    length?: string[];
+    level?: string[];
+    standardOutcomeIDs?: string[];
+    text?: string;
+    collections: {
+      [index: string]: string[];
+    };
+  }): Promise<{
+    total: number;
+    objects: LearningObject[];
+  }> {
+    let operationsArray = [{ status: 'released' }];
+    const filteredCollections = Object.keys(collections);
+    for (const key of filteredCollections) {
+      const status = collection[key];
+      operationsArray.push({ collection: key, status: status });
+    }
+
+    const cursor = this.db
+      .collection<LearningObjectDocment>(COLLECTIONS.LEARNING_OBJECTS)
+      .aggregate([
+        {
+          $match: {
+            $or: operationsArray,
+          },
+        },
+      ]);
+    totatalObjects = cursor.count();
+    return null;
+  }
+
   /**
    * Submit a learning object to a specified collection
    * @param username the username of the requester
