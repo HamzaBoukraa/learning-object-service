@@ -669,12 +669,12 @@ export class LearningObjectInteractor {
         page,
         limit,
       } = this.formatSearchQuery(query);
-
       status = this.getAuthorizedStatuses(userToken, status);
 
       let response: { total: number; objects: LearningObject[] };
 
       if (
+        userToken &&
         isPrivilegedUser(userToken.accessGroups) &&
         !isAdminOrEditor(userToken.accessGroups)
       ) {
