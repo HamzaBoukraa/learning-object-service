@@ -16,6 +16,7 @@ import * as FileInteractor from '../../FileManager/FileInteractor';
 import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
 import * as LearningOutcomeRouteHandler from '../../LearningOutcomes/LearningOutcomeRouteHandler';
 import * as SubmissionRouteDriver from '../../LearningObjectSubmission/SubmissionRouteDriver';
+import * as ChangelogRouteHandler from '../../Changelogs/ChangelogRouteDriver';
 import { reportError } from '../SentryConnector';
 import { LearningObjectError } from '../../errors';
 
@@ -88,6 +89,11 @@ export class ExpressAuthRouteDriver {
     });
 
     LearningOutcomeRouteHandler.initialize({
+      router,
+      dataStore: this.dataStore,
+    });
+
+    ChangelogRouteHandler.initialize({
       router,
       dataStore: this.dataStore,
     });

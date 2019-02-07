@@ -1,7 +1,6 @@
 import { Request, Response, Router } from 'express';
 import { LearningObjectError } from '../errors';
 import { DataStore } from '../interfaces/DataStore';
-import { FileManager } from '../interfaces/interfaces';
 import { UserToken } from '../types';
 import * as ChangelogInteractor from './ChangelogInteractor';
 
@@ -21,7 +20,6 @@ export function initialize({
 }: {
   router: Router;
   dataStore: DataStore;
-  fileManager: FileManager;
 }) {
   async function createLog(req: Request, res: Response) {
     try {
