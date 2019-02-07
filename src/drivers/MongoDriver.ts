@@ -5,6 +5,7 @@ import {
   Filters,
   LearningObjectCollection,
   LearningObjectQuery,
+  ObjectsByCollectionQuery,
 } from '../interfaces/DataStore';
 import {
   CompletedPart,
@@ -105,21 +106,13 @@ export class MongoDriver implements DataStore {
     this.statStore = new LearningObjectStatStore(this.db);
   }
 
-  async searchObjectsByCollection(params: {
-    name?: string;
-    author?: string;
-    length?: string[];
-    level?: string[];
-    standardOutcomeIDs?: string[];
-    text?: string;
-    collections: {
-      [index: string]: string[];
-    };
-  }): Promise<{
+  async searchObjectsByCollection(
+    params: ObjectsByCollectionQuery,
+  ): Promise<{
     total: number;
     objects: LearningObject[];
   }> {
-    const {
+    let {
       name,
       author,
       length,
@@ -127,13 +120,24 @@ export class MongoDriver implements DataStore {
       standardOutcomeIDs,
       text,
       collections,
+      orderBy,
+      sortType,
+      page,
+      limit,
     } = params;
 
     const orConditions: any[] = [{ status: 'released' }];
     const filteredCollections = Object.keys(collections);
     for (const key of filteredCollections) {
       const status = collections[key];
-      orConditions.push({ collection: key, status: { $in: status } });
+      orConditions.push({
+        $and: [
+          {
+            collection: key,
+            status: { $in: status },
+          },
+        ],
+      });
     }
 
     // Query for users
@@ -151,17 +155,47 @@ export class MongoDriver implements DataStore {
       outcomeIDs,
     });
 
-    const cursor = this.db
-      .collection<LearningObjectDocument>(COLLECTIONS.LEARNING_OBJECTS)
-      .aggregate([
-        {
-          $match: {
-            ...searchQuery,
-            $or: orConditions,
-          },
+    const pipeline: any[] = [
+      {
+        $match: {
+          ...searchQuery,
+          $or: orConditions,
         },
-      ]);
-    return null;
+      },
+    ];
+    if (limit) {
+      pipeline.push({ $limit: limit });
+      if (page != null) {
+        page = this.formatPage(page);
+        const skip = this.calcSkip({ page, limit });
+        pipeline.push({ $skip: skip });
+      }
+    }
+
+    if (orderBy) {
+      const sort = { $sort: {} };
+      sort.$sort[orderBy] = sortType;
+      pipeline.push(sort);
+    }
+
+    if (text && !orderBy) {
+      pipeline.push({ $sort: { score: { $meta: 'textScore' } } });
+    }
+
+    pipeline.push({
+      $group: {
+        _id: 1,
+        objects: { $push: '$$ROOT' },
+        total: { $sum: 1 },
+      },
+    });
+
+    const cursor = this.db
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .aggregate<{ objects: LearningObjectDocument; total: number }>(pipeline);
+    const results = await cursor.toArray();
+    const docs = results[0];
+    return { total: 0, objects: [] };
   }
 
   /**
@@ -1282,13 +1316,8 @@ export class MongoDriver implements DataStore {
     filters: Filters,
   ): Cursor<T> {
     try {
-      if (filters.page !== undefined && filters.page <= 0) {
-        filters.page = 1;
-      }
-      const skip =
-        filters.page && filters.limit
-          ? (filters.page - 1) * filters.limit
-          : undefined;
+      filters.page = this.formatPage(filters.page);
+      const skip = this.calcSkip({ page: filters.page, limit: filters.limit });
 
       // Paginate if has limiter
       cursor =
@@ -1307,6 +1336,34 @@ export class MongoDriver implements DataStore {
       console.log(e);
     }
   }
+
+  /**
+   * Ensures page is not less than 1 if defined
+   *
+   * @private
+   * @param {number} page
+   * @returns
+   * @memberof MongoDriver
+   */
+  private formatPage(page: number) {
+    if (page != null && page <= 0) {
+      return 1;
+    }
+    return page;
+  }
+
+  /**
+   * Calculated number of docs to skip based on page and limit
+   *
+   * @private
+   * @param {{ page: number; limit: number }} params
+   * @returns
+   * @memberof MongoDriver
+   */
+  private calcSkip(params: { page: number; limit: number }) {
+    return params.page && params.limit ? (params.page - 1) * params.limit : 0;
+  }
+
   /**
    * Gets Learning Outcome IDs that contain Standard Outcome IDs
    *
