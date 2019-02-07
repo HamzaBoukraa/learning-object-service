@@ -92,12 +92,12 @@ describe('cancelSubmission', () => {
 describe('createChangelog', () => {
   it('should create a new changelog', async done => {
     try {
-      await expect(createChangelog(
+      await expect(createChangelog({
         dataStore,
-        MOCK_OBJECTS.LEARNING_OBJECT_ID,
-        MOCK_OBJECTS.USER_ID,
-        MOCK_OBJECTS.CHANGELOG_TEXT,
-      ))
+        learningObjectId: MOCK_OBJECTS.LEARNING_OBJECT_ID,
+        user: MOCK_OBJECTS.USERTOKEN,
+        changelogText: MOCK_OBJECTS.CHANGELOG_TEXT,
+      }))
       .resolves.toBe(undefined);
       done();
     } catch (error) {
