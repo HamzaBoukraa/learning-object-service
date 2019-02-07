@@ -27,7 +27,7 @@ export function initialize({
       const user: UserToken = req.user;
       const changelogText = req.body.changelogText;
       await ChangelogInteractor.createChangelog({dataStore, learningObjectId, user, changelogText});
-      res.status(200);
+      res.sendStatus(200);
     } catch (e) {
       if (e instanceof Error) {
         switch (e.message) {
