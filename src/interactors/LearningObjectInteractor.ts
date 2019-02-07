@@ -303,41 +303,6 @@ export class LearningObjectInteractor {
     }
   }
 
-  public static async loadFullLearningObjectByIDs(
-    dataStore: DataStore,
-    library: LibraryCommunicator,
-    ids: string[],
-  ): Promise<LearningObject[]> {
-    try {
-      let learningObjects = await dataStore.fetchMultipleObjects(ids, true);
-
-      learningObjects = await Promise.all(
-        learningObjects.map(async object => {
-          try {
-            object.metrics = await this.loadMetrics(library, object.id);
-          } catch (e) {
-            console.error(e);
-          }
-          const children = await this.loadChildObjects(
-            dataStore,
-            library,
-            object.id,
-            true,
-            true,
-          );
-          children.forEach((child: LearningObject) => object.addChild(child));
-          return object;
-        }),
-      );
-
-      return learningObjects;
-    } catch (e) {
-      return Promise.reject(
-        `Problem loading full LearningObject by ID. Error: ${e}`,
-      );
-    }
-  }
-
   /**
    * Checks a learning object against submission criteria.
    *
