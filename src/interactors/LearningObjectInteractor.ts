@@ -1009,18 +1009,42 @@ function toNumber(value: any): number {
   return null;
 }
 
-function getCollectionAccess(
+/**
+ * Returns Map of collections to statuses representing read access privilege over associated collection
+ *
+ * @param {string[]} collectionFilters
+ * @param {string[]} privilegedCollections
+ * @returns {{ [index: string]: string[] }}
+ */
+function getCollectionAccessMap(
   collectionFilters: string[],
   privilegedCollections: string[],
-): { releasedOnly: string[]; privilegedAccess: string[] } {
-  const releasedOnly = [...collectionFilters];
-  const privilegedAccess = [];
+): { [index: string]: string[] } {
+  const accessMap = {};
+
+  if (collectionFilters && collectionFilters.length) {
   for (const filter of collectionFilters) {
     if (privilegedCollections.includes(filter)) {
-      privilegedAccess.push(filter);
-      const index = releasedOnly.indexOf(filter);
-      releasedOnly.splice(index, 1);
+        accessMap[filter] = [
+          LearningObject.Status.WAITING,
+          LearningObject.Status.REVIEW,
+          LearningObject.Status.PROOFING,
+          LearningObject.Status.RELEASED,
+        ];
+      } else {
+        accessMap[filter] = [LearningObject.Status.RELEASED];
+      }
+    }
+  } else {
+    for (const collection of privilegedCollections) {
+      accessMap[collection] = [
+        LearningObject.Status.WAITING,
+        LearningObject.Status.REVIEW,
+        LearningObject.Status.PROOFING,
+        LearningObject.Status.RELEASED,
+      ];
     }
   }
-  return { releasedOnly, privilegedAccess };
+
+  return accessMap;
 }
