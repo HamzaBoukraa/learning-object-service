@@ -1315,17 +1315,20 @@ export class MongoDriver implements DataStore {
    * @returns {Promise<LearningOutcomeDocument[]>}
    * @memberof MongoDriver
    */
-  private async matchOutcomes(
-    standardOutcomeIDs: string[],
-  ): Promise<LearningOutcomeDocument[]> {
-    return standardOutcomeIDs
-      ? await this.db
+  private async matchOutcomes(standardOutcomeIDs: string[]): Promise<string[]> {
+    if (!standardOutcomeIDs) {
+      return null;
+    }
+    const docs = await this.db
           .collection(COLLECTIONS.LEARNING_OUTCOMES)
-          .find<LearningOutcomeDocument>({
+      .find<LearningOutcomeDocument>(
+        {
             mappings: { $all: standardOutcomeIDs },
-          })
-          .toArray()
-      : null;
+        },
+        { projection: { _id: 1 } },
+      )
+      .toArray();
+    return docs.map(doc => doc._id);
   }
   /**
    * Search for users that match author or text param
