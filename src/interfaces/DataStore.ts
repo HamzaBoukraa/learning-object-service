@@ -24,17 +24,22 @@ export interface DataStore
   deleteMultipleLearningObjects(ids: string[]): Promise<void>;
   getUserObjects(username: string): Promise<string[]>;
   findLearningObject(username: string, name: string): Promise<string>;
-  fetchLearningObject(id: string, full?: boolean): Promise<LearningObject>;
-  fetchMultipleObjects(
-    ids: string[],
-    full?: boolean,
-    orderBy?: string,
-    sortType?: number,
-  ): Promise<LearningObject[]>;
-  fetchAllObjects(
-    page?: number,
-    limit?: number,
-  ): Promise<{ objects: LearningObject[]; total: number }>;
+  fetchLearningObject(params: {
+    id: string;
+    full?: boolean;
+  }): Promise<LearningObject>;
+  fetchMultipleObjects(params: {
+    ids: string[];
+    full?: boolean;
+    status: string[];
+    orderBy?: string;
+    sortType?: number;
+  }): Promise<LearningObject[]>;
+  fetchAllObjects(params: {
+    status: string[];
+    page?: number;
+    limit?: number;
+  }): Promise<{ objects: LearningObject[]; total: number }>;
   searchObjects(
     params: LearningObjectQuery,
   ): Promise<{ objects: LearningObject[]; total: number }>;
@@ -53,6 +58,7 @@ export interface DataStore
   loadChildObjects(params: {
     id: string;
     full?: boolean;
+    status?: string[];
   }): Promise<LearningObject[]>;
   findSingleFile(params: {
     learningObjectId: string;
