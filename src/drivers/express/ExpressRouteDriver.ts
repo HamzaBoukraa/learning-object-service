@@ -49,11 +49,11 @@ export class ExpressRouteDriver {
           total: number;
           objects: Partial<LearningObject>[];
         };
+        const userToken = req.user;
         const page = req.query.currPage;
         const limit = req.query.limit;
         delete req.query.page;
         delete req.query.limit;
-        const userToken = req.user;
         if (Object.keys(req.query).length) {
           objectResponse = await LearningObjectInteractor.searchObjects({
             dataStore: this.dataStore,
@@ -66,12 +66,13 @@ export class ExpressRouteDriver {
             userToken,
           });
         } else {
-          objectResponse = await LearningObjectInteractor.fetchAllObjects(
-            this.dataStore,
-            this.library,
+          objectResponse = await LearningObjectInteractor.fetchAllObjects({
+            dataStore: this.dataStore,
+            library: this.library,
             page,
             limit,
-          );
+            userToken,
+          });
         }
         objectResponse.objects = objectResponse.objects.map(obj =>
           obj.toPlainObject(),
