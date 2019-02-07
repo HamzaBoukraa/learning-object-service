@@ -4,27 +4,18 @@ import { MOCK_OBJECTS } from '../tests/mocks';
 import {
   getRecentChangelog, createChangelog,
 } from './ChangelogInteractor';
+import { LearningObject } from '@cyber4all/clark-entity';
 
 const dataStore: DataStore = new MockDataStore(); // DataStore
 
 describe('Interactor: ChangelogInteractor', () => {
   it('should get latest changelog for a learning object', async () => {
     try {
-        await expect(getRecentChangelog(
+        return expect(getRecentChangelog(
             dataStore,
             MOCK_OBJECTS.LEARNING_OBJECT_ID,
         ))
-        .resolves.toEqual({
-            _id: '1234',
-            learningObjectId: '1223',
-            logs: [
-                {
-                    userId: '123',
-                    date: '2019-02-06T15:52:10.894Z',
-                    text: 'hello',
-                },
-            ],
-        });
+        .resolves.toHaveProperty('learningObjectId', MOCK_OBJECTS.LEARNING_OBJECT_ID);
     } catch (error) {
       console.log(error);
     }
@@ -35,7 +26,7 @@ describe('Interactor: ChangelogInteractor', () => {
 describe('createChangelog', () => {
     it('should create a new changelog', async () => {
         try {
-            await expect(createChangelog({
+            return expect(createChangelog({
                 dataStore,
                 learningObjectId: MOCK_OBJECTS.LEARNING_OBJECT_ID,
                 user: MOCK_OBJECTS.USERTOKEN,

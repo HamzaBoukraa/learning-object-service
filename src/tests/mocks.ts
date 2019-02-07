@@ -73,7 +73,7 @@ export const MOCK_OBJECTS = {
   },
   CHANGELOG: {
       _id: '1234',
-      learningObjectId: '1223',
+      learningObjectId: 'default_id',
       logs: [
           {
               userId: '123',
