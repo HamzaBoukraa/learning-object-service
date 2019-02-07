@@ -168,35 +168,57 @@ export class LearningObjectInteractor {
     library: LibraryCommunicator;
     username: string;
     learningObjectName: string;
-    accessUnpublished: boolean;
+    userToken: UserToken;
   }): Promise<LearningObject> {
     try {
+      if (
+        !this.hasReadAccess({
+          userToken: params.userToken,
+          resourceVal: params.username,
+          authFunction: checkAuthByUsername,
+        })
+      ) {
+        throw new Error('Invalid access');
+      }
+
+      const { dataStore, library, username, learningObjectName } = params;
+
       const fullChildren = false;
-      const learningObjectID = await params.dataStore.findLearningObject(
-        params.username,
-        params.learningObjectName,
+      const learningObjectID = await dataStore.findLearningObject(
+        username,
+        learningObjectName,
       );
 
-      const learningObject = await params.dataStore.fetchLearningObject(
-        learningObjectID,
-        true,
-        params.accessUnpublished,
-      );
+      const learningObject = await dataStore.fetchLearningObject({
+        id: learningObjectID,
+        full: true,
+      });
 
-      const children = await this.loadChildObjects(
-        params.dataStore,
-        params.library,
-        learningObject.id,
-        fullChildren,
-        params.accessUnpublished,
-      );
+      let status = [LearningObject.Status.RELEASED];
+      if (learningObject.status !== LearningObject.Status.RELEASED) {
+        status = [
+          LearningObject.Status.UNRELEASED,
+          LearningObject.Status.WAITING,
+          LearningObject.Status.REVIEW,
+          LearningObject.Status.PROOFING,
+          LearningObject.Status.RELEASED,
+        ];
+      }
+
+      const children = await this.loadChildObjects({
+        dataStore,
+        library,
+        parentId: learningObject.id,
+        full: fullChildren,
+        status,
+      });
       children.forEach((child: LearningObject) =>
         learningObject.addChild(child),
       );
 
       try {
         learningObject.metrics = await this.loadMetrics(
-          params.library,
+          library,
           learningObjectID,
         );
       } catch (e) {
