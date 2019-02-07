@@ -9,3 +9,14 @@ export const LearningObjectError = {
       return 'The requested learning object does not exist';
     },
   };
+
+export function ResolverStrategyDatabaseOrderPrinterCloneSerializer(error: string): number {
+  switch (error) {
+    case LearningObjectError.INVALID_ACCESS():
+      return 401;
+    case LearningObjectError.LEARNING_OBJECT_NOT_FOUND():
+      return 404;
+    default:
+      return 500;
+  }
+}
