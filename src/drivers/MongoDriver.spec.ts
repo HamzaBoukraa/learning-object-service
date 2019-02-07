@@ -1,4 +1,5 @@
 import { MongoDriver } from './MongoDriver';
+import { IoTJobsDataPlane } from 'aws-sdk';
 
 describe('MongoDriver', () => {
   let driver: MongoDriver;
@@ -23,11 +24,20 @@ describe('MongoDriver', () => {
   describe('findParentObjectIds', () => {
     it('The function should return an array', async () => {
       expect.assertions(1);
-      const learningObjectId = '5ad8f5a6824dd17351adf1e1';
+      const learningObjectId = 'default_id';
       const parents = await driver.findParentObjectIds({
         childId: learningObjectId,
       });
       expect(Array.isArray(parents)).toBe(true);
+    });
+  });
+
+  describe('checkLearningObjectExistence', () => {
+    it('The function should return an array', async () => {
+      expect.assertions(1);
+      const learningObjectId = 'default_id';
+      const result = await driver.checkLearningObjectExistence(learningObjectId);
+      expect(result.length).toBe(1);
     });
   });
 
