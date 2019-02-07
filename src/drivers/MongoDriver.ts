@@ -119,23 +119,48 @@ export class MongoDriver implements DataStore {
     total: number;
     objects: LearningObject[];
   }> {
-    let operationsArray = [{ status: 'released' }];
+    const {
+      name,
+      author,
+      length,
+      level,
+      standardOutcomeIDs,
+      text,
+      collections,
+    } = params;
+
+    const orConditions: any[] = [{ status: 'released' }];
     const filteredCollections = Object.keys(collections);
     for (const key of filteredCollections) {
-      const status = collection[key];
-      operationsArray.push({ collection: key, status: status });
+      const status = collections[key];
+      orConditions.push({ collection: key, status: { $in: status } });
     }
 
+    // Query for users
+    const authors = await this.matchUsers(author, text);
+
+    // Query by LearningOutcomes' mappings
+    const outcomeIDs: string[] = await this.matchOutcomes(standardOutcomeIDs);
+
+    const searchQuery = this.buildSearchQuery({
+      name,
+      authors,
+      length,
+      level,
+      text,
+      outcomeIDs,
+    });
+
     const cursor = this.db
-      .collection<LearningObjectDocment>(COLLECTIONS.LEARNING_OBJECTS)
+      .collection<LearningObjectDocument>(COLLECTIONS.LEARNING_OBJECTS)
       .aggregate([
         {
           $match: {
-            $or: operationsArray,
+            ...searchQuery,
+            $or: orConditions,
           },
         },
       ]);
-    totatalObjects = cursor.count();
     return null;
   }
 
@@ -1154,15 +1179,15 @@ export class MongoDriver implements DataStore {
       query.$text = { $search: name };
     }
     if (authors) {
-        query.$or.push(
-          <any>{
-            authorID: { $in: authors.map(author => author._id) },
-          },
-          {
-            contributors: { $in: authors.map(author => author.username) },
-          },
-        );
-      }
+      query.$or.push(
+        <any>{
+          authorID: { $in: authors.map(author => author._id) },
+        },
+        {
+          contributors: { $in: authors.map(author => author.username) },
+        },
+      );
+    }
 
     if (length) {
       query.length = { $in: length };
@@ -1223,15 +1248,15 @@ export class MongoDriver implements DataStore {
       { contributors: { $regex: regex } },
     ];
     if (authors && authors.length) {
-        query.$or.push(
-          <any>{
-            authorID: { $in: authors.map(author => author._id) },
-          },
-          {
-            contributors: { $in: authors.map(author => author._id) },
-          },
-        );
-      }
+      query.$or.push(
+        <any>{
+          authorID: { $in: authors.map(author => author._id) },
+        },
+        {
+          contributors: { $in: authors.map(author => author._id) },
+        },
+      );
+    }
     if (length) {
       query.length = { $in: length };
     }
@@ -1295,10 +1320,10 @@ export class MongoDriver implements DataStore {
       return null;
     }
     const docs = await this.db
-          .collection(COLLECTIONS.LEARNING_OUTCOMES)
+      .collection(COLLECTIONS.LEARNING_OUTCOMES)
       .find<LearningOutcomeDocument>(
         {
-            mappings: { $all: standardOutcomeIDs },
+          mappings: { $all: standardOutcomeIDs },
         },
         { projection: { _id: 1 } },
       )
