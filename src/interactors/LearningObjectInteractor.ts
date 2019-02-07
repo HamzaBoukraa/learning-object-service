@@ -743,7 +743,7 @@ export class LearningObjectInteractor {
    */
   private static getAuthorizedStatuses(
     userToken: UserToken,
-    status: string[],
+    status?: string[],
   ): string[] {
     if (userToken && isAdminOrEditor(userToken.accessGroups)) {
       if (status && status.length) {
