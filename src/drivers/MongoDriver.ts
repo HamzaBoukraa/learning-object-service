@@ -1365,7 +1365,7 @@ export class MongoDriver implements DataStore {
           })
           .sort({ score: { $meta: 'textScore' } })
           .toArray()
-      : Promise.resolve(null);
+      : null;
   }
   /**
    * Fetches all Learning Object collections
