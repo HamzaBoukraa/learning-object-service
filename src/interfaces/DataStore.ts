@@ -9,19 +9,27 @@ export interface DataStore
   extends LearningOutcomeDatastore,
     LearningObjectStatDatastore,
     CollectionDataStore {
+  /*
+   * Datastore Connection Management
+   */
   connect(dburi: string): Promise<void>;
   disconnect(): void;
+  /*
+   * CREATE Operations
+   */
+
+  // LearningObjects
   insertLearningObject(object: LearningObject): Promise<string>;
-  editLearningObject(params: {
-    id: string;
-    updates: LearningObjectUpdates;
+
+  // File Uploads
+  insertMultipartUploadStatus(params: {
+    status: MultipartFileUploadStatus;
   }): Promise<void>;
-  updateMultipleLearningObjects(params: {
-    ids: string[];
-    updates: LearningObjectUpdates;
-  }): Promise<void>;
-  deleteLearningObject(id: string): Promise<void>;
-  deleteMultipleLearningObjects(ids: string[]): Promise<void>;
+  /*
+   * READ Operations
+   */
+
+  // Learning Objects
   getUserObjects(username: string): Promise<string[]>;
   findLearningObject(username: string, name: string): Promise<string>;
   fetchLearningObject(params: {
@@ -43,62 +51,6 @@ export interface DataStore
   searchObjects(
     params: LearningObjectQuery,
   ): Promise<{ objects: LearningObject[]; total: number }>;
-  submitLearningObjectToCollection(
-    username: string,
-    id: string,
-    collection: string,
-  ): Promise<void>;
-  unsubmitLearningObject(id: string): Promise<void>;
-  setChildren(parentId: string, children: string[]): Promise<void>;
-  deleteChild(parentId: string, childId: string): Promise<void>;
-  findParentObjects(params: {
-    query: LearningObjectQuery;
-  }): Promise<LearningObject[]>;
-  findParentObjectIds(params: { childId: string }): Promise<string[]>;
-  loadChildObjects(params: {
-    id: string;
-    full?: boolean;
-    status?: string[];
-  }): Promise<LearningObject[]>;
-  findSingleFile(params: {
-    learningObjectId: string;
-    fileId: string;
-  }): Promise<LearningObject.Material.File>;
-  // Learning Object Files
-  addToFiles(params: {
-    id: string;
-    loFile: LearningObject.Material.File;
-  }): Promise<void>;
-  getLearningObjectMaterials(params: {
-    id: string;
-  }): Promise<LearningObject.Material>;
-  removeFromFiles(params: { objectId: string; fileId: string }): Promise<void>;
-  updateFileDescription(params: {
-    learningObjectId: string;
-    fileId: string;
-    description: string;
-  }): Promise<LearningObject.Material.File>;
-  // Multipart Uploads
-  insertMultipartUploadStatus(params: {
-    status: MultipartFileUploadStatus;
-  }): Promise<void>;
-  fetchMultipartUploadStatus(params: {
-    id: string;
-  }): Promise<MultipartFileUploadStatus>;
-  updateMultipartUploadStatus(params: {
-    id: string;
-    completedPart: CompletedPart;
-  }): Promise<void>;
-  deleteMultipartUploadStatus(params: { id: string }): Promise<void>;
-  addToCollection(learningObjectId: string, collection: string): Promise<void>;
-
-  findUser(username: string): Promise<string>;
-  fetchUser(id: string): Promise<User>;
-  peek<T>(params: {
-    query: { [index: string]: string };
-    fields: { [index: string]: 0 | 1 };
-  }): Promise<T>;
-
   searchObjectsByCollection(params: {
     name?: string;
     author?: string;
@@ -113,6 +65,89 @@ export interface DataStore
     total: number;
     objects: LearningObject[];
   }>;
+  findParentObjects(params: {
+    query: LearningObjectQuery;
+  }): Promise<LearningObject[]>;
+  findParentObjectIds(params: { childId: string }): Promise<string[]>;
+  loadChildObjects(params: {
+    id: string;
+    full?: boolean;
+    status?: string[];
+  }): Promise<LearningObject[]>;
+
+  // Materials
+  findSingleFile(params: {
+    learningObjectId: string;
+    fileId: string;
+  }): Promise<LearningObject.Material.File>;
+  getLearningObjectMaterials(params: {
+    id: string;
+  }): Promise<LearningObject.Material>;
+
+  // File Uploads
+  fetchMultipartUploadStatus(params: {
+    id: string;
+  }): Promise<MultipartFileUploadStatus>;
+
+  // Users
+  findUser(username: string): Promise<string>;
+  fetchUser(id: string): Promise<User>;
+  peek<T>(params: {
+    query: { [index: string]: string };
+    fields: { [index: string]: 0 | 1 };
+  }): Promise<T>;
+
+  /*
+   * UPDATE Operations
+   */
+
+  // Learning Objects
+  editLearningObject(params: {
+    id: string;
+    updates: LearningObjectUpdates;
+  }): Promise<void>;
+  updateMultipleLearningObjects(params: {
+    ids: string[];
+    updates: LearningObjectUpdates;
+  }): Promise<void>;
+  submitLearningObjectToCollection(
+    username: string,
+    id: string,
+    collection: string,
+  ): Promise<void>;
+  unsubmitLearningObject(id: string): Promise<void>;
+  setChildren(parentId: string, children: string[]): Promise<void>;
+  deleteChild(parentId: string, childId: string): Promise<void>;
+  addToCollection(learningObjectId: string, collection: string): Promise<void>;
+
+  // Materials
+  addToFiles(params: {
+    id: string;
+    loFile: LearningObject.Material.File;
+  }): Promise<void>;
+  removeFromFiles(params: { objectId: string; fileId: string }): Promise<void>;
+  updateFileDescription(params: {
+    learningObjectId: string;
+    fileId: string;
+    description: string;
+  }): Promise<LearningObject.Material.File>;
+
+  // File Uploads
+  updateMultipartUploadStatus(params: {
+    id: string;
+    completedPart: CompletedPart;
+  }): Promise<void>;
+
+  /*
+   * DELETE Operations
+   */
+
+  // Learning Objects
+  deleteLearningObject(id: string): Promise<void>;
+  deleteMultipleLearningObjects(ids: string[]): Promise<void>;
+
+  // File Uploads
+  deleteMultipartUploadStatus(params: { id: string }): Promise<void>;
 }
 
 export { Collection as LearningObjectCollection };
