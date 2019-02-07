@@ -1,4 +1,5 @@
 import { MongoDriver } from '../drivers/MongoDriver';
+import { resolveSoa } from 'dns';
 
 describe('MongoDriver', () => {
   let driver: MongoDriver;
@@ -27,8 +28,18 @@ describe('MongoDriver', () => {
   describe('deleteChangelog', () => {
     it('The function should return void', async () => {
         const learningObjectId = 'default_id';
-        const changelog = await driver.deleteChangelog(learningObjectId);
-        expect(changelog).toBe(undefined);
+        await expect(driver.deleteChangelog(learningObjectId))
+            .resolves.toBe(undefined);
+    });
+  });
+
+  describe('createChangelog', () => {
+    it('The function should return void', async () => {
+        const learningObjectId = '5ad8f5a6824dd17351adf1e1';
+        const userID = '12356';
+        const text = 'hello world';
+        await expect(driver.createChangelog(learningObjectId, userID, text))
+           .resolves.toBe(undefined);
     });
   });
 

@@ -89,20 +89,4 @@ describe('cancelSubmission', () => {
   });
 });
 
-describe('createChangelog', () => {
-  it('should create a new changelog', async done => {
-    try {
-      await expect(createChangelog({
-        dataStore,
-        learningObjectId: MOCK_OBJECTS.LEARNING_OBJECT_ID,
-        user: MOCK_OBJECTS.USERTOKEN,
-        changelogText: MOCK_OBJECTS.CHANGELOG_TEXT,
-      }))
-      .resolves.toBe(undefined);
-      done();
-    } catch (error) {
-      console.error(error);
-    }
-  });
-});
 

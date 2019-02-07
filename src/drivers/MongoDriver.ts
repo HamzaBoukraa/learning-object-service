@@ -30,6 +30,7 @@ import { LearningObjectStats } from '../LearningObjectStats/LearningObjectStatsI
 import { lengths } from '@cyber4all/clark-taxonomy';
 import { LearningObjectDataStore } from '../LearningObjects/LearningObjectDatastore';
 import { ChangeLogDocument } from '../types/Changelog';
+import { ChangelogDataStore } from '../Changelogs/ChangelogDatastore';
 
 export enum COLLECTIONS {
   USERS = 'users',
@@ -46,6 +47,7 @@ export class MongoDriver implements DataStore {
   learningOutcomeStore: LearningOutcomeMongoDatastore;
   statStore: LearningObjectStatStore;
   learningObjectStore: LearningObjectDataStore;
+  changelogStore: ChangelogDataStore;
 
   private mongoClient: MongoClient;
   private db: Db;
@@ -110,6 +112,7 @@ export class MongoDriver implements DataStore {
     this.learningOutcomeStore = new LearningOutcomeMongoDatastore(this.db);
     this.statStore = new LearningObjectStatStore(this.db);
     this.learningObjectStore = new LearningObjectDataStore(this.db);
+    this.changelogStore = new ChangelogDataStore(this.db);
   }
 
   /**
@@ -284,11 +287,11 @@ export class MongoDriver implements DataStore {
   }
 
   async fetchRecentChangelog(learningObjectId: string): Promise<ChangeLogDocument> {
-    return this.learningObjectStore.getRecentChangelog(learningObjectId);
+    return this.changelogStore.getRecentChangelog(learningObjectId);
   }
 
   async deleteChangelog(learningObjectId: string): Promise<void> {
-    return this.learningObjectStore.deleteChangelog(learningObjectId);
+    return this.changelogStore.deleteChangelog(learningObjectId);
   }
 
   /**
@@ -1483,7 +1486,7 @@ export class MongoDriver implements DataStore {
     userId: string,
     changelogText: string,
   ): Promise<void> {
-    return this.submissionStore.createChangelog(
+    return this.changelogStore.createChangelog(
       learningObjectId,
       userId,
       changelogText,

@@ -10,7 +10,6 @@ import {
 } from '../types';
 import { LearningObjectError } from '../errors';
 import { hasLearningObjectWriteAccess } from '../interactors/AuthorizationManager';
-import { ChangeLogDocument } from '../types/Changelog';
 import { reportError } from '../drivers/SentryConnector';
 
 /**
@@ -225,11 +224,15 @@ export async function deleteLearningObject(params: {
       });
       await params.library.cleanObjectsFromLibraries([object.id]);
       await params.dataStore.deleteLearningObject(object.id);
-      await params.dataStore.deleteChangelog(object.id);
       const path = `${params.user.username}/${object.id}/`;
       params.fileManager.deleteAll({ path }).catch(e => {
         reportError(
           new Error(`Problem deleting files for ${params.learningObjectName}: ${path}. ${e}`),
+        );
+      });
+      params.dataStore.deleteChangelog(object.id).catch(e => {
+        reportError(
+          new Error(`Problem deleting changelogs for ${params.learningObjectName}: ${e}`),
         );
       });
     } else {
@@ -382,27 +385,6 @@ async function deleteFile(
     return fileManager.delete({ path });
   } catch (e) {
     return Promise.reject(`Problem deleting file. Error: ${e}`);
-  }
-}
-
-/**
- * Instruct the datastore to fetch a changelog object with only the last element in the logs array
- *
- * @param {DataStore} dataStore An instance of DataStore
- * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
- *
- * @returns {void}
- */
-export async function getRecentChangelog(
-  dataStore: DataStore,
-  learningObjectId: string,
-): Promise<ChangeLogDocument> {
-  try {
-    const changelog = await dataStore.fetchRecentChangelog(learningObjectId);
-    return changelog;
-  } catch (e) {
-    reportError(e);
-    return Promise.reject(e instanceof Error ? e : new Error(`Problem fetching recent changelog for learning object: ` + learningObjectId + `. Error: ${e}`));
   }
 }
 

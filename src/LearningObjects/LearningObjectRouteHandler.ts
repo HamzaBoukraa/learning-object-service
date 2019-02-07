@@ -168,25 +168,10 @@ export function initializePrivate({
     }
   };
 
-  const getRecentChangelog = async (req: Request, res: Response) => {
-    const learningObjectId = req.params.learningObjectId;
-    try {
-      const changelog = await LearningObjectInteractor.getRecentChangelog(
-        dataStore,
-        learningObjectId,
-      );
-      res.status(200).send(changelog);
-    } catch (e) {
-      console.error(e);
-      res.status(404).json({message: 'Could not find recent changelog for learning object: ' + learningObjectId});
-    }
-  };
-
   router
       .route('/learning-objects')
       .post(addLearningObject);
   router.patch('/learning-objects/:id', updateLearningObject);
   router.delete('/learning-objects/:learningObjectName', deleteLearningObject);
-  router.get('/learning-objects/:learningObjectId/changelog/:changelogId', getRecentChangelog);
   router.get('/learning-objects/:id/materials/all', getMaterials);
 }

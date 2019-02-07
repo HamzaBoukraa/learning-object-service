@@ -115,40 +115,5 @@ export class SubmissionDatastore {
       );
     return Promise.resolve(record);
   }
-
-  /**
-   * Upsert document in changelog collection
-   *
-   * @param {string} learningObjectId The id of the specified learning object
-   * @param {string} userId The id of the changelog author
-   * @param {string} changelogText The contents of the incoming changelog
-   *
-   * @returns {void}
-   */
-  public async createChangelog (
-    learningObjectId: string,
-    userId: string,
-    changelogText: string,
-  ): Promise<void> {
-    try {
-      await this.db
-        .collection(COLLECTIONS.CHANGLOG)
-        .update(
-          { learningObjectId: learningObjectId },
-          { $push: {
-            logs: {
-              userId: userId,
-              date: Date.now(),
-              text: changelogText,
-            },
-          }},
-          {
-            upsert: true,
-          },
-        );
-    } catch (e) {
-      return Promise.reject(new Error(`${e}`));
-    }
-  }
 }
 
