@@ -95,9 +95,9 @@ export class LearningObjectInteractor {
           name,
           author,
           collection,
-            status,
-            length,
-            level,
+          status,
+          length,
+          level,
           standardOutcomeIDs,
           text,
           orderBy,
@@ -117,18 +117,18 @@ export class LearningObjectInteractor {
         });
       }
 
-        // Load object metrics
-        summary = await Promise.all(
-          summary.map(async object => {
-            try {
+      // Load object metrics
+      summary = await Promise.all(
+        summary.map(async object => {
+          try {
             object.metrics = await this.loadMetrics(library, object.id);
-              return object;
-            } catch (e) {
-              console.log(e);
-              return object;
-            }
-          }),
-        );
+            return object;
+          } catch (e) {
+            console.log(e);
+            return object;
+          }
+        }),
+      );
 
       if (loadChildren) {
         summary = await Promise.all(
@@ -597,7 +597,7 @@ export class LearningObjectInteractor {
           LearningObject.Status.PROOFING,
           LearningObject.Status.RELEASED,
         ],
-          });
+      });
 
       learningObjects = await Promise.all(
         learningObjects.map(async object => {
@@ -607,9 +607,9 @@ export class LearningObjectInteractor {
           } catch (e) {
             console.log(e);
             if (!full) {
-            return object;
+              return object;
+            }
           }
-    }
           if (full) {
             const children = await this.loadChildObjects({
               dataStore,
@@ -672,21 +672,26 @@ export class LearningObjectInteractor {
 
       status = this.getAuthorizedStatuses(userToken, status);
 
-      let response;
+      let response: { total: number; objects: LearningObject[] };
 
       if (
         isPrivilegedUser(userToken.accessGroups) &&
         !isAdminOrEditor(userToken.accessGroups)
       ) {
         const privilegedCollections = getAccessGroupCollections(userToken);
-        if (collection && collection.length) {
-          const { releasedOnly, privilegedAccess } = getCollectionAccess(
-            collection,
-            privilegedCollections,
-          );
-        } else {
-          // Get all released and all unreleased in privilegedCollection
-        }
+        let collectionAccessMap = getCollectionAccessMap(
+          collection,
+          privilegedCollections,
+        );
+        response = await dataStore.searchObjectsByCollection({
+          name,
+          author,
+          length,
+          level,
+          standardOutcomeIDs,
+          text,
+          collections: collectionAccessMap,
+        });
       } else {
         response = await dataStore.searchObjects({
           name,
@@ -1018,8 +1023,8 @@ function getCollectionAccessMap(
   const accessMap = {};
 
   if (collectionFilters && collectionFilters.length) {
-  for (const filter of collectionFilters) {
-    if (privilegedCollections.includes(filter)) {
+    for (const filter of collectionFilters) {
+      if (privilegedCollections.includes(filter)) {
         accessMap[filter] = [
           LearningObject.Status.WAITING,
           LearningObject.Status.REVIEW,
