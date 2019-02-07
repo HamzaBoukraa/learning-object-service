@@ -38,76 +38,90 @@ export class LearningObjectInteractor {
    * @param params.loadChildren
    * @param params.query
    */
-  public static async loadLearningObjectSummary(params: {
+  public static async loadUsersObjectSummaries(params: {
     dataStore: DataStore;
     library: LibraryCommunicator;
     username: string;
     userToken: UserToken;
-    accessUnreleased?: boolean;
     loadChildren?: boolean;
     query?: LearningObjectQuery;
   }): Promise<LearningObject[]> {
     try {
-      // Set accessUnreleased
-      let accessUnreleased = params.accessUnreleased;
-
-      // If accessUnreleased is unset, set equal to the result of the hasOwnership function
-      if (accessUnreleased === undefined || accessUnreleased === null) {
-        accessUnreleased = await this.hasOwnership({
-          userToken: params.userToken,
-          resourceVal: params.username,
-          authFunction: (username: string, userToken: UserToken) => {
-            return userToken.username === username;
-          },
-        });
-      }
-
       let summary: LearningObject[] = [];
 
+      if (
+        !this.hasReadAccess({
+          userToken: params.userToken,
+          resourceVal: params.username,
+          authFunction: checkAuthByUsername,
+        })
+      ) {
+        throw new Error('Invalid access');
+      }
+
+      const { dataStore, library, username, loadChildren, query } = params;
+
+      const formattedQuery = this.formatSearchQuery(query);
+      let {
+        name,
+        author,
+        collection,
+        status,
+        length,
+        level,
+        standardOutcomeIDs,
+        text,
+        orderBy,
+        sortType,
+        page,
+        limit,
+      } = formattedQuery;
+
+      if (!status) {
+        status = [
+          LearningObject.Status.REJECTED,
+          LearningObject.Status.UNRELEASED,
+          LearningObject.Status.WAITING,
+          LearningObject.Status.REVIEW,
+          LearningObject.Status.PROOFING,
+          LearningObject.Status.RELEASED,
+        ];
+      }
+      delete formattedQuery.page;
+      delete formattedQuery.limit;
       // Perform search on objects
-      if (params.query && Object.keys(params.query).length) {
-        const level = toArray<string>(params.query.level);
-        const length = toArray<string>(params.query.length);
-        const status = toArray<string>(params.query.status);
-        const response = await this.searchObjects(
-          params.dataStore,
-          params.library,
-          {
-            name: params.query.name,
-            author: params.username,
-            collection: params.query.collection,
+      if (formattedQuery && Object.keys(formattedQuery).length) {
+        const response = await dataStore.searchObjects({
+          name,
+          author,
+          collection,
             status,
             length,
             level,
-            standardOutcomeIDs: params.query.standardOutcomeIDs,
-            text: params.query.text,
-            accessUnreleased,
-            orderBy: params.query.orderBy,
-            sortType: params.query.sortType,
-            currPage: params.query.page,
-            limit: params.query.limit,
-          },
-        );
+          standardOutcomeIDs,
+          text,
+          orderBy,
+          sortType,
+          page,
+          limit,
+        });
         summary = response.objects;
       } else {
-        const objectIDs = await params.dataStore.getUserObjects(
-          params.username,
-        );
-        summary = await params.dataStore.fetchMultipleObjects(
-          objectIDs,
-          false,
-          accessUnreleased,
-          params.query ? params.query.orderBy : null,
-          params.query ? params.query.sortType : null,
-        );
+        const objectIDs = await dataStore.getUserObjects(username);
+        summary = await dataStore.fetchMultipleObjects({
+          ids: objectIDs,
+          full: false,
+          orderBy: query ? query.orderBy : null,
+          sortType: query ? query.sortType : null,
+          status,
+        });
+      }
+
         // Load object metrics
         summary = await Promise.all(
           summary.map(async object => {
             try {
-              object.metrics = await this.loadMetrics(
-                params.library,
-                object.id,
-              );
+            object.metrics = await this.loadMetrics(library, object.id);
               return object;
             } catch (e) {
               console.log(e);
@@ -115,18 +129,17 @@ export class LearningObjectInteractor {
             }
           }),
         );
-      }
 
-      if (params.loadChildren) {
+      if (loadChildren) {
         summary = await Promise.all(
           summary.map(async object => {
-            const children = await this.loadChildObjects(
-              params.dataStore,
-              params.library,
-              object.id,
-              false,
-              accessUnreleased,
-            );
+            const children = await this.loadChildObjects({
+              dataStore,
+              library,
+              parentId: object.id,
+              full: false,
+              status,
+            });
             children.forEach((child: LearningObject) => object.addChild(child));
             return object;
           }),
@@ -864,7 +877,7 @@ export class LearningObjectInteractor {
    * @returns {Promise<boolean>}
    * @memberof LearningObjectInteractor
    */
-  private static async hasOwnership(params: {
+  private static async hasReadAccess(params: {
     userToken: UserToken;
     resourceVal: any;
     authFunction: (
