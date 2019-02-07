@@ -1,6 +1,6 @@
 import { User, LearningObject } from '@cyber4all/clark-entity';
 import { COLLECTIONS } from '../drivers/MongoDriver';
-import { Db, ObjectId } from 'mongodb';
+import { Db } from 'mongodb';
 import * as ObjectMapper from '../drivers/Mongo/ObjectMapper';
 import { UserDocument } from '../types';
 
