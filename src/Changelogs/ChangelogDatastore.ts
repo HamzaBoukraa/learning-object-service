@@ -53,20 +53,10 @@ export class ChangelogDataStore {
         try {
             const cursor = await this.db
                 .collection(COLLECTIONS.CHANGLOG)
-                .aggregate([
-                    {
-                        $match: {
-                            learningObjectId: learningObjectId,
-                        },
-                    },
-                    {
-                        $project:
-                        {
-                            learningObjectId: 1,
-                            recentChangelog: { $arrayElemAt: [ '$logs', -1 ] },
-                        },
-                    },
-                ]);
+                .find(
+                  { _id: learningObjectId },
+                  { logs: { $slice: -1 } },
+                );
             const documents = await cursor.toArray();
             const changelog = documents[0];
             return changelog;
