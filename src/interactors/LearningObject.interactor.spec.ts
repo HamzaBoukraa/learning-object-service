@@ -1,13 +1,13 @@
 import { LearningObjectInteractor } from '../interactors/interactors';
 import { expect } from 'chai';
-import { MockDataStore } from '../tests/mock-drivers/MockDataStore';
-import { MockLibraryDriver } from '../tests/mock-drivers/MockLibraryDriver';
 import { MOCK_OBJECTS } from '../tests/mocks';
 import { DataStore } from '../interfaces/DataStore';
 import { LibraryCommunicator } from '../interfaces/interfaces';
 import { UserToken } from '../types';
+import { MockDataStore } from '../tests/mock-drivers/MockDataStore';
+import { MockLibraryDriver } from '../tests/mock-drivers/MockLibraryDriver';
 
-const driver: DataStore = new MockDataStore(); // DataStore
+const dataStore: DataStore = new MockDataStore(); // DataStore
 const library: LibraryCommunicator = new MockLibraryDriver();
 const userToken: UserToken = {
   name: '',
@@ -17,10 +17,10 @@ const userToken: UserToken = {
   organization: '',
   accessGroups: [],
 };
-describe('loadLearningObjectSummary', () => {
+describe('loadUsersObjectSummaries', () => {
   it('should load learning object summary', done => {
-    return LearningObjectInteractor.loadLearningObjectSummary({
-      dataStore: driver,
+    return LearningObjectInteractor.loadUsersObjectSummaries({
+      dataStore,
       library,
       userToken,
       username: MOCK_OBJECTS.USERNAME,
@@ -36,13 +36,13 @@ describe('loadLearningObjectSummary', () => {
   });
 });
 
-describe('loadFullLearningObjectByIDs', () => {
+describe('fetchObjectsByIDs', () => {
   it('should load full learning object', done => {
-    return LearningObjectInteractor.loadFullLearningObjectByIDs(
-      driver,
+    return LearningObjectInteractor.fetchObjectsByIDs({
+      dataStore,
       library,
-      [MOCK_OBJECTS.LEARNING_OBJECT_ID],
-    )
+      ids: [MOCK_OBJECTS.LEARNING_OBJECT_ID],
+    })
       .then(val => {
         expect(val).to.be.an('array');
         done();
@@ -53,11 +53,11 @@ describe('loadFullLearningObjectByIDs', () => {
       });
   });
   it('should return learning object - given empty array!', done => {
-    return LearningObjectInteractor.loadFullLearningObjectByIDs(
-      driver,
+    return LearningObjectInteractor.fetchObjectsByIDs({
+      dataStore,
       library,
-      [MOCK_OBJECTS.EMPTY_STRING],
-    )
+      ids: [MOCK_OBJECTS.EMPTY_STRING],
+    })
       .then(val => {
         expect(val).to.be.an('array');
         done();
@@ -72,7 +72,7 @@ describe('loadFullLearningObjectByIDs', () => {
 describe('findLearningObject', () => {
   it('should find a learning object ID', done => {
     return LearningObjectInteractor.findLearningObject(
-      driver,
+      dataStore,
       MOCK_OBJECTS.USERNAME,
       MOCK_OBJECTS.LEARNING_OBJECT_NAME,
     )
@@ -90,7 +90,7 @@ describe('findLearningObject', () => {
 describe('fetchAllObjects', () => {
   it('should fetch all objects', done => {
     return LearningObjectInteractor.fetchAllObjects(
-      driver,
+      dataStore,
       library,
       MOCK_OBJECTS.CURR_PAGE,
       MOCK_OBJECTS.LIMIT,
@@ -108,7 +108,7 @@ describe('fetchAllObjects', () => {
     let currPage;
     const limit = 3;
     return LearningObjectInteractor.fetchAllObjects(
-      driver,
+      dataStore,
       library,
       currPage,
       limit,
@@ -124,7 +124,7 @@ describe('fetchAllObjects', () => {
   });
   it('should return error - invalid limit provided!', done => {
     return LearningObjectInteractor.fetchAllObjects(
-      driver,
+      dataStore,
       library,
       MOCK_OBJECTS.CURR_PAGE,
       MOCK_OBJECTS.NaN,
@@ -135,46 +135,6 @@ describe('fetchAllObjects', () => {
       })
       .catch(error => {
         expect(error).to.be.an('object');
-        done();
-      });
-  });
-});
-
-describe('fetchMultipleObjects', () => {
-  it('should return an array of objects - based on given username and lo name', done => {
-    const object = [
-      {
-        username: MOCK_OBJECTS.USERNAME,
-        learningObjectName: MOCK_OBJECTS.LEARNING_OBJECT_NAME,
-      },
-    ];
-    return LearningObjectInteractor.fetchMultipleObjects(
-      driver,
-      library,
-      object,
-    )
-      .then(val => {
-        expect(val).to.be.an('array');
-        done();
-      })
-      .catch(error => {
-        expect.fail();
-        done();
-      });
-  });
-});
-
-describe('fetchObjectsByIDs', () => {
-  it('should return an array of objects - based on given IDs', done => {
-    return LearningObjectInteractor.fetchObjectsByIDs(driver, library, [
-      MOCK_OBJECTS.LEARNING_OBJECT_ID,
-    ])
-      .then(val => {
-        expect(val).to.be.an('array');
-        done();
-      })
-      .catch(error => {
-        expect.fail();
         done();
       });
   });
