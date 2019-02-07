@@ -849,6 +849,13 @@ export class MongoDriver implements DataStore {
     return learningObject;
   }
 
+  /**
+   * Check if a learning object exists
+   *
+   * @param {string} learningObjectId The id of the specified learning object
+   *
+   * @returns {array}
+   */
   async checkLearningObjectExistence(learningObjectId: string): Promise<string[]> {
     try {
       const arr = await this.db

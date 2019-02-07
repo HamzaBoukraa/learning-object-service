@@ -123,7 +123,7 @@ export class SubmissionDatastore {
    * @param {string} userId The id of the changelog author
    * @param {string} changelogText The contents of the incoming changelog
    *
-   * @returns {void \ Error}
+   * @returns {void}
    */
   public async createChangelog (
     learningObjectId: string,
