@@ -25,7 +25,7 @@ export class ChangelogDataStore {
       await this.db
         .collection(COLLECTIONS.CHANGLOG)
         .update(
-          { learningObjectId: learningObjectId },
+          { learningObjectId },
           { $push: {
             logs: {
               userId: userId,
@@ -38,7 +38,7 @@ export class ChangelogDataStore {
           },
         );
     } catch (e) {
-      return Promise.reject(new Error(`${e}`));
+      return Promise.reject(new Error(e));
     }
   }
 
@@ -55,7 +55,7 @@ export class ChangelogDataStore {
             const changelog = await this.db
                 .collection(COLLECTIONS.CHANGLOG)
                 .findOne(
-                  { learningObjectId: learningObjectId },
+                  { learningObjectId },
                   { projection: { learningObjectId: 1, logs: { $slice: -1 } } },
                 );
             if (changelog === null) {
@@ -63,7 +63,7 @@ export class ChangelogDataStore {
             }
             return changelog;
         } catch (e) {
-            return Promise.reject(new Error(`${e}`));
+            return Promise.reject(new Error(e));
         }
     }
 
