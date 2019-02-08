@@ -1320,26 +1320,22 @@ export class MongoDriver implements DataStore {
     cursor: Cursor<T>,
     filters: Filters,
   ): Cursor<T> {
-    try {
-      filters.page = this.formatPage(filters.page);
-      const skip = this.calcSkip({ page: filters.page, limit: filters.limit });
+    let { page, limit, orderBy, sortType } = filters;
+    page = this.formatPage(filters.page);
+    const skip = this.calcSkip({ page, limit });
 
-      // Paginate if has limiter
-      cursor =
-        skip !== undefined
-          ? cursor.skip(skip).limit(filters.limit)
-          : filters.limit
-          ? cursor.limit(filters.limit)
-          : cursor;
-
-      // SortBy
-      cursor = filters.orderBy
-        ? cursor.sort(filters.orderBy, filters.sortType ? filters.sortType : 1)
-        : cursor;
-      return cursor;
-    } catch (e) {
-      console.log(e);
+    // Paginate
+    if (skip != null && limit) {
+      cursor = cursor.skip(skip).limit(limit);
+    } else if (skip == null && limit) {
+      cursor = cursor.limit(limit);
     }
+
+    // Apply orderBy
+    if (orderBy) {
+      cursor = cursor.sort(orderBy, sortType ? sortType : 1);
+    }
+      return cursor;
   }
 
   /**
