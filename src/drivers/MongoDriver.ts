@@ -156,8 +156,8 @@ export class MongoDriver implements DataStore {
     let cursor = this.db
       .collection<LearningObjectDocument>(COLLECTIONS.LEARNING_OBJECTS)
       .find({
-          ...searchQuery,
-          $or: orConditions,
+        ...searchQuery,
+        $or: orConditions,
       });
 
     const total = await cursor.count();
@@ -175,7 +175,7 @@ export class MongoDriver implements DataStore {
     );
     // const objects: any[] = [];
     return { total, objects };
-      }
+  }
 
   /**
    * Converts QueryConditions to valid Mongo conditional syntax
@@ -196,8 +196,8 @@ export class MongoDriver implements DataStore {
           query[key] = { $in: value };
         } else {
           query[key] = value;
-    }
-    }
+        }
+      }
       orConditions.push(query);
     });
     return orConditions;
@@ -1334,7 +1334,7 @@ export class MongoDriver implements DataStore {
     if (orderBy) {
       cursor = cursor.sort(orderBy, sortType ? sortType : 1);
     }
-      return cursor;
+    return cursor;
   }
 
   /**
