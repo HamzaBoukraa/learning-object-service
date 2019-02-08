@@ -21,10 +21,14 @@ import {
   updateObjectLastModifiedDate,
   updateParentsDate,
 } from '../LearningObjects/LearningObjectInteractor';
-import { sanitizeText } from '../functions';
+import { sanitizeText, sanitizeObject } from '../functions';
 
 // file size is in bytes
 const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
+
+interface CollectionAccessMap {
+  [index: string]: string[];
+}
 
 export class LearningObjectInteractor {
   /**
