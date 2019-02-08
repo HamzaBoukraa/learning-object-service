@@ -103,14 +103,7 @@ export class LearningObjectInteractor {
       } = formattedQuery;
 
       if (!status) {
-        status = [
-          LearningObject.Status.REJECTED,
-          LearningObject.Status.UNRELEASED,
-          LearningObject.Status.WAITING,
-          LearningObject.Status.REVIEW,
-          LearningObject.Status.PROOFING,
-          LearningObject.Status.RELEASED,
-        ];
+        status = LearningObjectState.ALL;
       }
       delete formattedQuery.page;
       delete formattedQuery.limit;
@@ -620,10 +613,7 @@ export class LearningObjectInteractor {
         ids,
         full,
         status: [
-          LearningObject.Status.UNRELEASED,
-          LearningObject.Status.WAITING,
-          LearningObject.Status.REVIEW,
-          LearningObject.Status.PROOFING,
+          ...LearningObjectState.IN_REVIEW,
           LearningObject.Status.RELEASED,
         ],
       });
@@ -646,9 +636,7 @@ export class LearningObjectInteractor {
               parentId: object.id,
               full: true,
               status: [
-                LearningObject.Status.WAITING,
-                LearningObject.Status.REVIEW,
-                LearningObject.Status.PROOFING,
+                ...LearningObjectState.IN_REVIEW,
                 LearningObject.Status.RELEASED,
               ],
             });
@@ -810,12 +798,7 @@ export class LearningObjectInteractor {
       if (status && status.length) {
         return status;
       }
-      return [
-        LearningObject.Status.WAITING,
-        LearningObject.Status.REVIEW,
-        LearningObject.Status.PROOFING,
-        LearningObject.Status.RELEASED,
-      ];
+      return [...LearningObjectState.IN_REVIEW, LearningObject.Status.RELEASED];
     }
     return [LearningObject.Status.RELEASED];
   }
@@ -1104,9 +1087,7 @@ function getCollectionAccessMap(
     for (const filter of requestedCollections) {
       if (privilegedCollections.includes(filter)) {
         accessMap[filter] = [
-          LearningObject.Status.WAITING,
-          LearningObject.Status.REVIEW,
-          LearningObject.Status.PROOFING,
+          ...LearningObjectState.IN_REVIEW,
           LearningObject.Status.RELEASED,
         ];
       } else {
@@ -1116,9 +1097,7 @@ function getCollectionAccessMap(
   } else {
     for (const collection of privilegedCollections) {
       accessMap[collection] = [
-        LearningObject.Status.WAITING,
-        LearningObject.Status.REVIEW,
-        LearningObject.Status.PROOFING,
+        ...LearningObjectState.IN_REVIEW,
         LearningObject.Status.RELEASED,
       ];
     }
