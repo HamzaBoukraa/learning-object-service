@@ -5,7 +5,7 @@ import { FileManager } from '../interfaces/interfaces';
 import { reportError } from '../drivers/SentryConnector';
 import { hasLearningObjectWriteAccess } from '../interactors/AuthorizationManager';
 import { UserToken } from '../types';
-import { LearningObjectError } from '../errors';
+import { ResourceError, ResourceErrorReason } from '../errors';
 
 export async function submitForReview(params: {
   dataStore: DataStore;
@@ -70,10 +70,10 @@ export async function createChangelog(params: {
       if (objectId && objectId.length > 0) {
         await params.dataStore.createChangelog(params.learningObjectId, authorID, params.changelogText);
       } else {
-        return Promise.reject(new Error(LearningObjectError.RESOURCE_NOT_FOUND()));
+        return Promise.reject(new ResourceError('Learning Object not found.', ResourceErrorReason.NOT_FOUND));
       }
     } else {
-      return Promise.reject(new Error(LearningObjectError.INVALID_ACCESS()));
+      return Promise.reject(new ResourceError('Invalid Access', ResourceErrorReason.INVALID_ACCESS));
     }
   } catch (e) {
     reportError(e);

@@ -1,7 +1,7 @@
 import { Db } from 'mongodb';
 import { COLLECTIONS } from '../drivers/MongoDriver';
 import { ChangeLogDocument } from '../types/Changelog';
-import { LearningObjectError } from '../errors';
+import { ServiceError, ServiceErrorType, ResourceError, ResourceErrorReason } from '../errors';
 import { reportError } from '../drivers/SentryConnector';
 
 export class ChangelogDataStore {
@@ -40,7 +40,7 @@ export class ChangelogDataStore {
         );
     } catch (e) {
       reportError(e);
-      return Promise.reject(new Error(LearningObjectError.INTERNAL_ERROR()));
+      return Promise.reject(new ServiceError(ServiceErrorType.INTERNAL, 'Internal Service Error'));
     }
   }
 
@@ -61,12 +61,12 @@ export class ChangelogDataStore {
                 { projection: { learningObjectId: 1, logs: { $slice: -1 } } },
               );
           if (changelog === null) {
-            return Promise.reject(new Error(LearningObjectError.RESOURCE_NOT_FOUND()));
+            return Promise.reject(new ResourceError('Changelog not found.', ResourceErrorReason.NOT_FOUND));
           }
           return changelog;
         } catch (e) {
           reportError(e);
-          return Promise.reject(new Error(LearningObjectError.INTERNAL_ERROR()));
+          return Promise.reject(new ServiceError(ServiceErrorType.INTERNAL, 'Internal Service Error'));
         }
     }
 
@@ -85,7 +85,7 @@ export class ChangelogDataStore {
             .remove({learningObjectId: learningObjectId});
         } catch (e) {
           reportError(e);
-          return Promise.reject(new Error(LearningObjectError.INTERNAL_ERROR()));
+          return Promise.reject(new ServiceError(ServiceErrorType.INTERNAL, 'Internal Service Error'));
         }
     }
 }

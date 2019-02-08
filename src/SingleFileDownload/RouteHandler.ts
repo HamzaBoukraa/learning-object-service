@@ -5,7 +5,6 @@ import { LEARNING_OBJECT_ROUTES } from '../routes';
 import { reportError } from '../drivers/SentryConnector';
 import { DataStore } from '../interfaces/DataStore';
 import { FileManager } from '../interfaces/FileManager';
-import { LearningObjectError } from '../errors';
 
 // TODO: Define DataStore just for this Feature Module
 export function initializeSingleFileDownloadRouter({

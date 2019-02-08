@@ -31,7 +31,7 @@ import { lengths } from '@cyber4all/clark-taxonomy';
 import { LearningObjectDataStore } from '../LearningObjects/LearningObjectDatastore';
 import { ChangeLogDocument } from '../types/Changelog';
 import { ChangelogDataStore } from '../Changelogs/ChangelogDatastore';
-import { LearningObjectError } from '../errors';
+import { ResourceError, ResourceErrorReason, ServiceError, ServiceErrorType } from '../errors';
 import { reportError } from './SentryConnector';
 
 export enum COLLECTIONS {
@@ -746,11 +746,11 @@ export class MongoDriver implements DataStore {
         .collection(COLLECTIONS.USERS)
         .findOne<UserDocument>(query, { projection: { _id: 1 } });
       if (!userRecord)
-        throw new Error(LearningObjectError.RESOURCE_NOT_FOUND());
+        throw new ResourceError('User not found', ResourceErrorReason.NOT_FOUND);
       return `${userRecord._id}`;
     } catch (e) {
       reportError(e);
-      return Promise.reject(new Error(LearningObjectError.INTERNAL_ERROR()));
+      return Promise.reject(new ServiceError(ServiceErrorType.INTERNAL, 'Internal Service Error'));
     }
   }
 
@@ -879,7 +879,7 @@ export class MongoDriver implements DataStore {
       return arr;
     } catch (e) {
       reportError(e);
-      return Promise.reject(new Error(LearningObjectError.INTERNAL_ERROR()));
+      return Promise.reject(new ServiceError(ServiceErrorType.INTERNAL, 'Internal Service Error'));
     }
   }
 

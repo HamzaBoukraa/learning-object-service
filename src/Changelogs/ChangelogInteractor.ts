@@ -2,7 +2,7 @@ import { DataStore } from '../interfaces/DataStore';
 import { reportError } from '../drivers/SentryConnector';
 import { hasLearningObjectWriteAccess } from '../interactors/AuthorizationManager';
 import { UserToken } from '../types';
-import { LearningObjectError } from '../errors';
+import { ResourceError, ResourceErrorReason } from '../errors';
 import { ChangeLogDocument } from '../types/Changelog';
 
 /**
@@ -29,10 +29,10 @@ export async function createChangelog(params: {
       if (objectId && objectId.length > 0) {
         await params.dataStore.createChangelog(params.learningObjectId, authorID, params.changelogText);
       } else {
-        return Promise.reject(new Error(LearningObjectError.RESOURCE_NOT_FOUND()));
+        return Promise.reject(new ResourceError('Learning Object not found.', ResourceErrorReason.NOT_FOUND));
       }
     } else {
-      return Promise.reject(new Error(LearningObjectError.INVALID_ACCESS()));
+      return Promise.reject(new ResourceError('Invalid Access', ResourceErrorReason.INVALID_ACCESS));
     }
   } catch (e) {
     return Promise.reject(e instanceof Error ? e : new Error(e));
@@ -55,6 +55,7 @@ export async function getRecentChangelog(
       const changelog = await dataStore.fetchRecentChangelog(learningObjectId);
       return changelog;
     } catch (e) {
-      return Promise.reject(e instanceof Error ? e : new Error(LearningObjectError.RESOURCE_NOT_FOUND()));
+      // TODO: Remove falsy resource error
+      return Promise.reject(e instanceof Error ? e : new ResourceError('Changelog not found.', ResourceErrorReason.NOT_FOUND));
     }
   }

@@ -8,7 +8,7 @@ import {
   UserToken,
   VALID_LEARNING_OBJECT_UPDATES,
 } from '../types';
-import { LearningObjectError } from '../errors';
+import { ResourceError, ResourceErrorReason } from '../errors';
 import { hasLearningObjectWriteAccess } from '../interactors/AuthorizationManager';
 import { reportError } from '../drivers/SentryConnector';
 
@@ -473,7 +473,7 @@ async function checkNameExists(params: {
   });
   // @ts-ignore typescript doesn't think a .id property should exist on the existing object
   if (existing && params.id !== existing.id) {
-    throw new Error(LearningObjectError.DUPLICATE_NAME(params.name));
+    throw new ResourceError(`A learning object with name '${params.name}' already exists.`, ResourceErrorReason.BAD_REQUEST);
   }
 }
 

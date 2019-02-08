@@ -4,7 +4,7 @@ import { LearningObject } from '@cyber4all/clark-entity';
 import { DataStore } from '../interfaces/DataStore';
 import { FileManager, LibraryCommunicator } from '../interfaces/interfaces';
 import { UserToken } from '../types';
-import { LearningObjectError } from '../errors';
+import { ResourceErrorReason } from '../errors';
 
 /**
  * Initializes an express router with endpoints for public Retrieving
@@ -88,7 +88,7 @@ export function initializePrivate({
       if (
         object &&
         object.name &&
-        e.message === LearningObjectError.DUPLICATE_NAME(object.name)
+        e.message === `A learning object with name '${object.name}' already exists.`
       ) {
         status = 409;
       }
@@ -132,12 +132,12 @@ export function initializePrivate({
       if (
         updates &&
         updates.name &&
-        e.message === LearningObjectError.DUPLICATE_NAME(updates.name)
+        e.message === `A learning object with name '${updates.name}' already exists.`
       ) {
         status = 409;
       }
 
-      if (e.message === LearningObjectError.INVALID_ACCESS) {
+      if (e.name === ResourceErrorReason.INVALID_ACCESS) {
         status = 401;
       }
 
@@ -161,7 +161,7 @@ export function initializePrivate({
 
       let status = 500;
 
-      if (e.message === LearningObjectError.INVALID_ACCESS) {
+      if (e.name === ResourceErrorReason.INVALID_ACCESS) {
         status = 401;
       }
       res.status(status).send(e);

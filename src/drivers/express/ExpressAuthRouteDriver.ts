@@ -18,7 +18,7 @@ import * as LearningOutcomeRouteHandler from '../../LearningOutcomes/LearningOut
 import * as SubmissionRouteDriver from '../../LearningObjectSubmission/SubmissionRouteDriver';
 import * as ChangelogRouteHandler from '../../Changelogs/ChangelogRouteDriver';
 import { reportError } from '../SentryConnector';
-import { LearningObjectError } from '../../errors';
+import { ResourceErrorReason } from '../../errors';
 
 export class ExpressAuthRouteDriver {
   private upload = multer({ storage: multer.memoryStorage() });
@@ -345,10 +345,9 @@ export class ExpressAuthRouteDriver {
           });
           res.sendStatus(200);
         } catch (e) {
-          console.error(e);
           let status = 500;
 
-          if (e.message === LearningObjectError.INVALID_ACCESS) {
+          if (e.name === ResourceErrorReason.INVALID_ACCESS) {
             status = 401;
           }
           res.status(status).send(e);
