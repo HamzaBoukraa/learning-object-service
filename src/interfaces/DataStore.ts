@@ -171,7 +171,7 @@ export interface ObjectsByCollectionQuery extends Filters {
   level?: string[];
   standardOutcomeIDs?: string[];
   text?: string;
-  collections: {
-    [index: string]: string[];
-  };
+
+export interface QueryCondition {
+  [index: string]: string | string[];
 }
