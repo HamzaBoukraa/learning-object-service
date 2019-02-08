@@ -33,7 +33,7 @@ export function initialize({
         const status = mapErrorToStatusCode(e);
         res.status(status.code).json({message: `${status.message}`});
       } else {
-        res.status(500).json({message: `Could not create changelog for specified learning object. ${e}`});
+        res.sendStatus(500);
       }
     }
   }
@@ -51,7 +51,7 @@ export function initialize({
         const status = mapErrorToStatusCode(e);
         res.status(status.code).json({message: `${status.message}`});
       } else {
-        res.status(500).json({message: `Could not fetch recent changelog for specified learning object. ${e}`});
+        res.sendStatus(500);
       }
     }
   };

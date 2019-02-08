@@ -27,6 +27,9 @@ export function mapErrorToStatusCode(error: Error): { code: number, message: str
     case LearningObjectError.RESOURCE_NOT_FOUND():
       status.code = 404;
       break;
+    case LearningObjectError.INTERNAL_ERROR():
+      status.code = 500;
+      break;
     default:
       reportError(error);
       status.code = 500;
