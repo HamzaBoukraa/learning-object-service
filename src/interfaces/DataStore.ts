@@ -66,7 +66,7 @@ export interface DataStore
   loadChildObjects(params: {
     id: string;
     full?: boolean;
-    status?: string[];
+    status: string[];
   }): Promise<LearningObject[]>;
 
   // Materials

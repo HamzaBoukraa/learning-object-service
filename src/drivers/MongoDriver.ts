@@ -278,14 +278,12 @@ export class MongoDriver implements DataStore {
   async loadChildObjects(params: {
     id: string;
     full?: boolean;
-    accessUnreleased?: boolean;
+    status: string[];
   }): Promise<LearningObject[]> {
     const matchQuery: { [index: string]: any } = {
-      $match: { _id: params.id },
+      $match: { _id: params.id, status: { $in: status } },
     };
-    if (!params.accessUnreleased) {
-      matchQuery.$match.status = LearningObject.Status.RELEASED;
-    }
+
     const docs = await this.db
       .collection<{ objects: LearningObjectDocument[] }>(
         COLLECTIONS.LEARNING_OBJECTS,
