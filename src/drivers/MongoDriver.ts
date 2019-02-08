@@ -1241,7 +1241,7 @@ export class MongoDriver implements DataStore {
       query.outcomes = { $in: outcomeIDs };
     }
     if (collection) {
-      query.collection = collection;
+      query.collection = { $in: collection };
     }
 
     return query;
@@ -1306,7 +1306,7 @@ export class MongoDriver implements DataStore {
       query.status = { $in: status };
     }
     if (collection) {
-      query.collection = collection;
+      query.collection = { $in: collection };
     }
     if (outcomeIDs) {
       query.outcomes = outcomeIDs.length
