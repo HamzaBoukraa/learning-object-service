@@ -1118,3 +1118,22 @@ const checkAuthByUsername = (username: string, userToken: UserToken) => {
     isAdminOrEditor(userToken.accessGroups) || userToken.username === username
   );
 };
+
+/**
+ * Checks if requester is author byu the username provided
+ *
+ * @param {string} username
+ * @param {UserToken} userToken
+ * @returns
+ */
+const isAuthorByUsername = (username: string, userToken: UserToken) => {
+  return userToken.username === username;
+};
+
+/**
+ * Checks if user has authorization based on collection
+ *
+ * @param {string} collectionName
+ * @param {UserToken} userToken
+ * @returns
+ */
