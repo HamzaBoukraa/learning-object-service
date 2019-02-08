@@ -193,7 +193,7 @@ export class LearningObjectInteractor {
       let learningObject: LearningObject;
 
       let childrenStatus = [LearningObject.Status.RELEASED];
-      const {
+      let {
         dataStore,
         library,
         username,
@@ -207,19 +207,19 @@ export class LearningObjectInteractor {
         learningObjectName,
       );
 
-      const status = await dataStore.fetchLearningObjectStatus(
-        learningObjectID,
-      );
-      const collection = await dataStore.fetchLearningObjectCollection(
-        learningObjectID,
-      );
+      const [status, collection] = await Promise.all([
+        dataStore.fetchLearningObjectStatus(learningObjectID),
+        dataStore.fetchLearningObjectCollection(learningObjectID),
+      ]);
 
       this.authorizeReadAccess({
         userToken,
         objectInfo: { author: username, status, collection },
       });
 
-      if (status in LearningObjectState.IN_REVIEW) {
+      if (
+        LearningObjectState.IN_REVIEW.includes(status as LearningObject.Status)
+      ) {
         childrenStatus = [
           ...LearningObjectState.IN_REVIEW,
           LearningObject.Status.RELEASED,
@@ -273,8 +273,10 @@ export class LearningObjectInteractor {
     objectInfo: { author: string; status: string; collection: string };
   }): void {
     const { userToken, objectInfo } = params;
-    const authorOnlyAccess =
-      objectInfo.status in LearningObjectState.UNRELEASED;
+    const authorOnlyAccess = LearningObjectState.UNRELEASED.includes(
+      objectInfo.status as LearningObject.Status,
+    );
+
     const isAuthor = this.hasReadAccess({
       userToken,
       resourceVal: objectInfo.author,
@@ -316,7 +318,7 @@ export class LearningObjectInteractor {
     library: LibraryCommunicator;
     parentId: string;
     full?: boolean;
-    status?: string[];
+    status: string[];
   }): Promise<LearningObject[]> {
     const { dataStore, library, parentId, full, status } = params;
     // Load Parent's children
@@ -736,7 +738,6 @@ export class LearningObjectInteractor {
         limit,
       } = this.formatSearchQuery(query);
       status = this.getAuthorizedStatuses(userToken, status);
-
       let response: { total: number; objects: LearningObject[] };
 
       if (
@@ -964,14 +965,14 @@ export class LearningObjectInteractor {
    * @returns {Promise<boolean>}
    * @memberof LearningObjectInteractor
    */
-  private static async hasReadAccess(params: {
+  private static hasReadAccess(params: {
     userToken: UserToken;
     resourceVal: any;
     authFunction: (
       resourceVal: any,
       userToken: UserToken,
     ) => boolean | Promise<boolean>;
-  }): Promise<boolean> {
+  }): boolean | Promise<boolean> {
     if (!params.userToken) {
       return false;
     }
@@ -1193,6 +1194,6 @@ const hasReadAccessByCollection = (
   if (!isPrivilegedUser(userToken.accessGroups)) return false;
   return (
     isAdminOrEditor(userToken.accessGroups) ||
-    collectionName in getAccessGroupCollections(userToken)
+    getAccessGroupCollections(userToken).includes(collectionName)
   );
 };
