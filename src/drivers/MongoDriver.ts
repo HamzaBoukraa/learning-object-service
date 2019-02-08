@@ -5,7 +5,8 @@ import {
   Filters,
   LearningObjectCollection,
   LearningObjectQuery,
-  ObjectsByCollectionQuery,
+  QueryCondition,
+  LearningObjectQueryWithConditions,
 } from '../interfaces/DataStore';
 import {
   CompletedPart,
@@ -106,43 +107,40 @@ export class MongoDriver implements DataStore {
     this.statStore = new LearningObjectStatStore(this.db);
   }
 
-  async searchObjectsByCollection(
-    params: ObjectsByCollectionQuery,
+  /**
+   * Performs search on objects collection based on query and or conditions
+   *
+   * @param {LearningObjectQueryWithConditions} params
+   * @returns {Promise<{
+   *     total: number;
+   *     objects: LearningObject[];
+   *   }>}
+   * @memberof MongoDriver
+   */
+  async searchObjectsWithConditions(
+    params: LearningObjectQueryWithConditions,
   ): Promise<{
     total: number;
     objects: LearningObject[];
   }> {
-    let {
+    const {
       name,
       author,
       length,
       level,
       standardOutcomeIDs,
       text,
-      collections,
+      conditions,
       orderBy,
       sortType,
       page,
       limit,
     } = params;
 
-    const orConditions: any[] = [{ status: 'released' }];
-    const filteredCollections = Object.keys(collections);
-    for (const key of filteredCollections) {
-      const status = collections[key];
-      orConditions.push({
-        $and: [
-          {
-            collection: key,
-            status: { $in: status },
-          },
-        ],
-      });
-    }
+    const orConditions: any[] = this.buildQueryConditions(conditions);
 
     // Query for users
     const authors = await this.matchUsers(author, text);
-
     // Query by LearningOutcomes' mappings
     const outcomeIDs: string[] = await this.matchOutcomes(standardOutcomeIDs);
 
@@ -155,47 +153,54 @@ export class MongoDriver implements DataStore {
       outcomeIDs,
     });
 
-    const pipeline: any[] = [
-      {
-        $match: {
+    let cursor = this.db
+      .collection<LearningObjectDocument>(COLLECTIONS.LEARNING_OBJECTS)
+      .find({
           ...searchQuery,
           $or: orConditions,
-        },
-      },
-    ];
-    if (limit) {
-      pipeline.push({ $limit: limit });
-      if (page != null) {
-        page = this.formatPage(page);
-        const skip = this.calcSkip({ page, limit });
-        pipeline.push({ $skip: skip });
-      }
-    }
+      });
 
-    if (orderBy) {
-      const sort = { $sort: {} };
-      sort.$sort[orderBy] = sortType;
-      pipeline.push(sort);
-    }
+    const total = await cursor.count();
 
-    if (text && !orderBy) {
-      pipeline.push({ $sort: { score: { $meta: 'textScore' } } });
-    }
-
-    pipeline.push({
-      $group: {
-        _id: 1,
-        objects: { $push: '$$ROOT' },
-        total: { $sum: 1 },
-      },
+    cursor = this.applyCursorFilters(cursor, {
+      orderBy,
+      sortType,
+      page,
+      limit,
     });
 
-    const cursor = this.db
-      .collection(COLLECTIONS.LEARNING_OBJECTS)
-      .aggregate<{ objects: LearningObjectDocument; total: number }>(pipeline);
-    const results = await cursor.toArray();
-    const docs = results[0];
-    return { total: 0, objects: [] };
+    const docs = await cursor.toArray();
+    const objects: LearningObject[] = await this.bulkGenerateLearningObjects(
+      docs,
+    );
+    // const objects: any[] = [];
+    return { total, objects };
+      }
+
+  /**
+   * Converts QueryConditions to valid Mongo conditional syntax
+   *
+   * @private
+   * @param {QueryCondition[]} conditions
+   * @returns
+   * @memberof MongoDriver
+   */
+  private buildQueryConditions(conditions: QueryCondition[]) {
+    const orConditions: any[] = [];
+    conditions.forEach(condition => {
+      const query = {};
+      const conditionKeys = Object.keys(condition);
+      for (const key of conditionKeys) {
+        const value = condition[key];
+        if (Array.isArray(value)) {
+          query[key] = { $in: value };
+        } else {
+          query[key] = value;
+    }
+    }
+      orConditions.push(query);
+    });
+    return orConditions;
   }
 
   /**
