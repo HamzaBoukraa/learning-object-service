@@ -1028,18 +1028,18 @@ function toNumber(value: any): number {
 /**
  * Returns Map of collections to statuses representing read access privilege over associated collection
  *
- * @param {string[]} collectionFilters
+ * @param {string[]} requestedCollections
  * @param {string[]} privilegedCollections
- * @returns {{ [index: string]: string[] }}
+ * @returns CollectionAccessMap
  */
 function getCollectionAccessMap(
-  collectionFilters: string[],
+  requestedCollections: string[],
   privilegedCollections: string[],
-): { [index: string]: string[] } {
+): CollectionAccessMap {
   const accessMap = {};
 
-  if (collectionFilters && collectionFilters.length) {
-    for (const filter of collectionFilters) {
+  if (requestedCollections && requestedCollections.length) {
+    for (const filter of requestedCollections) {
       if (privilegedCollections.includes(filter)) {
         accessMap[filter] = [
           LearningObject.Status.WAITING,
