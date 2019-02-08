@@ -4,7 +4,7 @@ describe('MongoDriver', () => {
   let driver: MongoDriver;
 
   beforeAll(async () => {
-    driver = await MongoDriver.build(`${global['__MONGO_URI__']}`);
+    driver = await MongoDriver.build(global['__MONGO_URI__']);
   });
 
   describe('updateMultipleLearningObjects', () => {
