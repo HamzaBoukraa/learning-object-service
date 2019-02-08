@@ -187,49 +187,56 @@ export class LearningObjectInteractor {
     library: LibraryCommunicator;
     username: string;
     learningObjectName: string;
-    userToken: UserToken;
+    userToken?: UserToken;
   }): Promise<LearningObject> {
     try {
-      if (
-        !this.hasReadAccess({
-          userToken: params.userToken,
-          resourceVal: params.username,
-          authFunction: checkAuthByUsername,
-        })
-      ) {
-        throw new Error('Invalid access');
-      }
+      let learningObject: LearningObject;
 
-      const { dataStore, library, username, learningObjectName } = params;
-
+      let childrenStatus = [LearningObject.Status.RELEASED];
+      const {
+        dataStore,
+        library,
+        username,
+        learningObjectName,
+        userToken,
+      } = params;
       const fullChildren = false;
+
       const learningObjectID = await dataStore.findLearningObject(
         username,
         learningObjectName,
       );
 
-      const learningObject = await dataStore.fetchLearningObject({
-        id: learningObjectID,
-        full: true,
+      const status = await dataStore.fetchLearningObjectStatus(
+        learningObjectID,
+      );
+      const collection = await dataStore.fetchLearningObjectCollection(
+        learningObjectID,
+      );
+
+      this.authorizeReadAccess({
+        userToken,
+        objectInfo: { author: username, status, collection },
       });
 
-      let status = [LearningObject.Status.RELEASED];
-      if (learningObject.status !== LearningObject.Status.RELEASED) {
-        status = [
-          LearningObject.Status.UNRELEASED,
-          LearningObject.Status.WAITING,
-          LearningObject.Status.REVIEW,
-          LearningObject.Status.PROOFING,
+      if (status in LearningObjectState.IN_REVIEW) {
+        childrenStatus = [
+          ...LearningObjectState.IN_REVIEW,
           LearningObject.Status.RELEASED,
         ];
       }
+
+      learningObject = await dataStore.fetchLearningObject({
+        id: learningObjectID,
+        full: true,
+      });
 
       const children = await this.loadChildObjects({
         dataStore,
         library,
         parentId: learningObject.id,
         full: fullChildren,
-        status,
+        status: childrenStatus,
       });
       children.forEach((child: LearningObject) =>
         learningObject.addChild(child),
