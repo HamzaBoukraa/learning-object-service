@@ -26,6 +26,26 @@ import { sanitizeText, sanitizeObject } from '../functions';
 // file size is in bytes
 const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
 
+const LearningObjectState = {
+  UNRELEASED: [
+    LearningObject.Status.REJECTED,
+    LearningObject.Status.UNRELEASED,
+  ],
+  IN_REVIEW: [
+    LearningObject.Status.WAITING,
+    LearningObject.Status.REVIEW,
+    LearningObject.Status.PROOFING,
+  ],
+  ALL: [
+    LearningObject.Status.REJECTED,
+    LearningObject.Status.UNRELEASED,
+    LearningObject.Status.WAITING,
+    LearningObject.Status.REVIEW,
+    LearningObject.Status.PROOFING,
+    LearningObject.Status.RELEASED,
+  ],
+};
+
 interface CollectionAccessMap {
   [index: string]: string[];
 }
