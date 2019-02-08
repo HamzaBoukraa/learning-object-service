@@ -1,50 +1,9 @@
 import { DataStore } from '../interfaces/DataStore';
-import { SubmittableLearningObject } from '@cyber4all/clark-entity';
-import { updateReadme } from '../LearningObjects/LearningObjectInteractor';
-import { FileManager } from '../interfaces/interfaces';
 import { reportError } from '../drivers/SentryConnector';
 import { hasLearningObjectWriteAccess } from '../interactors/AuthorizationManager';
 import { UserToken } from '../types';
 import { LearningObjectError } from '../errors';
-
-export async function submitForReview(params: {
-  dataStore: DataStore;
-  fileManager: FileManager;
-  username: string;
-  id: string;
-  collection: string;
-}): Promise<void> {
-  try {
-    const object = await params.dataStore.fetchLearningObject(
-      params.id,
-      true,
-      true,
-    );
-    const _ = new SubmittableLearningObject(object);
-    await params.dataStore.submitLearningObjectToCollection(
-      params.username,
-      params.id,
-      params.collection,
-    );
-    await updateReadme({
-      dataStore: params.dataStore,
-      fileManager: params.fileManager,
-      id: params.id,
-    });
-  } catch (e) {
-    console.log(e);
-    // TODO: Convey that this is an internal server error
-    return Promise.reject(
-      e instanceof Error ? e : new Error(`Problem submitting learning object.`),
-    );
-  }
-}
-export async function cancelSubmission(
-  dataStore: DataStore,
-  id: string,
-): Promise<void> {
-  await dataStore.unsubmitLearningObject(id);
-}
+import { ChangeLogDocument } from '../types/Changelog';
 
 /**
  * Instruct the datastore to create a new log in the changelogs collection
@@ -76,7 +35,26 @@ export async function createChangelog(params: {
       return Promise.reject(new Error(LearningObjectError.INVALID_ACCESS()));
     }
   } catch (e) {
-    reportError(e);
     return Promise.reject(e instanceof Error ? e : new Error(e));
   }
 }
+
+/**
+ * Instruct the datastore to fetch a changelog object with only the last element in the logs array
+ *
+ * @param {DataStore} dataStore An instance of DataStore
+ * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
+ *
+ * @returns {void}
+ */
+export async function getRecentChangelog(
+    dataStore: DataStore,
+    learningObjectId: string,
+  ): Promise<ChangeLogDocument> {
+    try {
+      const changelog = await dataStore.fetchRecentChangelog(learningObjectId);
+      return changelog;
+    } catch (e) {
+      return Promise.reject(e instanceof Error ? e : new Error(LearningObjectError.RESOURCE_NOT_FOUND()));
+    }
+  }

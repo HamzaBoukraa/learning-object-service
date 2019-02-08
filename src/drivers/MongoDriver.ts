@@ -30,6 +30,11 @@ import {
 import { LearningObjectStatStore } from '../LearningObjectStats/LearningObjectStatStore';
 import { LearningObjectStats } from '../LearningObjectStats/LearningObjectStatsInteractor';
 import { lengths } from '@cyber4all/clark-taxonomy';
+import { LearningObjectDataStore } from '../LearningObjects/LearningObjectDatastore';
+import { ChangeLogDocument } from '../types/Changelog';
+import { ChangelogDataStore } from '../Changelogs/ChangelogDatastore';
+import { LearningObjectError } from '../errors';
+import { reportError } from './SentryConnector';
 
 export enum COLLECTIONS {
   USERS = 'users',
@@ -38,6 +43,7 @@ export enum COLLECTIONS {
   STANDARD_OUTCOMES = 'outcomes',
   LO_COLLECTIONS = 'collections',
   MULTIPART_STATUSES = 'multipart-upload-statuses',
+  CHANGLOG = 'changelogs',
 }
 const RELEASED = 'released';
 
@@ -45,6 +51,8 @@ export class MongoDriver implements DataStore {
   submissionStore: SubmissionDatastore;
   learningOutcomeStore: LearningOutcomeMongoDatastore;
   statStore: LearningObjectStatStore;
+  learningObjectStore: LearningObjectDataStore;
+  changelogStore: ChangelogDataStore;
 
   private mongoClient: MongoClient;
   private db: Db;
@@ -105,6 +113,8 @@ export class MongoDriver implements DataStore {
     this.submissionStore = new SubmissionDatastore(this.db);
     this.learningOutcomeStore = new LearningOutcomeMongoDatastore(this.db);
     this.statStore = new LearningObjectStatStore(this.db);
+    this.learningObjectStore = new LearningObjectDataStore(this.db);
+    this.changelogStore = new ChangelogDataStore(this.db);
   }
 
   /**
@@ -371,6 +381,14 @@ export class MongoDriver implements DataStore {
     } catch (e) {
       return Promise.reject(e);
     }
+  }
+
+  async fetchRecentChangelog(learningObjectId: string): Promise<ChangeLogDocument> {
+    return this.changelogStore.getRecentChangelog(learningObjectId);
+  }
+
+  async deleteChangelog(learningObjectId: string): Promise<void> {
+    return this.changelogStore.deleteChangelog(learningObjectId);
   }
 
   /**
@@ -780,18 +798,23 @@ export class MongoDriver implements DataStore {
    * @returns {UserID}
    */
   async findUser(username: string): Promise<string> {
-    const query = {};
-    if (isEmail(username)) {
-      query['email'] = username;
-    } else {
-      query['username'] = username;
+    try {
+      const query = {};
+      if (isEmail(username)) {
+        query['email'] = username;
+      } else {
+        query['username'] = username;
+      }
+      const userRecord = await this.db
+        .collection(COLLECTIONS.USERS)
+        .findOne<UserDocument>(query, { projection: { _id: 1 } });
+      if (!userRecord)
+        throw new Error(LearningObjectError.RESOURCE_NOT_FOUND());
+      return `${userRecord._id}`;
+    } catch (e) {
+      reportError(e);
+      return Promise.reject(new Error(LearningObjectError.INTERNAL_ERROR()));
     }
-    const userRecord = await this.db
-      .collection(COLLECTIONS.USERS)
-      .findOne<UserDocument>(query, { projection: { _id: 1 } });
-    if (!userRecord)
-      throw new Error('No user with username or email' + username + ' exists.');
-    return `${userRecord._id}`;
   }
 
   /**
@@ -898,13 +921,29 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Returns all Learning Objects
+   * Check if a learning object exists
    *
-   * @param {string[]} [status]
-   * @param {number} [page]
-   * @param {number} [limit]
-   * @returns {Promise<{ objects: LearningObject[]; total: number }>}
-   * @memberof MongoDriver
+   * @param {string} learningObjectId The id of the specified learning object
+   *
+   * @returns {array}
+   */
+  async checkLearningObjectExistence(learningObjectId: string): Promise<string[]> {
+    try {
+      const arr = await this.db
+        .collection(COLLECTIONS.LEARNING_OBJECTS)
+        .find({ _id: learningObjectId })
+        .project({_id: 1 })
+        .toArray();
+      return arr;
+    } catch (e) {
+      reportError(e);
+      return Promise.reject(new Error(LearningObjectError.INTERNAL_ERROR()));
+    }
+  }
+
+  /**
+   * Return literally all objects. Very expensive.
+   * @returns {Cursor<LearningObjectRecord>[]} cursor of literally all objects
    */
   async fetchAllObjects(params: {
     status?: string[];
@@ -1541,6 +1580,18 @@ export class MongoDriver implements DataStore {
     } catch (e) {
       return Promise.reject(e);
     }
+  }
+
+  async createChangelog(
+    learningObjectId: string,
+    userId: string,
+    changelogText: string,
+  ): Promise<void> {
+    return this.changelogStore.createChangelog(
+      learningObjectId,
+      userId,
+      changelogText,
+    );
   }
 
   ////////////////////////////////////////////////

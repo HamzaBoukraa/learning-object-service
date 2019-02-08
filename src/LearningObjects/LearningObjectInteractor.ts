@@ -150,10 +150,10 @@ export async function updateLearningObject(params: {
   id: string;
   updates: { [index: string]: any };
 }): Promise<void> {
-  if(params.updates.id) {
+  if (params.updates.id) {
     delete params.updates.id;
   }
-  
+
   if (params.updates.name) {
     await checkNameExists({
       id: params.id,
@@ -163,8 +163,8 @@ export async function updateLearningObject(params: {
     });
   }
   try {
-      const hasAccess = await hasLearningObjectWriteAccess(params.user, params.dataStore, params.id); 
-      if(hasAccess) {
+      const hasAccess = await hasLearningObjectWriteAccess(params.user, params.dataStore, params.id);
+      if (hasAccess) {
           const updates: LearningObjectUpdates = sanitizeUpdates(params.updates);
           validateUpdates({
             id: params.id,
@@ -208,10 +208,10 @@ export async function deleteLearningObject(params: {
   fileManager: FileManager,
   learningObjectName: string,
   library: LibraryCommunicator,
-  user: UserToken
+  user: UserToken,
 }): Promise<void> {
   try {
-    const hasAccess = await hasLearningObjectWriteAccess(params.user, params.dataStore, params.learningObjectName); 
+    const hasAccess = await hasLearningObjectWriteAccess(params.user, params.dataStore, params.learningObjectName);
     if (hasAccess) {
       const object = await params.dataStore.peek<{
         id: string;
@@ -221,17 +221,20 @@ export async function deleteLearningObject(params: {
       });
       await params.library.cleanObjectsFromLibraries([object.id]);
       await params.dataStore.deleteLearningObject(object.id);
-    
       const path = `${params.user.username}/${object.id}/`;
       params.fileManager.deleteAll({ path }).catch(e => {
         reportError(
           new Error(`Problem deleting files for ${params.learningObjectName}: ${path}. ${e}`),
         );
       });
+      params.dataStore.deleteChangelog(object.id).catch(e => {
+        reportError(
+          new Error(`Problem deleting changelogs for ${params.learningObjectName}: ${e}`),
+        );
+      });
     } else {
       return Promise.reject(new Error('User does not have authorization to perform this action'));
-
-    } 
+    }
   } catch (e) {
     reportError(e);
     return Promise.reject(new Error(`Problem deleting Learning Object. Error: ${e}`));
@@ -470,3 +473,4 @@ async function checkNameExists(params: {
     throw new Error(LearningObjectError.DUPLICATE_NAME(params.name));
   }
 }
+

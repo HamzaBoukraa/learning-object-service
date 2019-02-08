@@ -42,38 +42,42 @@ export const MOCK_OBJECTS = {
     unpublish: () => {
       this.published = false;
     },
+    USERTOKEN: {
+      username: 'unittest',
+      name: 'unit test',
+      email: 'unit@test.com',
+      organization: 'unittesting',
+      emailVerified: true,
+      accessGroups: [''],
   },
-  TOTAL_RECORDS: 1,
-  COLLECTION_META: {
-    name: 'test',
-    abstracts: <any>[],
+  CHANGELOG: {
+      _id: '1234',
+      learningObjectId: 'default_id',
+      logs: [
+          {
+              userId: '123',
+              date: new Date(),
+              text: 'hello',
+          },
+      ],
   },
-  COLLECTION_NAME: 'test',
-  MULTIPART_UPLOAD_STATUS: {
-    _id: 'id',
-    uploadId: 'upload id',
-    partsUploaded: 2,
-    totalParts: 2,
-    fileSize: 134,
-    path: 'path',
-    bytesUploaded: 132,
-    completedParts: <any>[],
-    createdAt: 'time',
-  },
-  unpublish: () => {
-    this.published = false;
-  },
-  LEARNING_OBJECT_STATS: {
-    downloads: 1,
-    saves: 1,
-    total: 1,
-    released: 1,
-    lengths: {
-      nanomodule: 1,
-      micromodule: 1,
-      module: 1,
-      unit: 1,
-      course: 1,
+    LEARNING_OBJECT_STATS: {
+        downloads: 1,
+        saves: 1,
+        total: 1,
+        released: 1,
+        lengths: {
+          nanomodule: 1,
+          micromodule: 1,
+          module: 1,
+          unit: 1,
+          course: 1,
+        },
+        blooms_distribution: {
+          apply: 1,
+          evaluate: 1,
+          remember: 1,
+        },
     },
     blooms_distribution: {
       apply: 1,
@@ -97,8 +101,10 @@ export const MOCK_OBJECTS = {
     saves: 23,
     downloads: 4,
   },
-  USER: new User({ id: '234' }),
+  USER: new User({ id: '123' }),
   OUTCOME: new LearningOutcome({ id: '123' }),
+  USER_ID: '5a9583401405cb053272ced1',
+  CHANGELOG_TEXT: 'Hello',
 };
 
 export const SUBMITTABLE_LEARNING_OBJECT = {

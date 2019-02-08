@@ -4,6 +4,7 @@ import { LearningObjectUpdates } from '../types';
 import { LearningOutcomeDatastore } from '../LearningOutcomes/LearningOutcomeInteractor';
 import { LearningObjectStatDatastore } from '../LearningObjectStats/LearningObjectStatsInteractor';
 import { CollectionDataStore } from '../Collections/CollectionDataStore';
+import { ChangeLogDocument } from '../types/Changelog';
 
 export interface DataStore
   extends LearningOutcomeDatastore,
@@ -25,6 +26,13 @@ export interface DataStore
   insertMultipartUploadStatus(params: {
     status: MultipartFileUploadStatus;
   }): Promise<void>;
+
+  // Changelog
+  createChangelog(
+    learningObjectId: string,
+    userId: string,
+    changelogText: string,
+  ): Promise<void>;
   /*
    * READ Operations
    */
@@ -68,6 +76,7 @@ export interface DataStore
     full?: boolean;
     status: string[];
   }): Promise<LearningObject[]>;
+  checkLearningObjectExistence(learningObjectId: string): Promise<string[]>;
 
   // Materials
   findSingleFile(params: {
@@ -90,6 +99,9 @@ export interface DataStore
     query: { [index: string]: string };
     fields: { [index: string]: 0 | 1 };
   }): Promise<T>;
+
+  // Changelog
+  fetchRecentChangelog(learningObjectId: string): Promise<ChangeLogDocument>;
 
   /*
    * UPDATE Operations
@@ -142,6 +154,10 @@ export interface DataStore
 
   // File Uploads
   deleteMultipartUploadStatus(params: { id: string }): Promise<void>;
+  deleteMultipartUploadStatus(params: { id: string }): Promise<void>;
+
+  // Changelog
+  deleteChangelog(learningObjectId: string): Promise<void>;
 }
 
 export { Collection as LearningObjectCollection };

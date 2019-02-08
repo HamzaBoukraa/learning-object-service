@@ -22,7 +22,7 @@ describe('loadUsersObjectSummaries', () => {
     return LearningObjectInteractor.loadUsersObjectSummaries({
       dataStore,
       library,
-      userToken,
+      userToken: MOCK_OBJECTS.USERTOKEN,
       username: MOCK_OBJECTS.USERNAME,
     })
       .then(val => {

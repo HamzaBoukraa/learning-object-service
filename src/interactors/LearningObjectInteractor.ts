@@ -331,7 +331,7 @@ export class LearningObjectInteractor {
     return Promise.all(
       objects.map(async obj => {
         // Load their children
-        const children = await this.loadChildObjects({
+        let children = await this.loadChildObjects({
           dataStore,
           library,
           parentId: obj.id,
@@ -339,7 +339,7 @@ export class LearningObjectInteractor {
           status,
         });
         // For each of the Child's children
-        await Promise.all(
+        children = await Promise.all(
           children.map(async child => {
             // Load child metrics
             try {
@@ -347,12 +347,11 @@ export class LearningObjectInteractor {
             } catch (e) {
               console.error(e);
             }
-            // Add Child
-            obj.addChild(child);
+            return child;
           }),
         );
 
-        return obj;
+        return new LearningObject({ ...obj.toPlainObject(), children });
       }),
     );
   }

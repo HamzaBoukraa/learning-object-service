@@ -20,6 +20,7 @@ import {
   INVALID_LEARNING_OBJECTS,
 } from '../mocks';
 import { LearningObjectUpdates } from '../../types';
+import { ChangeLogDocument } from '../../types/Changelog';
 import {
   LearningOutcomeInsert,
   LearningOutcomeUpdate,
@@ -27,6 +28,14 @@ import {
 import { LearningObjectStats } from '../../LearningObjectStats/LearningObjectStatsInteractor';
 
 export class MockDataStore implements DataStore {
+  checkLearningObjectExistence(learningObjectId: string): Promise<string[]> {
+    return Promise.resolve([MOCK_OBJECTS.LEARNING_OBJECT_ID]);
+  }
+
+  deleteChangelog(learningObjectId: String): Promise<void> {
+    return Promise.resolve();
+  }
+
   connect(file: string): Promise<void> {
     return Promise.resolve();
   }
@@ -179,6 +188,18 @@ export class MockDataStore implements DataStore {
   }): Promise<any[]> {
     return Promise.resolve([MOCK_OBJECTS.LEARNING_OBJECT]);
   }
+  createChangelog(
+    learningObjectId: string,
+    userId: string,
+    changelogText: string,
+  ): Promise<void> {
+    return Promise.resolve();
+  }
+
+  fetchRecentChangelog(learningObjectId: string): Promise<ChangeLogDocument> {
+    return Promise.resolve(MOCK_OBJECTS.CHANGELOG);
+  }
+
   fetchAllObjects(params: {
     ids: string[];
     full?: boolean;
@@ -187,7 +208,7 @@ export class MockDataStore implements DataStore {
     sortType?: number;
   }): Promise<{ objects: any[]; total: number }> {
     return Promise.resolve({
-      objects: [MOCK_OBJECTS.LEARNING_OBJECT],
+      objects: [new LearningObject(MOCK_OBJECTS.LEARNING_OBJECT as any)],
       total: MOCK_OBJECTS.TOTAL_RECORDS,
     });
   }
@@ -196,7 +217,7 @@ export class MockDataStore implements DataStore {
     params: LearningObjectQuery,
   ): Promise<{ objects: any[]; total: number }> {
     return Promise.resolve({
-      objects: [MOCK_OBJECTS.LEARNING_OBJECT],
+      objects: [new LearningObject(MOCK_OBJECTS.LEARNING_OBJECT as any)],
       total: MOCK_OBJECTS.TOTAL_RECORDS,
     });
   }
@@ -214,7 +235,9 @@ export class MockDataStore implements DataStore {
   }
 
   fetchCollectionObjects(name: string): Promise<any[]> {
-    return Promise.resolve([MOCK_OBJECTS.LEARNING_OBJECT]);
+    return Promise.resolve([
+      new LearningObject(MOCK_OBJECTS.LEARNING_OBJECT as any),
+    ]);
   }
 
   submitLearningObjectToCollection(
@@ -238,7 +261,9 @@ export class MockDataStore implements DataStore {
   }
 
   findParentObjects(params: { query: LearningObjectQuery }): Promise<any[]> {
-    return Promise.resolve([MOCK_OBJECTS.LEARNING_OBJECT]);
+    return Promise.resolve([
+      new LearningObject(MOCK_OBJECTS.LEARNING_OBJECT as any),
+    ]);
   }
 
   addToFiles(params: {
