@@ -7,7 +7,7 @@ import {
   LibraryCommunicator,
 } from '../interfaces/interfaces';
 import { UserToken } from '../types';
-import { LearningObjectQuery } from '../interfaces/DataStore';
+import { LearningObjectQuery, QueryCondition } from '../interfaces/DataStore';
 import { DZFile, FileUpload } from '../interfaces/FileManager';
 import { processMultipartUpload } from '../FileManager/FileInteractor';
 import {
@@ -729,6 +729,34 @@ export class LearningObjectInteractor {
     } catch (e) {
       return Promise.reject(`Problem suggesting Learning Objects. Error:${e}`);
     }
+  }
+
+  /**
+   * Builds QueryConditions based on requested collections and collectionAccessMap
+   *
+   * @private
+   * @static
+   * @param {string[]} requestedCollections
+   * @param {CollectionAccessMap} collectionAccessMap
+   * @returns {QueryCondition[]}
+   * @memberof LearningObjectInteractor
+   */
+  private static buildCollectionQueryConditions(
+    requestedCollections: string[],
+    collectionAccessMap: CollectionAccessMap,
+  ): QueryCondition[] {
+    const conditions: QueryCondition[] = [];
+    if (!requestedCollections || !requestedCollections.length) {
+      conditions.push({
+        status: LearningObject.Status.RELEASED,
+      });
+    }
+    const mapKeys = Object.keys(collectionAccessMap);
+    for (const key of mapKeys) {
+      const status = collectionAccessMap[key];
+      conditions.push({ collection: key, status });
+    }
+    return conditions;
   }
 
   /**
