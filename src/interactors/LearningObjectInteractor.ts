@@ -128,6 +128,7 @@ export class LearningObjectInteractor {
       }
       return summary;
     } catch (e) {
+      // TODO: Expand error object to identify different resource types
       if (e instanceof Error && e.message === 'User not found') {
         throw e;
       }
