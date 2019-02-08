@@ -280,8 +280,9 @@ export class MongoDriver implements DataStore {
     full?: boolean;
     status: string[];
   }): Promise<LearningObject[]> {
+    const { id, full, status } = params;
     const matchQuery: { [index: string]: any } = {
-      $match: { _id: params.id, status: { $in: status } },
+      $match: { _id: id, status: { $in: status } },
     };
 
     const docs = await this.db
@@ -305,7 +306,7 @@ export class MongoDriver implements DataStore {
       .toArray();
     if (docs[0]) {
       const objects = docs[0].objects;
-      return this.bulkGenerateLearningObjects(objects, params.full);
+      return this.bulkGenerateLearningObjects(objects, full);
     }
     return [];
   }
