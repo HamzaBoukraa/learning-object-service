@@ -996,9 +996,9 @@ function toArray<T>(value: any): T[] {
     return null;
   }
   if (value && Array.isArray(value)) {
-    return [...value].filter(isEmptyValue);
+    return [...value].filter(v => !isEmptyValue(v));
   }
-  return [value].filter(isEmptyValue);
+  return [value].filter(v => !isEmptyValue(v));
 }
 
 function isEmptyValue(value: any): boolean {
