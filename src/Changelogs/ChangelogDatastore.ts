@@ -1,6 +1,7 @@
 import { Db } from 'mongodb';
 import { COLLECTIONS } from '../drivers/MongoDriver';
 import { ChangeLogDocument } from '../types/Changelog';
+import { LearningObjectError } from '../errors';
 
 export class ChangelogDataStore {
 
@@ -54,9 +55,12 @@ export class ChangelogDataStore {
             const changelog = await this.db
                 .collection(COLLECTIONS.CHANGLOG)
                 .findOne(
-                  { _id: learningObjectId },
-                  { logs: { $slice: -1 } },
+                  { learningObjectId: learningObjectId },
+                  { projection: { learningObjectId: 1, logs: { $slice: -1 } } },
                 );
+            if (changelog === null) {
+              return Promise.reject(new Error(LearningObjectError.RESOURCE_NOT_FOUND()));
+            }
             return changelog;
         } catch (e) {
             return Promise.reject(new Error(`${e}`));

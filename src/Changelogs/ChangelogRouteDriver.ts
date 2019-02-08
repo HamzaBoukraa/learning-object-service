@@ -1,5 +1,5 @@
 import { Request, Response, Router } from 'express';
-import { LearningObjectError, ResolverStrategyDatabaseOrderPrinterCloneSerializer } from '../errors';
+import { determineErrorResponse } from '../errors';
 import { DataStore } from '../interfaces/DataStore';
 import { UserToken } from '../types';
 import * as ChangelogInteractor from './ChangelogInteractor';
@@ -30,10 +30,11 @@ export function initialize({
       res.sendStatus(200);
     } catch (e) {
       if (e instanceof Error) {
-        const status = ResolverStrategyDatabaseOrderPrinterCloneSerializer(e.message);
+        const status = determineErrorResponse(e.message);
         res.status(status).json({message: `${e.message}`});
+      } else {
+        res.status(500).json({message: `Could not create changelog for specified learning object. ${e}`});
       }
-      res.status(500).json({message: `Could not create changelog for specified learning object. ${e}`});
     }
   }
 
@@ -46,8 +47,12 @@ export function initialize({
       );
       res.status(200).send(changelog);
     } catch (e) {
-      console.error(e);
-      res.status(404).json({message: 'Could not find recent changelog for learning object: ' + learningObjectId});
+      if (e instanceof Error) {
+        const status = determineErrorResponse(e.message);
+        res.status(status).json({message: `${e.message}`});
+      } else {
+        res.status(500).json({message: `Could not fetch recent changelog for specified learning object. ${e}`});
+      }
     }
   };
 

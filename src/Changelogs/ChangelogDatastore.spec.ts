@@ -14,12 +14,13 @@ describe('MongoDriver', () => {
         .resolves.toEqual({
           _id: '5c3e2cab7da238008fcd771c',
           learningObjectId: 'default_id',
-          recentChangelog:
+          logs: [
               {
                   userId: '5678',
                   date: '2019-01-15T18:55:39.000Z',
                   text: 'hello two',
               },
+            ],
         });
     });
   });
