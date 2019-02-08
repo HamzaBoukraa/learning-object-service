@@ -1,21 +1,12 @@
-import { LearningObjectInteractor } from './interactors';
 import {
   DataStore,
-  FileManager,
-  LibraryCommunicator,
 } from '../interfaces/interfaces';
-import {
-  deleteLearningObject,
-} from '../LearningObjects/LearningObjectInteractor';
 import { LearningObject } from '@cyber4all/clark-entity';
-import { accessGroups, UserToken } from '../types/user-token';
+import { UserToken } from '../types/user-token';
 import { hasLearningObjectWriteAccess } from './AuthorizationManager';
 
 
 export class AdminLearningObjectInteractor {
-  private static learningObjectInteractor = LearningObjectInteractor;
-  
-
 
   /**
    * *** Function to phase out ***
@@ -28,7 +19,7 @@ export class AdminLearningObjectInteractor {
   ): Promise<void> {
     try {
       const hasAccess = await hasLearningObjectWriteAccess(user, dataStore, id);
-      if(hasAccess) {
+      if (hasAccess) {
         return await dataStore.toggleLock(id, lock);
       } else {
         return Promise.reject('User does not have permission to update this object');

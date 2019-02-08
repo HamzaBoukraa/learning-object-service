@@ -163,7 +163,7 @@ export class ExpressRouteDriver {
             library: this.library,
             username,
             learningObjectName,
-            accessUnpublished
+            accessUnpublished,
           });
           res.status(200).send(object.toPlainObject());
         } catch (e) {

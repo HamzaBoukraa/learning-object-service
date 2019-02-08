@@ -63,6 +63,25 @@ export const MOCK_OBJECTS = {
     unpublish: () => {
       this.published = false;
     },
+    USERTOKEN: {
+      username: 'unittest',
+      name: 'unit test',
+      email: 'unit@test.com',
+      organization: 'unittesting',
+      emailVerified: true,
+      accessGroups: [''],
+  },
+  CHANGELOG: {
+      _id: '1234',
+      learningObjectId: 'default_id',
+      logs: [
+          {
+              userId: '123',
+              date: new Date(),
+              text: 'hello',
+          },
+      ],
+  },
     LEARNING_OBJECT_STATS: {
         downloads: 1,
         saves: 1,
@@ -78,8 +97,8 @@ export const MOCK_OBJECTS = {
         blooms_distribution: {
           apply: 1,
           evaluate: 1,
-          remember: 1
-        }
+          remember: 1,
+        },
     },
   LEARNING_OBJECT_FILE: {
     id: '123456789',
@@ -97,8 +116,10 @@ export const MOCK_OBJECTS = {
     saves: 23,
     downloads: 4,
   },
-  USER: new User( {id: '234'}),
-  OUTCOME: new LearningOutcome({id: '123'})
+  USER: new User({ id: '123' }),
+  OUTCOME: new LearningOutcome({ id: '123' }),
+  USER_ID: '5a9583401405cb053272ced1',
+  CHANGELOG_TEXT: 'Hello',
 };
 
 
