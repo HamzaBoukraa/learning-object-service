@@ -51,8 +51,8 @@ export interface DataStore
   searchObjects(
     params: LearningObjectQuery,
   ): Promise<{ objects: LearningObject[]; total: number }>;
-  searchObjectsByCollection(
-    params: ObjectsByCollectionQuery,
+  searchObjectsWithConditions(
+    params: LearningObjectQueryWithConditions,
   ): Promise<{
     total: number;
     objects: LearningObject[];
@@ -164,13 +164,15 @@ export interface LearningObjectQuery extends Filters {
   status?: string[];
 }
 
-export interface ObjectsByCollectionQuery extends Filters {
+export interface LearningObjectQueryWithConditions extends Filters {
   name?: string;
   author?: string;
   length?: string[];
   level?: string[];
   standardOutcomeIDs?: string[];
   text?: string;
+  conditions: QueryCondition[];
+}
 
 export interface QueryCondition {
   [index: string]: string | string[];
