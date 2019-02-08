@@ -687,21 +687,29 @@ export class LearningObjectInteractor {
         !isAdminOrEditor(userToken.accessGroups)
       ) {
         const privilegedCollections = getAccessGroupCollections(userToken);
-        let collectionAccessMap = getCollectionAccessMap(
+
+        const collectionAccessMap = getCollectionAccessMap(
           collection,
           privilegedCollections,
         );
-        response = await dataStore.searchObjectsByCollection({
+        const queryConditions = this.buildCollectionQueryConditions(
+          collection,
+          collectionAccessMap,
+        );
+        response = await dataStore.searchObjectsWithConditions({
           name,
           author,
           length,
           level,
           standardOutcomeIDs,
           text,
-          collections: collectionAccessMap,
+          conditions: queryConditions,
+          orderBy,
+          sortType,
+          page,
+          limit,
         });
       } else {
-        console.log('REGULAR', this.formatSearchQuery(query));
         response = await dataStore.searchObjects({
           name,
           author,
