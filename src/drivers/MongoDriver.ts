@@ -1057,9 +1057,8 @@ export class MongoDriver implements DataStore {
         .project({ score: { $meta: 'textScore' } })
         .sort({ score: { $meta: 'textScore' } });
 
-      const totalRecords = await objectCursor.count();
+      const total = await objectCursor.count();
 
-      // Paginate if has limiter
       objectCursor = this.applyCursorFilters(objectCursor, {
         page: page,
         limit: limit,
@@ -1068,15 +1067,15 @@ export class MongoDriver implements DataStore {
       });
 
       const docs = await objectCursor.toArray();
-      const learningObjects: LearningObject[] = await this.bulkGenerateLearningObjects(
+      const objects: LearningObject[] = await this.bulkGenerateLearningObjects(
         docs,
         full,
       );
 
-      return Promise.resolve({
-        objects: learningObjects,
-        total: totalRecords,
-      });
+      return {
+        objects,
+        total,
+      };
     } catch (e) {
       return Promise.reject('Error suggesting objects' + e);
     }
