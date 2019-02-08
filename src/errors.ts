@@ -1,3 +1,5 @@
+import { reportError } from './drivers/SentryConnector';
+
 export const LearningObjectError = {
     DUPLICATE_NAME: (name: string): string => {
       return `A learning object with name '${name}' already exists.`;
@@ -8,15 +10,28 @@ export const LearningObjectError = {
     RESOURCE_NOT_FOUND: (): string => {
       return 'The requested resource does not exist';
     },
+    INTERNAL_ERROR: (): string => {
+      return 'An internal server error has occured';
+    },
   };
 
-export function determineErrorResponse(error: string): number {
-  switch (error) {
+export function mapErrorToStatusCode(error: Error): { code: number, message: string } {
+  const status = {
+    code: 500,
+    message: error.message,
+  };
+  switch (error.message) {
     case LearningObjectError.INVALID_ACCESS():
-      return 401;
+      status.code = 401;
+      break;
     case LearningObjectError.RESOURCE_NOT_FOUND():
-      return 404;
+      status.code = 404;
+      break;
     default:
-      return 500;
+      reportError(error);
+      status.code = 500;
+      status.message = LearningObjectError.INTERNAL_ERROR();
   }
+
+  return status;
 }

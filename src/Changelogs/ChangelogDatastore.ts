@@ -2,6 +2,7 @@ import { Db } from 'mongodb';
 import { COLLECTIONS } from '../drivers/MongoDriver';
 import { ChangeLogDocument } from '../types/Changelog';
 import { LearningObjectError } from '../errors';
+import { reportError } from '../drivers/SentryConnector';
 
 export class ChangelogDataStore {
 
@@ -38,7 +39,8 @@ export class ChangelogDataStore {
           },
         );
     } catch (e) {
-      return Promise.reject(new Error(e));
+      reportError(e);
+      return Promise.reject(new Error(LearningObjectError.INTERNAL_ERROR()));
     }
   }
 
@@ -52,18 +54,19 @@ export class ChangelogDataStore {
    */
     async getRecentChangelog(learningObjectId: string): Promise<ChangeLogDocument> {
         try {
-            const changelog = await this.db
-                .collection(COLLECTIONS.CHANGLOG)
-                .findOne(
-                  { learningObjectId },
-                  { projection: { learningObjectId: 1, logs: { $slice: -1 } } },
-                );
-            if (changelog === null) {
-              return Promise.reject(new Error(LearningObjectError.RESOURCE_NOT_FOUND()));
-            }
-            return changelog;
+          const changelog = await this.db
+              .collection(COLLECTIONS.CHANGLOG)
+              .findOne(
+                { learningObjectId },
+                { projection: { learningObjectId: 1, logs: { $slice: -1 } } },
+              );
+          if (changelog === null) {
+            return Promise.reject(new Error(LearningObjectError.RESOURCE_NOT_FOUND()));
+          }
+          return changelog;
         } catch (e) {
-            return Promise.reject(new Error(e));
+          reportError(e);
+          return Promise.reject(new Error(LearningObjectError.INTERNAL_ERROR()));
         }
     }
 
@@ -77,11 +80,12 @@ export class ChangelogDataStore {
    */
     async deleteChangelog(learningObjectId: string): Promise<void> {
         try {
-            await this.db
-                .collection(COLLECTIONS.CHANGLOG)
-                .remove({learningObjectId: learningObjectId});
+          await this.db
+            .collection(COLLECTIONS.CHANGLOG)
+            .remove({learningObjectId: learningObjectId});
         } catch (e) {
-            return Promise.reject(new Error(`${e}`));
+          reportError(e);
+          return Promise.reject(new Error(LearningObjectError.INTERNAL_ERROR()));
         }
     }
 }

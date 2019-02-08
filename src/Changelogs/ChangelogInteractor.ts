@@ -35,7 +35,6 @@ export async function createChangelog(params: {
       return Promise.reject(new Error(LearningObjectError.INVALID_ACCESS()));
     }
   } catch (e) {
-    reportError(e);
     return Promise.reject(e instanceof Error ? e : new Error(e));
   }
 }
@@ -56,7 +55,6 @@ export async function getRecentChangelog(
       const changelog = await dataStore.fetchRecentChangelog(learningObjectId);
       return changelog;
     } catch (e) {
-      reportError(e);
-      return Promise.reject(e instanceof Error ? e : new Error(`Problem fetching recent changelog for learning object: ` + learningObjectId + `. Error: ${e}`));
+      return Promise.reject(e instanceof Error ? e : new Error(LearningObjectError.RESOURCE_NOT_FOUND()));
     }
   }
