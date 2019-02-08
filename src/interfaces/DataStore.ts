@@ -43,6 +43,8 @@ export interface DataStore
     orderBy?: string;
     sortType?: number;
   }): Promise<LearningObject[]>;
+  fetchLearningObjectStatus(id: string): Promise<string>;
+  fetchLearningObjectCollection(id: string): Promise<string>;
   fetchAllObjects(params: {
     status: string[];
     page?: number;

@@ -940,6 +940,47 @@ export class MongoDriver implements DataStore {
   }
 
   /**
+   * Fetches an object's status
+   *
+   * @param {string} id
+   * @returns {Promise<string>}
+   * @memberof MongoDriver
+   */
+  async fetchLearningObjectStatus(id: string): Promise<string> {
+    try {
+      const res = await this.db
+        .collection(COLLECTIONS.LEARNING_OBJECTS)
+        .findOne({ _id: id }, { projection: { status: 1 } });
+
+      if (res) {
+        return res.status;
+      }
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  }
+
+  /**
+   * Fetches an object's collection id
+   *
+   * @param {string} id
+   * @returns {Promise<string>}
+   * @memberof MongoDriver
+   */
+  async fetchLearningObjectCollection(id: string): Promise<string> {
+    try {
+      const res = await this.db
+        .collection(COLLECTIONS.LEARNING_OBJECTS)
+        .findOne({ _id: id }, { projection: { collection: 1 } });
+
+      if (res) {
+        return res.collection;
+      }
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  }
+  /**
    * Converts array of LearningObjectDocuments to Learning Objects
    *
    * @private
