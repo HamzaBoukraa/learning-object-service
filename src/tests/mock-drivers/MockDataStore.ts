@@ -14,6 +14,7 @@ import {
   MOCK_OBJECTS, SUBMITTABLE_LEARNING_OBJECT, INVALID_LEARNING_OBJECTS,
 } from '../mocks';
 import { LearningObjectUpdates } from '../../types';
+import { ChangeLogDocument } from '../../types/Changelog';
 import {
   LearningOutcomeInsert,
   LearningOutcomeUpdate,
@@ -27,6 +28,14 @@ const COLLECTIONS = {
 };
 
 export class MockDataStore implements DataStore {
+  checkLearningObjectExistence(learningObjectId: string): Promise<string[]> {
+    return Promise.resolve([MOCK_OBJECTS.LEARNING_OBJECT_ID]);
+  }
+
+  deleteChangelog(learningObjectId: String): Promise<void> {
+    return Promise.resolve();
+  }
+
   connect(file: string): Promise<void> {
     return Promise.resolve();
   }
@@ -160,6 +169,14 @@ export class MockDataStore implements DataStore {
       default:
         return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT);
     }
+  }
+
+  createChangelog(learningObjectId: string, userId: string, changelogText: string): Promise<void> {
+    return Promise.resolve();
+  }
+
+  fetchRecentChangelog(learningObjectId: string): Promise<ChangeLogDocument> {
+    return Promise.resolve(MOCK_OBJECTS.CHANGELOG);
   }
 
   fetchMultipleObjects(

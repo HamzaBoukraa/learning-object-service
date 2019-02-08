@@ -4,7 +4,7 @@ let connection;
 let db;
 
 const LEARNING_OBJECT_MOCK = { 
-    _id: "5ad8f5a6824dd17351adf1e1",
+    _id: "default_id",
     authorID: "5b967621f7a3ce2f6cbf5ba1",
     date:"1520530093085",
     goals:[
@@ -87,10 +87,15 @@ const C5_COLLECTION_MOCK = {
 
 const CHANGELOG_MOCK = {
     _id: "5c3e2cab7da238008fcd771c",
-    learningObjectId: "5ad8f5a6824dd17351adf1e1",
+    learningObjectId: "default_id",
     logs:[
         {
             userId:"1234",
+            date:"2019-01-15T18:55:39.000Z",
+            text:"hello"
+        },
+        {
+            userId:"5678",
             date:"2019-01-15T18:55:39.000Z",
             text:"hello two"
         }
@@ -138,7 +143,7 @@ async function seedDatabase(uri){
     await db.collection('objects').insertOne(LEARNING_OBJECT_MOCK);
     await db.collection('users').insertOne(USER_MOCK);
     await db.collection('collections').insertOne(C5_COLLECTION_MOCK);
-    await db.collection('changlogs').insertOne(CHANGELOG_MOCK);
+    await db.collection('changelogs').insertOne(CHANGELOG_MOCK);
     await db.collection('outcomes').insertOne(OUTCOME_MOCK);
     await db.collection('learning-outcomes').insertOne(LEARNING_OUTCOME_MOCK);
 }
