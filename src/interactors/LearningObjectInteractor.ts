@@ -250,6 +250,48 @@ export class LearningObjectInteractor {
   }
 
   /**
+   * Runs through authorization logic read access to a learning object.
+   * Throws an error if user is not authorized
+   *
+   * @private
+   * @static
+   * @param {{
+   *     userToken: UserToken;
+   *     objectInfo: { author: string; status: string; collection: string };
+   *   }} params
+   * @memberof LearningObjectInteractor
+   */
+  private static authorizeReadAccess(params: {
+    userToken: UserToken;
+    objectInfo: { author: string; status: string; collection: string };
+  }): void {
+    const { userToken, objectInfo } = params;
+    const authorOnlyAccess =
+      objectInfo.status in LearningObjectState.UNRELEASED;
+    const isAuthor = this.hasReadAccess({
+      userToken,
+      resourceVal: objectInfo.author,
+      authFunction: isAuthorByUsername,
+    });
+    if (authorOnlyAccess && !isAuthor) {
+      throw new Error('Unauthorized');
+    }
+    const authorOrPrivilegedAccess =
+      objectInfo.status !== LearningObject.Status.RELEASED;
+    if (
+      authorOrPrivilegedAccess &&
+      !isAuthor &&
+      !this.hasReadAccess({
+        userToken,
+        resourceVal: objectInfo.collection,
+        authFunction: hasReadAccessByCollection,
+      })
+    ) {
+      throw new Error('Unauthorized');
+    }
+  }
+
+  /**
    * Returns parent object's children
    *
    * @private
