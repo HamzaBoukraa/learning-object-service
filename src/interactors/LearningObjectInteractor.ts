@@ -94,8 +94,9 @@ export class LearningObjectInteractor {
       }
       delete formattedQuery.page;
       delete formattedQuery.limit;
+      delete formattedQuery.sortType;
       // Perform search on objects
-      if (formattedQuery && Object.keys(formattedQuery).length) {
+      if (Object.keys(formattedQuery).length) {
         const response = await dataStore.searchObjects({
           name,
           author,
