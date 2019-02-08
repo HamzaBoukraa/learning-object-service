@@ -1,4 +1,8 @@
-import { DataStore, LearningObjectQuery } from '../../interfaces/DataStore';
+import {
+  DataStore,
+  LearningObjectQuery,
+  LearningObjectQueryWithConditions,
+} from '../../interfaces/DataStore';
 import {
   LearningObject,
   Collection,
@@ -31,17 +35,9 @@ export class MockDataStore implements DataStore {
     return;
   }
 
-  searchObjectsByCollection(params: {
-    name?: string;
-    author?: string;
-    length?: string[];
-    level?: string[];
-    standardOutcomeIDs?: string[];
-    text?: string;
-    collections: {
-      [index: string]: string[];
-    };
-  }): Promise<{
+  searchObjectsWithConditions(
+    params: LearningObjectQueryWithConditions,
+  ): Promise<{
     total: number;
     objects: LearningObject[];
   }> {
