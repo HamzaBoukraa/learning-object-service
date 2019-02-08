@@ -31,7 +31,7 @@ export function initialize({
     } catch (e) {
       if (e instanceof Error) {
         const status = mapErrorToStatusCode(e);
-        res.status(status.code).json({message: `${status.message}`});
+        res.status(status.code).json({message: status.message});
       } else {
         res.sendStatus(500);
       }
@@ -49,7 +49,7 @@ export function initialize({
     } catch (e) {
       if (e instanceof Error) {
         const status = mapErrorToStatusCode(e);
-        res.status(status.code).json({message: `${status.message}`});
+        res.status(status.code).json({message: status.message});
       } else {
         res.sendStatus(500);
       }
