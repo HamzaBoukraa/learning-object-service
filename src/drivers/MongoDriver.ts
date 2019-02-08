@@ -31,6 +31,8 @@ import { lengths } from '@cyber4all/clark-taxonomy';
 import { LearningObjectDataStore } from '../LearningObjects/LearningObjectDatastore';
 import { ChangeLogDocument } from '../types/Changelog';
 import { ChangelogDataStore } from '../Changelogs/ChangelogDatastore';
+import { LearningObjectError } from '../errors';
+import { reportError } from './SentryConnector';
 
 export enum COLLECTIONS {
   USERS = 'users',
@@ -730,18 +732,23 @@ export class MongoDriver implements DataStore {
    * @returns {UserID}
    */
   async findUser(username: string): Promise<string> {
-    const query = {};
-    if (isEmail(username)) {
-      query['email'] = username;
-    } else {
-      query['username'] = username;
+    try {
+      const query = {};
+      if (isEmail(username)) {
+        query['email'] = username;
+      } else {
+        query['username'] = username;
+      }
+      const userRecord = await this.db
+        .collection(COLLECTIONS.USERS)
+        .findOne<UserDocument>(query, { projection: { _id: 1 } });
+      if (!userRecord)
+        throw new Error(LearningObjectError.RESOURCE_NOT_FOUND());
+      return `${userRecord._id}`;
+    } catch (e) {
+      reportError(e);
+      return Promise.reject(new Error(LearningObjectError.INTERNAL_ERROR()));
     }
-    const userRecord = await this.db
-      .collection(COLLECTIONS.USERS)
-      .findOne<UserDocument>(query, { projection: { _id: 1 } });
-    if (!userRecord)
-      throw new Error('No user with username or email' + username + ' exists.');
-    return `${userRecord._id}`;
   }
 
   /**
@@ -868,7 +875,8 @@ export class MongoDriver implements DataStore {
         .toArray();
       return arr;
     } catch (e) {
-      return Promise.reject(new Error(`${e}`));
+      reportError(e);
+      return Promise.reject(new Error(LearningObjectError.INTERNAL_ERROR()));
     }
   }
 
