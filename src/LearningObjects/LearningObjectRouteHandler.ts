@@ -153,7 +153,7 @@ export function initializePrivate({
         fileManager,
         learningObjectName,
         library,
-        user
+        user,
       });
       res.sendStatus(200);
     } catch (e) {
@@ -167,8 +167,11 @@ export function initializePrivate({
       res.status(status).send(e);
     }
   };
-  router.route('/learning-objects').post(addLearningObject);
+
+  router
+      .route('/learning-objects')
+      .post(addLearningObject);
   router.patch('/learning-objects/:id', updateLearningObject);
-  router.get('/learning-objects/:id/materials/all', getMaterials);
   router.delete('/learning-objects/:learningObjectName', deleteLearningObject);
+  router.get('/learning-objects/:id/materials/all', getMaterials);
 }

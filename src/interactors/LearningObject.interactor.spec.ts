@@ -22,7 +22,7 @@ describe('loadLearningObjectSummary', () => {
     return LearningObjectInteractor.loadLearningObjectSummary({
       dataStore: driver,
       library,
-      userToken,
+      userToken: MOCK_OBJECTS.USERTOKEN,
       username: MOCK_OBJECTS.USERNAME,
     })
       .then(val => {

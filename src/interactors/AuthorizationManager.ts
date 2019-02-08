@@ -23,13 +23,13 @@ export async function hasLearningObjectWriteAccess(user: UserToken, dataStore: D
  */
 export async function hasMultipleLearningObjectWriteAccesses(user: UserToken, dataStore: DataStore, objectIds: string[]): Promise<boolean> {
   let hasAccess = false;
-  for(let i = 0; i < objectIds.length; i++) {
+  for (let i = 0; i < objectIds.length; i++) {
     hasAccess = await hasLearningObjectWriteAccess(user, dataStore, objectIds[i]);
     if (!hasAccess) {
       return hasAccess;
     }
   }
-  return hasAccess
+  return hasAccess;
 }
 
 /**
@@ -60,9 +60,9 @@ async function checkCollectionWriteAccess(params: { user: UserToken, dataStore: 
   let key = '_id';
   if (!regexp.test(params.objectId)) {
     key = 'name';
-  } 
+  }
   let object;
-  if(key === 'name') {
+  if (key === 'name') {
     object = await params.dataStore.peek<{
       collection: string;
     }>({
@@ -88,7 +88,7 @@ async function checkCollectionWriteAccess(params: { user: UserToken, dataStore: 
  *
  * @returns if the user is the owner or the object or not
  */
-async function userIsOwner(params: { dataStore: DataStore; user: UserToken; objectId: string;}) {
+async function userIsOwner(params: { dataStore: DataStore; user: UserToken; objectId: string; }) {
   const userId = await params.dataStore.findUser(params.user.username);
   const object = await params.dataStore.peek<{
     authorID: string;
