@@ -799,7 +799,8 @@ export class LearningObjectInteractor {
         formattedQuery.text = this.removeStopwords(formattedQuery.text);
       }
     }
-    return formattedQuery;
+
+    return sanitizeObject({ object: formattedQuery }, false);
   }
 
   public static async addToCollection(
