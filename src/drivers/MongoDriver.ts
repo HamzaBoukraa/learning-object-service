@@ -28,6 +28,11 @@ import {
 import { LearningObjectStatStore } from '../LearningObjectStats/LearningObjectStatStore';
 import { LearningObjectStats } from '../LearningObjectStats/LearningObjectStatsInteractor';
 import { lengths } from '@cyber4all/clark-taxonomy';
+import { LearningObjectDataStore } from '../LearningObjects/LearningObjectDatastore';
+import { ChangeLogDocument } from '../types/Changelog';
+import { ChangelogDataStore } from '../Changelogs/ChangelogDatastore';
+import { LearningObjectError } from '../errors';
+import { reportError } from './SentryConnector';
 
 export enum COLLECTIONS {
   USERS = 'users',
@@ -36,48 +41,26 @@ export enum COLLECTIONS {
   STANDARD_OUTCOMES = 'outcomes',
   LO_COLLECTIONS = 'collections',
   MULTIPART_STATUSES = 'multipart-upload-statuses',
+  CHANGLOG = 'changelogs',
 }
 
 export class MongoDriver implements DataStore {
   submissionStore: SubmissionDatastore;
   learningOutcomeStore: LearningOutcomeMongoDatastore;
   statStore: LearningObjectStatStore;
-
-  /**
-   * Submit a learning object to a specified collection
-   * @param username the username of the requester
-   * @param id the id of the learning object
-   * @param collection the abreviated name of the collection to which to submit the object
-   */
-  submitLearningObjectToCollection(
-    username: string,
-    id: string,
-    collection: string,
-  ): Promise<void> {
-    return this.submissionStore.submitLearningObjectToCollection(
-      username,
-      id,
-      collection,
-    );
-  }
-
-  /**
-   * Unsubmit an object but keep it's collection property intact
-   * @param id the id of the object to unsubmit
-   */
-  unsubmitLearningObject(id: string): Promise<void> {
-    return this.submissionStore.unsubmitLearningObject(id);
-  }
+  learningObjectStore: LearningObjectDataStore;
+  changelogStore: ChangelogDataStore;
 
   private mongoClient: MongoClient;
   private db: Db;
 
-  constructor(dburi: string) {
-    this.connect(dburi).then(() => {
-      this.submissionStore = new SubmissionDatastore(this.db);
-      this.learningOutcomeStore = new LearningOutcomeMongoDatastore(this.db);
-      this.statStore = new LearningObjectStatStore(this.db);
-    });
+  private constructor() {}
+
+  static async build(dburi: string) {
+    const driver = new MongoDriver();
+    await driver.connect(dburi);
+    await driver.initializeModules();
+    return driver;
   }
 
   /**
@@ -111,6 +94,7 @@ export class MongoDriver implements DataStore {
       }
     }
   }
+
   /**
    * Close the database. Note that this will affect all services
    * and scripts using the database, so only do this if it's very
@@ -118,6 +102,84 @@ export class MongoDriver implements DataStore {
    */
   disconnect(): void {
     this.mongoClient.close();
+  }
+
+  /**
+   * Initializes module stores
+   *
+   * @memberof MongoDriver
+   */
+  initializeModules() {
+    this.submissionStore = new SubmissionDatastore(this.db);
+    this.learningOutcomeStore = new LearningOutcomeMongoDatastore(this.db);
+    this.statStore = new LearningObjectStatStore(this.db);
+    this.learningObjectStore = new LearningObjectDataStore(this.db);
+    this.changelogStore = new ChangelogDataStore(this.db);
+  }
+
+  /**
+   * Submit a learning object to a specified collection
+   * @param username the username of the requester
+   * @param id the id of the learning object
+   * @param collection the abreviated name of the collection to which to submit the object
+   */
+  submitLearningObjectToCollection(
+    username: string,
+    id: string,
+    collection: string,
+  ): Promise<void> {
+    return this.submissionStore.submitLearningObjectToCollection(
+      username,
+      id,
+      collection,
+    );
+  }
+
+  /**
+   * Unsubmit an object but keep it's collection property intact
+   * @param id the id of the object to unsubmit
+   */
+  unsubmitLearningObject(id: string): Promise<void> {
+    return this.submissionStore.unsubmitLearningObject(id);
+  }
+
+  /**
+   * Performs update on multiple LearningObject documents
+   *
+   * @param {{
+   *     ids: string[];
+   *     updates: LearningObjectUpdates;
+   *   }} params
+   * @returns {Promise<void>}
+   * @memberof MongoDriver
+   */
+  async updateMultipleLearningObjects(params: {
+    ids: string[];
+    updates: LearningObjectUpdates;
+  }): Promise<void> {
+    await this.db
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .update({ _id: { $in: params.ids } }, { $set: params.updates });
+  }
+  /**
+   * Returns array of ids associated with child's parent objects
+   *
+   * @param {{ childId: string }} params
+   * @returns {Promise<string[]>}
+   * @memberof MongoDriver
+   */
+  async findParentObjectIds(params: { childId: string }): Promise<string[]> {
+    const docs = await this.db
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .find<{ _id: string }>(
+        { children: params.childId },
+        { projection: { _id: 1 } },
+      )
+      .toArray();
+    if (docs) {
+      return docs.map(doc => doc._id);
+    }
+    return [];
   }
 
   /**
@@ -224,6 +286,14 @@ export class MongoDriver implements DataStore {
     } catch (e) {
       return Promise.reject(e);
     }
+  }
+
+  async fetchRecentChangelog(learningObjectId: string): Promise<ChangeLogDocument> {
+    return this.changelogStore.getRecentChangelog(learningObjectId);
+  }
+
+  async deleteChangelog(learningObjectId: string): Promise<void> {
+    return this.changelogStore.deleteChangelog(learningObjectId);
   }
 
   /**
@@ -662,18 +732,23 @@ export class MongoDriver implements DataStore {
    * @returns {UserID}
    */
   async findUser(username: string): Promise<string> {
-    const query = {};
-    if (isEmail(username)) {
-      query['email'] = username;
-    } else {
-      query['username'] = username;
+    try {
+      const query = {};
+      if (isEmail(username)) {
+        query['email'] = username;
+      } else {
+        query['username'] = username;
+      }
+      const userRecord = await this.db
+        .collection(COLLECTIONS.USERS)
+        .findOne<UserDocument>(query, { projection: { _id: 1 } });
+      if (!userRecord)
+        throw new Error(LearningObjectError.RESOURCE_NOT_FOUND());
+      return `${userRecord._id}`;
+    } catch (e) {
+      reportError(e);
+      return Promise.reject(new Error(LearningObjectError.INTERNAL_ERROR()));
     }
-    const userRecord = await this.db
-      .collection(COLLECTIONS.USERS)
-      .findOne<UserDocument>(query, { projection: { _id: 1 } });
-    if (!userRecord)
-      throw new Error('No user with username or email' + username + ' exists.');
-    return `${userRecord._id}`;
   }
 
   /**
@@ -782,6 +857,27 @@ export class MongoDriver implements DataStore {
         'User does not have access to the requested resource.',
       );
     return learningObject;
+  }
+
+  /**
+   * Check if a learning object exists
+   *
+   * @param {string} learningObjectId The id of the specified learning object
+   *
+   * @returns {array}
+   */
+  async checkLearningObjectExistence(learningObjectId: string): Promise<string[]> {
+    try {
+      const arr = await this.db
+        .collection(COLLECTIONS.LEARNING_OBJECTS)
+        .find({ _id: learningObjectId })
+        .project({_id: 1 })
+        .toArray();
+      return arr;
+    } catch (e) {
+      reportError(e);
+      return Promise.reject(new Error(LearningObjectError.INTERNAL_ERROR()));
+    }
   }
 
   /**
@@ -1062,14 +1158,14 @@ export class MongoDriver implements DataStore {
     released?: boolean,
   ) {
     let query: any = <any>{};
+
     if (!accessUnpublished) {
       query.published = true;
     }
+
     if (released) {
       // Check that the learning object does not have a download restriction
-      query['lock.restrictions'] = {
-        $nin: [LearningObject.Restriction.DOWNLOAD],
-      };
+      query.status = LearningObject.Status.RELEASED;
     }
     // Search By Text
     if (text || text === '') {
@@ -1391,6 +1487,18 @@ export class MongoDriver implements DataStore {
     } catch (e) {
       return Promise.reject(e);
     }
+  }
+
+  async createChangelog(
+    learningObjectId: string,
+    userId: string,
+    changelogText: string,
+  ): Promise<void> {
+    return this.changelogStore.createChangelog(
+      learningObjectId,
+      userId,
+      changelogText,
+    );
   }
 
   ////////////////////////////////////////////////

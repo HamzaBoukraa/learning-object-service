@@ -4,6 +4,7 @@ import { LearningObjectUpdates } from '../types';
 import { LearningOutcomeDatastore } from '../LearningOutcomes/LearningOutcomeInteractor';
 import { LearningObjectStatDatastore } from '../LearningObjectStats/LearningObjectStatsInteractor';
 import { CollectionDataStore } from '../Collections/CollectionDataStore';
+import { ChangeLogDocument } from '../types/Changelog';
 
 export interface DataStore
   extends LearningOutcomeDatastore,
@@ -14,6 +15,10 @@ export interface DataStore
   insertLearningObject(object: LearningObject): Promise<string>;
   editLearningObject(params: {
     id: string;
+    updates: LearningObjectUpdates;
+  }): Promise<void>;
+  updateMultipleLearningObjects(params: {
+    ids: string[];
     updates: LearningObjectUpdates;
   }): Promise<void>;
   toggleLock(id: string, lock?: LearningObject.Lock): Promise<void>;
@@ -65,6 +70,7 @@ export interface DataStore
   findParentObjects(params: {
     query: LearningObjectQuery;
   }): Promise<LearningObject[]>;
+  findParentObjectIds(params: { childId: string }): Promise<string[]>;
   loadChildObjects(params: {
     id: string;
     full?: boolean;
@@ -101,13 +107,16 @@ export interface DataStore
   }): Promise<void>;
   deleteMultipartUploadStatus(params: { id: string }): Promise<void>;
   addToCollection(learningObjectId: string, collection: string): Promise<void>;
-
+  createChangelog(learningObjectId: string, userId: string, changelogText: string): Promise<void>;
+  fetchRecentChangelog(learningObjectId: string): Promise<ChangeLogDocument>;
+  deleteChangelog(learningObjectId: string): Promise<void>;
   findUser(username: string): Promise<string>;
   fetchUser(id: string): Promise<User>;
   peek<T>(params: {
     query: { [index: string]: string };
     fields: { [index: string]: 0 | 1 };
   }): Promise<T>;
+  checkLearningObjectExistence(learningObjectId: string): Promise<string[]>;
 }
 
 export { Collection as LearningObjectCollection };

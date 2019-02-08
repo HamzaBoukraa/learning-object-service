@@ -9,8 +9,27 @@ import { DataStore } from '../interfaces/DataStore';
  * @param user information about the user who has initiated a privileged write operation
  * @param collection the name of the collection
  */
-export async function hasLearningObjectWriteAccess(user: UserToken, collection: string, dataStore: DataStore, objectId: string): Promise<boolean> {
-  return hasPrivilegedAccess(user, collection) ? true : await userIsOwner({dataStore, user, objectId});
+export async function hasLearningObjectWriteAccess(user: UserToken, dataStore: DataStore, objectId: string): Promise<boolean> {
+  return hasPrivilegedAccess(user, dataStore, objectId) ? true : await userIsOwner({dataStore, user, objectId});
+}
+
+/**
+ * Checks if a user has the authority to modify a multiple Learning Objects.
+ * return false on the first object that the user cannot access.
+ * otherwise return true
+ *
+ * @param user information about the user who has initiated a privileged write operation
+ * @param collection the name of the collection
+ */
+export async function hasMultipleLearningObjectWriteAccesses(user: UserToken, dataStore: DataStore, objectIds: string[]): Promise<boolean> {
+  let hasAccess = false;
+  for (let i = 0; i < objectIds.length; i++) {
+    hasAccess = await hasLearningObjectWriteAccess(user, dataStore, objectIds[i]);
+    if (!hasAccess) {
+      return hasAccess;
+    }
+  }
+  return hasAccess;
 }
 
 /**
@@ -19,23 +38,46 @@ export async function hasLearningObjectWriteAccess(user: UserToken, collection: 
  * @param user information about the user who has initiated a privileged write operation
  * @param collection the name of the collection
  */
-function hasPrivilegedAccess(user: UserToken, collection: string) {
+function hasPrivilegedAccess(user: UserToken, dataStore: DataStore, objectId: string) {
   if (user.accessGroups) {
     if (user.accessGroups.includes('admin') || user.accessGroups.includes('editor')) {
       return true;
     } else {
-      return checkCollectionWriteAccess(user, collection);
+      return checkCollectionWriteAccess({user, dataStore, objectId});
     }
   }
 }
 /**
  * Checks if a user has the authority to update the data of a particular collection.
  *
- * @param user information about the user who has initiated a privileged write operation
- * @param collection the name of the collection
+ * @param user UserToken
+ * @param dataStore Instance of datastore
+ * @param objectId Can be a learning object id or learning name
  */
-function checkCollectionWriteAccess(user: UserToken, collection: string): boolean {
-  return user.accessGroups.includes(`lead@${collection}`) || user.accessGroups.includes(`curator@${collection}`);
+async function checkCollectionWriteAccess(params: { user: UserToken, dataStore: DataStore, objectId: string }): Promise<boolean> {
+  // Regex checks to see if the given objectId string contains an id or a name
+  const regexp = new RegExp('/^[a-f\d]{24}$/i');
+  let key = '_id';
+  if (!regexp.test(params.objectId)) {
+    key = 'name';
+  }
+  let object;
+  if (key === 'name') {
+    object = await params.dataStore.peek<{
+      collection: string;
+    }>({
+      query: { name: params.objectId },
+      fields: { collection: 1 },
+    });
+  } else {
+    object = await params.dataStore.peek<{
+      collection: string;
+    }>({
+      query: { _id: params.objectId },
+      fields: { collection: 1 },
+    });
+  }
+  return (params.user.accessGroups.indexOf(`reviewer@${object.collection}`) > -1 || params.user.accessGroups.indexOf(`curator@${object.collection}`) > -1);
 }
 
 /**

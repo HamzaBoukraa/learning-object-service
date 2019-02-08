@@ -16,8 +16,9 @@ import * as FileInteractor from '../../FileManager/FileInteractor';
 import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
 import * as LearningOutcomeRouteHandler from '../../LearningOutcomes/LearningOutcomeRouteHandler';
 import * as SubmissionRouteDriver from '../../LearningObjectSubmission/SubmissionRouteDriver';
+import * as ChangelogRouteHandler from '../../Changelogs/ChangelogRouteDriver';
 import { reportError } from '../SentryConnector';
-import { UserToken } from '../../types';
+import { LearningObjectError } from '../../errors';
 
 export class ExpressAuthRouteDriver {
   private upload = multer({ storage: multer.memoryStorage() });
@@ -41,6 +42,16 @@ export class ExpressAuthRouteDriver {
 
   private setRoutes(router: Router): void {
     router.use((req, res, next) => {
+      if (!req.user) {
+        try {
+          throw new Error(
+            'The user property must be defined on the request object to access these routes.',
+          );
+        } catch (e) {
+          console.log(e.message);
+          reportError(e);
+        }
+      }
       // If the username in the cookie is not lowercase and error will be reported
       // and the value adjusted to be lowercase
       if (
@@ -78,6 +89,11 @@ export class ExpressAuthRouteDriver {
     });
 
     LearningOutcomeRouteHandler.initialize({
+      router,
+      dataStore: this.dataStore,
+    });
+
+    ChangelogRouteHandler.initialize({
       router,
       dataStore: this.dataStore,
     });
@@ -320,17 +336,22 @@ export class ExpressAuthRouteDriver {
       async (req, res) => {
         try {
           const learningObjectNames = req.params.learningObjectNames.split(',');
-          await LearningObjectInteractor.deleteMultipleLearningObjects(
-            this.dataStore,
-            this.fileManager,
-            this.library,
-            req.user.username,
+          await LearningObjectInteractor.deleteMultipleLearningObjects({
+            dataStore: this.dataStore,
+            fileManager: this.fileManager,
+            library: this.library,
+            user: req.user,
             learningObjectNames,
-          );
+          });
           res.sendStatus(200);
         } catch (e) {
           console.error(e);
-          res.status(500).send(e);
+          let status = 500;
+
+          if (e.message === LearningObjectError.INVALID_ACCESS) {
+            status = 401;
+          }
+          res.status(status).send(e);
         }
       },
     );

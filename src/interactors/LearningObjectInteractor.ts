@@ -10,6 +10,12 @@ import { UserToken } from '../types';
 import { LearningObjectQuery } from '../interfaces/DataStore';
 import { DZFile, FileUpload } from '../interfaces/FileManager';
 import { processMultipartUpload } from '../FileManager/FileInteractor';
+import { hasMultipleLearningObjectWriteAccesses } from './AuthorizationManager';
+import { reportError } from '../drivers/SentryConnector';
+import {
+  updateObjectLastModifiedDate,
+  updateParentsDate,
+} from '../LearningObjects/LearningObjectInteractor';
 
 // file size is in bytes
 const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
@@ -116,12 +122,10 @@ export class LearningObjectInteractor {
               false,
               accessUnpublished,
             );
-            children.forEach((child: LearningObject) => object.addChild(child));
-            return object;
+            return new LearningObject({ ...object.toPlainObject(), children });
           }),
         );
       }
-
       return summary;
     } catch (e) {
       return Promise.reject(`Problem loading summary. Error: ${e}`);
@@ -140,40 +144,41 @@ export class LearningObjectInteractor {
    * @param learningObjectName
    * @param accessUnpublished
    */
-  public static async loadLearningObject(
-    dataStore: DataStore,
-    library: LibraryCommunicator,
-    username: string,
-    learningObjectName: string,
-    accessUnpublished?: boolean,
-  ): Promise<LearningObject> {
+  public static async loadLearningObject(params: {
+    dataStore: DataStore;
+    library: LibraryCommunicator;
+    username: string;
+    learningObjectName: string;
+    accessUnpublished: boolean;
+  }): Promise<LearningObject> {
     try {
       const fullChildren = false;
-      const learningObjectID = await dataStore.findLearningObject(
-        username,
-        learningObjectName,
+      const learningObjectID = await params.dataStore.findLearningObject(
+        params.username,
+        params.learningObjectName,
       );
 
-      const learningObject = await dataStore.fetchLearningObject(
+      let learningObject = await params.dataStore.fetchLearningObject(
         learningObjectID,
         true,
-        accessUnpublished,
+        params.accessUnpublished,
       );
 
       const children = await this.loadChildObjects(
-        dataStore,
-        library,
+        params.dataStore,
+        params.library,
         learningObject.id,
         fullChildren,
-        accessUnpublished,
+        params.accessUnpublished,
       );
-      children.forEach((child: LearningObject) =>
-        learningObject.addChild(child),
-      );
+      learningObject = new LearningObject({
+        ...learningObject.toPlainObject(),
+        children,
+      });
 
       try {
         learningObject.metrics = await this.loadMetrics(
-          library,
+          params.library,
           learningObjectID,
         );
       } catch (e) {
@@ -215,7 +220,7 @@ export class LearningObjectInteractor {
     return Promise.all(
       objects.map(async obj => {
         // Load their children
-        const children = await this.loadChildObjects(
+        let children = await this.loadChildObjects(
           dataStore,
           library,
           obj.id,
@@ -223,7 +228,7 @@ export class LearningObjectInteractor {
           accessUnreleased,
         );
         // For each of the Child's children
-        await Promise.all(
+        children = await Promise.all(
           children.map(async child => {
             // Load child metrics
             try {
@@ -231,12 +236,11 @@ export class LearningObjectInteractor {
             } catch (e) {
               console.error(e);
             }
-            // Add Child
-            obj.addChild(child);
+            return child;
           }),
         );
 
-        return obj;
+        return new LearningObject({ ...obj.toPlainObject(), children });
       }),
     );
   }
@@ -279,8 +283,7 @@ export class LearningObjectInteractor {
             true,
             true,
           );
-          children.forEach((child: LearningObject) => object.addChild(child));
-          return object;
+          return new LearningObject({ ...object.toPlainObject(), children });
         }),
       );
 
@@ -422,9 +425,13 @@ export class LearningObjectInteractor {
     loFile: LearningObject.Material.File;
   }): Promise<void> {
     try {
-      return await params.dataStore.addToFiles({
+      await params.dataStore.addToFiles({
         id: params.id,
         loFile: params.loFile,
+      });
+      await updateObjectLastModifiedDate({
+        dataStore: params.dataStore,
+        id: params.id,
       });
     } catch (e) {
       return Promise.reject(e);
@@ -453,31 +460,65 @@ export class LearningObjectInteractor {
     }
   }
 
-  public static async deleteMultipleLearningObjects(
-    dataStore: DataStore,
-    fileManager: FileManager,
-    library: LibraryCommunicator,
-    username: string,
-    learningObjectNames: string[],
-  ): Promise<void> {
+  public static async deleteMultipleLearningObjects(params: {
+    dataStore: DataStore;
+    fileManager: FileManager;
+    library: LibraryCommunicator;
+    learningObjectNames: string[];
+    user: UserToken;
+  }): Promise<void> {
     try {
-      const learningObjectIDs: string[] = await Promise.all(
-        learningObjectNames.map((name: string) => {
-          return dataStore.findLearningObject(username, name);
-        }),
+      const hasAccess = await hasMultipleLearningObjectWriteAccesses(
+        params.user,
+        params.dataStore,
+        params.learningObjectNames,
       );
-      await library.cleanObjectsFromLibraries(learningObjectIDs);
-      await dataStore.deleteMultipleLearningObjects(learningObjectIDs);
-
-      learningObjectIDs.forEach(id => {
-        const path = `${username}/${id}/`;
-        fileManager.deleteAll({ path }).catch(e => {
-          console.error(`Problem deleting files at ${path}. ${e}`);
+      if (hasAccess) {
+        // Get LearningObject ids
+        const objectRefs: {
+          id: string;
+          parentIds: string[];
+        }[] = await Promise.all(
+          params.learningObjectNames.map(async (name: string) => {
+            const id = await params.dataStore.findLearningObject(
+              params.user.username,
+              name,
+            );
+            const parentIds = await params.dataStore.findParentObjectIds({
+              childId: id,
+            });
+            return { id, parentIds };
+          }),
+        );
+        const objectIds = objectRefs.map(obj => obj.id);
+        // Remove objects from library
+        await params.library.cleanObjectsFromLibraries(objectIds);
+        // Delete objects from datastore
+        await params.dataStore.deleteMultipleLearningObjects(objectIds);
+        // For each object id
+        objectRefs.forEach(async obj => {
+          // Attempt to delete files
+          const path = `${params.user.username}/${obj.id}/`;
+          params.fileManager.deleteAll({ path }).catch(e => {
+            console.error(`Problem deleting files at ${path}. ${e}`);
+          });
+          // Update parents' dates
+          updateParentsDate({
+            dataStore: params.dataStore,
+            parentIds: obj.parentIds,
+            childId: obj.id,
+            date: Date.now().toString(),
+          });
         });
-      });
+      } else {
+        return Promise.reject(
+          new Error('User does not have authorization to perform this action'),
+        );
+      }
     } catch (error) {
+      reportError(error);
       return Promise.reject(
-        `Problem deleting Learning Objects. Error: ${error}`,
+        new Error(`Problem deleting Learning Objects. Error: ${error}`),
       );
     }
   }
@@ -691,7 +732,12 @@ export class LearningObjectInteractor {
         params.username,
         params.parentName,
       );
-      return params.dataStore.setChildren(parentID, params.children);
+      await params.dataStore.setChildren(parentID, params.children);
+      await updateObjectLastModifiedDate({
+        dataStore: params.dataStore,
+        id: parentID,
+        date: Date.now().toString(),
+      });
     } catch (e) {
       return Promise.reject(`Problem adding child. Error: ${e}`);
     }
@@ -708,7 +754,12 @@ export class LearningObjectInteractor {
         params.username,
         params.parentName,
       );
-      return params.dataStore.deleteChild(parentID, params.childId);
+      await params.dataStore.deleteChild(parentID, params.childId);
+      await updateObjectLastModifiedDate({
+        dataStore: params.dataStore,
+        id: parentID,
+        date: Date.now().toString(),
+      });
     } catch (e) {
       return Promise.reject(`Problem removing child. Error: ${e}`);
     }
