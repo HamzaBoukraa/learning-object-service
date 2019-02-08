@@ -1137,3 +1137,13 @@ const isAuthorByUsername = (username: string, userToken: UserToken) => {
  * @param {UserToken} userToken
  * @returns
  */
+const hasReadAccessByCollection = (
+  collectionName: string,
+  userToken: UserToken,
+) => {
+  if (!isPrivilegedUser(userToken.accessGroups)) return false;
+  return (
+    isAdminOrEditor(userToken.accessGroups) ||
+    collectionName in getAccessGroupCollections(userToken)
+  );
+};
