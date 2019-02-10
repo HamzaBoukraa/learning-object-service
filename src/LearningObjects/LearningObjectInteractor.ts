@@ -206,6 +206,25 @@ export async function getLearningObjectById(
   }
 }
 
+/**
+ * Fetches a learning object by ID
+ *
+ * @export
+ * @param {DataStore} dataStore
+ * @param {string} id the learning object's id
+ * @returns {Promise<LearningObject>}
+ */
+export async function getLearningObjectChildrenById(
+  dataStore: DataStore,
+  id: string,
+): Promise<LearningObject []> {
+  try {
+    return await dataStore.loadChildObjects({id: id, full: true, accessUnreleased: true});
+  } catch (e) {
+    return Promise.reject(`Problem fetching Learning Object. ${e}`);
+  }
+}
+
 export async function deleteLearningObject(params: {
   dataStore: DataStore,
   fileManager: FileManager,

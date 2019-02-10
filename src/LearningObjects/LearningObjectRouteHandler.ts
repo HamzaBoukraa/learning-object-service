@@ -168,10 +168,25 @@ export function initializePrivate({
     }
   };
 
+  const getLearningObjectChildren = async (req: Request, res: Response) => {
+    try{
+      const id = req.params.id;
+      const children = await LearningObjectInteractor.getLearningObjectChildrenById(
+        dataStore, 
+        id
+      );
+      res.status(200).send(children); 
+    } catch (e) {
+      console.error(e);
+      res.status(500).send(e); 
+    }
+  }; 
+
   router
       .route('/learning-objects')
       .post(addLearningObject);
   router.patch('/learning-objects/:id', updateLearningObject);
   router.delete('/learning-objects/:learningObjectName', deleteLearningObject);
   router.get('/learning-objects/:id/materials/all', getMaterials);
+  router.get('/learning-objects/:id/children/summary', getLearningObjectChildren);
 }
