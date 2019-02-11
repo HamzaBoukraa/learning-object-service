@@ -4,7 +4,7 @@ import { LearningObjectUpdates } from '../types';
 import { LearningOutcomeDatastore } from '../LearningOutcomes/LearningOutcomeInteractor';
 import { LearningObjectStatDatastore } from '../LearningObjectStats/LearningObjectStatsInteractor';
 import { CollectionDataStore } from '../Collections/CollectionDataStore';
-import { ChangeLogDocument } from '../types/Changelog';
+import { ChangeLogDocument } from '../types/changelog';
 
 export interface DataStore
   extends LearningOutcomeDatastore,

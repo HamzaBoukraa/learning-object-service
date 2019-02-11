@@ -31,7 +31,7 @@ import { LearningObjectStatStore } from '../LearningObjectStats/LearningObjectSt
 import { LearningObjectStats } from '../LearningObjectStats/LearningObjectStatsInteractor';
 import { lengths } from '@cyber4all/clark-taxonomy';
 import { LearningObjectDataStore } from '../LearningObjects/LearningObjectDatastore';
-import { ChangeLogDocument } from '../types/Changelog';
+import { ChangeLogDocument } from '../types/changelog';
 import { ChangelogDataStore } from '../Changelogs/ChangelogDatastore';
 import { LearningObjectError } from '../errors';
 import { reportError } from './SentryConnector';
@@ -183,7 +183,6 @@ export class MongoDriver implements DataStore {
     const objects: LearningObject[] = await this.bulkGenerateLearningObjects(
       docs,
     );
-    // const objects: any[] = [];
     return { total, objects };
   }
 
