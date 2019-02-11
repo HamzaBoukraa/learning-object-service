@@ -45,7 +45,6 @@ export enum COLLECTIONS {
   MULTIPART_STATUSES = 'multipart-upload-statuses',
   CHANGLOG = 'changelogs',
 }
-const RELEASED = 'released';
 
 export class MongoDriver implements DataStore {
   submissionStore: SubmissionDatastore;
