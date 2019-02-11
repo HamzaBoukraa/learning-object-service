@@ -87,7 +87,6 @@ export class MockDataStore implements DataStore {
   loadChildObjects(params: {
     id: string;
     full?: boolean;
-    accessUnreleased?: boolean;
   }): Promise<LearningObject[]> {
     return Promise.resolve([]);
   }

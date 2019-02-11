@@ -60,7 +60,7 @@ export class LearningObjectInteractor {
    * @param params.dataStore
    * @param params.library
    * @param params.username
-   * @param params.accessUnreleased
+   * @param params.userToken
    * @param params.loadChildren
    * @param params.query
    */
@@ -181,7 +181,7 @@ export class LearningObjectInteractor {
    * @param library
    * @param username
    * @param learningObjectName
-   * @param accessUnreleased
+   * @param userToken
    */
   public static async loadLearningObject(params: {
     dataStore: DataStore;
