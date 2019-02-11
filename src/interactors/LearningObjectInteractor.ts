@@ -36,6 +36,7 @@ const LearningObjectState = {
     LearningObject.Status.REVIEW,
     LearningObject.Status.PROOFING,
   ],
+  RELEASED: [LearningObject.Status.RELEASED],
   ALL: [
     LearningObject.Status.REJECTED,
     LearningObject.Status.UNRELEASED,
@@ -192,7 +193,7 @@ export class LearningObjectInteractor {
     try {
       let learningObject: LearningObject;
 
-      let childrenStatus = [LearningObject.Status.RELEASED];
+      let childrenStatus = LearningObjectState.RELEASED;
       let {
         dataStore,
         library,
@@ -222,7 +223,7 @@ export class LearningObjectInteractor {
       ) {
         childrenStatus = [
           ...LearningObjectState.IN_REVIEW,
-          LearningObject.Status.RELEASED,
+          ...LearningObjectState.RELEASED,
         ];
       }
 
@@ -285,8 +286,9 @@ export class LearningObjectInteractor {
     if (authorOnlyAccess && !isAuthor) {
       throw new Error('Unauthorized');
     }
-    const authorOrPrivilegedAccess =
-      objectInfo.status !== LearningObject.Status.RELEASED;
+    const authorOrPrivilegedAccess = !LearningObjectState.RELEASED.includes(
+      objectInfo.status as LearningObject.Status,
+    );
     if (
       authorOrPrivilegedAccess &&
       !isAuthor &&
@@ -664,7 +666,7 @@ export class LearningObjectInteractor {
         full,
         status: [
           ...LearningObjectState.IN_REVIEW,
-          LearningObject.Status.RELEASED,
+          ...LearningObjectState.RELEASED,
         ],
       });
 
@@ -687,7 +689,7 @@ export class LearningObjectInteractor {
               full: true,
               status: [
                 ...LearningObjectState.IN_REVIEW,
-                LearningObject.Status.RELEASED,
+                ...LearningObjectState.RELEASED,
               ],
             });
             children.forEach((child: LearningObject) => object.addChild(child));
@@ -847,9 +849,12 @@ export class LearningObjectInteractor {
       if (status && status.length) {
         return status;
       }
-      return [...LearningObjectState.IN_REVIEW, LearningObject.Status.RELEASED];
+      return [
+        ...LearningObjectState.IN_REVIEW,
+        ...LearningObjectState.RELEASED,
+      ];
     }
-    return [LearningObject.Status.RELEASED];
+    return LearningObjectState.RELEASED;
   }
 
   /**
@@ -1137,17 +1142,17 @@ function getCollectionAccessMap(
       if (privilegedCollections.includes(filter)) {
         accessMap[filter] = [
           ...LearningObjectState.IN_REVIEW,
-          LearningObject.Status.RELEASED,
+          ...LearningObjectState.RELEASED,
         ];
       } else {
-        accessMap[filter] = [LearningObject.Status.RELEASED];
+        accessMap[filter] = LearningObjectState.RELEASED;
       }
     }
   } else {
     for (const collection of privilegedCollections) {
       accessMap[collection] = [
         ...LearningObjectState.IN_REVIEW,
-        LearningObject.Status.RELEASED,
+        ...LearningObjectState.RELEASED,
       ];
     }
   }
