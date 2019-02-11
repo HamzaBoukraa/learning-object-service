@@ -23,7 +23,6 @@ describe('loadUsersObjectSummaries', () => {
         done();
       })
       .catch(error => {
-        console.log('ERR: ', error);
         expect.fail();
         done();
       });
