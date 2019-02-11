@@ -729,10 +729,8 @@ export class MongoDriver implements DataStore {
         .toArray();
       return objects.map(obj => obj._id);
     } catch (e) {
-      if (e instanceof Error && e.message === `No user with username or email ${username} exists.`) {
-        throw new Error('User not found');
-      }
-      throw new Error(`Problem fetch User's Objects. Error: ${e}`);
+      reportError(e);
+      throw new ServiceError(ServiceErrorType.INTERNAL);
     }
   }
 
