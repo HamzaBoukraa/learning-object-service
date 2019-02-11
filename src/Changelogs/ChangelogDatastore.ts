@@ -40,7 +40,7 @@ export class ChangelogDataStore {
         );
     } catch (e) {
       reportError(e);
-      return Promise.reject(new ServiceError(ServiceErrorType.INTERNAL, 'Internal Service Error'));
+      return Promise.reject(new ServiceError(ServiceErrorType.INTERNAL));
     }
   }
 
@@ -66,7 +66,7 @@ export class ChangelogDataStore {
           return changelog;
         } catch (e) {
           reportError(e);
-          return Promise.reject(new ServiceError(ServiceErrorType.INTERNAL, 'Internal Service Error'));
+          return Promise.reject(new ServiceError(ServiceErrorType.INTERNAL));
         }
     }
 
@@ -85,7 +85,7 @@ export class ChangelogDataStore {
             .remove({learningObjectId: learningObjectId});
         } catch (e) {
           reportError(e);
-          return Promise.reject(new ServiceError(ServiceErrorType.INTERNAL, 'Internal Service Error'));
+          return Promise.reject(new ServiceError(ServiceErrorType.INTERNAL));
         }
     }
 }
