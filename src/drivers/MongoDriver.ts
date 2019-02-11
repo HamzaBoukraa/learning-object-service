@@ -712,10 +712,20 @@ export class MongoDriver implements DataStore {
    */
   async getUserObjects(username: string): Promise<string[]> {
     try {
-      const authorID = await this.findUser(username);
       const objects = await this.db
-        .collection<{ _id: string }>(COLLECTIONS.LEARNING_OBJECTS)
-        .find({ authorID }, { projection: { _id: 1 } })
+        .collection<{ _id: string }>(COLLECTIONS.USERS)
+        .aggregate([
+          { $match: { username } },
+          { $lookup: {
+            from: COLLECTIONS.LEARNING_OBJECTS,
+            localField: '_id',
+            foreignField: 'authorID',
+            as: 'objects',
+          }},
+          { $unwind: '$objects' },
+          { $replaceRoot: { newRoot: '$objects' }},
+          { $project: { _id: 1 }},
+        ])
         .toArray();
       return objects.map(obj => obj._id);
     } catch (e) {
