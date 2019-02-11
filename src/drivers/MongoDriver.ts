@@ -118,6 +118,19 @@ export class MongoDriver implements DataStore {
   }
 
   /**
+   * Inserts object into released objects collection or overwrites if exists
+   *
+   * @param {LearningObject} object
+   * @returns {Promise<void>}
+   * @memberof MongoDriver
+   */
+  async addToReleased(object: LearningObject): Promise<void> {
+    const doc = this.documentLearningObject(object);
+    await this.db
+      .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
+      .updateOne({ _id: object.id }, doc, { upsert: true });
+  }
+  /**
    * Performs search on objects and released-objects collection based on query and or conditions
    *
    * @param {LearningObjectQuery} params
@@ -566,7 +579,7 @@ export class MongoDriver implements DataStore {
    */
   async insertLearningObject(object: LearningObject): Promise<string> {
     try {
-      const doc = await this.documentLearningObject(object, true);
+      const doc = await this.documentLearningObject(object);
       // insert object into the database
       await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).insertOne(doc);
       return doc._id;
@@ -1805,8 +1818,6 @@ export class MongoDriver implements DataStore {
    */
   private async documentLearningObject(
     object: LearningObject,
-    isNew?: boolean,
-    id?: string,
   ): Promise<LearningObjectDocument> {
     try {
       const authorID = await this.findUser(object.author.username);
@@ -1819,7 +1830,7 @@ export class MongoDriver implements DataStore {
       }
 
       const doc: LearningObjectDocument = {
-        _id: new ObjectID().toHexString(),
+        _id: object.id || new ObjectID().toHexString(),
         authorID: authorID,
         name: object.name,
         date: object.date,

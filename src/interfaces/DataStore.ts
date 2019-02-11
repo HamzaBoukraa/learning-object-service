@@ -21,7 +21,7 @@ export interface DataStore
 
   // LearningObjects
   insertLearningObject(object: LearningObject): Promise<string>;
-
+  addToReleased(object: LearningObject): Promise<void>;
   // File Uploads
   insertMultipartUploadStatus(params: {
     status: MultipartFileUploadStatus;
