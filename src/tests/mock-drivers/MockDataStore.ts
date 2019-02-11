@@ -1,7 +1,7 @@
 import {
   DataStore,
+  ReleasedLearningObjectQuery,
   LearningObjectQuery,
-  LearningObjectQueryWithConditions,
 } from '../../interfaces/DataStore';
 import {
   LearningObject,
@@ -50,8 +50,8 @@ export class MockDataStore implements DataStore {
     return Promise.resolve();
   }
 
-  searchObjectsWithConditions(
-    params: LearningObjectQueryWithConditions,
+  searchAllObjects(
+    params: LearningObjectQuery,
   ): Promise<{
     total: number;
     objects: LearningObject[];
@@ -218,8 +218,8 @@ export class MockDataStore implements DataStore {
     });
   }
 
-  searchObjects(
-    params: LearningObjectQuery,
+  searchReleasedObjects(
+    params: ReleasedLearningObjectQuery,
   ): Promise<{ objects: any[]; total: number }> {
     return Promise.resolve({
       objects: [new LearningObject(MOCK_OBJECTS.LEARNING_OBJECT as any)],
@@ -265,7 +265,9 @@ export class MockDataStore implements DataStore {
     return Promise.resolve();
   }
 
-  findParentObjects(params: { query: LearningObjectQuery }): Promise<any[]> {
+  findParentObjects(params: {
+    query: ReleasedLearningObjectQuery;
+  }): Promise<any[]> {
     return Promise.resolve([
       new LearningObject(MOCK_OBJECTS.LEARNING_OBJECT as any),
     ]);
