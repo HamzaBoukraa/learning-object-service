@@ -8,10 +8,10 @@ describe('MongoDriver', () => {
     driver = await MongoDriver.build(global['__MONGO_URI__']);
   });
 
-  describe('searchObjectsWithConditions', () => {
+  describe('searchAllObjects', () => {
     it('The function should return an object with total and objects', async () => {
       expect.assertions(1);
-      const result = await driver.searchObjectsWithConditions({
+      const result = await driver.searchAllObjects({
         conditions: [{ nccp: [LearningObject.Status.RELEASED] }],
       });
       expect(result).toBeDefined();
