@@ -7,7 +7,7 @@ import {
   LibraryCommunicator,
 } from '../interfaces/interfaces';
 import { UserToken } from '../types';
-import { LearningObjectQuery, QueryCondition } from '../interfaces/DataStore';
+import { QueryCondition, LearningObjectQuery } from '../interfaces/DataStore';
 import { DZFile, FileUpload } from '../interfaces/FileManager';
 import { processMultipartUpload } from '../FileManager/FileInteractor';
 import {
@@ -111,7 +111,7 @@ export class LearningObjectInteractor {
       delete formattedQuery.sortType;
       // Perform search on objects
       if (Object.keys(formattedQuery).length) {
-        const response = await dataStore.searchObjects({
+        const response = await dataStore.searchAllObjects({
           name,
           author,
           collection,
@@ -728,7 +728,6 @@ export class LearningObjectInteractor {
         name,
         author,
         collection,
-        status,
         length,
         level,
         standardOutcomeIDs,
@@ -737,44 +736,45 @@ export class LearningObjectInteractor {
         sortType,
         page,
         limit,
+        status,
       } = this.formatSearchQuery(query);
       status = this.getAuthorizedStatuses(userToken, status);
       let response: { total: number; objects: LearningObject[] };
 
-      if (
-        userToken &&
-        isPrivilegedUser(userToken.accessGroups) &&
-        !isAdminOrEditor(userToken.accessGroups)
-      ) {
-        const privilegedCollections = getAccessGroupCollections(userToken);
+      if (userToken && isPrivilegedUser(userToken.accessGroups)) {
+        let conditions: QueryCondition[] = [];
+        if (!isAdminOrEditor(userToken.accessGroups)) {
+          const privilegedCollections = getAccessGroupCollections(userToken);
 
-        const collectionAccessMap = getCollectionAccessMap(
-          collection,
-          privilegedCollections,
-        );
-        const queryConditions = this.buildCollectionQueryConditions(
-          collection,
-          collectionAccessMap,
-        );
-        response = await dataStore.searchObjectsWithConditions({
+          const collectionAccessMap = getCollectionAccessMap(
+            collection,
+            privilegedCollections,
+          );
+          conditions = this.buildCollectionQueryConditions(
+            collection,
+            collectionAccessMap,
+          );
+        }
+
+        response = await dataStore.searchAllObjects({
           name,
           author,
           length,
           level,
           standardOutcomeIDs,
           text,
-          conditions: queryConditions,
+          status,
+          conditions,
           orderBy,
           sortType,
           page,
           limit,
         });
       } else {
-        response = await dataStore.searchObjects({
+        response = await dataStore.searchReleasedObjects({
           name,
           author,
           collection,
-          status,
           length,
           level,
           standardOutcomeIDs,
