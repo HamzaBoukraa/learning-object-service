@@ -6,7 +6,6 @@ import {
 import { Router } from 'express';
 import { LearningObjectInteractor } from '../../interactors/interactors';
 import { LearningObject } from '@cyber4all/clark-entity';
-import { LearningObjectQuery } from '../../interfaces/DataStore';
 import * as LearningObjectStatsRouteHandler from '../../LearningObjectStats/LearningObjectStatsRouteHandler';
 import { UserToken } from '../../types';
 import { initializeSingleFileDownloadRouter } from '../../SingleFileDownload/RouteHandler';
@@ -86,7 +85,7 @@ export class ExpressRouteDriver {
 
     router.get('/learning-objects/:id/parents', async (req, res) => {
       try {
-        const query: LearningObjectQuery = req.query;
+        const query = req.query;
         query.id = req.params.id;
         const parents = await LearningObjectInteractor.fetchParents({
           query,
