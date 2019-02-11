@@ -4,7 +4,7 @@ import { LearningObject, LearningOutcome, User } from '@cyber4all/clark-entity';
 import {
   Filters,
   LearningObjectCollection,
-  LearningObjectQuery,
+  ReleasedLearningObjectQuery,
   QueryCondition,
   LearningObjectQueryWithConditions,
 } from '../interfaces/DataStore';
@@ -638,13 +638,13 @@ export class MongoDriver implements DataStore {
    * Finds Parents of requested Object
    *
    * @param {{
-   *     query: LearningObjectQuery;
+   *     query: ReleasedLearningObjectQuery;
    *   }} params
    * @returns {Promise<LearningObject[]>}
    * @memberof MongoDriver
    */
   async findParentObjects(params: {
-    query: LearningObjectQuery;
+    query: ReleasedLearningObjectQuery;
   }): Promise<LearningObject[]> {
     try {
       let cursor: Cursor<LearningObjectDocument> = await this.db
@@ -1089,20 +1089,20 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Performs search on objects collection based on query
+   * Performs search on released objects collection based on query
    *
-   * @param {LearningObjectQuery} params
+   * @param {ReleasedLearningObjectQuery} params
    * @returns {Promise<{ objects: LearningObject[]; total: number }>}
    * @memberof MongoDriver
    */
-  async searchObjects(
-    params: LearningObjectQuery,
+  async searchReleasedObjects(
+    params: ReleasedLearningObjectQuery,
   ): Promise<{ objects: LearningObject[]; total: number }> {
     try {
+      const status = [LearningObject.Status.RELEASED];
       const {
         author,
         text,
-        status,
         length,
         level,
         standardOutcomeIDs,
