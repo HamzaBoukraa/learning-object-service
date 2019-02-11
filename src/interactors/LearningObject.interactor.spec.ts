@@ -16,13 +16,14 @@ describe('loadUsersObjectSummaries', () => {
       dataStore,
       library,
       userToken: MOCK_OBJECTS.USERTOKEN,
-      username: MOCK_OBJECTS.USERNAME,
+      username: MOCK_OBJECTS.USERTOKEN.username,
     })
       .then(val => {
         expect(val).to.be.an('array');
         done();
       })
       .catch(error => {
+        console.log('ERR: ', error);
         expect.fail();
         done();
       });
