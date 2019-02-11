@@ -1,6 +1,7 @@
-import { User, LearningOutcome } from '@cyber4all/clark-entity';
+import { User, LearningOutcome, LearningObject } from '@cyber4all/clark-entity';
 
 export const MOCK_OBJECTS = {
+  TOTAL_RECORDS: 1,
   USERNAME: 'cypress',
   EMPTY_STRING: '',
   CURR_PAGE: 1,
@@ -30,60 +31,70 @@ export const MOCK_OBJECTS = {
     outcomes: <any>[],
     materials: {},
     metrics: {},
-    published: true,
     children: <any>[],
     contributors: <any>[],
-    lock: {},
     collection: 'nccp',
     id: 'default_id',
-    publish: () => {
-      this.published = true;
-    },
-    unpublish: () => {
-      this.published = false;
-    },
-    USERTOKEN: {
-      username: 'unittest',
-      name: 'unit test',
-      email: 'unit@test.com',
-      organization: 'unittesting',
-      emailVerified: true,
-      accessGroups: [''],
+    status: LearningObject.Status.RELEASED,
+  },
+  USERTOKEN: {
+    username: 'unittest',
+    name: 'unit test',
+    email: 'unit@test.com',
+    organization: 'unittesting',
+    emailVerified: true,
+    accessGroups: [''],
   },
   CHANGELOG: {
-      _id: '1234',
-      learningObjectId: 'default_id',
-      logs: [
-          {
-              userId: '123',
-              date: new Date(),
-              text: 'hello',
-          },
-      ],
+    _id: '1234',
+    learningObjectId: 'default_id',
+    logs: [
+      {
+        userId: '123',
+        date: new Date(),
+        text: 'hello',
+      },
+    ],
   },
-    LEARNING_OBJECT_STATS: {
-        downloads: 1,
-        saves: 1,
-        total: 1,
-        released: 1,
-        lengths: {
-          nanomodule: 1,
-          micromodule: 1,
-          module: 1,
-          unit: 1,
-          course: 1,
-        },
-        blooms_distribution: {
-          apply: 1,
-          evaluate: 1,
-          remember: 1,
-        },
+  LEARNING_OBJECT_STATS: {
+    downloads: 1,
+    saves: 1,
+    total: 1,
+    released: 1,
+    lengths: {
+      nanomodule: 1,
+      micromodule: 1,
+      module: 1,
+      unit: 1,
+      course: 1,
     },
     blooms_distribution: {
       apply: 1,
       evaluate: 1,
       remember: 1,
     },
+  },
+  blooms_distribution: {
+    apply: 1,
+    evaluate: 1,
+    remember: 1,
+  },
+
+  COLLECTION_META: {
+    name: 'test',
+    abstracts: <any>[],
+  },
+  COLLECTION_NAME: 'test',
+  MULTIPART_UPLOAD_STATUS: {
+    _id: 'id',
+    uploadId: 'upload id',
+    partsUploaded: 2,
+    totalParts: 2,
+    fileSize: 134,
+    path: 'path',
+    bytesUploaded: 132,
+    completedParts: <any>[],
+    createdAt: 'time',
   },
   LEARNING_OBJECT_FILE: {
     id: '123456789',

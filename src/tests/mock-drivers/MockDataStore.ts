@@ -20,7 +20,7 @@ import {
   INVALID_LEARNING_OBJECTS,
 } from '../mocks';
 import { LearningObjectUpdates } from '../../types';
-import { ChangeLogDocument } from '../../types/Changelog';
+import { ChangeLogDocument } from '../../types/changelog';
 import {
   LearningOutcomeInsert,
   LearningOutcomeUpdate,
@@ -28,20 +28,26 @@ import {
 import { LearningObjectStats } from '../../LearningObjectStats/LearningObjectStatsInteractor';
 
 export class MockDataStore implements DataStore {
-  checkLearningObjectExistence(learningObjectId: string): Promise<string[]> {
-    return Promise.resolve([MOCK_OBJECTS.LEARNING_OBJECT_ID]);
-  }
-
-  deleteChangelog(learningObjectId: String): Promise<void> {
-    return Promise.resolve();
-  }
-
   connect(file: string): Promise<void> {
     return Promise.resolve();
   }
 
   disconnect(): void {
     return;
+  }
+
+  fetchLearningObjectStatus(id: string): Promise<string> {
+    return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT.status);
+  }
+  fetchLearningObjectCollection(id: string): Promise<string> {
+    return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT.collection);
+  }
+  checkLearningObjectExistence(learningObjectId: string): Promise<string[]> {
+    return Promise.resolve([MOCK_OBJECTS.LEARNING_OBJECT_ID]);
+  }
+
+  deleteChangelog(learningObjectId: String): Promise<void> {
+    return Promise.resolve();
   }
 
   searchObjectsWithConditions(

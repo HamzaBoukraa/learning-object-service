@@ -9,14 +9,7 @@ import { MockLibraryDriver } from '../tests/mock-drivers/MockLibraryDriver';
 
 const dataStore: DataStore = new MockDataStore(); // DataStore
 const library: LibraryCommunicator = new MockLibraryDriver();
-const userToken: UserToken = {
-  name: '',
-  username: MOCK_OBJECTS.USERNAME,
-  email: '',
-  emailVerified: true,
-  organization: '',
-  accessGroups: [],
-};
+
 describe('loadUsersObjectSummaries', () => {
   it('should load learning object summary', done => {
     return LearningObjectInteractor.loadUsersObjectSummaries({
@@ -89,52 +82,19 @@ describe('findLearningObject', () => {
 
 describe('fetchAllObjects', () => {
   it('should fetch all objects', done => {
-    return LearningObjectInteractor.fetchAllObjects(
+    return LearningObjectInteractor.fetchAllObjects({
       dataStore,
       library,
-      MOCK_OBJECTS.CURR_PAGE,
-      MOCK_OBJECTS.LIMIT,
-    )
+      page: MOCK_OBJECTS.CURR_PAGE,
+      limit: MOCK_OBJECTS.LIMIT,
+      userToken: MOCK_OBJECTS.USERTOKEN,
+    })
       .then(val => {
         expect(val).to.be.an('object');
         done();
       })
       .catch(error => {
         expect.fail();
-        done();
-      });
-  });
-  it('should return error - invalid currPage provided!', done => {
-    let currPage;
-    const limit = 3;
-    return LearningObjectInteractor.fetchAllObjects(
-      dataStore,
-      library,
-      currPage,
-      limit,
-    )
-      .then(val => {
-        expect.fail();
-        done();
-      })
-      .catch(error => {
-        expect(error).to.be.an('object');
-        done();
-      });
-  });
-  it('should return error - invalid limit provided!', done => {
-    return LearningObjectInteractor.fetchAllObjects(
-      dataStore,
-      library,
-      MOCK_OBJECTS.CURR_PAGE,
-      MOCK_OBJECTS.NaN,
-    )
-      .then(val => {
-        expect.fail();
-        done();
-      })
-      .catch(error => {
-        expect(error).to.be.an('object');
         done();
       });
   });
