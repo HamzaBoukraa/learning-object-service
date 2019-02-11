@@ -58,17 +58,17 @@ export interface DataStore
     page?: number;
     limit?: number;
   }): Promise<{ objects: LearningObject[]; total: number }>;
-  searchObjects(
-    params: LearningObjectQuery,
+  searchReleasedObjects(
+    params: ReleasedLearningObjectQuery,
   ): Promise<{ objects: LearningObject[]; total: number }>;
-  searchObjectsWithConditions(
-    params: LearningObjectQueryWithConditions,
+  searchAllObjects(
+    params: LearningObjectQuery,
   ): Promise<{
     total: number;
     objects: LearningObject[];
   }>;
   findParentObjects(params: {
-    query: LearningObjectQuery;
+    query: ReleasedLearningObjectQuery;
   }): Promise<LearningObject[]>;
   findParentObjectIds(params: { childId: string }): Promise<string[]>;
   loadChildObjects(params: {
@@ -169,7 +169,7 @@ export interface Filters {
   limit?: number;
 }
 
-export interface LearningObjectQuery extends Filters {
+export interface ReleasedLearningObjectQuery extends Filters {
   id?: string;
   name?: string;
   author?: string;
@@ -179,16 +179,10 @@ export interface LearningObjectQuery extends Filters {
   text?: string;
   full?: boolean;
   collection?: string[];
-  status?: string[];
 }
 
-export interface LearningObjectQueryWithConditions extends Filters {
-  name?: string;
-  author?: string;
-  length?: string[];
-  level?: string[];
-  standardOutcomeIDs?: string[];
-  text?: string;
+export interface LearningObjectQuery extends ReleasedLearningObjectQuery {
+  status?: string[];
   conditions: QueryCondition[];
 }
 
