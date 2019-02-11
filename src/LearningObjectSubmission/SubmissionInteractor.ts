@@ -15,11 +15,10 @@ export async function submitForReview(params: {
   collection: string;
 }): Promise<void> {
   try {
-    const object = await params.dataStore.fetchLearningObject(
-      params.id,
-      true,
-      true,
-    );
+    const object = await params.dataStore.fetchLearningObject({
+      id: params.id,
+      full: true,
+    });
     const _ = new SubmittableLearningObject(object);
     await params.dataStore.submitLearningObjectToCollection(
       params.username,
@@ -57,20 +56,32 @@ export async function cancelSubmission(
  * @returns {void}
  */
 export async function createChangelog(params: {
-  dataStore: DataStore,
-  learningObjectId: string,
-  user: UserToken,
-  changelogText: string,
+  dataStore: DataStore;
+  learningObjectId: string;
+  user: UserToken;
+  changelogText: string;
 }): Promise<void> {
   try {
-    const hasAccess = hasLearningObjectWriteAccess(params.user, params.dataStore, params.learningObjectId);
+    const hasAccess = hasLearningObjectWriteAccess(
+      params.user,
+      params.dataStore,
+      params.learningObjectId,
+    );
     if (hasAccess) {
       const authorID = await params.dataStore.findUser(params.user.username);
-      const objectId = await params.dataStore.checkLearningObjectExistence(params.learningObjectId);
+      const objectId = await params.dataStore.checkLearningObjectExistence(
+        params.learningObjectId,
+      );
       if (objectId && objectId.length > 0) {
-        await params.dataStore.createChangelog(params.learningObjectId, authorID, params.changelogText);
+        await params.dataStore.createChangelog(
+          params.learningObjectId,
+          authorID,
+          params.changelogText,
+        );
       } else {
-        return Promise.reject(new Error(LearningObjectError.RESOURCE_NOT_FOUND()));
+        return Promise.reject(
+          new Error(LearningObjectError.RESOURCE_NOT_FOUND()),
+        );
       }
     } else {
       return Promise.reject(new Error(LearningObjectError.INVALID_ACCESS()));
