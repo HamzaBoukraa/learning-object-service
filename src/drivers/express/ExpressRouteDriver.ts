@@ -49,7 +49,10 @@ export class ExpressRouteDriver {
         const currPage = req.query.currPage ? +req.query.currPage : null;
         const limit = req.query.limit ? +req.query.limit : null;
 
-        const status = req.query.status ? req.query.status : null;
+        let status = req.query.status ? req.query.status : null;
+        if (!Array.isArray(status)) {
+          status = [status];
+        }
 
         const name = req.query.name;
         const author = req.query.author;
@@ -87,7 +90,8 @@ export class ExpressRouteDriver {
           text ||
           orderBy ||
           sortType ||
-          released
+          released ||
+          status
         ) {
           objectResponse = await LearningObjectInteractor.searchObjects(
             this.dataStore,
