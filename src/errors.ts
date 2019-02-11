@@ -4,8 +4,8 @@ export enum ServiceErrorType {
   INTERNAL = 'InternalServiceError',
 }
 export class ServiceError extends Error {
-  constructor(type: ServiceErrorType, message: string) {
-    super(message);
+  constructor(type: ServiceErrorType) {
+    super('Internal Server Error');
     this.name = type;
   }
 }

@@ -750,7 +750,7 @@ export class MongoDriver implements DataStore {
       return `${userRecord._id}`;
     } catch (e) {
       reportError(e);
-      return Promise.reject(new ServiceError(ServiceErrorType.INTERNAL, 'Internal Service Error'));
+      return Promise.reject(new ServiceError(ServiceErrorType.INTERNAL));
     }
   }
 
@@ -879,7 +879,7 @@ export class MongoDriver implements DataStore {
       return arr;
     } catch (e) {
       reportError(e);
-      return Promise.reject(new ServiceError(ServiceErrorType.INTERNAL, 'Internal Service Error'));
+      return Promise.reject(new ServiceError(ServiceErrorType.INTERNAL));
     }
   }
 
