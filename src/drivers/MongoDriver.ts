@@ -382,7 +382,9 @@ export class MongoDriver implements DataStore {
     }
   }
 
-  async fetchRecentChangelog(learningObjectId: string): Promise<ChangeLogDocument> {
+  async fetchRecentChangelog(
+    learningObjectId: string,
+  ): Promise<ChangeLogDocument> {
     return this.changelogStore.getRecentChangelog(learningObjectId);
   }
 
@@ -926,12 +928,14 @@ export class MongoDriver implements DataStore {
    *
    * @returns {array}
    */
-  async checkLearningObjectExistence(learningObjectId: string): Promise<string[]> {
+  async checkLearningObjectExistence(
+    learningObjectId: string,
+  ): Promise<string[]> {
     try {
       const arr = await this.db
         .collection(COLLECTIONS.LEARNING_OBJECTS)
         .find({ _id: learningObjectId })
-        .project({_id: 1 })
+        .project({ _id: 1 })
         .toArray();
       return arr;
     } catch (e) {
@@ -1246,13 +1250,13 @@ export class MongoDriver implements DataStore {
     if (params.text || params.text === '') {
       query = this.buildTextSearchQuery({
         query,
-        ...params,
+        ...(params as any),
       } as any);
     } else {
       // Search by fields
       query = this.buildFieldSearchQuery({
         query,
-        ...params,
+        ...(params as any),
       });
     }
     return query;
