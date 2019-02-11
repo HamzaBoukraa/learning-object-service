@@ -85,7 +85,7 @@ async function checkCollectionWriteAccess(params: {
   objectId: string;
 }): Promise<boolean> {
   // Regex checks to see if the given objectId string contains an id or a name
-  const regexp = new RegExp('/^[a-fd]{24}$/i');
+  const regexp = /^[a-f\d]{24}$/i;
   let key = '_id';
   if (!regexp.test(params.objectId)) {
     key = 'name';
