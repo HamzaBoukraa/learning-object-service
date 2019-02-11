@@ -124,6 +124,7 @@ export class LearningObjectInteractor {
           sortType,
           page,
           limit,
+          conditions: [],
         });
         summary = response.objects;
       } else {
