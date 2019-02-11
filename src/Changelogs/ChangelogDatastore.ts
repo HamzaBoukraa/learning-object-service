@@ -1,6 +1,6 @@
 import { Db } from 'mongodb';
 import { COLLECTIONS } from '../drivers/MongoDriver';
-import { ChangeLogDocument } from '../types/Changelog';
+import { ChangeLogDocument } from '../types/changelog';
 import { LearningObjectError } from '../errors';
 import { reportError } from '../drivers/SentryConnector';
 
