@@ -6,7 +6,7 @@ import {
   LearningObjectCollection,
   ReleasedLearningObjectQuery,
   QueryCondition,
-  LearningObjectQueryWithConditions,
+  LearningObjectQuery,
 } from '../interfaces/DataStore';
 import {
   CompletedPart,
@@ -39,6 +39,7 @@ import { reportError } from './SentryConnector';
 export enum COLLECTIONS {
   USERS = 'users',
   LEARNING_OBJECTS = 'objects',
+  RELEASED_LEARNING_OBJECTS = 'released-objects',
   LEARNING_OUTCOMES = 'learning-outcomes',
   STANDARD_OUTCOMES = 'outcomes',
   LO_COLLECTIONS = 'collections',
@@ -117,22 +118,22 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Performs search on objects collection based on query and or conditions
+   * Performs search on objects and released-objects collection based on query and or conditions
    *
-   * @param {LearningObjectQueryWithConditions} params
+   * @param {LearningObjectQuery} params
    * @returns {Promise<{
    *     total: number;
    *     objects: LearningObject[];
    *   }>}
    * @memberof MongoDriver
    */
-  async searchObjectsWithConditions(
-    params: LearningObjectQueryWithConditions,
+  async searchAllObjects(
+    params: LearningObjectQuery,
   ): Promise<{
     total: number;
     objects: LearningObject[];
   }> {
-    const {
+    let {
       name,
       author,
       length,
@@ -144,6 +145,7 @@ export class MongoDriver implements DataStore {
       sortType,
       page,
       limit,
+      status,
     } = params;
 
     const orConditions: any[] = this.buildQueryConditions(conditions);
@@ -160,29 +162,221 @@ export class MongoDriver implements DataStore {
       level,
       text,
       outcomeIDs,
+      status,
     });
 
-    let cursor = this.db
-      .collection<LearningObjectDocument>(COLLECTIONS.LEARNING_OBJECTS)
-      .find({
-        ...searchQuery,
-        $or: orConditions,
-      });
-
-    const total = await cursor.count();
-
-    cursor = this.applyCursorFilters(cursor, {
-      orderBy,
-      sortType,
+    const pipeline = this.buildAllObjectsPipeline({
+      searchQuery,
+      orConditions,
+      hasText: !!text,
       page,
       limit,
+      orderBy,
+      sortType,
     });
 
-    const docs = await cursor.toArray();
+    const resultSet = await this.db
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .aggregate<{
+        objects: LearningObjectDocument[];
+        total: [{ total: number }];
+      }>(pipeline)
+      .toArray();
+
+    const results = resultSet[0];
+    const objectDocs = results.objects;
     const objects: LearningObject[] = await this.bulkGenerateLearningObjects(
-      docs,
+      objectDocs,
     );
+    const total = results.total[0] ? results.total[0].total : 0;
     return { total, objects };
+  }
+
+  /**
+   * Constructs aggregation pipeline for searching all objects
+   *
+   * @private
+   * @param {({
+   *     searchQuery?: any;
+   *     orConditions?: any[];
+   *     hasText?: boolean;
+   *     page?: number;
+   *     limit?: number;
+   *     orderBy?: string;
+   *     sortType?: 1 | -1;
+   *   })} params
+   * @returns {any[]}
+   * @memberof MongoDriver
+   */
+  private buildAllObjectsPipeline(params: {
+    searchQuery?: any;
+    orConditions?: any[];
+    hasText?: boolean;
+    page?: number;
+    limit?: number;
+    orderBy?: string;
+    sortType?: 1 | -1;
+  }): any[] {
+    let {
+      searchQuery,
+      orConditions,
+      hasText,
+      page,
+      limit,
+      orderBy,
+      sortType,
+    } = params;
+    const unWindArrayToRoot = [
+      { $unwind: '$objects' },
+      {
+        $replaceRoot: { newRoot: '$objects' },
+      },
+    ];
+
+    const joinCollections = {
+      $lookup: {
+        from: COLLECTIONS.RELEASED_LEARNING_OBJECTS,
+        let: { object_id: '$_id' },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $and: [{ $eq: ['$_id', '$$object_id'] }] },
+            },
+          },
+          {
+            $addFields: {
+              hasRevision: true,
+            },
+          },
+        ],
+        as: 'released',
+      },
+    };
+
+    const createSuperSet = [
+      { $unwind: { path: '$released', preserveNullAndEmptyArrays: true } },
+      {
+        $group: {
+          _id: 1,
+          objects: { $push: '$$ROOT' },
+          released: { $push: '$released' },
+        },
+      },
+      {
+        $project: {
+          objects: { $concatArrays: ['$objects', '$released'] },
+        },
+      },
+      ...unWindArrayToRoot,
+    ];
+
+    const removeDuplicates = [
+      {
+        $group: {
+          _id: '$_id',
+          objects: { $push: '$$ROOT' },
+        },
+      },
+      {
+        $project: {
+          objects: {
+            $cond: [
+              { $eq: [{ $size: '$objects' }, 1] },
+              { $arrayElemAt: ['$objects', 0] },
+              {
+                $filter: {
+                  input: '$objects',
+                  as: 'object',
+                  cond: { $eq: ['$$object.hasRevision', true] },
+                },
+              },
+            ],
+          },
+        },
+      },
+      ...unWindArrayToRoot,
+    ];
+
+    const { sort, paginate } = this.buildAggregationFilters({
+      page,
+      limit,
+      hasText,
+      orderBy,
+      sortType,
+    });
+
+    const matcher = { ...searchQuery };
+    if (orConditions && orConditions.length) {
+      matcher.$or = orConditions;
+    }
+    const match = { $match: { ...matcher } };
+
+    const pipeline = [
+      joinCollections,
+      ...createSuperSet,
+      match,
+      ...removeDuplicates,
+      ...sort,
+      {
+        $facet: {
+          objects: paginate,
+          total: [
+            {
+              $count: 'total',
+            },
+          ],
+        },
+      },
+    ];
+
+    return pipeline;
+  }
+
+  /**
+   * Builds sort and pagination filters for aggregation pipeline
+   *
+   * @private
+   * @param {{
+   *     page?: number;
+   *     limit?: number;
+   *     hasText?: boolean;
+   *     orderBy?: string;
+   *     sortType?: number;
+   *   }} params
+   * @returns {{ sort: any[]; paginate: any[] }}
+   * @memberof MongoDriver
+   */
+  private buildAggregationFilters(params: {
+    page?: number;
+    limit?: number;
+    hasText?: boolean;
+    orderBy?: string;
+    sortType?: number;
+  }): { sort: any[]; paginate: any[] } {
+    let { page, limit, hasText, orderBy, sortType } = params;
+    let paginate: {
+      [index: string]: number;
+    }[] = [{ $skip: 0 }];
+    page = this.formatPage(page);
+    const skip = this.calcSkip({ page, limit });
+    // Paginate
+    if (skip != null && limit) {
+      paginate = [{ $skip: skip }, { $limit: limit }];
+    } else if (skip == null && limit) {
+      paginate = [{ $limit: limit }];
+    }
+    let sort: {
+      [index: string]: any;
+    }[] = [];
+    if (hasText) {
+      sort = [{ $sort: { score: { $meta: 'textScore' } } }];
+    }
+    // Apply orderBy
+    if (orderBy) {
+      const orderBySort = { $sort: {} };
+      orderBySort[orderBy] = sortType ? sortType : 1;
+    }
+    return { sort, paginate };
   }
 
   /**
