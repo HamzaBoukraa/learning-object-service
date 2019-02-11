@@ -7,7 +7,6 @@ import {
   LearningObjectDocument,
   MaterialDocument,
   FileDocument,
-  LearningObjectLockDocument,
   UrlDocument,
 } from './learning-object-document';
 import { UserDocument } from './user-document';
@@ -22,7 +21,6 @@ export {
   LearningObjectDocument,
   MaterialDocument,
   FileDocument,
-  LearningObjectLockDocument,
   UrlDocument,
   LearningOutcomeDocument,
   StandardOutcomeDocument,
