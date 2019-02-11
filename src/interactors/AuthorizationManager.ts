@@ -146,13 +146,10 @@ async function userIsOwner(params: {
  * @returns {boolean}
  */
 export function isAdminOrEditor(accessGroups: string[]): boolean {
-  if (
+  return (
     accessGroups.includes(UserRole.ADMIN) ||
     accessGroups.includes(UserRole.EDITOR)
-  ) {
-    return true;
-  }
-  return false;
+  );
 }
 
 /**
