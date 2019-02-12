@@ -30,7 +30,7 @@ describe('Class: User', () => {
       name: validName,
       email: validEmail,
       organization: validOrganization,
-      bio: validBio
+      bio: validBio,
     };
     const newUser = new User(someUser);
     expect(newUser).toBeDefined();
@@ -44,11 +44,11 @@ describe('Class: User', () => {
       expect(e.message).toEqual(errorMessage);
     }
   });
-  it("should return the user's first name", () => {
+  it('should return the user\'s first name', () => {
     user.name = validName;
     expect(user.firstName).toEqual(firstName);
   });
-  it("should return the user's last name", () => {
+  it('should return the user\'s last name', () => {
     user.name = validName;
     expect(user.lastName).toEqual(lastName);
   });
