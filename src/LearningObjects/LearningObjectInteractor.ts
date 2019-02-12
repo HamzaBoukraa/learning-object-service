@@ -221,7 +221,7 @@ export async function getLearningObjectChildrenById(
     return await dataStore.loadChildObjects({id: ObjectId, full: true, accessUnreleased: true});
   } catch (e) {
     reportError(e);
-    return Promise.reject(new Error(LearningObjectError.RESOURCE_NOT_FOUND());
+    return Promise.reject(new Error(LearningObjectError.RESOURCE_NOT_FOUND()));
   }
 }
 
