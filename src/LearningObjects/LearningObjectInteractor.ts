@@ -202,26 +202,25 @@ export async function getLearningObjectById(
   try {
     return await dataStore.fetchLearningObject(id, true, true);
   } catch (e) {
-    return Promise.reject(`Problem fetching Learning Object. ${e}`);
+    return Promise.reject(`Problem 666 fetching Learning Object. ${e}`);
   }
 }
 
 /**
- * Fetches a learning object by ID
+ * Fetches a learning objects children by ID
  *
  * @export
  * @param {DataStore} dataStore
  * @param {string} id the learning object's id
- * @returns {Promise<LearningObject>}
  */
 export async function getLearningObjectChildrenById(
   dataStore: DataStore,
-  id: string,
-): Promise<LearningObject []> {
+  ObjectId: string,
+){
   try {
-    return await dataStore.loadChildObjects({id: id, full: true, accessUnreleased: true});
+    return await dataStore.loadChildObjects({id: ObjectId, full: true, accessUnreleased: true});
   } catch (e) {
-    return Promise.reject(`Problem fetching Learning Object. ${e}`);
+    return Promise.reject(`Problem fetching Children. ${e}`);
   }
 }
 
