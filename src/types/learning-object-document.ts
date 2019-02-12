@@ -10,11 +10,9 @@ export interface LearningObjectDocument {
   length: string;
   levels: string[];
   materials: MaterialDocument;
-  published: boolean;
   contributors: string[];
   children: string[];
   collection: string;
-  lock?: LearningObjectLockDocument;
   status: string;
 }
 
@@ -29,11 +27,6 @@ export interface FileDocument {
   fileType: string;
   url: string;
   date: string;
-}
-
-export interface LearningObjectLockDocument {
-  date?: string;
-  restrictions: string[];
 }
 export interface UrlDocument {
   title: string;

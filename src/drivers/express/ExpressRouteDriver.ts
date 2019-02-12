@@ -6,7 +6,6 @@ import {
 import { Router } from 'express';
 import { LearningObjectInteractor } from '../../interactors/interactors';
 import { LearningObject } from '@cyber4all/clark-entity';
-import * as TokenManager from '../TokenManager';
 import { LearningObjectQuery } from '../../interfaces/DataStore';
 import * as LearningObjectStatsRouteHandler from '../../LearningObjectStats/LearningObjectStatsRouteHandler';
 import { UserToken } from '../../types';
@@ -46,80 +45,34 @@ export class ExpressRouteDriver {
 
     router.route('/learning-objects').get(async (req, res) => {
       try {
-        const currPage = req.query.currPage ? +req.query.currPage : null;
-        const limit = req.query.limit ? +req.query.limit : null;
-
-        let status = req.query.status ? req.query.status : null;
-        if (status && !Array.isArray(status)) {
-          status = [status];
-        }
-
-        const name = req.query.name;
-        const author = req.query.author;
-        const collection = req.query.collection;
-        let length = req.query.length;
-        length = length && !Array.isArray(length) ? [length] : length;
-        let level = req.query.level;
-        level = level && !Array.isArray(level) ? [level] : level;
-        let standardOutcomes = req.query.standardOutcomes;
-        standardOutcomes =
-          standardOutcomes && !Array.isArray(standardOutcomes)
-            ? [standardOutcomes]
-            : standardOutcomes;
-        const released = req.query.released;
-
-        // For broad searching | Search all fields to match inputed text
-        const text = req.query.text;
-        const orderBy = req.query.orderBy;
-        const sortType = req.query.sortType ? +req.query.sortType : null;
-
         let objectResponse: {
           total: number;
           objects: Partial<LearningObject>[];
         };
-
-        const accessUnpublished = false;
-
-        if (
-          name ||
-          author ||
-          collection ||
-          length ||
-          level ||
-          standardOutcomes ||
-          text ||
-          orderBy ||
-          sortType ||
-          released ||
-          status
-        ) {
-          objectResponse = await LearningObjectInteractor.searchObjects(
-            this.dataStore,
-            this.library,
-            {
-              name,
-              author,
-              collection,
-              status,
-              length,
-              level,
-              standardOutcomeIDs: standardOutcomes,
-              text,
-              accessUnpublished,
-              orderBy,
-              sortType,
-              currPage,
+        const userToken = req.user;
+        const page = req.query.currPage;
+        const limit = req.query.limit;
+        delete req.query.page;
+        delete req.query.limit;
+        if (Object.keys(req.query).length) {
+          objectResponse = await LearningObjectInteractor.searchObjects({
+            dataStore: this.dataStore,
+            library: this.library,
+            query: {
+              ...req.query,
+              page,
               limit,
-              released,
             },
-          );
+            userToken,
+          });
         } else {
-          objectResponse = await LearningObjectInteractor.fetchAllObjects(
-            this.dataStore,
-            this.library,
-            currPage,
+          objectResponse = await LearningObjectInteractor.fetchAllObjects({
+            dataStore: this.dataStore,
+            library: this.library,
+            page,
             limit,
-          );
+            userToken,
+          });
         }
         objectResponse.objects = objectResponse.objects.map(obj =>
           obj.toPlainObject(),
@@ -150,20 +103,15 @@ export class ExpressRouteDriver {
       .route('/learning-objects/:username/:learningObjectName')
       .get(async (req, res) => {
         try {
-          let accessUnpublished = false;
           const username = req.params.username;
           const learningObjectName = req.params.learningObjectName;
-          const cookie = req.cookies.presence;
-          if (cookie) {
-            const user = await TokenManager.decode(cookie);
-            accessUnpublished = user.username === username;
-          }
+          const userToken = req.user;
           const object = await LearningObjectInteractor.loadLearningObject({
             dataStore: this.dataStore,
             library: this.library,
             username,
             learningObjectName,
-            accessUnpublished,
+            userToken,
           });
           res.status(200).send(object.toPlainObject());
         } catch (e) {
@@ -180,7 +128,7 @@ export class ExpressRouteDriver {
         const userToken: UserToken = req.user;
         const loadChildren: boolean = query.children;
         delete query.children;
-        const objects = await LearningObjectInteractor.loadLearningObjectSummary(
+        const objects = await LearningObjectInteractor.loadUsersObjectSummaries(
           {
             query,
             userToken,
