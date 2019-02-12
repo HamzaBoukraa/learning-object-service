@@ -754,11 +754,13 @@ export class LearningObjectInteractor {
             collection,
             collectionAccessMap,
           );
+          collection = [];
         }
 
         response = await dataStore.searchAllObjects({
           name,
           author,
+          collection,
           length,
           level,
           standardOutcomeIDs,
