@@ -50,7 +50,7 @@ export class ExpressRouteDriver {
         const limit = req.query.limit ? +req.query.limit : null;
 
         let status = req.query.status ? req.query.status : null;
-        if (!Array.isArray(status)) {
+        if (status && !Array.isArray(status)) {
           status = [status];
         }
 
