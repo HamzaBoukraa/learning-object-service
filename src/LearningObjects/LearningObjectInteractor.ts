@@ -215,10 +215,10 @@ export async function getLearningObjectById(
  */
 export async function getLearningObjectChildrenById(
   dataStore: DataStore,
-  ObjectId: string,
+  objectId: string,
 ){
   try {
-    return await dataStore.loadChildObjects({id: ObjectId, full: true, accessUnreleased: true});
+    return await dataStore.loadChildObjects({id: objectId, full: true, accessUnreleased: true});
   } catch (e) {
     reportError(e);
     return Promise.reject(new Error(LearningObjectError.RESOURCE_NOT_FOUND()));
