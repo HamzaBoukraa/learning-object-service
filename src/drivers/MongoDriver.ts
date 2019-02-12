@@ -249,7 +249,7 @@ export class MongoDriver implements DataStore {
     const joinCollections = {
       $lookup: {
         from: COLLECTIONS.RELEASED_LEARNING_OBJECTS,
-        let: { object_id: '$_id' },
+        let: { object_id: '$_id', object_status: '$status' },
         pipeline: [
           {
             $match: {
@@ -258,7 +258,15 @@ export class MongoDriver implements DataStore {
           },
           {
             $addFields: {
-              hasRevision: true,
+              hasRevision: {
+                $cond: [
+                  {
+                    $ne: ['$$object_status', LearningObject.Status.RELEASED],
+                  },
+                  true,
+                  false,
+                ],
+              },
             },
           },
         ],
@@ -300,7 +308,7 @@ export class MongoDriver implements DataStore {
                 $filter: {
                   input: '$objects',
                   as: 'object',
-                  cond: { $eq: ['$$object.hasRevision', true] },
+                  cond: { $ne: ['$$object.hasRevision', undefined] },
                 },
               },
             ],
