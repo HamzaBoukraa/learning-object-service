@@ -846,7 +846,12 @@ export class LearningObjectInteractor {
     status?: string[],
   ): string[] {
     if (userToken && isAdminOrEditor(userToken.accessGroups)) {
-      if (status && status.length) {
+      if (
+        status &&
+        status.length &&
+        !status.includes(LearningObject.Status.REJECTED) &&
+        !status.includes(LearningObject.Status.UNRELEASED)
+      ) {
         return status;
       }
       return [
