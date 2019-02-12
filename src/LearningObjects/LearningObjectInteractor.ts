@@ -202,7 +202,7 @@ export async function getLearningObjectById(
   try {
     return await dataStore.fetchLearningObject(id, true, true);
   } catch (e) {
-    return Promise.reject(`Problem 666 fetching Learning Object. ${e}`);
+    return Promise.reject(`Problem fetching Learning Object. ${e}`);
   }
 }
 
