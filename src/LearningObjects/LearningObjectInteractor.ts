@@ -220,7 +220,8 @@ export async function getLearningObjectChildrenById(
   try {
     return await dataStore.loadChildObjects({id: ObjectId, full: true, accessUnreleased: true});
   } catch (e) {
-    return Promise.reject(`Problem fetching Children. ${e}`);
+    reportError(e);
+    return Promise.reject(new Error(LearningObjectError.RESOURCE_NOT_FOUND());
   }
 }
 
