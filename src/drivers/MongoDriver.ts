@@ -149,6 +149,7 @@ export class MongoDriver implements DataStore {
     const {
       name,
       author,
+      collection,
       length,
       level,
       standardOutcomeIDs,
@@ -173,6 +174,7 @@ export class MongoDriver implements DataStore {
     const searchQuery = this.buildSearchQuery({
       name,
       authors,
+      collection,
       length,
       level,
       text,
