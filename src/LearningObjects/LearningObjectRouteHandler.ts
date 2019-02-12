@@ -176,7 +176,7 @@ export function initializePrivate({
         dataStore, 
         id
       );
-      res.status(200).send(children); 
+      res.status(200).json(children); 
     } catch (e) {
       if (e instanceof Error){
       const status = mapErrorToStatusCode(e); 
