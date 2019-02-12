@@ -177,7 +177,12 @@ export function initializePrivate({
       );
       res.status(200).send(children); 
     } catch (e) {
-      res.status(500).send(e); 
+      if (e instanceof Error) {
+        const status = mapErrorToStatusCode(e);
+        res.status(status.code).json({message: status.message});
+      } else {
+        res.sendStatus(500);
+      }
     }
   }; 
 
