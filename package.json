@@ -1,6 +1,10 @@
 {
   "name": "learning-object-service",
+<<<<<<< HEAD
   "version": "2.4.1",
+=======
+  "version": "2.5.0",
+>>>>>>> hotfix/status-array
   "description": "Learning Object Microservice.",
   "main": "app.ts",
   "scripts": {
