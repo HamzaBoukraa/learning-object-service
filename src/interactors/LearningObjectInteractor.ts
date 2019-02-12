@@ -1,4 +1,3 @@
-import { LearningObject } from '@cyber4all/clark-entity';
 // @ts-ignore
 import * as stopword from 'stopword';
 import {
@@ -23,6 +22,7 @@ import {
 } from '../LearningObjects/LearningObjectInteractor';
 import { sanitizeText, sanitizeObject } from '../functions';
 import { LearningObjectError } from '../errors';
+import { LearningObject } from '../entity';
 
 // file size is in bytes
 const MAX_PACKAGEABLE_FILE_SIZE = 100000000;

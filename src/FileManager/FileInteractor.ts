@@ -5,7 +5,7 @@ import {
   MultipartFileUploadStatus,
 } from '../interfaces/FileManager';
 import { FileManager } from '../interfaces/interfaces';
-import { LearningObject } from '@cyber4all/clark-entity';
+import { LearningObject } from '../entity';
 
 /**
  * Creates multipart upload and saves metadata for upload

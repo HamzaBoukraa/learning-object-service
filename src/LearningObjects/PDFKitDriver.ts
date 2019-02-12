@@ -1,9 +1,9 @@
 import * as PDFKit from 'pdfkit';
 import { LEARNING_OBJECT_ROUTES } from '../routes';
-import { LearningObject, LearningOutcome } from '@cyber4all/clark-entity';
 import { FileManager } from '../interfaces/interfaces';
 import { FileUpload } from '../interfaces/FileManager';
 import * as striptags from 'striptags';
+import { LearningObject, LearningOutcome } from '../entity';
 
 type GradientVector = [number, number, number, number];
 type PDFHeaderAlignment = 'left' | 'right' | 'center' | 'justify';

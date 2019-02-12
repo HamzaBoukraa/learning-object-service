@@ -1,10 +1,10 @@
 import * as LearningObjectInteractor from './LearningObjectInteractor';
 import { Request, Response, Router } from 'express';
-import { LearningObject } from '@cyber4all/clark-entity';
 import { DataStore } from '../interfaces/DataStore';
 import { FileManager, LibraryCommunicator } from '../interfaces/interfaces';
 import { UserToken } from '../types';
 import { LearningObjectError } from '../errors';
+import { LearningObject } from '../entity';
 
 /**
  * Initializes an express router with endpoints for public Retrieving
@@ -168,9 +168,7 @@ export function initializePrivate({
     }
   };
 
-  router
-      .route('/learning-objects')
-      .post(addLearningObject);
+  router.route('/learning-objects').post(addLearningObject);
   router.patch('/learning-objects/:id', updateLearningObject);
   router.delete('/learning-objects/:learningObjectName', deleteLearningObject);
   router.get('/learning-objects/:id/materials/all', getMaterials);

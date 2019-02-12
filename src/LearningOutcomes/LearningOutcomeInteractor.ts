@@ -1,4 +1,3 @@
-import { LearningOutcome } from '@cyber4all/clark-entity';
 import {
   LearningOutcomeInput,
   LearningOutcomeInsert,
@@ -6,6 +5,7 @@ import {
 } from './types';
 import { UserToken } from '../types';
 import { sanitizeObject } from '../functions';
+import { LearningOutcome } from '../entity';
 
 export interface LearningOutcomeDatastore {
   insertLearningOutcome(params: {

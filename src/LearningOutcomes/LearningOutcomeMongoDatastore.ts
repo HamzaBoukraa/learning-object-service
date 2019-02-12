@@ -4,10 +4,10 @@ import {
   LearningOutcomeInsert,
   LearningOutcomeUpdate,
 } from './types';
-import { LearningOutcome, StandardOutcome } from '@cyber4all/clark-entity';
 import { Db, ObjectID } from 'mongodb';
 import { COLLECTIONS } from '../drivers/MongoDriver';
 import { mapId } from '../drivers/Mongo/functions';
+import { LearningOutcome, StandardOutcome } from '../entity';
 
 export class LearningOutcomeMongoDatastore implements LearningOutcomeDatastore {
   constructor(private db: Db) {}

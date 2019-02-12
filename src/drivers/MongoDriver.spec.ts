@@ -1,5 +1,5 @@
 import { MongoDriver } from './MongoDriver';
-import { LearningObject } from '@cyber4all/clark-entity';
+import { LearningObject } from '../entity';
 
 describe('MongoDriver', () => {
   let driver: MongoDriver;
