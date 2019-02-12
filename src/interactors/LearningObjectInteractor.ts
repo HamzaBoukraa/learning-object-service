@@ -124,7 +124,6 @@ export class LearningObjectInteractor {
           sortType,
           page,
           limit,
-          conditions: [],
         });
         summary = response.objects;
       } else {
@@ -743,7 +742,7 @@ export class LearningObjectInteractor {
       let response: { total: number; objects: LearningObject[] };
 
       if (userToken && isPrivilegedUser(userToken.accessGroups)) {
-        let conditions: QueryCondition[] = [];
+        let conditions: QueryCondition[];
         if (!isAdminOrEditor(userToken.accessGroups)) {
           const privilegedCollections = getAccessGroupCollections(userToken);
 

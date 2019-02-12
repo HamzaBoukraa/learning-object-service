@@ -146,7 +146,7 @@ export class MongoDriver implements DataStore {
     total: number;
     objects: LearningObject[];
   }> {
-    let {
+    const {
       name,
       author,
       length,
@@ -161,7 +161,9 @@ export class MongoDriver implements DataStore {
       status,
     } = params;
 
-    const orConditions: any[] = this.buildQueryConditions(conditions);
+    const orConditions: any[] = conditions
+      ? this.buildQueryConditions(conditions)
+      : [];
 
     // Query for users
     const authors = await this.matchUsers(author, text);

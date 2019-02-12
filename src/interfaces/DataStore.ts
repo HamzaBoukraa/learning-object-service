@@ -183,7 +183,7 @@ export interface ReleasedLearningObjectQuery extends Filters {
 
 export interface LearningObjectQuery extends ReleasedLearningObjectQuery {
   status?: string[];
-  conditions: QueryCondition[];
+  conditions?: QueryCondition[];
 }
 
 export interface QueryCondition {
