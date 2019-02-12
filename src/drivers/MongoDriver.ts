@@ -312,7 +312,12 @@ export class MongoDriver implements DataStore {
                 $filter: {
                   input: '$objects',
                   as: 'object',
-                  cond: { $ne: ['$$object.hasRevision', undefined] },
+                  cond: {
+                    $or: [
+                      { $eq: ['$$object.hasRevision', true] },
+                      { $eq: ['$$object.hasRevision', false] },
+                    ],
+                  },
                 },
               },
             ],
