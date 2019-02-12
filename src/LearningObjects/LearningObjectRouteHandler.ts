@@ -5,6 +5,7 @@ import { DataStore } from '../interfaces/DataStore';
 import { FileManager, LibraryCommunicator } from '../interfaces/interfaces';
 import { UserToken } from '../types';
 import { LearningObjectError } from '../errors';
+import { mapErrorToStatusCode } from '../errors';
 
 /**
  * Initializes an express router with endpoints for public Retrieving
@@ -177,12 +178,7 @@ export function initializePrivate({
       );
       res.status(200).send(children); 
     } catch (e) {
-      if (e instanceof Error) {
-        const status = mapErrorToStatusCode(e);
-        res.status(status.code).json({message: status.message});
-      } else {
-        res.sendStatus(500);
-      }
+      res.status(500).send(e); 
     }
   }; 
 
