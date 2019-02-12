@@ -177,7 +177,6 @@ export function initializePrivate({
       );
       res.status(200).send(children); 
     } catch (e) {
-      console.error(e);
       res.status(500).send(e); 
     }
   }; 
