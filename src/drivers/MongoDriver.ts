@@ -1889,6 +1889,13 @@ export class MongoDriver implements DataStore {
     let contributors: User[] = [];
     let outcomes: LearningOutcome[] = [];
 
+    // Load Contributors
+    if (record.contributors && record.contributors.length) {
+      contributors = await Promise.all(
+        record.contributors.map(userId => this.fetchUser(userId)),
+      );
+    }
+
     // If full object requested, load up non-summary properties
     if (full) {
       // Logic for loading 'full' learning objects
@@ -1898,13 +1905,6 @@ export class MongoDriver implements DataStore {
       outcomes = await this.getAllLearningOutcomes({
         source: record._id,
       });
-
-      // Load Contributors
-      if (record.contributors && record.contributors.length) {
-        contributors = await Promise.all(
-          record.contributors.map(userId => this.fetchUser(userId)),
-        );
-      }
     }
     const learningObject = new LearningObject({
       id: record._id,

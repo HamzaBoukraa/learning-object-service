@@ -194,9 +194,7 @@ export async function updateLearningObject(params: {
         await dataStore.addToReleased(object);
       }
     } else {
-      return Promise.reject(
-        new Error('User does not have authorization to perform this action'),
-      );
+      return Promise.reject(new Error(LearningObjectError.INVALID_ACCESS()));
     }
   } catch (e) {
     reportError(e);

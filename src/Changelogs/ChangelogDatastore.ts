@@ -5,8 +5,7 @@ import { LearningObjectError } from '../errors';
 import { reportError } from '../drivers/SentryConnector';
 
 export class ChangelogDataStore {
-
-    constructor(private db: Db) { }
+  constructor(private db: Db) {}
 
   /**
    * Upsert document in changelog collection
@@ -17,27 +16,27 @@ export class ChangelogDataStore {
    *
    * @returns {void}
    */
-  public async createChangelog (
+  public async createChangelog(
     learningObjectId: string,
     userId: string,
     changelogText: string,
   ): Promise<void> {
     try {
-      await this.db
-        .collection(COLLECTIONS.CHANGLOG)
-        .update(
-          { learningObjectId },
-          { $push: {
+      await this.db.collection(COLLECTIONS.CHANGLOG).update(
+        { learningObjectId },
+        {
+          $push: {
             logs: {
               userId: userId,
               date: Date.now(),
               text: changelogText,
             },
-          }},
-          {
-            upsert: true,
           },
-        );
+        },
+        {
+          upsert: true,
+        },
+      );
     } catch (e) {
       reportError(e);
       return Promise.reject(new Error(LearningObjectError.INTERNAL_ERROR()));
@@ -52,23 +51,27 @@ export class ChangelogDataStore {
    *
    * @returns {ChangeLogDocument} A single changelog object with only the last element in the logs array
    */
-    async getRecentChangelog(learningObjectId: string): Promise<ChangeLogDocument> {
-        try {
-          const changelog = await this.db
-              .collection(COLLECTIONS.CHANGLOG)
-              .findOne(
-                { learningObjectId },
-                { projection: { learningObjectId: 1, logs: { $slice: -1 } } },
-              );
-          if (changelog === null) {
-            return Promise.reject(new Error(LearningObjectError.RESOURCE_NOT_FOUND()));
-          }
-          return changelog;
-        } catch (e) {
-          reportError(e);
-          return Promise.reject(new Error(LearningObjectError.INTERNAL_ERROR()));
-        }
+  async getRecentChangelog(
+    learningObjectId: string,
+  ): Promise<ChangeLogDocument> {
+    try {
+      const changelog = await this.db
+        .collection(COLLECTIONS.CHANGLOG)
+        .findOne(
+          { learningObjectId },
+          { projection: { learningObjectId: 1, logs: { $slice: -1 } } },
+        );
+      if (changelog === null) {
+        return Promise.reject(
+          new Error(LearningObjectError.RESOURCE_NOT_FOUND()),
+        );
+      }
+      return changelog;
+    } catch (e) {
+      reportError(e);
+      return Promise.reject(new Error(LearningObjectError.INTERNAL_ERROR()));
     }
+  }
 
   /**
    * Removes an entire document from the changelogs collection. This function is only triggered when its
@@ -78,14 +81,14 @@ export class ChangelogDataStore {
    *
    * @returns {void}
    */
-    async deleteChangelog(learningObjectId: string): Promise<void> {
-        try {
-          await this.db
-            .collection(COLLECTIONS.CHANGLOG)
-            .remove({learningObjectId: learningObjectId});
-        } catch (e) {
-          reportError(e);
-          return Promise.reject(new Error(LearningObjectError.INTERNAL_ERROR()));
-        }
+  async deleteChangelog(learningObjectId: string): Promise<void> {
+    try {
+      await this.db
+        .collection(COLLECTIONS.CHANGLOG)
+        .remove({ learningObjectId: learningObjectId });
+    } catch (e) {
+      reportError(e);
+      return Promise.reject(new Error(LearningObjectError.INTERNAL_ERROR()));
     }
+  }
 }

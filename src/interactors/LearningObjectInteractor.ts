@@ -22,6 +22,7 @@ import {
   updateParentsDate,
 } from '../LearningObjects/LearningObjectInteractor';
 import { sanitizeText, sanitizeObject } from '../functions';
+import { LearningObjectError } from '../errors';
 
 // file size is in bytes
 const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
@@ -284,7 +285,7 @@ export class LearningObjectInteractor {
       authFunction: isAuthorByUsername,
     });
     if (authorOnlyAccess && !isAuthor) {
-      throw new Error('Unauthorized');
+      throw new Error(LearningObjectError.INVALID_ACCESS());
     }
     const authorOrPrivilegedAccess = !LearningObjectState.RELEASED.includes(
       objectInfo.status as LearningObject.Status,
@@ -298,7 +299,7 @@ export class LearningObjectInteractor {
         authFunction: hasReadAccessByCollection,
       })
     ) {
-      throw new Error('Unauthorized');
+      throw new Error(LearningObjectError.INVALID_ACCESS());
     }
   }
 

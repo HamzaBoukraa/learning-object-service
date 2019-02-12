@@ -68,11 +68,11 @@ export async function createChangelog(params: {
       params.learningObjectId,
     );
     if (hasAccess) {
-      const authorID = await params.dataStore.findUser(params.user.username);
       const objectId = await params.dataStore.checkLearningObjectExistence(
         params.learningObjectId,
       );
       if (objectId && objectId.length > 0) {
+        const authorID = await params.dataStore.findUser(params.user.username);
         await params.dataStore.createChangelog(
           params.learningObjectId,
           authorID,
