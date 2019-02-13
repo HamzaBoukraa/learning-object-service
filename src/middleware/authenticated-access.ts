@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import * as jwt from 'jsonwebtoken';
 import { Request, Response } from 'express';
-import { getBearerToken } from './functions';
+import { getToken } from './functions';
 
 /**
  * Checks if decoded token is set in request.
@@ -19,12 +19,10 @@ export function enforceAuthenticatedAccess(
   next: Function,
 ) {
   let user = req.user;
-  const token =
-    req.cookies && req.cookies.presence
-      ? req.cookies.presence
-      : getBearerToken(req.headers.authorization);
+  const token = getToken(req);
   if (!user && token) {
     user = jwt.verify(token, process.env.KEY);
+    req.user = user;
   }
   if (user) {
     next();

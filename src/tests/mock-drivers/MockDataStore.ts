@@ -1,4 +1,8 @@
-import { DataStore, LearningObjectQuery } from '../../interfaces/DataStore';
+import {
+  DataStore,
+  LearningObjectQuery,
+  LearningObjectQueryWithConditions,
+} from '../../interfaces/DataStore';
 import {
   LearningObject,
   Collection,
@@ -16,17 +20,12 @@ import {
   INVALID_LEARNING_OBJECTS,
 } from '../mocks';
 import { LearningObjectUpdates } from '../../types';
+import { ChangeLogDocument } from '../../types/changelog';
 import {
   LearningOutcomeInsert,
   LearningOutcomeUpdate,
 } from '../../LearningOutcomes/types';
 import { LearningObjectStats } from '../../LearningObjectStats/LearningObjectStatsInteractor';
-
-const COLLECTIONS = {
-  LEARNING_OBJECTS: 'objects',
-  COLLECTIONS: 'collections',
-  MULTIPART_UPLOAD_STATUSES: 'multipart-upload-statuses',
-};
 
 export class MockDataStore implements DataStore {
   connect(file: string): Promise<void> {
@@ -35,6 +34,32 @@ export class MockDataStore implements DataStore {
 
   disconnect(): void {
     return;
+  }
+
+  fetchLearningObjectStatus(id: string): Promise<string> {
+    return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT.status);
+  }
+  fetchLearningObjectCollection(id: string): Promise<string> {
+    return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT.collection);
+  }
+  checkLearningObjectExistence(learningObjectId: string): Promise<string[]> {
+    return Promise.resolve([MOCK_OBJECTS.LEARNING_OBJECT_ID]);
+  }
+
+  deleteChangelog(learningObjectId: String): Promise<void> {
+    return Promise.resolve();
+  }
+
+  searchObjectsWithConditions(
+    params: LearningObjectQueryWithConditions,
+  ): Promise<{
+    total: number;
+    objects: LearningObject[];
+  }> {
+    return Promise.resolve({
+      objects: [MOCK_OBJECTS.LEARNING_OBJECT as any],
+      total: MOCK_OBJECTS.TOTAL_RECORDS,
+    });
   }
 
   updateMultipleLearningObjects(params: {
@@ -62,7 +87,6 @@ export class MockDataStore implements DataStore {
   loadChildObjects(params: {
     id: string;
     full?: boolean;
-    accessUnreleased?: boolean;
   }): Promise<LearningObject[]> {
     return Promise.resolve([]);
   }
@@ -147,12 +171,8 @@ export class MockDataStore implements DataStore {
     return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT_ID);
   }
 
-  fetchLearningObject(
-    id: string,
-    full?: boolean,
-    accessUnpublished?: boolean,
-  ): Promise<any> {
-    switch (id) {
+  fetchLearningObject(params: { id: string; full?: boolean }): Promise<any> {
+    switch (params.id) {
       case SUBMITTABLE_LEARNING_OBJECT.id:
         return Promise.resolve(SUBMITTABLE_LEARNING_OBJECT);
       case INVALID_LEARNING_OBJECTS.NO_DESCRIPTION.id:
@@ -164,42 +184,45 @@ export class MockDataStore implements DataStore {
     }
   }
 
-  fetchMultipleObjects(
-    ids: string[],
-    full?: boolean,
-    accessUnpublished?: boolean,
-    orderBy?: string,
-    sortType?: number,
-  ): Promise<any[]> {
+  fetchMultipleObjects(params: {
+    ids: string[];
+    full?: boolean;
+    status: string[];
+    orderBy?: string;
+    sortType?: number;
+  }): Promise<any[]> {
     return Promise.resolve([MOCK_OBJECTS.LEARNING_OBJECT]);
   }
-  fetchAllObjects(
-    accessUnpublished?: boolean,
-    page?: number,
-    limit?: number,
-  ): Promise<{ objects: any[]; total: number }> {
+  createChangelog(
+    learningObjectId: string,
+    userId: string,
+    changelogText: string,
+  ): Promise<void> {
+    return Promise.resolve();
+  }
+
+  fetchRecentChangelog(learningObjectId: string): Promise<ChangeLogDocument> {
+    return Promise.resolve(MOCK_OBJECTS.CHANGELOG);
+  }
+
+  fetchAllObjects(params: {
+    ids: string[];
+    full?: boolean;
+    status: string[];
+    orderBy?: string;
+    sortType?: number;
+  }): Promise<{ objects: any[]; total: number }> {
     return Promise.resolve({
-      objects: [MOCK_OBJECTS.LEARNING_OBJECT],
+      objects: [new LearningObject(MOCK_OBJECTS.LEARNING_OBJECT as any)],
       total: MOCK_OBJECTS.TOTAL_RECORDS,
     });
   }
 
-  searchObjects(params: {
-    name: string;
-    author: string;
-    collection: string;
-    length: string[];
-    level: string[];
-    standardOutcomeIDs: string[];
-    text: string;
-    accessUnpublished?: boolean;
-    orderBy?: string;
-    sortType?: number;
-    page?: number;
-    limit?: number;
-  }): Promise<{ objects: any[]; total: number }> {
+  searchObjects(
+    params: LearningObjectQuery,
+  ): Promise<{ objects: any[]; total: number }> {
     return Promise.resolve({
-      objects: [MOCK_OBJECTS.LEARNING_OBJECT],
+      objects: [new LearningObject(MOCK_OBJECTS.LEARNING_OBJECT as any)],
       total: MOCK_OBJECTS.TOTAL_RECORDS,
     });
   }
@@ -217,7 +240,9 @@ export class MockDataStore implements DataStore {
   }
 
   fetchCollectionObjects(name: string): Promise<any[]> {
-    return Promise.resolve([MOCK_OBJECTS.LEARNING_OBJECT]);
+    return Promise.resolve([
+      new LearningObject(MOCK_OBJECTS.LEARNING_OBJECT as any),
+    ]);
   }
 
   submitLearningObjectToCollection(
@@ -241,7 +266,9 @@ export class MockDataStore implements DataStore {
   }
 
   findParentObjects(params: { query: LearningObjectQuery }): Promise<any[]> {
-    return Promise.resolve([MOCK_OBJECTS.LEARNING_OBJECT]);
+    return Promise.resolve([
+      new LearningObject(MOCK_OBJECTS.LEARNING_OBJECT as any),
+    ]);
   }
 
   addToFiles(params: {

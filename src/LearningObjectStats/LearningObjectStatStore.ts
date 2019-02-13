@@ -4,6 +4,7 @@ import {
 } from './LearningObjectStatsInteractor';
 import { Db } from 'mongodb';
 import { COLLECTIONS } from '../drivers/MongoDriver';
+import { LearningObject } from '@cyber4all/clark-entity';
 
 const USAGE_STATS_COLLECTION = 'usage-stats';
 const BLOOMS_DISTRIBUTION_COLLECTION = 'blooms_outcome_distribution';
@@ -43,12 +44,7 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
             released: {
               $sum: {
                 $cond: [
-                  {
-                    $and: [
-                      { $eq: ['$published', true] },
-                      { $eq: ['$lock', null] },
-                    ],
-                  },
+                  { $eq: ['$status', LearningObject.Status.RELEASED] },
                   1,
                   0,
                 ],
