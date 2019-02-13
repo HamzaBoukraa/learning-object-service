@@ -125,7 +125,6 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
         stats.working += stat.working;
       });
     }
-    console.log('\n\n', stats.working, '\n\n');
     // If downloadSavesData update stats
     if (downloadSavesData) {
       stats.downloads = downloadSavesData.downloads;
