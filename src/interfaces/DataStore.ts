@@ -4,15 +4,110 @@ import { LearningObjectUpdates } from '../types';
 import { LearningOutcomeDatastore } from '../LearningOutcomes/LearningOutcomeInteractor';
 import { LearningObjectStatDatastore } from '../LearningObjectStats/LearningObjectStatsInteractor';
 import { CollectionDataStore } from '../Collections/CollectionDataStore';
-import { ChangeLogDocument } from '../types/Changelog';
+import { ChangeLogDocument } from '../types/changelog';
 
 export interface DataStore
   extends LearningOutcomeDatastore,
     LearningObjectStatDatastore,
     CollectionDataStore {
+  /*
+   * Datastore Connection Management
+   */
   connect(dburi: string): Promise<void>;
   disconnect(): void;
+  /*
+   * CREATE Operations
+   */
+
+  // LearningObjects
   insertLearningObject(object: LearningObject): Promise<string>;
+
+  // File Uploads
+  insertMultipartUploadStatus(params: {
+    status: MultipartFileUploadStatus;
+  }): Promise<void>;
+
+  // Changelog
+  createChangelog(
+    learningObjectId: string,
+    userId: string,
+    changelogText: string,
+  ): Promise<void>;
+  /*
+   * READ Operations
+   */
+
+  // Learning Objects
+  getUserObjects(username: string): Promise<string[]>;
+  findLearningObject(username: string, name: string): Promise<string>;
+  fetchLearningObject(params: {
+    id: string;
+    full?: boolean;
+  }): Promise<LearningObject>;
+  fetchMultipleObjects(params: {
+    ids: string[];
+    full?: boolean;
+    status: string[];
+    orderBy?: string;
+    sortType?: number;
+  }): Promise<LearningObject[]>;
+  fetchLearningObjectStatus(id: string): Promise<string>;
+  fetchLearningObjectCollection(id: string): Promise<string>;
+  fetchAllObjects(params: {
+    status: string[];
+    page?: number;
+    limit?: number;
+  }): Promise<{ objects: LearningObject[]; total: number }>;
+  searchObjects(
+    params: LearningObjectQuery,
+  ): Promise<{ objects: LearningObject[]; total: number }>;
+  searchObjectsWithConditions(
+    params: LearningObjectQueryWithConditions,
+  ): Promise<{
+    total: number;
+    objects: LearningObject[];
+  }>;
+  findParentObjects(params: {
+    query: LearningObjectQuery;
+  }): Promise<LearningObject[]>;
+  findParentObjectIds(params: { childId: string }): Promise<string[]>;
+  loadChildObjects(params: {
+    id: string;
+    full?: boolean;
+    status: string[];
+  }): Promise<LearningObject[]>;
+  checkLearningObjectExistence(learningObjectId: string): Promise<string[]>;
+
+  // Materials
+  findSingleFile(params: {
+    learningObjectId: string;
+    fileId: string;
+  }): Promise<LearningObject.Material.File>;
+  getLearningObjectMaterials(params: {
+    id: string;
+  }): Promise<LearningObject.Material>;
+
+  // File Uploads
+  fetchMultipartUploadStatus(params: {
+    id: string;
+  }): Promise<MultipartFileUploadStatus>;
+
+  // Users
+  findUser(username: string): Promise<string>;
+  fetchUser(id: string): Promise<User>;
+  peek<T>(params: {
+    query: { [index: string]: string };
+    fields: { [index: string]: 0 | 1 };
+  }): Promise<T>;
+
+  // Changelog
+  fetchRecentChangelog(learningObjectId: string): Promise<ChangeLogDocument>;
+
+  /*
+   * UPDATE Operations
+   */
+
+  // Learning Objects
   editLearningObject(params: {
     id: string;
     updates: LearningObjectUpdates;
@@ -21,44 +116,6 @@ export interface DataStore
     ids: string[];
     updates: LearningObjectUpdates;
   }): Promise<void>;
-  toggleLock(id: string, lock?: LearningObject.Lock): Promise<void>;
-  deleteLearningObject(id: string): Promise<void>;
-  deleteMultipleLearningObjects(ids: string[]): Promise<void>;
-  getUserObjects(username: string): Promise<string[]>;
-  findLearningObject(username: string, name: string): Promise<string>;
-  fetchLearningObject(
-    id: string,
-    full?: boolean,
-    accessUnpublished?: boolean,
-  ): Promise<LearningObject>;
-  fetchMultipleObjects(
-    ids: string[],
-    full?: boolean,
-    accessUnpublished?: boolean,
-    orderBy?: string,
-    sortType?: number,
-  ): Promise<LearningObject[]>;
-  fetchAllObjects(
-    accessUnpublished?: boolean,
-    page?: number,
-    limit?: number,
-  ): Promise<{ objects: LearningObject[]; total: number }>;
-  searchObjects(params: {
-    name: string;
-    author: string;
-    collection: string;
-    status: string[];
-    length: string[];
-    level: string[];
-    standardOutcomeIDs: string[];
-    text: string;
-    accessUnpublished?: boolean;
-    orderBy?: string;
-    sortType?: number;
-    page?: number;
-    limit?: number;
-    released?: boolean;
-  }): Promise<{ objects: LearningObject[]; total: number }>;
   submitLearningObjectToCollection(
     username: string,
     id: string,
@@ -67,56 +124,40 @@ export interface DataStore
   unsubmitLearningObject(id: string): Promise<void>;
   setChildren(parentId: string, children: string[]): Promise<void>;
   deleteChild(parentId: string, childId: string): Promise<void>;
-  findParentObjects(params: {
-    query: LearningObjectQuery;
-  }): Promise<LearningObject[]>;
-  findParentObjectIds(params: { childId: string }): Promise<string[]>;
-  loadChildObjects(params: {
-    id: string;
-    full?: boolean;
-    accessUnreleased?: boolean;
-  }): Promise<LearningObject[]>;
-  findSingleFile(params: {
-    learningObjectId: string;
-    fileId: string;
-  }): Promise<LearningObject.Material.File>;
-  // Learning Object Files
+  addToCollection(learningObjectId: string, collection: string): Promise<void>;
+
+  // Materials
   addToFiles(params: {
     id: string;
     loFile: LearningObject.Material.File;
   }): Promise<void>;
-  getLearningObjectMaterials(params: {
-    id: string;
-  }): Promise<LearningObject.Material>;
   removeFromFiles(params: { objectId: string; fileId: string }): Promise<void>;
   updateFileDescription(params: {
     learningObjectId: string;
     fileId: string;
     description: string;
   }): Promise<LearningObject.Material.File>;
-  // Multipart Uploads
-  insertMultipartUploadStatus(params: {
-    status: MultipartFileUploadStatus;
-  }): Promise<void>;
-  fetchMultipartUploadStatus(params: {
-    id: string;
-  }): Promise<MultipartFileUploadStatus>;
+
+  // File Uploads
   updateMultipartUploadStatus(params: {
     id: string;
     completedPart: CompletedPart;
   }): Promise<void>;
+
+  /*
+   * DELETE Operations
+   */
+
+  // Learning Objects
+  deleteLearningObject(id: string): Promise<void>;
+  deleteMultipleLearningObjects(ids: string[]): Promise<void>;
+
+  // File Uploads
   deleteMultipartUploadStatus(params: { id: string }): Promise<void>;
-  addToCollection(learningObjectId: string, collection: string): Promise<void>;
-  createChangelog(learningObjectId: string, userId: string, changelogText: string): Promise<void>;
-  fetchRecentChangelog(learningObjectId: string): Promise<ChangeLogDocument>;
+  deleteMultipartUploadStatus(params: { id: string }): Promise<void>;
+
+  // Changelog
   deleteChangelog(learningObjectId: string): Promise<void>;
-  findUser(username: string): Promise<string>;
-  fetchUser(id: string): Promise<User>;
-  peek<T>(params: {
-    query: { [index: string]: string };
-    fields: { [index: string]: 0 | 1 };
-  }): Promise<T>;
-  checkLearningObjectExistence(learningObjectId: string): Promise<string[]>;
 }
 
 export { Collection as LearningObjectCollection };
@@ -137,6 +178,20 @@ export interface LearningObjectQuery extends Filters {
   standardOutcomeIDs?: string[];
   text?: string;
   full?: boolean;
-  collection?: string;
+  collection?: string[];
   status?: string[];
+}
+
+export interface LearningObjectQueryWithConditions extends Filters {
+  name?: string;
+  author?: string;
+  length?: string[];
+  level?: string[];
+  standardOutcomeIDs?: string[];
+  text?: string;
+  conditions: QueryCondition[];
+}
+
+export interface QueryCondition {
+  [index: string]: string | string[];
 }

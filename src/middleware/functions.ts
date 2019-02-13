@@ -1,3 +1,5 @@
+import { Request } from 'express';
+
 /**
  * Returns Bearer token from authorization header.
  *
@@ -17,4 +19,18 @@ export function getBearerToken(authHeader: string): string {
     token = tokenVal;
   }
   return token;
+}
+
+/**
+ * Returns string token from cookie or header
+ *
+ * @export
+ * @param {Request} req
+ * @returns {string}
+ */
+export function getToken(req: Request): string {
+  if (req.cookies && req.cookies.presence) {
+    return req.cookies.presence;
+  }
+  return getBearerToken(req.headers.authorization);
 }
