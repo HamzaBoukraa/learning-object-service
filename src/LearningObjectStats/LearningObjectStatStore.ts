@@ -59,9 +59,8 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
                 $cond: [
                   {
                     $or: [
-                          { $eq: ['$status', 'unreleased'] },
-                          { $eq: ['$status', 'rejected'] },
-                        
+                      { $eq: ['$status', 'unreleased'] },
+                      { $eq: ['$status', 'rejected'] },
                     ]
                   },
                   1,
