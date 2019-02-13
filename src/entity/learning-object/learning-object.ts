@@ -306,33 +306,6 @@ export class LearningObject {
     }
   }
 
-  private _published: boolean;
-  /**
-   * @property {boolean} published
-   *       Whether or not the Learning Object is published
-   */
-  get published(): boolean {
-    return this._published;
-  }
-  /**
-   * Sets LearningObject's status to published and published flag to true
-   *
-   * @memberof LearningObject
-   */
-  publish(): void {
-    this._published = true;
-    this.updateDate();
-  }
-  /**
-   * Sets LearningObject's published flag to false
-   *
-   * @memberof LearningObject
-   */
-  unpublish(): void {
-    this._published = false;
-    this.updateDate();
-  }
-
   private _children: LearningObject[];
   get children(): LearningObject[] {
     return this._children;
@@ -406,19 +379,6 @@ export class LearningObject {
     return this._contributors.splice(index, 1)[0];
   }
 
-  private _lock?: LearningObject.Lock;
-
-  /**
-   * @property {lock} LearningObject.Lock
-   *
-   */
-  get lock(): LearningObject.Lock | undefined {
-    return this._lock;
-  }
-  set lock(lock: LearningObject.Lock | undefined) {
-    this._lock = lock;
-    this.updateDate();
-  }
   private _collection!: string;
   /**
    * @property {collection} string the collection this object belongs to
@@ -452,9 +412,6 @@ export class LearningObject {
     status = this.remapStatus(status);
     if (this.isValidStatus(status)) {
       this._status = status;
-      if (this.status === LearningObject.Status.RELEASED) {
-        this.publish();
-      }
       this.updateDate();
     } else {
       throw new EntityError(
@@ -533,8 +490,6 @@ export class LearningObject {
     this._collection = '';
     this._status = LearningObject.Status.UNRELEASED;
     this._metrics = { saves: 0, downloads: 0 };
-    this._published = false;
-    this._lock = undefined;
 
     if (object) {
       this.copyObject(object);
@@ -590,8 +545,6 @@ export class LearningObject {
     this.collection = <string>object.collection || this.collection;
     this.status = <LearningObject.Status>object.status || this.status;
     this.metrics = <LearningObject.Metrics>object.metrics || this.metrics;
-    this._published = <boolean>object.published || this.published;
-    this.lock = <LearningObject.Lock>object.lock || this.lock;
   }
 
   /**
@@ -622,8 +575,6 @@ export class LearningObject {
       collection: this.collection,
       status: this.status,
       metrics: this.metrics,
-      published: this.published,
-      lock: this.lock,
     };
     return object;
   }
