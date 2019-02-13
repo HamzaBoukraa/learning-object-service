@@ -5,12 +5,12 @@ import {
 } from '../../interfaces/interfaces';
 import { Router } from 'express';
 import { LearningObjectInteractor } from '../../interactors/interactors';
-import { LearningObject } from '@cyber4all/clark-entity';
 import * as LearningObjectStatsRouteHandler from '../../LearningObjectStats/LearningObjectStatsRouteHandler';
 import { UserToken } from '../../types';
 import { initializeSingleFileDownloadRouter } from '../../SingleFileDownload/RouteHandler';
 import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
 import { initializeCollectionRouter } from '../../Collections/RouteHandler';
+import { LearningObject } from '../../entity';
 
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
 // tslint:disable-next-line:no-require-imports

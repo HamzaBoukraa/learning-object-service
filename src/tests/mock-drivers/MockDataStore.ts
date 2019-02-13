@@ -4,12 +4,6 @@ import {
   LearningObjectQuery,
 } from '../../interfaces/DataStore';
 import {
-  LearningObject,
-  Collection,
-  LearningOutcome,
-  User,
-} from '@cyber4all/clark-entity';
-import {
   MultipartFileUploadStatus,
   MultipartFileUploadStatusUpdates,
   CompletedPart,
@@ -26,6 +20,12 @@ import {
   LearningOutcomeUpdate,
 } from '../../LearningOutcomes/types';
 import { LearningObjectStats } from '../../LearningObjectStats/LearningObjectStatsInteractor';
+import {
+  LearningObject,
+  User,
+  LearningOutcome,
+  Collection,
+} from '../../entity';
 
 export class MockDataStore implements DataStore {
   connect(file: string): Promise<void> {

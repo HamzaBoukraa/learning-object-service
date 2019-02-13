@@ -1,4 +1,4 @@
-import { LearningObject } from '@cyber4all/clark-entity';
+import { LearningObject } from '../entity';
 
 export interface LearningObjectUpdates {
   name?: string;

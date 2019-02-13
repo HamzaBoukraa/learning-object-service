@@ -4,7 +4,6 @@ import { MOCK_OBJECTS } from '../tests/mocks';
 import {
   getRecentChangelog, createChangelog,
 } from './ChangelogInteractor';
-import { LearningObject } from '@cyber4all/clark-entity';
 
 const dataStore: DataStore = new MockDataStore(); // DataStore
 

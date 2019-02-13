@@ -1,6 +1,5 @@
 import { Cursor, Db, MongoClient, ObjectID } from 'mongodb';
 import { DataStore } from '../interfaces/interfaces';
-import { LearningObject, LearningOutcome, User } from '@cyber4all/clark-entity';
 import {
   Filters,
   LearningObjectCollection,
@@ -35,6 +34,7 @@ import { ChangeLogDocument } from '../types/changelog';
 import { ChangelogDataStore } from '../Changelogs/ChangelogDatastore';
 import { LearningObjectError } from '../errors';
 import { reportError } from './SentryConnector';
+import { LearningObject, LearningOutcome, User } from '../entity';
 
 export enum COLLECTIONS {
   USERS = 'users',

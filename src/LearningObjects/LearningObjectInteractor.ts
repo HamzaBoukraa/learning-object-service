@@ -1,4 +1,3 @@
-import { LearningObject } from '@cyber4all/clark-entity';
 import { LearningObjectInteractor } from '../interactors/interactors';
 import { DataStore } from '../interfaces/DataStore';
 import { FileManager, LibraryCommunicator } from '../interfaces/interfaces';
@@ -14,6 +13,7 @@ import {
   isPrivilegedUser,
 } from '../interactors/AuthorizationManager';
 import { reportError } from '../drivers/SentryConnector';
+import { LearningObject } from '../entity';
 
 /**
  * Performs update operation on learning object's date

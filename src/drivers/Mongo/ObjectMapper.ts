@@ -1,5 +1,5 @@
-import { User } from '@cyber4all/clark-entity';
 import { UserDocument } from '../../types';
+import { User } from '../../entity';
 
 /**
  * Generates User object from Document
