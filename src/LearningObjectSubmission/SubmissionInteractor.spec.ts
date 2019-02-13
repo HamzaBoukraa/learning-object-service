@@ -1,8 +1,7 @@
-import { submitForReview, cancelSubmission } from './SubmissionInteractor';
+import { submitForReview, cancelSubmission, createChangelog } from './SubmissionInteractor';
 import {
   MOCK_OBJECTS,
   SUBMITTABLE_LEARNING_OBJECT,
-  INVALID_LEARNING_OBJECTS,
 } from '../tests/mocks';
 import { DataStore } from '../interfaces/DataStore';
 import { MockDataStore } from '../tests/mock-drivers/MockDataStore';
@@ -89,3 +88,5 @@ describe('cancelSubmission', () => {
     }
   });
 });
+
+

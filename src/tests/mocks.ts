@@ -1,6 +1,7 @@
-import { User, LearningOutcome } from '@cyber4all/clark-entity';
+import { User, LearningOutcome, LearningObject } from '@cyber4all/clark-entity';
 
 export const MOCK_OBJECTS = {
+  TOTAL_RECORDS: 1,
   USERNAME: 'cypress',
   EMPTY_STRING: '',
   CURR_PAGE: 1,
@@ -18,42 +19,70 @@ export const MOCK_OBJECTS = {
   LEARNING_OBJECT_ID: 'default_id',
   COLLECTION: {
     name: 'test',
-    // @ts-ignore
-    learningObjects: [],
+    learningObjects: <any>[],
   },
   LEARNING_OBJECT: {
     author: '5a70fb5ed45bde3f9d65agfd',
     name: 'Input Validation - CS0 - C',
     date: '1523479539862',
     length: 'nanomodule',
-    // @ts-ignore
-    levels: [],
-    // @ts-ignore
-    goals: [],
-    // @ts-ignore
-    outcomes: [],
+    levels: <any>[],
+    goals: <any>[],
+    outcomes: <any>[],
     materials: {},
     metrics: {},
-    published: true,
-    // @ts-ignore
-    children: [],
-    // @ts-ignore
-    contributors: [],
-    lock: {},
+    children: <any>[],
+    contributors: <any>[],
     collection: 'nccp',
     id: 'default_id',
-    publish: () => {
-      this.published = true;
+    status: LearningObject.Status.RELEASED,
+  },
+  USERTOKEN: {
+    username: 'unittest',
+    name: 'unit test',
+    email: 'unit@test.com',
+    organization: 'unittesting',
+    emailVerified: true,
+    accessGroups: [''],
+  },
+  CHANGELOG: {
+    _id: '1234',
+    learningObjectId: 'default_id',
+    logs: [
+      {
+        userId: '123',
+        date: new Date(),
+        text: 'hello',
+      },
+    ],
+  },
+  LEARNING_OBJECT_STATS: {
+    downloads: 1,
+    saves: 1,
+    total: 1,
+    released: 1,
+    lengths: {
+      nanomodule: 1,
+      micromodule: 1,
+      module: 1,
+      unit: 1,
+      course: 1,
     },
-    unpublish: () => {
-      this.published = false;
+    blooms_distribution: {
+      apply: 1,
+      evaluate: 1,
+      remember: 1,
     },
   },
-  TOTAL_RECORDS: 1,
+  blooms_distribution: {
+    apply: 1,
+    evaluate: 1,
+    remember: 1,
+  },
+
   COLLECTION_META: {
     name: 'test',
-    // @ts-ignore
-    abstracts: [],
+    abstracts: <any>[],
   },
   COLLECTION_NAME: 'test',
   MULTIPART_UPLOAD_STATUS: {
@@ -64,8 +93,7 @@ export const MOCK_OBJECTS = {
     fileSize: 134,
     path: 'path',
     bytesUploaded: 132,
-    // @ts-ignore
-    completedParts: [],
+    completedParts: <any>[],
     createdAt: 'time',
   },
   LEARNING_OBJECT_FILE: {
@@ -86,6 +114,8 @@ export const MOCK_OBJECTS = {
   },
   USER: new User({ id: '123' }),
   OUTCOME: new LearningOutcome({ id: '123' }),
+  USER_ID: '5a9583401405cb053272ced1',
+  CHANGELOG_TEXT: 'Hello',
 };
 
 export const SUBMITTABLE_LEARNING_OBJECT = {

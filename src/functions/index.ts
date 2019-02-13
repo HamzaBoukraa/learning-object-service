@@ -32,13 +32,7 @@ export function sanitizeObject<T>(
   const keys = Object.keys(params.object);
   for (const key of keys) {
     const field = params.object[key];
-    if (
-      !field ||
-      field === undefined ||
-      field === 'undefined' ||
-      field === null ||
-      field === 'null'
-    ) {
+    if (!field || field == null || field === 'undefined' || field === 'null') {
       delete params.object[key];
     } else if (field && typeof field === 'string') {
       params.object[key] = sanitizeText(field, lowercaseStrings);
