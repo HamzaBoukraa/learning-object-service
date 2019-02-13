@@ -4,7 +4,6 @@ import { MOCK_OBJECTS } from '../tests/mocks';
 import {
   updateObjectLastModifiedDate,
   updateParentsDate,
-  getLearningObjectChildrenById
 } from './LearningObjectInteractor';
 
 const dataStore: DataStore = new MockDataStore(); // DataStore
@@ -29,13 +28,4 @@ describe('Interactor: LearningObjectInteractor', () => {
       }),
     ).resolves.toBe(undefined);
   });
-  it(`should return the children of the parent object`, async () => {
-    expect.assertions(1); 
-    await expect(
-      getLearningObjectChildrenById(
-        dataStore, 
-        MOCK_OBJECTS.LEARNING_OBJECT_ID, 
-      ),
-    ).resolves.toBe(undefined); 
-  })
 });
