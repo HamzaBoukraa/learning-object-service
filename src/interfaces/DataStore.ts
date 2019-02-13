@@ -44,6 +44,10 @@ export interface DataStore
     id: string;
     full?: boolean;
   }): Promise<LearningObject>;
+  fetchReleasedLearningObject(params: {
+    id: string;
+    full?: boolean;
+  }): Promise<LearningObject>;
   fetchMultipleObjects(params: {
     ids: string[];
     full?: boolean;
