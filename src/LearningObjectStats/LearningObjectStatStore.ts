@@ -33,6 +33,7 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
         ids: string[];
         count: number;
         released: number;
+        working: number;
       }>([
         { $match: params.query },
         {
@@ -52,6 +53,21 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
                   0,
                 ],
               },
+            },
+            working: {
+              $sum: {
+                $cond: [
+                  {
+                    $or: [
+                          { $eq: ['$status', 'unreleased'] },
+                          { $eq: ['$status', 'rejected'] },
+                        
+                    ]
+                  },
+                  1,
+                  0,
+                ]
+              }
             },
           },
         },
@@ -91,6 +107,7 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
       },
       total: 0,
       released: 0,
+      working: 0,
       downloads: 0,
       saves: 0,
     };
@@ -104,8 +121,11 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
         stats.total += stat.count;
         // Increment released by number in released
         stats.released += stat.released;
+        // Increment working by number in working
+        stats.working += stat.working;
       });
     }
+    console.log('\n\n', stats.working, '\n\n');
     // If downloadSavesData update stats
     if (downloadSavesData) {
       stats.downloads = downloadSavesData.downloads;
