@@ -89,83 +89,45 @@ export class LearningObjectInteractor {
       const { dataStore, library, username, loadChildren, query } = params;
 
       const formattedQuery = this.formatSearchQuery(query);
-      let {
-        name,
-        author,
-        collection,
-        status,
-        length,
-        level,
-        standardOutcomeIDs,
-        text,
-        orderBy,
-        sortType,
-        page,
-        limit,
-      } = formattedQuery;
+      let { status, orderBy, sortType } = formattedQuery;
 
       if (!status) {
         status = LearningObjectState.ALL;
       }
-      delete formattedQuery.page;
-      delete formattedQuery.limit;
-      delete formattedQuery.sortType;
-      // Perform search on objects
-      if (Object.keys(formattedQuery).length) {
-        const response = await dataStore.searchAllObjects({
-          name,
-          author,
-          collection,
-          status,
-          length,
-          level,
-          standardOutcomeIDs,
-          text,
-          orderBy,
-          sortType,
-          page,
-          limit,
-        });
-        summary = response.objects;
-      } else {
+
         const objectIDs = await dataStore.getUserObjects(username);
         summary = await dataStore.fetchMultipleObjects({
           ids: objectIDs,
           full: false,
-          orderBy: query ? query.orderBy : null,
-          sortType: query ? query.sortType : null,
+        orderBy,
+        sortType,
           status,
         });
-      }
 
-      // Load object metrics
       summary = await Promise.all(
         summary.map(async object => {
+          // Load object metrics
           try {
             object.metrics = await this.loadMetrics(library, object.id);
-            return object;
           } catch (e) {
             console.log(e);
-            return object;
           }
-        }),
-      );
 
       if (loadChildren) {
-        summary = await Promise.all(
-          summary.map(async object => {
             const children = await this.loadChildObjects({
               dataStore,
               library,
               parentId: object.id,
               full: false,
-              status,
+              status: LearningObjectState.ALL,
+              loadWorkingCopies: true,
             });
             children.forEach((child: LearningObject) => object.addChild(child));
+          }
+
             return object;
           }),
         );
-      }
       return summary;
     } catch (e) {
       return Promise.reject(`Problem loading summary. Error: ${e}`);
