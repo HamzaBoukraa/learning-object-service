@@ -45,36 +45,6 @@ export class ExpressRouteDriver {
 
     router.route('/learning-objects').get(async (req, res) => {
       try {
-<<<<<<< HEAD
-        const currPage = req.query.currPage ? +req.query.currPage : null;
-        const limit = req.query.limit ? +req.query.limit : null;
-
-        let status = req.query.status ? req.query.status : null;
-        if (!Array.isArray(status)) {
-          status = [status];
-        }
-
-        const name = req.query.name;
-        const author = req.query.author;
-        const collection = req.query.collection;
-        let length = req.query.length;
-        length = length && !Array.isArray(length) ? [length] : length;
-        let level = req.query.level;
-        level = level && !Array.isArray(level) ? [level] : level;
-        let standardOutcomes = req.query.standardOutcomes;
-        standardOutcomes =
-          standardOutcomes && !Array.isArray(standardOutcomes)
-            ? [standardOutcomes]
-            : standardOutcomes;
-        const released = req.query.released;
-
-        // For broad searching | Search all fields to match inputed text
-        const text = req.query.text;
-        const orderBy = req.query.orderBy;
-        const sortType = req.query.sortType ? +req.query.sortType : null;
-
-=======
->>>>>>> c0543f6a490e96c1f018731071fc06076d03617d
         let objectResponse: {
           total: number;
           objects: Partial<LearningObject>[];
