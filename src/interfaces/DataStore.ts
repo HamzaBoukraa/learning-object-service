@@ -47,6 +47,7 @@ export interface DataStore
   fetchMultipleObjects(params: {
     ids: string[];
     full?: boolean;
+    collections?: string[];
     status: string[];
     orderBy?: string;
     sortType?: number;

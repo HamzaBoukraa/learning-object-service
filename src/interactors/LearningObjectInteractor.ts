@@ -178,19 +178,23 @@ export class LearningObjectInteractor {
     userToken?: UserToken;
   }): Promise<LearningObject[]> {
     const { dataStore, username, userToken } = params;
-    // all users can see released objects
+    // all users can see released objects from all collections
     let status: string[] = LearningObjectState.RELEASED;
+    let collections;
 
-    // if user is admin/editor/curator/review, also send waiting/review/proofing objects
-    if (userToken && (isAdminOrEditor(userToken.accessGroups) || isPrivilegedUser(userToken.accessGroups))) {
+    // if user is admin/editor/curator/review, also send waiting/review/proofing objects for collections they're privileged in
+    if (userToken && isAdminOrEditor(userToken.accessGroups)) {
       status = status.concat(LearningObjectState.IN_REVIEW);
-      // TODO reviewers and curators shouldn't be able to see objects in collections they're not priviledged to
+    } else if (userToken && isPrivilegedUser(userToken.accessGroups)) {
+      status = status.concat(LearningObjectState.IN_REVIEW);
+      collections = getAccessGroupCollections(userToken);
     }
 
     const objectIDs = await dataStore.getUserObjects(username);
     const summaries = await dataStore.fetchMultipleObjects({
       ids: objectIDs,
       full: false,
+      collections,
       status,
     });
 
