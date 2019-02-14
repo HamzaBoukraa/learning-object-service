@@ -95,14 +95,14 @@ export class LearningObjectInteractor {
         status = LearningObjectState.ALL;
       }
 
-        const objectIDs = await dataStore.getUserObjects(username);
-        summary = await dataStore.fetchMultipleObjects({
-          ids: objectIDs,
-          full: false,
+      const objectIDs = await dataStore.getUserObjects(username);
+      summary = await dataStore.fetchMultipleObjects({
+        ids: objectIDs,
+        full: false,
         orderBy,
         sortType,
-          status,
-        });
+        status,
+      });
 
       summary = await Promise.all(
         summary.map(async object => {
@@ -113,7 +113,7 @@ export class LearningObjectInteractor {
             console.log(e);
           }
 
-      if (loadChildren) {
+          if (loadChildren) {
             const children = await this.loadChildObjects({
               dataStore,
               library,
@@ -125,9 +125,9 @@ export class LearningObjectInteractor {
             children.forEach((child: LearningObject) => object.addChild(child));
           }
 
-            return object;
-          }),
-        );
+          return object;
+        }),
+      );
       return summary;
     } catch (e) {
       return Promise.reject(`Problem loading summary. Error: ${e}`);
@@ -173,26 +173,26 @@ export class LearningObjectInteractor {
         learningObjectName,
       );
       if (revision) {
-      const [status, collection] = await Promise.all([
-        dataStore.fetchLearningObjectStatus(learningObjectID),
-        dataStore.fetchLearningObjectCollection(learningObjectID),
-      ]);
+        const [status, collection] = await Promise.all([
+          dataStore.fetchLearningObjectStatus(learningObjectID),
+          dataStore.fetchLearningObjectCollection(learningObjectID),
+        ]);
 
-      this.authorizeReadAccess({
-        userToken,
-        objectInfo: { author: username, status, collection },
-      });
+        this.authorizeReadAccess({
+          userToken,
+          objectInfo: { author: username, status, collection },
+        });
 
-      if (
+        if (
           LearningObjectState.IN_REVIEW.includes(
             status as LearningObject.Status,
           )
-      ) {
-        childrenStatus = [
-          ...LearningObjectState.IN_REVIEW,
-          ...LearningObjectState.RELEASED,
-        ];
-      }
+        ) {
+          childrenStatus = [
+            ...LearningObjectState.IN_REVIEW,
+            ...LearningObjectState.RELEASED,
+          ];
+        }
 
         learningObject = await dataStore.fetchReleasedLearningObject({
           id: learningObjectID,
@@ -201,9 +201,9 @@ export class LearningObjectInteractor {
         loadWorkingCopies = true;
       } else {
         learningObject = await dataStore.fetchReleasedLearningObject({
-        id: learningObjectID,
-        full: true,
-      });
+          id: learningObjectID,
+          full: true,
+        });
       }
 
       const children = await this.loadChildObjects({
@@ -317,10 +317,10 @@ export class LearningObjectInteractor {
       });
     } else {
       objects = await dataStore.loadReleasedChildObjects({
-      id: parentId,
-      full,
-      status,
-    });
+        id: parentId,
+        full,
+        status,
+      });
     }
 
     // For each child object
