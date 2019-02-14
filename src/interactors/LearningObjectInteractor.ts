@@ -83,7 +83,7 @@ export class LearningObjectInteractor {
           authFunction: checkAuthByUsername,
         })
       ) {
-        throw new Error('Invalid access');
+        throw new Error(LearningObjectError.INVALID_ACCESS());
       }
 
       const { dataStore, library, username, loadChildren, query } = params;
