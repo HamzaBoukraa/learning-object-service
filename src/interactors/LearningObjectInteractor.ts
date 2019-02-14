@@ -190,6 +190,7 @@ export class LearningObjectInteractor {
     username: string;
     learningObjectName: string;
     userToken?: UserToken;
+    revision?: boolean;
   }): Promise<LearningObject> {
     try {
       let learningObject: LearningObject;
@@ -201,14 +202,15 @@ export class LearningObjectInteractor {
         username,
         learningObjectName,
         userToken,
+        revision,
       } = params;
       const fullChildren = false;
-
+      let loadWorkingCopies = false;
       const learningObjectID = await dataStore.findLearningObject(
         username,
         learningObjectName,
       );
-
+      if (revision) {
       const [status, collection] = await Promise.all([
         dataStore.fetchLearningObjectStatus(learningObjectID),
         dataStore.fetchLearningObjectCollection(learningObjectID),
@@ -220,7 +222,9 @@ export class LearningObjectInteractor {
       });
 
       if (
-        LearningObjectState.IN_REVIEW.includes(status as LearningObject.Status)
+          LearningObjectState.IN_REVIEW.includes(
+            status as LearningObject.Status,
+          )
       ) {
         childrenStatus = [
           ...LearningObjectState.IN_REVIEW,
@@ -228,10 +232,17 @@ export class LearningObjectInteractor {
         ];
       }
 
-      learningObject = await dataStore.fetchLearningObject({
+        learningObject = await dataStore.fetchReleasedLearningObject({
+          id: learningObjectID,
+          full: true,
+        });
+        loadWorkingCopies = true;
+      } else {
+        learningObject = await dataStore.fetchReleasedLearningObject({
         id: learningObjectID,
         full: true,
       });
+      }
 
       const children = await this.loadChildObjects({
         dataStore,
@@ -239,6 +250,7 @@ export class LearningObjectInteractor {
         parentId: learningObject.id,
         full: fullChildren,
         status: childrenStatus,
+        loadWorkingCopies,
       });
       children.forEach((child: LearningObject) =>
         learningObject.addChild(child),
