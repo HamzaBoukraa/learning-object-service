@@ -172,6 +172,31 @@ export class LearningObjectInteractor {
     }
   }
 
+  public static async loadProfile(params: {
+    dataStore: DataStore;
+    username: string;
+    userToken?: UserToken;
+  }): Promise<LearningObject[]> {
+    const { dataStore, username, userToken } = params;
+    // all users can see released objects
+    let status: string[] = LearningObjectState.RELEASED;
+
+    // if user is admin/editor/curator/review, also send waiting/review/proofing objects
+    if (userToken && (isAdminOrEditor(userToken.accessGroups) || isPrivilegedUser(userToken.accessGroups))) {
+      status = status.concat(LearningObjectState.IN_REVIEW);
+      // TODO reviewers and curators shouldn't be able to see objects in collections they're not priviledged to
+    }
+
+    const objectIDs = await dataStore.getUserObjects(username);
+    const summaries = await dataStore.fetchMultipleObjects({
+      ids: objectIDs,
+      full: false,
+      status,
+    });
+
+    return summaries;
+  }
+
   /**
    * Load a learning object and all its learning outcomes.
    * @async
