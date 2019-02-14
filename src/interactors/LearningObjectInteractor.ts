@@ -322,14 +322,33 @@ export class LearningObjectInteractor {
     parentId: string;
     full?: boolean;
     status: string[];
+    loadWorkingCopies?: boolean;
   }): Promise<LearningObject[]> {
-    const { dataStore, library, parentId, full, status } = params;
+    const {
+      dataStore,
+      library,
+      parentId,
+      full,
+      status,
+      loadWorkingCopies,
+    } = params;
+
     // Load Parent's children
-    const objects = await dataStore.loadChildObjects({
+    let objects;
+    if (loadWorkingCopies) {
+      objects = await dataStore.loadChildObjects({
+        id: parentId,
+        full,
+        status,
+      });
+    } else {
+      objects = await dataStore.loadReleasedChildObjects({
       id: parentId,
       full,
       status,
     });
+    }
+
     // For each child object
     return Promise.all(
       objects.map(async obj => {
@@ -340,6 +359,7 @@ export class LearningObjectInteractor {
           parentId: obj.id,
           full,
           status,
+          loadWorkingCopies,
         });
         // For each of the Child's children
         children = await Promise.all(
