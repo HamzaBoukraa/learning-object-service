@@ -1218,42 +1218,6 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Return literally all objects. Very expensive.
-   * @returns {Cursor<LearningObjectRecord>[]} cursor of literally all objects
-   */
-  async fetchAllObjects(params: {
-    status?: string[];
-    page?: number;
-    limit?: number;
-  }): Promise<{ objects: LearningObject[]; total: number }> {
-    try {
-      const query: any = {};
-
-      if (status && status.length) {
-        query.status = { $in: status };
-      }
-      let objectCursor = await this.db
-        .collection(COLLECTIONS.LEARNING_OBJECTS)
-        .find<LearningObjectDocument>(query);
-      const totalRecords = await objectCursor.count();
-      objectCursor = this.applyCursorFilters(objectCursor, {
-        page: params.page,
-        limit: params.limit,
-      });
-      const docs = await objectCursor.toArray();
-      const learningObjects: LearningObject[] = await this.bulkGenerateLearningObjects(
-        docs,
-      );
-      return Promise.resolve({
-        objects: learningObjects,
-        total: totalRecords,
-      });
-    } catch (e) {
-      return Promise.reject(`Error fetching all learning objects. Error: ${e}`);
-    }
-  }
-
-  /**
    * Fetches an object's status
    *
    * @param {string} id
