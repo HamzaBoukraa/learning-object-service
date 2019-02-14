@@ -511,21 +511,22 @@ export class MongoDriver implements DataStore {
     id: string;
     full?: boolean;
     status: string[];
+    collection?: string;
   }): Promise<LearningObject[]> {
-    const { id, full, status } = params;
+    const { id, full, status, collection } = params;
     const matchQuery: { [index: string]: any } = {
       $match: { _id: id, status: { $in: status } },
     };
 
     const docs = await this.db
       .collection<{ objects: LearningObjectDocument[] }>(
-        COLLECTIONS.LEARNING_OBJECTS,
+        collection || COLLECTIONS.LEARNING_OBJECTS,
       )
       .aggregate([
         matchQuery,
         {
           $graphLookup: {
-            from: COLLECTIONS.LEARNING_OBJECTS,
+            from: collection || COLLECTIONS.LEARNING_OBJECTS,
             startWith: '$children',
             connectFromField: 'children',
             connectToField: '_id',
@@ -541,6 +542,28 @@ export class MongoDriver implements DataStore {
       return this.bulkGenerateLearningObjects(objects, full);
     }
     return [];
+  }
+
+  /**
+   * Loads released child objects
+   *
+   * @param {{
+   *     id: string;
+   *     full?: boolean;
+   *     status: string[];
+   *   }} params
+   * @returns {Promise<LearningObject[]>}
+   * @memberof MongoDriver
+   */
+  async loadReleasedChildObjects(params: {
+    id: string;
+    full?: boolean;
+    status: string[];
+  }): Promise<LearningObject[]> {
+    return this.loadChildObjects({
+      ...params,
+      collection: COLLECTIONS.RELEASED_LEARNING_OBJECTS,
+    });
   }
 
   async getLearningObjectMaterials(params: {
