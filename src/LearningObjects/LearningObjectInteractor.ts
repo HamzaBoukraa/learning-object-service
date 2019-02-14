@@ -12,6 +12,27 @@ import { LearningObjectError } from '../errors';
 import { hasLearningObjectWriteAccess } from '../interactors/AuthorizationManager';
 import { reportError } from '../drivers/SentryConnector';
 
+const LearningObjectState = {
+  UNRELEASED: [
+    LearningObject.Status.REJECTED,
+    LearningObject.Status.UNRELEASED,
+  ],
+  IN_REVIEW: [
+    LearningObject.Status.WAITING,
+    LearningObject.Status.REVIEW,
+    LearningObject.Status.PROOFING,
+  ],
+  RELEASED: [LearningObject.Status.RELEASED],
+  ALL: [
+    LearningObject.Status.REJECTED,
+    LearningObject.Status.UNRELEASED,
+    LearningObject.Status.WAITING,
+    LearningObject.Status.REVIEW,
+    LearningObject.Status.PROOFING,
+    LearningObject.Status.RELEASED,
+  ],
+};
+
 /**
  * Performs update operation on learning object's date
  *
@@ -221,7 +242,7 @@ export async function getLearningObjectChildrenById(
   objectId: string,
 ){
   try {
-    return await dataStore.loadChildObjects({id: objectId, full: true, accessUnreleased: true});
+    return await dataStore.loadChildObjects({id: objectId, full: true, status: LearningObjectState.ALL});
   } catch (e) {
     reportError(e);
     return Promise.reject(new Error(LearningObjectError.RESOURCE_NOT_FOUND()));
