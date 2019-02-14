@@ -36,6 +36,20 @@ export class MockDataStore implements DataStore {
     return;
   }
 
+  fetchReleasedLearningObject(params: {
+    id: string;
+    full?: boolean;
+  }): Promise<LearningObject> {
+    return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT as any);
+  }
+  loadReleasedChildObjects(params: {
+    id: string;
+    full?: boolean;
+    status: string[];
+  }): Promise<LearningObject[]> {
+    return Promise.resolve([MOCK_OBJECTS.LEARNING_OBJECT as any]);
+  }
+
   addToReleased(object: LearningObject): Promise<void> {
     return Promise.resolve();
   }
