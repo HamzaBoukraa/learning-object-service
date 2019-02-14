@@ -26,6 +26,6 @@ describe('Interactor: LearningObjectInteractor', () => {
         childId: MOCK_OBJECTS.LEARNING_OBJECT_ID,
         date: Date.now().toString(),
       }),
-    ).resolves.toBe(undefined);
+    ).resolves.toEqual([]);
   });
 });
