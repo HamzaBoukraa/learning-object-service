@@ -75,6 +75,11 @@ export interface DataStore
     full?: boolean;
     status: string[];
   }): Promise<LearningObject[]>;
+  loadReleasedChildObjects(params: {
+    id: string;
+    full?: boolean;
+    status: string[];
+  }): Promise<LearningObject[]>;
   checkLearningObjectExistence(learningObjectId: string): Promise<string[]>;
 
   // Materials
