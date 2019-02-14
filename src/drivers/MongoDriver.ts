@@ -1396,7 +1396,7 @@ export class MongoDriver implements DataStore {
         total,
       };
     } catch (e) {
-      return Promise.reject('Error suggesting objects' + e);
+      return Promise.reject('Error searching objects ' + e);
     }
   }
 
