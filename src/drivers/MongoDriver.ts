@@ -1168,6 +1168,33 @@ export class MongoDriver implements DataStore {
   }
 
   /**
+   * Fetches released object
+   *
+   * @param {{
+   *     id: string;
+   *     full?: boolean;
+   *   }} params
+   * @returns {Promise<LearningObject>}
+   * @memberof MongoDriver
+   */
+  async fetchReleasedLearningObject(params: {
+    id: string;
+    full?: boolean;
+  }): Promise<LearningObject> {
+    const object = await this.db
+      .collection<LearningObjectDocument>(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
+      .findOne({ id: params.id });
+    const author = await this.fetchUser(object.authorID);
+    const learningObject = await this.generateLearningObject(
+      author,
+      object,
+      params.full,
+    );
+
+    return learningObject;
+  }
+
+  /**
    * Check if a learning object exists
    *
    * @param {string} learningObjectId The id of the specified learning object
