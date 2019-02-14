@@ -172,6 +172,18 @@ export class LearningObjectInteractor {
     }
   }
 
+  /**
+   * Retrieve the objects on a user's profile based on the requester's access groups and priveleges
+   *
+   * @static
+   * @param {{
+   *     dataStore: DataStore;
+   *     username: string;
+   *     userToken?: UserToken;
+   *   }} params
+   * @returns {Promise<LearningObject[]>}
+   * @memberof LearningObjectInteractor
+   */
   public static async loadProfile(params: {
     dataStore: DataStore;
     username: string;
