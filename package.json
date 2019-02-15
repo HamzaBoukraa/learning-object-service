@@ -41,7 +41,7 @@
     "pdfkit": "^0.8.3",
     "raven": "^2.6.4",
     "request": "^2.85.0",
-    "request-promise": "^4.2.2",
+    "request-promise": "4.2.2",
     "rxjs": "^6.2.1",
     "source-map-support": "^0.5.0",
     "stemmer": "^1.0.2",
