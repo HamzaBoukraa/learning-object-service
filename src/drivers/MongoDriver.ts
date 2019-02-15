@@ -161,12 +161,13 @@ export class MongoDriver implements DataStore {
       text,
       outcomeIDs,
     });
-
     let cursor = this.db
       .collection<LearningObjectDocument>(COLLECTIONS.LEARNING_OBJECTS)
       .find({
-        ...searchQuery,
-        $or: orConditions,
+        $and : [
+          searchQuery,
+          { $or: orConditions },
+        ]
       });
 
     const total = await cursor.count();
