@@ -145,6 +145,20 @@ export class ExpressRouteDriver {
       }
     });
 
+    router.get('/users/:username/learning-objects/profile', async (req, res) => {
+      try {
+        const objects = await LearningObjectInteractor.loadProfile({
+          dataStore: this.dataStore,
+          username: req.params.username,
+          userToken: req.user,
+        });
+
+        res.status(200).send(objects.map(x => x.toPlainObject()));
+      } catch (e) {
+        res.status(500).send(e);
+      }
+    });
+
     LearningObjectStatsRouteHandler.initialize({
       router,
       dataStore: this.dataStore,
