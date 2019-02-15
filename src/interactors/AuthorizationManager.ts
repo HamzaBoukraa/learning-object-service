@@ -148,7 +148,8 @@ async function userIsOwner(params: {
 export function isAdminOrEditor(accessGroups: string[]): boolean {
   return (
     accessGroups.includes(UserRole.ADMIN) ||
-    accessGroups.includes(UserRole.EDITOR)
+    accessGroups.includes(UserRole.EDITOR) && 
+    accessGroups.includes(null)
   );
 }
 
