@@ -151,7 +151,9 @@ function addEventListeners(
   return new Promise<LearningObject.Material.PDF>(resolve => {
     doc.on('end', async () => {
       const buffer: Buffer = Buffer.concat(buffers);
-      const fileName = `0ReadMeFirst - ${learningObject.name}.pdf`;
+      const fileName = `0ReadMeFirst - ${sanitizePath(
+        learningObject.name,
+      )}.pdf`;
       const path = `${learningObject.author.username}/${
         learningObject.id
       }/${fileName}`;
@@ -494,4 +496,14 @@ export function titleCase(text: string): string {
     textArr[i] = word;
   }
   return textArr.join(' ');
+}
+
+/**
+ * Replaces invalid characters with _ characters
+ *
+ * @param {string} path
+ * @returns {string}
+ */
+function sanitizePath(path: string): string {
+  return path.replace(/[\\/:"*?<>|]/gi, '_');
 }
