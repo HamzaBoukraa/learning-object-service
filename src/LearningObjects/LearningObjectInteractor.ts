@@ -125,18 +125,17 @@ export async function addLearningObject(
   object: LearningObject,
   user: UserToken,
 ): Promise<LearningObject> {
-  await checkNameExists({
+  const err = await checkNameExists({
     dataStore,
     username: user.username,
     name: object.name,
   });
-
   try {
+    if (err) {
+      return Promise.reject(err);
+    }
     const authorID = await dataStore.findUser(user.username);
     const author = await dataStore.fetchUser(authorID);
-    if (!author.emailVerified) {
-      object.status = LearningObject.Status.UNRELEASED;
-    }
     const objectInsert = new LearningObject({
       ...object.toPlainObject(),
       author,
@@ -542,6 +541,6 @@ async function checkNameExists(params: {
   });
   // @ts-ignore typescript doesn't think a .id property should exist on the existing object
   if (existing && params.id !== existing.id) {
-    throw new Error(LearningObjectError.DUPLICATE_NAME(params.name));
+    return new Error(LearningObjectError.DUPLICATE_NAME(params.name));
   }
 }
