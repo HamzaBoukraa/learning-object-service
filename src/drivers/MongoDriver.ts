@@ -335,9 +335,9 @@ export class MongoDriver implements DataStore {
       sortType,
     });
 
-    const matcher = { ...searchQuery };
+    let matcher: any = { ...searchQuery };
     if (orConditions && orConditions.length) {
-      matcher.$or = orConditions;
+      matcher = { $and: [searchQuery, orConditions] };
     }
     const match = { $match: { ...matcher } };
 
@@ -1292,16 +1292,29 @@ export class MongoDriver implements DataStore {
    */
   async fetchMultipleObjects(params: {
     ids: string[];
+    status: string[];
     full?: boolean;
     orderBy?: string;
     sortType?: 1 | -1;
-    status: string[];
+    collections?: string[];
   }): Promise<LearningObject[]> {
     try {
       const query: any = {
         _id: { $in: params.ids },
-        status: { $in: params.status },
       };
+
+      if (params.collections) {
+        query.$or = [
+          { status: LearningObject.Status.RELEASED },
+          {
+            status: { $in: params.status },
+            collection: { $in: params.collections },
+          },
+        ];
+      } else {
+        query.status = { $in: params.status };
+      }
+
       let objectCursor = await this.db
         .collection(COLLECTIONS.LEARNING_OBJECTS)
         .find<LearningObjectDocument>(query);

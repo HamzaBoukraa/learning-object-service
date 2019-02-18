@@ -15,6 +15,27 @@ import {
 import { reportError } from '../drivers/SentryConnector';
 import { LearningObject } from '../entity';
 
+const LearningObjectState = {
+  UNRELEASED: [
+    LearningObject.Status.REJECTED,
+    LearningObject.Status.UNRELEASED,
+  ],
+  IN_REVIEW: [
+    LearningObject.Status.WAITING,
+    LearningObject.Status.REVIEW,
+    LearningObject.Status.PROOFING,
+  ],
+  RELEASED: [LearningObject.Status.RELEASED],
+  ALL: [
+    LearningObject.Status.REJECTED,
+    LearningObject.Status.UNRELEASED,
+    LearningObject.Status.WAITING,
+    LearningObject.Status.REVIEW,
+    LearningObject.Status.PROOFING,
+    LearningObject.Status.RELEASED,
+  ],
+};
+
 /**
  * Performs update operation on learning object's date
  *
@@ -220,6 +241,25 @@ export async function getLearningObjectById(
     return await dataStore.fetchLearningObject({ id, full: true });
   } catch (e) {
     return Promise.reject(`Problem fetching Learning Object. ${e}`);
+  }
+}
+
+/**
+ * Fetches a learning objects children by ID
+ *
+ * @export
+ * @param {DataStore} dataStore
+ * @param {string} id the learning object's id
+ */
+export async function getLearningObjectChildrenById(
+  dataStore: DataStore,
+  objectId: string,
+){
+  try {
+    return await dataStore.loadChildObjects({id: objectId, full: true, status: LearningObjectState.ALL});
+  } catch (e) {
+    reportError(e);
+    return Promise.reject(new Error(LearningObjectError.RESOURCE_NOT_FOUND()));
   }
 }
 

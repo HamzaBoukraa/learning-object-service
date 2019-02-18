@@ -22,9 +22,10 @@ export async function downloadSingleFile(params: {
 }): Promise<{ filename: string; mimeType: string; stream: Readable }> {
   let learningObject, fileMetaData;
 
-  learningObject = await params.dataStore.fetchLearningObject(
-    params.learningObjectId,
-  );
+  learningObject = await params.dataStore.fetchLearningObject({
+    id: params.learningObjectId,
+    full: true,
+  });
 
   if (!learningObject) {
     throw new Error(
