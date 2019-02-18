@@ -12,7 +12,7 @@ import { UserToken } from '../../types';
 import { initializeSingleFileDownloadRouter } from '../../SingleFileDownload/RouteHandler';
 import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
 import { initializeCollectionRouter } from '../../Collections/RouteHandler';
-import { ResourceError, mapErrorToStatusCode } from '../../errors';
+import { ResourceError, mapErrorToResponseData } from '../../errors';
 
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
 // tslint:disable-next-line:no-require-imports
@@ -142,7 +142,7 @@ export class ExpressRouteDriver {
         res.status(200).send(objects.map(obj => obj.toPlainObject()));
       } catch (e) {
         if (e instanceof ResourceError) {
-          const { code, message } = mapErrorToStatusCode(e);
+          const { code, message } = mapErrorToResponseData(e);
           res.status(code).json({ message });
         }
         if (e instanceof Error && e.message === 'User not found') {

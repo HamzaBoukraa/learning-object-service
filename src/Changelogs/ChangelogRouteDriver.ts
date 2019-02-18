@@ -1,5 +1,5 @@
 import { Request, Response, Router } from 'express';
-import { mapErrorToStatusCode } from '../errors';
+import { mapErrorToResponseData } from '../errors';
 import { DataStore } from '../interfaces/DataStore';
 import { UserToken } from '../types';
 import * as ChangelogInteractor from './ChangelogInteractor';
@@ -29,7 +29,7 @@ export function initialize({
       await ChangelogInteractor.createChangelog({dataStore, learningObjectId, user, changelogText});
       res.sendStatus(200);
     } catch (e) {
-      const { code, message } = mapErrorToStatusCode(e);
+      const { code, message } = mapErrorToResponseData(e);
       res.status(code).json({message});
     }
   }
@@ -43,7 +43,7 @@ export function initialize({
       );
       res.status(200).send(changelog);
     } catch (e) {
-      const { code, message } = mapErrorToStatusCode(e);
+      const { code, message } = mapErrorToResponseData(e);
       res.status(code).json({message});
     }
   };

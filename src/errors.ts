@@ -44,7 +44,7 @@ export class ResourceError extends Error {
  * @param error the Error to map to HTTP information.
  * @returns information to convert an Error to a proper HTTP response.
  */
-export function mapErrorToStatusCode(error: Error): { code: number, message: string } {
+export function mapErrorToResponseData(error: Error): { code: number, message: string } {
   if (!(error instanceof Error)) {
     reportError(error);
     return { code: 500, message: 'Internal Server Error' };

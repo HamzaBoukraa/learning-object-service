@@ -1,6 +1,6 @@
 import { LearningObject } from '@cyber4all/clark-entity';
 import { Request, Response, Router } from 'express';
-import { mapErrorToStatusCode, ResourceErrorReason } from '../errors';
+import { mapErrorToResponseData, ResourceErrorReason } from '../errors';
 import { DataStore } from '../interfaces/DataStore';
 import { FileManager, LibraryCommunicator } from '../interfaces/interfaces';
 import { UserToken } from '../types';
@@ -177,7 +177,7 @@ export function initializePrivate({
       );
       res.status(200).json(children);
     } catch (e) {
-      const { code, message } = mapErrorToStatusCode(e);
+      const { code, message } = mapErrorToResponseData(e);
       res.status(code).json({message});
     }
   };
