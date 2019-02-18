@@ -201,7 +201,7 @@ export async function updateLearningObject(params: {
         updates,
       });
     } else {
-      return Promise.reject(new Error(LearningObjectError.INVALID_ACCESS()));
+      return Promise.reject(new ResourceError('Invalid Access', ResourceErrorReason.INVALID_ACCESS));
     }
   } catch (e) {
     reportError(e);
@@ -245,7 +245,8 @@ export async function getLearningObjectChildrenById(
     return await dataStore.loadChildObjects({id: objectId, full: true, status: LearningObjectState.ALL});
   } catch (e) {
     reportError(e);
-    return Promise.reject(new Error(LearningObjectError.RESOURCE_NOT_FOUND()));
+    // TODO: Is this actually a case of it not being found? Can't other faults hit this?
+    return Promise.reject(new ResourceError('Learning Object not found.', ResourceErrorReason.NOT_FOUND));
   }
 }
 
