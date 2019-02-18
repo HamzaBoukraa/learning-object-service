@@ -33,7 +33,7 @@ import { lengths } from '@cyber4all/clark-taxonomy';
 import { LearningObjectDataStore } from '../LearningObjects/LearningObjectDatastore';
 import { ChangeLogDocument } from '../types/changelog';
 import { ChangelogDataStore } from '../Changelogs/ChangelogDatastore';
-import { ResourceError, ResourceErrorReason, ServiceError, ServiceErrorType } from '../errors';
+import { ResourceError, ResourceErrorReason, ServiceError, ServiceErrorReason } from '../errors';
 import { reportError } from './SentryConnector';
 
 export enum COLLECTIONS {
@@ -797,7 +797,7 @@ export class MongoDriver implements DataStore {
       return objects.map(obj => obj._id);
     } catch (e) {
       reportError(e);
-      throw new ServiceError(ServiceErrorType.INTERNAL);
+      throw new ServiceError(ServiceErrorReason.INTERNAL);
     }
   }
 
@@ -825,7 +825,7 @@ export class MongoDriver implements DataStore {
       return `${userRecord._id}`;
     } catch (e) {
       reportError(e);
-      return Promise.reject(new ServiceError(ServiceErrorType.INTERNAL));
+      return Promise.reject(new ServiceError(ServiceErrorReason.INTERNAL));
     }
   }
 
@@ -951,7 +951,7 @@ export class MongoDriver implements DataStore {
       return arr;
     } catch (e) {
       reportError(e);
-      return Promise.reject(new ServiceError(ServiceErrorType.INTERNAL));
+      return Promise.reject(new ServiceError(ServiceErrorReason.INTERNAL));
     }
   }
 

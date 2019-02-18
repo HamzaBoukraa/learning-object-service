@@ -12,6 +12,7 @@ import { UserToken } from '../../types';
 import { initializeSingleFileDownloadRouter } from '../../SingleFileDownload/RouteHandler';
 import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
 import { initializeCollectionRouter } from '../../Collections/RouteHandler';
+import { ResourceError, mapErrorToStatusCode } from '../../errors';
 
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
 // tslint:disable-next-line:no-require-imports

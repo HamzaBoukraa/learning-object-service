@@ -1,10 +1,10 @@
 import { reportError } from './drivers/SentryConnector';
 
-export enum ServiceErrorType {
+export enum ServiceErrorReason {
   INTERNAL = 'InternalServiceError',
 }
 export class ServiceError extends Error {
-  constructor(type: ServiceErrorType) {
+  constructor(type: ServiceErrorReason) {
     super('Internal Server Error');
     this.name = type;
   }
@@ -34,7 +34,7 @@ export function mapErrorToStatusCode(error: Error): { code: number, message: str
     case ResourceErrorReason.NOT_FOUND:
       status.code = 404;
       break;
-    case ServiceErrorType.INTERNAL:
+    case ServiceErrorReason.INTERNAL:
       status.code = 500;
       break;
     default:

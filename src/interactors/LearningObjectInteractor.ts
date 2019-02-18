@@ -10,7 +10,7 @@ import { DataStore, FileManager, LibraryCommunicator } from '../interfaces/inter
 import { updateObjectLastModifiedDate, updateParentsDate } from '../LearningObjects/LearningObjectInteractor';
 import { UserToken } from '../types';
 import { getAccessGroupCollections, hasMultipleLearningObjectWriteAccesses, isAdminOrEditor, isPrivilegedUser } from './AuthorizationManager';
-import { ResourceError, ResourceErrorReason } from '../errors';
+import { ResourceError, ResourceErrorReason, ServiceError, ServiceErrorReason } from '../errors';
 
 // file size is in bytes
 const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
@@ -71,7 +71,7 @@ export class LearningObjectInteractor {
           authFunction: checkAuthByUsername,
         })
       ) {
-        throw new Error('Invalid access');
+        throw new ResourceError('Invalid Access', ResourceErrorReason.INVALID_ACCESS);
       }
 
       const { dataStore, library, username, loadChildren, query } = params;
@@ -156,12 +156,14 @@ export class LearningObjectInteractor {
       }
       return summary;
     } catch (e) {
-      // TODO: Expand error object to identify different resource types
+      if (e instanceof ResourceError) {
+        throw e;
+      }
       if (e instanceof Error && e.message === 'User not found') {
         throw e;
       }
       reportError(e);
-      throw new Error('Internal Server Error');
+      throw new ServiceError(ServiceErrorReason.INTERNAL);
     }
   }
 

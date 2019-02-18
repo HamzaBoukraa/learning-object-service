@@ -1,7 +1,7 @@
 import { Db } from 'mongodb';
 import { COLLECTIONS } from '../drivers/MongoDriver';
 import { reportError } from '../drivers/SentryConnector';
-import { ResourceError, ResourceErrorReason, ServiceError, ServiceErrorType } from '../errors';
+import { ResourceError, ResourceErrorReason, ServiceError, ServiceErrorReason } from '../errors';
 import { ChangeLogDocument } from '../types/Changelog';
 
 export class ChangelogDataStore {
@@ -39,7 +39,7 @@ export class ChangelogDataStore {
       );
     } catch (e) {
       reportError(e);
-      return Promise.reject(new ServiceError(ServiceErrorType.INTERNAL));
+      return Promise.reject(new ServiceError(ServiceErrorReason.INTERNAL));
     }
   }
 
@@ -65,7 +65,7 @@ export class ChangelogDataStore {
       return changelog;
     } catch (e) {
       reportError(e);
-      return Promise.reject(new ServiceError(ServiceErrorType.INTERNAL));
+      return Promise.reject(new ServiceError(ServiceErrorReason.INTERNAL));
     }
   }
 
@@ -84,7 +84,7 @@ export class ChangelogDataStore {
         .remove({ learningObjectId: learningObjectId });
     } catch (e) {
       reportError(e);
-      return Promise.reject(new ServiceError(ServiceErrorType.INTERNAL));
+      return Promise.reject(new ServiceError(ServiceErrorReason.INTERNAL));
     }
   }
 }
