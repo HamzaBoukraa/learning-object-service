@@ -821,7 +821,7 @@ export class MongoDriver implements DataStore {
         .collection(COLLECTIONS.USERS)
         .findOne<UserDocument>(query, { projection: { _id: 1 } });
       if (!userRecord)
-        throw new ResourceError('User not found', ResourceErrorReason.NOT_FOUND);
+        return Promise.reject(new ResourceError(`Cannot find user with username ${username}`, ResourceErrorReason.NOT_FOUND));
       return `${userRecord._id}`;
     } catch (e) {
       reportError(e);

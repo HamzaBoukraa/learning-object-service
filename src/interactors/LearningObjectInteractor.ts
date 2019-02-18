@@ -61,20 +61,22 @@ export class LearningObjectInteractor {
     loadChildren?: boolean;
     query?: LearningObjectQuery;
   }): Promise<LearningObject[]> {
+    const { dataStore, library, username, userToken, loadChildren, query } = params;
     try {
       let summary: LearningObject[] = [];
 
+      // This will throw an error if there is no user with that username
+      await dataStore.findUser(username);
+
       if (
         !this.hasReadAccess({
-          userToken: params.userToken,
+          userToken,
           resourceVal: params.username,
           authFunction: checkAuthByUsername,
         })
       ) {
         throw new ResourceError('Invalid Access', ResourceErrorReason.INVALID_ACCESS);
       }
-
-      const { dataStore, library, username, loadChildren, query } = params;
 
       const formattedQuery = this.formatSearchQuery(query);
       let {
@@ -156,11 +158,8 @@ export class LearningObjectInteractor {
       }
       return summary;
     } catch (e) {
-      if (e instanceof ResourceError) {
-        throw e;
-      }
-      if (e instanceof Error && e.message === 'User not found') {
-        throw e;
+      if (e instanceof ResourceError || e instanceof ServiceError) {
+        return Promise.reject(e);
       }
       reportError(e);
       throw new ServiceError(ServiceErrorReason.INTERNAL);
