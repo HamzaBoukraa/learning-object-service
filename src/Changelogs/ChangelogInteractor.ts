@@ -1,9 +1,8 @@
-import { DataStore } from '../interfaces/DataStore';
-import { reportError } from '../drivers/SentryConnector';
-import { hasLearningObjectWriteAccess } from '../interactors/AuthorizationManager';
-import { UserToken } from '../types';
-import { ResourceError, ResourceErrorReason } from '../errors';
-import { ChangeLogDocument } from '../types/Changelog';
+import {DataStore} from '../interfaces/DataStore';
+import {hasLearningObjectWriteAccess} from '../interactors/AuthorizationManager';
+import {UserToken} from '../types';
+import {ResourceError, ResourceErrorReason} from '../errors';
+import {ChangeLogDocument} from '../types/Changelog';
 
 /**
  * Instruct the datastore to create a new log in the changelogs collection
@@ -40,7 +39,7 @@ export async function createChangelog(params: {
 }
 
 /**
- * Instruct the datastore to fetch a changelog object with only the last element in the logs array
+ * Fetches the most recent change log from the data store.
  *
  * @param {DataStore} dataStore An instance of DataStore
  * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
@@ -51,11 +50,5 @@ export async function getRecentChangelog(
     dataStore: DataStore,
     learningObjectId: string,
   ): Promise<ChangeLogDocument> {
-    try {
-      const changelog = await dataStore.fetchRecentChangelog(learningObjectId);
-      return changelog;
-    } catch (e) {
-      // TODO: Remove falsy resource error
-      return Promise.reject(e instanceof Error ? e : new ResourceError('Changelog not found.', ResourceErrorReason.NOT_FOUND));
-    }
+    return await dataStore.fetchRecentChangelog(learningObjectId);
   }
