@@ -5,6 +5,7 @@ import { DataStore } from '../interfaces/DataStore';
 import { FileManager, LibraryCommunicator } from '../interfaces/interfaces';
 import { UserToken } from '../types';
 import { LearningObjectError } from '../errors';
+import { mapErrorToStatusCode } from '../errors';
 
 /**
  * Initializes an express router with endpoints for public Retrieving
@@ -137,27 +138,60 @@ export function initializePrivate({
         status = 409;
       }
 
+      if (e.message === LearningObjectError.INVALID_ACCESS) {
+        status = 401;
+      }
+
       res.status(status).send(e);
     }
   };
   const deleteLearningObject = async (req: Request, res: Response) => {
     try {
+      const user: UserToken = req.user;
       const learningObjectName = req.params.learningObjectName;
-      await LearningObjectInteractor.deleteLearningObject(
+      await LearningObjectInteractor.deleteLearningObject({
         dataStore,
         fileManager,
-        req.user.username,
         learningObjectName,
         library,
-      );
+        user,
+      });
       res.sendStatus(200);
     } catch (e) {
       console.error(e);
-      res.status(500).send(e);
+
+      let status = 500;
+
+      if (e.message === LearningObjectError.INVALID_ACCESS) {
+        status = 401;
+      }
+      res.status(status).send(e);
     }
   };
-  router.route('/learning-objects').post(addLearningObject);
+
+  const getLearningObjectChildren = async (req: Request, res: Response) => {
+    try{
+      const id = req.params.id;
+      const children = await LearningObjectInteractor.getLearningObjectChildrenById(
+        dataStore, 
+        id
+      );
+      res.status(200).json(children); 
+    } catch (e) {
+      if (e instanceof Error){
+      const status = mapErrorToStatusCode(e); 
+      res.status(status.code).json({message: status.message});
+    }else{
+      res.sendStatus(500); 
+      }
+    }
+  }; 
+
+  router
+      .route('/learning-objects')
+      .post(addLearningObject);
   router.patch('/learning-objects/:id', updateLearningObject);
-  router.get('/learning-objects/:id/materials/all', getMaterials);
   router.delete('/learning-objects/:learningObjectName', deleteLearningObject);
+  router.get('/learning-objects/:id/materials/all', getMaterials);
+  router.get('/learning-objects/:id/children/summary', getLearningObjectChildren);
 }

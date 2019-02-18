@@ -6,3 +6,11 @@ export interface UserToken {
   emailVerified: boolean;
   accessGroups: string[];
 }
+
+export const accessGroups = { 
+  ADMIN: 'admin',
+  EDITOR: 'editor',
+  CURATOR: 'curator',
+  REVIEWER: 'reviewer',
+  USER: 'user'
+}

@@ -15,11 +15,7 @@ import * as logger from 'morgan';
 import * as cors from 'cors';
 import * as cookieParser from 'cookie-parser';
 import * as raven from 'raven';
-import {
-  enforceAuthenticatedAccess,
-  enforceAdminAccess,
-  processToken,
-} from '../../middleware';
+import { enforceAuthenticatedAccess, processToken } from '../../middleware';
 
 export class ExpressDriver {
   static app = express();
@@ -79,11 +75,7 @@ export class ExpressDriver {
     );
 
     // Set admin api routes
-    this.app.use(enforceAdminAccess);
-    this.app.use(
-      '/admin',
-      ExpressAdminRouteDriver.buildRouter(dataStore, fileManager, library),
-    );
+    this.app.use('/admin', ExpressAdminRouteDriver.buildRouter());
 
     /**
      * Get port from environment and store in Express.

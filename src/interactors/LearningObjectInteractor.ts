@@ -7,16 +7,50 @@ import {
   LibraryCommunicator,
 } from '../interfaces/interfaces';
 import { UserToken } from '../types';
-import { LearningObjectQuery } from '../interfaces/DataStore';
+import { LearningObjectQuery, QueryCondition } from '../interfaces/DataStore';
 import { DZFile, FileUpload } from '../interfaces/FileManager';
 import { processMultipartUpload } from '../FileManager/FileInteractor';
+import {
+  hasMultipleLearningObjectWriteAccesses,
+  isAdminOrEditor,
+  isPrivilegedUser,
+  getAccessGroupCollections,
+} from './AuthorizationManager';
+import { reportError } from '../drivers/SentryConnector';
 import {
   updateObjectLastModifiedDate,
   updateParentsDate,
 } from '../LearningObjects/LearningObjectInteractor';
+import { sanitizeText, sanitizeObject } from '../functions';
+import { LearningObjectError } from '../errors';
 
 // file size is in bytes
 const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
+
+const LearningObjectState = {
+  UNRELEASED: [
+    LearningObject.Status.REJECTED,
+    LearningObject.Status.UNRELEASED,
+  ],
+  IN_REVIEW: [
+    LearningObject.Status.WAITING,
+    LearningObject.Status.REVIEW,
+    LearningObject.Status.PROOFING,
+  ],
+  RELEASED: [LearningObject.Status.RELEASED],
+  ALL: [
+    LearningObject.Status.REJECTED,
+    LearningObject.Status.UNRELEASED,
+    LearningObject.Status.WAITING,
+    LearningObject.Status.REVIEW,
+    LearningObject.Status.PROOFING,
+    LearningObject.Status.RELEASED,
+  ],
+};
+
+interface CollectionAccessMap {
+  [index: string]: string[];
+}
 
 export class LearningObjectInteractor {
   /**
@@ -27,99 +61,106 @@ export class LearningObjectInteractor {
    * @param params.dataStore
    * @param params.library
    * @param params.username
-   * @param params.accessUnpublished
+   * @param params.userToken
    * @param params.loadChildren
    * @param params.query
    */
-  public static async loadLearningObjectSummary(params: {
+  public static async loadUsersObjectSummaries(params: {
     dataStore: DataStore;
     library: LibraryCommunicator;
     username: string;
     userToken: UserToken;
-    accessUnpublished?: boolean;
     loadChildren?: boolean;
     query?: LearningObjectQuery;
   }): Promise<LearningObject[]> {
     try {
-      // Set accessUnpublished
-      let accessUnpublished = params.accessUnpublished;
+      let summary: LearningObject[] = [];
 
-      // If accessUnpublished is unset, set equal to the result of the hasOwnership function
-      if (accessUnpublished === undefined || accessUnpublished === null) {
-        accessUnpublished = await this.hasOwnership({
+      if (
+        !this.hasReadAccess({
           userToken: params.userToken,
           resourceVal: params.username,
-          authFunction: (username: string, userToken: UserToken) => {
-            return userToken.username === username;
-          },
+          authFunction: checkAuthByUsername,
+        })
+      ) {
+        throw new Error('Invalid access');
+      }
+
+      const { dataStore, library, username, loadChildren, query } = params;
+
+      const formattedQuery = this.formatSearchQuery(query);
+      let {
+        name,
+        author,
+        collection,
+        status,
+        length,
+        level,
+        standardOutcomeIDs,
+        text,
+        orderBy,
+        sortType,
+        page,
+        limit,
+      } = formattedQuery;
+
+      if (!status) {
+        status = LearningObjectState.ALL;
+      }
+      delete formattedQuery.page;
+      delete formattedQuery.limit;
+      delete formattedQuery.sortType;
+      // Perform search on objects
+      if (Object.keys(formattedQuery).length) {
+        const response = await dataStore.searchObjects({
+          name,
+          author,
+          collection,
+          status,
+          length,
+          level,
+          standardOutcomeIDs,
+          text,
+          orderBy,
+          sortType,
+          page,
+          limit,
+        });
+        summary = response.objects;
+      } else {
+        const objectIDs = await dataStore.getUserObjects(username);
+        summary = await dataStore.fetchMultipleObjects({
+          ids: objectIDs,
+          full: false,
+          orderBy: query ? query.orderBy : null,
+          sortType: query ? query.sortType : null,
+          status,
         });
       }
 
-      let summary: LearningObject[] = [];
+      // Load object metrics
+      summary = await Promise.all(
+        summary.map(async object => {
+          try {
+            object.metrics = await this.loadMetrics(library, object.id);
+            return object;
+          } catch (e) {
+            console.log(e);
+            return object;
+          }
+        }),
+      );
 
-      // Perform search on objects
-      if (params.query && Object.keys(params.query).length) {
-        const level = toArray<string>(params.query.level);
-        const length = toArray<string>(params.query.length);
-        const status = toArray<string>(params.query.status);
-        const response = await this.searchObjects(
-          params.dataStore,
-          params.library,
-          {
-            name: params.query.name,
-            author: params.username,
-            collection: params.query.collection,
-            status,
-            length,
-            level,
-            standardOutcomeIDs: params.query.standardOutcomeIDs,
-            text: params.query.text,
-            accessUnpublished,
-            orderBy: params.query.orderBy,
-            sortType: params.query.sortType,
-            currPage: params.query.page,
-            limit: params.query.limit,
-          },
-        );
-        summary = response.objects;
-      } else {
-        const objectIDs = await params.dataStore.getUserObjects(
-          params.username,
-        );
-        summary = await params.dataStore.fetchMultipleObjects(
-          objectIDs,
-          false,
-          accessUnpublished,
-          params.query ? params.query.orderBy : null,
-          params.query ? params.query.sortType : null,
-        );
-        // Load object metrics
+      if (loadChildren) {
         summary = await Promise.all(
           summary.map(async object => {
-            try {
-              object.metrics = await this.loadMetrics(
-                params.library,
-                object.id,
-              );
-              return object;
-            } catch (e) {
-              console.log(e);
-              return object;
-            }
-          }),
-        );
-      }
-
-      if (params.loadChildren) {
-        summary = await Promise.all(
-          summary.map(async object => {
-            const children = await this.loadChildObjects(
-              params.dataStore,
-              params.library,
-              object.id,
-              false,
-              accessUnpublished,
-            );
+            const children = await this.loadChildObjects({
+              dataStore,
+              library,
+              parentId: object.id,
+              full: false,
+              status,
+            });
             children.forEach((child: LearningObject) => object.addChild(child));
             return object;
           }),
@@ -132,6 +173,47 @@ export class LearningObjectInteractor {
   }
 
   /**
+   * Retrieve the objects on a user's profile based on the requester's access groups and priveleges
+   *
+   * @static
+   * @param {{
+   *     dataStore: DataStore;
+   *     username: string;
+   *     userToken?: UserToken;
+   *   }} params
+   * @returns {Promise<LearningObject[]>}
+   * @memberof LearningObjectInteractor
+   */
+  public static async loadProfile(params: {
+    dataStore: DataStore;
+    username: string;
+    userToken?: UserToken;
+  }): Promise<LearningObject[]> {
+    const { dataStore, username, userToken } = params;
+    // all users can see released objects from all collections
+    let status: string[] = LearningObjectState.RELEASED;
+    let collections;
+
+    // if user is admin/editor/curator/review, also send waiting/review/proofing objects for collections they're privileged in
+    if (userToken && isAdminOrEditor(userToken.accessGroups)) {
+      status = status.concat(LearningObjectState.IN_REVIEW);
+    } else if (userToken && isPrivilegedUser(userToken.accessGroups)) {
+      status = status.concat(LearningObjectState.IN_REVIEW);
+      collections = getAccessGroupCollections(userToken);
+    }
+
+    const objectIDs = await dataStore.getUserObjects(username);
+    const summaries = await dataStore.fetchMultipleObjects({
+      ids: objectIDs,
+      full: false,
+      collections,
+      status,
+    });
+
+    return summaries;
+  }
+
+  /**
    * Load a learning object and all its learning outcomes.
    * @async
    *
@@ -141,35 +223,64 @@ export class LearningObjectInteractor {
    * @param library
    * @param username
    * @param learningObjectName
-   * @param accessUnpublished
+   * @param userToken
    */
-  public static async loadLearningObject(
-    dataStore: DataStore,
-    library: LibraryCommunicator,
-    username: string,
-    learningObjectName: string,
-    accessUnpublished?: boolean,
-  ): Promise<LearningObject> {
+  public static async loadLearningObject(params: {
+    dataStore: DataStore;
+    library: LibraryCommunicator;
+    username: string;
+    learningObjectName: string;
+    userToken?: UserToken;
+  }): Promise<LearningObject> {
     try {
+      let learningObject: LearningObject;
+
+      let childrenStatus = LearningObjectState.RELEASED;
+      let {
+        dataStore,
+        library,
+        username,
+        learningObjectName,
+        userToken,
+      } = params;
       const fullChildren = false;
+
       const learningObjectID = await dataStore.findLearningObject(
         username,
         learningObjectName,
       );
 
-      const learningObject = await dataStore.fetchLearningObject(
-        learningObjectID,
-        true,
-        accessUnpublished,
-      );
+      const [status, collection] = await Promise.all([
+        dataStore.fetchLearningObjectStatus(learningObjectID),
+        dataStore.fetchLearningObjectCollection(learningObjectID),
+      ]);
 
-      const children = await this.loadChildObjects(
+      this.authorizeReadAccess({
+        userToken,
+        objectInfo: { author: username, status, collection },
+      });
+
+      if (
+        LearningObjectState.IN_REVIEW.includes(status as LearningObject.Status)
+      ) {
+        childrenStatus = [
+          ...LearningObjectState.IN_REVIEW,
+          ...LearningObjectState.RELEASED,
+        ];
+      }
+
+      learningObject = await dataStore.fetchLearningObject({
+        id: learningObjectID,
+        full: true,
+      });
+
+      const children = await this.loadChildObjects({
         dataStore,
         library,
-        learningObject.id,
-        fullChildren,
-        accessUnpublished,
-      );
+        parentId: learningObject.id,
+        full: fullChildren,
+        status: childrenStatus,
+      });
       children.forEach((child: LearningObject) =>
         learningObject.addChild(child),
       );
@@ -189,6 +300,51 @@ export class LearningObjectInteractor {
   }
 
   /**
+   * Runs through authorization logic read access to a learning object.
+   * Throws an error if user is not authorized
+   *
+   * @private
+   * @static
+   * @param {{
+   *     userToken: UserToken;
+   *     objectInfo: { author: string; status: string; collection: string };
+   *   }} params
+   * @memberof LearningObjectInteractor
+   */
+  private static authorizeReadAccess(params: {
+    userToken: UserToken;
+    objectInfo: { author: string; status: string; collection: string };
+  }): void {
+    const { userToken, objectInfo } = params;
+    const authorOnlyAccess = LearningObjectState.UNRELEASED.includes(
+      objectInfo.status as LearningObject.Status,
+    );
+
+    const isAuthor = this.hasReadAccess({
+      userToken,
+      resourceVal: objectInfo.author,
+      authFunction: isAuthorByUsername,
+    });
+    if (authorOnlyAccess && !isAuthor) {
+      throw new Error(LearningObjectError.INVALID_ACCESS());
+    }
+    const authorOrPrivilegedAccess = !LearningObjectState.RELEASED.includes(
+      objectInfo.status as LearningObject.Status,
+    );
+    if (
+      authorOrPrivilegedAccess &&
+      !isAuthor &&
+      !this.hasReadAccess({
+        userToken,
+        resourceVal: objectInfo.collection,
+        authFunction: hasReadAccessByCollection,
+      })
+    ) {
+      throw new Error(LearningObjectError.INVALID_ACCESS());
+    }
+  }
+
+  /**
    * Returns parent object's children
    *
    * @private
@@ -197,36 +353,37 @@ export class LearningObjectInteractor {
    * @param {LibraryCommunicator} library
    * @param {string} parentId
    * @param {boolean} [full]
-   * @param {boolean} [accessUnreleased]
+   * @param {string[]} [status]
    * @returns {Promise<LearningObject[]>}
    * @memberof LearningObjectInteractor
    */
-  private static async loadChildObjects(
-    dataStore: DataStore,
-    library: LibraryCommunicator,
-    parentId: string,
-    full?: boolean,
-    accessUnreleased?: boolean,
-  ): Promise<LearningObject[]> {
+  private static async loadChildObjects(params: {
+    dataStore: DataStore;
+    library: LibraryCommunicator;
+    parentId: string;
+    full?: boolean;
+    status: string[];
+  }): Promise<LearningObject[]> {
+    const { dataStore, library, parentId, full, status } = params;
     // Load Parent's children
     const objects = await dataStore.loadChildObjects({
       id: parentId,
       full,
-      accessUnreleased,
+      status,
     });
     // For each child object
     return Promise.all(
       objects.map(async obj => {
         // Load their children
-        const children = await this.loadChildObjects(
+        let children = await this.loadChildObjects({
           dataStore,
           library,
-          obj.id,
+          parentId: obj.id,
           full,
-          accessUnreleased,
-        );
+          status,
+        });
         // For each of the Child's children
-        await Promise.all(
+        children = await Promise.all(
           children.map(async child => {
             // Load child metrics
             try {
@@ -234,12 +391,11 @@ export class LearningObjectInteractor {
             } catch (e) {
               console.error(e);
             }
-            // Add Child
-            obj.addChild(child);
+            return child;
           }),
         );
 
-        return obj;
+        return new LearningObject({ ...obj.toPlainObject(), children });
       }),
     );
   }
@@ -256,41 +412,6 @@ export class LearningObjectInteractor {
       console.log(e);
       return Promise.reject(
         `Problem fetching parent objects for ${params.query.id}. Error: ${e}`,
-      );
-    }
-  }
-
-  public static async loadFullLearningObjectByIDs(
-    dataStore: DataStore,
-    library: LibraryCommunicator,
-    ids: string[],
-  ): Promise<LearningObject[]> {
-    try {
-      let learningObjects = await dataStore.fetchMultipleObjects(ids, true);
-
-      learningObjects = await Promise.all(
-        learningObjects.map(async object => {
-          try {
-            object.metrics = await this.loadMetrics(library, object.id);
-          } catch (e) {
-            console.error(e);
-          }
-          const children = await this.loadChildObjects(
-            dataStore,
-            library,
-            object.id,
-            true,
-            true,
-          );
-          children.forEach((child: LearningObject) => object.addChild(child));
-          return object;
-        }),
-      );
-
-      return learningObjects;
-    } catch (e) {
-      return Promise.reject(
-        `Problem loading full LearningObject by ID. Error: ${e}`,
       );
     }
   }
@@ -460,50 +581,65 @@ export class LearningObjectInteractor {
     }
   }
 
-  public static async deleteMultipleLearningObjects(
-    dataStore: DataStore,
-    fileManager: FileManager,
-    library: LibraryCommunicator,
-    username: string,
-    learningObjectNames: string[],
-  ): Promise<void> {
+  public static async deleteMultipleLearningObjects(params: {
+    dataStore: DataStore;
+    fileManager: FileManager;
+    library: LibraryCommunicator;
+    learningObjectNames: string[];
+    user: UserToken;
+  }): Promise<void> {
     try {
-      // Get LearningObject ids
-      const objectRefs: {
-        id: string;
-        parentIds: string[];
-      }[] = await Promise.all(
-        learningObjectNames.map(async (name: string) => {
-          const id = await dataStore.findLearningObject(username, name);
-          const parentIds = await dataStore.findParentObjectIds({
-            childId: id,
-          });
-          return { id, parentIds };
-        }),
+      const hasAccess = await hasMultipleLearningObjectWriteAccesses(
+        params.user,
+        params.dataStore,
+        params.learningObjectNames,
       );
-      const objectIds = objectRefs.map(obj => obj.id);
-      // Remove objects from library
-      await library.cleanObjectsFromLibraries(objectIds);
-      // Delete objects from datastore
-      await dataStore.deleteMultipleLearningObjects(objectIds);
-      // For each object id
-      objectRefs.forEach(async obj => {
-        // Attempt to delete files
-        const path = `${username}/${obj.id}/`;
-        fileManager.deleteAll({ path }).catch(e => {
-          console.error(`Problem deleting files at ${path}. ${e}`);
+      if (hasAccess) {
+        // Get LearningObject ids
+        const objectRefs: {
+          id: string;
+          parentIds: string[];
+        }[] = await Promise.all(
+          params.learningObjectNames.map(async (name: string) => {
+            const id = await params.dataStore.findLearningObject(
+              params.user.username,
+              name,
+            );
+            const parentIds = await params.dataStore.findParentObjectIds({
+              childId: id,
+            });
+            return { id, parentIds };
+          }),
+        );
+        const objectIds = objectRefs.map(obj => obj.id);
+        // Remove objects from library
+        await params.library.cleanObjectsFromLibraries(objectIds);
+        // Delete objects from datastore
+        await params.dataStore.deleteMultipleLearningObjects(objectIds);
+        // For each object id
+        objectRefs.forEach(async obj => {
+          // Attempt to delete files
+          const path = `${params.user.username}/${obj.id}/`;
+          params.fileManager.deleteAll({ path }).catch(e => {
+            console.error(`Problem deleting files at ${path}. ${e}`);
+          });
+          // Update parents' dates
+          updateParentsDate({
+            dataStore: params.dataStore,
+            parentIds: obj.parentIds,
+            childId: obj.id,
+            date: Date.now().toString(),
+          });
         });
-        // Update parents' dates
-        updateParentsDate({
-          dataStore,
-          parentIds: obj.parentIds,
-          childId: obj.id,
-          date: Date.now().toString(),
-        });
-      });
+      } else {
+        return Promise.reject(
+          new Error('User does not have authorization to perform this action'),
+        );
+      }
     } catch (error) {
+      reportError(error);
       return Promise.reject(
-        `Problem deleting Learning Objects. Error: ${error}`,
+        new Error(`Problem deleting Learning Objects. Error: ${error}`),
       );
     }
   }
@@ -512,14 +648,21 @@ export class LearningObjectInteractor {
    * Fetch all Learning Objects in the system.
    * @returns {LearningObject[]} array of all objects
    */
-  public static async fetchAllObjects(
-    dataStore: DataStore,
-    library: LibraryCommunicator,
-    currPage: number,
-    limit: number,
-  ): Promise<{ objects: LearningObject[]; total: number }> {
+  public static async fetchAllObjects(params: {
+    dataStore: DataStore;
+    library: LibraryCommunicator;
+    page: number;
+    limit: number;
+    userToken: UserToken;
+  }): Promise<{ objects: LearningObject[]; total: number }> {
     try {
-      const response = await dataStore.fetchAllObjects(false, currPage, limit);
+      const { dataStore, library, page, limit, userToken } = params;
+      const status = this.getAuthorizedStatuses(userToken);
+      const response = await dataStore.fetchAllObjects({
+        status,
+        page: toNumber(page),
+        limit: toNumber(limit),
+      });
       const objects = await Promise.all(
         response.objects.map(async object => {
           try {
@@ -540,65 +683,34 @@ export class LearningObjectInteractor {
   }
 
   /**
-   * Returns array of learning objects associated with the given ids.
-   * @returns {LearningObject[]} the Learning Objects for the supplied identifiers.
+   * Fetches objects by id
+   *
+   * @static
+   * @param {{
+   *     dataStore: DataStore;
+   *     library: LibraryCommunicator;
+   *     ids: string[];
+   *     full?: boolean;
+   *   }} params
+   * @returns {Promise<LearningObject[]>}
+   * @memberof LearningObjectInteractor
    */
-  public static async fetchMultipleObjects(
-    dataStore: DataStore,
-    library: LibraryCommunicator,
-    ids: { username: string; learningObjectName: string }[],
-  ): Promise<LearningObject[]> {
+  public static async fetchObjectsByIDs(params: {
+    dataStore: DataStore;
+    library: LibraryCommunicator;
+    ids: string[];
+    full?: boolean;
+  }): Promise<LearningObject[]> {
     try {
-      // Get IDs associated with LearningObjects
-      const learningObjectIDs = await Promise.all(
-        ids.map(id => {
-          return new Promise<string>((resolve, reject) => {
-            dataStore
-              .findLearningObject(id.username, id.learningObjectName)
-              .then(
-                learningObjectID => resolve(learningObjectID),
-                err => reject(err),
-              );
-          });
-        }),
-      );
-
-      let learningObjects: LearningObject[] = await dataStore.fetchMultipleObjects(
-        learningObjectIDs,
-        false,
-        true,
-      );
-
-      learningObjects = await Promise.all(
-        learningObjects.map(async object => {
-          try {
-            object.metrics = await this.loadMetrics(library, object.id);
-            return object;
-          } catch (e) {
-            console.log(e);
-            return object;
-          }
-        }),
-      );
-      return learningObjects;
-    } catch (e) {
-      return Promise.reject(
-        `Problem fetching multiple Learning Objects. Error: ${e}`,
-      );
-    }
-  }
-
-  public static async fetchObjectsByIDs(
-    dataStore: DataStore,
-    library: LibraryCommunicator,
-    ids: string[],
-  ): Promise<LearningObject[]> {
-    try {
-      let learningObjects = await dataStore.fetchMultipleObjects(
+      const { dataStore, library, ids, full } = params;
+      let learningObjects = await dataStore.fetchMultipleObjects({
         ids,
-        true,
-        true,
-      );
+        full,
+        status: [
+          ...LearningObjectState.IN_REVIEW,
+          ...LearningObjectState.RELEASED,
+        ],
+      });
 
       learningObjects = await Promise.all(
         learningObjects.map(async object => {
@@ -607,6 +719,22 @@ export class LearningObjectInteractor {
             return object;
           } catch (e) {
             console.log(e);
+            if (!full) {
+              return object;
+            }
+          }
+          if (full) {
+            const children = await this.loadChildObjects({
+              dataStore,
+              library,
+              parentId: object.id,
+              full: true,
+              status: [
+                ...LearningObjectState.IN_REVIEW,
+                ...LearningObjectState.RELEASED,
+              ],
+            });
+            children.forEach((child: LearningObject) => object.addChild(child));
             return object;
           }
         }),
@@ -620,61 +748,85 @@ export class LearningObjectInteractor {
   }
 
   /**
-   * Search for objects by name, author, length, level, and content.
+   * Searches LearningObjects based on query
    *
-   * @param {string} params.name the objects' names should closely relate
-   * @param {string} params.author the objects' authors' names` should closely relate
-   * @param {string} params.length the objects' lengths should match exactly
-   * @param {string} params.level the objects' levels should match exactly
-   * @param {boolean} params.ascending whether or not result should be in ascending order
-   *
-   * @returns {Outcome[]} list of outcome suggestions, ordered by score
+   * @static
+   * @param {DataStore} dataStore
+   * @param {LibraryCommunicator} library
+   * @param {LearningObjectQuery} query
+   * @param {UserToken} userToken
+   * @returns {Promise<{ total: number; objects: LearningObject[] }>}
+   * @memberof LearningObjectInteractor
    */
-  public static async searchObjects(
-    dataStore: DataStore,
-    library: LibraryCommunicator,
-    params: {
-      name: string;
-      author: string;
-      collection: string;
-      status: string[];
-      length: string[];
-      level: string[];
-      standardOutcomeIDs: string[];
-      text: string;
-      accessUnpublished?: boolean;
-      orderBy?: string;
-      sortType?: number;
-      currPage?: number;
-      limit?: number;
-      released?: boolean;
-    },
-  ): Promise<{ total: number; objects: LearningObject[] }> {
+  public static async searchObjects(params: {
+    dataStore: DataStore;
+    library: LibraryCommunicator;
+    query: LearningObjectQuery;
+    userToken: UserToken;
+  }): Promise<{ total: number; objects: LearningObject[] }> {
     try {
-      if (params.text) {
-        const firstChar = params.text.charAt(0);
-        const lastChar = params.text.charAt(params.text.length - 1);
-        if (firstChar !== `"` && lastChar !== `"`) {
-          params.text = this.removeStopwords(params.text);
-        }
-      }
+      const { dataStore, library, query, userToken } = params;
+      let {
+        name,
+        author,
+        collection,
+        status,
+        length,
+        level,
+        standardOutcomeIDs,
+        text,
+        orderBy,
+        sortType,
+        page,
+        limit,
+      } = this.formatSearchQuery(query);
+      status = this.getAuthorizedStatuses(userToken, status);
+      let response: { total: number; objects: LearningObject[] };
 
-      const response = await dataStore.searchObjects({
-        name: params.name,
-        author: params.author,
-        collection: params.collection,
-        status: params.status,
-        length: params.length,
-        level: params.level,
-        standardOutcomeIDs: params.standardOutcomeIDs,
-        text: params.text,
-        accessUnpublished: params.accessUnpublished,
-        orderBy: params.orderBy,
-        sortType: params.sortType,
-        page: params.currPage,
-        limit: params.limit,
-        released: params.released,
-      });
+      if (
+        userToken &&
+        isPrivilegedUser(userToken.accessGroups) &&
+        !isAdminOrEditor(userToken.accessGroups)
+      ) {
+        const privilegedCollections = getAccessGroupCollections(userToken);
+
+        const collectionAccessMap = getCollectionAccessMap(
+          collection,
+          privilegedCollections,
+        );
+        const queryConditions = this.buildCollectionQueryConditions(
+          collection,
+          collectionAccessMap,
+        );
+        response = await dataStore.searchObjectsWithConditions({
+          name,
+          author,
+          length,
+          level,
+          standardOutcomeIDs,
+          text,
+          conditions: queryConditions,
+          orderBy,
+          sortType,
+          page,
+          limit,
+        });
+      } else {
+        response = await dataStore.searchObjects({
+          name,
+          author,
+          collection,
+          status,
+          length,
+          level,
+          standardOutcomeIDs,
+          text,
+          orderBy,
+          sortType,
+          page,
+          limit,
+        });
+      }
 
       const objects = await Promise.all(
         response.objects.map(async object => {
@@ -691,6 +843,104 @@ export class LearningObjectInteractor {
     } catch (e) {
       return Promise.reject(`Problem suggesting Learning Objects. Error:${e}`);
     }
+  }
+
+  /**
+   * Builds QueryConditions based on requested collections and collectionAccessMap
+   *
+   * @private
+   * @static
+   * @param {string[]} requestedCollections
+   * @param {CollectionAccessMap} collectionAccessMap
+   * @returns {QueryCondition[]}
+   * @memberof LearningObjectInteractor
+   */
+  private static buildCollectionQueryConditions(
+    requestedCollections: string[],
+    collectionAccessMap: CollectionAccessMap,
+  ): QueryCondition[] {
+    const conditions: QueryCondition[] = [];
+    if (!requestedCollections || !requestedCollections.length) {
+      conditions.push({
+        status: LearningObject.Status.RELEASED,
+      });
+    }
+    const mapKeys = Object.keys(collectionAccessMap);
+    for (const key of mapKeys) {
+      const status = collectionAccessMap[key];
+      conditions.push({ collection: key, status });
+    }
+    return conditions;
+  }
+
+  /**
+   * Returns statuses of objects a user has access to based on authorization level and requested statuses
+   *
+   * @private
+   * @static
+   * @param {UserToken} userToken
+   * @param {string[]} status
+   * @returns
+   * @memberof LearningObjectInteractor
+   */
+  private static getAuthorizedStatuses(
+    userToken: UserToken,
+    status?: string[],
+  ): string[] {
+    if (userToken && isAdminOrEditor(userToken.accessGroups)) {
+      if (status && status.length) {
+        return status;
+      }
+      return [
+        ...LearningObjectState.IN_REVIEW,
+        ...LearningObjectState.RELEASED,
+      ];
+    }
+    return LearningObjectState.RELEASED;
+  }
+
+  /**
+   * Formats search query to verify params are the appropriate types
+   *
+   * @private
+   * @static
+   * @param {LearningObjectQuery} query
+   * @returns {LearningObjectQuery}
+   * @memberof LearningObjectInteractor
+   */
+  private static formatSearchQuery(
+    query: LearningObjectQuery,
+  ): LearningObjectQuery {
+    const formattedQuery = { ...query };
+    formattedQuery.text = sanitizeText(formattedQuery.text) || null;
+    formattedQuery.orderBy =
+      sanitizeText(formattedQuery.orderBy, false) || null;
+    formattedQuery.status = toArray(formattedQuery.status);
+    formattedQuery.length = toArray(formattedQuery.length);
+    formattedQuery.level = toArray(formattedQuery.level);
+    formattedQuery.collection = toArray(formattedQuery.collection);
+    formattedQuery.standardOutcomeIDs = toArray(
+      formattedQuery.standardOutcomeIDs,
+    );
+    formattedQuery.page = toNumber(formattedQuery.page);
+    formattedQuery.limit = toNumber(formattedQuery.limit);
+    formattedQuery.sortType = <1 | -1>toNumber(formattedQuery.sortType);
+    formattedQuery.sortType =
+      formattedQuery.sortType === 1 || formattedQuery.sortType === -1
+        ? formattedQuery.sortType
+        : 1;
+
+    if (formattedQuery.text) {
+      const firstChar = formattedQuery.text.charAt(0);
+      const lastChar = formattedQuery.text.charAt(
+        formattedQuery.text.length - 1,
+      );
+      if (firstChar !== `"` && lastChar !== `"`) {
+        formattedQuery.text = this.removeStopwords(formattedQuery.text);
+      }
+    }
+
+    return sanitizeObject({ object: formattedQuery }, false);
   }
 
   public static async addToCollection(
@@ -761,14 +1011,14 @@ export class LearningObjectInteractor {
    * @returns {Promise<boolean>}
    * @memberof LearningObjectInteractor
    */
-  private static async hasOwnership(params: {
+  private static hasReadAccess(params: {
     userToken: UserToken;
     resourceVal: any;
     authFunction: (
       resourceVal: any,
       userToken: UserToken,
     ) => boolean | Promise<boolean>;
-  }): Promise<boolean> {
+  }): boolean | Promise<boolean> {
     if (!params.userToken) {
       return false;
     }
@@ -883,11 +1133,113 @@ export function sanitizeFileName(name: string): string {
  * @returns {T[]}
  */
 function toArray<T>(value: any): T[] {
-  if (value === undefined || value === null) {
-    return undefined;
+  if (value == null || value === '') {
+    return null;
   }
   if (value && Array.isArray(value)) {
-    return [...value];
+    return [...value].filter(v => !isEmptyValue(v));
   }
-  return [value];
+  return [value].filter(v => !isEmptyValue(v));
 }
+
+function isEmptyValue(value: any): boolean {
+  if (value == null || value === '') {
+    return true;
+  }
+  if (typeof value === 'string') {
+    return sanitizeText(value) === '';
+  }
+  return false;
+}
+
+/**
+ *
+ * Converts non-number value to number if defined else returns null
+ * @param {*} value
+ * @returns {number}
+ */
+function toNumber(value: any): number {
+  const num = parseInt(`${value}`, 10);
+  if (!isNaN(num)) {
+    return +value;
+  }
+  return null;
+}
+
+/**
+ * Returns Map of collections to statuses representing read access privilege over associated collection
+ *
+ * @param {string[]} requestedCollections
+ * @param {string[]} privilegedCollections
+ * @returns CollectionAccessMap
+ */
+function getCollectionAccessMap(
+  requestedCollections: string[],
+  privilegedCollections: string[],
+): CollectionAccessMap {
+  const accessMap = {};
+
+  if (requestedCollections && requestedCollections.length) {
+    for (const filter of requestedCollections) {
+      if (privilegedCollections.includes(filter)) {
+        accessMap[filter] = [
+          ...LearningObjectState.IN_REVIEW,
+          ...LearningObjectState.RELEASED,
+        ];
+      } else {
+        accessMap[filter] = LearningObjectState.RELEASED;
+      }
+    }
+  } else {
+    for (const collection of privilegedCollections) {
+      accessMap[collection] = [
+        ...LearningObjectState.IN_REVIEW,
+        ...LearningObjectState.RELEASED,
+      ];
+    }
+  }
+
+  return accessMap;
+}
+
+/**
+ * Checks if requester is admin or username matches the username provided
+ *
+ * @param {string} username
+ * @param {UserToken} userToken
+ * @returns
+ */
+const checkAuthByUsername = (username: string, userToken: UserToken) => {
+  return (
+    isAdminOrEditor(userToken.accessGroups) || userToken.username === username
+  );
+};
+
+/**
+ * Checks if requester is author byu the username provided
+ *
+ * @param {string} username
+ * @param {UserToken} userToken
+ * @returns
+ */
+const isAuthorByUsername = (username: string, userToken: UserToken) => {
+  return userToken.username === username;
+};
+
+/**
+ * Checks if user has authorization based on collection
+ *
+ * @param {string} collectionName
+ * @param {UserToken} userToken
+ * @returns
+ */
+const hasReadAccessByCollection = (
+  collectionName: string,
+  userToken: UserToken,
+) => {
+  if (!isPrivilegedUser(userToken.accessGroups)) return false;
+  return (
+    isAdminOrEditor(userToken.accessGroups) ||
+    getAccessGroupCollections(userToken).includes(collectionName)
+  );
+};
