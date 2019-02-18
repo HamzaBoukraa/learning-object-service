@@ -240,7 +240,7 @@ export async function getLearningObjectById(
 export async function getLearningObjectChildrenById(
   dataStore: DataStore,
   objectId: string,
-){
+) {
   try {
     return await dataStore.loadChildObjects({id: objectId, full: true, status: LearningObjectState.ALL});
   } catch (e) {

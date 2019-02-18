@@ -34,6 +34,7 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
         ids: string[];
         count: number;
         released: number;
+        review: number;
       }>([
         { $match: params.query },
         {
@@ -44,6 +45,21 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
               $sum: {
                 $cond: [
                   { $eq: ['$status', LearningObject.Status.RELEASED] },
+                  1,
+                  0,
+                ],
+              },
+            },
+            review: {
+              $sum: {
+                $cond: [
+                  {
+                    $or: [
+                      { $eq: ['$status', 'waiting'] },
+                      { $eq: ['$status', 'review'] },
+                      { $eq: ['$status', 'proofing'] },
+                    ],
+                  },
                   1,
                   0,
                 ],
@@ -87,6 +103,7 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
       },
       total: 0,
       released: 0,
+      review: 0,
       downloads: 0,
       saves: 0,
     };
@@ -100,6 +117,8 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
         stats.total += stat.count;
         // Increment released by number in released
         stats.released += stat.released;
+        // Increment review by number in review
+        stats.review += stat.review;
       });
     }
     // If downloadSavesData update stats

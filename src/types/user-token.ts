@@ -7,10 +7,10 @@ export interface UserToken {
   accessGroups: string[];
 }
 
-export const accessGroups = { 
+export const accessGroups = {
   ADMIN: 'admin',
   EDITOR: 'editor',
   CURATOR: 'curator',
   REVIEWER: 'reviewer',
-  USER: 'user'
-}
+  USER: 'user',
+};
