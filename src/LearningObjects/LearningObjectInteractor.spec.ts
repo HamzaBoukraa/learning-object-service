@@ -30,12 +30,12 @@ describe('Interactor: LearningObjectInteractor', () => {
     ).resolves.toBe(undefined);
   });
   it(`should get object's children`, async () => {
-    expect.assertions(1); 
+    expect.assertions(1);
     await expect(
       getLearningObjectChildrenById(
-        dataStore, 
+        dataStore,
         MOCK_OBJECTS.LEARNING_OBJECT_ID,
       ),
-    ). resolves.toEqual([]); 
-  })
+    ). resolves.toEqual([]);
+  });
 });
