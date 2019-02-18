@@ -337,7 +337,7 @@ export class MongoDriver implements DataStore {
 
     let matcher: any = { ...searchQuery };
     if (orConditions && orConditions.length) {
-      matcher = { $and: [searchQuery, orConditions] };
+      matcher.$and = [{ $or: orConditions }];
     }
     const match = { $match: { ...matcher } };
 
