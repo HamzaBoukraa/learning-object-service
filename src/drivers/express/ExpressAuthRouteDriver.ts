@@ -359,11 +359,11 @@ export class ExpressAuthRouteDriver {
     router.get('/cart/learning-objects/:ids/summary', async (req, res) => {
       try {
         const ids: string[] = req.params.ids.split(',');
-        const objects = await LearningObjectInteractor.fetchObjectsByIDs(
-          this.dataStore,
-          this.library,
+        const objects = await LearningObjectInteractor.fetchObjectsByIDs({
+          dataStore: this.dataStore,
+          library: this.library,
           ids,
-        );
+        });
         res.status(200).send(objects.map(obj => obj.toPlainObject()));
       } catch (e) {
         console.error(e);
@@ -375,11 +375,12 @@ export class ExpressAuthRouteDriver {
     router.get('/cart/learning-objects/:ids/full', async (req, res) => {
       try {
         const ids: string[] = req.params.ids.split(',');
-        const objects = await LearningObjectInteractor.loadFullLearningObjectByIDs(
-          this.dataStore,
-          this.library,
+        const objects = await LearningObjectInteractor.fetchObjectsByIDs({
+          dataStore: this.dataStore,
+          library: this.library,
           ids,
-        );
+          full: true,
+        });
         res.status(200).send(objects.map(obj => obj.toPlainObject()));
       } catch (e) {
         console.error(e);

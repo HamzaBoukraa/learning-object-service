@@ -5,6 +5,8 @@ import {
   Filters,
   LearningObjectCollection,
   LearningObjectQuery,
+  QueryCondition,
+  LearningObjectQueryWithConditions,
 } from '../interfaces/DataStore';
 import {
   CompletedPart,
@@ -29,7 +31,7 @@ import { LearningObjectStatStore } from '../LearningObjectStats/LearningObjectSt
 import { LearningObjectStats } from '../LearningObjectStats/LearningObjectStatsInteractor';
 import { lengths } from '@cyber4all/clark-taxonomy';
 import { LearningObjectDataStore } from '../LearningObjects/LearningObjectDatastore';
-import { ChangeLogDocument } from '../types/Changelog';
+import { ChangeLogDocument } from '../types/changelog';
 import { ChangelogDataStore } from '../Changelogs/ChangelogDatastore';
 import { ResourceError, ResourceErrorReason, ServiceError, ServiceErrorType } from '../errors';
 import { reportError } from './SentryConnector';
@@ -83,10 +85,7 @@ export class MongoDriver implements DataStore {
       this.db = this.mongoClient.db();
     } catch (e) {
       if (!retryAttempt) {
-        this.connect(
-          dbURI,
-          1,
-        );
+        this.connect(dbURI, 1);
       } else {
         return Promise.reject(
           'Problem connecting to database at ' + dbURI + ':\n\t' + e,
@@ -115,6 +114,102 @@ export class MongoDriver implements DataStore {
     this.statStore = new LearningObjectStatStore(this.db);
     this.learningObjectStore = new LearningObjectDataStore(this.db);
     this.changelogStore = new ChangelogDataStore(this.db);
+  }
+
+  /**
+   * Performs search on objects collection based on query and or conditions
+   *
+   * @param {LearningObjectQueryWithConditions} params
+   * @returns {Promise<{
+   *     total: number;
+   *     objects: LearningObject[];
+   *   }>}
+   * @memberof MongoDriver
+   */
+  async searchObjectsWithConditions(
+    params: LearningObjectQueryWithConditions,
+  ): Promise<{
+    total: number;
+    objects: LearningObject[];
+  }> {
+    const {
+      name,
+      author,
+      length,
+      level,
+      standardOutcomeIDs,
+      text,
+      conditions,
+      orderBy,
+      sortType,
+      page,
+      limit,
+    } = params;
+
+    const orConditions: any[] = this.buildQueryConditions(conditions);
+
+    // Query for users
+    const authors = await this.matchUsers(author, text);
+    // Query by LearningOutcomes' mappings
+    const outcomeIDs: string[] = await this.matchOutcomes(standardOutcomeIDs);
+
+    const searchQuery = this.buildSearchQuery({
+      name,
+      authors,
+      length,
+      level,
+      text,
+      outcomeIDs,
+    });
+    let cursor = this.db
+      .collection<LearningObjectDocument>(COLLECTIONS.LEARNING_OBJECTS)
+      .find({
+        $and : [
+          searchQuery,
+          { $or: orConditions },
+        ]
+      });
+
+    const total = await cursor.count();
+
+    cursor = this.applyCursorFilters(cursor, {
+      orderBy,
+      sortType,
+      page,
+      limit,
+    });
+
+    const docs = await cursor.toArray();
+    const objects: LearningObject[] = await this.bulkGenerateLearningObjects(
+      docs,
+    );
+    return { total, objects };
+  }
+
+  /**
+   * Converts QueryConditions to valid Mongo conditional syntax
+   *
+   * @private
+   * @param {QueryCondition[]} conditions
+   * @returns
+   * @memberof MongoDriver
+   */
+  private buildQueryConditions(conditions: QueryCondition[]) {
+    const orConditions: any[] = [];
+    conditions.forEach(condition => {
+      const query = {};
+      const conditionKeys = Object.keys(condition);
+      for (const key of conditionKeys) {
+        const value = condition[key];
+        if (Array.isArray(value)) {
+          query[key] = { $in: value };
+        } else {
+          query[key] = value;
+        }
+      }
+      orConditions.push(query);
+    });
+    return orConditions;
   }
 
   /**
@@ -192,14 +287,13 @@ export class MongoDriver implements DataStore {
   async loadChildObjects(params: {
     id: string;
     full?: boolean;
-    accessUnreleased?: boolean;
+    status: string[];
   }): Promise<LearningObject[]> {
+    const { id, full, status } = params;
     const matchQuery: { [index: string]: any } = {
-      $match: { _id: params.id },
+      $match: { _id: id, status: { $in: status } },
     };
-    if (!params.accessUnreleased) {
-      matchQuery.$match.status = LearningObject.Status.RELEASED;
-    }
+
     const docs = await this.db
       .collection<{ objects: LearningObjectDocument[] }>(
         COLLECTIONS.LEARNING_OBJECTS,
@@ -221,7 +315,7 @@ export class MongoDriver implements DataStore {
       .toArray();
     if (docs[0]) {
       const objects = docs[0].objects;
-      return this.bulkGenerateLearningObjects(objects, params.full);
+      return this.bulkGenerateLearningObjects(objects, full);
     }
     return [];
   }
@@ -288,7 +382,9 @@ export class MongoDriver implements DataStore {
     }
   }
 
-  async fetchRecentChangelog(learningObjectId: string): Promise<ChangeLogDocument> {
+  async fetchRecentChangelog(
+    learningObjectId: string,
+  ): Promise<ChangeLogDocument> {
     return this.changelogStore.getRecentChangelog(learningObjectId);
   }
 
@@ -590,35 +686,6 @@ export class MongoDriver implements DataStore {
       .updateOne({ _id: params.id }, { $set: params.updates });
   }
 
-  public async toggleLock(
-    id: string,
-    lock?: LearningObject.Lock,
-  ): Promise<void> {
-    try {
-      const updates: any = {
-        lock,
-      };
-
-      if (
-        lock &&
-        (lock.restrictions.indexOf(LearningObject.Restriction.FULL) > -1 ||
-          lock.restrictions.indexOf(LearningObject.Restriction.PUBLISH) > -1)
-      ) {
-        updates.published = false;
-      }
-
-      await this.db
-        .collection(COLLECTIONS.LEARNING_OBJECTS)
-        .update(
-          { _id: id },
-          lock ? { $set: updates } : { $unset: { lock: null } },
-        );
-      return Promise.resolve();
-    } catch (e) {
-      return Promise.reject(e);
-    }
-  }
-
   //////////////////////////////////////////
   // DELETIONS - will cascade to children //
   //////////////////////////////////////////
@@ -848,25 +915,20 @@ export class MongoDriver implements DataStore {
    *
    * @returns {LearningObjectRecord}
    */
-  async fetchLearningObject(
-    id: string,
-    full?: boolean,
-    accessUnpublished?: boolean,
-  ): Promise<LearningObject> {
+  async fetchLearningObject(params: {
+    id: string;
+    full?: boolean;
+  }): Promise<LearningObject> {
     const object = await this.db
       .collection<LearningObjectDocument>(COLLECTIONS.LEARNING_OBJECTS)
-      .findOne({ _id: id });
+      .findOne({ _id: params.id });
     const author = await this.fetchUser(object.authorID);
     const learningObject = await this.generateLearningObject(
       author,
       object,
-      full,
+      params.full,
     );
 
-    if (!accessUnpublished && !learningObject.published)
-      return Promise.reject(
-        'User does not have access to the requested resource.',
-      );
     return learningObject;
   }
 
@@ -877,12 +939,14 @@ export class MongoDriver implements DataStore {
    *
    * @returns {array}
    */
-  async checkLearningObjectExistence(learningObjectId: string): Promise<string[]> {
+  async checkLearningObjectExistence(
+    learningObjectId: string,
+  ): Promise<string[]> {
     try {
       const arr = await this.db
         .collection(COLLECTIONS.LEARNING_OBJECTS)
         .find({ _id: learningObjectId })
-        .project({_id: 1 })
+        .project({ _id: 1 })
         .toArray();
       return arr;
     } catch (e) {
@@ -895,24 +959,25 @@ export class MongoDriver implements DataStore {
    * Return literally all objects. Very expensive.
    * @returns {Cursor<LearningObjectRecord>[]} cursor of literally all objects
    */
-  async fetchAllObjects(
-    accessUnpublished?: boolean,
-    page?: number,
-    limit?: number,
-  ): Promise<{ objects: LearningObject[]; total: number }> {
+  async fetchAllObjects(params: {
+    status?: string[];
+    page?: number;
+    limit?: number;
+  }): Promise<{ objects: LearningObject[]; total: number }> {
     try {
       const query: any = {};
 
-      if (!accessUnpublished) {
-        query.published = true;
+      if (status && status.length) {
+        query.status = { $in: status };
       }
-
       let objectCursor = await this.db
         .collection(COLLECTIONS.LEARNING_OBJECTS)
         .find<LearningObjectDocument>(query);
       const totalRecords = await objectCursor.count();
-      objectCursor = this.applyCursorFilters(objectCursor, { page, limit });
-
+      objectCursor = this.applyCursorFilters(objectCursor, {
+        page: params.page,
+        limit: params.limit,
+      });
       const docs = await objectCursor.toArray();
       const learningObjects: LearningObject[] = await this.bulkGenerateLearningObjects(
         docs,
@@ -926,6 +991,47 @@ export class MongoDriver implements DataStore {
     }
   }
 
+  /**
+   * Fetches an object's status
+   *
+   * @param {string} id
+   * @returns {Promise<string>}
+   * @memberof MongoDriver
+   */
+  async fetchLearningObjectStatus(id: string): Promise<string> {
+    try {
+      const res = await this.db
+        .collection(COLLECTIONS.LEARNING_OBJECTS)
+        .findOne({ _id: id }, { projection: { status: 1 } });
+
+      if (res) {
+        return res.status;
+      }
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  }
+
+  /**
+   * Fetches an object's collection id
+   *
+   * @param {string} id
+   * @returns {Promise<string>}
+   * @memberof MongoDriver
+   */
+  async fetchLearningObjectCollection(id: string): Promise<string> {
+    try {
+      const res = await this.db
+        .collection(COLLECTIONS.LEARNING_OBJECTS)
+        .findOne({ _id: id }, { projection: { collection: 1 } });
+
+      if (res) {
+        return res.collection;
+      }
+    } catch (e) {
+      return Promise.reject(e);
+    }
+  }
   /**
    * Converts array of LearningObjectDocuments to Learning Objects
    *
@@ -958,95 +1064,95 @@ export class MongoDriver implements DataStore {
    *
    * @returns {Cursor<LearningObjectRecord>[]}
    */
-  async fetchMultipleObjects(
-    ids: string[],
-    full?: boolean,
-    accessUnpublished?: boolean,
-    orderBy?: string,
-    sortType?: 1 | -1,
-  ): Promise<LearningObject[]> {
+  async fetchMultipleObjects(params: {
+    ids: string[];
+    status: string[];
+    full?: boolean;
+    orderBy?: string;
+    sortType?: 1 | -1;
+    collections?: string[]
+  }): Promise<LearningObject[]> {
     try {
-      const query: any = { _id: { $in: ids } };
-      if (!accessUnpublished) query.published = true;
+      const query: any = {
+        _id: { $in: params.ids },
+      };
+
+      if (params.collections) {
+        query.$or = [
+          { status: LearningObject.Status.RELEASED },
+          { status: { $in: params.status }, collection: { $in: params.collections } },
+        ];
+      } else {
+        query.status = { $in: params.status };
+      }
+
       let objectCursor = await this.db
         .collection(COLLECTIONS.LEARNING_OBJECTS)
         .find<LearningObjectDocument>(query);
 
       objectCursor = this.applyCursorFilters(objectCursor, {
-        orderBy,
-        sortType,
+        orderBy: params.orderBy,
+        sortType: params.sortType,
       });
 
       const docs = await objectCursor.toArray();
 
       const learningObjects: LearningObject[] = await this.bulkGenerateLearningObjects(
         docs,
-        full,
+        params.full,
       );
 
       return learningObjects;
     } catch (e) {
       return Promise.reject(
-        `Problem fetching LearningObjects: ${ids}. Error: ${e}`,
+        `Problem fetching LearningObjects: ${params.ids}. Error: ${e}`,
       );
     }
   }
 
-  /* Search for objects on CuBE criteria.
+  /**
+   * Performs search on objects collection based on query
    *
-   * TODO: Efficiency very questionable.
-   *      Convert to streaming algorithm if possible.
-   *
+   * @param {LearningObjectQuery} params
+   * @returns {Promise<{ objects: LearningObject[]; total: number }>}
+   * @memberof MongoDriver
    */
-  // tslint:disable-next-line:member-ordering
-  async searchObjects(params: {
-    name: string;
-    author: string;
-    collection: string;
-    status: string[];
-    length: string[];
-    level: string[];
-    standardOutcomeIDs: string[];
-    text: string;
-    accessUnpublished?: boolean;
-    orderBy?: string;
-    sortType?: 1 | -1;
-    page?: number;
-    limit?: number;
-    released?: boolean;
-  }): Promise<{ objects: LearningObject[]; total: number }> {
+  async searchObjects(
+    params: LearningObjectQuery,
+  ): Promise<{ objects: LearningObject[]; total: number }> {
     try {
-      // Query for users
-      const authorRecords: {
-        _id: string;
-        username: string;
-      }[] = await this.matchUsers(params.author, params.text);
+      const {
+        author,
+        text,
+        status,
+        length,
+        level,
+        standardOutcomeIDs,
+        name,
+        collection,
+        sortType,
+        page,
+        limit,
+        orderBy,
+        full,
+      } = params;
 
-      const exactAuthor =
-        params.author && authorRecords && authorRecords.length ? true : false;
+      // Query for users
+      const authors = await this.matchUsers(author, text);
 
       // Query by LearningOutcomes' mappings
-      let outcomeIDs;
-      if (params.standardOutcomeIDs) {
-        const outcomeRecords: LearningOutcomeDocument[] = await this.matchOutcomes(
-          params.standardOutcomeIDs,
-        );
-        outcomeIDs = outcomeRecords ? outcomeRecords.map(doc => doc._id) : null;
-      }
+      const outcomeIDs: string[] = await this.matchOutcomes(standardOutcomeIDs);
 
-      let query: any = this.buildSearchQuery(
-        params.accessUnpublished,
-        params.text,
-        authorRecords,
-        params.status,
-        params.length,
-        params.level,
+      let query: any = this.buildSearchQuery({
+        text,
+        authors,
+        status,
+        length,
+        level,
         outcomeIDs,
-        params.name,
-        params.collection,
-        exactAuthor,
-        params.released,
-      );
+        name,
+        collection,
+      });
 
       let objectCursor = await this.db
         .collection(COLLECTIONS.LEARNING_OBJECTS)
@@ -1054,30 +1160,25 @@ export class MongoDriver implements DataStore {
         .project({ score: { $meta: 'textScore' } })
         .sort({ score: { $meta: 'textScore' } });
 
-      const totalRecords = await objectCursor.count();
-      if (typeof params.sortType === 'string') {
-        // @ts-ignore
-        sortType = parseInt(sortType, 10) || 1;
-      }
+      const total = await objectCursor.count();
 
-      // Paginate if has limiter
       objectCursor = this.applyCursorFilters(objectCursor, {
-        page: params.page,
-        limit: params.limit,
-        orderBy: params.orderBy,
-        sortType: params.sortType,
+        page: page,
+        limit: limit,
+        orderBy: orderBy,
+        sortType: sortType,
       });
 
       const docs = await objectCursor.toArray();
-      const learningObjects: LearningObject[] = await this.bulkGenerateLearningObjects(
+      const objects: LearningObject[] = await this.bulkGenerateLearningObjects(
         docs,
-        false,
+        full,
       );
 
-      return Promise.resolve({
-        objects: learningObjects,
-        total: totalRecords,
-      });
+      return {
+        objects,
+        total,
+      };
     } catch (e) {
       return Promise.reject('Error suggesting objects' + e);
     }
@@ -1145,7 +1246,6 @@ export class MongoDriver implements DataStore {
    * Builds query object for Learning Object search
    *
    * @private
-   * @param {boolean} accessUnpublished
    * @param {string} text
    * @param {string[]} authorIDs
    * @param {string[]} length
@@ -1155,55 +1255,30 @@ export class MongoDriver implements DataStore {
    * @returns
    * @memberof MongoDriver
    */
-  private buildSearchQuery(
-    accessUnpublished: boolean,
-    text: string,
-    authors: { _id: string; username: string }[],
-    status: string[],
-    length: string[],
-    level: string[],
-    outcomeIDs: string[],
-    name: string,
-    collection: string,
-    exactAuthor?: boolean,
-    released?: boolean,
-  ) {
+  private buildSearchQuery(params: {
+    text?: string;
+    authors?: { _id: string; username: string }[];
+    status?: string[];
+    length?: string[];
+    level?: string[];
+    outcomeIDs?: string[];
+    name?: string;
+    collection?: string[];
+  }) {
     let query: any = <any>{};
 
-    if (!accessUnpublished) {
-      query.published = true;
-    }
-
-    if (released) {
-      // Check that the learning object does not have a download restriction
-      query.status = LearningObject.Status.RELEASED;
-    }
     // Search By Text
-    if (text || text === '') {
-      query = this.buildTextSearchQuery(
+    if (params.text || params.text === '') {
+      query = this.buildTextSearchQuery({
         query,
-        text,
-        authors,
-        exactAuthor,
-        status,
-        length,
-        level,
-        outcomeIDs,
-        collection,
-      );
+        ...(params as any),
+      } as any);
     } else {
       // Search by fields
-      query = this.buildFieldSearchQuery(
-        name,
+      query = this.buildFieldSearchQuery({
         query,
-        authors,
-        status,
-        length,
-        level,
-        outcomeIDs,
-        collection,
-        exactAuthor,
-      );
+        ...(params as any),
+      });
     }
     return query;
   }
@@ -1221,33 +1296,38 @@ export class MongoDriver implements DataStore {
    * @returns
    * @memberof MongoDriver
    */
-  private buildFieldSearchQuery(
-    name: string,
-    query: any,
-    authors: { _id: string; username: string }[],
-    status: string[],
-    length: string[],
-    level: string[],
-    outcomeIDs: string[],
-    collection: string,
-    exactAuthor: boolean,
-  ) {
+  private buildFieldSearchQuery(params: {
+    query: any;
+    name?: string;
+    authors?: { _id: string; username: string }[];
+    status?: string[];
+    length?: string[];
+    level?: string[];
+    outcomeIDs?: string[];
+    collection?: string[];
+  }) {
+    const {
+      query,
+      name,
+      authors,
+      status,
+      length,
+      level,
+      outcomeIDs,
+      collection,
+    } = params;
     if (name) {
       query.$text = { $search: name };
     }
     if (authors) {
-      if (exactAuthor) {
-        query.authorID = authors[0]._id;
-      } else {
-        query.$or.push(
-          <any>{
-            authorID: { $in: authors.map(author => author._id) },
-          },
-          {
-            contributors: { $in: authors.map(author => author.username) },
-          },
-        );
-      }
+      query.$or.push(
+        <any>{
+          authorID: { $in: authors.map(author => author._id) },
+        },
+        {
+          contributors: { $in: authors.map(author => author.username) },
+        },
+      );
     }
 
     if (length) {
@@ -1263,7 +1343,7 @@ export class MongoDriver implements DataStore {
       query.outcomes = { $in: outcomeIDs };
     }
     if (collection) {
-      query.collection = collection;
+      query.collection = { $in: collection };
     }
 
     return query;
@@ -1276,24 +1356,32 @@ export class MongoDriver implements DataStore {
    * @param {*} query
    * @param {string} text
    * @param {{ _id: string; username: string }[]} authors
-   * @param {boolean} exactAuthor
    * @param {string[]} length
    * @param {string[]} level
    * @param {string[]} outcomeIDs
    * @returns
    * @memberof MongoDriver
    */
-  private buildTextSearchQuery(
-    query: any,
-    text: string,
-    authors: { _id: string; username: string }[],
-    exactAuthor: boolean,
-    status: string[],
-    length: string[],
-    level: string[],
-    outcomeIDs: string[],
-    collection: string,
-  ) {
+  private buildTextSearchQuery(params: {
+    query: any;
+    text: string;
+    authors?: { _id: string; username: string }[];
+    status?: string[];
+    length?: string[];
+    level?: string[];
+    outcomeIDs?: string[];
+    collection?: string[];
+  }) {
+    const {
+      query,
+      text,
+      authors,
+      status,
+      length,
+      level,
+      outcomeIDs,
+      collection,
+    } = params;
     const regex = new RegExp(sanitizeRegex(text));
     query.$or = [
       { $text: { $search: text } },
@@ -1301,18 +1389,14 @@ export class MongoDriver implements DataStore {
       { contributors: { $regex: regex } },
     ];
     if (authors && authors.length) {
-      if (exactAuthor) {
-        query.authorID = authors[0]._id;
-      } else {
-        query.$or.push(
-          <any>{
-            authorID: { $in: authors.map(author => author._id) },
-          },
-          {
-            contributors: { $in: authors.map(author => author._id) },
-          },
-        );
-      }
+      query.$or.push(
+        <any>{
+          authorID: { $in: authors.map(author => author._id) },
+        },
+        {
+          contributors: { $in: authors.map(author => author._id) },
+        },
+      );
     }
     if (length) {
       query.length = { $in: length };
@@ -1324,7 +1408,7 @@ export class MongoDriver implements DataStore {
       query.status = { $in: status };
     }
     if (collection) {
-      query.collection = collection;
+      query.collection = { $in: collection };
     }
     if (outcomeIDs) {
       query.outcomes = outcomeIDs.length
@@ -1338,32 +1422,51 @@ export class MongoDriver implements DataStore {
     cursor: Cursor<T>,
     filters: Filters,
   ): Cursor<T> {
-    try {
-      if (filters.page !== undefined && filters.page <= 0) {
-        filters.page = 1;
-      }
-      const skip =
-        filters.page && filters.limit
-          ? (filters.page - 1) * filters.limit
-          : undefined;
+    let { page, limit, orderBy, sortType } = filters;
+    page = this.formatPage(filters.page);
+    const skip = this.calcSkip({ page, limit });
 
-      // Paginate if has limiter
-      cursor =
-        skip !== undefined
-          ? cursor.skip(skip).limit(filters.limit)
-          : filters.limit
-          ? cursor.limit(filters.limit)
-          : cursor;
-
-      // SortBy
-      cursor = filters.orderBy
-        ? cursor.sort(filters.orderBy, filters.sortType ? filters.sortType : 1)
-        : cursor;
-      return cursor;
-    } catch (e) {
-      console.log(e);
+    // Paginate
+    if (skip != null && limit) {
+      cursor = cursor.skip(skip).limit(limit);
+    } else if (skip == null && limit) {
+      cursor = cursor.limit(limit);
     }
+
+    // Apply orderBy
+    if (orderBy) {
+      cursor = cursor.sort(orderBy, sortType ? sortType : 1);
+    }
+    return cursor;
   }
+
+  /**
+   * Ensures page is not less than 1 if defined
+   *
+   * @private
+   * @param {number} page
+   * @returns
+   * @memberof MongoDriver
+   */
+  private formatPage(page: number) {
+    if (page != null && page <= 0) {
+      return 1;
+    }
+    return page;
+  }
+
+  /**
+   * Calculated number of docs to skip based on page and limit
+   *
+   * @private
+   * @param {{ page: number; limit: number }} params
+   * @returns
+   * @memberof MongoDriver
+   */
+  private calcSkip(params: { page: number; limit: number }) {
+    return params.page && params.limit ? (params.page - 1) * params.limit : 0;
+  }
+
   /**
    * Gets Learning Outcome IDs that contain Standard Outcome IDs
    *
@@ -1372,17 +1475,20 @@ export class MongoDriver implements DataStore {
    * @returns {Promise<LearningOutcomeDocument[]>}
    * @memberof MongoDriver
    */
-  private async matchOutcomes(
-    standardOutcomeIDs: string[],
-  ): Promise<LearningOutcomeDocument[]> {
-    return standardOutcomeIDs
-      ? await this.db
-          .collection(COLLECTIONS.LEARNING_OUTCOMES)
-          .find<LearningOutcomeDocument>({
-            mappings: { $all: standardOutcomeIDs },
-          })
-          .toArray()
-      : null;
+  private async matchOutcomes(standardOutcomeIDs: string[]): Promise<string[]> {
+    if (!standardOutcomeIDs) {
+      return null;
+    }
+    const docs = await this.db
+      .collection(COLLECTIONS.LEARNING_OUTCOMES)
+      .find<LearningOutcomeDocument>(
+        {
+          mappings: { $all: standardOutcomeIDs },
+        },
+        { projection: { _id: 1 } },
+      )
+      .toArray();
+    return docs.map(doc => doc._id);
   }
   /**
    * Search for users that match author or text param
@@ -1419,7 +1525,7 @@ export class MongoDriver implements DataStore {
           })
           .sort({ score: { $meta: 'textScore' } })
           .toArray()
-      : Promise.resolve(null);
+      : null;
   }
   /**
    * Fetches all Learning Object collections
@@ -1462,7 +1568,7 @@ export class MongoDriver implements DataStore {
         .findOne({ name: name });
       const objects = await Promise.all(
         collection.learningObjects.map((id: string) => {
-          return this.fetchLearningObject(id, false, false);
+          return this.fetchLearningObject({ id, full: false });
         }),
       );
 
@@ -1549,10 +1655,8 @@ export class MongoDriver implements DataStore {
         levels: object.levels,
         description: object.description,
         materials: object.materials,
-        published: object.published,
         contributors: contributorIds,
         collection: object.collection,
-        lock: object.lock,
         status: object.status,
         children: object.children.map(obj => obj.id),
       };
@@ -1585,6 +1689,13 @@ export class MongoDriver implements DataStore {
     let contributors: User[] = [];
     let outcomes: LearningOutcome[] = [];
 
+    // Load Contributors
+    if (record.contributors && record.contributors.length) {
+      contributors = await Promise.all(
+        record.contributors.map(userId => this.fetchUser(userId)),
+      );
+    }
+
     // If full object requested, load up non-summary properties
     if (full) {
       // Logic for loading 'full' learning objects
@@ -1594,13 +1705,6 @@ export class MongoDriver implements DataStore {
       outcomes = await this.getAllLearningOutcomes({
         source: record._id,
       });
-
-      // Load Contributors
-      if (record.contributors && record.contributors.length) {
-        contributors = await Promise.all(
-          record.contributors.map(userId => this.fetchUser(userId)),
-        );
-      }
     }
     const learningObject = new LearningObject({
       id: record._id,
@@ -1609,11 +1713,9 @@ export class MongoDriver implements DataStore {
       date: record.date,
       length: record.length as LearningObject.Length,
       levels: record.levels as LearningObject.Level[],
-      lock: record.lock as LearningObject.Lock,
       collection: record.collection,
       status: record.status as LearningObject.Status,
       description: record.description,
-      published: record.published || false,
       materials,
       contributors,
       outcomes,

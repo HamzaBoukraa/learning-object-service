@@ -1,10 +1,21 @@
 import { MongoDriver } from './MongoDriver';
+import { LearningObject } from '@cyber4all/clark-entity';
 
 describe('MongoDriver', () => {
   let driver: MongoDriver;
 
   beforeAll(async () => {
     driver = await MongoDriver.build(global['__MONGO_URI__']);
+  });
+
+  describe('searchObjectsWithConditions', () => {
+    it('The function should return an object with total and objects', async () => {
+      expect.assertions(1);
+      const result = await driver.searchObjectsWithConditions({
+        conditions: [{ nccp: [LearningObject.Status.RELEASED] }],
+      });
+      expect(result).toBeDefined();
+    });
   });
 
   describe('updateMultipleLearningObjects', () => {
@@ -35,7 +46,9 @@ describe('MongoDriver', () => {
     it('The function should return an array', async () => {
       expect.assertions(1);
       const learningObjectId = 'default_id';
-      const result = await driver.checkLearningObjectExistence(learningObjectId);
+      const result = await driver.checkLearningObjectExistence(
+        learningObjectId,
+      );
       expect(result.length).toBe(1);
     });
   });
