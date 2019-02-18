@@ -22,6 +22,7 @@ export class ChangelogDataStore {
     changelogText: string,
   ): Promise<void> {
     try {
+      // FIXME: update is deprecated, consult docs for fix.
       await this.db.collection(COLLECTIONS.CHANGLOG).update(
         { learningObjectId },
         {
