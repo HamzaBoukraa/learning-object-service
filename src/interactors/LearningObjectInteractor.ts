@@ -173,6 +173,47 @@ export class LearningObjectInteractor {
   }
 
   /**
+   * Retrieve the objects on a user's profile based on the requester's access groups and priveleges
+   *
+   * @static
+   * @param {{
+   *     dataStore: DataStore;
+   *     username: string;
+   *     userToken?: UserToken;
+   *   }} params
+   * @returns {Promise<LearningObject[]>}
+   * @memberof LearningObjectInteractor
+   */
+  public static async loadProfile(params: {
+    dataStore: DataStore;
+    username: string;
+    userToken?: UserToken;
+  }): Promise<LearningObject[]> {
+    const { dataStore, username, userToken } = params;
+    // all users can see released objects from all collections
+    let status: string[] = LearningObjectState.RELEASED;
+    let collections;
+
+    // if user is admin/editor/curator/review, also send waiting/review/proofing objects for collections they're privileged in
+    if (userToken && isAdminOrEditor(userToken.accessGroups)) {
+      status = status.concat(LearningObjectState.IN_REVIEW);
+    } else if (userToken && isPrivilegedUser(userToken.accessGroups)) {
+      status = status.concat(LearningObjectState.IN_REVIEW);
+      collections = getAccessGroupCollections(userToken);
+    }
+
+    const objectIDs = await dataStore.getUserObjects(username);
+    const summaries = await dataStore.fetchMultipleObjects({
+      ids: objectIDs,
+      full: false,
+      collections,
+      status,
+    });
+
+    return summaries;
+  }
+
+  /**
    * Load a learning object and all its learning outcomes.
    * @async
    *

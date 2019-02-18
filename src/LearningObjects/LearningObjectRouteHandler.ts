@@ -5,6 +5,7 @@ import { DataStore } from '../interfaces/DataStore';
 import { FileManager, LibraryCommunicator } from '../interfaces/interfaces';
 import { UserToken } from '../types';
 import { LearningObjectError } from '../errors';
+import { mapErrorToStatusCode } from '../errors';
 
 /**
  * Initializes an express router with endpoints for public Retrieving
@@ -168,10 +169,29 @@ export function initializePrivate({
     }
   };
 
+  const getLearningObjectChildren = async (req: Request, res: Response) => {
+    try{
+      const id = req.params.id;
+      const children = await LearningObjectInteractor.getLearningObjectChildrenById(
+        dataStore, 
+        id
+      );
+      res.status(200).json(children); 
+    } catch (e) {
+      if (e instanceof Error){
+      const status = mapErrorToStatusCode(e); 
+      res.status(status.code).json({message: status.message});
+    }else{
+      res.sendStatus(500); 
+      }
+    }
+  }; 
+
   router
       .route('/learning-objects')
       .post(addLearningObject);
   router.patch('/learning-objects/:id', updateLearningObject);
   router.delete('/learning-objects/:learningObjectName', deleteLearningObject);
   router.get('/learning-objects/:id/materials/all', getMaterials);
+  router.get('/learning-objects/:id/children/summary', getLearningObjectChildren);
 }
