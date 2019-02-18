@@ -5,12 +5,12 @@ import {ResourceError, ResourceErrorReason} from '../errors';
 import {ChangeLogDocument} from '../types/Changelog';
 
 /**
- * Instruct the datastore to create a new log in the changelogs collection
+ * Instruct the data store to create a new log in the change logs collection
  *
- * @param {DataStore} dataStore An instance of DataStore
- * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
- * @param {string} userId The id of the user that wrote the incoming changelog
- * @param {string} changelogText The contents of the incoming changelog
+ * @param {DataStore} params.dataStore An instance of DataStore
+ * @param {string} params.learningObjectId The id of the learning object that the requested changelog belongs to
+ * @param {string} params.userId The id of the user that wrote the incoming changelog
+ * @param {string} params.changelogText The contents of the incoming changelog
  *
  * @returns {void}
  */
