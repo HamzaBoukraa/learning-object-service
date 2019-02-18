@@ -142,8 +142,9 @@ export class ExpressRouteDriver {
       } catch (e) {
         if (e instanceof Error && e.message === 'User not found') {
           res.status(404).send(`No user with username ${req.params.username}.`);
+        } else {
+          res.status(500).send('Internal Server Error');
         }
-        res.status(500).send(e);
       }
     });
 
