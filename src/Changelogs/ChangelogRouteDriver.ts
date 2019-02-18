@@ -29,12 +29,8 @@ export function initialize({
       await ChangelogInteractor.createChangelog({dataStore, learningObjectId, user, changelogText});
       res.sendStatus(200);
     } catch (e) {
-      if (e instanceof Error) {
-        const status = mapErrorToStatusCode(e);
-        res.status(status.code).json({message: status.message});
-      } else {
-        res.sendStatus(500);
-      }
+      const { code, message } = mapErrorToStatusCode(e);
+      res.status(code).json({message});
     }
   }
 
@@ -47,12 +43,8 @@ export function initialize({
       );
       res.status(200).send(changelog);
     } catch (e) {
-      if (e instanceof Error) {
-        const status = mapErrorToStatusCode(e);
-        res.status(status.code).json({message: status.message});
-      } else {
-        res.sendStatus(500);
-      }
+      const { code, message } = mapErrorToStatusCode(e);
+      res.status(code).json({message});
     }
   };
 
