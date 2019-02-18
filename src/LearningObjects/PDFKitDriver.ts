@@ -151,7 +151,7 @@ function addEventListeners(
   return new Promise<LearningObject.Material.PDF>(resolve => {
     doc.on('end', async () => {
       const buffer: Buffer = Buffer.concat(buffers);
-      const fileName = `0ReadMeFirst - ${sanitizePath(
+      const fileName = `0ReadMeFirst - ${sanitizeLearningObjectName(
         learningObject.name,
       )}.pdf`;
       const path = `${learningObject.author.username}/${
@@ -499,11 +499,11 @@ export function titleCase(text: string): string {
 }
 
 /**
- * Replaces invalid characters with _ characters
+ * Replaces invalid file path characters in a Learning Object's name with _ characters
  *
  * @param {string} path
  * @returns {string}
  */
-function sanitizePath(path: string): string {
+function sanitizeLearningObjectName(path: string): string {
   return path.replace(/[\\/:"*?<>|]/gi, '_');
 }
