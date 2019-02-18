@@ -235,7 +235,7 @@ export class LearningObjectInteractor {
           ];
         }
 
-        learningObject = await dataStore.fetchReleasedLearningObject({
+        learningObject = await dataStore.fetchLearningObject({
           id: learningObjectID,
           full: true,
         });
@@ -267,6 +267,7 @@ export class LearningObjectInteractor {
       } catch (e) {
         console.error(e);
       }
+      console.log(learningObject);
       return learningObject;
     } catch (e) {
       return Promise.reject(e);
