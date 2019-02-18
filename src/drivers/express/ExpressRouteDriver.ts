@@ -140,6 +140,10 @@ export class ExpressRouteDriver {
         );
         res.status(200).send(objects.map(obj => obj.toPlainObject()));
       } catch (e) {
+        if (e instanceof ResourceError) {
+          const { code, message } = mapErrorToStatusCode(e);
+          res.status(code).json({ message });
+        }
         if (e instanceof Error && e.message === 'User not found') {
           res.status(404).send(`No user with username ${req.params.username}.`);
         } else {
