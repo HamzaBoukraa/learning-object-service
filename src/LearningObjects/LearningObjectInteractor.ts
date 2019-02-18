@@ -125,8 +125,6 @@ export async function addLearningObject(
   object: LearningObject,
   user: UserToken,
 ): Promise<LearningObject> {
-  const err = LearningObjectInteractor.validateLearningObject(object);
-
   await checkNameExists({
     dataStore,
     username: user.username,
@@ -134,24 +132,18 @@ export async function addLearningObject(
   });
 
   try {
-    if (err) {
-      return Promise.reject(err);
-    } else {
-      const authorID = await dataStore.findUser(user.username);
-      const author = await dataStore.fetchUser(authorID);
-      if (!author.emailVerified) {
-        object.unpublish();
-      }
-      const objectInsert = new LearningObject({
-        ...object.toPlainObject(),
-        author,
-      });
-      const learningObjectID = await dataStore.insertLearningObject(
-        objectInsert,
-      );
-      objectInsert.id = learningObjectID;
-      return objectInsert;
+    const authorID = await dataStore.findUser(user.username);
+    const author = await dataStore.fetchUser(authorID);
+    if (!author.emailVerified) {
+      object.status = LearningObject.Status.UNRELEASED;
     }
+    const objectInsert = new LearningObject({
+      ...object.toPlainObject(),
+      author,
+    });
+    const learningObjectID = await dataStore.insertLearningObject(objectInsert);
+    objectInsert.id = learningObjectID;
+    return objectInsert;
   } catch (e) {
     return Promise.reject(`Problem creating Learning Object. Error${e}`);
   }
@@ -254,9 +246,13 @@ export async function getLearningObjectById(
 export async function getLearningObjectChildrenById(
   dataStore: DataStore,
   objectId: string,
-){
+) {
   try {
-    return await dataStore.loadChildObjects({id: objectId, full: true, status: LearningObjectState.ALL});
+    return await dataStore.loadChildObjects({
+      id: objectId,
+      full: true,
+      status: LearningObjectState.ALL,
+    });
   } catch (e) {
     reportError(e);
     return Promise.reject(new Error(LearningObjectError.RESOURCE_NOT_FOUND()));
