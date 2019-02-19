@@ -124,24 +124,8 @@ export function initializePrivate({
       });
       res.sendStatus(200);
     } catch (e) {
-      console.error(e);
-
-      let status = 500;
-
-      // if the error was that the object has a duplicate name, send a 409 error code
-      if (
-        updates &&
-        updates.name &&
-        e.message === `A learning object with name '${updates.name}' already exists.`
-      ) {
-        status = 409;
-      }
-
-      if (e.name === ResourceErrorReason.INVALID_ACCESS) {
-        status = 401;
-      }
-
-      res.status(status).send(e);
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({message});
     }
   };
   const deleteLearningObject = async (req: Request, res: Response) => {
