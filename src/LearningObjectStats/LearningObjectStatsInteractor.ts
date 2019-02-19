@@ -20,7 +20,7 @@ export interface LearningObjectStats {
     waiting: number;
     peerReview: number;
     proofing: number;
-  }
+  };
 }
 export interface LearningObjectStatDatastore {
   fetchStats(params: { query: any }): Promise<LearningObjectStats>;
