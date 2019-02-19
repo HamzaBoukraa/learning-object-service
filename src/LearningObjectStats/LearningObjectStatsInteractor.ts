@@ -16,6 +16,11 @@ export interface LearningObjectStats {
     evaluate: number;
     remember: number;
   };
+  status: {
+    waiting: number;
+    peerReview: number;
+    proofing: number;
+  };
 }
 export interface LearningObjectStatDatastore {
   fetchStats(params: { query: any }): Promise<LearningObjectStats>;
