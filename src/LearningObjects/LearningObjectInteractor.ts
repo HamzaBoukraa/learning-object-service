@@ -241,13 +241,7 @@ export async function getLearningObjectChildrenById(
   dataStore: DataStore,
   objectId: string,
 ) {
-  try {
-    return await dataStore.loadChildObjects({id: objectId, full: true, status: LearningObjectState.ALL});
-  } catch (e) {
-    reportError(e);
-    // TODO: Is this actually a case of it not being found? Can't other faults hit this?
-    return Promise.reject(new ResourceError('Learning Object not found.', ResourceErrorReason.NOT_FOUND));
-  }
+  return await dataStore.loadChildObjects({id: objectId, full: true, status: LearningObjectState.ALL});
 }
 
 export async function deleteLearningObject(params: {
