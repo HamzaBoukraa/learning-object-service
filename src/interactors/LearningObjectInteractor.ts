@@ -780,7 +780,6 @@ export class LearningObjectInteractor {
         page,
         limit,
       } = this.formatSearchQuery(query);
-      status = this.getAuthorizedStatuses(userToken, status);
       let response: { total: number; objects: LearningObject[] };
 
       if (
@@ -788,12 +787,16 @@ export class LearningObjectInteractor {
         isPrivilegedUser(userToken.accessGroups) &&
         !isAdminOrEditor(userToken.accessGroups)
       ) {
-        const privilegedCollections = getAccessGroupCollections(userToken);
+        let collectionAccessMap = {};
 
-        const collectionAccessMap = getCollectionAccessMap(
-          collection,
-          privilegedCollections,
-        );
+        if (status !== [LearningObject.Status.RELEASED]) {
+          const privilegedCollections = getAccessGroupCollections(userToken);
+          collectionAccessMap = getCollectionAccessMap(
+            collection,
+            privilegedCollections,
+          );
+        }
+
         const queryConditions = this.buildCollectionQueryConditions(
           collection,
           collectionAccessMap,
@@ -812,6 +815,7 @@ export class LearningObjectInteractor {
           limit,
         });
       } else {
+        status = this.getAuthorizedStatuses(userToken, status);
         response = await dataStore.searchObjects({
           name,
           author,
