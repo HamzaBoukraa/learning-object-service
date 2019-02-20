@@ -12,6 +12,7 @@ import { UserToken } from '../../types';
 import { initializeSingleFileDownloadRouter } from '../../SingleFileDownload/RouteHandler';
 import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
 import { initializeCollectionRouter } from '../../Collections/RouteHandler';
+import { ResourceError, mapErrorToResponseData, ServiceError } from '../../errors';
 
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
 // tslint:disable-next-line:no-require-imports
@@ -140,8 +141,15 @@ export class ExpressRouteDriver {
         );
         res.status(200).send(objects.map(obj => obj.toPlainObject()));
       } catch (e) {
-        console.error(e);
-        res.status(500).send(e);
+        if (e instanceof ResourceError || e instanceof ServiceError) {
+          const { code, message } = mapErrorToResponseData(e);
+          res.status(code).json({ message });
+        }
+        if (e instanceof Error && e.message === 'User not found') {
+          res.status(404).send(`No user with username ${req.params.username}.`);
+        } else {
+          res.status(500).send('Internal Server Error');
+        }
       }
     });
 

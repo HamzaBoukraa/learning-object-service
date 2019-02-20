@@ -1,28 +1,16 @@
 import { LearningObject } from '@cyber4all/clark-entity';
 // @ts-ignore
 import * as stopword from 'stopword';
-import {
-  DataStore,
-  FileManager,
-  LibraryCommunicator,
-} from '../interfaces/interfaces';
-import { UserToken } from '../types';
+import { reportError } from '../drivers/SentryConnector';
+import { processMultipartUpload } from '../FileManager/FileInteractor';
+import { sanitizeObject, sanitizeText } from '../functions';
 import { LearningObjectQuery, QueryCondition } from '../interfaces/DataStore';
 import { DZFile, FileUpload } from '../interfaces/FileManager';
-import { processMultipartUpload } from '../FileManager/FileInteractor';
-import {
-  hasMultipleLearningObjectWriteAccesses,
-  isAdminOrEditor,
-  isPrivilegedUser,
-  getAccessGroupCollections,
-} from './AuthorizationManager';
-import { reportError } from '../drivers/SentryConnector';
-import {
-  updateObjectLastModifiedDate,
-  updateParentsDate,
-} from '../LearningObjects/LearningObjectInteractor';
-import { sanitizeText, sanitizeObject } from '../functions';
-import { LearningObjectError } from '../errors';
+import { DataStore, FileManager, LibraryCommunicator } from '../interfaces/interfaces';
+import { updateObjectLastModifiedDate, updateParentsDate } from '../LearningObjects/LearningObjectInteractor';
+import { UserToken } from '../types';
+import { getAccessGroupCollections, hasMultipleLearningObjectWriteAccesses, isAdminOrEditor, isPrivilegedUser } from './AuthorizationManager';
+import { ResourceError, ResourceErrorReason, ServiceError, ServiceErrorReason } from '../errors';
 
 // file size is in bytes
 const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
@@ -73,20 +61,22 @@ export class LearningObjectInteractor {
     loadChildren?: boolean;
     query?: LearningObjectQuery;
   }): Promise<LearningObject[]> {
+    const { dataStore, library, username, userToken, loadChildren, query } = params;
     try {
       let summary: LearningObject[] = [];
 
+      // This will throw an error if there is no user with that username
+      await dataStore.findUser(username);
+
       if (
         !this.hasReadAccess({
-          userToken: params.userToken,
+          userToken,
           resourceVal: params.username,
           authFunction: checkAuthByUsername,
         })
       ) {
-        throw new Error('Invalid access');
+        throw new ResourceError('Invalid Access', ResourceErrorReason.INVALID_ACCESS);
       }
-
-      const { dataStore, library, username, loadChildren, query } = params;
 
       const formattedQuery = this.formatSearchQuery(query);
       let {
@@ -168,7 +158,11 @@ export class LearningObjectInteractor {
       }
       return summary;
     } catch (e) {
-      return Promise.reject(`Problem loading summary. Error: ${e}`);
+      if (e instanceof ResourceError || e instanceof ServiceError) {
+        return Promise.reject(e);
+      }
+      reportError(e);
+      throw new ServiceError(ServiceErrorReason.INTERNAL);
     }
   }
 
@@ -326,7 +320,7 @@ export class LearningObjectInteractor {
       authFunction: isAuthorByUsername,
     });
     if (authorOnlyAccess && !isAuthor) {
-      throw new Error(LearningObjectError.INVALID_ACCESS());
+      throw new ResourceError('Invalid Access', ResourceErrorReason.INVALID_ACCESS);
     }
     const authorOrPrivilegedAccess = !LearningObjectState.RELEASED.includes(
       objectInfo.status as LearningObject.Status,
@@ -340,7 +334,7 @@ export class LearningObjectInteractor {
         authFunction: hasReadAccessByCollection,
       })
     ) {
-      throw new Error(LearningObjectError.INVALID_ACCESS());
+      throw new ResourceError('Invalid Access', ResourceErrorReason.INVALID_ACCESS);
     }
   }
 
