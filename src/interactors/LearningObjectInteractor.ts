@@ -760,7 +760,7 @@ export class LearningObjectInteractor {
   }): Promise<{ total: number; objects: LearningObject[] }> {
     try {
       const { dataStore, library, query, userToken } = params;
-      let {
+      const {
         name,
         author,
         collection,
@@ -774,7 +774,6 @@ export class LearningObjectInteractor {
         page,
         limit,
       } = this.formatSearchQuery(query);
-      status = this.getAuthorizedStatuses(userToken, status);
       let response: { total: number; objects: LearningObject[] };
 
       if (
@@ -783,11 +782,12 @@ export class LearningObjectInteractor {
         !isAdminOrEditor(userToken.accessGroups)
       ) {
         const privilegedCollections = getAccessGroupCollections(userToken);
-
         const collectionAccessMap = getCollectionAccessMap(
           collection,
           privilegedCollections,
+          status,
         );
+
         const queryConditions = this.buildCollectionQueryConditions(
           collection,
           collectionAccessMap,
@@ -806,11 +806,12 @@ export class LearningObjectInteractor {
           limit,
         });
       } else {
+        const authStatuses = this.getAuthorizedStatuses(userToken, status);
         response = await dataStore.searchObjects({
           name,
           author,
           collection,
-          status,
+          status: authStatuses,
           length,
           level,
           standardOutcomeIDs,
@@ -1170,26 +1171,32 @@ function toNumber(value: any): number {
 function getCollectionAccessMap(
   requestedCollections: string[],
   privilegedCollections: string[],
+  requestedStatuses: string[],
 ): CollectionAccessMap {
   const accessMap = {};
+  let authStatuses = [
+    ...LearningObjectState.IN_REVIEW,
+    ...LearningObjectState.RELEASED,
+  ];
+
+  if (requestedStatuses && requestedStatuses.length) {
+    authStatuses = requestedStatuses.filter(
+      (status: LearningObject.Status) =>
+        !LearningObjectState.UNRELEASED.includes(status),
+    ) as any[];
+  }
 
   if (requestedCollections && requestedCollections.length) {
     for (const filter of requestedCollections) {
       if (privilegedCollections.includes(filter)) {
-        accessMap[filter] = [
-          ...LearningObjectState.IN_REVIEW,
-          ...LearningObjectState.RELEASED,
-        ];
+        accessMap[filter] = authStatuses;
       } else {
         accessMap[filter] = LearningObjectState.RELEASED;
       }
     }
   } else {
     for (const collection of privilegedCollections) {
-      accessMap[collection] = [
-        ...LearningObjectState.IN_REVIEW,
-        ...LearningObjectState.RELEASED,
-      ];
+      accessMap[collection] = authStatuses;
     }
   }
 
