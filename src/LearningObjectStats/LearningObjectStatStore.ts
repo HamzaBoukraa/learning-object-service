@@ -34,6 +34,9 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
         ids: string[];
         count: number;
         released: number;
+        waiting: number;
+        peerReview: number;
+        proofing: number;
       }>([
         { $match: params.query },
         {
@@ -44,6 +47,33 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
               $sum: {
                 $cond: [
                   { $eq: ['$status', LearningObject.Status.RELEASED] },
+                  1,
+                  0,
+                ],
+              },
+            },
+            waiting: {
+              $sum: {
+                $cond: [
+                  { $eq: ['$status', LearningObject.Status.WAITING] },
+                  1,
+                  0,
+                ],
+              },
+            },
+            peerReview: {
+              $sum: {
+                $cond: [
+                  { $eq: ['$status', LearningObject.Status.REVIEW] },
+                  1,
+                  0,
+                ],
+              },
+            },
+            proofing: {
+              $sum: {
+                $cond: [
+                  { $eq: ['$status', LearningObject.Status.PROOFING] },
                   1,
                   0,
                 ],
@@ -85,8 +115,14 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
         evaluate: 0,
         remember: 0,
       },
+      status: {
+        waiting: 0,
+        peerReview: 0,
+        proofing: 0,
+      },
       total: 0,
       released: 0,
+      review: 0,
       downloads: 0,
       saves: 0,
     };
@@ -100,7 +136,13 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
         stats.total += stat.count;
         // Increment released by number in released
         stats.released += stat.released;
+        // Increment status by according status
+        stats.status.waiting += stat.waiting;
+        stats.status.peerReview += stat.peerReview;
+        stats.status.proofing += stat.proofing;
       });
+      // Set review property to statuses in review stage
+      stats.review = stats.status.waiting + stats.status.peerReview + stats.status.proofing;
     }
     // If downloadSavesData update stats
     if (downloadSavesData) {

@@ -1,6 +1,7 @@
 export interface LearningObjectStats {
   downloads: number;
   saves: number;
+  review: number;
   total: number;
   released: number;
   lengths: {
@@ -14,6 +15,11 @@ export interface LearningObjectStats {
     apply: number;
     evaluate: number;
     remember: number;
+  };
+  status: {
+    waiting: number;
+    peerReview: number;
+    proofing: number;
   };
 }
 export interface LearningObjectStatDatastore {

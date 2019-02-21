@@ -32,7 +32,7 @@ import { lengths } from '@cyber4all/clark-taxonomy';
 import { LearningObjectDataStore } from '../LearningObjects/LearningObjectDatastore';
 import { ChangeLogDocument } from '../types/changelog';
 import { ChangelogDataStore } from '../Changelogs/ChangelogDatastore';
-import { LearningObjectError } from '../errors';
+import { ResourceError, ResourceErrorReason, ServiceError, ServiceErrorReason } from '../errors';
 import { reportError } from './SentryConnector';
 import { LearningObject, LearningOutcome, User } from '../entity';
 
@@ -1025,14 +1025,25 @@ export class MongoDriver implements DataStore {
    */
   async getUserObjects(username: string): Promise<string[]> {
     try {
-      const authorID = await this.findUser(username);
       const objects = await this.db
-        .collection<{ _id: string }>(COLLECTIONS.LEARNING_OBJECTS)
-        .find({ authorID }, { projection: { _id: 1 } })
+        .collection<{ _id: string }>(COLLECTIONS.USERS)
+        .aggregate([
+          { $match: { username } },
+          { $lookup: {
+            from: COLLECTIONS.LEARNING_OBJECTS,
+            localField: '_id',
+            foreignField: 'authorID',
+            as: 'objects',
+          }},
+          { $unwind: '$objects' },
+          { $replaceRoot: { newRoot: '$objects' }},
+          { $project: { _id: 1 }},
+        ])
         .toArray();
       return objects.map(obj => obj._id);
     } catch (e) {
-      return Promise.reject(`Problem fetch User's Objects. Error: ${e}`);
+      reportError(e);
+      throw new ServiceError(ServiceErrorReason.INTERNAL);
     }
   }
 
@@ -1056,11 +1067,11 @@ export class MongoDriver implements DataStore {
         .collection(COLLECTIONS.USERS)
         .findOne<UserDocument>(query, { projection: { _id: 1 } });
       if (!userRecord)
-        throw new Error(LearningObjectError.RESOURCE_NOT_FOUND());
+        return Promise.reject(new ResourceError(`Cannot find user with username ${username}`, ResourceErrorReason.NOT_FOUND));
       return `${userRecord._id}`;
     } catch (e) {
       reportError(e);
-      return Promise.reject(new Error(LearningObjectError.INTERNAL_ERROR()));
+      return Promise.reject(new ServiceError(ServiceErrorReason.INTERNAL));
     }
   }
 
@@ -1213,7 +1224,7 @@ export class MongoDriver implements DataStore {
       return arr;
     } catch (e) {
       reportError(e);
-      return Promise.reject(new Error(LearningObjectError.INTERNAL_ERROR()));
+      return Promise.reject(new ServiceError(ServiceErrorReason.INTERNAL));
     }
   }
 

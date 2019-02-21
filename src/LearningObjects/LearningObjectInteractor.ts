@@ -7,11 +7,8 @@ import {
   UserToken,
   VALID_LEARNING_OBJECT_UPDATES,
 } from '../types';
-import { LearningObjectError } from '../errors';
-import {
-  hasLearningObjectWriteAccess,
-  isPrivilegedUser,
-} from '../interactors/AuthorizationManager';
+import { ResourceError, ResourceErrorReason } from '../errors';
+import { hasLearningObjectWriteAccess } from '../interactors/AuthorizationManager';
 import { reportError } from '../drivers/SentryConnector';
 import { LearningObject } from '../entity';
 
@@ -206,7 +203,7 @@ export async function updateLearningObject(params: {
         await dataStore.addToReleased(object);
       }
     } else {
-      return Promise.reject(new Error(LearningObjectError.INVALID_ACCESS()));
+      return Promise.reject(new ResourceError('Invalid Access', ResourceErrorReason.INVALID_ACCESS));
     }
   } catch (e) {
     reportError(e);
@@ -246,16 +243,7 @@ export async function getLearningObjectChildrenById(
   dataStore: DataStore,
   objectId: string,
 ) {
-  try {
-    return await dataStore.loadChildObjects({
-      id: objectId,
-      full: true,
-      status: LearningObjectState.ALL,
-    });
-  } catch (e) {
-    reportError(e);
-    return Promise.reject(new Error(LearningObjectError.RESOURCE_NOT_FOUND()));
-  }
+  return await dataStore.loadChildObjects({id: objectId, full: true, status: LearningObjectState.ALL});
 }
 
 export async function deleteLearningObject(params: {
@@ -541,6 +529,6 @@ async function checkNameExists(params: {
   });
   // @ts-ignore typescript doesn't think a .id property should exist on the existing object
   if (existing && params.id !== existing.id) {
-    return new Error(LearningObjectError.DUPLICATE_NAME(params.name));
+    throw new ResourceError(`A learning object with name '${params.name}' already exists.`, ResourceErrorReason.BAD_REQUEST);
   }
 }

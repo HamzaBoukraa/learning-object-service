@@ -1,27 +1,15 @@
 // @ts-ignore
 import * as stopword from 'stopword';
-import {
-  DataStore,
-  FileManager,
-  LibraryCommunicator,
-} from '../interfaces/interfaces';
-import { UserToken } from '../types';
-import { QueryCondition, LearningObjectQuery } from '../interfaces/DataStore';
-import { DZFile, FileUpload } from '../interfaces/FileManager';
-import { processMultipartUpload } from '../FileManager/FileInteractor';
-import {
-  hasMultipleLearningObjectWriteAccesses,
-  isAdminOrEditor,
-  isPrivilegedUser,
-  getAccessGroupCollections,
-} from './AuthorizationManager';
 import { reportError } from '../drivers/SentryConnector';
-import {
-  updateObjectLastModifiedDate,
-  updateParentsDate,
-} from '../LearningObjects/LearningObjectInteractor';
-import { sanitizeText, sanitizeObject } from '../functions';
-import { LearningObjectError } from '../errors';
+import { processMultipartUpload } from '../FileManager/FileInteractor';
+import { sanitizeObject, sanitizeText } from '../functions';
+import { LearningObjectQuery, QueryCondition } from '../interfaces/DataStore';
+import { DZFile, FileUpload } from '../interfaces/FileManager';
+import { DataStore, FileManager, LibraryCommunicator } from '../interfaces/interfaces';
+import { updateObjectLastModifiedDate, updateParentsDate } from '../LearningObjects/LearningObjectInteractor';
+import { UserToken } from '../types';
+import { getAccessGroupCollections, hasMultipleLearningObjectWriteAccesses, isAdminOrEditor, isPrivilegedUser } from './AuthorizationManager';
+import { ResourceError, ResourceErrorReason, ServiceError, ServiceErrorReason } from '../errors';
 import { LearningObject } from '../entity';
 
 // file size is in bytes
@@ -73,20 +61,22 @@ export class LearningObjectInteractor {
     loadChildren?: boolean;
     query?: LearningObjectQuery;
   }): Promise<LearningObject[]> {
+    const { dataStore, library, username, userToken, loadChildren, query } = params;
     try {
       let summary: LearningObject[] = [];
 
+      // This will throw an error if there is no user with that username
+      await dataStore.findUser(username);
+
       if (
         !this.hasReadAccess({
-          userToken: params.userToken,
+          userToken,
           resourceVal: params.username,
           authFunction: checkAuthByUsername,
         })
       ) {
-        throw new Error(LearningObjectError.INVALID_ACCESS());
+        throw new ResourceError('Invalid Access', ResourceErrorReason.INVALID_ACCESS);
       }
-
-      const { dataStore, library, username, loadChildren, query } = params;
 
       const formattedQuery = this.formatSearchQuery(query);
       let { status, orderBy, sortType } = formattedQuery;
@@ -130,7 +120,11 @@ export class LearningObjectInteractor {
       );
       return summary;
     } catch (e) {
-      return Promise.reject(`Problem loading summary. Error: ${e}`);
+      if (e instanceof ResourceError || e instanceof ServiceError) {
+        return Promise.reject(e);
+      }
+      reportError(e);
+      throw new ServiceError(ServiceErrorReason.INTERNAL);
     }
   }
 
@@ -300,7 +294,7 @@ export class LearningObjectInteractor {
       authFunction: isAuthorByUsername,
     });
     if (authorOnlyAccess && !isAuthor) {
-      throw new Error(LearningObjectError.INVALID_ACCESS());
+      throw new ResourceError('Invalid Access', ResourceErrorReason.INVALID_ACCESS);
     }
     const authorOrPrivilegedAccess = !LearningObjectState.RELEASED.includes(
       objectInfo.status as LearningObject.Status,
@@ -314,7 +308,7 @@ export class LearningObjectInteractor {
         authFunction: hasReadAccessByCollection,
       })
     ) {
-      throw new Error(LearningObjectError.INVALID_ACCESS());
+      throw new ResourceError('Invalid Access', ResourceErrorReason.INVALID_ACCESS);
     }
   }
 
@@ -703,7 +697,7 @@ export class LearningObjectInteractor {
   }): Promise<{ total: number; objects: LearningObject[] }> {
     try {
       const { dataStore, library, query, userToken } = params;
-      let {
+      const {
         name,
         author,
         collection,
@@ -717,26 +711,25 @@ export class LearningObjectInteractor {
         limit,
         status,
       } = this.formatSearchQuery(query);
-      status = this.getAuthorizedStatuses(userToken, status);
       let response: { total: number; objects: LearningObject[] };
 
-      if (userToken && isPrivilegedUser(userToken.accessGroups)) {
-        let conditions: QueryCondition[];
-        if (!isAdminOrEditor(userToken.accessGroups)) {
-          const privilegedCollections = getAccessGroupCollections(userToken);
+      if (
+        userToken &&
+        isPrivilegedUser(userToken.accessGroups) &&
+        !isAdminOrEditor(userToken.accessGroups)
+      ) {
+        const privilegedCollections = getAccessGroupCollections(userToken);
+        const collectionAccessMap = getCollectionAccessMap(
+          collection,
+          privilegedCollections,
+          status,
+        );
 
-          const collectionAccessMap = getCollectionAccessMap(
-            collection,
-            privilegedCollections,
-          );
-          conditions = this.buildCollectionQueryConditions(
-            collection,
-            collectionAccessMap,
-          );
-          collection = [];
-        }
-
-        response = await dataStore.searchAllObjects({
+        const queryConditions = this.buildCollectionQueryConditions(
+          collection,
+          collectionAccessMap,
+        );
+        response = await dataStore.searchObjectsWithConditions({
           name,
           author,
           collection,
@@ -745,17 +738,19 @@ export class LearningObjectInteractor {
           standardOutcomeIDs,
           text,
           status,
-          conditions,
+          conditions: queryConditions,
           orderBy,
           sortType,
           page,
           limit,
         });
       } else {
-        response = await dataStore.searchReleasedObjects({
+        const authStatuses = this.getAuthorizedStatuses(userToken, status);
+        response = await dataStore.searchObjects({
           name,
           author,
           collection,
+          status: authStatuses,
           length,
           level,
           standardOutcomeIDs,
@@ -1120,26 +1115,32 @@ function toNumber(value: any): number {
 function getCollectionAccessMap(
   requestedCollections: string[],
   privilegedCollections: string[],
+  requestedStatuses: string[],
 ): CollectionAccessMap {
   const accessMap = {};
+  let authStatuses = [
+    ...LearningObjectState.IN_REVIEW,
+    ...LearningObjectState.RELEASED,
+  ];
+
+  if (requestedStatuses && requestedStatuses.length) {
+    authStatuses = requestedStatuses.filter(
+      (status: LearningObject.Status) =>
+        !LearningObjectState.UNRELEASED.includes(status),
+    ) as any[];
+  }
 
   if (requestedCollections && requestedCollections.length) {
     for (const filter of requestedCollections) {
       if (privilegedCollections.includes(filter)) {
-        accessMap[filter] = [
-          ...LearningObjectState.IN_REVIEW,
-          ...LearningObjectState.RELEASED,
-        ];
+        accessMap[filter] = authStatuses;
       } else {
         accessMap[filter] = LearningObjectState.RELEASED;
       }
     }
   } else {
     for (const collection of privilegedCollections) {
-      accessMap[collection] = [
-        ...LearningObjectState.IN_REVIEW,
-        ...LearningObjectState.RELEASED,
-      ];
+      accessMap[collection] = authStatuses;
     }
   }
 
