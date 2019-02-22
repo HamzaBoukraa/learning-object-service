@@ -22,6 +22,18 @@ export class S3Driver implements FileManager {
   private s3 = new AWS.S3({ region: AWS_SDK_CONFIG.region });
 
   /**
+   * Returns stream of file from working files bucket
+   *
+   * @param {{ path: string }} params
+   * @returns {Readable}
+   * @memberof S3Driver
+   */
+  streamWorkingCopyFile(params: { path: string }): Readable {
+    const { path } = params;
+    return this.streamFile({ path, bucket: BUCKETS.WORKING_FILES });
+  }
+
+  /**
    * Uploads single file
    *
    * @param {{ file: FileUpload }} params
