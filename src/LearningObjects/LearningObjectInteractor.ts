@@ -8,7 +8,10 @@ import {
   VALID_LEARNING_OBJECT_UPDATES,
 } from '../types';
 import { ResourceError, ResourceErrorReason } from '../errors';
-import { hasLearningObjectWriteAccess } from '../interactors/AuthorizationManager';
+import {
+  hasLearningObjectWriteAccess,
+  isPrivilegedUser,
+} from '../interactors/AuthorizationManager';
 import { reportError } from '../drivers/SentryConnector';
 import { LearningObject } from '../entity';
 
@@ -122,15 +125,12 @@ export async function addLearningObject(
   object: LearningObject,
   user: UserToken,
 ): Promise<LearningObject> {
-  const err = await checkNameExists({
+  await checkNameExists({
     dataStore,
     username: user.username,
     name: object.name,
   });
   try {
-    if (err) {
-      return Promise.reject(err);
-    }
     const authorID = await dataStore.findUser(user.username);
     const author = await dataStore.fetchUser(authorID);
     const objectInsert = new LearningObject({
@@ -203,7 +203,9 @@ export async function updateLearningObject(params: {
         await dataStore.addToReleased(object);
       }
     } else {
-      return Promise.reject(new ResourceError('Invalid Access', ResourceErrorReason.INVALID_ACCESS));
+      return Promise.reject(
+        new ResourceError('Invalid Access', ResourceErrorReason.INVALID_ACCESS),
+      );
     }
   } catch (e) {
     reportError(e);
@@ -243,7 +245,11 @@ export async function getLearningObjectChildrenById(
   dataStore: DataStore,
   objectId: string,
 ) {
-  return await dataStore.loadChildObjects({id: objectId, full: true, status: LearningObjectState.ALL});
+  return await dataStore.loadChildObjects({
+    id: objectId,
+    full: true,
+    status: LearningObjectState.ALL,
+  });
 }
 
 export async function deleteLearningObject(params: {
@@ -529,6 +535,9 @@ async function checkNameExists(params: {
   });
   // @ts-ignore typescript doesn't think a .id property should exist on the existing object
   if (existing && params.id !== existing.id) {
-    throw new ResourceError(`A learning object with name '${params.name}' already exists.`, ResourceErrorReason.BAD_REQUEST);
+    throw new ResourceError(
+      `A learning object with name '${params.name}' already exists.`,
+      ResourceErrorReason.BAD_REQUEST,
+    );
   }
 }
