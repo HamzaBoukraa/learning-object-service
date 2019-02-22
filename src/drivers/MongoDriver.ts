@@ -243,6 +243,14 @@ export class MongoDriver implements DataStore {
       orderBy,
       sortType,
     } = params;
+
+    let matcher: any = { ...searchQuery };
+    if (orConditions && orConditions.length) {
+      matcher.$and = [{ $or: orConditions }];
+    }
+
+    const match = { $match: { ...matcher } };
+
     const unWindArrayToRoot = [
       { $unwind: '$objects' },
       {
@@ -335,16 +343,10 @@ export class MongoDriver implements DataStore {
       sortType,
     });
 
-    let matcher: any = { ...searchQuery };
-    if (orConditions && orConditions.length) {
-      matcher.$and = [{ $or: orConditions }];
-    }
-    const match = { $match: { ...matcher } };
-
     const pipeline = [
+      match,
       joinCollections,
       ...createSuperSet,
-      match,
       ...removeDuplicates,
       ...sort,
       {
