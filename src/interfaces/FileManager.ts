@@ -9,6 +9,7 @@ export interface FileManager {
   delete(params: { path: string }): Promise<void>;
   deleteAll(params: { path: string }): Promise<void>;
   streamFile(params: { path: string }): Readable;
+  streamWorkingCopyFile(params: { path: string }): Readable;
   hasAccess(path: string): Promise<boolean>;
   initMultipartUpload(params: { path: string }): Promise<string>;
   uploadPart(params: {
