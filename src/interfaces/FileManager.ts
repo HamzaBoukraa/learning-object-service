@@ -27,6 +27,10 @@ export interface FileManager {
     path: string;
     uploadId: string;
   }): Promise<void>;
+  copyToReleased(params: {
+    srcFolder: string;
+    destFolder: string;
+  }): Promise<void>;
 }
 
 export interface FileUpload {
