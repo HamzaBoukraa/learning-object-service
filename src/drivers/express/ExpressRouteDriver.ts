@@ -10,7 +10,11 @@ import { UserToken } from '../../types';
 import { initializeSingleFileDownloadRouter } from '../../SingleFileDownload/RouteHandler';
 import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
 import { initializeCollectionRouter } from '../../Collections/RouteHandler';
-import { ResourceError, mapErrorToResponseData, ServiceError } from '../../errors';
+import {
+  ResourceError,
+  mapErrorToResponseData,
+  ServiceError,
+} from '../../errors';
 import { LearningObject } from '../../entity';
 
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
@@ -69,8 +73,8 @@ export class ExpressRouteDriver {
         );
         res.status(200).send(objectResponse);
       } catch (e) {
-        console.log(e);
-        res.status(500).send(e);
+        const { code, message } = mapErrorToResponseData(e);
+        res.status(code).json({ message });
       }
     });
 
@@ -144,19 +148,22 @@ export class ExpressRouteDriver {
       }
     });
 
-    router.get('/users/:username/learning-objects/profile', async (req, res) => {
-      try {
-        const objects = await LearningObjectInteractor.loadProfile({
-          dataStore: this.dataStore,
-          username: req.params.username,
-          userToken: req.user,
-        });
+    router.get(
+      '/users/:username/learning-objects/profile',
+      async (req, res) => {
+        try {
+          const objects = await LearningObjectInteractor.loadProfile({
+            dataStore: this.dataStore,
+            username: req.params.username,
+            userToken: req.user,
+          });
 
-        res.status(200).send(objects.map(x => x.toPlainObject()));
-      } catch (e) {
-        res.status(500).send(e);
-      }
-    });
+          res.status(200).send(objects.map(x => x.toPlainObject()));
+        } catch (e) {
+          res.status(500).send(e);
+        }
+      },
+    );
 
     LearningObjectStatsRouteHandler.initialize({
       router,
