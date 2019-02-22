@@ -1164,18 +1164,22 @@ function getCollectionAccessMap(
   privilegedCollections: string[],
   requestedStatuses: string[],
 ): CollectionAccessMap {
-  const accessMap = {};
-  let authStatuses = [
-    ...LearningObjectState.IN_REVIEW,
-    ...LearningObjectState.RELEASED,
-  ];
-
-  if (requestedStatuses && requestedStatuses.length) {
-    authStatuses = requestedStatuses.filter(
-      (status: LearningObject.Status) =>
-        !LearningObjectState.UNRELEASED.includes(status),
-    ) as any[];
+  if (
+    requestedStatuses &&
+    (requestedStatuses.includes(LearningObject.Status.REJECTED) ||
+      requestedStatuses.includes(LearningObject.Status.UNRELEASED))
+  ) {
+    throw new ResourceError(
+      'Invalid Access',
+      ResourceErrorReason.INVALID_ACCESS,
+    );
   }
+
+  const accessMap = {};
+  const authStatuses =
+    requestedStatuses && requestedStatuses.length
+      ? requestedStatuses
+      : [...LearningObjectState.IN_REVIEW, ...LearningObjectState.RELEASED];
 
   if (requestedCollections && requestedCollections.length) {
     for (const filter of requestedCollections) {
