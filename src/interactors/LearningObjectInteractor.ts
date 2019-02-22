@@ -75,6 +75,10 @@ export class LearningObjectInteractor {
   }): Promise<LearningObject[]> {
     try {
       let summary: LearningObject[] = [];
+      const { dataStore, library, username, loadChildren, query } = params;
+
+      const formattedQuery = this.formatSearchQuery(query);
+      let { status, orderBy, sortType } = formattedQuery;
 
       if (
         !this.hasReadAccess({
@@ -83,18 +87,11 @@ export class LearningObjectInteractor {
           authFunction: checkAuthByUsername,
         })
       ) {
-        throw new Error(LearningObjectError.INVALID_ACCESS());
-      }
-
-      const { dataStore, library, username, loadChildren, query } = params;
-
-      const formattedQuery = this.formatSearchQuery(query);
-      let { status, orderBy, sortType } = formattedQuery;
-
-      if (!status) {
+        status = LearningObjectState.RELEASED;
+      }else{
         status = LearningObjectState.ALL;
       }
-
+      
       const objectIDs = await dataStore.getUserObjects(username);
       summary = await dataStore.fetchMultipleObjects({
         ids: objectIDs,
