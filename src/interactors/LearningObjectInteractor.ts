@@ -756,14 +756,13 @@ export class LearningObjectInteractor {
             status,
           );
           const requestedCollections = collection && collection.length > 0;
-          const requestedStatuses = status && status.length > 0;
-          collection = null;
-          status = null;
           conditions = this.buildCollectionQueryConditions({
             requestedCollections,
-            requestedStatuses,
+            requestedStatuses: status,
             collectionAccessMap,
           });
+          collection = null;
+          status = null;
         } else {
           status = this.getAuthAdminEditorStatuses(status);
         }
@@ -826,14 +825,14 @@ export class LearningObjectInteractor {
    * @private
    * @static
    * @param {boolean} requestedCollections [Represents whether or not specific collections were requested]
-   * @param {boolean} requestedStatuses [Represents whether or not specific statuses were requested]
+   * @param {string[]} requestedStatuses [Array of requested statuses]
    * @param {CollectionAccessMap} collectionAccessMap
    * @returns {QueryCondition[]}
    * @memberof LearningObjectInteractor
    */
   private static buildCollectionQueryConditions(params: {
     requestedCollections: boolean;
-    requestedStatuses: boolean;
+    requestedStatuses: string[];
     collectionAccessMap: CollectionAccessMap;
   }): QueryCondition[] {
     const {
@@ -842,11 +841,19 @@ export class LearningObjectInteractor {
       collectionAccessMap,
     } = params;
     const conditions: QueryCondition[] = [];
-    if (!requestedCollections && !requestedStatuses) {
-      conditions.push({
-        status: LearningObject.Status.RELEASED,
-      });
+    if (!requestedCollections) {
+      if (
+        !requestedStatuses ||
+        (requestedStatuses &&
+          requestedStatuses.length === 1 &&
+          requestedStatuses[0] === LearningObject.Status.RELEASED)
+      ) {
+        conditions.push({
+          status: LearningObject.Status.RELEASED,
+        });
+      }
     }
+
     const mapKeys = Object.keys(collectionAccessMap);
     for (const key of mapKeys) {
       const status = collectionAccessMap[key];
