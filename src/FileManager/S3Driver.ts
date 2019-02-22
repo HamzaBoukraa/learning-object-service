@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import * as AWS from 'aws-sdk';
 import { AWSError } from 'aws-sdk';
 import { Readable } from 'stream';
@@ -12,8 +13,10 @@ import { AWS_SDK_CONFIG } from './aws-sdk.config';
 
 AWS.config.credentials = AWS_SDK_CONFIG.credentials;
 
-const AWS_S3_BUCKET = 'neutrino-file-uploads';
-const AWS_S3_ACL = 'public-read';
+const BUCKETS = {
+  WORKING_FILES: process.env.WORKING_FILES_BUCKET,
+  RELEASED_FILES: process.env.RELEASED_FILES_BUCKET,
+};
 
 export class S3Driver implements FileManager {
   private s3 = new AWS.S3({ region: AWS_SDK_CONFIG.region });
