@@ -29,24 +29,18 @@ export class S3Driver implements FileManager {
    * @memberof S3Driver
    */
   public async upload(params: { file: FileUpload }): Promise<string> {
-    try {
       const uploadParams = {
-        Bucket: AWS_S3_BUCKET,
+      Bucket: BUCKETS.WORKING_FILES,
         Key: params.file.path,
-        ACL: AWS_S3_ACL,
         Body: params.file.data,
       };
       const response = await this.s3.upload(uploadParams).promise();
       return response.Location;
-    } catch (e) {
-      return Promise.reject(e);
-    }
   }
 
   public async initMultipartUpload(params: { path: string }): Promise<string> {
     const createParams = {
-      Bucket: AWS_S3_BUCKET,
-      ACL: AWS_S3_ACL,
+      Bucket: BUCKETS.WORKING_FILES,
       Key: params.path,
     };
     const createdUpload = await this.s3
@@ -62,7 +56,7 @@ export class S3Driver implements FileManager {
     uploadId: string;
   }): Promise<CompletedPart> {
     const partUploadParams = {
-      Bucket: AWS_S3_BUCKET,
+      Bucket: BUCKETS.WORKING_FILES,
       Key: params.path,
       Body: params.data,
       PartNumber: params.partNumber,
@@ -85,7 +79,7 @@ export class S3Driver implements FileManager {
       (partA, partB) => partA.PartNumber - partB.PartNumber,
     );
     const completedParams = {
-      Bucket: AWS_S3_BUCKET,
+      Bucket: BUCKETS.WORKING_FILES,
       Key: params.path,
       UploadId: params.uploadId,
       MultipartUpload: {
@@ -114,7 +108,7 @@ export class S3Driver implements FileManager {
     uploadId: string;
   }): Promise<void> {
     const abortUploadParams = {
-      Bucket: AWS_S3_BUCKET,
+      Bucket: BUCKETS.WORKING_FILES,
       Key: params.path,
       UploadId: params.uploadId,
     };
@@ -129,15 +123,11 @@ export class S3Driver implements FileManager {
    * @memberof S3Driver
    */
   public async delete(params: { path: string }): Promise<void> {
-    try {
       const deleteParams = {
-        Bucket: AWS_S3_BUCKET,
+      Bucket: BUCKETS.WORKING_FILES,
         Key: params.path,
       };
       return await this.deleteObject(deleteParams);
-    } catch (e) {
-      return Promise.reject(e);
-    }
   }
   /**
    * Deletes all files in storage
@@ -148,14 +138,14 @@ export class S3Driver implements FileManager {
    */
   public async deleteAll(params: { path: string }): Promise<void> {
     const listParams = {
-      Bucket: AWS_S3_BUCKET,
+      Bucket: BUCKETS.WORKING_FILES,
       Prefix: params.path,
     };
 
     const listedObjects = await this.s3.listObjectsV2(listParams).promise();
     if (listedObjects.Contents && listedObjects.Contents.length) {
       const deleteParams = {
-        Bucket: AWS_S3_BUCKET,
+        Bucket: BUCKETS.WORKING_FILES,
         Delete: {
           Objects: listedObjects.Contents.map(({ Key }) => ({ Key })),
         },
@@ -167,10 +157,11 @@ export class S3Driver implements FileManager {
     }
   }
 
-  streamFile(params: { path: string }): Readable {
+  streamFile(params: { path: string; bucket?: string }): Readable {
+    const { path, bucket } = params;
     const fetchParams = {
-      Bucket: AWS_S3_BUCKET,
-      Key: params.path,
+      Bucket: bucket || BUCKETS.RELEASED_FILES,
+      Key: path,
     };
     const stream = this.s3
       .getObject(fetchParams)
@@ -193,12 +184,7 @@ export class S3Driver implements FileManager {
    * @memberof S3Driver
    */
   private async deleteObject(params: any): Promise<void> {
-    try {
       await this.s3.deleteObject(params).promise();
-      return Promise.resolve();
-    } catch (e) {
-      return Promise.reject(e);
-    }
   }
 
   /**
@@ -210,7 +196,7 @@ export class S3Driver implements FileManager {
    */
   async hasAccess(path: string): Promise<boolean> {
     const fetchParams = {
-      Bucket: AWS_S3_BUCKET,
+      Bucket: BUCKETS.WORKING_FILES,
       Key: path,
     };
     return new Promise<boolean>(resolve => {
