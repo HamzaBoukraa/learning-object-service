@@ -34,6 +34,103 @@ export class S3Driver implements FileManager {
   }
 
   /**
+   * Copies all objects in source folder from working files bucket to destination folder in released files bucket
+   *
+   * @param {{
+   *     srcFolder: string;
+   *     destFolder: string;
+   *   }} params
+   * @returns {Promise<void>}
+   * @memberof S3Driver
+   */
+  async copyToReleased(params: {
+    srcFolder: string;
+    destFolder: string;
+  }): Promise<void> {
+    const { srcFolder, destFolder } = params;
+    const files = await this.listFiles({
+      bucket: BUCKETS.WORKING_FILES,
+      path: srcFolder,
+    });
+    await Promise.all(
+      files.map(file => {
+        const uploadPath = file.Key.replace(srcFolder, destFolder);
+        return this.copyObjectToBucket({
+          srcBucket: BUCKETS.WORKING_FILES,
+          srcPath: file.Key,
+          destBucket: BUCKETS.RELEASED_FILES,
+          destPath: uploadPath,
+        });
+      }),
+    );
+  }
+
+  /**
+   * Copies an object from one bucket to another
+   *
+   * @private
+   * @param {{
+   *     destBucket: string;
+   *     srcBucket: string;
+   *     srcPath: string;
+   *     destPath: string;
+   *   }} params
+   * @returns {Promise<void>}
+   * @memberof S3Driver
+   */
+  private async copyObjectToBucket(params: {
+    destBucket: string;
+    srcBucket: string;
+    srcPath: string;
+    destPath: string;
+  }): Promise<void> {
+    const { destBucket, srcBucket, srcPath, destPath } = params;
+    const copyParams = {
+      Bucket: destBucket,
+      CopySource: encodeURIComponent(`${srcBucket}/${srcPath}`),
+      Key: destPath,
+    };
+    await this.s3.copyObject(copyParams).promise();
+  }
+
+  /**
+   * Returns a list of files at specified path in bucket
+   *
+   * @private
+   * @param {{
+   *     bucket: string;
+   *     path: string;
+   *     files?: AWS.S3.Object[];
+   *   }} params
+   * @returns {Promise<AWS.S3.Object[]>}
+   * @memberof S3Driver
+   */
+  private async listFiles(params: {
+    bucket: string;
+    path: string;
+    files?: AWS.S3.Object[];
+  }): Promise<AWS.S3.Object[]> {
+    let { bucket, path, files } = params;
+    if (!files) {
+      files = [];
+    }
+    const listParams = {
+      Bucket: bucket,
+      Prefix: path,
+    };
+    const objects = await this.s3.listObjectsV2(listParams).promise();
+    if (objects.IsTruncated) {
+      return this.listFiles({
+        path,
+        bucket,
+        files: objects.Contents,
+      });
+    }
+    files = [...files, ...objects.Contents];
+    return files;
+  }
+
+  /**
    * Uploads single file
    *
    * @param {{ file: FileUpload }} params
@@ -41,13 +138,13 @@ export class S3Driver implements FileManager {
    * @memberof S3Driver
    */
   public async upload(params: { file: FileUpload }): Promise<string> {
-      const uploadParams = {
+    const uploadParams = {
       Bucket: BUCKETS.WORKING_FILES,
-        Key: params.file.path,
-        Body: params.file.data,
-      };
-      const response = await this.s3.upload(uploadParams).promise();
-      return response.Location;
+      Key: params.file.path,
+      Body: params.file.data,
+    };
+    const response = await this.s3.upload(uploadParams).promise();
+    return response.Location;
   }
 
   public async initMultipartUpload(params: { path: string }): Promise<string> {
@@ -135,11 +232,11 @@ export class S3Driver implements FileManager {
    * @memberof S3Driver
    */
   public async delete(params: { path: string }): Promise<void> {
-      const deleteParams = {
+    const deleteParams = {
       Bucket: BUCKETS.WORKING_FILES,
-        Key: params.path,
-      };
-      return await this.deleteObject(deleteParams);
+      Key: params.path,
+    };
+    return await this.deleteObject(deleteParams);
   }
   /**
    * Deletes all files in storage
@@ -196,7 +293,7 @@ export class S3Driver implements FileManager {
    * @memberof S3Driver
    */
   private async deleteObject(params: any): Promise<void> {
-      await this.s3.deleteObject(params).promise();
+    await this.s3.deleteObject(params).promise();
   }
 
   /**
