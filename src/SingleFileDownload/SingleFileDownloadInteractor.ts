@@ -52,7 +52,7 @@ export async function downloadSingleFile(params: {
   const mimeType = fileMetaData.fileType;
   // Check if the file manager has access to the resource before opening a stream
   if (await params.fileManager.hasAccess(path)) {
-    const stream = params.fileManager.streamFile({ path });
+    const stream = params.fileManager.streamWorkingCopyFile({ path });
     return { mimeType, stream, filename: fileMetaData.name };
   } else {
     throw { message: 'File not found', object: { name: learningObject.name } };
