@@ -1170,14 +1170,12 @@ export class MongoDriver implements DataStore {
     const object = await this.db
       .collection<LearningObjectDocument>(COLLECTIONS.LEARNING_OBJECTS)
       .findOne({ _id: params.id });
+    if (object) {
     const author = await this.fetchUser(object.authorID);
-    const learningObject = await this.generateLearningObject(
-      author,
-      object,
-      params.full,
-    );
+      return this.generateLearningObject(author, object, params.full);
+    }
 
-    return learningObject;
+    return null;
   }
 
   /**
@@ -1197,14 +1195,11 @@ export class MongoDriver implements DataStore {
     const object = await this.db
       .collection<LearningObjectDocument>(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
       .findOne({ _id: params.id });
+    if (object) {
     const author = await this.fetchUser(object.authorID);
-    const learningObject = await this.generateLearningObject(
-      author,
-      object,
-      params.full,
-    );
-
-    return learningObject;
+      return this.generateLearningObject(author, object, params.full);
+    }
+    return null;
   }
 
   /**
