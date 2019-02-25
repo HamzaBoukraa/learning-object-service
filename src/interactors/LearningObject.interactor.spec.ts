@@ -3,7 +3,6 @@ import { expect } from 'chai';
 import { MOCK_OBJECTS } from '../tests/mocks';
 import { DataStore } from '../interfaces/DataStore';
 import { LibraryCommunicator } from '../interfaces/interfaces';
-import { UserToken } from '../types';
 import { MockDataStore } from '../tests/mock-drivers/MockDataStore';
 import { MockLibraryDriver } from '../tests/mock-drivers/MockLibraryDriver';
 
@@ -108,26 +107,6 @@ describe('findLearningObject', () => {
     )
       .then(val => {
         expect(val).to.be.a('string');
-        done();
-      })
-      .catch(error => {
-        expect.fail();
-        done();
-      });
-  });
-});
-
-describe('fetchAllObjects', () => {
-  it('should fetch all objects', done => {
-    return LearningObjectInteractor.fetchAllObjects({
-      dataStore,
-      library,
-      page: MOCK_OBJECTS.CURR_PAGE,
-      limit: MOCK_OBJECTS.LIMIT,
-      userToken: MOCK_OBJECTS.USERTOKEN,
-    })
-      .then(val => {
-        expect(val).to.be.an('object');
         done();
       })
       .catch(error => {
