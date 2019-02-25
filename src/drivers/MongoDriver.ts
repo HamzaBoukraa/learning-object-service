@@ -32,7 +32,12 @@ import { lengths } from '@cyber4all/clark-taxonomy';
 import { LearningObjectDataStore } from '../LearningObjects/LearningObjectDatastore';
 import { ChangeLogDocument } from '../types/changelog';
 import { ChangelogDataStore } from '../Changelogs/ChangelogDatastore';
-import { ResourceError, ResourceErrorReason, ServiceError, ServiceErrorReason } from '../errors';
+import {
+  ResourceError,
+  ResourceErrorReason,
+  ServiceError,
+  ServiceErrorReason,
+} from '../errors';
 import { reportError } from './SentryConnector';
 import { LearningObject, LearningOutcome, User } from '../entity';
 
@@ -1031,15 +1036,17 @@ export class MongoDriver implements DataStore {
         .collection<{ _id: string }>(COLLECTIONS.USERS)
         .aggregate([
           { $match: { username } },
-          { $lookup: {
-            from: COLLECTIONS.LEARNING_OBJECTS,
-            localField: '_id',
-            foreignField: 'authorID',
-            as: 'objects',
-          }},
+          {
+            $lookup: {
+              from: COLLECTIONS.LEARNING_OBJECTS,
+              localField: '_id',
+              foreignField: 'authorID',
+              as: 'objects',
+            },
+          },
           { $unwind: '$objects' },
-          { $replaceRoot: { newRoot: '$objects' }},
-          { $project: { _id: 1 }},
+          { $replaceRoot: { newRoot: '$objects' } },
+          { $project: { _id: 1 } },
         ])
         .toArray();
       return objects.map(obj => obj._id);
@@ -1069,7 +1076,12 @@ export class MongoDriver implements DataStore {
         .collection(COLLECTIONS.USERS)
         .findOne<UserDocument>(query, { projection: { _id: 1 } });
       if (!userRecord)
-        return Promise.reject(new ResourceError(`Cannot find user with username ${username}`, ResourceErrorReason.NOT_FOUND));
+        return Promise.reject(
+          new ResourceError(
+            `Cannot find user with username ${username}`,
+            ResourceErrorReason.NOT_FOUND,
+          ),
+        );
       return `${userRecord._id}`;
     } catch (e) {
       reportError(e);
@@ -1170,14 +1182,12 @@ export class MongoDriver implements DataStore {
     const object = await this.db
       .collection<LearningObjectDocument>(COLLECTIONS.LEARNING_OBJECTS)
       .findOne({ _id: params.id });
-    const author = await this.fetchUser(object.authorID);
-    const learningObject = await this.generateLearningObject(
-      author,
-      object,
-      params.full,
-    );
+    if (object) {
+      const author = await this.fetchUser(object.authorID);
+      return this.generateLearningObject(author, object, params.full);
+    }
 
-    return learningObject;
+    return null;
   }
 
   /**
@@ -1196,15 +1206,12 @@ export class MongoDriver implements DataStore {
   }): Promise<LearningObject> {
     const object = await this.db
       .collection<LearningObjectDocument>(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
-      .findOne({ id: params.id });
-    const author = await this.fetchUser(object.authorID);
-    const learningObject = await this.generateLearningObject(
-      author,
-      object,
-      params.full,
-    );
-
-    return learningObject;
+      .findOne({ _id: params.id });
+    if (object) {
+      const author = await this.fetchUser(object.authorID);
+      return this.generateLearningObject(author, object, params.full);
+    }
+    return null;
   }
 
   /**

@@ -228,44 +228,40 @@ export class LearningObjectInteractor {
         userToken,
         revision,
       } = params;
+
       const fullChildren = false;
       let loadWorkingCopies = false;
       const learningObjectID = await dataStore.findLearningObject(
         username,
         learningObjectName,
       );
-      if (revision) {
-        const [status, collection] = await Promise.all([
-          dataStore.fetchLearningObjectStatus(learningObjectID),
-          dataStore.fetchLearningObjectCollection(learningObjectID),
-        ]);
-
-        this.authorizeReadAccess({
-          userToken,
-          objectInfo: { author: username, status, collection },
+      if (!revision) {
+        learningObject = await dataStore.fetchReleasedLearningObject({
+          id: learningObjectID,
+          full: true,
         });
-
-        if (
-          LearningObjectState.IN_REVIEW.includes(
-            status as LearningObject.Status,
-          )
-        ) {
+      }
+      if (revision || !learningObject) {
+        learningObject = await this.loadWorkingObject({
+          dataStore,
+          learningObjectID,
+          userToken,
+          authorUsername: username,
+        });
+        if (LearningObjectState.IN_REVIEW.includes(learningObject.status)) {
           childrenStatus = [
             ...LearningObjectState.IN_REVIEW,
             ...LearningObjectState.RELEASED,
           ];
         }
-
-        learningObject = await dataStore.fetchLearningObject({
-          id: learningObjectID,
-          full: true,
-        });
         loadWorkingCopies = true;
-      } else {
-        learningObject = await dataStore.fetchReleasedLearningObject({
-          id: learningObjectID,
-          full: true,
-        });
+      }
+
+      if (!learningObject) {
+        throw new ResourceError(
+          `Learning Object ${learningObjectName} by ${username} does not exist.`,
+          ResourceErrorReason.NOT_FOUND,
+        );
       }
 
       const children = await this.loadChildObjects({
@@ -292,6 +288,41 @@ export class LearningObjectInteractor {
     } catch (e) {
       return Promise.reject(e);
     }
+  }
+
+  /**
+   * Fetches the working copy of an object if authorized
+   *
+   * @private
+   * @static
+   * @param {{
+   *     dataStore: DataStore;
+   *     learningObjectID: string;
+   *     userToken: UserToken;
+   *     authorUsername: string;
+   *   }} params
+   * @returns
+   * @memberof LearningObjectInteractor
+   */
+  private static async loadWorkingObject(params: {
+    dataStore: DataStore;
+    learningObjectID: string;
+    userToken: UserToken;
+    authorUsername: string;
+  }) {
+    const { dataStore, learningObjectID, userToken, authorUsername } = params;
+    const [status, collection] = await Promise.all([
+      dataStore.fetchLearningObjectStatus(learningObjectID),
+      dataStore.fetchLearningObjectCollection(learningObjectID),
+    ]);
+    this.authorizeReadAccess({
+      userToken,
+      objectInfo: { author: authorUsername, status, collection },
+    });
+    return dataStore.fetchLearningObject({
+      id: learningObjectID,
+      full: true,
+    });
   }
 
   /**
