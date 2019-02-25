@@ -240,18 +240,15 @@ export class LearningObjectInteractor {
           id: learningObjectID,
           full: true,
         });
-      } else if (revision || !learningObject) {
+      }
+      if (revision || !learningObject) {
         learningObject = await this.loadWorkingObject({
           dataStore,
           learningObjectID,
           userToken,
           authorUsername: username,
         });
-        if (
-          LearningObjectState.IN_REVIEW.includes(
-            status as LearningObject.Status,
-          )
-        ) {
+        if (LearningObjectState.IN_REVIEW.includes(learningObject.status)) {
           childrenStatus = [
             ...LearningObjectState.IN_REVIEW,
             ...LearningObjectState.RELEASED,
