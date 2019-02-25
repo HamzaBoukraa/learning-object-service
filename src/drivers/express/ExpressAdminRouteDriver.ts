@@ -68,7 +68,6 @@ export class ExpressAdminRouteDriver {
     router.delete(
       '/users/:username/learning-objects/:learningObjectName',
       async (req, res) => {
-        console.log(req.originalUrl);
         const learningObjectName = req.params.learningObjectName;
         const username = req.user.username;
         res.redirect(

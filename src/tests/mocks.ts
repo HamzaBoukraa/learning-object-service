@@ -1,4 +1,4 @@
-import { User, LearningOutcome, LearningObject } from '@cyber4all/clark-entity';
+import { LearningObject, User, LearningOutcome } from '../entity';
 
 export const MOCK_OBJECTS = {
   TOTAL_RECORDS: 1,

@@ -1,11 +1,11 @@
 import { DataStore } from '../interfaces/DataStore';
-import { SubmittableLearningObject } from '@cyber4all/clark-entity';
 import { updateReadme } from '../LearningObjects/LearningObjectInteractor';
 import { FileManager } from '../interfaces/interfaces';
 import { reportError } from '../drivers/SentryConnector';
 import { hasLearningObjectWriteAccess } from '../interactors/AuthorizationManager';
 import { UserToken } from '../types';
 import { ResourceError, ResourceErrorReason } from '../errors';
+import { SubmittableLearningObject } from '../entity';
 
 export async function submitForReview(params: {
   dataStore: DataStore;
@@ -19,7 +19,8 @@ export async function submitForReview(params: {
       id: params.id,
       full: true,
     });
-    const _ = new SubmittableLearningObject(object);
+    // tslint:disable-next-line:no-unused-expression
+    new SubmittableLearningObject(object);
     await params.dataStore.submitLearningObjectToCollection(
       params.username,
       params.id,

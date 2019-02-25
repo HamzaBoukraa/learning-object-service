@@ -1,6 +1,6 @@
 import { LibraryCommunicator } from '../../interfaces/LibraryCommunicator';
 import { MOCK_OBJECTS } from '../mocks';
-import { LearningObject } from '@cyber4all/clark-entity';
+import { LearningObject } from '../../entity';
 
 export class MockLibraryDriver implements LibraryCommunicator {
   getMetrics(objectID: string): Promise<LearningObject.Metrics> {
