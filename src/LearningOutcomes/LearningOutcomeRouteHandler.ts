@@ -17,7 +17,7 @@ export function initialize({
   const addLearningOutcome = async (req: Request, res: Response) => {
     try {
       const user: UserToken = req.user;
-      const outcomeInput: LearningOutcomeInput = req.body.outcome;
+      const outcomeInput = req.body.outcome;
       const source: string = req.params.id;
       const id = await LearningOutcomeInteractor.addLearningOutcome({
         dataStore,

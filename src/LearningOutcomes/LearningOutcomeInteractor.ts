@@ -10,7 +10,7 @@ import { LearningOutcome } from '../entity';
 export interface LearningOutcomeDatastore {
   insertLearningOutcome(params: {
     source: string;
-    outcome: LearningOutcomeInput & LearningOutcomeInsert;
+    outcome: Partial<LearningOutcome>;
   }): Promise<string>;
   getLearningOutcome(params: { id: string }): Promise<LearningOutcome>;
   getAllLearningOutcomes(params: {
@@ -39,19 +39,15 @@ export async function addLearningOutcome(params: {
   dataStore: LearningOutcomeDatastore;
   user: UserToken;
   source: string;
-  outcomeInput: LearningOutcomeInput;
+  outcomeInput: Partial<LearningOutcome>;
 }): Promise<string> {
   try {
-    const outcome: LearningOutcomeInput & LearningOutcomeInsert = {
-      ...sanitizeObject<LearningOutcomeInput>(
-        { object: params.outcomeInput },
-        false,
-      ),
-      date: Date.now().toString(),
-    };
-    return await params.dataStore.insertLearningOutcome({
-      outcome,
-      source: params.source,
+    //FIXME: add authorization
+    const {dataStore, user, source,outcomeInput} = params;
+    const outcome = new LearningOutcome(outcomeInput)
+    return await dataStore.insertLearningOutcome({
+      outcome: outcome.toPlainObject(),
+      source,
     });
   } catch (e) {
     return Promise.reject(`Problem adding learning outcome. ${e}`);
