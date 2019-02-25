@@ -1,71 +1,12 @@
 import * as express from 'express';
 import * as bodyParser from 'body-parser';
-import { LearningOutcomeDatastore } from './LearningOutcomeInteractor';
-import {
-  LearningOutcomeInput,
-  LearningOutcomeInsert,
-  LearningOutcomeUpdate,
-} from './types';
 import { MongoDriver } from '../drivers/MongoDriver'
 import * as supertest from 'supertest';
 import * as LearningOutcomeRouteHandler from './LearningOutcomeRouteHandler';
 import { LearningOutcome } from '../entity';
 
-const validOutcome = new LearningOutcome({
-  verb: 'remember',
-  bloom: 'remember and understand',
-  text: 'to brush your face',
-});
-
-// FIXME instead of mocking out a datastore, we should implement the MongoDB Memory Server so that our tests hit the real datastore
-const dataStore: LearningOutcomeDatastore = {
-  async insertLearningOutcome(params: {
-    source: string;
-    outcome: Partial<LearningOutcome>;
-  }) {
-    try {
-      const _ = new LearningOutcome(Object.assign(params.outcome));
-      return Promise.resolve('someid');
-    } catch (error) {
-      return Promise.reject(error);
-    }
-  },
-
-  async getLearningOutcome(params: { id: string }) {
-    return Promise.resolve(validOutcome);
-  },
-
-  async getAllLearningOutcomes(params: { source: string }) {
-    return Promise.resolve([validOutcome, validOutcome]);
-  },
-
-  async updateLearningOutcome(params: {
-    id: string;
-    updates: LearningOutcomeUpdate & LearningOutcomeInsert;
-  }) {
-    try {
-      const outcome = new LearningOutcome(Object.assign(params.updates));
-      return Promise.resolve(outcome);
-    } catch (error) {
-      return Promise.reject(error);
-    }
-  },
-
-  async deleteLearningOutcome(params: { id: string }) {
-    return Promise.resolve();
-  },
-
-  async deleteAllLearningOutcomes(params: { source: string }) {
-    return Promise.resolve();
-  },
-};
-
-
 const app = express();
 const router = express.Router();
-
-//LearningOutcomeRouteHandler.initialize({ router, dataStore });
-
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
