@@ -133,7 +133,7 @@ export class MongoDriver implements DataStore {
     const doc = this.documentLearningObject(object);
     await this.db
       .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
-      .updateOne({ _id: object.id }, doc, { upsert: true });
+      .replaceOne({ _id: object.id }, doc, { upsert: true });
   }
   /**
    * Performs search on objects and released-objects collection based on query and or conditions
