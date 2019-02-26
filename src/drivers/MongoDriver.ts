@@ -389,7 +389,7 @@ export class MongoDriver implements DataStore {
     hasText?: boolean;
     orderBy?: string;
     sortType?: number;
-  }): { sort: any[]; paginate: any[] } {
+  }): { sort: [{ $sort: { [index: string]: any } }]; paginate: any[] } {
     let { page, limit, hasText, orderBy, sortType } = params;
     let paginate: {
       [index: string]: number;
@@ -402,16 +402,16 @@ export class MongoDriver implements DataStore {
     } else if (skip == null && limit) {
       paginate = [{ $limit: limit }];
     }
-    let sort: {
-      [index: string]: any;
-    }[] = [];
+    // @ts-ignore Sort must be initialized to modify
+    const sort: [{ $sort: { [index: string]: any } }] = [];
     if (hasText) {
-      sort = [{ $sort: { score: { $meta: 'textScore' } } }];
+      sort[0] = { $sort: { score: { $meta: 'textScore' } } };
     }
     // Apply orderBy
     if (orderBy) {
-      const orderBySort = { $sort: {} };
-      orderBySort[orderBy] = sortType ? sortType : 1;
+      const orderBySorter = {};
+      orderBySorter[orderBy] = sortType ? sortType : 1;
+      sort[0] = { $sort: orderBySorter };
     }
     return { sort, paginate };
   }
@@ -694,7 +694,6 @@ export class MongoDriver implements DataStore {
     objectId: string;
     fileId: string;
   }): Promise<void> {
-    console.log(params.fileId);
     await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).updateOne(
       { _id: params.objectId },
       {
