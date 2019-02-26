@@ -694,7 +694,6 @@ export class MongoDriver implements DataStore {
     objectId: string;
     fileId: string;
   }): Promise<void> {
-    console.log(params.fileId);
     await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).updateOne(
       { _id: params.objectId },
       {
