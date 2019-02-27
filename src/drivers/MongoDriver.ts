@@ -1395,7 +1395,6 @@ export class MongoDriver implements DataStore {
     params: ReleasedLearningObjectQuery,
   ): Promise<{ objects: LearningObject[]; total: number }> {
     try {
-      const status = [LearningObject.Status.RELEASED];
       const {
         author,
         text,
@@ -1420,7 +1419,6 @@ export class MongoDriver implements DataStore {
       let query: any = this.buildSearchQuery({
         text,
         authors,
-        status,
         length,
         level,
         outcomeIDs,
@@ -1429,7 +1427,7 @@ export class MongoDriver implements DataStore {
       });
 
       let objectCursor = await this.db
-        .collection(COLLECTIONS.LEARNING_OBJECTS)
+        .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
         .find<LearningObjectDocument>(query)
         .project({ score: { $meta: 'textScore' } })
         .sort({ score: { $meta: 'textScore' } });
