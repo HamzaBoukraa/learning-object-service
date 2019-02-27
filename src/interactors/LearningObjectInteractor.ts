@@ -291,6 +291,33 @@ export class LearningObjectInteractor {
   }
 
   /**
+   * Finds author's id by username.
+   * If id is not found a ResourceError is thrown
+   *
+   * @private
+   * @param {{
+   *     dataStore: DataStore;
+   *     username: string;
+   *   }} params
+   * @returns {Promise<string>}
+   * @memberof LearningObjectInteractor
+   */
+  private static async findAuthorIdByUsername(params: {
+    dataStore: DataStore;
+    username: string;
+  }): Promise<string> {
+    const { dataStore, username } = params;
+    const authorId = await dataStore.findUser(username);
+    if (!authorId) {
+      throw new ResourceError(
+        `No user with username ${username} exists`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+
+    return authorId;
+  }
+  /**
    * Fetches the working copy of an object if authorized
    *
    * @private
