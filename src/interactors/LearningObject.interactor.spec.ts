@@ -29,7 +29,6 @@ describe('loadUsersObjectSummaries', () => {
 });
 
 describe('loadProfile', () => {
-
   it('should return an array of learning object summaries', done => {
     return LearningObjectInteractor.loadProfile({
       dataStore,
@@ -61,7 +60,6 @@ describe('loadProfile', () => {
         done();
       });
   });
-
 });
 
 describe('fetchObjectsByIDs', () => {
@@ -98,13 +96,14 @@ describe('fetchObjectsByIDs', () => {
   });
 });
 
-describe('findLearningObject', () => {
+describe('getLearningObjectId', () => {
   it('should find a learning object ID', done => {
-    return LearningObjectInteractor.findLearningObject(
+    return LearningObjectInteractor.getLearningObjectId({
       dataStore,
-      MOCK_OBJECTS.USERNAME,
-      MOCK_OBJECTS.LEARNING_OBJECT_NAME,
-    )
+      username: MOCK_OBJECTS.USERNAME,
+      learningObjectName: MOCK_OBJECTS.LEARNING_OBJECT_NAME,
+      userToken: MOCK_OBJECTS.USERTOKEN,
+    })
       .then(val => {
         expect(val).to.be.a('string');
         done();
