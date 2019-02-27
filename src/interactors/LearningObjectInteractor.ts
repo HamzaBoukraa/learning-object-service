@@ -333,7 +333,7 @@ export class LearningObjectInteractor {
       dataStore,
       username: authorUsername,
     });
-    const learningObjectID = await this.findLearningObjectIdByAuthorAndName({
+    const learningObjectID = await this.getLearningObjectIdByAuthorAndName({
       dataStore,
       authorId,
       authorUsername,
@@ -371,7 +371,7 @@ export class LearningObjectInteractor {
       dataStore,
       username: authorUsername,
     });
-    const learningObjectID = await this.findReleasedLearningObjectIdByAuthorAndName(
+    const learningObjectID = await this.getReleasedLearningObjectIdByAuthorAndName(
       {
         dataStore,
         authorId,
@@ -434,7 +434,7 @@ export class LearningObjectInteractor {
    * @returns {Promise<string>}
    * @memberof LearningObjectInteractor
    */
-  private static async findLearningObjectIdByAuthorAndName(params: {
+  private static async getLearningObjectIdByAuthorAndName(params: {
     dataStore: DataStore;
     name: string;
     authorId: string;
@@ -468,7 +468,7 @@ export class LearningObjectInteractor {
    * @returns {Promise<string>}
    * @memberof LearningObjectInteractor
    */
-  private static async findReleasedLearningObjectIdByAuthorAndName(params: {
+  private static async getReleasedLearningObjectIdByAuthorAndName(params: {
     dataStore: DataStore;
     name: string;
     authorId: string;
