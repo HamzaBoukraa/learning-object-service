@@ -235,9 +235,9 @@ export class LearningObjectInteractor {
 
       if (!revision) {
         const requesterIsAuthor = this.hasReadAccess({
-            userToken,
-            resourceVal: username,
-            authFunction: isAuthorByUsername,
+          userToken,
+          resourceVal: username,
+          authFunction: isAuthorByUsername,
         }) as boolean;
         const requesterIsPrivileged =
           userToken && isPrivilegedUser(userToken.accessGroups);
@@ -562,8 +562,8 @@ export class LearningObjectInteractor {
     );
     const requesterIsPrivileged = this.hasReadAccess({
       userToken: userToken as UserToken,
-        resourceVal: objectInfo.collection,
-        authFunction: hasReadAccessByCollection,
+      resourceVal: objectInfo.collection,
+      authFunction: hasReadAccessByCollection,
     }) as boolean;
     if (
       authorOrPrivilegedAccess &&
@@ -795,6 +795,86 @@ export class LearningObjectInteractor {
   }
 
   /**
+   * Returns a Learning Object's Id by author's username and Learning Object's name
+   * Will attempt to find released and unreleased object's id if authorized
+   *
+   * @static
+   * @param {({
+   *     dataStore: DataStore;
+   *     username: string;
+   *     learningObjectName: string;
+   *     userToken: UserToken | ServiceToken;
+   *   })} params
+   * @returns {Promise<string>}
+   * @memberof LearningObjectInteractor
+   */
+  public static async getLearningObjectId(params: {
+    dataStore: DataStore;
+    username: string;
+    learningObjectName: string;
+    userToken: UserToken | ServiceToken;
+  }): Promise<string> {
+    try {
+      const { dataStore, username, learningObjectName, userToken } = params;
+
+      const authorId = await this.findAuthorIdByUsername({
+        dataStore,
+        username,
+      });
+
+      const requesterIsAuthor = this.hasReadAccess({
+        userToken: userToken as UserToken,
+        resourceVal: username,
+        authFunction: isAuthorByUsername,
+      }) as boolean;
+      const requesterIsPrivileged =
+        userToken && isPrivilegedUser((<UserToken>userToken).accessGroups);
+      const requesterIsService = hasServiceLevelAccess(
+        userToken as ServiceToken,
+      );
+      const authorizationCases = [
+        requesterIsAuthor,
+        requesterIsPrivileged,
+        requesterIsService,
+      ];
+
+      let learningObjectID = await this.getReleasedLearningObjectIdByAuthorAndName(
+        {
+          dataStore,
+          authorId,
+          authorUsername: username,
+          name: learningObjectName,
+        },
+      ).catch(error =>
+        bypassNotFoundResourceErrorIfAuthorized({ error, authorizationCases }),
+      );
+
+      if (!learningObjectID) {
+        learningObjectID = await this.getLearningObjectIdByAuthorAndName({
+          dataStore,
+          authorId,
+          authorUsername: username,
+          name: learningObjectName,
+        });
+        const [status, collection] = await Promise.all([
+          dataStore.fetchLearningObjectStatus(learningObjectID),
+          dataStore.fetchLearningObjectCollection(learningObjectID),
+        ]);
+        this.authorizeReadAccess({
+          userToken,
+          objectInfo: { author: username, status, collection },
+        });
+      }
+      return learningObjectID;
+    } catch (e) {
+      if (e instanceof ResourceError || e instanceof ServiceError) {
+        return Promise.reject(e);
+      }
+      reportError(e);
+      throw new ServiceError(ServiceErrorReason.INTERNAL);
+    }
+  }
+  /**
    * Deletes multiple objects by author's name and Learning Objects' names
    *
    * @static
@@ -808,18 +888,6 @@ export class LearningObjectInteractor {
    * @returns {Promise<void>}
    * @memberof LearningObjectInteractor
    */
-  public static async findLearningObject(
-    dataStore: DataStore,
-    username: string,
-    learningObjectName: string,
-  ): Promise<string> {
-    try {
-      return await dataStore.findLearningObject(username, learningObjectName);
-    } catch (e) {
-      return Promise.reject(`Problem finding LearningObject. Error: ${e}`);
-    }
-  }
-
   public static async deleteMultipleLearningObjects(params: {
     dataStore: DataStore;
     fileManager: FileManager;
@@ -1297,7 +1365,7 @@ export class LearningObjectInteractor {
    * @param {UserToken} params.userToken [Object containing information about the user requesting the resource]
    * @param {any} params.resourceVal [Resource value to run auth function against]
    * @param {Function} params.authFunction [Function used to check if user has ownership over resource]
-   * @returns {Promise<boolean>}
+   * @returns {boolean | Promise<boolean>}
    * @memberof LearningObjectInteractor
    */
   private static hasReadAccess(params: {
@@ -1307,7 +1375,7 @@ export class LearningObjectInteractor {
       resourceVal: any,
       userToken: UserToken,
     ) => boolean | Promise<boolean>;
-  }): boolean | Promise<boolean> {
+  }) {
     if (!params.userToken) {
       return false;
     }
@@ -1521,7 +1589,10 @@ const checkAuthByUsername = (username: string, userToken: UserToken) => {
  * @param {UserToken} userToken
  * @returns
  */
-const isAuthorByUsername = (username: string, userToken: UserToken) => {
+const isAuthorByUsername = (
+  username: string,
+  userToken: UserToken,
+): boolean => {
   return userToken.username === username;
 };
 
