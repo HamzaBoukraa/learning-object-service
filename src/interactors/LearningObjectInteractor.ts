@@ -14,12 +14,13 @@ import {
   updateObjectLastModifiedDate,
   updateParentsDate,
 } from '../LearningObjects/LearningObjectInteractor';
-import { UserToken } from '../types';
+import { UserToken, ServiceToken } from '../types';
 import {
   getAccessGroupCollections,
   hasMultipleLearningObjectWriteAccesses,
   isAdminOrEditor,
   isPrivilegedUser,
+  hasServiceLevelAccess,
 } from './AuthorizationManager';
 import {
   ResourceError,
@@ -522,19 +523,19 @@ export class LearningObjectInteractor {
   }
 
   /**
-   * Runs through authorization logic read access to a learning object.
-   * Throws an error if user is not authorized
+   * Runs through authorization logic read access to a learning object data.
+   * Throws an error if requester is not authorized
    *
    * @private
    * @static
    * @param {{
-   *     userToken: UserToken;
+   *     userToken: UserToken | ServiceToken; [The token of the requester]
    *     objectInfo: { author: string; status: string; collection: string };
    *   }} params
    * @memberof LearningObjectInteractor
    */
   private static authorizeReadAccess(params: {
-    userToken: UserToken;
+    userToken: UserToken | ServiceToken;
     objectInfo: { author: string; status: string; collection: string };
   }): void {
     const { userToken, objectInfo } = params;
@@ -542,12 +543,15 @@ export class LearningObjectInteractor {
       objectInfo.status as LearningObject.Status,
     );
 
-    const isAuthor = this.hasReadAccess({
-      userToken,
+    const requesterIsAuthor = this.hasReadAccess({
+      userToken: userToken as UserToken,
       resourceVal: objectInfo.author,
       authFunction: isAuthorByUsername,
-    });
-    if (authorOnlyAccess && !isAuthor) {
+    }) as boolean;
+
+    const requesterIsService = hasServiceLevelAccess(userToken as ServiceToken);
+
+    if (authorOnlyAccess && !requesterIsService && !requesterIsAuthor) {
       throw new ResourceError(
         'Invalid Access',
         ResourceErrorReason.INVALID_ACCESS,
@@ -556,14 +560,16 @@ export class LearningObjectInteractor {
     const authorOrPrivilegedAccess = !LearningObjectState.RELEASED.includes(
       objectInfo.status as LearningObject.Status,
     );
-    if (
-      authorOrPrivilegedAccess &&
-      !isAuthor &&
-      !this.hasReadAccess({
-        userToken,
+    const requesterIsPrivileged = this.hasReadAccess({
+      userToken: userToken as UserToken,
         resourceVal: objectInfo.collection,
         authFunction: hasReadAccessByCollection,
-      })
+    }) as boolean;
+    if (
+      authorOrPrivilegedAccess &&
+      !requesterIsService &&
+      !requesterIsAuthor &&
+      !requesterIsPrivileged
     ) {
       throw new ResourceError(
         'Invalid Access',
