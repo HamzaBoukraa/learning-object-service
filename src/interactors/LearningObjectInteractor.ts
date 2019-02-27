@@ -637,10 +637,17 @@ export class LearningObjectInteractor {
     user: UserToken;
   }): Promise<void> {
     try {
+      const {
+        dataStore,
+        fileManager,
+        library,
+        learningObjectNames,
+        user,
+      } = params;
       const hasAccess = await hasMultipleLearningObjectWriteAccesses(
-        params.user,
-        params.dataStore,
-        params.learningObjectNames,
+        user,
+        dataStore,
+        learningObjectNames,
       );
       if (hasAccess) {
         // Get LearningObject ids
@@ -648,12 +655,16 @@ export class LearningObjectInteractor {
           id: string;
           parentIds: string[];
         }[] = await Promise.all(
-          params.learningObjectNames.map(async (name: string) => {
-            const id = await params.dataStore.findLearningObject(
-              params.user.username,
+        learningObjectNames.map(async (name: string) => {
+          const authorId = await this.findAuthorIdByUsername({
+            dataStore,
+            username: user.username,
+          });
+          const id = await dataStore.findLearningObject({
+            authorId,
               name,
-            );
-            const parentIds = await params.dataStore.findParentObjectIds({
+          });
+          const parentIds = await dataStore.findParentObjectIds({
               childId: id,
             });
             return { id, parentIds };
@@ -661,19 +672,19 @@ export class LearningObjectInteractor {
         );
         const objectIds = objectRefs.map(obj => obj.id);
         // Remove objects from library
-        await params.library.cleanObjectsFromLibraries(objectIds);
+      await library.cleanObjectsFromLibraries(objectIds);
         // Delete objects from datastore
-        await params.dataStore.deleteMultipleLearningObjects(objectIds);
+      await dataStore.deleteMultipleLearningObjects(objectIds);
         // For each object id
         objectRefs.forEach(async obj => {
           // Attempt to delete files
-          const path = `${params.user.username}/${obj.id}/`;
-          params.fileManager.deleteAll({ path }).catch(e => {
+        const path = `${user.username}/${obj.id}/`;
+        fileManager.deleteAll({ path }).catch(e => {
             console.error(`Problem deleting files at ${path}. ${e}`);
           });
           // Update parents' dates
           updateParentsDate({
-            dataStore: params.dataStore,
+          dataStore,
             parentIds: obj.parentIds,
             childId: obj.id,
             date: Date.now().toString(),
@@ -1002,13 +1013,15 @@ export class LearningObjectInteractor {
     parentName: string;
   }): Promise<void> {
     try {
-      const parentID = await params.dataStore.findLearningObject(
-        params.username,
-        params.parentName,
-      );
-      await params.dataStore.setChildren(parentID, params.children);
+      const { dataStore, children, username, parentName } = params;
+      const authorId = await this.findAuthorIdByUsername({ dataStore, username });
+      const parentID = await dataStore.findLearningObject({
+        authorId,
+        name: parentName,
+      });
+      await dataStore.setChildren(parentID, children);
       await updateObjectLastModifiedDate({
-        dataStore: params.dataStore,
+        dataStore: dataStore,
         id: parentID,
         date: Date.now().toString(),
       });
@@ -1024,13 +1037,15 @@ export class LearningObjectInteractor {
     parentName: string;
   }) {
     try {
-      const parentID = await params.dataStore.findLearningObject(
-        params.username,
-        params.parentName,
-      );
-      await params.dataStore.deleteChild(parentID, params.childId);
+      const { dataStore, childId, username, parentName } = params;
+      const authorId = await this.findAuthorIdByUsername({ dataStore, username });
+      const parentID = await dataStore.findLearningObject({
+        authorId,
+        name: parentName,
+      });
+      await dataStore.deleteChild(parentID, childId);
       await updateObjectLastModifiedDate({
-        dataStore: params.dataStore,
+        dataStore,
         id: parentID,
         date: Date.now().toString(),
       });
