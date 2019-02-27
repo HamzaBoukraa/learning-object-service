@@ -288,6 +288,89 @@ export class LearningObjectInteractor {
     } catch (e) {
       return Promise.reject(e);
     }
+
+  /**
+   * Loads working copy of a Learning Object by author's username and Learning Object's name
+   *
+   * @private
+   * @static
+   * @param {{
+   *     dataStore: DataStore;
+   *     authorUsername: string;
+   *     learningObjectName: string;
+   *     userToken: UserToken;
+   *   }} params
+   * @returns
+   * @memberof LearningObjectInteractor
+   */
+  private static async loadLearningObjectByAuthorAndName(params: {
+    dataStore: DataStore;
+    authorUsername: string;
+    learningObjectName: string;
+    userToken: UserToken;
+  }) {
+    const { dataStore, authorUsername, learningObjectName, userToken } = params;
+    const authorId = await this.findAuthorIdByUsername({
+      dataStore,
+      username: authorUsername,
+    });
+    const learningObjectID = await this.findLearningObjectIdByAuthorAndName({
+      dataStore,
+      authorId,
+      authorUsername,
+      name: learningObjectName,
+    });
+    return this.loadLearningObjectById({
+      dataStore,
+      learningObjectID,
+      userToken,
+      authorUsername,
+    });
+  }
+
+  /**
+   * Loads released Learning Object by author's id and Learning Object's name
+   *
+   * @private
+   * @static
+   * @param {{
+   *     dataStore: DataStore;
+   *     authorId: string;
+   *     authorUsername: string;
+   *     learningObjectName: string;
+   *   }} params
+   * @returns
+   * @memberof LearningObjectInteractor
+   */
+  private static async loadReleasedLearningObjectByAuthorAndName(params: {
+    dataStore: DataStore;
+    authorUsername: string;
+    learningObjectName: string;
+  }) {
+    const { dataStore, authorUsername, learningObjectName } = params;
+    const authorId = await this.findAuthorIdByUsername({
+      dataStore,
+      username: authorUsername,
+    });
+    const learningObjectID = await this.findReleasedLearningObjectIdByAuthorAndName(
+      {
+        dataStore,
+        authorId,
+        authorUsername,
+        name: learningObjectName,
+      },
+    );
+    const learningObject = await dataStore.fetchReleasedLearningObject({
+      id: learningObjectID,
+      full: true,
+    });
+    if (!learningObject) {
+      throw new ResourceError(
+        `A released Learning Object ${learningObjectName} by ${authorUsername} does not exist.`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+    return learningObject;
   }
 
   /**
