@@ -1545,3 +1545,27 @@ const hasReadAccessByCollection = (
     getAccessGroupCollections(userToken).includes(collectionName)
   );
 };
+
+/**
+ * This handler allows execution to proceed if a ResourceError occurs because of a resource not being found.
+ * This allows authorized requesters to retry request on the working collection which requires explicit authorization
+ *
+ * @param {Error} error
+ * @param {authorizationCases} boolean[] [Contains results from authorization checks that determines whether or not the requester is authorized to access resource]
+ * @returns {null} [Returns null so that the value resolves to null indicating resource was not loaded]
+ */
+const bypassNotFoundResourceErrorIfAuthorized = (params: {
+  error: Error;
+  authorizationCases: boolean[];
+}): null | never => {
+  const { error, authorizationCases } = params;
+  if (
+    !(error instanceof ResourceError) ||
+    (error instanceof ResourceError &&
+      error.name !== ResourceErrorReason.NOT_FOUND) ||
+    !authorizationCases.includes(true)
+  ) {
+    throw error;
+  }
+  return null;
+};
