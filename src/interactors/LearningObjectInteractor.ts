@@ -602,18 +602,6 @@ export class LearningObjectInteractor {
    *
    * @returns {string} LearningOutcomeID
    */
-  public static async findLearningObject(
-    dataStore: DataStore,
-    username: string,
-    learningObjectName: string,
-  ): Promise<string> {
-    try {
-      return await dataStore.findLearningObject(username, learningObjectName);
-    } catch (e) {
-      return Promise.reject(`Problem finding LearningObject. Error: ${e}`);
-    }
-  }
-
   public static async deleteMultipleLearningObjects(params: {
     dataStore: DataStore;
     fileManager: FileManager;
