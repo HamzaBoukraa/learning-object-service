@@ -317,6 +317,75 @@ export class LearningObjectInteractor {
 
     return authorId;
   }
+
+  /**
+   * Finds Learning Object's id by name and authorID.
+   * If id is not found a ResourceError is thrown
+   *
+   * @private
+   * @param {{
+   *     dataStore: DataStore;
+   *     name: string; [Learning Object's name]
+   *     authorId: string [Learning Object's author's id]
+   *     authorUsername: string [Learning Object's author's username]
+   *   }} params
+   * @returns {Promise<string>}
+   * @memberof LearningObjectInteractor
+   */
+  private static async findLearningObjectIdByAuthorAndName(params: {
+    dataStore: DataStore;
+    name: string;
+    authorId: string;
+    authorUsername: string;
+  }): Promise<string> {
+    const { dataStore, name, authorId, authorUsername } = params;
+    const learningObjectId = await dataStore.findLearningObject({
+      authorId,
+      name,
+    });
+    if (!learningObjectId) {
+      throw new ResourceError(
+        `No Learning Object with name ${name} by ${authorUsername} exists`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+    return learningObjectId;
+  }
+
+  /**
+   * Finds released Learning Object's id by name and authorID.
+   * If id is not found a ResourceError is thrown
+   *
+   * @private
+   * @param {{
+   *     dataStore: DataStore;
+   *     name: string; [Learning Object's name]
+   *     authorId: string [Learning Object's author's id]
+   *     authorUsername: string [Learning Object's author's username]
+   *   }} params
+   * @returns {Promise<string>}
+   * @memberof LearningObjectInteractor
+   */
+  private static async findReleasedLearningObjectIdByAuthorAndName(params: {
+    dataStore: DataStore;
+    name: string;
+    authorId: string;
+    authorUsername: string;
+  }): Promise<string> {
+    const { dataStore, name, authorId, authorUsername } = params;
+    const learningObjectId = await dataStore.findReleasedLearningObject({
+      authorId,
+      name,
+    });
+    if (!learningObjectId) {
+      throw new ResourceError(
+        `No released Learning Object with name ${name} by ${authorUsername} exists`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+    return learningObjectId;
+  }
+
   /**
    * Fetches the working copy of an object if authorized
    *
