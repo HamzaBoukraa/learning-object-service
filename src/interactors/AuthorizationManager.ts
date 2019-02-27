@@ -1,4 +1,5 @@
-import { UserToken } from '../types';
+import 'dotenv/config';
+import { UserToken, ServiceToken } from '../types';
 import { DataStore } from '../interfaces/DataStore';
 
 enum UserRole {
@@ -186,4 +187,29 @@ export function getAccessGroupCollections(userToken: UserToken) {
     collections.push(access[1]);
   }
   return collections.filter(collection => !!collection);
+}
+
+/**
+ * Checks if requester is a service
+ *
+ * @export
+ * @param {ServiceToken} serviceToken
+ * @returns {boolean}
+ */
+export function hasServiceLevelAccess(serviceToken: ServiceToken): boolean {
+  if (serviceToken) {
+    return isValidServiceKey(serviceToken.SERVICE_KEY);
+  }
+  return false;
+}
+
+/**
+ * Checks if service key provided is valid
+ *
+ * @export
+ * @param {string} key
+ * @returns {boolean}
+ */
+function isValidServiceKey(key: string): boolean {
+  return key === process.env.SERVICE_KEY;
 }
