@@ -19,6 +19,7 @@ import * as SubmissionRouteDriver from '../../LearningObjectSubmission/Submissio
 import * as ChangelogRouteHandler from '../../Changelogs/ChangelogRouteDriver';
 import { reportError } from '../SentryConnector';
 import { ResourceErrorReason } from '../../errors';
+import { UserToken } from '../../types';
 
 export class ExpressAuthRouteDriver {
   private upload = multer({ storage: multer.memoryStorage() });
@@ -27,7 +28,7 @@ export class ExpressAuthRouteDriver {
     private dataStore: DataStore,
     private fileManager: FileManager,
     private library: LibraryCommunicator,
-  ) {}
+  ) { }
 
   public static buildRouter(
     dataStore: DataStore,
@@ -63,7 +64,7 @@ export class ExpressAuthRouteDriver {
         try {
           throw new Error(
             `${
-              req.user.username
+            req.user.username
             } was retrieved from the token. Should be lowercase`,
           );
         } catch (e) {
@@ -297,18 +298,17 @@ export class ExpressAuthRouteDriver {
       .post(async (req, res) => {
         try {
           const username = req.params.username;
-          const user = req.user;
-          if (this.hasAccess(user, 'username', username)) {
-            await LearningObjectInteractor.setChildren({
-              dataStore: this.dataStore,
-              children: req.body.children,
-              parentName: req.params.learningObjectName,
-              username: user.username,
-            });
-            res.sendStatus(200);
-          } else {
-            res.status(403).send('Invalid Access. Could not add child object.');
-          }
+          const user: UserToken = req.user;
+
+          await LearningObjectInteractor.setChildren({
+            dataStore: this.dataStore,
+            children: req.body.children,
+            parentName: req.params.learningObjectName,
+            username,
+            userToken: user,
+          });
+          res.sendStatus(200);
+
         } catch (e) {
           console.error(e);
           res.status(500).send(e);
@@ -316,15 +316,15 @@ export class ExpressAuthRouteDriver {
       })
       .delete(async (req, res) => {
         try {
-          const user = req.user;
+          const user: UserToken = req.user;
           const username = req.params.username;
-          if (this.hasAccess(user, 'username', username))
-            await LearningObjectInteractor.removeChild({
-              dataStore: this.dataStore,
-              childId: req.body.id,
-              parentName: req.params.learningObjectName,
-              username: user.username,
-            });
+          await LearningObjectInteractor.removeChild({
+            dataStore: this.dataStore,
+            childId: req.body.id,
+            parentName: req.params.learningObjectName,
+            username,
+            userToken: user,
+          });
           res.sendStatus(200);
         } catch (e) {
           console.error(e);

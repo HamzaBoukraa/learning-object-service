@@ -28,6 +28,7 @@ import {
   ServiceErrorReason,
 } from '../errors';
 import { LearningObject } from '../entity';
+import { accessGroups } from '../types/user-token';
 
 // file size is in bytes
 const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
@@ -493,7 +494,7 @@ export class LearningObjectInteractor {
       let loFile: LearningObject.Material.File;
       const uploadPath = `${params.username}/${params.id}/${
         params.file.fullPath ? params.file.fullPath : params.file.name
-      }`;
+        }`;
       const fileUpload: FileUpload = {
         path: uploadPath,
         data: params.file.buffer,
@@ -980,20 +981,40 @@ export class LearningObjectInteractor {
     }
   }
 
+  /**
+   * Sets children of parent object after fetching the ID of the object and authenticating user as privelaged or Author
+   * 
+   * @param {DataStore} dataStore 
+   * @param {string[]} children - array of children IDs to be added
+   * @param {string} parentName 
+   * @param {string } username - author's username 
+   * @param {UserToken} userToken - user's token with access privelages.
+   * 
+   */
   public static async setChildren(params: {
     dataStore: DataStore;
     children: string[];
-    username: string;
     parentName: string;
+    username: string;
+    userToken: UserToken;
   }): Promise<void> {
+    const { dataStore, children, username, parentName, userToken } = params;
+
     try {
-      const parentID = await params.dataStore.findLearningObject(
-        params.username,
-        params.parentName,
+      const parentID = await dataStore.findLearningObject(
+        username,
+        parentName,
       );
-      await params.dataStore.setChildren(parentID, params.children);
+      const [status, collection] = await Promise.all([
+        dataStore.fetchLearningObjectStatus(parentID),
+        dataStore.fetchLearningObjectCollection(parentID),
+      ]);
+      this.authorizeReadAccess({
+        userToken, objectInfo: { author: username, status, collection }
+      })
+      await dataStore.setChildren(parentID, children);
       await updateObjectLastModifiedDate({
-        dataStore: params.dataStore,
+        dataStore,
         id: parentID,
         date: Date.now().toString(),
       });
@@ -1002,20 +1023,38 @@ export class LearningObjectInteractor {
     }
   }
 
+  /**
+   * Removes child of parent object after fetching the ID of the object and authenticating user as privelaged or Author
+   * 
+   * @param {DataStore} dataStore 
+   * @param {string} childId
+   * @param {string} parentName 
+   * @param {string } username - author's username 
+   * @param {UserToken} userToken - user's token with access privelages.
+   * 
+   */
   public static async removeChild(params: {
     dataStore: DataStore;
     childId: string;
-    username: string;
     parentName: string;
+    username: string;
+    userToken: UserToken;
   }) {
+    const { dataStore, childId, username, parentName, userToken } = params;
     try {
-      const parentID = await params.dataStore.findLearningObject(
-        params.username,
-        params.parentName,
+      const parentID = await dataStore.findLearningObject(
+        username,
+        parentName,
       );
-      await params.dataStore.deleteChild(parentID, params.childId);
+      const [status, collection] = await Promise.all([
+        dataStore.fetchLearningObjectStatus(parentID),
+        dataStore.fetchLearningObjectCollection(parentID),
+      ]);
+      this.authorizeReadAccess({ userToken, objectInfo: { author: username, status, collection } })
+      await dataStore.deleteChild(parentID, childId);
+
       await updateObjectLastModifiedDate({
-        dataStore: params.dataStore,
+        dataStore,
         id: parentID,
         date: Date.now().toString(),
       });
