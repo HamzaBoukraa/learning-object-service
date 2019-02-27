@@ -231,22 +231,43 @@ export class LearningObjectInteractor {
 
       const fullChildren = false;
       let loadWorkingCopies = false;
-      const learningObjectID = await dataStore.findLearningObject(
-        username,
-        learningObjectName,
-      );
+
       if (!revision) {
-        learningObject = await dataStore.fetchReleasedLearningObject({
-          id: learningObjectID,
-          full: true,
-        });
+        /**
+         * The call to loadReleasedLearningObjectByAuthorAndName will throw a ResourceError if the Learning Object is not found within the released collection
+         * This handler allows execution to proceed to load the load working copy of a Learning Object for authorized users
+         *
+         * @param {Error} error
+         * @returns {null} [Returns null so that the value of learningObject is assigned to null]
+         */
+        const proceedIfAuthorized = (error: Error): null => {
+          const authorIsRequester = this.hasReadAccess({
+            userToken,
+            resourceVal: username,
+            authFunction: isAuthorByUsername,
+          });
+          if (
+            !(error instanceof ResourceError) ||
+            !userToken ||
+            (!authorIsRequester && !isPrivilegedUser(userToken.accessGroups))
+          ) {
+            throw error;
+          }
+          return null;
+        };
+
+        learningObject = await this.loadReleasedLearningObjectByAuthorAndName({
+          dataStore,
+          authorUsername: username,
+          learningObjectName,
+        }).catch(proceedIfAuthorized);
       }
       if (revision || !learningObject) {
-        learningObject = await this.loadWorkingObject({
+        learningObject = await this.loadLearningObjectByAuthorAndName({
           dataStore,
-          learningObjectID,
-          userToken,
           authorUsername: username,
+          learningObjectName,
+          userToken,
         });
         if (LearningObjectState.IN_REVIEW.includes(learningObject.status)) {
           childrenStatus = [
@@ -255,13 +276,6 @@ export class LearningObjectInteractor {
           ];
         }
         loadWorkingCopies = true;
-      }
-
-      if (!learningObject) {
-        throw new ResourceError(
-          `Learning Object ${learningObjectName} by ${username} does not exist.`,
-          ResourceErrorReason.NOT_FOUND,
-        );
       }
 
       const children = await this.loadChildObjects({
@@ -279,15 +293,199 @@ export class LearningObjectInteractor {
       try {
         learningObject.metrics = await this.loadMetrics(
           library,
-          learningObjectID,
+          learningObject.id,
         );
       } catch (e) {
         console.error(e);
       }
       return learningObject;
     } catch (e) {
-      return Promise.reject(e);
+      if (e instanceof ResourceError || e instanceof ServiceError) {
+        return Promise.reject(e);
+      }
+      reportError(e);
+      throw new ServiceError(ServiceErrorReason.INTERNAL);
     }
+  }
+
+  /**
+   * Loads working copy of a Learning Object by author's username and Learning Object's name
+   *
+   * @private
+   * @static
+   * @param {{
+   *     dataStore: DataStore;
+   *     authorUsername: string;
+   *     learningObjectName: string;
+   *     userToken: UserToken;
+   *   }} params
+   * @returns
+   * @memberof LearningObjectInteractor
+   */
+  private static async loadLearningObjectByAuthorAndName(params: {
+    dataStore: DataStore;
+    authorUsername: string;
+    learningObjectName: string;
+    userToken: UserToken;
+  }) {
+    const { dataStore, authorUsername, learningObjectName, userToken } = params;
+    const authorId = await this.findAuthorIdByUsername({
+      dataStore,
+      username: authorUsername,
+    });
+    const learningObjectID = await this.findLearningObjectIdByAuthorAndName({
+      dataStore,
+      authorId,
+      authorUsername,
+      name: learningObjectName,
+    });
+    return this.loadLearningObjectById({
+      dataStore,
+      learningObjectID,
+      userToken,
+      authorUsername,
+    });
+  }
+
+  /**
+   * Loads released Learning Object by author's id and Learning Object's name
+   *
+   * @private
+   * @static
+   * @param {{
+   *     dataStore: DataStore;
+   *     authorId: string;
+   *     authorUsername: string;
+   *     learningObjectName: string;
+   *   }} params
+   * @returns
+   * @memberof LearningObjectInteractor
+   */
+  private static async loadReleasedLearningObjectByAuthorAndName(params: {
+    dataStore: DataStore;
+    authorUsername: string;
+    learningObjectName: string;
+  }) {
+    const { dataStore, authorUsername, learningObjectName } = params;
+    const authorId = await this.findAuthorIdByUsername({
+      dataStore,
+      username: authorUsername,
+    });
+    const learningObjectID = await this.findReleasedLearningObjectIdByAuthorAndName(
+      {
+        dataStore,
+        authorId,
+        authorUsername,
+        name: learningObjectName,
+      },
+    );
+    const learningObject = await dataStore.fetchReleasedLearningObject({
+      id: learningObjectID,
+      full: true,
+    });
+    if (!learningObject) {
+      throw new ResourceError(
+        `A released Learning Object ${learningObjectName} by ${authorUsername} does not exist.`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+    return learningObject;
+  }
+
+  /**
+   * Finds author's id by username.
+   * If id is not found a ResourceError is thrown
+   *
+   * @private
+   * @param {{
+   *     dataStore: DataStore;
+   *     username: string;
+   *   }} params
+   * @returns {Promise<string>}
+   * @memberof LearningObjectInteractor
+   */
+  private static async findAuthorIdByUsername(params: {
+    dataStore: DataStore;
+    username: string;
+  }): Promise<string> {
+    const { dataStore, username } = params;
+    const authorId = await dataStore.findUser(username);
+    if (!authorId) {
+      throw new ResourceError(
+        `No user with username ${username} exists`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+
+    return authorId;
+  }
+
+  /**
+   * Finds Learning Object's id by name and authorID.
+   * If id is not found a ResourceError is thrown
+   *
+   * @private
+   * @param {{
+   *     dataStore: DataStore;
+   *     name: string; [Learning Object's name]
+   *     authorId: string [Learning Object's author's id]
+   *     authorUsername: string [Learning Object's author's username]
+   *   }} params
+   * @returns {Promise<string>}
+   * @memberof LearningObjectInteractor
+   */
+  private static async findLearningObjectIdByAuthorAndName(params: {
+    dataStore: DataStore;
+    name: string;
+    authorId: string;
+    authorUsername: string;
+  }): Promise<string> {
+    const { dataStore, name, authorId, authorUsername } = params;
+    const learningObjectId = await dataStore.findLearningObject({
+      authorId,
+      name,
+    });
+    if (!learningObjectId) {
+      throw new ResourceError(
+        `No Learning Object with name ${name} by ${authorUsername} exists`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+    return learningObjectId;
+  }
+
+  /**
+   * Finds released Learning Object's id by name and authorID.
+   * If id is not found a ResourceError is thrown
+   *
+   * @private
+   * @param {{
+   *     dataStore: DataStore;
+   *     name: string; [Learning Object's name]
+   *     authorId: string [Learning Object's author's id]
+   *     authorUsername: string [Learning Object's author's username]
+   *   }} params
+   * @returns {Promise<string>}
+   * @memberof LearningObjectInteractor
+   */
+  private static async findReleasedLearningObjectIdByAuthorAndName(params: {
+    dataStore: DataStore;
+    name: string;
+    authorId: string;
+    authorUsername: string;
+  }): Promise<string> {
+    const { dataStore, name, authorId, authorUsername } = params;
+    const learningObjectId = await dataStore.findReleasedLearningObject({
+      authorId,
+      name,
+    });
+    if (!learningObjectId) {
+      throw new ResourceError(
+        `No released Learning Object with name ${name} by ${authorUsername} exists`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+    return learningObjectId;
   }
 
   /**
@@ -304,7 +502,7 @@ export class LearningObjectInteractor {
    * @returns
    * @memberof LearningObjectInteractor
    */
-  private static async loadWorkingObject(params: {
+  private static async loadLearningObjectById(params: {
     dataStore: DataStore;
     learningObjectID: string;
     userToken: UserToken;
@@ -319,10 +517,17 @@ export class LearningObjectInteractor {
       userToken,
       objectInfo: { author: authorUsername, status, collection },
     });
-    return dataStore.fetchLearningObject({
+    const learningObject = await dataStore.fetchLearningObject({
       id: learningObjectID,
       full: true,
     });
+    if (!learningObject) {
+      throw new ResourceError(
+        `No Learning Object with name ${name} by ${authorUsername} exists`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+    return learningObject;
   }
 
   /**
@@ -593,27 +798,19 @@ export class LearningObjectInteractor {
   }
 
   /**
-   * Look up a Learning Object by its name and the user that created it.
-   * @async
+   * Deletes multiple objects by author's name and Learning Objects' names
    *
-   * @param dataStore the data store to be accessed
-   * @param {string} username the username of the creator
-   * @param {string} learningObjectName the name of the Learning Object
-   *
-   * @returns {string} LearningOutcomeID
+   * @static
+   * @param {{
+   *     dataStore: DataStore;
+   *     fileManager: FileManager;
+   *     library: LibraryCommunicator;
+   *     learningObjectNames: string[];
+   *     user: UserToken;
+   *   }} params
+   * @returns {Promise<void>}
+   * @memberof LearningObjectInteractor
    */
-  public static async findLearningObject(
-    dataStore: DataStore,
-    username: string,
-    learningObjectName: string,
-  ): Promise<string> {
-    try {
-      return await dataStore.findLearningObject(username, learningObjectName);
-    } catch (e) {
-      return Promise.reject(`Problem finding LearningObject. Error: ${e}`);
-    }
-  }
-
   public static async deleteMultipleLearningObjects(params: {
     dataStore: DataStore;
     fileManager: FileManager;
@@ -622,58 +819,73 @@ export class LearningObjectInteractor {
     user: UserToken;
   }): Promise<void> {
     try {
+      const {
+        dataStore,
+        fileManager,
+        library,
+        learningObjectNames,
+        user,
+      } = params;
       const hasAccess = await hasMultipleLearningObjectWriteAccesses(
-        params.user,
-        params.dataStore,
-        params.learningObjectNames,
+        user,
+        dataStore,
+        learningObjectNames,
       );
-      if (hasAccess) {
-        // Get LearningObject ids
-        const objectRefs: {
-          id: string;
-          parentIds: string[];
-        }[] = await Promise.all(
-          params.learningObjectNames.map(async (name: string) => {
-            const id = await params.dataStore.findLearningObject(
-              params.user.username,
-              name,
-            );
-            const parentIds = await params.dataStore.findParentObjectIds({
-              childId: id,
-            });
-            return { id, parentIds };
-          }),
-        );
-        const objectIds = objectRefs.map(obj => obj.id);
-        // Remove objects from library
-        await params.library.cleanObjectsFromLibraries(objectIds);
-        // Delete objects from datastore
-        await params.dataStore.deleteMultipleLearningObjects(objectIds);
-        // For each object id
-        objectRefs.forEach(async obj => {
-          // Attempt to delete files
-          const path = `${params.user.username}/${obj.id}/`;
-          params.fileManager.deleteAll({ path }).catch(e => {
-            console.error(`Problem deleting files at ${path}. ${e}`);
-          });
-          // Update parents' dates
-          updateParentsDate({
-            dataStore: params.dataStore,
-            parentIds: obj.parentIds,
-            childId: obj.id,
-            date: Date.now().toString(),
-          });
-        });
-      } else {
-        return Promise.reject(
-          new Error('User does not have authorization to perform this action'),
+
+      if (!hasAccess) {
+        throw new ResourceError(
+          'User does not have authorization to perform this action',
+          ResourceErrorReason.INVALID_ACCESS,
         );
       }
-    } catch (error) {
-      reportError(error);
-      return Promise.reject(
-        new Error(`Problem deleting Learning Objects. Error: ${error}`),
+
+      // Get LearningObject ids
+      const objectRefs: {
+        id: string;
+        parentIds: string[];
+      }[] = await Promise.all(
+        learningObjectNames.map(async (name: string) => {
+          const authorId = await this.findAuthorIdByUsername({
+            dataStore,
+            username: user.username,
+          });
+          const id = await dataStore.findLearningObject({
+            authorId,
+            name,
+          });
+          const parentIds = await dataStore.findParentObjectIds({
+            childId: id,
+          });
+          return { id, parentIds };
+        }),
       );
+      const objectIds = objectRefs.map(obj => obj.id);
+      // Remove objects from library
+      await library.cleanObjectsFromLibraries(objectIds);
+      // Delete objects from datastore
+      await dataStore.deleteMultipleLearningObjects(objectIds);
+      // For each object id
+      objectRefs.forEach(async obj => {
+        // Attempt to delete files
+        const path = `${user.username}/${obj.id}/`;
+        fileManager.deleteAll({ path }).catch(e => {
+          console.error(`Problem deleting files at ${path}. ${e}`);
+          reportError(e);
+        });
+        // Update parents' dates
+        updateParentsDate({
+          dataStore,
+          parentIds: obj.parentIds,
+          childId: obj.id,
+          date: Date.now().toString(),
+        });
+      });
+    } catch (e) {
+      if (e instanceof ResourceError || e instanceof ServiceError) {
+        return Promise.reject(e);
+      }
+      reportError(e);
+      throw new ServiceError(ServiceErrorReason.INTERNAL);
     }
   }
 
@@ -980,6 +1192,19 @@ export class LearningObjectInteractor {
     }
   }
 
+  /**
+   * Adds Children ids to Learning Object
+   *
+   * @static
+   * @param {{
+   *     dataStore: DataStore;
+   *     children: string[];
+   *     username: string;
+   *     parentName: string;
+   *   }} params
+   * @returns {Promise<void>}
+   * @memberof LearningObjectInteractor
+   */
   public static async setChildren(params: {
     dataStore: DataStore;
     children: string[];
@@ -987,21 +1212,43 @@ export class LearningObjectInteractor {
     parentName: string;
   }): Promise<void> {
     try {
-      const parentID = await params.dataStore.findLearningObject(
-        params.username,
-        params.parentName,
-      );
-      await params.dataStore.setChildren(parentID, params.children);
+      const { dataStore, children, username, parentName } = params;
+      const authorId = await this.findAuthorIdByUsername({
+        dataStore,
+        username,
+      });
+      const parentID = await dataStore.findLearningObject({
+        authorId,
+        name: parentName,
+      });
+      await dataStore.setChildren(parentID, children);
       await updateObjectLastModifiedDate({
-        dataStore: params.dataStore,
+        dataStore: dataStore,
         id: parentID,
         date: Date.now().toString(),
       });
     } catch (e) {
-      return Promise.reject(`Problem adding child. Error: ${e}`);
+      if (e instanceof ResourceError || e instanceof ServiceError) {
+        return Promise.reject(e);
+      }
+      reportError(e);
+      throw new ServiceError(ServiceErrorReason.INTERNAL);
     }
   }
 
+  /**
+   * Removes child id from array of Learning Object children
+   *
+   * @static
+   * @param {{
+   *     dataStore: DataStore;
+   *     childId: string;
+   *     username: string;
+   *     parentName: string;
+   *   }} params
+   * @returns
+   * @memberof LearningObjectInteractor
+   */
   public static async removeChild(params: {
     dataStore: DataStore;
     childId: string;
@@ -1009,18 +1256,27 @@ export class LearningObjectInteractor {
     parentName: string;
   }) {
     try {
-      const parentID = await params.dataStore.findLearningObject(
-        params.username,
-        params.parentName,
-      );
-      await params.dataStore.deleteChild(parentID, params.childId);
+      const { dataStore, childId, username, parentName } = params;
+      const authorId = await this.findAuthorIdByUsername({
+        dataStore,
+        username,
+      });
+      const parentID = await dataStore.findLearningObject({
+        authorId,
+        name: parentName,
+      });
+      await dataStore.deleteChild(parentID, childId);
       await updateObjectLastModifiedDate({
-        dataStore: params.dataStore,
+        dataStore,
         id: parentID,
         date: Date.now().toString(),
       });
     } catch (e) {
-      return Promise.reject(`Problem removing child. Error: ${e}`);
+      if (e instanceof ResourceError || e instanceof ServiceError) {
+        return Promise.reject(e);
+      }
+      reportError(e);
+      throw new ServiceError(ServiceErrorReason.INTERNAL);
     }
   }
 
