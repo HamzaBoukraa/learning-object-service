@@ -117,6 +117,31 @@ export class ExpressAuthRouteDriver {
         }
       },
     );
+    router.get(
+      '/learning-objects/:username/:learningObjectName/id',
+      async (req, res) => {
+        try {
+          const user = req.user;
+          const username = req.params.username;
+          const learningObjectName = req.params.learningObjectName;
+          if (this.hasAccess(user, 'username', username) || user.SERVICE_KEY) {
+            const id = await LearningObjectInteractor.findLearningObject(
+              this.dataStore,
+              username,
+              learningObjectName,
+            );
+            res.status(200).send(id);
+          } else {
+            res
+              .status(403)
+              .send('Invalid Access. Cannot fetch Learning Object ID.');
+          }
+        } catch (e) {
+          console.error(e);
+          res.status(500).send(e);
+        }
+      },
+    );
 
     // FILE MANAGEMENT
     router

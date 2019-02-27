@@ -97,3 +97,21 @@ describe('fetchObjectsByIDs', () => {
       });
   });
 });
+
+describe('findLearningObject', () => {
+  it('should find a learning object ID', done => {
+    return LearningObjectInteractor.findLearningObject(
+      dataStore,
+      MOCK_OBJECTS.USERNAME,
+      MOCK_OBJECTS.LEARNING_OBJECT_NAME,
+    )
+      .then(val => {
+        expect(val).to.be.a('string');
+        done();
+      })
+      .catch(error => {
+        expect.fail();
+        done();
+      });
+  });
+});
