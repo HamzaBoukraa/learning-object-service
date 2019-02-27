@@ -231,22 +231,27 @@ export class LearningObjectInteractor {
 
       const fullChildren = false;
       let loadWorkingCopies = false;
-      const learningObjectID = await dataStore.findLearningObject(
-        username,
-        learningObjectName,
-      );
+
+      const proceedIfPrivileged = (e: Error): null => {
+        if (!userToken || !isPrivilegedUser(userToken.accessGroups)) {
+          throw e;
+        }
+        return null;
+      };
+
       if (!revision) {
-        learningObject = await dataStore.fetchReleasedLearningObject({
-          id: learningObjectID,
-          full: true,
-        });
+        learningObject = await this.loadReleasedLearningObjectByAuthorAndName({
+          dataStore,
+          authorUsername: username,
+          learningObjectName,
+        }).catch(proceedIfPrivileged);
       }
       if (revision || !learningObject) {
-        learningObject = await this.loadWorkingObject({
+        learningObject = await this.loadLearningObjectByAuthorAndName({
           dataStore,
-          learningObjectID,
-          userToken,
           authorUsername: username,
+          learningObjectName,
+          userToken,
         });
         if (LearningObjectState.IN_REVIEW.includes(learningObject.status)) {
           childrenStatus = [
@@ -255,13 +260,6 @@ export class LearningObjectInteractor {
           ];
         }
         loadWorkingCopies = true;
-      }
-
-      if (!learningObject) {
-        throw new ResourceError(
-          `Learning Object ${learningObjectName} by ${username} does not exist.`,
-          ResourceErrorReason.NOT_FOUND,
-        );
       }
 
       const children = await this.loadChildObjects({
@@ -279,15 +277,20 @@ export class LearningObjectInteractor {
       try {
         learningObject.metrics = await this.loadMetrics(
           library,
-          learningObjectID,
+          learningObject.id,
         );
       } catch (e) {
         console.error(e);
       }
       return learningObject;
     } catch (e) {
+      if (e instanceof ResourceError || e instanceof ServiceError) {
       return Promise.reject(e);
     }
+      reportError(e);
+      throw new ServiceError(ServiceErrorReason.INTERNAL);
+    }
+  }
 
   /**
    * Loads working copy of a Learning Object by author's username and Learning Object's name
