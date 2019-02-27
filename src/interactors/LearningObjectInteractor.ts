@@ -285,8 +285,8 @@ export class LearningObjectInteractor {
       return learningObject;
     } catch (e) {
       if (e instanceof ResourceError || e instanceof ServiceError) {
-      return Promise.reject(e);
-    }
+        return Promise.reject(e);
+      }
       reportError(e);
       throw new ServiceError(ServiceErrorReason.INTERNAL);
     }
@@ -823,11 +823,11 @@ export class LearningObjectInteractor {
         );
       }
 
-        // Get LearningObject ids
-        const objectRefs: {
-          id: string;
-          parentIds: string[];
-        }[] = await Promise.all(
+      // Get LearningObject ids
+      const objectRefs: {
+        id: string;
+        parentIds: string[];
+      }[] = await Promise.all(
         learningObjectNames.map(async (name: string) => {
           const authorId = await this.findAuthorIdByUsername({
             dataStore,
@@ -835,34 +835,34 @@ export class LearningObjectInteractor {
           });
           const id = await dataStore.findLearningObject({
             authorId,
-              name,
+            name,
           });
           const parentIds = await dataStore.findParentObjectIds({
-              childId: id,
-            });
-            return { id, parentIds };
-          }),
-        );
-        const objectIds = objectRefs.map(obj => obj.id);
-        // Remove objects from library
+            childId: id,
+          });
+          return { id, parentIds };
+        }),
+      );
+      const objectIds = objectRefs.map(obj => obj.id);
+      // Remove objects from library
       await library.cleanObjectsFromLibraries(objectIds);
-        // Delete objects from datastore
+      // Delete objects from datastore
       await dataStore.deleteMultipleLearningObjects(objectIds);
-        // For each object id
-        objectRefs.forEach(async obj => {
-          // Attempt to delete files
+      // For each object id
+      objectRefs.forEach(async obj => {
+        // Attempt to delete files
         const path = `${user.username}/${obj.id}/`;
         fileManager.deleteAll({ path }).catch(e => {
-            console.error(`Problem deleting files at ${path}. ${e}`);
-          });
-          // Update parents' dates
-          updateParentsDate({
-          dataStore,
-            parentIds: obj.parentIds,
-            childId: obj.id,
-            date: Date.now().toString(),
-          });
+          console.error(`Problem deleting files at ${path}. ${e}`);
         });
+        // Update parents' dates
+        updateParentsDate({
+          dataStore,
+          parentIds: obj.parentIds,
+          childId: obj.id,
+          date: Date.now().toString(),
+        });
+      });
     } catch (e) {
       if (e instanceof ResourceError || e instanceof ServiceError) {
         return Promise.reject(e);
@@ -1196,7 +1196,10 @@ export class LearningObjectInteractor {
   }): Promise<void> {
     try {
       const { dataStore, children, username, parentName } = params;
-      const authorId = await this.findAuthorIdByUsername({ dataStore, username });
+      const authorId = await this.findAuthorIdByUsername({
+        dataStore,
+        username,
+      });
       const parentID = await dataStore.findLearningObject({
         authorId,
         name: parentName,
@@ -1237,7 +1240,10 @@ export class LearningObjectInteractor {
   }) {
     try {
       const { dataStore, childId, username, parentName } = params;
-      const authorId = await this.findAuthorIdByUsername({ dataStore, username });
+      const authorId = await this.findAuthorIdByUsername({
+        dataStore,
+        username,
+      });
       const parentID = await dataStore.findLearningObject({
         authorId,
         name: parentName,
