@@ -34,6 +34,12 @@ export class MockDataStore implements DataStore {
   }): Promise<string> {
     return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT_ID);
   }
+  findReleasedLearningObject(params: {
+    authorId: string;
+    name: string;
+  }): Promise<string> {
+    return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT_ID);
+  }
   connect(file: string): Promise<void> {
     return Promise.resolve();
   }
@@ -189,10 +195,6 @@ export class MockDataStore implements DataStore {
 
   getUserObjects(username: string): Promise<string[]> {
     return Promise.resolve([MOCK_OBJECTS.LEARNING_OBJECT_ID]);
-  }
-
-  findLearningObject(username: string, name: string): Promise<string> {
-    return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT_ID);
   }
 
   fetchLearningObject(params: { id: string; full?: boolean }): Promise<any> {

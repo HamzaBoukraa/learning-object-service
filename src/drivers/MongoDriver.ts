@@ -1107,7 +1107,7 @@ export class MongoDriver implements DataStore {
     collection?: COLLECTIONS.RELEASED_LEARNING_OBJECTS;
   }): Promise<string> {
     const { authorId, name, collection } = params;
-      const doc = await this.db
+    const doc = await this.db
       .collection(collection || COLLECTIONS.LEARNING_OBJECTS)
       .findOne<LearningObjectDocument>(
         {
@@ -1115,12 +1115,31 @@ export class MongoDriver implements DataStore {
           name,
         },
         { projection: { _id: 1 } },
-        );
+      );
     if (doc) {
       return doc._id;
     }
     return null;
-    }
+  }
+
+  /**
+   * Looks up a released learning object by its author and name.
+   *
+   * @param {{
+   *     authorId: string; [Id of the author]
+   *     name: string; [name of the Learning Object]
+   *   }} params
+   * @returns {Promise<string>}
+   * @memberof MongoDriver
+   */
+  async findReleasedLearningObject(params: {
+    authorId: string;
+    name: string;
+  }): Promise<string> {
+    return this.findLearningObject({
+      ...params,
+      collection: COLLECTIONS.RELEASED_LEARNING_OBJECTS,
+    });
   }
 
   /**

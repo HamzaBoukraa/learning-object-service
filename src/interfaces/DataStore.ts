@@ -43,6 +43,10 @@ export interface DataStore
     authorId: string;
     name: string;
   }): Promise<string>;
+  findReleasedLearningObject(params: {
+    authorId: string;
+    name: string;
+  }): Promise<string>;
   fetchLearningObject(params: {
     id: string;
     full?: boolean;
