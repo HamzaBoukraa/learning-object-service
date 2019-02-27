@@ -620,14 +620,18 @@ export class LearningObjectInteractor {
   }
 
   /**
-   * Look up a Learning Object by its name and the user that created it.
-   * @async
+   * Deletes multiple objects by author's name and Learning Objects' names
    *
-   * @param dataStore the data store to be accessed
-   * @param {string} username the username of the creator
-   * @param {string} learningObjectName the name of the Learning Object
-   *
-   * @returns {string} LearningOutcomeID
+   * @static
+   * @param {{
+   *     dataStore: DataStore;
+   *     fileManager: FileManager;
+   *     library: LibraryCommunicator;
+   *     learningObjectNames: string[];
+   *     user: UserToken;
+   *   }} params
+   * @returns {Promise<void>}
+   * @memberof LearningObjectInteractor
    */
   public static async deleteMultipleLearningObjects(params: {
     dataStore: DataStore;
@@ -649,7 +653,14 @@ export class LearningObjectInteractor {
         dataStore,
         learningObjectNames,
       );
-      if (hasAccess) {
+
+      if (!hasAccess) {
+        throw new ResourceError(
+          'User does not have authorization to perform this action',
+          ResourceErrorReason.INVALID_ACCESS,
+        );
+      }
+
         // Get LearningObject ids
         const objectRefs: {
           id: string;
@@ -690,16 +701,12 @@ export class LearningObjectInteractor {
             date: Date.now().toString(),
           });
         });
-      } else {
-        return Promise.reject(
-          new Error('User does not have authorization to perform this action'),
-        );
+    } catch (e) {
+      if (e instanceof ResourceError || e instanceof ServiceError) {
+        return Promise.reject(e);
       }
-    } catch (error) {
-      reportError(error);
-      return Promise.reject(
-        new Error(`Problem deleting Learning Objects. Error: ${error}`),
-      );
+      reportError(e);
+      throw new ServiceError(ServiceErrorReason.INTERNAL);
     }
   }
 
@@ -1006,6 +1013,19 @@ export class LearningObjectInteractor {
     }
   }
 
+  /**
+   * Adds Children ids to Learning Object
+   *
+   * @static
+   * @param {{
+   *     dataStore: DataStore;
+   *     children: string[];
+   *     username: string;
+   *     parentName: string;
+   *   }} params
+   * @returns {Promise<void>}
+   * @memberof LearningObjectInteractor
+   */
   public static async setChildren(params: {
     dataStore: DataStore;
     children: string[];
@@ -1026,10 +1046,27 @@ export class LearningObjectInteractor {
         date: Date.now().toString(),
       });
     } catch (e) {
-      return Promise.reject(`Problem adding child. Error: ${e}`);
+      if (e instanceof ResourceError || e instanceof ServiceError) {
+        return Promise.reject(e);
+      }
+      reportError(e);
+      throw new ServiceError(ServiceErrorReason.INTERNAL);
     }
   }
 
+  /**
+   * Removes child id from array of Learning Object children
+   *
+   * @static
+   * @param {{
+   *     dataStore: DataStore;
+   *     childId: string;
+   *     username: string;
+   *     parentName: string;
+   *   }} params
+   * @returns
+   * @memberof LearningObjectInteractor
+   */
   public static async removeChild(params: {
     dataStore: DataStore;
     childId: string;
@@ -1050,7 +1087,11 @@ export class LearningObjectInteractor {
         date: Date.now().toString(),
       });
     } catch (e) {
-      return Promise.reject(`Problem removing child. Error: ${e}`);
+      if (e instanceof ResourceError || e instanceof ServiceError) {
+        return Promise.reject(e);
+      }
+      reportError(e);
+      throw new ServiceError(ServiceErrorReason.INTERNAL);
     }
   }
 
