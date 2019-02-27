@@ -854,6 +854,7 @@ export class LearningObjectInteractor {
         const path = `${user.username}/${obj.id}/`;
         fileManager.deleteAll({ path }).catch(e => {
           console.error(`Problem deleting files at ${path}. ${e}`);
+          reportError(e);
         });
         // Update parents' dates
         updateParentsDate({
