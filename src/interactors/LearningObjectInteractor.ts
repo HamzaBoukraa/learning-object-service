@@ -346,10 +346,17 @@ export class LearningObjectInteractor {
       userToken,
       objectInfo: { author: authorUsername, status, collection },
     });
-    return dataStore.fetchLearningObject({
+    const learningObject = await dataStore.fetchLearningObject({
       id: learningObjectID,
       full: true,
     });
+    if (!learningObject) {
+      throw new ResourceError(
+        `No Learning Object with name ${name} by ${authorUsername} exists`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+    return learningObject;
   }
 
   /**
