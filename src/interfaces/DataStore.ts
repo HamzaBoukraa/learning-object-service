@@ -39,7 +39,10 @@ export interface DataStore
 
   // Learning Objects
   getUserObjects(username: string): Promise<string[]>;
-  findLearningObject(username: string, name: string): Promise<string>;
+  findLearningObject(params: {
+    authorId: string;
+    name: string;
+  }): Promise<string>;
   fetchLearningObject(params: {
     id: string;
     full?: boolean;

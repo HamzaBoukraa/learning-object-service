@@ -1090,29 +1090,36 @@ export class MongoDriver implements DataStore {
 
   /**
    * Look up a learning object by its author and name.
-   * @async
+   * By default it will perform this query on the objects collection.
+   * If collection param is passed then it will perform the query on specified collection
    *
-   * @param {UserID} author the author's unique database id
-   * @param {string} name the object's name
-   *
-   * @returns {LearningObjectID}
+   * @param {{
+   *     authorId: string; [Id of the author]
+   *     name: string; [name of the Learning Object]
+   *     collection?: string; [DB collection to perform query on;]
+   *   }} params
+   * @returns {Promise<string>}
+   * @memberof MongoDriver
    */
-  async findLearningObject(username: string, name: string): Promise<string> {
-    try {
-      const authorID = await this.findUser(username);
+  async findLearningObject(params: {
+    authorId: string;
+    name: string;
+    collection?: COLLECTIONS.RELEASED_LEARNING_OBJECTS;
+  }): Promise<string> {
+    const { authorId, name, collection } = params;
       const doc = await this.db
-        .collection(COLLECTIONS.LEARNING_OBJECTS)
-        .findOne<LearningObjectDocument>({
-          authorID: authorID,
-          name: name,
-        });
-      if (!doc)
-        return Promise.reject(
-          'No learning object ' + name + ' for the given user',
+      .collection(collection || COLLECTIONS.LEARNING_OBJECTS)
+      .findOne<LearningObjectDocument>(
+        {
+          authorID: authorId,
+          name,
+        },
+        { projection: { _id: 1 } },
         );
-      return Promise.resolve(doc._id);
-    } catch (e) {
-      return Promise.reject(e);
+    if (doc) {
+      return doc._id;
+    }
+    return null;
     }
   }
 

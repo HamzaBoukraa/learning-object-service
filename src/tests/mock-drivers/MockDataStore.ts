@@ -28,6 +28,12 @@ import {
 } from '../../entity';
 
 export class MockDataStore implements DataStore {
+  findLearningObject(params: {
+    authorId: string;
+    name: string;
+  }): Promise<string> {
+    return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT_ID);
+  }
   connect(file: string): Promise<void> {
     return Promise.resolve();
   }
