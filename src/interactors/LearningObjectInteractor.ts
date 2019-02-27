@@ -331,7 +331,7 @@ export class LearningObjectInteractor {
    * @returns
    * @memberof LearningObjectInteractor
    */
-  private static async loadWorkingObject(params: {
+  private static async loadLearningObjectById(params: {
     dataStore: DataStore;
     learningObjectID: string;
     userToken: UserToken;
