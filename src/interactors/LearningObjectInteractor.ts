@@ -232,19 +232,35 @@ export class LearningObjectInteractor {
       const fullChildren = false;
       let loadWorkingCopies = false;
 
-      const proceedIfPrivileged = (e: Error): null => {
-        if (!userToken || !isPrivilegedUser(userToken.accessGroups)) {
-          throw e;
-        }
-        return null;
-      };
-
       if (!revision) {
+        /**
+         * The call to loadReleasedLearningObjectByAuthorAndName will throw a ResourceError if the Learning Object is not found within the released collection
+         * This handler allows execution to proceed to load the load working copy of a Learning Object for authorized users
+         *
+         * @param {Error} error
+         * @returns {null} [Returns null so that the value of learningObject is assigned to null]
+         */
+        const proceedIfAuthorized = (error: Error): null => {
+          const authorIsRequester = this.hasReadAccess({
+            userToken,
+            resourceVal: username,
+            authFunction: isAuthorByUsername,
+          });
+          if (
+            !(error instanceof ResourceError) ||
+            !userToken ||
+            (!authorIsRequester && !isPrivilegedUser(userToken.accessGroups))
+          ) {
+            throw error;
+          }
+          return null;
+        };
+
         learningObject = await this.loadReleasedLearningObjectByAuthorAndName({
           dataStore,
           authorUsername: username,
           learningObjectName,
-        }).catch(proceedIfPrivileged);
+        }).catch(proceedIfAuthorized);
       }
       if (revision || !learningObject) {
         learningObject = await this.loadLearningObjectByAuthorAndName({
