@@ -3,7 +3,11 @@ import * as stopword from 'stopword';
 import { reportError } from '../drivers/SentryConnector';
 import { processMultipartUpload } from '../FileManager/FileInteractor';
 import { sanitizeObject, sanitizeText } from '../functions';
-import { LearningObjectQuery, QueryCondition } from '../interfaces/DataStore';
+import {
+  LearningObjectQuery,
+  QueryCondition,
+  ParentLearningObjectQuery,
+} from '../interfaces/DataStore';
 import { DZFile, FileUpload } from '../interfaces/FileManager';
 import {
   DataStore,
@@ -657,19 +661,72 @@ export class LearningObjectInteractor {
     );
   }
 
+  /**
+   * Fetches Learning Object's parents
+   *
+   * @static
+   * @param {{
+   *     dataStore: DataStore;
+   *     query: ParentLearningObjectQuery;
+   *     userToken: UserToken;
+   *     full?: boolean;
+   *   }} params
+   * @returns {Promise<LearningObject[]>}
+   * @memberof LearningObjectInteractor
+   */
   public static async fetchParents(params: {
     dataStore: DataStore;
-    query: LearningObjectQuery;
+    query: ParentLearningObjectQuery;
+    userToken: UserToken;
+    full?: boolean;
+    revision?: boolean;
   }): Promise<LearningObject[]> {
     try {
-      return await params.dataStore.findParentObjects({
-        query: params.query,
-      });
+      const { dataStore, query, userToken, full, revision } = params;
+      const status = await dataStore.fetchLearningObjectStatus(query.id);
+      if (status === LearningObject.Status.RELEASED && !revision) {
+        return await dataStore.fetchReleasedParentObjects({
+          query,
+          full,
+        });
+      } else if (userToken || revision) {
+        query.status = toArray(query.status);
+        const [collection, author] = await Promise.all([
+          dataStore.fetchLearningObjectCollection(query.id),
+          dataStore.fetchLearningObjectAuthorUsername(query.id),
+        ]);
+        const requesterIsAuthor = this.hasReadAccess({
+          userToken,
+          resourceVal: author,
+          authFunction: isAuthorByUsername,
+        }) as boolean;
+
+        const requesterIsPrivileged = this.hasReadAccess({
+          userToken,
+          resourceVal: collection,
+          authFunction: hasReadAccessByCollection,
+        }) as boolean;
+
+        if (requesterIsAuthor) {
+          query.status = LearningObjectState.ALL;
+        } else if (requesterIsPrivileged) {
+          query.status = LearningObjectState.IN_REVIEW;
+        } else {
+          return [];
+        }
+
+        return await params.dataStore.fetchParentObjects({
+          query,
+          full,
+        });
+      }
+      return [];
     } catch (e) {
-      console.log(e);
-      return Promise.reject(
-        `Problem fetching parent objects for ${params.query.id}. Error: ${e}`,
-      );
+      if (e instanceof ResourceError || e instanceof ServiceError) {
+        return Promise.reject(e);
+      }
+      reportError(e);
+      throw new ServiceError(ServiceErrorReason.INTERNAL);
     }
   }
 
