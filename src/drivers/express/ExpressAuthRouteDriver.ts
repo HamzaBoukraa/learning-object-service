@@ -18,7 +18,7 @@ import * as LearningOutcomeRouteHandler from '../../LearningOutcomes/LearningOut
 import * as SubmissionRouteDriver from '../../LearningObjectSubmission/SubmissionRouteDriver';
 import * as ChangelogRouteHandler from '../../Changelogs/ChangelogRouteDriver';
 import { reportError } from '../SentryConnector';
-import { ResourceErrorReason } from '../../errors';
+import { ResourceErrorReason, mapErrorToResponseData } from '../../errors';
 
 export class ExpressAuthRouteDriver {
   private upload = multer({ storage: multer.memoryStorage() });
@@ -114,6 +114,26 @@ export class ExpressAuthRouteDriver {
         } catch (e) {
           console.error(e);
           res.status(500).send(e);
+        }
+      },
+    );
+    router.get(
+      '/learning-objects/:username/:learningObjectName/id',
+      async (req, res) => {
+        try {
+          const userToken = req.user;
+          const username = req.params.username;
+          const learningObjectName = req.params.learningObjectName;
+          const id = await LearningObjectInteractor.getLearningObjectId({
+            dataStore: this.dataStore,
+            username,
+            learningObjectName,
+            userToken,
+          });
+          res.status(200).send(id);
+        } catch (e) {
+          const { code, message } = mapErrorToResponseData(e);
+          res.status(code).json({ message });
         }
       },
     );

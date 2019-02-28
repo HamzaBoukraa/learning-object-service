@@ -14,12 +14,13 @@ import {
   updateObjectLastModifiedDate,
   updateParentsDate,
 } from '../LearningObjects/LearningObjectInteractor';
-import { UserToken } from '../types';
+import { UserToken, ServiceToken } from '../types';
 import {
   getAccessGroupCollections,
   hasMultipleLearningObjectWriteAccesses,
   isAdminOrEditor,
   isPrivilegedUser,
+  hasServiceLevelAccess,
 } from './AuthorizationManager';
 import {
   ResourceError,
@@ -233,34 +234,25 @@ export class LearningObjectInteractor {
       let loadWorkingCopies = false;
 
       if (!revision) {
-        /**
-         * The call to loadReleasedLearningObjectByAuthorAndName will throw a ResourceError if the Learning Object is not found within the released collection
-         * This handler allows execution to proceed to load the load working copy of a Learning Object for authorized users
-         *
-         * @param {Error} error
-         * @returns {null} [Returns null so that the value of learningObject is assigned to null]
-         */
-        const proceedIfAuthorized = (error: Error): null => {
-          const authorIsRequester = this.hasReadAccess({
-            userToken,
-            resourceVal: username,
-            authFunction: isAuthorByUsername,
-          });
-          if (
-            !(error instanceof ResourceError) ||
-            !userToken ||
-            (!authorIsRequester && !isPrivilegedUser(userToken.accessGroups))
-          ) {
-            throw error;
-          }
-          return null;
-        };
+        const requesterIsAuthor = this.hasReadAccess({
+          userToken,
+          resourceVal: username,
+          authFunction: isAuthorByUsername,
+        }) as boolean;
+        const requesterIsPrivileged =
+          userToken && isPrivilegedUser(userToken.accessGroups);
+        const authorizationCases = [requesterIsAuthor, requesterIsPrivileged];
 
         learningObject = await this.loadReleasedLearningObjectByAuthorAndName({
           dataStore,
           authorUsername: username,
           learningObjectName,
-        }).catch(proceedIfAuthorized);
+        }).catch(error =>
+          bypassNotFoundResourceErrorIfAuthorized({
+            error,
+            authorizationCases,
+          }),
+        );
       }
       if (revision || !learningObject) {
         learningObject = await this.loadLearningObjectByAuthorAndName({
@@ -333,7 +325,7 @@ export class LearningObjectInteractor {
       dataStore,
       username: authorUsername,
     });
-    const learningObjectID = await this.findLearningObjectIdByAuthorAndName({
+    const learningObjectID = await this.getLearningObjectIdByAuthorAndName({
       dataStore,
       authorId,
       authorUsername,
@@ -371,7 +363,7 @@ export class LearningObjectInteractor {
       dataStore,
       username: authorUsername,
     });
-    const learningObjectID = await this.findReleasedLearningObjectIdByAuthorAndName(
+    const learningObjectID = await this.getReleasedLearningObjectIdByAuthorAndName(
       {
         dataStore,
         authorId,
@@ -434,7 +426,7 @@ export class LearningObjectInteractor {
    * @returns {Promise<string>}
    * @memberof LearningObjectInteractor
    */
-  private static async findLearningObjectIdByAuthorAndName(params: {
+  private static async getLearningObjectIdByAuthorAndName(params: {
     dataStore: DataStore;
     name: string;
     authorId: string;
@@ -468,7 +460,7 @@ export class LearningObjectInteractor {
    * @returns {Promise<string>}
    * @memberof LearningObjectInteractor
    */
-  private static async findReleasedLearningObjectIdByAuthorAndName(params: {
+  private static async getReleasedLearningObjectIdByAuthorAndName(params: {
     dataStore: DataStore;
     name: string;
     authorId: string;
@@ -531,19 +523,19 @@ export class LearningObjectInteractor {
   }
 
   /**
-   * Runs through authorization logic read access to a learning object.
-   * Throws an error if user is not authorized
+   * Runs through authorization logic read access to a learning object data.
+   * Throws an error if requester is not authorized
    *
    * @private
    * @static
    * @param {{
-   *     userToken: UserToken;
+   *     userToken: UserToken | ServiceToken; [The token of the requester]
    *     objectInfo: { author: string; status: string; collection: string };
    *   }} params
    * @memberof LearningObjectInteractor
    */
   private static authorizeReadAccess(params: {
-    userToken: UserToken;
+    userToken: UserToken | ServiceToken;
     objectInfo: { author: string; status: string; collection: string };
   }): void {
     const { userToken, objectInfo } = params;
@@ -551,12 +543,15 @@ export class LearningObjectInteractor {
       objectInfo.status as LearningObject.Status,
     );
 
-    const isAuthor = this.hasReadAccess({
-      userToken,
+    const requesterIsAuthor = this.hasReadAccess({
+      userToken: userToken as UserToken,
       resourceVal: objectInfo.author,
       authFunction: isAuthorByUsername,
-    });
-    if (authorOnlyAccess && !isAuthor) {
+    }) as boolean;
+
+    const requesterIsService = hasServiceLevelAccess(userToken as ServiceToken);
+
+    if (authorOnlyAccess && !requesterIsService && !requesterIsAuthor) {
       throw new ResourceError(
         'Invalid Access',
         ResourceErrorReason.INVALID_ACCESS,
@@ -565,14 +560,16 @@ export class LearningObjectInteractor {
     const authorOrPrivilegedAccess = !LearningObjectState.RELEASED.includes(
       objectInfo.status as LearningObject.Status,
     );
+    const requesterIsPrivileged = this.hasReadAccess({
+      userToken: userToken as UserToken,
+      resourceVal: objectInfo.collection,
+      authFunction: hasReadAccessByCollection,
+    }) as boolean;
     if (
       authorOrPrivilegedAccess &&
-      !isAuthor &&
-      !this.hasReadAccess({
-        userToken,
-        resourceVal: objectInfo.collection,
-        authFunction: hasReadAccessByCollection,
-      })
+      !requesterIsService &&
+      !requesterIsAuthor &&
+      !requesterIsPrivileged
     ) {
       throw new ResourceError(
         'Invalid Access',
@@ -797,6 +794,86 @@ export class LearningObjectInteractor {
     }
   }
 
+  /**
+   * Returns a Learning Object's Id by author's username and Learning Object's name
+   * Will attempt to find released and unreleased object's id if authorized
+   *
+   * @static
+   * @param {({
+   *     dataStore: DataStore;
+   *     username: string;
+   *     learningObjectName: string;
+   *     userToken: UserToken | ServiceToken;
+   *   })} params
+   * @returns {Promise<string>}
+   * @memberof LearningObjectInteractor
+   */
+  public static async getLearningObjectId(params: {
+    dataStore: DataStore;
+    username: string;
+    learningObjectName: string;
+    userToken: UserToken | ServiceToken;
+  }): Promise<string> {
+    try {
+      const { dataStore, username, learningObjectName, userToken } = params;
+
+      const authorId = await this.findAuthorIdByUsername({
+        dataStore,
+        username,
+      });
+
+      const requesterIsAuthor = this.hasReadAccess({
+        userToken: userToken as UserToken,
+        resourceVal: username,
+        authFunction: isAuthorByUsername,
+      }) as boolean;
+      const requesterIsPrivileged =
+        userToken && isPrivilegedUser((<UserToken>userToken).accessGroups);
+      const requesterIsService = hasServiceLevelAccess(
+        userToken as ServiceToken,
+      );
+      const authorizationCases = [
+        requesterIsAuthor,
+        requesterIsPrivileged,
+        requesterIsService,
+      ];
+
+      let learningObjectID = await this.getReleasedLearningObjectIdByAuthorAndName(
+        {
+          dataStore,
+          authorId,
+          authorUsername: username,
+          name: learningObjectName,
+        },
+      ).catch(error =>
+        bypassNotFoundResourceErrorIfAuthorized({ error, authorizationCases }),
+      );
+
+      if (!learningObjectID) {
+        learningObjectID = await this.getLearningObjectIdByAuthorAndName({
+          dataStore,
+          authorId,
+          authorUsername: username,
+          name: learningObjectName,
+        });
+        const [status, collection] = await Promise.all([
+          dataStore.fetchLearningObjectStatus(learningObjectID),
+          dataStore.fetchLearningObjectCollection(learningObjectID),
+        ]);
+        this.authorizeReadAccess({
+          userToken,
+          objectInfo: { author: username, status, collection },
+        });
+      }
+      return learningObjectID;
+    } catch (e) {
+      if (e instanceof ResourceError || e instanceof ServiceError) {
+        return Promise.reject(e);
+      }
+      reportError(e);
+      throw new ServiceError(ServiceErrorReason.INTERNAL);
+    }
+  }
   /**
    * Deletes multiple objects by author's name and Learning Objects' names
    *
@@ -1288,7 +1365,7 @@ export class LearningObjectInteractor {
    * @param {UserToken} params.userToken [Object containing information about the user requesting the resource]
    * @param {any} params.resourceVal [Resource value to run auth function against]
    * @param {Function} params.authFunction [Function used to check if user has ownership over resource]
-   * @returns {Promise<boolean>}
+   * @returns {boolean | Promise<boolean>}
    * @memberof LearningObjectInteractor
    */
   private static hasReadAccess(params: {
@@ -1298,7 +1375,7 @@ export class LearningObjectInteractor {
       resourceVal: any,
       userToken: UserToken,
     ) => boolean | Promise<boolean>;
-  }): boolean | Promise<boolean> {
+  }) {
     if (!params.userToken) {
       return false;
     }
@@ -1512,7 +1589,10 @@ const checkAuthByUsername = (username: string, userToken: UserToken) => {
  * @param {UserToken} userToken
  * @returns
  */
-const isAuthorByUsername = (username: string, userToken: UserToken) => {
+const isAuthorByUsername = (
+  username: string,
+  userToken: UserToken,
+): boolean => {
   return userToken.username === username;
 };
 
@@ -1532,4 +1612,28 @@ const hasReadAccessByCollection = (
     isAdminOrEditor(userToken.accessGroups) ||
     getAccessGroupCollections(userToken).includes(collectionName)
   );
+};
+
+/**
+ * This handler allows execution to proceed if a ResourceError occurs because of a resource not being found.
+ * This allows authorized requesters to retry request on the working collection which requires explicit authorization
+ *
+ * @param {Error} error
+ * @param {authorizationCases} boolean[] [Contains results from authorization checks that determines whether or not the requester is authorized to access resource]
+ * @returns {null} [Returns null so that the value resolves to null indicating resource was not loaded]
+ */
+const bypassNotFoundResourceErrorIfAuthorized = (params: {
+  error: Error;
+  authorizationCases: boolean[];
+}): null | never => {
+  const { error, authorizationCases } = params;
+  if (
+    !(error instanceof ResourceError) ||
+    (error instanceof ResourceError &&
+      error.name !== ResourceErrorReason.NOT_FOUND) ||
+    !authorizationCases.includes(true)
+  ) {
+    throw error;
+  }
+  return null;
 };
