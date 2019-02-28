@@ -6,6 +6,7 @@ import {
   ReleasedLearningObjectQuery,
   QueryCondition,
   LearningObjectQuery,
+  ParentLearningObjectQuery,
 } from '../interfaces/DataStore';
 import {
   CompletedPart,
@@ -120,6 +121,38 @@ export class MongoDriver implements DataStore {
     this.statStore = new LearningObjectStatStore(this.db);
     this.learningObjectStore = new LearningObjectDataStore(this.db);
     this.changelogStore = new ChangelogDataStore(this.db);
+  }
+
+  /**
+   * Fetches Learning Object's author's username
+   *
+   * @param {string} id
+   * @returns {Promise<string>}
+   * @memberof MongoDriver
+   */
+  async fetchLearningObjectAuthorUsername(id: string): Promise<string> {
+    const results = await this.db
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .aggregate([
+        { $match: { _id: id } },
+        {
+          $lookup: {
+            from: COLLECTIONS.USERS,
+            localField: 'authorID',
+            foreignField: '_id',
+            as: 'author',
+          },
+        },
+        { $unwind: { path: '$author' } },
+        { $project: { 'author.username': 1 } },
+        { $replaceRoot: { newRoot: '$author' } },
+      ])
+      .toArray();
+    const user = results[0];
+    if (user) {
+      return user.username;
+    }
+    return null;
   }
 
   /**
@@ -888,34 +921,53 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Finds Parents of requested Object
+   * Fetches Parents of requested Learning Object from working collection if collection not specified
    *
    * @param {{
-   *     query: ReleasedLearningObjectQuery;
+   *     query: ParentLearningObjectQuery;
+   *     collection: string [Collection to query for parent objects from]
    *   }} params
    * @returns {Promise<LearningObject[]>}
    * @memberof MongoDriver
    */
-  async findParentObjects(params: {
-    query: ReleasedLearningObjectQuery;
+  async fetchParentObjects(params: {
+    query: ParentLearningObjectQuery;
+    full?: boolean;
+    collection?: COLLECTIONS.RELEASED_LEARNING_OBJECTS;
   }): Promise<LearningObject[]> {
-    try {
-      let cursor: Cursor<LearningObjectDocument> = await this.db
-        .collection(COLLECTIONS.LEARNING_OBJECTS)
-        .find<LearningObjectDocument>({ children: params.query.id });
-      cursor = this.applyCursorFilters<LearningObjectDocument>(
-        cursor,
-        params.query,
-      );
-      const parentDocs = await cursor.toArray();
-      const parents = await this.bulkGenerateLearningObjects(
-        parentDocs,
-        params.query.full,
-      );
-      return parents;
-    } catch (e) {
-      return Promise.reject(e);
+    const { query, full } = params;
+    const mongoQuery: { [index: string]: any } = { children: query.id };
+    if (query.status) {
+      mongoQuery.status = { $in: query.status };
     }
+    let cursor: Cursor<LearningObjectDocument> = await this.db
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .find<LearningObjectDocument>(mongoQuery);
+    cursor = this.applyCursorFilters<LearningObjectDocument>(cursor, {
+      ...(query as Filters),
+    });
+    const parentDocs = await cursor.toArray();
+    const parents = await this.bulkGenerateLearningObjects(parentDocs, full);
+    return parents;
+  }
+
+  /**
+   * Fetches Parents of requested Learning Object from released collection
+   *
+   * @param {{
+   *     query: ParentLearningObjectQuery;
+   *   }} params
+   * @returns {Promise<LearningObject[]>}
+   * @memberof MongoDriver
+   */
+  async fetchReleasedParentObjects(params: {
+    query: ParentLearningObjectQuery;
+    full?: boolean;
+  }): Promise<LearningObject[]> {
+    return this.fetchParentObjects({
+      ...params,
+      collection: COLLECTIONS.RELEASED_LEARNING_OBJECTS,
+    });
   }
 
   ///////////////////////////////////////////////////////////////////
