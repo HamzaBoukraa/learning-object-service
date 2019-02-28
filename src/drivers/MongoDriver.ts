@@ -944,7 +944,7 @@ export class MongoDriver implements DataStore {
       .collection(COLLECTIONS.LEARNING_OBJECTS)
       .find<LearningObjectDocument>(mongoQuery);
     cursor = this.applyCursorFilters<LearningObjectDocument>(cursor, {
-      ...query,
+      ...(query as Filters),
     });
     const parentDocs = await cursor.toArray();
     const parents = await this.bulkGenerateLearningObjects(parentDocs, full);
