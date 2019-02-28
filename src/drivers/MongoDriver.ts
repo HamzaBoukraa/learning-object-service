@@ -940,16 +940,34 @@ export class MongoDriver implements DataStore {
     if (query.status) {
       mongoQuery.status = { $in: query.status };
     }
-      let cursor: Cursor<LearningObjectDocument> = await this.db
-        .collection(COLLECTIONS.LEARNING_OBJECTS)
+    let cursor: Cursor<LearningObjectDocument> = await this.db
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
       .find<LearningObjectDocument>(mongoQuery);
     cursor = this.applyCursorFilters<LearningObjectDocument>(cursor, {
       ...query,
     });
-      const parentDocs = await cursor.toArray();
+    const parentDocs = await cursor.toArray();
     const parents = await this.bulkGenerateLearningObjects(parentDocs, full);
-      return parents;
-    }
+    return parents;
+  }
+
+  /**
+   * Fetches Parents of requested Learning Object from released collection
+   *
+   * @param {{
+   *     query: ParentLearningObjectQuery;
+   *   }} params
+   * @returns {Promise<LearningObject[]>}
+   * @memberof MongoDriver
+   */
+  async fetchReleasedParentObjects(params: {
+    query: ParentLearningObjectQuery;
+    full?: boolean;
+  }): Promise<LearningObject[]> {
+    return this.fetchParentObjects({
+      ...params,
+      collection: COLLECTIONS.RELEASED_LEARNING_OBJECTS,
+    });
   }
 
   ///////////////////////////////////////////////////////////////////
