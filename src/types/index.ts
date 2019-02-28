@@ -12,9 +12,11 @@ import {
 import { UserDocument } from './user-document';
 import { LearningOutcomeDocument } from './learning-outcome-document';
 import { StandardOutcomeDocument } from './standard-outcome-document';
+import { ServiceToken } from './service-token';
 
 export {
   UserToken,
+  ServiceToken,
   LearningObjectUpdates,
   VALID_LEARNING_OBJECT_UPDATES,
   UserDocument,
