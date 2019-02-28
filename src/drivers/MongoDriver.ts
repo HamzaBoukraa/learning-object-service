@@ -123,6 +123,38 @@ export class MongoDriver implements DataStore {
   }
 
   /**
+   * Fetches Learning Object's author's username
+   *
+   * @param {string} id
+   * @returns {Promise<string>}
+   * @memberof MongoDriver
+   */
+  async fetchLearningObjectAuthorUsername(id: string): Promise<string> {
+    const results = await this.db
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .aggregate([
+        { $match: { _id: id } },
+        {
+          $lookup: {
+            from: COLLECTIONS.USERS,
+            localField: 'authorID',
+            foreignField: '_id',
+            as: 'author',
+          },
+        },
+        { $unwind: { path: '$author' } },
+        { $project: { 'author.username': 1 } },
+        { $replaceRoot: { newRoot: '$author' } },
+      ])
+      .toArray();
+    const user = results[0];
+    if (user) {
+      return user.username;
+    }
+    return null;
+  }
+
+  /**
    * Inserts object into released objects collection or overwrites if exists
    *
    * @param {LearningObject} object

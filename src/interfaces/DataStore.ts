@@ -65,6 +65,7 @@ export interface DataStore
   }): Promise<LearningObject[]>;
   fetchLearningObjectStatus(id: string): Promise<string>;
   fetchLearningObjectCollection(id: string): Promise<string>;
+  fetchLearningObjectAuthorUsername(id: string): Promise<string>;
   searchReleasedObjects(
     params: ReleasedLearningObjectQuery,
   ): Promise<{ objects: LearningObject[]; total: number }>;
