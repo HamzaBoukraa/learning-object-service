@@ -6,6 +6,7 @@ import {
   ReleasedLearningObjectQuery,
   QueryCondition,
   LearningObjectQuery,
+  ParentLearningObjectQuery,
 } from '../interfaces/DataStore';
 import {
   CompletedPart,
@@ -920,33 +921,34 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Finds Parents of requested Object
+   * Fetches Parents of requested Learning Object from working collection if collection not specified
    *
    * @param {{
-   *     query: ReleasedLearningObjectQuery;
+   *     query: ParentLearningObjectQuery;
+   *     collection: string [Collection to query for parent objects from]
    *   }} params
    * @returns {Promise<LearningObject[]>}
    * @memberof MongoDriver
    */
-  async findParentObjects(params: {
-    query: ReleasedLearningObjectQuery;
+  async fetchParentObjects(params: {
+    query: ParentLearningObjectQuery;
+    full?: boolean;
+    collection?: COLLECTIONS.RELEASED_LEARNING_OBJECTS;
   }): Promise<LearningObject[]> {
-    try {
+    const { query, full } = params;
+    const mongoQuery: { [index: string]: any } = { children: query.id };
+    if (query.status) {
+      mongoQuery.status = { $in: query.status };
+    }
       let cursor: Cursor<LearningObjectDocument> = await this.db
         .collection(COLLECTIONS.LEARNING_OBJECTS)
-        .find<LearningObjectDocument>({ children: params.query.id });
-      cursor = this.applyCursorFilters<LearningObjectDocument>(
-        cursor,
-        params.query,
-      );
+      .find<LearningObjectDocument>(mongoQuery);
+    cursor = this.applyCursorFilters<LearningObjectDocument>(cursor, {
+      ...query,
+    });
       const parentDocs = await cursor.toArray();
-      const parents = await this.bulkGenerateLearningObjects(
-        parentDocs,
-        params.query.full,
-      );
+    const parents = await this.bulkGenerateLearningObjects(parentDocs, full);
       return parents;
-    } catch (e) {
-      return Promise.reject(e);
     }
   }
 
