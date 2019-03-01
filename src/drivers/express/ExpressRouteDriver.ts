@@ -54,7 +54,7 @@ export class ExpressRouteDriver {
           objects: Partial<LearningObject>[];
         };
         const userToken = req.user;
-        const page = req.query.currPage;
+        const page = req.query.currPage || req.query.page;
         const limit = req.query.limit;
 
         objectResponse = await LearningObjectInteractor.searchObjects({
