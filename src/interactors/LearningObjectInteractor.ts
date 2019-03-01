@@ -18,6 +18,7 @@ import { UserToken } from '../types';
 import {
   getAccessGroupCollections,
   hasMultipleLearningObjectWriteAccesses,
+  hasLearningObjectWriteAccess,
   isAdminOrEditor,
   isPrivilegedUser,
 } from './AuthorizationManager';
@@ -983,13 +984,13 @@ export class LearningObjectInteractor {
 
   /**
    * Sets children of parent object after fetching the ID of the object and authenticating user as privelaged or Author
-   * 
-   * @param {DataStore} dataStore 
+   *
+   * @param {DataStore} dataStore
    * @param {string[]} children - array of children IDs to be added
-   * @param {string} parentName 
-   * @param {string } username - author's username 
-   * @param {UserToken} userToken - user's token with access privelages.
-   * 
+   * @param {string} parentName
+   * @param {string } username - author's username
+   * @param {UserToken} userToken - user's token with access privelages
+   *
    */
   public static async setChildren(params: {
     dataStore: DataStore;
@@ -1005,19 +1006,25 @@ export class LearningObjectInteractor {
         username,
         parentName,
       );
-      const [status, collection] = await Promise.all([
-        dataStore.fetchLearningObjectStatus(parentID),
-        dataStore.fetchLearningObjectCollection(parentID),
-      ]);
-      this.authorizeReadAccess({
-        userToken, objectInfo: { author: username, status, collection }
-      })
-      await dataStore.setChildren(parentID, children);
-      await updateObjectLastModifiedDate({
-        dataStore,
-        id: parentID,
-        date: Date.now().toString(),
-      });
+
+      const hasAccess = await hasLearningObjectWriteAccess(userToken, dataStore, parentID);
+
+      if (hasAccess) {
+        await dataStore.setChildren(parentID, children);
+
+        await updateObjectLastModifiedDate({
+          dataStore,
+          id: parentID,
+          date: Date.now().toString(),
+        });
+      } else {
+        throw new ResourceError(
+          'Invalid Access',
+          ResourceErrorReason.INVALID_ACCESS,
+        );
+      }
+
+
     } catch (e) {
       return Promise.reject(`Problem adding child. Error: ${e}`);
     }
@@ -1025,13 +1032,13 @@ export class LearningObjectInteractor {
 
   /**
    * Removes child of parent object after fetching the ID of the object and authenticating user as privelaged or Author
-   * 
-   * @param {DataStore} dataStore 
+   *
+   * @param {DataStore} dataStore
    * @param {string} childId
-   * @param {string} parentName 
-   * @param {string } username - author's username 
+   * @param {string} parentName
+   * @param {string } username - author's username
    * @param {UserToken} userToken - user's token with access privelages.
-   * 
+   *
    */
   public static async removeChild(params: {
     dataStore: DataStore;
@@ -1046,18 +1053,24 @@ export class LearningObjectInteractor {
         username,
         parentName,
       );
-      const [status, collection] = await Promise.all([
-        dataStore.fetchLearningObjectStatus(parentID),
-        dataStore.fetchLearningObjectCollection(parentID),
-      ]);
-      this.authorizeReadAccess({ userToken, objectInfo: { author: username, status, collection } })
-      await dataStore.deleteChild(parentID, childId);
 
-      await updateObjectLastModifiedDate({
-        dataStore,
-        id: parentID,
-        date: Date.now().toString(),
-      });
+      const hasAccess = await hasLearningObjectWriteAccess(userToken, dataStore, parentID);
+
+      if (hasAccess) {
+        await dataStore.deleteChild(parentID, childId);
+
+        await updateObjectLastModifiedDate({
+          dataStore,
+          id: parentID,
+          date: Date.now().toString(),
+        });
+      } else {
+        throw new ResourceError(
+          'Invalid Access',
+          ResourceErrorReason.INVALID_ACCESS,
+        );
+      }
+
     } catch (e) {
       return Promise.reject(`Problem removing child. Error: ${e}`);
     }
