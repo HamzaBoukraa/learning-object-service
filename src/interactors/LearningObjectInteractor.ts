@@ -132,7 +132,7 @@ export class LearningObjectInteractor {
           try {
             object.metrics = await this.loadMetrics(library, object.id);
           } catch (e) {
-            console.log(e);
+            reportError(e);
           }
 
           if (loadChildren) {
@@ -152,11 +152,7 @@ export class LearningObjectInteractor {
       );
       return summary;
     } catch (e) {
-      if (e instanceof ResourceError || e instanceof ServiceError) {
-        return Promise.reject(e);
-      }
-      reportError(e);
-      throw new ServiceError(ServiceErrorReason.INTERNAL);
+      handleError(e);
     }
   }
 
@@ -292,15 +288,11 @@ export class LearningObjectInteractor {
           learningObject.id,
         );
       } catch (e) {
-        console.error(e);
+        reportError(e);
       }
       return learningObject;
     } catch (e) {
-      if (e instanceof ResourceError || e instanceof ServiceError) {
-        return Promise.reject(e);
-      }
-      reportError(e);
-      throw new ServiceError(ServiceErrorReason.INTERNAL);
+      handleError(e);
     }
   }
 
@@ -647,7 +639,7 @@ export class LearningObjectInteractor {
             try {
               child.metrics = await this.loadMetrics(library, child.id);
             } catch (e) {
-              console.error(e);
+              reportError(e);
             }
             return child;
           }),
@@ -719,11 +711,7 @@ export class LearningObjectInteractor {
       }
       return [];
     } catch (e) {
-      if (e instanceof ResourceError || e instanceof ServiceError) {
-        return Promise.reject(e);
-      }
-      reportError(e);
-      throw new ServiceError(ServiceErrorReason.INTERNAL);
+      handleError(e);
     }
   }
 
@@ -785,7 +773,7 @@ export class LearningObjectInteractor {
       }
       return loFile;
     } catch (e) {
-      return Promise.reject(`Problem uploading file. Error: ${e}`);
+      handleError(e);
     }
   }
 
@@ -816,7 +804,7 @@ export class LearningObjectInteractor {
         id: params.id,
       });
     } catch (e) {
-      return Promise.reject(`Problem uploading file. Error: ${e}`);
+      handleError(e);
     }
   }
 
@@ -847,7 +835,7 @@ export class LearningObjectInteractor {
         id: params.id,
       });
     } catch (e) {
-      return Promise.reject(e);
+      handleError(e);
     }
   }
 
@@ -1003,8 +991,7 @@ export class LearningObjectInteractor {
         // Attempt to delete files
         const path = `${user.username}/${obj.id}/`;
         fileManager.deleteAll({ path }).catch(e => {
-          console.error(`Problem deleting files at ${path}. ${e}`);
-          reportError(e);
+          reportError(new Error(`Problem deleting files at ${path}. ${e}`));
         });
         // Update parents' dates
         updateParentsDate({
@@ -1015,11 +1002,7 @@ export class LearningObjectInteractor {
         });
       });
     } catch (e) {
-      if (e instanceof ResourceError || e instanceof ServiceError) {
-        return Promise.reject(e);
-      }
-      reportError(e);
-      throw new ServiceError(ServiceErrorReason.INTERNAL);
+      handleError(e);
     }
   }
 
@@ -1059,7 +1042,7 @@ export class LearningObjectInteractor {
             object.metrics = await this.loadMetrics(library, object.id);
             return object;
           } catch (e) {
-            console.log(e);
+            reportError(e);
             if (!full) {
               return object;
             }
@@ -1082,9 +1065,7 @@ export class LearningObjectInteractor {
       );
       return learningObjects;
     } catch (e) {
-      return Promise.reject(
-        `Problem fetching LearningObjects by ID. Error: ${e}`,
-      );
+      handleError(e);
     }
   }
 
@@ -1181,18 +1162,14 @@ export class LearningObjectInteractor {
             object.metrics = await this.loadMetrics(library, object.id);
             return object;
           } catch (e) {
-            console.log(e);
+            reportError(e);
             return object;
           }
         }),
       );
       return { total: response.total, objects };
     } catch (e) {
-      if (e instanceof ResourceError || e instanceof ServiceError) {
-        return Promise.reject(e);
-      }
-      reportError(e);
-      throw new ServiceError(ServiceErrorReason.INTERNAL);
+      handleError(e);
     }
   }
 
@@ -1321,8 +1298,7 @@ export class LearningObjectInteractor {
     try {
       await dataStore.addToCollection(learningObjectId, collection);
     } catch (e) {
-      console.log(e);
-      return Promise.reject(e);
+      handleError(e);
     }
   }
 
@@ -1362,11 +1338,7 @@ export class LearningObjectInteractor {
         date: Date.now().toString(),
       });
     } catch (e) {
-      if (e instanceof ResourceError || e instanceof ServiceError) {
-        return Promise.reject(e);
-      }
-      reportError(e);
-      throw new ServiceError(ServiceErrorReason.INTERNAL);
+      handleError(e);
     }
   }
 
@@ -1406,11 +1378,7 @@ export class LearningObjectInteractor {
         date: Date.now().toString(),
       });
     } catch (e) {
-      if (e instanceof ResourceError || e instanceof ServiceError) {
-        return Promise.reject(e);
-      }
-      reportError(e);
-      throw new ServiceError(ServiceErrorReason.INTERNAL);
+      handleError(e);
     }
   }
 
@@ -1447,15 +1415,11 @@ export class LearningObjectInteractor {
    * @param {string} objectID
    * @returns {Promise<LearningObject.Metrics>}
    */
-  private static async loadMetrics(
+  private static loadMetrics(
     library: LibraryCommunicator,
     objectID: string,
   ): Promise<LearningObject.Metrics> {
-    try {
-      return library.getMetrics(objectID);
-    } catch (e) {
-      return Promise.reject(e);
-    }
+    return library.getMetrics(objectID);
   }
 
   /**
@@ -1694,3 +1658,18 @@ const bypassNotFoundResourceErrorIfAuthorized = (params: {
   }
   return null;
 };
+
+/**
+ * Handles errors by rejecting Promise if handled, otherwise the error is reported and a ServiceError is thrown
+ *
+ * @template T
+ * @param {T} error
+ * @returns {Promise<T>}
+ */
+function handleError<T extends Error>(error: T): Promise<T> {
+  if (error instanceof ResourceError || error instanceof ServiceError) {
+    return Promise.reject(error);
+  }
+  reportError(error);
+  throw new ServiceError(ServiceErrorReason.INTERNAL);
+}
