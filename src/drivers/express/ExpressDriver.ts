@@ -15,7 +15,11 @@ import * as logger from 'morgan';
 import * as cors from 'cors';
 import * as cookieParser from 'cookie-parser';
 import * as raven from 'raven';
-import { enforceAuthenticatedAccess, processToken } from '../../middleware';
+import {
+  enforceAuthenticatedAccess,
+  processToken,
+  handleProcessTokenError,
+} from '../../middleware';
 import { reportError } from '../SentryConnector';
 
 export class ExpressDriver {
@@ -50,7 +54,7 @@ export class ExpressDriver {
     // Set up cookie parser
     this.app.use(cookieParser());
 
-    this.app.use(processToken);
+    this.app.use(processToken, handleProcessTokenError);
 
     // Set our public api routes
     this.app.use(
