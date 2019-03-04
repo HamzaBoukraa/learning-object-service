@@ -1,4 +1,4 @@
-import {Collection} from '@cyber4all/clark-entity';
+import { Collection } from '../entity';
 
 export interface CollectionDataStore {
   fetchCollections(loadObjects?: boolean): Promise<Collection[]>;

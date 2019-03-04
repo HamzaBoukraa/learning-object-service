@@ -1,9 +1,7 @@
 import { Request, Response, Router } from 'express';
-import { LearningObjectError } from '../errors';
 import { DataStore } from '../interfaces/DataStore';
 import { FileManager } from '../interfaces/interfaces';
-import { UserToken } from '../types';
-import { cancelSubmission, createChangelog, submitForReview } from './SubmissionInteractor';
+import { cancelSubmission, submitForReview } from './SubmissionInteractor';
 
 /**
  * Initializes an express router with endpoints to publish and unpublish a learning object.

@@ -1,5 +1,5 @@
 import { MongoDriver } from './MongoDriver';
-import { LearningObject } from '@cyber4all/clark-entity';
+import { LearningObject } from '../entity';
 
 describe('MongoDriver', () => {
   let driver: MongoDriver;
@@ -8,10 +8,10 @@ describe('MongoDriver', () => {
     driver = await MongoDriver.build(global['__MONGO_URI__']);
   });
 
-  describe('searchObjectsWithConditions', () => {
+  describe('searchAllObjects', () => {
     it('The function should return an object with total and objects', async () => {
       expect.assertions(1);
-      const result = await driver.searchObjectsWithConditions({
+      const result = await driver.searchAllObjects({
         conditions: [{ nccp: [LearningObject.Status.RELEASED] }],
       });
       expect(result).toBeDefined();
@@ -50,6 +50,16 @@ describe('MongoDriver', () => {
         learningObjectId,
       );
       expect(result.length).toBe(1);
+    });
+  });
+
+  describe('getUserObjects', () => {
+    it('The function should return an array of ids', async () => {
+      expect.assertions(1);
+
+      const username = 'unittester';
+      const ids = await driver.getUserObjects(username);
+      expect(ids).toEqual([ 'default_id' ]);
     });
   });
 

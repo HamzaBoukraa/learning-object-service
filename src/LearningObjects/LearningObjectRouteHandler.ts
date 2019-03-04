@@ -1,11 +1,10 @@
-import * as LearningObjectInteractor from './LearningObjectInteractor';
 import { Request, Response, Router } from 'express';
-import { LearningObject } from '@cyber4all/clark-entity';
+import { mapErrorToResponseData, ResourceErrorReason } from '../errors';
 import { DataStore } from '../interfaces/DataStore';
 import { FileManager, LibraryCommunicator } from '../interfaces/interfaces';
 import { UserToken } from '../types';
-import { LearningObjectError } from '../errors';
-import { mapErrorToStatusCode } from '../errors';
+import * as LearningObjectInteractor from './LearningObjectInteractor';
+import { LearningObject } from '../entity';
 
 /**
  * Initializes an express router with endpoints for public Retrieving
@@ -89,7 +88,7 @@ export function initializePrivate({
       if (
         object &&
         object.name &&
-        e.message === LearningObjectError.DUPLICATE_NAME(object.name)
+        e.message === `A learning object with name '${object.name}' already exists.`
       ) {
         status = 409;
       }
@@ -116,33 +115,17 @@ export function initializePrivate({
     try {
       const id: string = req.params.id;
       updates = req.body.learningObject;
-      const user: UserToken = req.user;
+      const userToken: UserToken = req.user;
       await LearningObjectInteractor.updateLearningObject({
-        user,
+        userToken,
         dataStore,
         id,
         updates,
       });
       res.sendStatus(200);
     } catch (e) {
-      console.error(e);
-
-      let status = 500;
-
-      // if the error was that the object has a duplicate name, send a 409 error code
-      if (
-        updates &&
-        updates.name &&
-        e.message === LearningObjectError.DUPLICATE_NAME(updates.name)
-      ) {
-        status = 409;
-      }
-
-      if (e.message === LearningObjectError.INVALID_ACCESS) {
-        status = 401;
-      }
-
-      res.status(status).send(e);
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({message});
     }
   };
   const deleteLearningObject = async (req: Request, res: Response) => {
@@ -162,7 +145,7 @@ export function initializePrivate({
 
       let status = 500;
 
-      if (e.message === LearningObjectError.INVALID_ACCESS) {
+      if (e.name === ResourceErrorReason.INVALID_ACCESS) {
         status = 401;
       }
       res.status(status).send(e);
@@ -170,7 +153,7 @@ export function initializePrivate({
   };
 
   const getLearningObjectChildren = async (req: Request, res: Response) => {
-    try{
+    try {
       const id = req.params.id;
       const children = await LearningObjectInteractor.getLearningObjectChildrenById(
         dataStore,
@@ -178,20 +161,17 @@ export function initializePrivate({
       );
       res.status(200).json(children);
     } catch (e) {
-      if (e instanceof Error) {
-      const status = mapErrorToStatusCode(e);
-      res.status(status.code).json({message: status.message});
-    } else {
-      res.sendStatus(500);
-      }
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({message});
     }
   };
 
-  router
-      .route('/learning-objects')
-      .post(addLearningObject);
+  router.route('/learning-objects').post(addLearningObject);
   router.patch('/learning-objects/:id', updateLearningObject);
   router.delete('/learning-objects/:learningObjectName', deleteLearningObject);
   router.get('/learning-objects/:id/materials/all', getMaterials);
-  router.get('/learning-objects/:id/children/summary', getLearningObjectChildren);
+  router.get(
+    '/learning-objects/:id/children/summary',
+    getLearningObjectChildren,
+  );
 }

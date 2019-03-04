@@ -1,4 +1,3 @@
-import { LearningObject } from '@cyber4all/clark-entity';
 import { LearningObjectInteractor } from '../interactors/interactors';
 import { DataStore } from '../interfaces/DataStore';
 import { FileManager, LibraryCommunicator } from '../interfaces/interfaces';
@@ -8,9 +7,13 @@ import {
   UserToken,
   VALID_LEARNING_OBJECT_UPDATES,
 } from '../types';
-import { LearningObjectError } from '../errors';
-import { hasLearningObjectWriteAccess } from '../interactors/AuthorizationManager';
+import { ResourceError, ResourceErrorReason } from '../errors';
+import {
+  hasLearningObjectWriteAccess,
+  isPrivilegedUser,
+} from '../interactors/AuthorizationManager';
 import { reportError } from '../drivers/SentryConnector';
+import { LearningObject } from '../entity';
 
 const LearningObjectState = {
   UNRELEASED: [
@@ -122,33 +125,21 @@ export async function addLearningObject(
   object: LearningObject,
   user: UserToken,
 ): Promise<LearningObject> {
-  const err = LearningObjectInteractor.validateLearningObject(object);
-
   await checkNameExists({
     dataStore,
     username: user.username,
     name: object.name,
   });
-
   try {
-    if (err) {
-      return Promise.reject(err);
-    } else {
-      const authorID = await dataStore.findUser(user.username);
-      const author = await dataStore.fetchUser(authorID);
-      if (!author.emailVerified) {
-        object.unpublish();
-      }
-      const objectInsert = new LearningObject({
-        ...object.toPlainObject(),
-        author,
-      });
-      const learningObjectID = await dataStore.insertLearningObject(
-        objectInsert,
-      );
-      objectInsert.id = learningObjectID;
-      return objectInsert;
-    }
+    const authorID = await dataStore.findUser(user.username);
+    const author = await dataStore.fetchUser(authorID);
+    const objectInsert = new LearningObject({
+      ...object.toPlainObject(),
+      author,
+    });
+    const learningObjectID = await dataStore.insertLearningObject(objectInsert);
+    objectInsert.id = learningObjectID;
+    return objectInsert;
   } catch (e) {
     return Promise.reject(`Problem creating Learning Object. Error${e}`);
   }
@@ -166,42 +157,55 @@ export async function addLearningObject(
  * @param {LearningObject} object - entity with values to update to
  */
 export async function updateLearningObject(params: {
-  user: UserToken;
+  userToken: UserToken;
   dataStore: DataStore;
   id: string;
   updates: { [index: string]: any };
 }): Promise<void> {
-  if (params.updates.id) {
-    delete params.updates.id;
+  let { userToken, dataStore, id, updates } = params;
+  if (updates.id) {
+    delete updates.id;
   }
 
-  if (params.updates.name) {
+  if (updates.name) {
     await checkNameExists({
-      id: params.id,
-      dataStore: params.dataStore,
-      name: params.updates.name,
-      username: params.user.username,
+      id,
+      dataStore,
+      name: updates.name,
+      username: userToken.username,
     });
   }
   try {
     const hasAccess = await hasLearningObjectWriteAccess(
-      params.user,
-      params.dataStore,
-      params.id,
+      userToken,
+      dataStore,
+      id,
     );
     if (hasAccess) {
-      const updates: LearningObjectUpdates = sanitizeUpdates(params.updates);
+      const cleanUpdates = sanitizeUpdates(updates);
       validateUpdates({
-        id: params.id,
-        updates,
+        id,
+        updates: cleanUpdates,
       });
-      updates.date = Date.now().toString();
-      await params.dataStore.editLearningObject({
-        id: params.id,
-        updates,
+      cleanUpdates.date = Date.now().toString();
+      await dataStore.editLearningObject({
+        id,
+        updates: cleanUpdates,
       });
+      if (
+        isPrivilegedUser(userToken.accessGroups) &&
+        cleanUpdates.status === LearningObject.Status.RELEASED
+      ) {
+        const object = await dataStore.fetchLearningObject({
+          id,
+          full: true,
+        });
+        await dataStore.addToReleased(object);
+      }
     } else {
-      return Promise.reject(new Error(LearningObjectError.INVALID_ACCESS()));
+      return Promise.reject(
+        new ResourceError('Invalid Access', ResourceErrorReason.INVALID_ACCESS),
+      );
     }
   } catch (e) {
     reportError(e);
@@ -241,12 +245,11 @@ export async function getLearningObjectChildrenById(
   dataStore: DataStore,
   objectId: string,
 ) {
-  try {
-    return await dataStore.loadChildObjects({id: objectId, full: true, status: LearningObjectState.ALL});
-  } catch (e) {
-    reportError(e);
-    return Promise.reject(new Error(LearningObjectError.RESOURCE_NOT_FOUND()));
-  }
+  return await dataStore.loadChildObjects({
+    id: objectId,
+    full: true,
+    status: LearningObjectState.ALL,
+  });
 }
 
 export async function deleteLearningObject(params: {
@@ -532,6 +535,9 @@ async function checkNameExists(params: {
   });
   // @ts-ignore typescript doesn't think a .id property should exist on the existing object
   if (existing && params.id !== existing.id) {
-    throw new Error(LearningObjectError.DUPLICATE_NAME(params.name));
+    throw new ResourceError(
+      `A learning object with name '${params.name}' already exists.`,
+      ResourceErrorReason.BAD_REQUEST,
+    );
   }
 }

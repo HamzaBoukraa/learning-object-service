@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import * as AWS from 'aws-sdk';
 import { AWSError } from 'aws-sdk';
 import { Readable } from 'stream';
@@ -12,11 +13,122 @@ import { AWS_SDK_CONFIG } from './aws-sdk.config';
 
 AWS.config.credentials = AWS_SDK_CONFIG.credentials;
 
-const AWS_S3_BUCKET = 'neutrino-file-uploads';
-const AWS_S3_ACL = 'public-read';
+const BUCKETS = {
+  WORKING_FILES: process.env.WORKING_FILES_BUCKET,
+  RELEASED_FILES: process.env.RELEASED_FILES_BUCKET,
+};
 
 export class S3Driver implements FileManager {
   private s3 = new AWS.S3({ region: AWS_SDK_CONFIG.region });
+
+  /**
+   * Returns stream of file from working files bucket
+   *
+   * @param {{ path: string }} params
+   * @returns {Readable}
+   * @memberof S3Driver
+   */
+  streamWorkingCopyFile(params: { path: string }): Readable {
+    const { path } = params;
+    return this.streamFile({ path, bucket: BUCKETS.WORKING_FILES });
+  }
+
+  /**
+   * Copies all objects in source folder from working files bucket to destination folder in released files bucket
+   *
+   * @param {{
+   *     srcFolder: string;
+   *     destFolder: string;
+   *   }} params
+   * @returns {Promise<void>}
+   * @memberof S3Driver
+   */
+  async copyToReleased(params: {
+    srcFolder: string;
+    destFolder: string;
+  }): Promise<void> {
+    const { srcFolder, destFolder } = params;
+    const files = await this.listFiles({
+      bucket: BUCKETS.WORKING_FILES,
+      path: srcFolder,
+    });
+    await Promise.all(
+      files.map(file => {
+        const uploadPath = file.Key.replace(srcFolder, destFolder);
+        return this.copyObjectToBucket({
+          srcBucket: BUCKETS.WORKING_FILES,
+          srcPath: file.Key,
+          destBucket: BUCKETS.RELEASED_FILES,
+          destPath: uploadPath,
+        });
+      }),
+    );
+  }
+
+  /**
+   * Copies an object from one bucket to another
+   *
+   * @private
+   * @param {{
+   *     destBucket: string;
+   *     srcBucket: string;
+   *     srcPath: string;
+   *     destPath: string;
+   *   }} params
+   * @returns {Promise<void>}
+   * @memberof S3Driver
+   */
+  private async copyObjectToBucket(params: {
+    destBucket: string;
+    srcBucket: string;
+    srcPath: string;
+    destPath: string;
+  }): Promise<void> {
+    const { destBucket, srcBucket, srcPath, destPath } = params;
+    const copyParams = {
+      Bucket: destBucket,
+      CopySource: encodeURIComponent(`${srcBucket}/${srcPath}`),
+      Key: destPath,
+    };
+    await this.s3.copyObject(copyParams).promise();
+  }
+
+  /**
+   * Returns a list of files at specified path in bucket
+   *
+   * @private
+   * @param {{
+   *     bucket: string;
+   *     path: string;
+   *     files?: AWS.S3.Object[];
+   *   }} params
+   * @returns {Promise<AWS.S3.Object[]>}
+   * @memberof S3Driver
+   */
+  private async listFiles(params: {
+    bucket: string;
+    path: string;
+    files?: AWS.S3.Object[];
+  }): Promise<AWS.S3.Object[]> {
+    let { bucket, path, files } = params;
+    if (!files) {
+      files = [];
+    }
+    const listParams = {
+      Bucket: bucket,
+      Prefix: path,
+    };
+    const objects = await this.s3.listObjectsV2(listParams).promise();
+    if (objects.IsTruncated) {
+      return this.listFiles({
+        path,
+        bucket,
+        files: objects.Contents,
+      });
+    }
+    files = [...files, ...objects.Contents];
+    return files;
+  }
 
   /**
    * Uploads single file
@@ -26,24 +138,18 @@ export class S3Driver implements FileManager {
    * @memberof S3Driver
    */
   public async upload(params: { file: FileUpload }): Promise<string> {
-    try {
-      const uploadParams = {
-        Bucket: AWS_S3_BUCKET,
-        Key: params.file.path,
-        ACL: AWS_S3_ACL,
-        Body: params.file.data,
-      };
-      const response = await this.s3.upload(uploadParams).promise();
-      return response.Location;
-    } catch (e) {
-      return Promise.reject(e);
-    }
+    const uploadParams = {
+      Bucket: BUCKETS.WORKING_FILES,
+      Key: params.file.path,
+      Body: params.file.data,
+    };
+    const response = await this.s3.upload(uploadParams).promise();
+    return response.Location;
   }
 
   public async initMultipartUpload(params: { path: string }): Promise<string> {
     const createParams = {
-      Bucket: AWS_S3_BUCKET,
-      ACL: AWS_S3_ACL,
+      Bucket: BUCKETS.WORKING_FILES,
       Key: params.path,
     };
     const createdUpload = await this.s3
@@ -59,7 +165,7 @@ export class S3Driver implements FileManager {
     uploadId: string;
   }): Promise<CompletedPart> {
     const partUploadParams = {
-      Bucket: AWS_S3_BUCKET,
+      Bucket: BUCKETS.WORKING_FILES,
       Key: params.path,
       Body: params.data,
       PartNumber: params.partNumber,
@@ -82,7 +188,7 @@ export class S3Driver implements FileManager {
       (partA, partB) => partA.PartNumber - partB.PartNumber,
     );
     const completedParams = {
-      Bucket: AWS_S3_BUCKET,
+      Bucket: BUCKETS.WORKING_FILES,
       Key: params.path,
       UploadId: params.uploadId,
       MultipartUpload: {
@@ -111,7 +217,7 @@ export class S3Driver implements FileManager {
     uploadId: string;
   }): Promise<void> {
     const abortUploadParams = {
-      Bucket: AWS_S3_BUCKET,
+      Bucket: BUCKETS.WORKING_FILES,
       Key: params.path,
       UploadId: params.uploadId,
     };
@@ -126,15 +232,11 @@ export class S3Driver implements FileManager {
    * @memberof S3Driver
    */
   public async delete(params: { path: string }): Promise<void> {
-    try {
-      const deleteParams = {
-        Bucket: AWS_S3_BUCKET,
-        Key: params.path,
-      };
-      return await this.deleteObject(deleteParams);
-    } catch (e) {
-      return Promise.reject(e);
-    }
+    const deleteParams = {
+      Bucket: BUCKETS.WORKING_FILES,
+      Key: params.path,
+    };
+    return await this.deleteObject(deleteParams);
   }
   /**
    * Deletes all files in storage
@@ -145,14 +247,14 @@ export class S3Driver implements FileManager {
    */
   public async deleteAll(params: { path: string }): Promise<void> {
     const listParams = {
-      Bucket: AWS_S3_BUCKET,
+      Bucket: BUCKETS.WORKING_FILES,
       Prefix: params.path,
     };
 
     const listedObjects = await this.s3.listObjectsV2(listParams).promise();
     if (listedObjects.Contents && listedObjects.Contents.length) {
       const deleteParams = {
-        Bucket: AWS_S3_BUCKET,
+        Bucket: BUCKETS.WORKING_FILES,
         Delete: {
           Objects: listedObjects.Contents.map(({ Key }) => ({ Key })),
         },
@@ -164,10 +266,11 @@ export class S3Driver implements FileManager {
     }
   }
 
-  streamFile(params: { path: string }): Readable {
+  streamFile(params: { path: string; bucket?: string }): Readable {
+    const { path, bucket } = params;
     const fetchParams = {
-      Bucket: AWS_S3_BUCKET,
-      Key: params.path,
+      Bucket: bucket || BUCKETS.RELEASED_FILES,
+      Key: path,
     };
     const stream = this.s3
       .getObject(fetchParams)
@@ -190,12 +293,7 @@ export class S3Driver implements FileManager {
    * @memberof S3Driver
    */
   private async deleteObject(params: any): Promise<void> {
-    try {
-      await this.s3.deleteObject(params).promise();
-      return Promise.resolve();
-    } catch (e) {
-      return Promise.reject(e);
-    }
+    await this.s3.deleteObject(params).promise();
   }
 
   /**
@@ -207,7 +305,7 @@ export class S3Driver implements FileManager {
    */
   async hasAccess(path: string): Promise<boolean> {
     const fetchParams = {
-      Bucket: AWS_S3_BUCKET,
+      Bucket: BUCKETS.WORKING_FILES,
       Key: path,
     };
     return new Promise<boolean>(resolve => {

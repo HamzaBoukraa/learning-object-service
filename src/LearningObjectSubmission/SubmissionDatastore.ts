@@ -1,8 +1,8 @@
-import { User, LearningObject } from '@cyber4all/clark-entity';
 import { COLLECTIONS } from '../drivers/MongoDriver';
 import { Db } from 'mongodb';
 import * as ObjectMapper from '../drivers/Mongo/ObjectMapper';
 import { UserDocument } from '../types';
+import { LearningObject, User } from '../entity';
 
 const ERROR_MESSAGE = {
   INVALID_ACCESS: `Invalid access. User must be verified to release Learning Objects`,
@@ -10,7 +10,7 @@ const ERROR_MESSAGE = {
 };
 
 export class SubmissionDatastore {
-  constructor(private db: Db) { }
+  constructor(private db: Db) {}
 
   /**
    * Updates a Learning Object document as having been submitted to a given collection.
@@ -30,16 +30,6 @@ export class SubmissionDatastore {
 
       if (!user.emailVerified) {
         return Promise.reject(ERROR_MESSAGE.INVALID_ACCESS);
-      }
-
-      // else
-      const object: { lock: LearningObject.Lock } = await this.db
-        .collection(COLLECTIONS.LEARNING_OBJECTS)
-        .findOne({ _id: id }, { projection: { _id: 0, lock: 1 } });
-
-      // TODO: Remove check for Learning Object Lock
-      if (this.objectHasRestrictions(object.lock)) {
-        return Promise.reject(ERROR_MESSAGE.RESTRICTED);
       }
 
       await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).update(
@@ -76,14 +66,6 @@ export class SubmissionDatastore {
     );
   }
 
-  private objectHasRestrictions(lock: LearningObject.Lock) {
-    return (
-      lock &&
-      (lock.restrictions.indexOf(LearningObject.Restriction.FULL) > -1 ||
-        lock.restrictions.indexOf(LearningObject.Restriction.PUBLISH) > -1)
-    );
-  }
-
   // TODO: Should this be an external helper?
   /**
    * Fetches a user, given their username.
@@ -110,10 +92,9 @@ export class SubmissionDatastore {
     if (!record)
       return Promise.reject(
         'Problem fetching a user' +
-        ':\n\tInvalid username ' +
-        JSON.stringify(username),
+          ':\n\tInvalid username ' +
+          JSON.stringify(username),
       );
     return Promise.resolve(record);
   }
 }
-

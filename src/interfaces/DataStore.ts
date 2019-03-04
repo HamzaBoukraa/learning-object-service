@@ -1,10 +1,10 @@
-import { Collection, LearningObject, User } from '@cyber4all/clark-entity';
 import { CompletedPart, MultipartFileUploadStatus } from './FileManager';
 import { LearningObjectUpdates } from '../types';
 import { LearningOutcomeDatastore } from '../LearningOutcomes/LearningOutcomeInteractor';
 import { LearningObjectStatDatastore } from '../LearningObjectStats/LearningObjectStatsInteractor';
 import { CollectionDataStore } from '../Collections/CollectionDataStore';
 import { ChangeLogDocument } from '../types/changelog';
+import { LearningObject, User, Collection } from '../entity';
 
 export interface DataStore
   extends LearningOutcomeDatastore,
@@ -21,7 +21,7 @@ export interface DataStore
 
   // LearningObjects
   insertLearningObject(object: LearningObject): Promise<string>;
-
+  addToReleased(object: LearningObject): Promise<void>;
   // File Uploads
   insertMultipartUploadStatus(params: {
     status: MultipartFileUploadStatus;
@@ -39,8 +39,19 @@ export interface DataStore
 
   // Learning Objects
   getUserObjects(username: string): Promise<string[]>;
-  findLearningObject(username: string, name: string): Promise<string>;
+  findLearningObject(params: {
+    authorId: string;
+    name: string;
+  }): Promise<string>;
+  findReleasedLearningObject(params: {
+    authorId: string;
+    name: string;
+  }): Promise<string>;
   fetchLearningObject(params: {
+    id: string;
+    full?: boolean;
+  }): Promise<LearningObject>;
+  fetchReleasedLearningObject(params: {
     id: string;
     full?: boolean;
   }): Promise<LearningObject>;
@@ -54,25 +65,31 @@ export interface DataStore
   }): Promise<LearningObject[]>;
   fetchLearningObjectStatus(id: string): Promise<string>;
   fetchLearningObjectCollection(id: string): Promise<string>;
-  fetchAllObjects(params: {
-    status: string[];
-    page?: number;
-    limit?: number;
-  }): Promise<{ objects: LearningObject[]; total: number }>;
-  searchObjects(
-    params: LearningObjectQuery,
+  fetchLearningObjectAuthorUsername(id: string): Promise<string>;
+  searchReleasedObjects(
+    params: ReleasedLearningObjectQuery,
   ): Promise<{ objects: LearningObject[]; total: number }>;
-  searchObjectsWithConditions(
-    params: LearningObjectQueryWithConditions,
+  searchAllObjects(
+    params: LearningObjectQuery,
   ): Promise<{
     total: number;
     objects: LearningObject[];
   }>;
-  findParentObjects(params: {
-    query: LearningObjectQuery;
+  fetchParentObjects(params: {
+    query: ParentLearningObjectQuery;
+    full?: boolean;
+  }): Promise<LearningObject[]>;
+  fetchReleasedParentObjects(params: {
+    query: ParentLearningObjectQuery;
+    full?: boolean;
   }): Promise<LearningObject[]>;
   findParentObjectIds(params: { childId: string }): Promise<string[]>;
   loadChildObjects(params: {
+    id: string;
+    full?: boolean;
+    status: string[];
+  }): Promise<LearningObject[]>;
+  loadReleasedChildObjects(params: {
     id: string;
     full?: boolean;
     status: string[];
@@ -170,7 +187,7 @@ export interface Filters {
   limit?: number;
 }
 
-export interface LearningObjectQuery extends Filters {
+export interface ReleasedLearningObjectQuery extends Filters {
   id?: string;
   name?: string;
   author?: string;
@@ -180,17 +197,16 @@ export interface LearningObjectQuery extends Filters {
   text?: string;
   full?: boolean;
   collection?: string[];
-  status?: string[];
 }
 
-export interface LearningObjectQueryWithConditions extends Filters {
-  name?: string;
-  author?: string;
-  length?: string[];
-  level?: string[];
-  standardOutcomeIDs?: string[];
-  text?: string;
-  conditions: QueryCondition[];
+export interface LearningObjectQuery extends ReleasedLearningObjectQuery {
+  status?: string[];
+  conditions?: QueryCondition[];
+}
+
+export interface ParentLearningObjectQuery extends Filters {
+  id: string;
+  status?: string[];
 }
 
 export interface QueryCondition {

@@ -1,12 +1,12 @@
 import { Cursor, Db, MongoClient, ObjectID } from 'mongodb';
 import { DataStore } from '../interfaces/interfaces';
-import { LearningObject, LearningOutcome, User } from '@cyber4all/clark-entity';
 import {
   Filters,
   LearningObjectCollection,
-  LearningObjectQuery,
+  ReleasedLearningObjectQuery,
   QueryCondition,
-  LearningObjectQueryWithConditions,
+  LearningObjectQuery,
+  ParentLearningObjectQuery,
 } from '../interfaces/DataStore';
 import {
   CompletedPart,
@@ -33,12 +33,19 @@ import { lengths } from '@cyber4all/clark-taxonomy';
 import { LearningObjectDataStore } from '../LearningObjects/LearningObjectDatastore';
 import { ChangeLogDocument } from '../types/changelog';
 import { ChangelogDataStore } from '../Changelogs/ChangelogDatastore';
-import { LearningObjectError } from '../errors';
+import {
+  ResourceError,
+  ResourceErrorReason,
+  ServiceError,
+  ServiceErrorReason,
+} from '../errors';
 import { reportError } from './SentryConnector';
+import { LearningObject, LearningOutcome, User } from '../entity';
 
 export enum COLLECTIONS {
   USERS = 'users',
   LEARNING_OBJECTS = 'objects',
+  RELEASED_LEARNING_OBJECTS = 'released-objects',
   LEARNING_OUTCOMES = 'learning-outcomes',
   STANDARD_OUTCOMES = 'outcomes',
   LO_COLLECTIONS = 'collections',
@@ -117,17 +124,62 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Performs search on objects collection based on query and or conditions
+   * Fetches Learning Object's author's username
    *
-   * @param {LearningObjectQueryWithConditions} params
+   * @param {string} id
+   * @returns {Promise<string>}
+   * @memberof MongoDriver
+   */
+  async fetchLearningObjectAuthorUsername(id: string): Promise<string> {
+    const results = await this.db
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .aggregate([
+        { $match: { _id: id } },
+        {
+          $lookup: {
+            from: COLLECTIONS.USERS,
+            localField: 'authorID',
+            foreignField: '_id',
+            as: 'author',
+          },
+        },
+        { $unwind: { path: '$author' } },
+        { $project: { 'author.username': 1 } },
+        { $replaceRoot: { newRoot: '$author' } },
+      ])
+      .toArray();
+    const user = results[0];
+    if (user) {
+      return user.username;
+    }
+    return null;
+  }
+
+  /**
+   * Inserts object into released objects collection or overwrites if exists
+   *
+   * @param {LearningObject} object
+   * @returns {Promise<void>}
+   * @memberof MongoDriver
+   */
+  async addToReleased(object: LearningObject): Promise<void> {
+    const doc = await this.documentLearningObject(object);
+    await this.db
+      .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
+      .replaceOne({ _id: object.id }, doc, { upsert: true });
+  }
+  /**
+   * Performs search on objects and released-objects collection based on query and or conditions
+   *
+   * @param {LearningObjectQuery} params
    * @returns {Promise<{
    *     total: number;
    *     objects: LearningObject[];
    *   }>}
    * @memberof MongoDriver
    */
-  async searchObjectsWithConditions(
-    params: LearningObjectQueryWithConditions,
+  async searchAllObjects(
+    params: LearningObjectQuery,
   ): Promise<{
     total: number;
     objects: LearningObject[];
@@ -135,6 +187,7 @@ export class MongoDriver implements DataStore {
     const {
       name,
       author,
+      collection,
       length,
       level,
       standardOutcomeIDs,
@@ -144,9 +197,12 @@ export class MongoDriver implements DataStore {
       sortType,
       page,
       limit,
+      status,
     } = params;
 
-    const orConditions: any[] = this.buildQueryConditions(conditions);
+    const orConditions: any[] = conditions
+      ? this.buildQueryConditions(conditions)
+      : [];
 
     // Query for users
     const authors = await this.matchUsers(author, text);
@@ -156,34 +212,241 @@ export class MongoDriver implements DataStore {
     const searchQuery = this.buildSearchQuery({
       name,
       authors,
+      collection,
       length,
       level,
       text,
       outcomeIDs,
+      status,
     });
-    let cursor = this.db
-      .collection<LearningObjectDocument>(COLLECTIONS.LEARNING_OBJECTS)
-      .find({
-        $and : [
-          searchQuery,
-          { $or: orConditions },
-        ]
-      });
 
-    const total = await cursor.count();
-
-    cursor = this.applyCursorFilters(cursor, {
-      orderBy,
-      sortType,
+    const pipeline = this.buildAllObjectsPipeline({
+      searchQuery,
+      orConditions,
+      hasText: !!text,
       page,
       limit,
+      orderBy,
+      sortType,
     });
 
-    const docs = await cursor.toArray();
+    const resultSet = await this.db
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .aggregate<{
+        objects: LearningObjectDocument[];
+        total: [{ total: number }];
+      }>(pipeline)
+      .toArray();
+
+    const results = resultSet[0];
+    const objectDocs = results.objects;
     const objects: LearningObject[] = await this.bulkGenerateLearningObjects(
-      docs,
+      objectDocs,
     );
+    const total = results.total[0] ? results.total[0].total : 0;
     return { total, objects };
+  }
+
+  /**
+   * Constructs aggregation pipeline for searching all objects
+   *
+   * @private
+   * @param {({
+   *     searchQuery?: any;
+   *     orConditions?: any[];
+   *     hasText?: boolean;
+   *     page?: number;
+   *     limit?: number;
+   *     orderBy?: string;
+   *     sortType?: 1 | -1;
+   *   })} params
+   * @returns {any[]}
+   * @memberof MongoDriver
+   */
+  private buildAllObjectsPipeline(params: {
+    searchQuery?: any;
+    orConditions?: any[];
+    hasText?: boolean;
+    page?: number;
+    limit?: number;
+    orderBy?: string;
+    sortType?: 1 | -1;
+  }): any[] {
+    let {
+      searchQuery,
+      orConditions,
+      hasText,
+      page,
+      limit,
+      orderBy,
+      sortType,
+    } = params;
+
+    let matcher: any = { ...searchQuery };
+    if (orConditions && orConditions.length) {
+      matcher.$and = [{ $or: orConditions }];
+    }
+
+    const match = { $match: { ...matcher } };
+
+    const unWindArrayToRoot = [
+      { $unwind: '$objects' },
+      {
+        $replaceRoot: { newRoot: '$objects' },
+      },
+    ];
+
+    const joinCollections = {
+      $lookup: {
+        from: COLLECTIONS.RELEASED_LEARNING_OBJECTS,
+        let: { object_id: '$_id', object_status: '$status' },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $and: [{ $eq: ['$_id', '$$object_id'] }] },
+            },
+          },
+          {
+            $addFields: {
+              hasRevision: {
+                $cond: [
+                  {
+                    $ne: ['$$object_status', LearningObject.Status.RELEASED],
+                  },
+                  true,
+                  false,
+                ],
+              },
+            },
+          },
+        ],
+        as: 'released',
+      },
+    };
+
+    const createSuperSet = [
+      { $unwind: { path: '$released', preserveNullAndEmptyArrays: true } },
+      {
+        $group: {
+          _id: 1,
+          objects: { $push: '$$ROOT' },
+          released: { $push: '$released' },
+        },
+      },
+      {
+        $project: {
+          objects: { $concatArrays: ['$objects', '$released'] },
+        },
+      },
+      ...unWindArrayToRoot,
+    ];
+
+    const removeDuplicates = [
+      {
+        $group: {
+          _id: '$_id',
+          objects: { $push: '$$ROOT' },
+        },
+      },
+      {
+        $project: {
+          objects: {
+            $cond: [
+              { $eq: [{ $size: '$objects' }, 1] },
+              { $arrayElemAt: ['$objects', 0] },
+              {
+                $filter: {
+                  input: '$objects',
+                  as: 'object',
+                  cond: {
+                    $or: [
+                      { $eq: ['$$object.hasRevision', true] },
+                      { $eq: ['$$object.hasRevision', false] },
+                    ],
+                  },
+                },
+              },
+            ],
+          },
+        },
+      },
+      ...unWindArrayToRoot,
+    ];
+
+    const { sort, paginate } = this.buildAggregationFilters({
+      page,
+      limit,
+      hasText,
+      orderBy,
+      sortType,
+    });
+
+    const pipeline = [
+      match,
+      joinCollections,
+      ...createSuperSet,
+      ...removeDuplicates,
+      ...sort,
+      {
+        $facet: {
+          objects: paginate,
+          total: [
+            {
+              $count: 'total',
+            },
+          ],
+        },
+      },
+    ];
+
+    return pipeline;
+  }
+
+  /**
+   * Builds sort and pagination filters for aggregation pipeline
+   *
+   * @private
+   * @param {{
+   *     page?: number;
+   *     limit?: number;
+   *     hasText?: boolean;
+   *     orderBy?: string;
+   *     sortType?: number;
+   *   }} params
+   * @returns {{ sort: any[]; paginate: any[] }}
+   * @memberof MongoDriver
+   */
+  private buildAggregationFilters(params: {
+    page?: number;
+    limit?: number;
+    hasText?: boolean;
+    orderBy?: string;
+    sortType?: number;
+  }): { sort: [{ $sort: { [index: string]: any } }]; paginate: any[] } {
+    let { page, limit, hasText, orderBy, sortType } = params;
+    let paginate: {
+      [index: string]: number;
+    }[] = [{ $skip: 0 }];
+    page = this.formatPage(page);
+    const skip = this.calcSkip({ page, limit });
+    // Paginate
+    if (skip != null && limit) {
+      paginate = [{ $skip: skip }, { $limit: limit }];
+    } else if (skip == null && limit) {
+      paginate = [{ $limit: limit }];
+    }
+    // @ts-ignore Sort must be initialized to modify
+    const sort: [{ $sort: { [index: string]: any } }] = [];
+    if (hasText) {
+      sort[0] = { $sort: { score: { $meta: 'textScore' } } };
+    }
+    // Apply orderBy
+    if (orderBy) {
+      const orderBySorter = {};
+      orderBySorter[orderBy] = sortType ? sortType : 1;
+      sort[0] = { $sort: orderBySorter };
+    }
+    return { sort, paginate };
   }
 
   /**
@@ -288,21 +551,22 @@ export class MongoDriver implements DataStore {
     id: string;
     full?: boolean;
     status: string[];
+    collection?: string;
   }): Promise<LearningObject[]> {
-    const { id, full, status } = params;
+    const { id, full, status, collection } = params;
     const matchQuery: { [index: string]: any } = {
       $match: { _id: id, status: { $in: status } },
     };
 
     const docs = await this.db
       .collection<{ objects: LearningObjectDocument[] }>(
-        COLLECTIONS.LEARNING_OBJECTS,
+        collection || COLLECTIONS.LEARNING_OBJECTS,
       )
       .aggregate([
         matchQuery,
         {
           $graphLookup: {
-            from: COLLECTIONS.LEARNING_OBJECTS,
+            from: collection || COLLECTIONS.LEARNING_OBJECTS,
             startWith: '$children',
             connectFromField: 'children',
             connectToField: '_id',
@@ -318,6 +582,28 @@ export class MongoDriver implements DataStore {
       return this.bulkGenerateLearningObjects(objects, full);
     }
     return [];
+  }
+
+  /**
+   * Loads released child objects
+   *
+   * @param {{
+   *     id: string;
+   *     full?: boolean;
+   *     status: string[];
+   *   }} params
+   * @returns {Promise<LearningObject[]>}
+   * @memberof MongoDriver
+   */
+  async loadReleasedChildObjects(params: {
+    id: string;
+    full?: boolean;
+    status: string[];
+  }): Promise<LearningObject[]> {
+    return this.loadChildObjects({
+      ...params,
+      collection: COLLECTIONS.RELEASED_LEARNING_OBJECTS,
+    });
   }
 
   async getLearningObjectMaterials(params: {
@@ -373,7 +659,7 @@ export class MongoDriver implements DataStore {
    */
   async insertLearningObject(object: LearningObject): Promise<string> {
     try {
-      const doc = await this.documentLearningObject(object, true);
+      const doc = await this.documentLearningObject(object);
       // insert object into the database
       await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).insertOne(doc);
       return doc._id;
@@ -441,7 +727,6 @@ export class MongoDriver implements DataStore {
     objectId: string;
     fileId: string;
   }): Promise<void> {
-    console.log(params.fileId);
     await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).updateOne(
       { _id: params.objectId },
       {
@@ -636,34 +921,53 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Finds Parents of requested Object
+   * Fetches Parents of requested Learning Object from working collection if collection not specified
    *
    * @param {{
-   *     query: LearningObjectQuery;
+   *     query: ParentLearningObjectQuery;
+   *     collection: string [Collection to query for parent objects from]
    *   }} params
    * @returns {Promise<LearningObject[]>}
    * @memberof MongoDriver
    */
-  async findParentObjects(params: {
-    query: LearningObjectQuery;
+  async fetchParentObjects(params: {
+    query: ParentLearningObjectQuery;
+    full?: boolean;
+    collection?: COLLECTIONS.RELEASED_LEARNING_OBJECTS;
   }): Promise<LearningObject[]> {
-    try {
-      let cursor: Cursor<LearningObjectDocument> = await this.db
-        .collection(COLLECTIONS.LEARNING_OBJECTS)
-        .find<LearningObjectDocument>({ children: params.query.id });
-      cursor = this.applyCursorFilters<LearningObjectDocument>(
-        cursor,
-        params.query,
-      );
-      const parentDocs = await cursor.toArray();
-      const parents = await this.bulkGenerateLearningObjects(
-        parentDocs,
-        params.query.full,
-      );
-      return parents;
-    } catch (e) {
-      return Promise.reject(e);
+    const { query, full } = params;
+    const mongoQuery: { [index: string]: any } = { children: query.id };
+    if (query.status) {
+      mongoQuery.status = { $in: query.status };
     }
+    let cursor: Cursor<LearningObjectDocument> = await this.db
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .find<LearningObjectDocument>(mongoQuery);
+    cursor = this.applyCursorFilters<LearningObjectDocument>(cursor, {
+      ...(query as Filters),
+    });
+    const parentDocs = await cursor.toArray();
+    const parents = await this.bulkGenerateLearningObjects(parentDocs, full);
+    return parents;
+  }
+
+  /**
+   * Fetches Parents of requested Learning Object from released collection
+   *
+   * @param {{
+   *     query: ParentLearningObjectQuery;
+   *   }} params
+   * @returns {Promise<LearningObject[]>}
+   * @memberof MongoDriver
+   */
+  async fetchReleasedParentObjects(params: {
+    query: ParentLearningObjectQuery;
+    full?: boolean;
+  }): Promise<LearningObject[]> {
+    return this.fetchParentObjects({
+      ...params,
+      collection: COLLECTIONS.RELEASED_LEARNING_OBJECTS,
+    });
   }
 
   ///////////////////////////////////////////////////////////////////
@@ -779,14 +1083,27 @@ export class MongoDriver implements DataStore {
    */
   async getUserObjects(username: string): Promise<string[]> {
     try {
-      const authorID = await this.findUser(username);
       const objects = await this.db
-        .collection<{ _id: string }>(COLLECTIONS.LEARNING_OBJECTS)
-        .find({ authorID }, { projection: { _id: 1 } })
+        .collection<{ _id: string }>(COLLECTIONS.USERS)
+        .aggregate([
+          { $match: { username } },
+          {
+            $lookup: {
+              from: COLLECTIONS.LEARNING_OBJECTS,
+              localField: '_id',
+              foreignField: 'authorID',
+              as: 'objects',
+            },
+          },
+          { $unwind: '$objects' },
+          { $replaceRoot: { newRoot: '$objects' } },
+          { $project: { _id: 1 } },
+        ])
         .toArray();
       return objects.map(obj => obj._id);
     } catch (e) {
-      return Promise.reject(`Problem fetch User's Objects. Error: ${e}`);
+      reportError(e);
+      throw new ServiceError(ServiceErrorReason.INTERNAL);
     }
   }
 
@@ -810,40 +1127,71 @@ export class MongoDriver implements DataStore {
         .collection(COLLECTIONS.USERS)
         .findOne<UserDocument>(query, { projection: { _id: 1 } });
       if (!userRecord)
-        throw new Error(LearningObjectError.RESOURCE_NOT_FOUND());
+        return Promise.reject(
+          new ResourceError(
+            `Cannot find user with username ${username}`,
+            ResourceErrorReason.NOT_FOUND,
+          ),
+        );
       return `${userRecord._id}`;
     } catch (e) {
       reportError(e);
-      return Promise.reject(new Error(LearningObjectError.INTERNAL_ERROR()));
+      return Promise.reject(new ServiceError(ServiceErrorReason.INTERNAL));
     }
   }
 
   /**
    * Look up a learning object by its author and name.
-   * @async
+   * By default it will perform this query on the objects collection.
+   * If collection param is passed then it will perform the query on specified collection
    *
-   * @param {UserID} author the author's unique database id
-   * @param {string} name the object's name
-   *
-   * @returns {LearningObjectID}
+   * @param {{
+   *     authorId: string; [Id of the author]
+   *     name: string; [name of the Learning Object]
+   *     collection?: string; [DB collection to perform query on;]
+   *   }} params
+   * @returns {Promise<string>}
+   * @memberof MongoDriver
    */
-  async findLearningObject(username: string, name: string): Promise<string> {
-    try {
-      const authorID = await this.findUser(username);
-      const doc = await this.db
-        .collection(COLLECTIONS.LEARNING_OBJECTS)
-        .findOne<LearningObjectDocument>({
-          authorID: authorID,
-          name: name,
-        });
-      if (!doc)
-        return Promise.reject(
-          'No learning object ' + name + ' for the given user',
-        );
-      return Promise.resolve(doc._id);
-    } catch (e) {
-      return Promise.reject(e);
+  async findLearningObject(params: {
+    authorId: string;
+    name: string;
+    collection?: COLLECTIONS.RELEASED_LEARNING_OBJECTS;
+  }): Promise<string> {
+    const { authorId, name, collection } = params;
+    const doc = await this.db
+      .collection(collection || COLLECTIONS.LEARNING_OBJECTS)
+      .findOne<LearningObjectDocument>(
+        {
+          authorID: authorId,
+          name,
+        },
+        { projection: { _id: 1 } },
+      );
+    if (doc) {
+      return doc._id;
     }
+    return null;
+  }
+
+  /**
+   * Looks up a released learning object by its author and name.
+   *
+   * @param {{
+   *     authorId: string; [Id of the author]
+   *     name: string; [name of the Learning Object]
+   *   }} params
+   * @returns {Promise<string>}
+   * @memberof MongoDriver
+   */
+  async findReleasedLearningObject(params: {
+    authorId: string;
+    name: string;
+  }): Promise<string> {
+    return this.findLearningObject({
+      ...params,
+      collection: COLLECTIONS.RELEASED_LEARNING_OBJECTS,
+    });
   }
 
   /**
@@ -911,14 +1259,36 @@ export class MongoDriver implements DataStore {
     const object = await this.db
       .collection<LearningObjectDocument>(COLLECTIONS.LEARNING_OBJECTS)
       .findOne({ _id: params.id });
-    const author = await this.fetchUser(object.authorID);
-    const learningObject = await this.generateLearningObject(
-      author,
-      object,
-      params.full,
-    );
+    if (object) {
+      const author = await this.fetchUser(object.authorID);
+      return this.generateLearningObject(author, object, params.full);
+    }
 
-    return learningObject;
+    return null;
+  }
+
+  /**
+   * Fetches released object
+   *
+   * @param {{
+   *     id: string;
+   *     full?: boolean;
+   *   }} params
+   * @returns {Promise<LearningObject>}
+   * @memberof MongoDriver
+   */
+  async fetchReleasedLearningObject(params: {
+    id: string;
+    full?: boolean;
+  }): Promise<LearningObject> {
+    const object = await this.db
+      .collection<LearningObjectDocument>(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
+      .findOne({ _id: params.id });
+    if (object) {
+      const author = await this.fetchUser(object.authorID);
+      return this.generateLearningObject(author, object, params.full);
+    }
+    return null;
   }
 
   /**
@@ -940,43 +1310,7 @@ export class MongoDriver implements DataStore {
       return arr;
     } catch (e) {
       reportError(e);
-      return Promise.reject(new Error(LearningObjectError.INTERNAL_ERROR()));
-    }
-  }
-
-  /**
-   * Return literally all objects. Very expensive.
-   * @returns {Cursor<LearningObjectRecord>[]} cursor of literally all objects
-   */
-  async fetchAllObjects(params: {
-    status?: string[];
-    page?: number;
-    limit?: number;
-  }): Promise<{ objects: LearningObject[]; total: number }> {
-    try {
-      const query: any = {};
-
-      if (status && status.length) {
-        query.status = { $in: status };
-      }
-      let objectCursor = await this.db
-        .collection(COLLECTIONS.LEARNING_OBJECTS)
-        .find<LearningObjectDocument>(query);
-      const totalRecords = await objectCursor.count();
-      objectCursor = this.applyCursorFilters(objectCursor, {
-        page: params.page,
-        limit: params.limit,
-      });
-      const docs = await objectCursor.toArray();
-      const learningObjects: LearningObject[] = await this.bulkGenerateLearningObjects(
-        docs,
-      );
-      return Promise.resolve({
-        objects: learningObjects,
-        total: totalRecords,
-      });
-    } catch (e) {
-      return Promise.reject(`Error fetching all learning objects. Error: ${e}`);
+      return Promise.reject(new ServiceError(ServiceErrorReason.INTERNAL));
     }
   }
 
@@ -1059,7 +1393,7 @@ export class MongoDriver implements DataStore {
     full?: boolean;
     orderBy?: string;
     sortType?: 1 | -1;
-    collections?: string[]
+    collections?: string[];
   }): Promise<LearningObject[]> {
     try {
       const query: any = {
@@ -1069,7 +1403,10 @@ export class MongoDriver implements DataStore {
       if (params.collections) {
         query.$or = [
           { status: LearningObject.Status.RELEASED },
-          { status: { $in: params.status }, collection: { $in: params.collections } },
+          {
+            status: { $in: params.status },
+            collection: { $in: params.collections },
+          },
         ];
       } else {
         query.status = { $in: params.status };
@@ -1100,20 +1437,19 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Performs search on objects collection based on query
+   * Performs search on released objects collection based on query
    *
-   * @param {LearningObjectQuery} params
+   * @param {ReleasedLearningObjectQuery} params
    * @returns {Promise<{ objects: LearningObject[]; total: number }>}
    * @memberof MongoDriver
    */
-  async searchObjects(
-    params: LearningObjectQuery,
+  async searchReleasedObjects(
+    params: ReleasedLearningObjectQuery,
   ): Promise<{ objects: LearningObject[]; total: number }> {
     try {
       const {
         author,
         text,
-        status,
         length,
         level,
         standardOutcomeIDs,
@@ -1135,7 +1471,6 @@ export class MongoDriver implements DataStore {
       let query: any = this.buildSearchQuery({
         text,
         authors,
-        status,
         length,
         level,
         outcomeIDs,
@@ -1144,7 +1479,7 @@ export class MongoDriver implements DataStore {
       });
 
       let objectCursor = await this.db
-        .collection(COLLECTIONS.LEARNING_OBJECTS)
+        .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
         .find<LearningObjectDocument>(query)
         .project({ score: { $meta: 'textScore' } })
         .sort({ score: { $meta: 'textScore' } });
@@ -1169,7 +1504,7 @@ export class MongoDriver implements DataStore {
         total,
       };
     } catch (e) {
-      return Promise.reject('Error suggesting objects' + e);
+      return Promise.reject('Error searching objects ' + e);
     }
   }
 
@@ -1622,8 +1957,6 @@ export class MongoDriver implements DataStore {
    */
   private async documentLearningObject(
     object: LearningObject,
-    isNew?: boolean,
-    id?: string,
   ): Promise<LearningObjectDocument> {
     try {
       const authorID = await this.findUser(object.author.username);
@@ -1636,7 +1969,7 @@ export class MongoDriver implements DataStore {
       }
 
       const doc: LearningObjectDocument = {
-        _id: new ObjectID().toHexString(),
+        _id: object.id || new ObjectID().toHexString(),
         authorID: authorID,
         name: object.name,
         date: object.date,

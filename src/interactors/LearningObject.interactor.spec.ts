@@ -3,7 +3,6 @@ import { expect } from 'chai';
 import { MOCK_OBJECTS } from '../tests/mocks';
 import { DataStore } from '../interfaces/DataStore';
 import { LibraryCommunicator } from '../interfaces/interfaces';
-import { UserToken } from '../types';
 import { MockDataStore } from '../tests/mock-drivers/MockDataStore';
 import { MockLibraryDriver } from '../tests/mock-drivers/MockLibraryDriver';
 
@@ -30,7 +29,6 @@ describe('loadUsersObjectSummaries', () => {
 });
 
 describe('loadProfile', () => {
-
   it('should return an array of learning object summaries', done => {
     return LearningObjectInteractor.loadProfile({
       dataStore,
@@ -62,7 +60,6 @@ describe('loadProfile', () => {
         done();
       });
   });
-
 });
 
 describe('fetchObjectsByIDs', () => {
@@ -99,35 +96,16 @@ describe('fetchObjectsByIDs', () => {
   });
 });
 
-describe('findLearningObject', () => {
+describe('getLearningObjectId', () => {
   it('should find a learning object ID', done => {
-    return LearningObjectInteractor.findLearningObject(
+    return LearningObjectInteractor.getLearningObjectId({
       dataStore,
-      MOCK_OBJECTS.USERNAME,
-      MOCK_OBJECTS.LEARNING_OBJECT_NAME,
-    )
-      .then(val => {
-        expect(val).to.be.a('string');
-        done();
-      })
-      .catch(error => {
-        expect.fail();
-        done();
-      });
-  });
-});
-
-describe('fetchAllObjects', () => {
-  it('should fetch all objects', done => {
-    return LearningObjectInteractor.fetchAllObjects({
-      dataStore,
-      library,
-      page: MOCK_OBJECTS.CURR_PAGE,
-      limit: MOCK_OBJECTS.LIMIT,
+      username: MOCK_OBJECTS.USERNAME,
+      learningObjectName: MOCK_OBJECTS.LEARNING_OBJECT_NAME,
       userToken: MOCK_OBJECTS.USERTOKEN,
     })
       .then(val => {
-        expect(val).to.be.an('object');
+        expect(val).to.be.a('string');
         done();
       })
       .catch(error => {

@@ -18,7 +18,7 @@ import * as LearningOutcomeRouteHandler from '../../LearningOutcomes/LearningOut
 import * as SubmissionRouteDriver from '../../LearningObjectSubmission/SubmissionRouteDriver';
 import * as ChangelogRouteHandler from '../../Changelogs/ChangelogRouteDriver';
 import { reportError } from '../SentryConnector';
-import { LearningObjectError } from '../../errors';
+import { ResourceErrorReason, mapErrorToResponseData } from '../../errors';
 
 export class ExpressAuthRouteDriver {
   private upload = multer({ storage: multer.memoryStorage() });
@@ -121,24 +121,19 @@ export class ExpressAuthRouteDriver {
       '/learning-objects/:username/:learningObjectName/id',
       async (req, res) => {
         try {
-          const user = req.user;
+          const userToken = req.user;
           const username = req.params.username;
           const learningObjectName = req.params.learningObjectName;
-          if (this.hasAccess(user, 'username', username) || user.SERVICE_KEY) {
-            const id = await LearningObjectInteractor.findLearningObject(
-              this.dataStore,
-              username,
-              learningObjectName,
-            );
-            res.status(200).send(id);
-          } else {
-            res
-              .status(403)
-              .send('Invalid Access. Cannot fetch Learning Object ID.');
-          }
+          const id = await LearningObjectInteractor.getLearningObjectId({
+            dataStore: this.dataStore,
+            username,
+            learningObjectName,
+            userToken,
+          });
+          res.status(200).send(id);
         } catch (e) {
-          console.error(e);
-          res.status(500).send(e);
+          const { code, message } = mapErrorToResponseData(e);
+          res.status(code).json({ message });
         }
       },
     );
@@ -345,10 +340,9 @@ export class ExpressAuthRouteDriver {
           });
           res.sendStatus(200);
         } catch (e) {
-          console.error(e);
           let status = 500;
 
-          if (e.message === LearningObjectError.INVALID_ACCESS) {
+          if (e.name === ResourceErrorReason.INVALID_ACCESS) {
             status = 401;
           }
           res.status(status).send(e);

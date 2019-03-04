@@ -1,14 +1,9 @@
 import {
   DataStore,
+  ReleasedLearningObjectQuery,
   LearningObjectQuery,
-  LearningObjectQueryWithConditions,
+  ParentLearningObjectQuery,
 } from '../../interfaces/DataStore';
-import {
-  LearningObject,
-  Collection,
-  LearningOutcome,
-  User,
-} from '@cyber4all/clark-entity';
 import {
   MultipartFileUploadStatus,
   MultipartFileUploadStatusUpdates,
@@ -26,6 +21,12 @@ import {
   LearningOutcomeUpdate,
 } from '../../LearningOutcomes/types';
 import { LearningObjectStats } from '../../LearningObjectStats/LearningObjectStatsInteractor';
+import {
+  LearningObject,
+  User,
+  LearningOutcome,
+  Collection,
+} from '../../entity';
 
 export class MockDataStore implements DataStore {
   connect(file: string): Promise<void> {
@@ -34,6 +35,52 @@ export class MockDataStore implements DataStore {
 
   disconnect(): void {
     return;
+  }
+
+  fetchLearningObjectAuthorUsername(id: string): Promise<string> {
+    return Promise.resolve(MOCK_OBJECTS.USERNAME);
+  }
+  fetchParentObjects(params: {
+    query: ParentLearningObjectQuery;
+    full?: boolean;
+  }): Promise<LearningObject[]> {
+    return Promise.resolve([]);
+  }
+  fetchReleasedParentObjects(params: {
+    query: ParentLearningObjectQuery;
+    full?: boolean;
+  }): Promise<LearningObject[]> {
+    return Promise.resolve([]);
+  }
+  findLearningObject(params: {
+    authorId: string;
+    name: string;
+  }): Promise<string> {
+    return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT_ID);
+  }
+  findReleasedLearningObject(params: {
+    authorId: string;
+    name: string;
+  }): Promise<string> {
+    return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT_ID);
+  }
+
+  fetchReleasedLearningObject(params: {
+    id: string;
+    full?: boolean;
+  }): Promise<LearningObject> {
+    return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT as any);
+  }
+  loadReleasedChildObjects(params: {
+    id: string;
+    full?: boolean;
+    status: string[];
+  }): Promise<LearningObject[]> {
+    return Promise.resolve([MOCK_OBJECTS.LEARNING_OBJECT as any]);
+  }
+
+  addToReleased(object: LearningObject): Promise<void> {
+    return Promise.resolve();
   }
 
   fetchLearningObjectStatus(id: string): Promise<string> {
@@ -50,8 +97,8 @@ export class MockDataStore implements DataStore {
     return Promise.resolve();
   }
 
-  searchObjectsWithConditions(
-    params: LearningObjectQueryWithConditions,
+  searchAllObjects(
+    params: LearningObjectQuery,
   ): Promise<{
     total: number;
     objects: LearningObject[];
@@ -167,10 +214,6 @@ export class MockDataStore implements DataStore {
     return Promise.resolve([MOCK_OBJECTS.LEARNING_OBJECT_ID]);
   }
 
-  findLearningObject(username: string, name: string): Promise<string> {
-    return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT_ID);
-  }
-
   fetchLearningObject(params: { id: string; full?: boolean }): Promise<any> {
     switch (params.id) {
       case SUBMITTABLE_LEARNING_OBJECT.id:
@@ -218,8 +261,8 @@ export class MockDataStore implements DataStore {
     });
   }
 
-  searchObjects(
-    params: LearningObjectQuery,
+  searchReleasedObjects(
+    params: ReleasedLearningObjectQuery,
   ): Promise<{ objects: any[]; total: number }> {
     return Promise.resolve({
       objects: [new LearningObject(MOCK_OBJECTS.LEARNING_OBJECT as any)],
@@ -265,7 +308,9 @@ export class MockDataStore implements DataStore {
     return Promise.resolve();
   }
 
-  findParentObjects(params: { query: LearningObjectQuery }): Promise<any[]> {
+  findParentObjects(params: {
+    query: ReleasedLearningObjectQuery;
+  }): Promise<any[]> {
     return Promise.resolve([
       new LearningObject(MOCK_OBJECTS.LEARNING_OBJECT as any),
     ]);
