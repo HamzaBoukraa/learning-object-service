@@ -39,3 +39,10 @@ describe('fetchCollectionMeta', () => {
     expect(collectionMetadata).to.be.an('object');
   });
 });
+
+describe('fetchCollectionStats', () => {
+  it('should return an object with the collection stats', async () => {
+    const collectionStats = await CollectionInteractor.fetchCollectionStats(mockStore);
+    expect(collectionStats.number).to.equal(7);
+  });
+});
