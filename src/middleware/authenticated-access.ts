@@ -2,6 +2,7 @@ import 'dotenv/config';
 import * as jwt from 'jsonwebtoken';
 import { Request, Response } from 'express';
 import { getToken } from './functions';
+import { reportError } from '../drivers/SentryConnector';
 
 /**
  * Checks if decoded token is set in request.
@@ -18,15 +19,32 @@ export function enforceAuthenticatedAccess(
   res: Response,
   next: Function,
 ) {
-  let user = req.user;
-  const token = getToken(req);
-  if (!user && token) {
-    user = jwt.verify(token, process.env.KEY);
-    req.user = user;
+  if (!req.user) {
+    req.user = decodeToken(req);
   }
-  if (user) {
+  if (req.user) {
     next();
   } else {
     res.status(401).send('Invalid access!');
   }
+}
+
+/**
+ * Attempts to verify and decode token.
+ * Reports Error if error is not an UnauthorizedError
+ *
+ * @param {Request} req
+ * @returns
+ */
+function decodeToken(req: Request) {
+  let user;
+  try {
+    const token = getToken(req);
+    user = jwt.verify(token, process.env.KEY);
+  } catch (e) {
+    if (e.name !== 'UnauthorizedError') {
+      reportError(e);
+    }
+  }
+  return user;
 }
