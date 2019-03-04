@@ -991,7 +991,7 @@ export class LearningObjectInteractor {
         // Attempt to delete files
         const path = `${user.username}/${obj.id}/`;
         fileManager.deleteAll({ path }).catch(e => {
-          reportError(new Error(`Problem deleting files at ${path}. ${e}`));
+          reportError(e);
         });
         // Update parents' dates
         updateParentsDate({
