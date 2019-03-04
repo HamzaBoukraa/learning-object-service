@@ -1357,23 +1357,6 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Fetches statistics for collections
-   *
-   * @returns {Promise<number>}
-   * @memberof MongoDriver
-   */
-  async fetchCollectionStats(): Promise<number> {
-    try {
-      const res = await this.db
-        .collection(COLLECTIONS.LO_COLLECTIONS)
-        .count();
-      return res;
-    } catch (e) {
-      return Promise.reject(e);
-    }
-  }
-
-  /**
    * Converts array of LearningObjectDocuments to Learning Objects
    *
    * @private

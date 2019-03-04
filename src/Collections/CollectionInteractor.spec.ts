@@ -40,9 +40,3 @@ describe('fetchCollectionMeta', () => {
   });
 });
 
-describe('fetchCollectionStats', () => {
-  it('should return an object with the collection stats', async () => {
-    const collectionStats = await CollectionInteractor.fetchCollectionStats(mockStore);
-    expect(collectionStats.number).to.equal(7);
-  });
-});

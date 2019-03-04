@@ -357,8 +357,4 @@ export class MockDataStore implements DataStore {
   }): Promise<LearningObject.Material.File> {
     return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT_FILE);
   }
-
-  fetchCollectionStats(): Promise<number> {
-    return Promise.resolve(7);
-  }
 }

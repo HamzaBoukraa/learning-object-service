@@ -52,24 +52,8 @@ export function initializeCollectionRouter({ router, dataStore }: { router: Rout
       res.status(code).json({message});
     }
   };
-  /**
-   * Return stats for all collections
-   */
-  const getCollectionStats = async (req: Request, res: Response) => {
-    try {
-      const collectionStats = await CollectionInteractor.fetchCollectionStats(
-        dataStore,
-      );
-      res.status(200).json(collectionStats);
-    } catch (e) {
-      console.error(e);
-      const { code, message } = mapErrorToResponseData(e);
-      res.status(code).json({message});
-    }
-  };
 
   router.get('/collections', getAllCollections);
-  router.get('/collections/stats', getCollectionStats);
   router.get('/collections/:name', getCollection);
   router.get('/collections/:name/meta', getCollectionMetadata);
 }
