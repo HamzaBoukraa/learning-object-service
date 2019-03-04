@@ -48,7 +48,7 @@ export async function fetchCollectionMeta(
 }
 
 /**
- * Fetches metadata for a specific collection.
+ * Fetches statistics for all collections
  * @param dataStore
  */
 export async function fetchCollectionStats(

@@ -1357,10 +1357,9 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Fetches an object's collection id
+   * Fetches statistics for collections
    *
-   * @param {string} id
-   * @returns {Promise<string>}
+   * @returns {Promise<number>}
    * @memberof MongoDriver
    */
   async fetchCollectionStats(): Promise<number> {
