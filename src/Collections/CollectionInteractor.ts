@@ -47,3 +47,13 @@ export async function fetchCollectionMeta(
   }
 }
 
+/**
+ * Fetches metadata for a specific collection.
+ * @param dataStore
+ */
+export async function fetchCollectionStats(
+  dataStore: CollectionDataStore,
+): Promise<any> {
+    return await dataStore.fetchCollectionStats();
+}
+

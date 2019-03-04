@@ -48,7 +48,23 @@ export function initializeCollectionRouter({ router, dataStore }: { router: Rout
       res.status(500).send(e);
     }
   };
+  /**
+   * Return stats for all collections
+   */
+  const getCollectionStats = async (req: Request, res: Response) => {
+    try {
+      const collectionStats = await CollectionInteractor.fetchCollectionStats(
+        dataStore,
+        req.params.name,
+      );
+      res.status(200).send(collectionStats);
+    } catch (e) {
+      console.error(e);
+      res.status(500).send(e);
+    }
+  };
   router.get('/collections', getAllCollections);
+  router.get('/collections/stats', getCollectionStats);
   router.get('/collections/:name', getCollection);
   router.get('/collections/:name/meta', getCollectionMetadata);
 }
