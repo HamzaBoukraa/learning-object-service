@@ -54,6 +54,10 @@ export async function fetchCollectionMeta(
 export async function fetchCollectionStats(
   dataStore: CollectionDataStore,
 ): Promise<any> {
-    return await dataStore.fetchCollectionStats();
+    const stats = {
+      number: 0,
+    };
+    stats.number = await dataStore.fetchCollectionStats();
+    return stats;
 }
 
