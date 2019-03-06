@@ -245,10 +245,10 @@ export async function getLearningObjectChildrenById(
   dataStore: DataStore,
   objectId: string,
 ) {
-  //Retrieve the ids of the children in the order in which they were set by user 
+  //Retrieve the ids of the children in the order in which they were set by user
   const childrenIDs = await dataStore.findChildObjectIds({
     parentId: objectId,
-  });  
+  });
 
   //fill children array with children learning objects based on order of objects in the database
   return childrenIDs.map(async(kid) => await dataStore.fetchLearningObject({ id: childrenIDs[kid], full: true, }));

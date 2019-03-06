@@ -542,7 +542,7 @@ export class MongoDriver implements DataStore {
 
   /**
    * Returns array of ids associated with the learning object's children objects
-   * @param {{ parentId: string }} params 
+   * @param {{ parentId: string }} params
    * @return {Promise<string[]>}
    * @memberof MongoDriver
    */
@@ -552,10 +552,10 @@ export class MongoDriver implements DataStore {
     .findOne<{ children: string [] }> (
       { _id: params.parentId },
       { projection: {children: 1} }
-    )
+    );
 
-    if (children) { 
-      const childrenIDs = children.children;  
+    if (children) {
+      const childrenIDs = children.children;
       return childrenIDs;
     }
     return [];
