@@ -1,5 +1,5 @@
 import { MongoDriver } from '../drivers/MongoDriver';
-import { MOCK_OBJECTS,generateToken } from '../tests/mocks'
+import { MOCK_OBJECTS, generateToken } from '../tests/mocks'
 import * as LearningObjectRouteHandler from './LearningObjectRouteHandler';
 import * as express from 'express';
 import * as bodyParser from 'body-parser'
@@ -16,8 +16,8 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(processToken, (error: any, req: any, res: any, next: any) =>
-      next(),
-    );
+    next(),
+);
 app.use(router);
 const request = supertest(app);
 const testObjectID = 'parent_object_1';
@@ -25,14 +25,14 @@ describe('LearningObjectRouteHandler', () => {
     let dataStore: MongoDriver;
     let fileManager: FileManager
     let LibraryDriver: LibraryCommunicator;
-    let token:string;
+    let token: string;
     let authorization = {}
     beforeAll(async () => {
         dataStore = await MongoDriver.build(global['__MONGO_URI__']);
         fileManager = new MockS3Driver();
         LibraryDriver = new MockLibraryDriver();
         token = generateToken(MOCK_OBJECTS.USERTOKEN);
-        authorization = {Cookie:`presence=${token}`, 'Content-Type':'application/json'}
+        authorization = { Cookie: `presence=${token}`, 'Content-Type': 'application/json' }
         LearningObjectRouteHandler.initializePublic({ router, dataStore });
         LearningObjectRouteHandler.initializePrivate({
             router,
@@ -81,7 +81,7 @@ describe('LearningObjectRouteHandler', () => {
         it('should update the requested learning object and return a status of 200', done => {
             request
                 .patch(`/learning-objects/${testObjectID}`)
-                .send({learningObject: { name: 'Java stuff' }})
+                .send({ learningObject: { name: 'Java stuff' } })
                 .set(authorization)
                 .expect('Content-Type', /text/)
                 .expect(200)
@@ -104,7 +104,7 @@ describe('LearningObjectRouteHandler', () => {
         });
     });
     describe('DELETE /learning-objects/:learningObjectName', () => {
-        
+
         it('should delete a learning object from the database and return a 200 status', done => {
             request
                 .delete(`/learning-objects/Java%20stuff`)
