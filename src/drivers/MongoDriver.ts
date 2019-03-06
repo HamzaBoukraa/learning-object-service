@@ -497,7 +497,8 @@ export class MongoDriver implements DataStore {
     const docs = await this.db
       .collection(COLLECTIONS.LEARNING_OBJECTS)
       .find<{ _id: string }>(
-        {_id: params.childId }
+        { children: params.childId },
+        { projection: { _id: 1 } },
       )
       .toArray();
     if (docs) {
@@ -519,7 +520,7 @@ export class MongoDriver implements DataStore {
       { _id: params.parentId },
       { projection: {children: 1} }
     )
-    
+
     if (children) { 
       const childrenIDs = children.children;  
       return childrenIDs;
