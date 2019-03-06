@@ -2031,7 +2031,7 @@ export class MongoDriver implements DataStore {
     let materials: LearningObject.Material;
     let contributors: User[] = [];
     let outcomes: LearningOutcome[] = [];
-    let children: LearningObject[] =[]; 
+    let children: LearningObject[] = [];
 
     // Load Contributors
     if (record.contributors && record.contributors.length) {
