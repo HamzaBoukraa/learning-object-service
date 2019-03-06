@@ -1,17 +1,17 @@
 import { MongoDriver } from '../drivers/MongoDriver';
-import { MOCK_OBJECTS, generateToken } from '../tests/mocks'
+import { MOCK_OBJECTS, generateToken } from '../tests/mocks';
 import * as LearningObjectRouteHandler from './LearningObjectRouteHandler';
 import * as express from 'express';
-import * as bodyParser from 'body-parser'
+import * as bodyParser from 'body-parser';
 import * as supertest from 'supertest';
-import { MockLibraryDriver } from '../tests/mock-drivers/MockLibraryDriver'
-import { MockS3Driver } from '../tests/mock-drivers/MockS3Driver'
+import { MockLibraryDriver } from '../tests/mock-drivers/MockLibraryDriver';
+import { MockS3Driver } from '../tests/mock-drivers/MockS3Driver';
 import { LibraryCommunicator, FileManager } from '../interfaces/interfaces';
-import cookieParser = require('cookie-parser');
+import * as cookieParser from 'cookie-parser';
 import { processToken } from '../middleware';
 
 const app = express();
-const router = express.Router()
+const router = express.Router();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -23,22 +23,22 @@ const request = supertest(app);
 const testObjectID = 'parent_object_1';
 describe('LearningObjectRouteHandler', () => {
     let dataStore: MongoDriver;
-    let fileManager: FileManager
+    let fileManager: FileManager;
     let LibraryDriver: LibraryCommunicator;
     let token: string;
-    let authorization = {}
+    let authorization = {};
     beforeAll(async () => {
         dataStore = await MongoDriver.build(global['__MONGO_URI__']);
         fileManager = new MockS3Driver();
         LibraryDriver = new MockLibraryDriver();
         token = generateToken(MOCK_OBJECTS.USERTOKEN);
-        authorization = { Cookie: `presence=${token}`, 'Content-Type': 'application/json' }
+        authorization = { Cookie: `presence=${token}`, 'Content-Type': 'application/json' };
         LearningObjectRouteHandler.initializePublic({ router, dataStore });
         LearningObjectRouteHandler.initializePrivate({
             router,
             dataStore,
             fileManager,
-            library: LibraryDriver
+            library: LibraryDriver,
         });
     });
     describe('GET /learning-objects/:learningObjectId', () => {
@@ -49,8 +49,8 @@ describe('LearningObjectRouteHandler', () => {
                 .expect('Content-Type', /json/)
                 .expect(200)
                 .then(res => {
-                    expect(res.text).toContain(`${testObjectID}`)
-                    done()
+                    expect(res.text).toContain(`${testObjectID}`);
+                    done();
                 });
         });
         it('should return a status of 500 and an Error message', done => {
@@ -59,8 +59,8 @@ describe('LearningObjectRouteHandler', () => {
                 .expect('Content-Type', /text/)
                 .expect(500)
                 .then(res => {
-                    expect(res.text).toMatch('Problem')
-                    done()
+                    expect(res.text).toMatch('Problem');
+                    done();
                 });
         });
     });
@@ -71,8 +71,8 @@ describe('LearningObjectRouteHandler', () => {
                 .expect('Content-Type', /json/)
                 .expect(200)
                 .then(res => {
-                    expect(res.text).toContain('url')
-                    done()
+                    expect(res.text).toContain('url');
+                    done();
                 });
         });
     });
@@ -86,9 +86,9 @@ describe('LearningObjectRouteHandler', () => {
                 .expect('Content-Type', /text/)
                 .expect(200)
                 .then(res => {
-                    done()
-                }
-                )
+                    done();
+                },
+                );
         });
     });
     describe('GET /learning-objects/:id/children/summary', () => {
@@ -98,8 +98,8 @@ describe('LearningObjectRouteHandler', () => {
                 .expect(200)
                 .expect('Content-Type', /json/)
                 .then(res => {
-                    expect(res.text).toContain('author')
-                    done()
+                    expect(res.text).toContain('author');
+                    done();
                 });
         });
     });

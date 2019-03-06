@@ -126,7 +126,7 @@ export async function addLearningObject(
   user: UserToken,
 ): Promise<LearningObject> {
 
- const err = await checkNameExists({
+  const err = await checkNameExists({
     dataStore,
     username: user.username,
     name: object.name,
@@ -250,9 +250,9 @@ export async function getLearningObjectById(
 export async function getLearningObjectChildrenById(
   dataStore: DataStore,
   objectId: string,
-){
+) {
   try {
-    return await dataStore.loadChildObjects({id: objectId, full: true, status: LearningObjectState.ALL});
+    return await dataStore.loadChildObjects({ id: objectId, full: true, status: LearningObjectState.ALL });
   } catch (e) {
     reportError(e);
     return Promise.reject(new Error(LearningObjectError.RESOURCE_NOT_FOUND()));
@@ -286,7 +286,7 @@ export async function deleteLearningObject(params: {
         reportError(
           new Error(
             `Problem deleting files for ${
-              params.learningObjectName
+            params.learningObjectName
             }: ${path}. ${e}`,
           ),
         );
@@ -295,7 +295,7 @@ export async function deleteLearningObject(params: {
         reportError(
           new Error(
             `Problem deleting changelogs for ${
-              params.learningObjectName
+            params.learningObjectName
             }: ${e}`,
           ),
         );
@@ -419,7 +419,7 @@ export async function removeFile(params: {
     if (file) {
       const path = `${params.username}/${params.objectId}/${
         file.fullPath ? file.fullPath : file.name
-      }`;
+        }`;
       await params.dataStore.removeFromFiles({
         objectId: params.objectId,
         fileId: params.fileId,

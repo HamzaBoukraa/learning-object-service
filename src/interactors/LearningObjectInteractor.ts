@@ -88,10 +88,10 @@ export class LearningObjectInteractor {
         })
       ) {
         status = LearningObjectState.RELEASED;
-      }else{
+      } else {
         status = LearningObjectState.ALL;
       }
-      
+
       const objectIDs = await dataStore.getUserObjects(username);
       summary = await dataStore.fetchMultipleObjects({
         ids: objectIDs,
@@ -433,7 +433,7 @@ export class LearningObjectInteractor {
       let loFile: LearningObject.Material.File;
       const uploadPath = `${params.username}/${params.id}/${
         params.file.fullPath ? params.file.fullPath : params.file.name
-      }`;
+        }`;
       const fileUpload: FileUpload = {
         path: uploadPath,
         data: params.file.buffer,
