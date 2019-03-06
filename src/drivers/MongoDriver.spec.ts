@@ -11,8 +11,8 @@ describe('MongoDriver', () => {
   describe('searchAllObjects', () => {
     it('The function should return an object with total and objects', async () => {
       expect.assertions(1);
-      const result = await driver.searchAllObjects({
-        conditions: [{ nccp: [LearningObject.Status.RELEASED] }],
+      const result = await driver.searchAllObjects({ 
+        collection:['nccp']
       });
       expect(result).toBeDefined();
     });
@@ -45,7 +45,7 @@ describe('MongoDriver', () => {
   describe('checkLearningObjectExistence', () => {
     it('The function should return an array', async () => {
       expect.assertions(1);
-      const learningObjectId = 'default_id';
+      const learningObjectId = 'parent_object_1';
       const result = await driver.checkLearningObjectExistence(
         learningObjectId,
       );

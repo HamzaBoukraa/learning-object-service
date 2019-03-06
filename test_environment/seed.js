@@ -4,8 +4,8 @@ let connection;
 let db;
 
 const LEARNING_OBJECT_MOCK = { 
-    _id: "default_id",
-    authorID: "5b967621f7a3ce2f6cbf5ba1",
+    _id: "parent_object_1",
+    authorID: "author_bob",
     date:"1520530093085",
     goals:[
     {
@@ -44,6 +44,7 @@ const LEARNING_OBJECT_MOCK = {
             url:"https://neutrino-file-uploads.s3.us-east-2.amazonaws.com/skaza/5aa0013becba9a264dcd8030/0ReadMeFirst%20-%20Buffer%20Overflow%20-%20CS0%20-%20C%2B%2B.pdf"
         }
     },
+    children: ['child_object_1'],
     levels:["undergraduate"],
     contributors:[],
     collection:"secinj",
@@ -52,20 +53,63 @@ const LEARNING_OBJECT_MOCK = {
             date:"1538061211867",
             restrictions:[]
         },
-    status:"published"
+    status:"released"
 }
+LEARNING_OBJECT_CHILD = {
+    authorID: 'author_bob',
+    name: 'Input Validation - CS0 - C',
+    date: '1523479539862',
+    length: 'nanomodule',
+    levels: [],
+    goals: [],
+    outcomes: [],
+    materials:
+    {
+        files:[],
+        urls:[
+        {
+            title: "An Awesome File",
+            url:"http://cis1.towson.edu/~cyber4all/modules/nanomodules/Buffer_Overflow-CS0_C++.html"
+        },
+        {
+            title: "Another Awesome File",
+            url:"https://youtu.be/MH_RD1jh0AE"
+        },
+        {
+            title: "Yeet",
+            url:"https://youtu.be/u47q-qX52JI"
+        }
+        ],
+        notes:"",
+        folderDescriptions:[],
+        pdf:
+        {
+            name:"0ReadMeFirst - Buffer Overflow - CS0 - C++.pdf",
+            url:"https://neutrino-file-uploads.s3.us-east-2.amazonaws.com/skaza/5aa0013becba9a264dcd8030/0ReadMeFirst%20-%20Buffer%20Overflow%20-%20CS0%20-%20C%2B%2B.pdf"
+        }
+    },
+    metrics: {},
+    children: [],
+    contributors: [],
+    collection: 'nccp',
+    _id: 'child_object_1',
+    status: 'released',
+  }
 
 const USER_MOCK = { 
-    _id: "5b967621f7a3ce2f6cbf5ba1",
-    username: "unittester",
+    _id: "author_bob",
+    username: "Bob",
     name: "Uncle Bob",
     email: "unitTest12@gmail.com",
     organization: "Towson University",
     password: '$2b$10$Xo4wAJimokUp8Yha4c9boeiFufdf/UnxEuhbGHNuFrgqkHp.96P5a', //hash of 'password',
-    objects:[],
+    objects:['parent_object_1','child_object_1'],
     emailVerified: true,
     bio: "random text random text random text random text random text random text random text random text random text random text",
-    createdAt:"1534558693394"
+    createdAt:"1534558693394",
+    emailVerified: true,
+    accessGroups: ['admin','reviewer@nccp']
+    
 }
 
 const SECJ_COLLECTION_MOCK = {
@@ -134,13 +178,16 @@ async function seedDatabase(uri){
     db = connection.db();
     
     await db.createCollection('objects');
+    await db.createCollection('released-objects');
     await db.createCollection('users');
     await db.createCollection('collections');
     await db.createCollection('changelogs');
     await db.createCollection('outcomes');
     await db.createCollection('learning-outcomes');
 
-    await db.collection('objects').insertOne(LEARNING_OBJECT_MOCK);
+    await db.collection('objects').insert(LEARNING_OBJECT_MOCK);
+    await db.collection('objects').insert(LEARNING_OBJECT_CHILD);
+    await db.collection('released-objects').insertMany([LEARNING_OBJECT_MOCK,LEARNING_OBJECT_CHILD]);
     await db.collection('users').insertOne(USER_MOCK);
     await db.collection('collections').insertOne(C5_COLLECTION_MOCK);
     await db.collection('changelogs').insertOne(CHANGELOG_MOCK);

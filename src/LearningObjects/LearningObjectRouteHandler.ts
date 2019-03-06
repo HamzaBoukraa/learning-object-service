@@ -118,7 +118,7 @@ export function initializePrivate({
       updates = req.body.learningObject;
       const user: UserToken = req.user;
       await LearningObjectInteractor.updateLearningObject({
-        user,
+        userToken: user,
         dataStore,
         id,
         updates,

@@ -1,5 +1,6 @@
 import { LearningObject, User, LearningOutcome } from '../entity';
-
+import { UserToken } from '../types';
+import * as jwt from 'jsonwebtoken'
 export const MOCK_OBJECTS = {
   TOTAL_RECORDS: 1,
   USERNAME: 'cypress',
@@ -22,14 +23,38 @@ export const MOCK_OBJECTS = {
     learningObjects: <any>[],
   },
   LEARNING_OBJECT: {
-    author: '5a70fb5ed45bde3f9d65agfd',
-    name: 'Input Validation - CS0 - C',
+    author: 'author_bob',
+    name: 'Input Validation - CS0 - JAVA',
     date: '1523479539862',
     length: 'nanomodule',
     levels: <any>[],
     goals: <any>[],
     outcomes: <any>[],
-    materials: {},
+    materials:
+    {
+        files:<any>[],
+        urls:[
+        {
+            title: "An Awesome File",
+            url:"http://cis1.towson.edu/~cyber4all/modules/nanomodules/Buffer_Overflow-CS0_C++.html"
+        },
+        {
+            title: "Another Awesome File",
+            url:"https://youtu.be/MH_RD1jh0AE"
+        },
+        {
+            title: "Yeet",
+            url:"https://youtu.be/u47q-qX52JI"
+        }
+        ],
+        notes:"",
+        folderDescriptions:<any> [],
+        pdf:
+        {
+            name:"0ReadMeFirst - Buffer Overflow - CS0 - C++.pdf",
+            url:"https://neutrino-file-uploads.s3.us-east-2.amazonaws.com/skaza/5aa0013becba9a264dcd8030/0ReadMeFirst%20-%20Buffer%20Overflow%20-%20CS0%20-%20C%2B%2B.pdf"
+        }
+    },
     metrics: {},
     children: <any>[],
     contributors: <any>[],
@@ -37,14 +62,77 @@ export const MOCK_OBJECTS = {
     id: 'default_id',
     status: LearningObject.Status.RELEASED,
   },
-  USERTOKEN: {
-    username: 'unittest',
-    name: 'unit test',
-    email: 'unit@test.com',
-    organization: 'unittesting',
-    emailVerified: true,
-    accessGroups: [''],
+  LEARNING_OBJECT_CHILD :{
+    authorID: '5b967621f7a3ce2f6cbf5ba1',
+    name: 'Input Validation - CS0 - JAVA',
+    date: '1523479539862',
+    length: 'nanomodule',
+    levels: <any>[],
+    goals: <any>[],
+    outcomes: <any>[],
+    materials:
+    {
+        files:<any>[],
+        urls:[
+        {
+            title: "An Awesome File",
+            url:"http://cis1.towson.edu/~cyber4all/modules/nanomodules/Buffer_Overflow-CS0_C++.html"
+        },
+        {
+            title: "Another Awesome File",
+            url:"https://youtu.be/MH_RD1jh0AE"
+        },
+        {
+            title: "Yeet",
+            url:"https://youtu.be/u47q-qX52JI"
+        }
+        ],
+        notes:"",
+        folderDescriptions:<any>[],
+        pdf:
+        {
+            name:"0ReadMeFirst - Buffer Overflow - CS0 - C++.pdf",
+            url:"https://neutrino-file-uploads.s3.us-east-2.amazonaws.com/skaza/5aa0013becba9a264dcd8030/0ReadMeFirst%20-%20Buffer%20Overflow%20-%20CS0%20-%20C%2B%2B.pdf"
+        }
+    },
+    metrics: {},
+    children: <any>[],
+    contributors: <any>[],
+    collection: 'nccp',
+    //id: 'default_id',
+    status: 'released',
   },
+  USERTOKEN: {
+    username: 'Bob',
+    name: 'uncle Bob',
+    email: 'unitTest12@gmail.com',
+    organization: 'Towson University',
+    emailVerified: true,
+    accessGroups: ['admin','reviewer@nccp'],
+  },
+  USER_MOCK:{ 
+    _id: "author_bob",
+    username: "Bob",
+    name: "Uncle Bob",
+    email: "unitTest12@gmail.com",
+    organization: "Towson University",
+    password: '$2b$10$Xo4wAJimokUp8Yha4c9boeiFufdf/UnxEuhbGHNuFrgqkHp.96P5a', //hash of 'password',
+    objects:<any>[],
+    emailVerified: true,
+    bio: "random text random text random text random text random text random text random text random text random text random text",
+    createdAt:"1534558693394"
+},
+DUPLICATE_USER_MOCK:{ 
+  username: "unittest",
+  name: "Uncle Bob",
+  email: "unitTest13@gmail.com",
+  organization: "Towson University",
+  password: '$2b$10$Xo4wAJimokUp8Yha4c9obeiFufdf/UnxEuhbGHNuFrgqkHp.96P5a', //hash of 'password',
+  objects:<any>[],
+  emailVerified: true,
+  bio: "text random text random text random text random text random text random text",
+  createdAt:"1534556893394"
+},
   CHANGELOG: {
     _id: '1234',
     learningObjectId: 'default_id',
@@ -120,7 +208,7 @@ export const MOCK_OBJECTS = {
 
 export const SUBMITTABLE_LEARNING_OBJECT = {
   ...MOCK_OBJECTS.LEARNING_OBJECT,
-  id: 'submittable_id',
+  //id: 'submittable_id',
   outcomes: ['notarealoutcomeid'],
   goals: [{ text: 'a description' }],
 };
@@ -137,3 +225,20 @@ export const INVALID_LEARNING_OBJECTS = {
     name: '',
   },
 };
+export function generateToken(user: UserToken) {
+  const payload = {
+    username: user.username,
+    name: user.name,
+    email: user.email,
+    organization: user.organization,
+    emailVerified: user.emailVerified,
+    accessGroups: user.accessGroups
+  };
+  const options = {
+    issuer: 'THIS_IS_AN_ISSUER',
+    expiresIn: 86400,
+    audience: user.username
+  };
+  const token = jwt.sign(payload, 'THIS_IS_A_KEY', options);
+  return token;
+}
