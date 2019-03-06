@@ -78,6 +78,7 @@ export interface DataStore
     query: ReleasedLearningObjectQuery;
   }): Promise<LearningObject[]>;
   findParentObjectIds(params: { childId: string }): Promise<string[]>;
+  findChildObjectIds(params: { parentId: string }): Promise<string[]>;  
   loadChildObjects(params: {
     id: string;
     full?: boolean;

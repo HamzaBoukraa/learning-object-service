@@ -497,8 +497,7 @@ export class MongoDriver implements DataStore {
     const docs = await this.db
       .collection(COLLECTIONS.LEARNING_OBJECTS)
       .find<{ _id: string }>(
-        { children: params.childId },
-        { projection: { _id: 1 } },
+        {_id: params.childId }
       )
       .toArray();
     if (docs) {
@@ -507,6 +506,26 @@ export class MongoDriver implements DataStore {
     return [];
   }
 
+  /**
+   * Returns array of ids associated with the learning object's children objects
+   * @param {{ parentId: string }} params 
+   * @return {Promise<string[]>}
+   * @memberof MongoDriver
+   */
+  async findChildObjectIds(params: { parentId: string }): Promise<string[]> {
+    const children = await this.db
+    .collection(COLLECTIONS.LEARNING_OBJECTS)
+    .findOne<{ children: string [] }> (
+      { _id: params.parentId },
+      { projection: {children: 1} }
+    )
+    
+    if (children) { 
+      const childrenIDs = children.children;  
+      return childrenIDs;
+    }
+    return [];
+  }
   /**
    *  Fetches all child objects for object with given id
    *
@@ -1958,6 +1977,7 @@ export class MongoDriver implements DataStore {
     let materials: LearningObject.Material;
     let contributors: User[] = [];
     let outcomes: LearningOutcome[] = [];
+    let children: LearningObject[] =[]; 
 
     // Load Contributors
     if (record.contributors && record.contributors.length) {

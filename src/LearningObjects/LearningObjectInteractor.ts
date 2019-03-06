@@ -245,11 +245,23 @@ export async function getLearningObjectChildrenById(
   dataStore: DataStore,
   objectId: string,
 ) {
-  return await dataStore.loadChildObjects({
-    id: objectId,
-    full: true,
-    status: LearningObjectState.ALL,
-  });
+  //Retrieve the ids of the children in the order in which they were set by user 
+  const childrenIDs = await dataStore.findChildObjectIds({
+    parentId: objectId,
+  });  
+
+  //variable to store the full children learning objects 
+  const children: LearningObject[] = [];  
+
+  //fill children array with children learning objects based on order of objects in the database
+  for(let child in childrenIDs){
+    const kid = await dataStore.fetchLearningObject({
+      id: childrenIDs[child],
+      full: true
+    })
+    children.push(kid);
+  } 
+  return children;
 }
 
 export async function deleteLearningObject(params: {
