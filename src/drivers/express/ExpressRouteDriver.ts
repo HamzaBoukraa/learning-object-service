@@ -54,7 +54,7 @@ export class ExpressRouteDriver {
           objects: Partial<LearningObject>[];
         };
         const userToken = req.user;
-        const page = req.query.currPage;
+        const page = req.query.currPage || req.query.page;
         const limit = req.query.limit;
 
         objectResponse = await LearningObjectInteractor.searchObjects({
@@ -80,10 +80,12 @@ export class ExpressRouteDriver {
 
     router.get('/learning-objects/:id/parents', async (req, res) => {
       try {
+        const userToken = req.user;
         const query = req.query;
         query.id = req.params.id;
         const parents = await LearningObjectInteractor.fetchParents({
           query,
+          userToken,
           dataStore: this.dataStore,
         });
         res.status(200).send(parents.map(obj => obj.toPlainObject()));

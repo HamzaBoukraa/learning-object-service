@@ -2,6 +2,7 @@ import {
   DataStore,
   ReleasedLearningObjectQuery,
   LearningObjectQuery,
+  ParentLearningObjectQuery,
 } from '../../interfaces/DataStore';
 import {
   MultipartFileUploadStatus,
@@ -28,6 +29,29 @@ import {
 } from '../../entity';
 
 export class MockDataStore implements DataStore {
+  connect(file: string): Promise<void> {
+    return Promise.resolve();
+  }
+
+  disconnect(): void {
+    return;
+  }
+
+  fetchLearningObjectAuthorUsername(id: string): Promise<string> {
+    return Promise.resolve(MOCK_OBJECTS.USERNAME);
+  }
+  fetchParentObjects(params: {
+    query: ParentLearningObjectQuery;
+    full?: boolean;
+  }): Promise<LearningObject[]> {
+    return Promise.resolve([]);
+  }
+  fetchReleasedParentObjects(params: {
+    query: ParentLearningObjectQuery;
+    full?: boolean;
+  }): Promise<LearningObject[]> {
+    return Promise.resolve([]);
+  }
   findLearningObject(params: {
     authorId: string;
     name: string;
@@ -39,13 +63,6 @@ export class MockDataStore implements DataStore {
     name: string;
   }): Promise<string> {
     return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT_ID);
-  }
-  connect(file: string): Promise<void> {
-    return Promise.resolve();
-  }
-
-  disconnect(): void {
-    return;
   }
 
   fetchReleasedLearningObject(params: {

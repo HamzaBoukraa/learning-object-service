@@ -1,4 +1,4 @@
-import { processToken } from './process-token';
+import { processToken, handleProcessTokenError } from './process-token';
 import { enforceAuthenticatedAccess } from './authenticated-access';
 
-export { processToken, enforceAuthenticatedAccess };
+export { processToken, handleProcessTokenError, enforceAuthenticatedAccess };
