@@ -21,6 +21,9 @@ export interface LearningObjectStats {
     peerReview: number;
     proofing: number;
   };
+  collections: {
+    number: number;
+  };
 }
 export interface LearningObjectStatDatastore {
   fetchStats(params: { query: any }): Promise<LearningObjectStats>;
