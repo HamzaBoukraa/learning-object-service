@@ -1355,6 +1355,7 @@ export class MongoDriver implements DataStore {
       return Promise.reject(e);
     }
   }
+
   /**
    * Converts array of LearningObjectDocuments to Learning Objects
    *
