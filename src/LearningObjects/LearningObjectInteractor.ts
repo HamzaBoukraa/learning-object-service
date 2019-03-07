@@ -250,8 +250,23 @@ export async function getLearningObjectChildrenById(
     parentId: objectId,
   });
 
-  //fill children array with children learning objects based on order of objects in the database
-  return childrenIDs.map(async(kid) => await dataStore.fetchLearningObject({ id: childrenIDs[kid], full: true, }));
+  const childrenOrder = await dataStore.loadChildObjects({
+    id: objectId,
+    full: true,
+    status: LearningObjectState.ALL 
+  });
+  //array to return the children in correct order
+  const children: LearningObject[] = [];
+  
+  //fill children array with correct order of children
+  for(let child in childrenIDs) {
+    for(let kid in childrenOrder) {
+      if(childrenIDs[child] === childrenOrder[kid].id) {
+        children.push(childrenOrder[kid]);
+      }
+    }
+  }
+  return children;
 }
 
 export async function deleteLearningObject(params: {
