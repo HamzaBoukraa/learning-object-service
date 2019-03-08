@@ -259,16 +259,11 @@ export async function getLearningObjectChildrenById(
   const children: LearningObject[] = [];
 
   //fill children array with correct order of children
-  let cIDs = 0;
-  let c = 0;
-
-  while (c < childrenOrder.length) {
-    if (childrenIDs[cIDs] === childrenOrder[c].id) {
-      children.push(childrenOrder[c]);
-      cIDs++;
-      c = 0;
-    } else {
-      c++;
+  for (let child in childrenIDs) {
+    for (let kid in childrenOrder) {
+      if (childrenIDs[child] === childrenOrder[kid].id) {
+        children.push(childrenOrder[kid]);
+      }
     }
   }
   return children;
