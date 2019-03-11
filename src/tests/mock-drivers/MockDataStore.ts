@@ -118,6 +118,10 @@ export class MockDataStore implements DataStore {
   findParentObjectIds(params: { childId: string }): Promise<string[]> {
     return Promise.resolve([]);
   }
+
+  findChildObjectIds(params: { parentId: string }): Promise<string[]> {
+    return Promise.resolve([]);
+  }
   fetchUser(id: string): Promise<User> {
     return Promise.resolve(MOCK_OBJECTS.USER);
   }

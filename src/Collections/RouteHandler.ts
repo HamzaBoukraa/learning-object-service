@@ -1,6 +1,7 @@
 import {Request, Response, Router} from 'express';
 import * as CollectionInteractor from './CollectionInteractor';
 import {CollectionDataStore} from './CollectionDataStore';
+import { mapErrorToResponseData } from '../errors';
 
 export function initializeCollectionRouter({ router, dataStore }: { router: Router, dataStore: CollectionDataStore}) {
   /**
@@ -14,7 +15,8 @@ export function initializeCollectionRouter({ router, dataStore }: { router: Rout
       res.status(200).send(collections);
     } catch (e) {
       console.error(e);
-      res.status(500).send(e);
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({message});
     }
   };
   /**
@@ -30,7 +32,8 @@ export function initializeCollectionRouter({ router, dataStore }: { router: Rout
       res.status(200).send(collection);
     } catch (e) {
       console.error(e);
-      res.status(500).send(e);
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({message});
     }
   };
   /**
@@ -45,9 +48,11 @@ export function initializeCollectionRouter({ router, dataStore }: { router: Rout
       res.status(200).send(collectionMeta);
     } catch (e) {
       console.error(e);
-      res.status(500).send(e);
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({message});
     }
   };
+
   router.get('/collections', getAllCollections);
   router.get('/collections/:name', getCollection);
   router.get('/collections/:name/meta', getCollectionMetadata);

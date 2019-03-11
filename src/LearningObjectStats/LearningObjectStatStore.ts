@@ -94,6 +94,10 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
       )
       .find();
 
+    const collectionCount = await this.db
+      .collection(COLLECTIONS.LO_COLLECTIONS)
+      .count();
+
     // Convert cursors to arrays
     const [objectStats, bloomsData, downloadSavesData] = await Promise.all([
       statCursor.toArray(),
@@ -120,12 +124,17 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
         peerReview: 0,
         proofing: 0,
       },
+      collections: {
+        number: 0,
+      },
       total: 0,
       released: 0,
       review: 0,
       downloads: 0,
       saves: 0,
     };
+
+    stats.collections.number = collectionCount;
     // If objectStats is defined and is iterable
     if (objectStats && objectStats.length) {
       // For each stats grouped by length
