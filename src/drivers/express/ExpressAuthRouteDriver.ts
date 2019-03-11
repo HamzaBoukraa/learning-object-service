@@ -215,7 +215,8 @@ export class ExpressAuthRouteDriver {
           });
           res.status(200).send({ uploadId });
         } catch (e) {
-          res.status(500).send(e);
+          const response = mapErrorToResponseData(e);
+          res.status(response.code).json(response.message);
         }
       })
       .patch(async (req, res) => {
@@ -236,7 +237,8 @@ export class ExpressAuthRouteDriver {
           });
           res.sendStatus(200);
         } catch (e) {
-          res.status(500).send(e);
+          const response = mapErrorToResponseData(e);
+          res.status(response.code).json(response.message);
         }
       })
       .delete(async (req, res) => {
@@ -249,7 +251,8 @@ export class ExpressAuthRouteDriver {
           });
           res.sendStatus(200);
         } catch (e) {
-          res.status(500).send(e);
+          const response = mapErrorToResponseData(e);
+          res.status(response.code).json(response.message);
         }
       });
     // TODO: Deprecate Route
@@ -335,8 +338,8 @@ export class ExpressAuthRouteDriver {
               );
           }
         } catch (e) {
-          console.error(e);
-          res.status(500).send(e);
+          const response = mapErrorToResponseData(e);
+          res.status(response.code).json(response.message);
         }
       },
     );
