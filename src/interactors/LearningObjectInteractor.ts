@@ -1660,15 +1660,14 @@ const bypassNotFoundResourceErrorIfAuthorized = (params: {
 };
 
 /**
- * Handles errors by rejecting Promise if handled, otherwise the error is reported and a ServiceError is thrown
+ * Handles errors by throwing error if handled, otherwise the error is reported and a ServiceError is thrown
  *
- * @template T
- * @param {T} error
- * @returns {Promise<T>}
+ * @param {Error} error
+ * @returns {never}
  */
-function handleError<T extends Error>(error: T): Promise<T> {
+function handleError(error: Error): never {
   if (error instanceof ResourceError || error instanceof ServiceError) {
-    return Promise.reject(error);
+    throw error;
   }
   reportError(error);
   throw new ServiceError(ServiceErrorReason.INTERNAL);
