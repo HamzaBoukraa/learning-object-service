@@ -140,7 +140,13 @@ export class ExpressAuthRouteDriver {
 
     // FILE MANAGEMENT
 
-    // TODO: Deprecate Route
+    /**
+     * @deprecated TODO: Deprecate route
+     * This route should be deprecated once the clients using this route have updated to the new route:
+     * `/users/:username/learning-objects/:learningObjectId/files/:fileId/multipart`
+     * The new route provides more information about the resource being requested and more closely adheres to a RESTful structure
+     *
+     */
     router
       .route('/learning-objects/:id/files/:fileId/multipart')
       .post(async (req, res) => {
@@ -255,7 +261,13 @@ export class ExpressAuthRouteDriver {
           res.status(response.code).json(response.message);
         }
       });
-    // TODO: Deprecate Route
+    /**
+     * @deprecated TODO: Deprecate route
+     * This route should be deprecated once the clients using this route have updated to the new route:
+     * `/users/:username/learning-objects/:id/files`
+     * The new route provides more information about the resource being requested and more closely adheres to a RESTful structure
+     *
+     */
     router.post(
       '/learning-objects/:id/files',
       this.upload.any(),
