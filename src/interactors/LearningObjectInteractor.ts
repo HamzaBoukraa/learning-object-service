@@ -238,14 +238,7 @@ export class LearningObjectInteractor {
       let loadWorkingCopies = false;
 
       if (!revision) {
-        const requesterIsAuthor = this.hasReadAccess({
-          userToken,
-          resourceVal: username,
-          authFunction: isAuthorByUsername,
-        }) as boolean;
-        const requesterIsPrivileged =
-          userToken && isPrivilegedUser(userToken.accessGroups);
-        const authorizationCases = [requesterIsAuthor, requesterIsPrivileged];
+        const authorizationCases = [true];
 
         learningObject = await this.loadReleasedLearningObjectByAuthorAndName({
           dataStore,
