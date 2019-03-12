@@ -1676,12 +1676,22 @@ const bypassNotFoundResourceErrorIfAuthorized = (params: {
   error: Error;
   authorizationCases: boolean[];
 }): null | never => {
-  const { error, authorizationCases } = params;
+
+/**
+ * This handler allows execution to proceed if a ResourceError occurs because of a resource not being found.
+ *
+ * @param {Error} error
+ * @returns {null} [Returns null so that the value resolves to null indicating resource was not loaded]
+ */
+const bypassNotFoundResourceError = ({
+  error,
+}: {
+  error: Error;
+}): null | never => {
   if (
     !(error instanceof ResourceError) ||
     (error instanceof ResourceError &&
-      error.name !== ResourceErrorReason.NOT_FOUND) ||
-    !authorizationCases.includes(true)
+      error.name !== ResourceErrorReason.NOT_FOUND)
   ) {
     throw error;
   }
