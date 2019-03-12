@@ -2032,6 +2032,9 @@ export class MongoDriver implements DataStore {
     let contributors: User[] = [];
     let outcomes: LearningOutcome[] = [];
     let children: LearningObject[] = [];
+    if (Array.isArray(record.children)) {
+      children = record.children.map(id => new LearningObject({ id }));
+    }
 
     // Load Contributors
     if (record.contributors && record.contributors.length) {
@@ -2063,6 +2066,7 @@ export class MongoDriver implements DataStore {
       materials,
       contributors,
       outcomes,
+      children,
     });
 
     return learningObject;
