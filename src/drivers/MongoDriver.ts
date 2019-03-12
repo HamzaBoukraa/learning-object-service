@@ -2063,6 +2063,7 @@ export class MongoDriver implements DataStore {
       materials,
       contributors,
       outcomes,
+      children,
     });
 
     return learningObject;
