@@ -238,23 +238,13 @@ export class LearningObjectInteractor {
       let loadWorkingCopies = false;
 
       if (!revision) {
-        const requesterIsAuthor = this.hasReadAccess({
-          userToken,
-          resourceVal: username,
-          authFunction: isAuthorByUsername,
-        }) as boolean;
-        const requesterIsPrivileged =
-          userToken && isPrivilegedUser(userToken.accessGroups);
-        const authorizationCases = [requesterIsAuthor, requesterIsPrivileged];
-
         learningObject = await this.loadReleasedLearningObjectByAuthorAndName({
           dataStore,
           authorUsername: username,
           learningObjectName,
         }).catch(error =>
-          bypassNotFoundResourceErrorIfAuthorized({
+          bypassNotFoundResourceError({
             error,
-            authorizationCases,
           }),
         );
       }
@@ -1679,16 +1669,34 @@ const hasReadAccessByCollection = (
  * @param {authorizationCases} boolean[] [Contains results from authorization checks that determines whether or not the requester is authorized to access resource]
  * @returns {null} [Returns null so that the value resolves to null indicating resource was not loaded]
  */
-const bypassNotFoundResourceErrorIfAuthorized = (params: {
+const bypassNotFoundResourceErrorIfAuthorized = ({
+  error,
+  authorizationCases,
+}: {
   error: Error;
   authorizationCases: boolean[];
 }): null | never => {
-  const { error, authorizationCases } = params;
+  if (!authorizationCases.includes(true)) {
+    throw error;
+  }
+  return bypassNotFoundResourceError({ error });
+};
+
+/**
+ * This handler allows execution to proceed if a ResourceError occurs because of a resource not being found.
+ *
+ * @param {Error} error
+ * @returns {null} [Returns null so that the value resolves to null indicating resource was not loaded]
+ */
+const bypassNotFoundResourceError = ({
+  error,
+}: {
+  error: Error;
+}): null | never => {
   if (
     !(error instanceof ResourceError) ||
     (error instanceof ResourceError &&
-      error.name !== ResourceErrorReason.NOT_FOUND) ||
-    !authorizationCases.includes(true)
+      error.name !== ResourceErrorReason.NOT_FOUND)
   ) {
     throw error;
   }
