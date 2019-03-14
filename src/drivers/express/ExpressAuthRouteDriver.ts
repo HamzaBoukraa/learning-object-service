@@ -139,6 +139,14 @@ export class ExpressAuthRouteDriver {
     );
 
     // FILE MANAGEMENT
+
+    /**
+     * @deprecated TODO: Deprecate route
+     * This route should be deprecated once the clients using this route have updated to the new route:
+     * `/users/:username/learning-objects/:learningObjectId/files/:fileId/multipart`
+     * The new route provides more information about the resource being requested and more closely adheres to a RESTful structure
+     *
+     */
     router
       .route('/learning-objects/:id/files/:fileId/multipart')
       .post(async (req, res) => {
@@ -193,6 +201,73 @@ export class ExpressAuthRouteDriver {
         }
       });
 
+    router
+      .route(
+        '/users/:username/learning-objects/:learningObjectId/files/:fileId/multipart',
+      )
+      .post(async (req, res) => {
+        try {
+          const user = req.user;
+          const username = req.params.username;
+          const objectId: string = req.params.id;
+          const filePath = req.body.filePath;
+          const uploadId = await FileInteractor.startMultipartUpload({
+            objectId,
+            filePath,
+            user,
+            dataStore: this.dataStore,
+            fileManager: this.fileManager,
+            username,
+          });
+          res.status(200).send({ uploadId });
+        } catch (e) {
+          const response = mapErrorToResponseData(e);
+          res.status(response.code).json(response.message);
+        }
+      })
+      .patch(async (req, res) => {
+        try {
+          const id = req.params.id;
+          const uploadId: string = req.body.uploadId;
+          const fileMeta = req.body.fileMeta;
+          const url = await FileInteractor.finalizeMultipartUpload({
+            uploadId,
+            dataStore: this.dataStore,
+            fileManager: this.fileManager,
+          });
+          await LearningObjectInteractor.addFileMeta({
+            id,
+            fileMeta,
+            url,
+            dataStore: this.dataStore,
+          });
+          res.sendStatus(200);
+        } catch (e) {
+          const response = mapErrorToResponseData(e);
+          res.status(response.code).json(response.message);
+        }
+      })
+      .delete(async (req, res) => {
+        try {
+          const uploadId: string = req.body.uploadId;
+          await FileInteractor.abortMultipartUpload({
+            dataStore: this.dataStore,
+            fileManager: this.fileManager,
+            uploadId,
+          });
+          res.sendStatus(200);
+        } catch (e) {
+          const response = mapErrorToResponseData(e);
+          res.status(response.code).json(response.message);
+        }
+      });
+    /**
+     * @deprecated TODO: Deprecate route
+     * This route should be deprecated once the clients using this route have updated to the new route:
+     * `/users/:username/learning-objects/:id/files`
+     * The new route provides more information about the resource being requested and more closely adheres to a RESTful structure
+     *
+     */
     router.post(
       '/learning-objects/:id/files',
       this.upload.any(),
@@ -233,6 +308,50 @@ export class ExpressAuthRouteDriver {
         } catch (e) {
           console.error(e);
           res.status(500).send(e);
+        }
+      },
+    );
+
+    router.post(
+      '/users/:username/learning-objects/:id/files',
+      this.upload.any(),
+      async (req, res) => {
+        try {
+          const file: Express.Multer.File = req.files[0];
+          const id = req.params.id;
+          const dzMetadata: DZFileMetadata = req.body;
+          const upload: DZFile = {
+            ...dzMetadata,
+            name: file.originalname,
+            encoding: file.encoding,
+            buffer: file.buffer,
+            mimetype: file.mimetype,
+            size: dzMetadata.dztotalfilesize || dzMetadata.size,
+          };
+          const uploadId = req.body.uploadId;
+          const user = req.user;
+          const username = req.params.username;
+          if (this.hasAccess(user, 'emailVerified', true)) {
+            const loFile = await LearningObjectInteractor.uploadFile({
+              id,
+              username,
+              dataStore: this.dataStore,
+              fileManager: this.fileManager,
+              file: upload,
+              uploadId,
+            });
+
+            res.status(200).send(loFile);
+          } else {
+            res
+              .status(403)
+              .send(
+                'Invalid Access. User must be verified to upload materials.',
+              );
+          }
+        } catch (e) {
+          const response = mapErrorToResponseData(e);
+          res.status(response.code).json(response.message);
         }
       },
     );
