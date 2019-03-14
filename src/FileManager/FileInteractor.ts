@@ -26,11 +26,12 @@ export async function startMultipartUpload(params: {
   objectId: string;
   filePath: string;
   user: any;
+  username?: string;
 }): Promise<string> {
   try {
-    const path = `${params.user.username}/${params.objectId}/${
-      params.filePath
-    }`;
+    const path = `${params.username || params.user.username}/${
+      params.objectId
+    }/${params.filePath}`;
     const uploadId = await params.fileManager.initMultipartUpload({ path });
     const status: MultipartFileUploadStatus = {
       path,
