@@ -75,7 +75,7 @@
     "gulp-typescript": "^4.0.2",
     "jest": "^23.4.0",
     "mongodb-memory-server": "^2.7.4",
-    "supertest": "^3.3.0",
+    "supertest": "^4.0.2",
     "tape": "^4.8.0",
     "ts-jest": "^23.0.0",
     "tslint": "^5.8.0",
