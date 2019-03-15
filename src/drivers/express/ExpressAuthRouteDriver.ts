@@ -209,7 +209,7 @@ export class ExpressAuthRouteDriver {
         try {
           const user = req.user;
           const username = req.params.username;
-          const objectId: string = req.params.id;
+          const objectId: string = req.params.learningObjectId;
           const filePath = req.body.filePath;
           const uploadId = await FileInteractor.startMultipartUpload({
             objectId,
@@ -227,7 +227,7 @@ export class ExpressAuthRouteDriver {
       })
       .patch(async (req, res) => {
         try {
-          const id = req.params.id;
+          const id = req.params.learningObjectId;
           const uploadId: string = req.body.uploadId;
           const fileMeta = req.body.fileMeta;
           const url = await FileInteractor.finalizeMultipartUpload({
