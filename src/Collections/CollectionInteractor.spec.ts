@@ -1,5 +1,4 @@
 import * as CollectionInteractor from './CollectionInteractor';
-import {expect} from 'chai';
 import {MOCK_OBJECTS} from '../tests/mocks';
 import {MockDataStore} from '../tests/mock-drivers/MockDataStore';
 import {CollectionDataStore} from './CollectionDataStore';
@@ -9,10 +8,7 @@ const mockStore: CollectionDataStore = new MockDataStore();
 describe('fetchCollections', () => {
   it('should return an array of objects - these objects contain lo IDs', done => {
     return CollectionInteractor.fetchCollections(mockStore).then(val => {
-      expect(val).to.be.an('array');
-      done();
-    }).catch(() => {
-      expect.fail();
+      expect(val).toBeInstanceOf(Array);
       done();
     });
   });
@@ -24,10 +20,7 @@ describe('fetchCollection', () => {
       mockStore,
       MOCK_OBJECTS.COLLECTION_NAME,
     ).then(val => {
-      expect(val).to.be.an('object');
-      done();
-    }).catch(() => {
-      expect.fail();
+      expect(val).toBeDefined();
       done();
     });
   });
@@ -36,7 +29,7 @@ describe('fetchCollection', () => {
 describe('fetchCollectionMeta', () => {
   it('should return an object with the collection metadata', async () => {
     const collectionMetadata = await CollectionInteractor.fetchCollectionMeta(mockStore, 'name');
-    expect(collectionMetadata).to.be.an('object');
+    expect(collectionMetadata).toBeDefined();
   });
 });
 
