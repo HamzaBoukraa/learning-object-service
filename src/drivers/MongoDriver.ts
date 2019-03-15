@@ -950,18 +950,16 @@ export class MongoDriver implements DataStore {
    * @returns {Promise<LearningObject[]>}
    * @memberof MongoDriver
    */
-  async fetchParentObjects(params: {
-    query: ParentLearningObjectQuery;
-    full?: boolean;
-    collection?: COLLECTIONS.RELEASED_LEARNING_OBJECTS;
-  }): Promise<LearningObject[]> {
-    const { query, full } = params;
+    async fetchParentObjects(
+      { query, full, collection = COLLECTIONS.LEARNING_OBJECTS }
+      : { query: ParentLearningObjectQuery, full: boolean, collection: COLLECTIONS },
+    ): Promise<LearningObject[]> {
     const mongoQuery: { [index: string]: any } = { children: query.id };
     if (query.status) {
       mongoQuery.status = { $in: query.status };
     }
     let cursor: Cursor<LearningObjectDocument> = await this.db
-      .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .collection(collection)
       .find<LearningObjectDocument>(mongoQuery);
     cursor = this.applyCursorFilters<LearningObjectDocument>(cursor, {
       ...(query as Filters),
@@ -982,7 +980,7 @@ export class MongoDriver implements DataStore {
    */
   async fetchReleasedParentObjects(params: {
     query: ParentLearningObjectQuery;
-    full?: boolean;
+    full: boolean;
   }): Promise<LearningObject[]> {
     return this.fetchParentObjects({
       ...params,
