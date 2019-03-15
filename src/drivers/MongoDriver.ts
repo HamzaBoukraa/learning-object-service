@@ -63,7 +63,7 @@ export class MongoDriver implements DataStore {
   private mongoClient: MongoClient;
   private db: Db;
 
-  private constructor() {}
+  private constructor() { }
 
   static async build(dburi: string) {
     const driver = new MongoDriver();
@@ -237,7 +237,6 @@ export class MongoDriver implements DataStore {
         total: [{ total: number }];
       }>(pipeline)
       .toArray();
-
     const results = resultSet[0];
     const objectDocs = results.objects;
     const objects: LearningObject[] = await this.bulkGenerateLearningObjects(
@@ -355,22 +354,26 @@ export class MongoDriver implements DataStore {
               { $eq: [{ $size: '$objects' }, 1] },
               { $arrayElemAt: ['$objects', 0] },
               {
-                $filter: {
-                  input: '$objects',
-                  as: 'object',
-                  cond: {
-                    $or: [
-                      { $eq: ['$$object.hasRevision', true] },
-                      { $eq: ['$$object.hasRevision', false] },
-                    ],
+                $arrayElemAt: [{
+                  $filter: {
+                    input: '$objects',
+                    as: 'object',
+                    cond: {
+                      $or: [
+                        { $eq: ['$$object.hasRevision', true] },
+                        { $eq: ['$$object.hasRevision', false] },
+                      ],
+                    },
                   },
-                },
+                }, 0],
               },
             ],
           },
         },
       },
-      ...unWindArrayToRoot,
+      {$replaceRoot: {
+        newRoot: '$objects',
+      }},
     ];
 
     const { sort, paginate } = this.buildAggregationFilters({
@@ -548,11 +551,11 @@ export class MongoDriver implements DataStore {
    */
   async findChildObjectIds(params: { parentId: string }): Promise<string[]> {
     const children = await this.db
-    .collection(COLLECTIONS.LEARNING_OBJECTS)
-    .findOne<{ children: string [] }> (
-      { _id: params.parentId },
-      { projection: {children: 1} }
-    );
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .findOne<{ children: string[] }>(
+        { _id: params.parentId },
+        { projection: { children: 1 } },
+      );
 
     if (children) {
       const childrenIDs = children.children;
@@ -925,9 +928,9 @@ export class MongoDriver implements DataStore {
           return res.result.nModified > 0
             ? Promise.resolve()
             : Promise.reject({
-                message: `${childId} is not a child of Object ${parentId}`,
-                status: 404,
-              });
+              message: `${childId} is not a child of Object ${parentId}`,
+              status: 404,
+            });
         });
     } catch (error) {
       if (error.message && error.status) {
@@ -1861,15 +1864,15 @@ export class MongoDriver implements DataStore {
     }
     return author || text
       ? await this.db
-          .collection(COLLECTIONS.USERS)
-          .find<{ _id: string; username: string }>(query)
-          .project({
-            _id: 1,
-            username: 1,
-            score: { $meta: 'textScore' },
-          })
-          .sort({ score: { $meta: 'textScore' } })
-          .toArray()
+        .collection(COLLECTIONS.USERS)
+        .find<{ _id: string; username: string }>(query)
+        .project({
+          _id: 1,
+          username: 1,
+          score: { $meta: 'textScore' },
+        })
+        .sort({ score: { $meta: 'textScore' } })
+        .toArray()
       : null;
   }
   /**
@@ -2063,6 +2066,7 @@ export class MongoDriver implements DataStore {
       materials,
       contributors,
       outcomes,
+      hasRevision: record.hasRevision,
     });
 
     return learningObject;
