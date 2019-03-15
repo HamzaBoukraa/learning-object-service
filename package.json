@@ -61,10 +61,10 @@
     "gulp": "^4.0.0",
     "gulp-nodemon": "^2.4.2",
     "gulp-typescript": "^5.0.1",
-    "jest": "^23.4.0",
+    "jest": "^24.5.0",
     "mongodb-memory-server": "^2.7.4",
     "supertest": "^3.3.0",
-    "ts-jest": "^23.0.0",
+    "ts-jest": "^24.0.0",
     "tslint": "^5.8.0",
     "typescript": "^2.5.3"
   },
