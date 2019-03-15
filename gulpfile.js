@@ -12,7 +12,8 @@ const tsProject = ts.createProject('./tsconfig.json');
 const compileTypeScript = () => {
   const tsResult = tsProject
     .src()
-    .pipe(tsProject());
+    .pipe(tsProject())
+    .on("error",()=>{/*handle the error here*/});
 
   return tsResult.js.pipe(gulp.dest('dist'));
 };
