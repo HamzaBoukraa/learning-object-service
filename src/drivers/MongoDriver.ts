@@ -1306,10 +1306,23 @@ export class MongoDriver implements DataStore {
   }): Promise<LearningObject> {
     const object = await this.db
       .collection<LearningObjectDocument>(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
-      .findOne({ _id: params.id });
+      .aggregate([{
+        $match: { _id: params.id } },
+      { $lookup:
+        { from: 'objects',
+        localField: '_id',
+        foreignField: '_id',
+        as: 'copy'},
+      },
+        { $unwind:
+          { path: '$copy', preserveNullAndEmptyArrays: true }
+        },
+          { $addFields:
+            { hasRevision: { $cond: [{ $ne: ['$copy.status', 'released'] }, true, false] } } }, 
+            { $project: { copy: 0 } }]).toArray();
     if (object) {
-      const author = await this.fetchUser(object.authorID);
-      return this.generateLearningObject(author, object, params.full);
+      const author = await this.fetchUser(object[0].authorID);
+      return this.generateLearningObject(author, object[0], params.full);
     }
     return null;
   }
