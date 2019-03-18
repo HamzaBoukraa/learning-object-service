@@ -196,11 +196,7 @@ export async function updateLearningObject(params: {
         isPrivilegedUser(userToken.accessGroups) &&
         cleanUpdates.status === LearningObject.Status.RELEASED
       ) {
-        const object = await dataStore.fetchLearningObject({
-          id,
-          full: true,
-        });
-        await dataStore.addToReleased(object);
+        await releaseLearningObject({ dataStore, id });
       }
     } else {
       return Promise.reject(
@@ -213,6 +209,41 @@ export async function updateLearningObject(params: {
       new Error(`Problem updating learning object ${params.id}. ${e}`),
     );
   }
+}
+
+/**
+ * Releases a LearningObject by adding object to released collection of objects
+ *
+ * FIXME: Once the return type of `fetchLearningObject` is updated to the `Datastore's` schema type,
+ * this function should be updated to not fetch children ids as they should be returned with the document
+ *
+ * @param {DataStore} datastore [Driver for the datastore]
+ * @param {string} id [Id of the LearningObject to be copied]
+ * @returns {Promise<void>}
+ */
+async function releaseLearningObject({
+  dataStore,
+  id,
+}: {
+  dataStore: DataStore;
+  id: string;
+}): Promise<void> {
+  const [object, childIds] = await Promise.all([
+    dataStore.fetchLearningObject({
+      id,
+      full: true,
+    }),
+    dataStore.findChildObjectIds({ parentId: id }),
+  ]);
+  let children: LearningObject[] = [];
+  if (Array.isArray(childIds)) {
+    children = childIds.map(childId => new LearningObject({ id: childId }));
+  }
+  const releasableObject = new LearningObject({
+    ...object.toPlainObject(),
+    children,
+    });
+  return dataStore.addToReleased(releasableObject);
 }
 
 /**
@@ -245,11 +276,33 @@ export async function getLearningObjectChildrenById(
   dataStore: DataStore,
   objectId: string,
 ) {
-  return await dataStore.loadChildObjects({
+  //Retrieve the ids of the children in the order in which they were set by user
+  const childrenIDs = await dataStore.findChildObjectIds({
+    parentId: objectId,
+  });
+
+  const childrenOrder = await dataStore.loadChildObjects({
     id: objectId,
     full: true,
-    status: LearningObjectState.ALL,
+    status: LearningObjectState.ALL
   });
+  //array to return the children in correct order
+  const children: LearningObject[] = [];
+
+  //fill children array with correct order of children
+  let cIDs = 0;
+  let c = 0;
+
+  while (c < childrenOrder.length) {
+    if (childrenIDs[cIDs] === childrenOrder[c].id) {
+      children.push(childrenOrder[c]);
+      cIDs++;
+      c = 0;
+    } else {
+      c++;
+    }
+  }
+  return children;
 }
 
 export async function deleteLearningObject(params: {

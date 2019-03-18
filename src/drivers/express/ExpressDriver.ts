@@ -15,7 +15,12 @@ import * as logger from 'morgan';
 import * as cors from 'cors';
 import * as cookieParser from 'cookie-parser';
 import * as raven from 'raven';
-import { enforceAuthenticatedAccess, processToken } from '../../middleware';
+import {
+  enforceAuthenticatedAccess,
+  processToken,
+  handleProcessTokenError,
+} from '../../middleware';
+import { reportError } from '../SentryConnector';
 
 export class ExpressDriver {
   static app = express();
@@ -49,10 +54,7 @@ export class ExpressDriver {
     // Set up cookie parser
     this.app.use(cookieParser());
 
-    // Handles any errors that may occur when processing the token by passing execution to the next handler. This prevents this error from being passed to other error handlers.
-    this.app.use(processToken, (error: any, req: any, res: any, next: any) =>
-      next(),
-    );
+    this.app.use(processToken, handleProcessTokenError);
 
     // Set our public api routes
     this.app.use(
@@ -62,11 +64,6 @@ export class ExpressDriver {
 
     // Set Validation Middleware
     this.app.use(enforceAuthenticatedAccess);
-    this.app.use((error: any, req: any, res: any, next: any) => {
-      if (error.name === 'UnauthorizedError') {
-        res.status(401).send('Invalid Access Token');
-      }
-    });
 
     // Set our authenticated api routes
     this.app.use(
