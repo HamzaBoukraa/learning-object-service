@@ -420,7 +420,11 @@ export class LearningObject {
       );
     }
   }
-
+/**
+ * @property {boolean} hasRevision
+ * An optional field on a learning object, denoting whether or not the object 
+ * has a working copy with a different status in the working collection.
+ */
   private _hasRevision?: boolean;
 
   get hasRevision(): boolean {
