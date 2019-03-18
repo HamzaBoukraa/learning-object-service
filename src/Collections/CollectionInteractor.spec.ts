@@ -39,3 +39,4 @@ describe('fetchCollectionMeta', () => {
     expect(collectionMetadata).to.be.an('object');
   });
 });
+

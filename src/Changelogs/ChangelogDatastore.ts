@@ -1,11 +1,11 @@
 import { Db } from 'mongodb';
 import { COLLECTIONS } from '../drivers/MongoDriver';
-import { ChangeLogDocument } from '../types/changelog';
-import { LearningObjectError } from '../errors';
 import { reportError } from '../drivers/SentryConnector';
+import { ResourceError, ResourceErrorReason, ServiceError, ServiceErrorReason } from '../errors';
+import { ChangeLogDocument } from '../types/Changelog';
 
 export class ChangelogDataStore {
-  constructor(private db: Db) {}
+  constructor(private db: Db) { }
 
   /**
    * Upsert document in changelog collection
@@ -22,6 +22,7 @@ export class ChangelogDataStore {
     changelogText: string,
   ): Promise<void> {
     try {
+      // FIXME: update is deprecated, consult docs for fix.
       await this.db.collection(COLLECTIONS.CHANGLOG).update(
         { learningObjectId },
         {
@@ -39,7 +40,7 @@ export class ChangelogDataStore {
       );
     } catch (e) {
       reportError(e);
-      return Promise.reject(new Error(LearningObjectError.INTERNAL_ERROR()));
+      return Promise.reject(new ServiceError(ServiceErrorReason.INTERNAL));
     }
   }
 
@@ -51,9 +52,7 @@ export class ChangelogDataStore {
    *
    * @returns {ChangeLogDocument} A single changelog object with only the last element in the logs array
    */
-  async getRecentChangelog(
-    learningObjectId: string,
-  ): Promise<ChangeLogDocument> {
+  async getRecentChangelog(learningObjectId: string): Promise<ChangeLogDocument> {
     try {
       const changelog = await this.db
         .collection(COLLECTIONS.CHANGLOG)
@@ -62,14 +61,12 @@ export class ChangelogDataStore {
           { projection: { learningObjectId: 1, logs: { $slice: -1 } } },
         );
       if (changelog === null) {
-        return Promise.reject(
-          new Error(LearningObjectError.RESOURCE_NOT_FOUND()),
-        );
+        return Promise.reject(new ResourceError('Changelog not found.', ResourceErrorReason.NOT_FOUND));
       }
       return changelog;
     } catch (e) {
       reportError(e);
-      return Promise.reject(new Error(LearningObjectError.INTERNAL_ERROR()));
+      return Promise.reject(new ServiceError(ServiceErrorReason.INTERNAL));
     }
   }
 
@@ -88,7 +85,7 @@ export class ChangelogDataStore {
         .remove({ learningObjectId: learningObjectId });
     } catch (e) {
       reportError(e);
-      return Promise.reject(new Error(LearningObjectError.INTERNAL_ERROR()));
+      return Promise.reject(new ServiceError(ServiceErrorReason.INTERNAL));
     }
   }
 }

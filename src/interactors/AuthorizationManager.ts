@@ -1,4 +1,5 @@
-import { UserToken } from '../types';
+import 'dotenv/config';
+import { UserToken, ServiceToken } from '../types';
 import { DataStore } from '../interfaces/DataStore';
 
 enum UserRole {
@@ -64,7 +65,7 @@ function hasPrivilegedWriteAccess(
   dataStore: DataStore,
   objectId: string,
 ) {
-  if (user.accessGroups) {
+  if (user && user.accessGroups) {
     if (isAdminOrEditor(user.accessGroups)) {
       return true;
     } else {
@@ -147,8 +148,9 @@ async function userIsOwner(params: {
  */
 export function isAdminOrEditor(accessGroups: string[]): boolean {
   return (
-    accessGroups.includes(UserRole.ADMIN) ||
-    accessGroups.includes(UserRole.EDITOR)
+    accessGroups &&
+    (accessGroups.includes(UserRole.ADMIN) ||
+      accessGroups.includes(UserRole.EDITOR))
   );
 }
 
@@ -159,14 +161,16 @@ export function isAdminOrEditor(accessGroups: string[]): boolean {
  * @returns {boolean}
  */
 export function isPrivilegedUser(accessGroups: string[]): boolean {
-  if (isAdminOrEditor(accessGroups)) {
-    return true;
-  }
-  for (const group of accessGroups) {
-    const access = group.split('@');
-    const role = access[0] ? access[0].toLowerCase() : null;
-    if (role === UserRole.CURATOR || role === UserRole.REVIEWER) {
+  if (accessGroups) {
+    if (isAdminOrEditor(accessGroups)) {
       return true;
+    }
+    for (const group of accessGroups) {
+      const access = group.split('@');
+      const role = access[0] ? access[0].toLowerCase() : null;
+      if (role === UserRole.CURATOR || role === UserRole.REVIEWER) {
+        return true;
+      }
     }
   }
   return false;
@@ -181,9 +185,36 @@ export function isPrivilegedUser(accessGroups: string[]): boolean {
  */
 export function getAccessGroupCollections(userToken: UserToken) {
   const collections = [];
-  for (const group of userToken.accessGroups) {
-    const access = group.split('@');
-    collections.push(access[1]);
+  if (userToken && userToken.accessGroups) {
+    for (const group of userToken.accessGroups) {
+      const access = group.split('@');
+      collections.push(access[1]);
+    }
   }
   return collections.filter(collection => !!collection);
+}
+
+/**
+ * Checks if requester is a service
+ *
+ * @export
+ * @param {ServiceToken} serviceToken
+ * @returns {boolean}
+ */
+export function hasServiceLevelAccess(serviceToken: ServiceToken): boolean {
+  if (serviceToken) {
+    return isValidServiceKey(serviceToken.SERVICE_KEY);
+  }
+  return false;
+}
+
+/**
+ * Checks if service key provided is valid
+ *
+ * @export
+ * @param {string} key
+ * @returns {boolean}
+ */
+function isValidServiceKey(key: string): boolean {
+  return key === process.env.SERVICE_KEY;
 }

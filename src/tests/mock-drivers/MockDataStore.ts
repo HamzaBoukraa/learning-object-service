@@ -2,6 +2,7 @@ import {
   DataStore,
   ReleasedLearningObjectQuery,
   LearningObjectQuery,
+  ParentLearningObjectQuery,
 } from '../../interfaces/DataStore';
 import {
   MultipartFileUploadStatus,
@@ -34,6 +35,34 @@ export class MockDataStore implements DataStore {
 
   disconnect(): void {
     return;
+  }
+
+  fetchLearningObjectAuthorUsername(id: string): Promise<string> {
+    return Promise.resolve(MOCK_OBJECTS.USERNAME);
+  }
+  fetchParentObjects(params: {
+    query: ParentLearningObjectQuery;
+    full?: boolean;
+  }): Promise<LearningObject[]> {
+    return Promise.resolve([]);
+  }
+  fetchReleasedParentObjects(params: {
+    query: ParentLearningObjectQuery;
+    full?: boolean;
+  }): Promise<LearningObject[]> {
+    return Promise.resolve([]);
+  }
+  findLearningObject(params: {
+    authorId: string;
+    name: string;
+  }): Promise<string> {
+    return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT_ID);
+  }
+  findReleasedLearningObject(params: {
+    authorId: string;
+    name: string;
+  }): Promise<string> {
+    return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT_ID);
   }
 
   fetchReleasedLearningObject(params: {
@@ -87,6 +116,10 @@ export class MockDataStore implements DataStore {
     return Promise.resolve();
   }
   findParentObjectIds(params: { childId: string }): Promise<string[]> {
+    return Promise.resolve([]);
+  }
+
+  findChildObjectIds(params: { parentId: string }): Promise<string[]> {
     return Promise.resolve([]);
   }
   fetchUser(id: string): Promise<User> {
@@ -183,10 +216,6 @@ export class MockDataStore implements DataStore {
 
   getUserObjects(username: string): Promise<string[]> {
     return Promise.resolve([MOCK_OBJECTS.LEARNING_OBJECT_ID]);
-  }
-
-  findLearningObject(username: string, name: string): Promise<string> {
-    return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT_ID);
   }
 
   fetchLearningObject(params: { id: string; full?: boolean }): Promise<any> {

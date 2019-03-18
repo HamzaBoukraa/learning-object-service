@@ -53,6 +53,16 @@ describe('MongoDriver', () => {
     });
   });
 
+  describe('getUserObjects', () => {
+    it('The function should return an array of ids', async () => {
+      expect.assertions(1);
+
+      const username = 'Bob';
+      const ids = await driver.getUserObjects(username);
+      expect(ids).toEqual([ 'parent_object_1', 'child_object_1' ]);
+    });
+  });
+
   afterAll(() => {
     driver.disconnect();
     console.log('Disconnected from Database');

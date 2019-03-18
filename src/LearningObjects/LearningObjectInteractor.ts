@@ -7,7 +7,7 @@ import {
   UserToken,
   VALID_LEARNING_OBJECT_UPDATES,
 } from '../types';
-import { LearningObjectError } from '../errors';
+import { ResourceError, ResourceErrorReason } from '../errors';
 import {
   hasLearningObjectWriteAccess,
   isPrivilegedUser,
@@ -125,29 +125,21 @@ export async function addLearningObject(
   object: LearningObject,
   user: UserToken,
 ): Promise<LearningObject> {
-
-  const err = await checkNameExists({
+  await checkNameExists({
     dataStore,
     username: user.username,
     name: object.name,
   });
-
   try {
-    if (err) {
-      return Promise.reject(err);
-    } else {
-      const authorID = await dataStore.findUser(user.username);
-      const author = await dataStore.fetchUser(authorID);
-      const objectInsert = new LearningObject({
-        ...object.toPlainObject(),
-        author,
-      });
-      const learningObjectID = await dataStore.insertLearningObject(
-        objectInsert,
-      );
-      objectInsert.id = learningObjectID;
-      return objectInsert;
-    }
+    const authorID = await dataStore.findUser(user.username);
+    const author = await dataStore.fetchUser(authorID);
+    const objectInsert = new LearningObject({
+      ...object.toPlainObject(),
+      author,
+    });
+    const learningObjectID = await dataStore.insertLearningObject(objectInsert);
+    objectInsert.id = learningObjectID;
+    return objectInsert;
   } catch (e) {
     return Promise.reject(`Problem creating Learning Object. Error${e}`);
   }
@@ -204,14 +196,12 @@ export async function updateLearningObject(params: {
         isPrivilegedUser(userToken.accessGroups) &&
         cleanUpdates.status === LearningObject.Status.RELEASED
       ) {
-        const object = await dataStore.fetchLearningObject({
-          id,
-          full: true,
-        });
-        await dataStore.addToReleased(object);
+        await releaseLearningObject({ dataStore, id });
       }
     } else {
-      return Promise.reject(new Error(LearningObjectError.INVALID_ACCESS()));
+      return Promise.reject(
+        new ResourceError('Invalid Access', ResourceErrorReason.INVALID_ACCESS),
+      );
     }
   } catch (e) {
     reportError(e);
@@ -219,6 +209,41 @@ export async function updateLearningObject(params: {
       new Error(`Problem updating learning object ${params.id}. ${e}`),
     );
   }
+}
+
+/**
+ * Releases a LearningObject by adding object to released collection of objects
+ *
+ * FIXME: Once the return type of `fetchLearningObject` is updated to the `Datastore's` schema type,
+ * this function should be updated to not fetch children ids as they should be returned with the document
+ *
+ * @param {DataStore} datastore [Driver for the datastore]
+ * @param {string} id [Id of the LearningObject to be copied]
+ * @returns {Promise<void>}
+ */
+async function releaseLearningObject({
+  dataStore,
+  id,
+}: {
+  dataStore: DataStore;
+  id: string;
+}): Promise<void> {
+  const [object, childIds] = await Promise.all([
+    dataStore.fetchLearningObject({
+      id,
+      full: true,
+    }),
+    dataStore.findChildObjectIds({ parentId: id }),
+  ]);
+  let children: LearningObject[] = [];
+  if (Array.isArray(childIds)) {
+    children = childIds.map(childId => new LearningObject({ id: childId }));
+  }
+  const releasableObject = new LearningObject({
+    ...object.toPlainObject(),
+    children,
+    });
+  return dataStore.addToReleased(releasableObject);
 }
 
 /**
@@ -251,12 +276,33 @@ export async function getLearningObjectChildrenById(
   dataStore: DataStore,
   objectId: string,
 ) {
-  try {
-    return await dataStore.loadChildObjects({ id: objectId, full: true, status: LearningObjectState.ALL });
-  } catch (e) {
-    reportError(e);
-    return Promise.reject(new Error(LearningObjectError.RESOURCE_NOT_FOUND()));
+  //Retrieve the ids of the children in the order in which they were set by user
+  const childrenIDs = await dataStore.findChildObjectIds({
+    parentId: objectId,
+  });
+
+  const childrenOrder = await dataStore.loadChildObjects({
+    id: objectId,
+    full: true,
+    status: LearningObjectState.ALL
+  });
+  //array to return the children in correct order
+  const children: LearningObject[] = [];
+
+  //fill children array with correct order of children
+  let cIDs = 0;
+  let c = 0;
+
+  while (c < childrenOrder.length) {
+    if (childrenIDs[cIDs] === childrenOrder[c].id) {
+      children.push(childrenOrder[c]);
+      cIDs++;
+      c = 0;
+    } else {
+      c++;
+    }
   }
+  return children;
 }
 
 export async function deleteLearningObject(params: {
@@ -542,6 +588,9 @@ async function checkNameExists(params: {
   });
   // @ts-ignore typescript doesn't think a .id property should exist on the existing object
   if (existing && params.id !== existing.id) {
-    return new Error(LearningObjectError.DUPLICATE_NAME(params.name));
+    throw new ResourceError(
+      `A learning object with name '${params.name}' already exists.`,
+      ResourceErrorReason.BAD_REQUEST,
+    );
   }
 }

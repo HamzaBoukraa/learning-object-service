@@ -39,7 +39,14 @@ export interface DataStore
 
   // Learning Objects
   getUserObjects(username: string): Promise<string[]>;
-  findLearningObject(username: string, name: string): Promise<string>;
+  findLearningObject(params: {
+    authorId: string;
+    name: string;
+  }): Promise<string>;
+  findReleasedLearningObject(params: {
+    authorId: string;
+    name: string;
+  }): Promise<string>;
   fetchLearningObject(params: {
     id: string;
     full?: boolean;
@@ -58,6 +65,7 @@ export interface DataStore
   }): Promise<LearningObject[]>;
   fetchLearningObjectStatus(id: string): Promise<string>;
   fetchLearningObjectCollection(id: string): Promise<string>;
+  fetchLearningObjectAuthorUsername(id: string): Promise<string>;
   searchReleasedObjects(
     params: ReleasedLearningObjectQuery,
   ): Promise<{ objects: LearningObject[]; total: number }>;
@@ -67,10 +75,16 @@ export interface DataStore
     total: number;
     objects: LearningObject[];
   }>;
-  findParentObjects(params: {
-    query: ReleasedLearningObjectQuery;
+  fetchParentObjects(params: {
+    query: ParentLearningObjectQuery;
+    full?: boolean;
+  }): Promise<LearningObject[]>;
+  fetchReleasedParentObjects(params: {
+    query: ParentLearningObjectQuery;
+    full?: boolean;
   }): Promise<LearningObject[]>;
   findParentObjectIds(params: { childId: string }): Promise<string[]>;
+  findChildObjectIds(params: { parentId: string }): Promise<string[]>;
   loadChildObjects(params: {
     id: string;
     full?: boolean;
@@ -189,6 +203,11 @@ export interface ReleasedLearningObjectQuery extends Filters {
 export interface LearningObjectQuery extends ReleasedLearningObjectQuery {
   status?: string[];
   conditions?: QueryCondition[];
+}
+
+export interface ParentLearningObjectQuery extends Filters {
+  id: string;
+  status?: string[];
 }
 
 export interface QueryCondition {

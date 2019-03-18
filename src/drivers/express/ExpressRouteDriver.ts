@@ -10,6 +10,11 @@ import { UserToken } from '../../types';
 import { initializeSingleFileDownloadRouter } from '../../SingleFileDownload/RouteHandler';
 import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
 import { initializeCollectionRouter } from '../../Collections/RouteHandler';
+import {
+  ResourceError,
+  mapErrorToResponseData,
+  ServiceError,
+} from '../../errors';
 import { LearningObject } from '../../entity';
 
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
@@ -49,7 +54,7 @@ export class ExpressRouteDriver {
           objects: Partial<LearningObject>[];
         };
         const userToken = req.user;
-        const page = req.query.currPage;
+        const page = req.query.currPage || req.query.page;
         const limit = req.query.limit;
 
         objectResponse = await LearningObjectInteractor.searchObjects({
@@ -68,17 +73,19 @@ export class ExpressRouteDriver {
         );
         res.status(200).send(objectResponse);
       } catch (e) {
-        console.log(e);
-        res.status(500).send(e);
+        const { code, message } = mapErrorToResponseData(e);
+        res.status(code).json({ message });
       }
     });
 
     router.get('/learning-objects/:id/parents', async (req, res) => {
       try {
+        const userToken = req.user;
         const query = req.query;
         query.id = req.params.id;
         const parents = await LearningObjectInteractor.fetchParents({
           query,
+          userToken,
           dataStore: this.dataStore,
         });
         res.status(200).send(parents.map(obj => obj.toPlainObject()));
@@ -107,7 +114,8 @@ export class ExpressRouteDriver {
           res.status(200).send(object.toPlainObject());
         } catch (e) {
           console.error(e);
-          res.status(500).send(e);
+          const { code, message } = mapErrorToResponseData(e);
+          res.status(code).json({message});
         }
       });
 
@@ -131,24 +139,34 @@ export class ExpressRouteDriver {
         );
         res.status(200).send(objects.map(obj => obj.toPlainObject()));
       } catch (e) {
-        console.error(e);
-        res.status(500).send(e);
+        if (e instanceof ResourceError || e instanceof ServiceError) {
+          const { code, message } = mapErrorToResponseData(e);
+          res.status(code).json({ message });
+        }
+        if (e instanceof Error && e.message === 'User not found') {
+          res.status(404).send(`No user with username ${req.params.username}.`);
+        } else {
+          res.status(500).send('Internal Server Error');
+        }
       }
     });
 
-    router.get('/users/:username/learning-objects/profile', async (req, res) => {
-      try {
-        const objects = await LearningObjectInteractor.loadProfile({
-          dataStore: this.dataStore,
-          username: req.params.username,
-          userToken: req.user,
-        });
+    router.get(
+      '/users/:username/learning-objects/profile',
+      async (req, res) => {
+        try {
+          const objects = await LearningObjectInteractor.loadProfile({
+            dataStore: this.dataStore,
+            username: req.params.username,
+            userToken: req.user,
+          });
 
-        res.status(200).send(objects.map(x => x.toPlainObject()));
-      } catch (e) {
-        res.status(500).send(e);
-      }
-    });
+          res.status(200).send(objects.map(x => x.toPlainObject()));
+        } catch (e) {
+          res.status(500).send(e);
+        }
+      },
+    );
 
     LearningObjectStatsRouteHandler.initialize({
       router,
