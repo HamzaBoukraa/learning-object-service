@@ -1,6 +1,6 @@
 {
   "name": "learning-object-service",
-  "version": "6.4.2",
+  "version": "2.14.2",
   "description": "Learning Object Microservice.",
   "main": "app.ts",
   "scripts": {
