@@ -1319,8 +1319,8 @@ export class LearningObjectInteractor {
     try {
 
       const parentID = await dataStore.findLearningObject(
-        username,
-        parentName,
+      {authorId: username,
+      name: parentName},
       );
       const hasAccess = await hasLearningObjectWriteAccess(userToken, dataStore, parentID);
       if (hasAccess) {
@@ -1366,8 +1366,8 @@ export class LearningObjectInteractor {
     const { dataStore, childId, username, parentName, userToken } = params;
     try {
       const parentID = await dataStore.findLearningObject(
-        username,
-        parentName,
+        {authorId: username,
+        name: parentName},
       );
       const hasAccess = await hasLearningObjectWriteAccess(userToken, dataStore, parentID);
       if (hasAccess) {
