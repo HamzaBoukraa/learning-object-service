@@ -1318,7 +1318,7 @@ export class MongoDriver implements DataStore {
           { path: '$copy', preserveNullAndEmptyArrays: true }
         },
           { $addFields:
-            { hasRevision: { $cond: [{ $ne: ['$copy.status', 'released'] }, true, false] } } }, 
+            { hasRevision: { $cond: [{ $ne: ['$copy.status', 'released'] }, true, false] } } },
             { $project: { copy: 0 } }]).toArray();
     if (object) {
       const author = await this.fetchUser(object[0].authorID);
@@ -2080,6 +2080,7 @@ export class MongoDriver implements DataStore {
       contributors,
       outcomes,
       hasRevision: record.hasRevision,
+      children,
     });
 
     return learningObject;

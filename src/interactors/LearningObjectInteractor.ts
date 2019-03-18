@@ -132,7 +132,7 @@ export class LearningObjectInteractor {
           try {
             object.metrics = await this.loadMetrics(library, object.id);
           } catch (e) {
-            console.log(e);
+            reportError(e);
           }
 
           if (loadChildren) {
@@ -152,11 +152,7 @@ export class LearningObjectInteractor {
       );
       return summary;
     } catch (e) {
-      if (e instanceof ResourceError || e instanceof ServiceError) {
-        return Promise.reject(e);
-      }
-      reportError(e);
-      throw new ServiceError(ServiceErrorReason.INTERNAL);
+      handleError(e);
     }
   }
 
@@ -238,23 +234,13 @@ export class LearningObjectInteractor {
       let loadWorkingCopies = false;
 
       if (!revision) {
-        const requesterIsAuthor = this.hasReadAccess({
-          userToken,
-          resourceVal: username,
-          authFunction: isAuthorByUsername,
-        }) as boolean;
-        const requesterIsPrivileged =
-          userToken && isPrivilegedUser(userToken.accessGroups);
-        const authorizationCases = [requesterIsAuthor, requesterIsPrivileged];
-
         learningObject = await this.loadReleasedLearningObjectByAuthorAndName({
           dataStore,
           authorUsername: username,
           learningObjectName,
         }).catch(error =>
-          bypassNotFoundResourceErrorIfAuthorized({
+          bypassNotFoundResourceError({
             error,
-            authorizationCases,
           }),
         );
       }
@@ -292,15 +278,11 @@ export class LearningObjectInteractor {
           learningObject.id,
         );
       } catch (e) {
-        console.error(e);
+        reportError(e);
       }
       return learningObject;
     } catch (e) {
-      if (e instanceof ResourceError || e instanceof ServiceError) {
-        return Promise.reject(e);
-      }
-      reportError(e);
-      throw new ServiceError(ServiceErrorReason.INTERNAL);
+      handleError(e);
     }
   }
 
@@ -647,7 +629,7 @@ export class LearningObjectInteractor {
             try {
               child.metrics = await this.loadMetrics(library, child.id);
             } catch (e) {
-              console.error(e);
+              reportError(e);
             }
             return child;
           }),
@@ -719,11 +701,7 @@ export class LearningObjectInteractor {
       }
       return [];
     } catch (e) {
-      if (e instanceof ResourceError || e instanceof ServiceError) {
-        return Promise.reject(e);
-      }
-      reportError(e);
-      throw new ServiceError(ServiceErrorReason.INTERNAL);
+      handleError(e);
     }
   }
 
@@ -785,7 +763,7 @@ export class LearningObjectInteractor {
       }
       return loFile;
     } catch (e) {
-      return Promise.reject(`Problem uploading file. Error: ${e}`);
+      handleError(e);
     }
   }
 
@@ -816,7 +794,7 @@ export class LearningObjectInteractor {
         id: params.id,
       });
     } catch (e) {
-      return Promise.reject(`Problem uploading file. Error: ${e}`);
+      handleError(e);
     }
   }
 
@@ -847,7 +825,7 @@ export class LearningObjectInteractor {
         id: params.id,
       });
     } catch (e) {
-      return Promise.reject(e);
+      handleError(e);
     }
   }
 
@@ -1003,7 +981,6 @@ export class LearningObjectInteractor {
         // Attempt to delete files
         const path = `${user.username}/${obj.id}/`;
         fileManager.deleteAll({ path }).catch(e => {
-          console.error(`Problem deleting files at ${path}. ${e}`);
           reportError(e);
         });
         // Update parents' dates
@@ -1015,11 +992,7 @@ export class LearningObjectInteractor {
         });
       });
     } catch (e) {
-      if (e instanceof ResourceError || e instanceof ServiceError) {
-        return Promise.reject(e);
-      }
-      reportError(e);
-      throw new ServiceError(ServiceErrorReason.INTERNAL);
+      handleError(e);
     }
   }
 
@@ -1059,7 +1032,7 @@ export class LearningObjectInteractor {
             object.metrics = await this.loadMetrics(library, object.id);
             return object;
           } catch (e) {
-            console.log(e);
+            reportError(e);
             if (!full) {
               return object;
             }
@@ -1082,9 +1055,7 @@ export class LearningObjectInteractor {
       );
       return learningObjects;
     } catch (e) {
-      return Promise.reject(
-        `Problem fetching LearningObjects by ID. Error: ${e}`,
-      );
+      handleError(e);
     }
   }
 
@@ -1174,25 +1145,20 @@ export class LearningObjectInteractor {
           limit,
         });
       }
-
+// FIXME: Loadmetrics is failing and only hitting the catch block but still returning the object.
       const objects = await Promise.all(
         response.objects.map(async object => {
           try {
             object.metrics = await this.loadMetrics(library, object.id);
             return object;
           } catch (e) {
-            console.log(e);
             return object;
           }
         }),
       );
       return { total: response.total, objects };
     } catch (e) {
-      if (e instanceof ResourceError || e instanceof ServiceError) {
-        return Promise.reject(e);
-      }
-      reportError(e);
-      throw new ServiceError(ServiceErrorReason.INTERNAL);
+      handleError(e);
     }
   }
 
@@ -1321,8 +1287,7 @@ export class LearningObjectInteractor {
     try {
       await dataStore.addToCollection(learningObjectId, collection);
     } catch (e) {
-      console.log(e);
-      return Promise.reject(e);
+      handleError(e);
     }
   }
 
@@ -1362,11 +1327,7 @@ export class LearningObjectInteractor {
         date: Date.now().toString(),
       });
     } catch (e) {
-      if (e instanceof ResourceError || e instanceof ServiceError) {
-        return Promise.reject(e);
-      }
-      reportError(e);
-      throw new ServiceError(ServiceErrorReason.INTERNAL);
+      handleError(e);
     }
   }
 
@@ -1406,11 +1367,7 @@ export class LearningObjectInteractor {
         date: Date.now().toString(),
       });
     } catch (e) {
-      if (e instanceof ResourceError || e instanceof ServiceError) {
-        return Promise.reject(e);
-      }
-      reportError(e);
-      throw new ServiceError(ServiceErrorReason.INTERNAL);
+      handleError(e);
     }
   }
 
@@ -1447,15 +1404,11 @@ export class LearningObjectInteractor {
    * @param {string} objectID
    * @returns {Promise<LearningObject.Metrics>}
    */
-  private static async loadMetrics(
+  private static loadMetrics(
     library: LibraryCommunicator,
     objectID: string,
   ): Promise<LearningObject.Metrics> {
-    try {
-      return library.getMetrics(objectID);
-    } catch (e) {
-      return Promise.reject(e);
-    }
+    return library.getMetrics(objectID);
   }
 
   /**
@@ -1679,18 +1632,50 @@ const hasReadAccessByCollection = (
  * @param {authorizationCases} boolean[] [Contains results from authorization checks that determines whether or not the requester is authorized to access resource]
  * @returns {null} [Returns null so that the value resolves to null indicating resource was not loaded]
  */
-const bypassNotFoundResourceErrorIfAuthorized = (params: {
+const bypassNotFoundResourceErrorIfAuthorized = ({
+  error,
+  authorizationCases,
+}: {
   error: Error;
   authorizationCases: boolean[];
 }): null | never => {
-  const { error, authorizationCases } = params;
+  if (!authorizationCases.includes(true)) {
+    throw error;
+  }
+  return bypassNotFoundResourceError({ error });
+};
+
+/**
+ * This handler allows execution to proceed if a ResourceError occurs because of a resource not being found.
+ *
+ * @param {Error} error
+ * @returns {null} [Returns null so that the value resolves to null indicating resource was not loaded]
+ */
+const bypassNotFoundResourceError = ({
+  error,
+}: {
+  error: Error;
+}): null | never => {
   if (
     !(error instanceof ResourceError) ||
     (error instanceof ResourceError &&
-      error.name !== ResourceErrorReason.NOT_FOUND) ||
-    !authorizationCases.includes(true)
+      error.name !== ResourceErrorReason.NOT_FOUND)
   ) {
     throw error;
   }
   return null;
 };
+
+/**
+ * Handles errors by throwing error if handled, otherwise the error is reported and a ServiceError is thrown
+ *
+ * @param {Error} error
+ * @returns {never}
+ */
+function handleError(error: Error): never {
+  if (error instanceof ResourceError || error instanceof ServiceError) {
+    throw error;
+  }
+  reportError(error);
+  throw new ServiceError(ServiceErrorReason.INTERNAL);
+}
