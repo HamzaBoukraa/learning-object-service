@@ -16,6 +16,9 @@
     "downlevelIteration": true,
     "allowUnusedLabels": false,
     "types": ["jest"]
-  }
-
+  },
+  "exclude": [
+    "node_modules",
+    "src/**/*.spec.ts"
+  ]
 }
