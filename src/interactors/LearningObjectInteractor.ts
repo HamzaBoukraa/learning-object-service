@@ -1317,11 +1317,11 @@ export class LearningObjectInteractor {
     const { dataStore, children, username, parentName, userToken } = params;
 
     try {
-
-      const parentID = await dataStore.findLearningObject(
-      {authorId: username,
-      name: parentName},
-      );
+      const authorId = await dataStore.findUser(username);
+      const parentID = await dataStore.findLearningObject({
+        authorId,
+        name: parentName,
+      });
       const hasAccess = await hasLearningObjectWriteAccess(userToken, dataStore, parentID);
       if (hasAccess) {
         await dataStore.setChildren(parentID, children);
@@ -1365,10 +1365,11 @@ export class LearningObjectInteractor {
   }) {
     const { dataStore, childId, username, parentName, userToken } = params;
     try {
-      const parentID = await dataStore.findLearningObject(
-        {authorId: username,
-        name: parentName},
-      );
+      const authorId = await dataStore.findUser(username);
+      const parentID = await dataStore.findLearningObject({
+        authorId,
+        name: parentName,
+      });
       const hasAccess = await hasLearningObjectWriteAccess(userToken, dataStore, parentID);
       if (hasAccess) {
         await dataStore.deleteChild(parentID, childId);
