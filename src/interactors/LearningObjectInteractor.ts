@@ -1145,7 +1145,6 @@ export class LearningObjectInteractor {
           limit,
         });
       }
-// FIXME: Loadmetrics is failing and only hitting the catch block but still returning the object.
       const objects = await Promise.all(
         response.objects.map(async object => {
           try {
