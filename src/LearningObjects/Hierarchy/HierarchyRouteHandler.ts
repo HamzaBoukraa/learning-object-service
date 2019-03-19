@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { DataStore } from '../../interfaces/DataStore';
 import { LearningObjectInteractor } from '../../interactors/interactors';
 import { fetchParents } from './HierarchyInteractor';
+import { mapErrorToResponseData } from '../../errors';
 
 export function initializePublic({ router, dataStore}: { router: Router, dataStore: DataStore }) {
   const getParents = async (req: Request, res: Response) => {
@@ -19,8 +20,8 @@ export function initializePublic({ router, dataStore}: { router: Router, dataSto
       });
       res.status(200).send(parents.map(obj => obj.toPlainObject()));
     } catch (e) {
-      console.error(e);
-      res.status(500).send(e);
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({message});
     }
   };
   router.get('/learning-objects/:id/parents', getParents);
