@@ -9,11 +9,13 @@ export function initializePublic({ router, dataStore}: { router: Router, dataSto
       const userToken = req.user;
       const query = req.query;
       query.id = req.params.id;
+      const isRequestingRevision = query.revision !== undefined;
 
       const parents = await fetchParents({
         query,
         userToken,
         dataStore,
+        isRequestingRevision,
       });
       res.status(200).send(parents.map(obj => obj.toPlainObject()));
     } catch (e) {

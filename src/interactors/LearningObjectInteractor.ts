@@ -1570,7 +1570,7 @@ export const hasReadAccessByCollection = (
   collectionName: string,
   userToken: UserToken,
 ) => {
-  if (!isPrivilegedUser(userToken.accessGroups)) return false;
+  if (!userToken || !isPrivilegedUser(userToken.accessGroups)) return false;
   return (
     isAdminOrEditor(userToken.accessGroups) ||
     getAccessGroupCollections(userToken).includes(collectionName)
