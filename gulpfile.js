@@ -1,38 +1,48 @@
 const gulp = require('gulp');
 const nodemon = require('gulp-nodemon');
 const ts = require('gulp-typescript');
-const watch = require('gulp-watch');
-var exec = require('child_process').exec;
-const JSON_FILES = ['package.json', 'src/*.json', 'src/**/*.json'];
+const spawn = require('child_process').spawn;
+
+const path = require('path');
+const JSON_FILES = ['src/*.json', 'src/**/*.json', 'package.json'];
 
 // pull in the project TypeScript config
-const tsProject = ts.createProject('tsconfig.json');
+const tsProject = ts.createProject('./tsconfig.json');
 
-gulp.task('tsc', () => {
-  const tsResult = tsProject.src().pipe(tsProject());
+const compileTypeScript = () => {
+  const tsResult = tsProject
+    .src()
+    .pipe(tsProject())
+    .on("error",()=>{/*handle the error here*/});
+
   return tsResult.js.pipe(gulp.dest('dist'));
-});
+};
 
-gulp.task('watch', ['tsc'], () => {
-  watch('src/**/*.ts', { usePolling: true, interval: 2000 }, function(file) {
-    gulp.start('tsc')
+const runDevelopmentServer = function() {
+  return nodemon({
+    script: 'dist/app.js',
+    ext: 'js',
+  })
+  .once('exit', () => {
+    process.exit();
   });
+};
+
+gulp.task('clean', function() {
+  return spawn('rm', ['-rf', path.join(__dirname, 'dist')]);
 });
 
 gulp.task('assets', function() {
   return gulp.src(JSON_FILES).pipe(gulp.dest('dist'));
 });
 
-gulp.task('start', ['watch'], function() {
-  inDocker = process.env.IN_DOCKER == 'true';
-  
-  nodemon({
-    script: 'dist/app.js',
-    ext: 'js html',
-    watch: ['./dist'],
-    legacyWatch: inDocker,
-    delay: 5
-  });
+gulp.task('tsc', gulp.series('clean', compileTypeScript, 'assets'));
+
+gulp.task('watch', () => {
+  return gulp.watch('src/**/*.ts', compileTypeScript);
 });
 
-gulp.task('default', ['watch', 'assets']);
+
+gulp.task('start', gulp.series('tsc', gulp.parallel('watch', runDevelopmentServer)));
+
+gulp.task('default', gulp.series('watch', 'assets'));

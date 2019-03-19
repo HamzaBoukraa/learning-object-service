@@ -22,6 +22,7 @@ import { UserToken, ServiceToken } from '../types';
 import {
   getAccessGroupCollections,
   hasMultipleLearningObjectWriteAccesses,
+  hasLearningObjectWriteAccess,
   isAdminOrEditor,
   isPrivilegedUser,
   hasServiceLevelAccess,
@@ -33,6 +34,7 @@ import {
   ServiceErrorReason,
 } from '../errors';
 import { LearningObject } from '../entity';
+import { accessGroups } from '../types/user-token';
 
 // file size is in bytes
 const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
@@ -1306,25 +1308,34 @@ export class LearningObjectInteractor {
   public static async setChildren(params: {
     dataStore: DataStore;
     children: string[];
-    username: string;
     parentName: string;
+    username: string;
+    userToken: UserToken;
   }): Promise<void> {
+    const { dataStore, children, username, parentName, userToken } = params;
+
     try {
-      const { dataStore, children, username, parentName } = params;
-      const authorId = await this.findAuthorIdByUsername({
-        dataStore,
-        username,
-      });
+      const authorId = await dataStore.findUser(username);
       const parentID = await dataStore.findLearningObject({
         authorId,
         name: parentName,
       });
-      await dataStore.setChildren(parentID, children);
-      await updateObjectLastModifiedDate({
-        dataStore: dataStore,
-        id: parentID,
-        date: Date.now().toString(),
-      });
+      const hasAccess = await hasLearningObjectWriteAccess(userToken, dataStore, parentID);
+      if (hasAccess) {
+        await dataStore.setChildren(parentID, children);
+        await updateObjectLastModifiedDate({
+          dataStore,
+          id: parentID,
+          date: Date.now().toString(),
+        });
+      } else {
+        throw new ResourceError(
+          'Invalid Access',
+          ResourceErrorReason.INVALID_ACCESS,
+        );
+      }
+
+
     } catch (e) {
       handleError(e);
     }
@@ -1346,25 +1357,31 @@ export class LearningObjectInteractor {
   public static async removeChild(params: {
     dataStore: DataStore;
     childId: string;
-    username: string;
     parentName: string;
+    username: string;
+    userToken: UserToken;
   }) {
+    const { dataStore, childId, username, parentName, userToken } = params;
     try {
-      const { dataStore, childId, username, parentName } = params;
-      const authorId = await this.findAuthorIdByUsername({
-        dataStore,
-        username,
-      });
+      const authorId = await dataStore.findUser(username);
       const parentID = await dataStore.findLearningObject({
         authorId,
         name: parentName,
       });
-      await dataStore.deleteChild(parentID, childId);
-      await updateObjectLastModifiedDate({
-        dataStore,
-        id: parentID,
-        date: Date.now().toString(),
-      });
+      const hasAccess = await hasLearningObjectWriteAccess(userToken, dataStore, parentID);
+      if (hasAccess) {
+        await dataStore.deleteChild(parentID, childId);
+        await updateObjectLastModifiedDate({
+          dataStore,
+          id: parentID,
+          date: Date.now().toString(),
+        });
+      } else {
+        throw new ResourceError(
+          'Invalid Access',
+          ResourceErrorReason.INVALID_ACCESS,
+        );
+      }
     } catch (e) {
       handleError(e);
     }
