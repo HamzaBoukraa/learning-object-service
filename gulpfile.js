@@ -22,9 +22,6 @@ const runDevelopmentServer = function() {
   return nodemon({
     script: 'dist/app.js',
     ext: 'js',
-  })
-  .once('exit', () => {
-    process.exit();
   });
 };
 
