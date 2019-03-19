@@ -126,8 +126,8 @@ export class MongoDriver implements DataStore {
   /**
    * Fetches Learning Object's author's username
    *
-   * @param {string} id
-   * @returns {Promise<string>}
+   * @param {string} id the id of the Learning Object.
+   * @returns {Promise<string>} the username of the author.
    * @memberof MongoDriver
    */
   async fetchLearningObjectAuthorUsername(id: string): Promise<string> {

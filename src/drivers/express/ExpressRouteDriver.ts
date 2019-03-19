@@ -16,6 +16,7 @@ import {
   ServiceError,
 } from '../../errors';
 import { LearningObject } from '../../entity';
+import { initializePublic as initializePublicHierarchyRoutes } from '../../LearningObjects/Hierarchy/HierarchyRouteHandler';
 
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
 // tslint:disable-next-line:no-require-imports
@@ -77,23 +78,7 @@ export class ExpressRouteDriver {
         res.status(code).json({ message });
       }
     });
-
-    router.get('/learning-objects/:id/parents', async (req, res) => {
-      try {
-        const userToken = req.user;
-        const query = req.query;
-        query.id = req.params.id;
-        const parents = await LearningObjectInteractor.fetchParents({
-          query,
-          userToken,
-          dataStore: this.dataStore,
-        });
-        res.status(200).send(parents.map(obj => obj.toPlainObject()));
-      } catch (e) {
-        console.error(e);
-        res.status(500).send(e);
-      }
-    });
+    initializePublicHierarchyRoutes({ router, dataStore: this.dataStore });
 
     router
       .route('/learning-objects/:username/:learningObjectName')
