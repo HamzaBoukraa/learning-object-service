@@ -134,8 +134,10 @@ export class MongoDriver implements DataStore {
     const results = await this.db
       .collection(COLLECTIONS.LEARNING_OBJECTS)
       .aggregate([
+        // match the id
         { $match: { _id: id } },
         {
+          // search the Users collection for the author based on Id and save as 'author' array.
           $lookup: {
             from: COLLECTIONS.USERS,
             localField: 'authorID',
@@ -143,8 +145,11 @@ export class MongoDriver implements DataStore {
             as: 'author',
           },
         },
+        // unwind the array to an object.
         { $unwind: { path: '$author' } },
+        // display only the author's username.
         { $project: { 'author.username': 1 } },
+        // make the author's username the main document.
         { $replaceRoot: { newRoot: '$author' } },
       ])
       .toArray();
@@ -247,7 +252,7 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Constructs aggregation pipeline for searching all objects
+   * Constructs aggregation pipeline for searching all objects with pagination and sorting.
    *
    * @private
    * @param {({
@@ -287,25 +292,27 @@ export class MongoDriver implements DataStore {
     }
 
     const match = { $match: { ...matcher } };
-
+// Unwind the modified array to the root level at the end of every stage.
     const unWindArrayToRoot = [
       { $unwind: '$objects' },
       {
         $replaceRoot: { newRoot: '$objects' },
       },
     ];
-
+// perform a lookup on the Released collection by ID and assign two variables 'Object_id' and 'object_status' that will be used in this stage
     const joinCollections = {
       $lookup: {
         from: COLLECTIONS.RELEASED_LEARNING_OBJECTS,
         let: { object_id: '$_id', object_status: '$status' },
         pipeline: [
           {
+            // match Released objects to working objects ID.
             $match: {
               $expr: { $and: [{ $eq: ['$_id', '$$object_id'] }] },
             },
           },
           {
+            // add the hasRevision Field to learning objects, set false if the working copy is released, true otherwise.
             $addFields: {
               hasRevision: {
                 $cond: [
@@ -319,13 +326,16 @@ export class MongoDriver implements DataStore {
             },
           },
         ],
+        // store all released objects under a 'released' array.
         as: 'released',
       },
     };
 
+// create a large filtered collection of learning objects with diplicates.
     const createSuperSet = [
       { $unwind: { path: '$released', preserveNullAndEmptyArrays: true } },
       {
+        // group released objects and with their working copy if one exists.
         $group: {
           _id: 1,
           objects: { $push: '$$ROOT' },
@@ -333,6 +343,7 @@ export class MongoDriver implements DataStore {
         },
       },
       {
+        // combine objects and released arrays and store under 'objects[]'.
         $project: {
           objects: { $concatArrays: ['$objects', '$released'] },
         },
@@ -340,6 +351,7 @@ export class MongoDriver implements DataStore {
       ...unWindArrayToRoot,
     ];
 
+    // filter and remove duplicates after grouping the objects by ID.
     const removeDuplicates = [
       {
         $group: {
@@ -348,6 +360,8 @@ export class MongoDriver implements DataStore {
         },
       },
       {
+        // If the objects array has one learning object, project it,
+        // otherwise filter and project the object that contains a 'hasRevision' field.
         $project: {
           objects: {
             $cond: [
@@ -371,6 +385,7 @@ export class MongoDriver implements DataStore {
           },
         },
       },
+      // unwind and replace all arrays with objects.
       {$replaceRoot: {
         newRoot: '$objects',
       }},
@@ -586,8 +601,10 @@ export class MongoDriver implements DataStore {
         collection || COLLECTIONS.LEARNING_OBJECTS,
       )
       .aggregate([
+        // match based on id's and status array if given.
         matchQuery,
         {
+          // grab the children of learning objects
           $graphLookup: {
             from: collection || COLLECTIONS.LEARNING_OBJECTS,
             startWith: '$children',
@@ -597,6 +614,7 @@ export class MongoDriver implements DataStore {
             maxDepth: 0,
           },
         },
+        // only return children.
         { $project: { _id: 0, objects: '$objects' } },
       ])
       .toArray();
@@ -1109,8 +1127,10 @@ export class MongoDriver implements DataStore {
       const objects = await this.db
         .collection<{ _id: string }>(COLLECTIONS.USERS)
         .aggregate([
+          // match based on username given
           { $match: { username } },
           {
+            // lookup the users learning objects based on the author's id.
             $lookup: {
               from: COLLECTIONS.LEARNING_OBJECTS,
               localField: '_id',
@@ -1118,8 +1138,11 @@ export class MongoDriver implements DataStore {
               as: 'objects',
             },
           },
+          // unwind learning object from array to object.
           { $unwind: '$objects' },
+          // make the learning object the root of the document.
           { $replaceRoot: { newRoot: '$objects' } },
+          // return only the ID.
           { $project: { _id: 1 } },
         ])
         .toArray();
@@ -1291,7 +1314,7 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Fetches released object
+   * Fetches released object through aggregation pipeline.
    *
    * @param {{
    *     id: string;
@@ -1307,16 +1330,21 @@ export class MongoDriver implements DataStore {
     const object = await this.db
       .collection<LearningObjectDocument>(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
       .aggregate([{
+        // match learning object by params.id
         $match: { _id: params.id } },
+        // perform a lookup and store the working copy of the object under the "Copy" array.
       { $lookup:
         { from: 'objects',
         localField: '_id',
         foreignField: '_id',
         as: 'copy'},
       },
+      // unwind copy from array to object so we can check certain fields.
         { $unwind:
-          { path: '$copy', preserveNullAndEmptyArrays: true }
+          { path: '$copy', preserveNullAndEmptyArrays: true },
         },
+      // if the copys' status differs from the released objects status, then the object has a revision.
+      // so we add a the field 'hasRevision' with a true value
           { $addFields:
             { hasRevision: { $cond: [{ $ne: ['$copy.status', 'released'] }, true, false] } } },
             { $project: { copy: 0 } }]).toArray();
@@ -1900,6 +1928,7 @@ export class MongoDriver implements DataStore {
         .collection(COLLECTIONS.LO_COLLECTIONS)
         .aggregate([
           {
+            // only display name, abreviated name and logo.
             $project: {
               _id: 0,
               name: 1,
