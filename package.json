@@ -37,7 +37,7 @@
     "pdfkit": "^0.9.0",
     "raven": "^2.6.4",
     "request-promise": "^4.2.2",
-    "stopword": "^0.1.10",
+    "stopword": "^0.2.0",
     "striptags": "^3.1.1"
   },
   "devDependencies": {
