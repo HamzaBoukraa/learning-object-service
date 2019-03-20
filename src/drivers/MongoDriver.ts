@@ -943,11 +943,9 @@ export class MongoDriver implements DataStore {
   /**
    * Fetches Parents of requested Learning Object from working collection if collection not specified
    *
-   * @param {{
-   *     query: ParentLearningObjectQuery;
-   *     collection: string [Collection to query for parent objects from]
-   *   }} params
-   * @returns {Promise<LearningObject[]>}
+   * @param {ParentLearningObjectQuery} query
+   * @param {string} collection Collection to query for parent objects from
+   * @returns {Promise<LearningObject[]>} the set of parent Learning Objects
    * @memberof MongoDriver
    */
     async fetchParentObjects(
