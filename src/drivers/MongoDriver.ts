@@ -63,7 +63,7 @@ export class MongoDriver implements DataStore {
   private mongoClient: MongoClient;
   private db: Db;
 
-  private constructor() {}
+  private constructor() { }
 
   static async build(dburi: string) {
     const driver = new MongoDriver();
@@ -548,11 +548,11 @@ export class MongoDriver implements DataStore {
    */
   async findChildObjectIds(params: { parentId: string }): Promise<string[]> {
     const children = await this.db
-    .collection(COLLECTIONS.LEARNING_OBJECTS)
-    .findOne<{ children: string [] }> (
-      { _id: params.parentId },
-      { projection: {children: 1} }
-    );
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .findOne<{ children: string[] }>(
+        { _id: params.parentId },
+        { projection: { children: 1 } }
+      );
 
     if (children) {
       const childrenIDs = children.children;
@@ -925,9 +925,9 @@ export class MongoDriver implements DataStore {
           return res.result.nModified > 0
             ? Promise.resolve()
             : Promise.reject({
-                message: `${childId} is not a child of Object ${parentId}`,
-                status: 404,
-              });
+              message: `${childId} is not a child of Object ${parentId}`,
+              status: 404,
+            });
         });
     } catch (error) {
       if (error.message && error.status) {
@@ -941,30 +941,56 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Fetches Parents of requested Learning Object from working collection if collection not specified
+   * Retrieves parent objects that match the provided query parameters, allowing
+   * the caller to identify Learning Object status and collection values.
    *
-   * @param {ParentLearningObjectQuery} query
-   * @param {string} collection Collection to query for parent objects from
-   * @returns {Promise<LearningObject[]>} the set of parent Learning Objects
+   * This function will aggregate both released and working copies of Learning Objects.
+   * In the case that there is both a released copy and a working copy, the released copy
+   * will be returned.
+   *
+   * @param {ParentLearningObjectQuery} query a collection of query parameters to filter the search by.
+   * @returns {Promise<LearningObject[]>} the set of parent Learning Objects found.
    * @memberof MongoDriver
    */
-    async fetchParentObjects(
-      { query, full, collection = COLLECTIONS.LEARNING_OBJECTS }
+  async fetchParentObjects(
+    { query, full, collection = COLLECTIONS.LEARNING_OBJECTS }
       : { query: ParentLearningObjectQuery, full: boolean, collection: COLLECTIONS },
-    ): Promise<LearningObject[]> {
-    const mongoQuery: { [index: string]: any } = { children: query.id };
+  ): Promise<LearningObject[]> {
+    const matchQuery: { [index: string]: any } = { children: query.id };
     if (query.status) {
-      mongoQuery.status = { $in: query.status };
+      matchQuery.status = { $in: query.status };
     }
-    let cursor: Cursor<LearningObjectDocument> = await this.db
-      .collection(collection)
-      .find<LearningObjectDocument>(mongoQuery);
-    cursor = this.applyCursorFilters<LearningObjectDocument>(cursor, {
-      ...(query as Filters),
-    });
-    const parentDocs = await cursor.toArray();
-    const parents = await this.bulkGenerateLearningObjects(parentDocs, full);
-    return parents;
+    if (query.collections) {
+      matchQuery.collection = { $in: query.collections };
+    }
+
+    const parents = await this.db.collection(COLLECTIONS.LEARNING_OBJECTS)
+      .aggregate([
+        { $match: matchQuery },
+        {
+          $lookup: {
+            from: 'released-objects',
+            localField: '_id',
+            foreignField: '_id',
+            as: 'releasedCopy',
+          },
+        },
+        {
+          $project: {
+            returnable: {
+              $cond:
+              {
+                if: { $gt: [{ $size: '$releasedCopy' }, 0] },
+                then: { $arrayElemAt: ['$releasedCopy', 0] },
+                else: '$$ROOT',
+              },
+            },
+          },
+        },
+        { $replaceRoot: { newRoot: '$returnable' } },
+      ]).toArray();
+
+    return this.bulkGenerateLearningObjects(parents);
   }
 
   /**
@@ -980,10 +1006,13 @@ export class MongoDriver implements DataStore {
     query: ParentLearningObjectQuery;
     full: boolean;
   }): Promise<LearningObject[]> {
-    return this.fetchParentObjects({
-      ...params,
-      collection: COLLECTIONS.RELEASED_LEARNING_OBJECTS,
-    });
+    const { query, full } = params;
+    const mongoQuery = { children: query.id, status: 'released' };
+
+    const parentDocs = await this.db
+      .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
+      .find<LearningObjectDocument>(mongoQuery).toArray();
+    return await this.bulkGenerateLearningObjects(parentDocs, full);
   }
 
   ///////////////////////////////////////////////////////////////////
@@ -1857,15 +1886,15 @@ export class MongoDriver implements DataStore {
     }
     return author || text
       ? await this.db
-          .collection(COLLECTIONS.USERS)
-          .find<{ _id: string; username: string }>(query)
-          .project({
-            _id: 1,
-            username: 1,
-            score: { $meta: 'textScore' },
-          })
-          .sort({ score: { $meta: 'textScore' } })
-          .toArray()
+        .collection(COLLECTIONS.USERS)
+        .find<{ _id: string; username: string }>(query)
+        .project({
+          _id: 1,
+          username: 1,
+          score: { $meta: 'textScore' },
+        })
+        .sort({ score: { $meta: 'textScore' } })
+        .toArray()
       : null;
   }
   /**
