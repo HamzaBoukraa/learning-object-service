@@ -1,5 +1,4 @@
 import { LearningObjectInteractor } from '../interactors/interactors';
-import { expect } from 'chai';
 import { MOCK_OBJECTS } from '../tests/mocks';
 import { DataStore } from '../interfaces/DataStore';
 import { LibraryCommunicator } from '../interfaces/interfaces';
@@ -18,12 +17,11 @@ describe('loadUsersObjectSummaries', () => {
       username: MOCK_OBJECTS.USERTOKEN.username,
     })
       .then(val => {
-        expect(val).to.be.an('array');
+        expect(val).toBeInstanceOf(Array);
         done();
       })
       .catch(error => {
-        expect.fail();
-        done();
+        throw new Error('Failed to load summary.');
       });
   });
 });
@@ -36,11 +34,7 @@ describe('loadProfile', () => {
       username: MOCK_OBJECTS.USERTOKEN.username,
     })
       .then(val => {
-        expect(val).to.be.an('array');
-        done();
-      })
-      .catch(error => {
-        expect.fail();
+        expect(val).toBeInstanceOf(Array);
         done();
       });
   });
@@ -52,11 +46,7 @@ describe('loadProfile', () => {
       username: MOCK_OBJECTS.USERTOKEN.username,
     })
       .then(val => {
-        expect(val).to.be.an('array');
-        done();
-      })
-      .catch(error => {
-        expect.fail();
+        expect(val).toBeInstanceOf(Array);
         done();
       });
   });
@@ -70,11 +60,7 @@ describe('fetchObjectsByIDs', () => {
       ids: [MOCK_OBJECTS.LEARNING_OBJECT_ID],
     })
       .then(val => {
-        expect(val).to.be.an('array');
-        done();
-      })
-      .catch(error => {
-        expect.fail();
+        expect(val).toBeInstanceOf(Array);
         done();
       });
   });
@@ -86,11 +72,7 @@ describe('fetchObjectsByIDs', () => {
       ids: [MOCK_OBJECTS.EMPTY_STRING],
     })
       .then(val => {
-        expect(val).to.be.an('array');
-        done();
-      })
-      .catch(error => {
-        expect.fail();
+        expect(val).toBeInstanceOf(Array);
         done();
       });
   });
@@ -105,11 +87,7 @@ describe('getLearningObjectId', () => {
       userToken: MOCK_OBJECTS.USERTOKEN,
     })
       .then(val => {
-        expect(val).to.be.a('string');
-        done();
-      })
-      .catch(error => {
-        expect.fail();
+        expect(val).toEqual(MOCK_OBJECTS.LEARNING_OBJECT_ID);
         done();
       });
   });
