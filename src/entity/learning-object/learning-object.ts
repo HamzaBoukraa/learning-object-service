@@ -420,6 +420,16 @@ export class LearningObject {
       );
     }
   }
+/**
+ * @property {boolean} hasRevision
+ * An optional field on a learning object, denoting whether or not the object
+ * has a working copy with a different status in the working collection.
+ */
+  private _hasRevision?: boolean;
+
+  get hasRevision(): boolean {
+    return this._hasRevision;
+  }
 
   /**
    * Map deprecated status values to new LearningObject.Status values
@@ -490,7 +500,6 @@ export class LearningObject {
     this._collection = '';
     this._status = LearningObject.Status.UNRELEASED;
     this._metrics = { saves: 0, downloads: 0 };
-
     if (object) {
       this.copyObject(object);
     }
@@ -542,6 +551,9 @@ export class LearningObject {
         this.addContributor(contributor),
       );
     }
+    if (object.hasRevision === true) {
+      this._hasRevision = object.hasRevision;
+    }
     this.collection = <string>object.collection || this.collection;
     this.status = <LearningObject.Status>object.status || this.status;
     this.metrics = <LearningObject.Metrics>object.metrics || this.metrics;
@@ -575,6 +587,7 @@ export class LearningObject {
       collection: this.collection,
       status: this.status,
       metrics: this.metrics,
+      hasRevision: this.hasRevision,
     };
     return object;
   }
