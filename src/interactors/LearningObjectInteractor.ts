@@ -1082,14 +1082,12 @@ export class LearningObjectInteractor {
           limit,
         });
       }
-
       const objects = await Promise.all(
         response.objects.map(async object => {
           try {
             object.metrics = await this.loadMetrics(library, object.id);
             return object;
           } catch (e) {
-            reportError(e);
             return object;
           }
         }),
