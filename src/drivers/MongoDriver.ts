@@ -124,7 +124,8 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Fetches Learning Object's author's username
+   * Fetches Learning Object's author's username through an aggregation by matching the id of tje learning object provided,
+   * and using that information to perform a lookup on the users collection to grab the author and return their username
    *
    * @param {string} id
    * @returns {Promise<string>}
@@ -252,7 +253,9 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Constructs aggregation pipeline for searching all objects with pagination and sorting.
+   * Constructs aggregation pipeline for searching all objects with pagination and sorting By matching learning obejcts based on
+   * queries provided, then joining the working and released collection together, adding the hasRevision flag to released learning object based on
+   * the status of the working object, removing duplicates then returns a filtered and sorted superset of working and released learning objects.
    *
    * @private
    * @param {({
@@ -579,7 +582,8 @@ export class MongoDriver implements DataStore {
     return [];
   }
   /**
-   *  Fetches all child objects for object with given id
+   *  Fetches all child objects for object with given parent id and status starting with a match, then performing a
+   *  lookup to grab the children of the specified parent and returning only the children
    *
    * @param {string} id
    * @returns {Promise<LearningObject[]>}
@@ -1116,7 +1120,8 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Get LearningObject IDs owned by User
+   * Get LearningObject IDs owned by User starting with match based on the username provided, then performing lookup on the
+   * learning objects collection to grab the users learning objects.
    *
    * @param {string} username
    * @returns {string[]}
@@ -1314,7 +1319,8 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Fetches released object through aggregation pipeline.
+   * Fetches released object through aggregation pipeline by performing a match based on the object id, finding the duplicate object in the
+   * working collection, then checking the status of the duplicate to determine whether or not to set hasRevision to true or false.
    *
    * @param {{
    *     id: string;
@@ -1917,7 +1923,7 @@ export class MongoDriver implements DataStore {
       : null;
   }
   /**
-   * Fetches all Learning Object collections
+   * Fetches all Learning Object collections and displays only the name, abreviated name and logo.
    *
    * @returns {Promise<LearningObjectCollection[]>}
    * @memberof MongoDriver
@@ -1928,7 +1934,6 @@ export class MongoDriver implements DataStore {
         .collection(COLLECTIONS.LO_COLLECTIONS)
         .aggregate([
           {
-            // only display name, abreviated name and logo.
             $project: {
               _id: 0,
               name: 1,
