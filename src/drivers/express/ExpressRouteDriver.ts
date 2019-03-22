@@ -57,16 +57,14 @@ export class ExpressRouteDriver {
         const userToken = req.user;
         const page = req.query.currPage || req.query.page;
         const limit = req.query.limit;
+        const standardOutcomeIDs = req.query.standardOutcomes;
+        const query = Object.assign({}, req.query, { page, limit, standardOutcomeIDs });
 
         objectResponse = await LearningObjectInteractor.searchObjects({
-          dataStore: this.dataStore,
-          library: this.library,
-          query: {
-            ...req.query,
-            page,
-            limit,
-          },
-          userToken,
+            dataStore: this.dataStore,
+            library: this.library,
+            query,
+            userToken,
         });
 
         objectResponse.objects = objectResponse.objects.map(obj =>
