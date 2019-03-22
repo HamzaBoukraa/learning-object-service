@@ -127,8 +127,8 @@ export class MongoDriver implements DataStore {
    * Fetches Learning Object's author's username through an aggregation by matching the id of tje learning object provided,
    * and using that information to perform a lookup on the users collection to grab the author and return their username
    *
-   * @param {string} id
-   * @returns {Promise<string>}
+   * @param {string} id the id of the Learning Object.
+   * @returns {Promise<string>} the username of the author.
    * @memberof MongoDriver
    */
   async fetchLearningObjectAuthorUsername(id: string): Promise<string> {
@@ -966,34 +966,56 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Fetches Parents of requested Learning Object from working collection if collection not specified
+   * Retrieves parent objects that match the provided query parameters, allowing
+   * the caller to identify Learning Object status and collection values.
    *
-   * @param {{
-   *     query: ParentLearningObjectQuery;
-   *     collection: string [Collection to query for parent objects from]
-   *   }} params
-   * @returns {Promise<LearningObject[]>}
+   * This function will aggregate both released and working copies of Learning Objects.
+   * In the case that there is both a released copy and a working copy, the released copy
+   * will be returned.
+   *
+   * @param {ParentLearningObjectQuery} query a collection of query parameters to filter the search by.
+   * @returns {Promise<LearningObject[]>} the set of parent Learning Objects found.
    * @memberof MongoDriver
    */
-  async fetchParentObjects(params: {
-    query: ParentLearningObjectQuery;
-    full?: boolean;
-    collection?: COLLECTIONS.RELEASED_LEARNING_OBJECTS;
-  }): Promise<LearningObject[]> {
-    const { query, full } = params;
-    const mongoQuery: { [index: string]: any } = { children: query.id };
+  async fetchParentObjects(
+    { query, full, collection = COLLECTIONS.LEARNING_OBJECTS }
+      : { query: ParentLearningObjectQuery, full: boolean, collection: COLLECTIONS },
+  ): Promise<LearningObject[]> {
+    const matchQuery: { [index: string]: any } = { children: query.id };
     if (query.status) {
-      mongoQuery.status = { $in: query.status };
+      matchQuery.status = { $in: query.status };
     }
-    let cursor: Cursor<LearningObjectDocument> = await this.db
-      .collection(COLLECTIONS.LEARNING_OBJECTS)
-      .find<LearningObjectDocument>(mongoQuery);
-    cursor = this.applyCursorFilters<LearningObjectDocument>(cursor, {
-      ...(query as Filters),
-    });
-    const parentDocs = await cursor.toArray();
-    const parents = await this.bulkGenerateLearningObjects(parentDocs, full);
-    return parents;
+    if (query.collections) {
+      matchQuery.collection = { $in: query.collections };
+    }
+
+    const parents = await this.db.collection(COLLECTIONS.LEARNING_OBJECTS)
+      .aggregate([
+        { $match: matchQuery },
+        {
+          $lookup: {
+            from: 'released-objects',
+            localField: '_id',
+            foreignField: '_id',
+            as: 'releasedCopy',
+          },
+        },
+        {
+          $project: {
+            returnable: {
+              $cond:
+              {
+                if: { $gt: [{ $size: '$releasedCopy' }, 0] },
+                then: { $arrayElemAt: ['$releasedCopy', 0] },
+                else: '$$ROOT',
+              },
+            },
+          },
+        },
+        { $replaceRoot: { newRoot: '$returnable' } },
+      ]).toArray();
+
+    return this.bulkGenerateLearningObjects(parents);
   }
 
   /**
@@ -1007,12 +1029,15 @@ export class MongoDriver implements DataStore {
    */
   async fetchReleasedParentObjects(params: {
     query: ParentLearningObjectQuery;
-    full?: boolean;
+    full: boolean;
   }): Promise<LearningObject[]> {
-    return this.fetchParentObjects({
-      ...params,
-      collection: COLLECTIONS.RELEASED_LEARNING_OBJECTS,
-    });
+    const { query, full } = params;
+    const mongoQuery = { children: query.id, status: 'released' };
+
+    const parentDocs = await this.db
+      .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
+      .find<LearningObjectDocument>(mongoQuery).toArray();
+    return await this.bulkGenerateLearningObjects(parentDocs, full);
   }
 
   ///////////////////////////////////////////////////////////////////
