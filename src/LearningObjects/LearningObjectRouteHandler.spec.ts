@@ -19,7 +19,7 @@ app.use(cookieParser());
 app.use(processToken, handleProcessTokenError);
 app.use(router);
 const request = supertest(app);
-const testObjectID = 'parent_object_1';
+const testObjectID = MOCK_OBJECTS.seedTestID;
 describe('LearningObjectRouteHandler', () => {
     let dataStore: MongoDriver;
     let fileManager: FileManager;
