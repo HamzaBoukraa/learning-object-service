@@ -208,6 +208,7 @@ export interface LearningObjectQuery extends ReleasedLearningObjectQuery {
 export interface ParentLearningObjectQuery extends Filters {
   id: string;
   status?: string[];
+  collections?: string[];
 }
 
 export interface QueryCondition {

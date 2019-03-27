@@ -39,7 +39,7 @@ import { accessGroups } from '../types/user-token';
 // file size is in bytes
 const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
 
-const LearningObjectState = {
+export const LearningObjectState = {
   UNRELEASED: [
     LearningObject.Status.REJECTED,
     LearningObject.Status.UNRELEASED,
@@ -643,71 +643,6 @@ export class LearningObjectInteractor {
   }
 
   /**
-   * Fetches Learning Object's parents
-   *
-   * @static
-   * @param {{
-   *     dataStore: DataStore;
-   *     query: ParentLearningObjectQuery;
-   *     userToken: UserToken;
-   *     full?: boolean;
-   *   }} params
-   * @returns {Promise<LearningObject[]>}
-   * @memberof LearningObjectInteractor
-   */
-  public static async fetchParents(params: {
-    dataStore: DataStore;
-    query: ParentLearningObjectQuery;
-    userToken: UserToken;
-    full?: boolean;
-    revision?: boolean;
-  }): Promise<LearningObject[]> {
-    try {
-      const { dataStore, query, userToken, full, revision } = params;
-      const status = await dataStore.fetchLearningObjectStatus(query.id);
-      if (status === LearningObject.Status.RELEASED && !revision) {
-        return await dataStore.fetchReleasedParentObjects({
-          query,
-          full,
-        });
-      } else if (userToken || revision) {
-        query.status = toArray(query.status);
-        const [collection, author] = await Promise.all([
-          dataStore.fetchLearningObjectCollection(query.id),
-          dataStore.fetchLearningObjectAuthorUsername(query.id),
-        ]);
-        const requesterIsAuthor = this.hasReadAccess({
-          userToken,
-          resourceVal: author,
-          authFunction: isAuthorByUsername,
-        }) as boolean;
-
-        const requesterIsPrivileged = this.hasReadAccess({
-          userToken,
-          resourceVal: collection,
-          authFunction: hasReadAccessByCollection,
-        }) as boolean;
-
-        if (requesterIsAuthor) {
-          query.status = LearningObjectState.ALL;
-        } else if (requesterIsPrivileged) {
-          query.status = LearningObjectState.IN_REVIEW;
-        } else {
-          return [];
-        }
-
-        return await params.dataStore.fetchParentObjects({
-          query,
-          full,
-        });
-      }
-      return [];
-    } catch (e) {
-      handleError(e);
-    }
-  }
-
-  /**
    * Uploads a file and adds its metadata to the LearningObject's materials.
    *
    * @static
@@ -1147,14 +1082,12 @@ export class LearningObjectInteractor {
           limit,
         });
       }
-
       const objects = await Promise.all(
         response.objects.map(async object => {
           try {
             object.metrics = await this.loadMetrics(library, object.id);
             return object;
           } catch (e) {
-            reportError(e);
             return object;
           }
         }),
@@ -1317,11 +1250,11 @@ export class LearningObjectInteractor {
     const { dataStore, children, username, parentName, userToken } = params;
 
     try {
-
-      const parentID = await dataStore.findLearningObject(
-      {authorId: username,
-      name: parentName},
-      );
+      const authorId = await dataStore.findUser(username);
+      const parentID = await dataStore.findLearningObject({
+        authorId,
+        name: parentName,
+      });
       const hasAccess = await hasLearningObjectWriteAccess(userToken, dataStore, parentID);
       if (hasAccess) {
         await dataStore.setChildren(parentID, children);
@@ -1365,10 +1298,11 @@ export class LearningObjectInteractor {
   }) {
     const { dataStore, childId, username, parentName, userToken } = params;
     try {
-      const parentID = await dataStore.findLearningObject(
-        {authorId: username,
-        name: parentName},
-      );
+      const authorId = await dataStore.findUser(username);
+      const parentID = await dataStore.findLearningObject({
+        authorId,
+        name: parentName,
+      });
       const hasAccess = await hasLearningObjectWriteAccess(userToken, dataStore, parentID);
       if (hasAccess) {
         await dataStore.deleteChild(parentID, childId);
@@ -1516,7 +1450,7 @@ export function sanitizeFileName(name: string): string {
  * @param {*} value
  * @returns {T[]}
  */
-function toArray<T>(value: any): T[] {
+export function toArray<T>(value: any): T[] {
   if (value == null || value === '') {
     return null;
   }
@@ -1630,11 +1564,11 @@ const isAuthorByUsername = (
  * @param {UserToken} userToken
  * @returns
  */
-const hasReadAccessByCollection = (
+export const hasReadAccessByCollection = (
   collectionName: string,
   userToken: UserToken,
 ) => {
-  if (!isPrivilegedUser(userToken.accessGroups)) return false;
+  if (!userToken || !isPrivilegedUser(userToken.accessGroups)) return false;
   return (
     isAdminOrEditor(userToken.accessGroups) ||
     getAccessGroupCollections(userToken).includes(collectionName)
@@ -1689,7 +1623,7 @@ const bypassNotFoundResourceError = ({
  * @param {Error} error
  * @returns {never}
  */
-function handleError(error: Error): never {
+export function handleError(error: Error): never {
   if (error instanceof ResourceError || error instanceof ServiceError) {
     throw error;
   }
