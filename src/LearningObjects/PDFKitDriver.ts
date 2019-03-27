@@ -89,8 +89,6 @@ export function generatePDF(
       gradientRGB,
       doc,
       title: PDFText.OUTCOMES_TITLE,
-      headerYStart: doc.y - 75,
-      textYStart: doc.y - 70 + 20,
     });
     appendOutcomes(doc, learningObject);
   }
