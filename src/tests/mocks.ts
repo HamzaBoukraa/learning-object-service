@@ -1,6 +1,6 @@
 import { LearningObject, User, LearningOutcome } from '../entity';
-import { UserToken } from '../types';
-import * as jwt from 'jsonwebtoken';
+import 'dotenv/config';
+
 export const MOCK_OBJECTS = {
   TOTAL_RECORDS: 1,
   USERNAME: 'cypress',
@@ -23,7 +23,7 @@ export const MOCK_OBJECTS = {
     learningObjects: <any>[],
   },
   LEARNING_OBJECT: {
-    author: 'author_bob',
+    author: 'mock_author_id',
     name: 'Input Validation - CS0 - JAVA',
     date: '1523479539862',
     length: 'nanomodule',
@@ -111,7 +111,7 @@ export const MOCK_OBJECTS = {
     accessGroups: ['admin', 'reviewer@nccp'],
   },
   USER_MOCK: {
-    _id: 'author_bob',
+    _id: 'mock_author_id',
     username: 'Bob',
     name: 'Uncle Bob',
     email: 'unitTest12@gmail.com',
@@ -225,20 +225,4 @@ export const INVALID_LEARNING_OBJECTS = {
     name: '',
   },
 };
-export function generateToken(user: UserToken) {
-  const payload = {
-    username: user.username,
-    name: user.name,
-    email: user.email,
-    organization: user.organization,
-    emailVerified: user.emailVerified,
-    accessGroups: user.accessGroups,
-  };
-  const options = {
-    issuer: 'THIS_IS_AN_ISSUER',
-    expiresIn: 86400,
-    audience: user.username,
-  };
-  const token = jwt.sign(payload, 'THIS_IS_A_KEY', options);
-  return token;
-}
+export const seedTestID = 'parent_object_1';

@@ -1,5 +1,4 @@
 import * as Learningobjectstatsroute from './LearningObjectStatsRouteHandler';
-import {} from './LearningObjectStatsInteractor';
 import * as supertest from 'supertest';
 import * as express from 'express';
 import * as bodyParser from 'body-parser';

@@ -5,7 +5,7 @@ let db;
 
 const LEARNING_OBJECT_MOCK = { 
     _id: "parent_object_1",
-    authorID: "author_bob",
+    authorID: "mock_author_id",
     date:"1520530093085",
     goals:[
     {
@@ -56,7 +56,7 @@ const LEARNING_OBJECT_MOCK = {
     status:"released"
 }
 LEARNING_OBJECT_CHILD = {
-    authorID: 'author_bob',
+    authorID: 'mock_author_id',
     name: 'Input Validation - CS0 - C',
     date: '1523479539862',
     length: 'nanomodule',
@@ -97,7 +97,7 @@ LEARNING_OBJECT_CHILD = {
   }
 
 const USER_MOCK = { 
-    _id: "author_bob",
+    _id: "mock_author_id",
     username: "Bob",
     name: "Uncle Bob",
     email: "unitTest12@gmail.com",
