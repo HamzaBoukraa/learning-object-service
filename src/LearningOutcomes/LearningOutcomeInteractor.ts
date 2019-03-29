@@ -42,9 +42,9 @@ export async function addLearningOutcome(params: {
   outcomeInput: Partial<LearningOutcome>;
 }): Promise<string> {
   try {
-    //FIXME: add authorization
-    const {dataStore, user, source,outcomeInput} = params;
-    const outcome = new LearningOutcome(outcomeInput)
+    // FIXME: add authorization
+    const {dataStore, user, source, outcomeInput} = params;
+    const outcome = new LearningOutcome(outcomeInput);
     return await dataStore.insertLearningOutcome({
       outcome: outcome.toPlainObject(),
       source,

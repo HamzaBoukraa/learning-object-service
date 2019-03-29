@@ -49,6 +49,7 @@ describe('MongoDriver', () => {
       const result = await driver.checkLearningObjectExistence(
         learningObjectId,
       );
+      console.log(result);
       expect(result.length).toBe(1);
     });
   });

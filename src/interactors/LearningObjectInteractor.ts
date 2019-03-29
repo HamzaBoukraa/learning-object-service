@@ -95,6 +95,7 @@ export class LearningObjectInteractor {
     } = params;
     try {
       let summary: LearningObject[] = [];
+// tslint:disable-next-line: no-shadowed-variable
       const { dataStore, library, username, loadChildren, query } = params;
 
       const formattedQuery = this.formatSearchQuery(query);

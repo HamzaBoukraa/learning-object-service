@@ -54,7 +54,6 @@ describe('LearningObjectRouteHandler', () => {
         it('should return a status of 500 and an Error message', done => {
             request
                 .get(`/learning-objects/${testObjectID}123`)
-
                 .expect(500)
                 .then(res => {
                     expect(res).toBeDefined();
@@ -66,7 +65,6 @@ describe('LearningObjectRouteHandler', () => {
         it('should return the materials for the specified learning object', done => {
             request
                 .get(`/learning-objects/${testObjectID}/materials/all`)
-
                 .expect(200)
                 .then(res => {
                     expect(res.text).toContain('url');
@@ -93,7 +91,6 @@ describe('LearningObjectRouteHandler', () => {
             request
                 .get(`/learning-objects/${testObjectID}/children/summary`)
                 .expect(200)
-
                 .then(res => {
                     expect(res.text).toContain('author');
                     done();

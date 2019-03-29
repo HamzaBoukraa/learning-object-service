@@ -1,6 +1,6 @@
 import * as express from 'express';
 import * as bodyParser from 'body-parser';
-import { MongoDriver } from '../drivers/MongoDriver'
+import { MongoDriver } from '../drivers/MongoDriver';
 import * as supertest from 'supertest';
 import * as LearningOutcomeRouteHandler from './LearningOutcomeRouteHandler';
 import { LearningOutcome } from '../entity';
@@ -12,15 +12,15 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(router);
 let dataStore: LearningOutcomeDatastore;
-let driver: MongoDriver
+let driver: MongoDriver;
 const request = supertest(app);
 
 describe('LearningOutcomeRouteHandler', () => {
   beforeAll(async () => {
     driver = await MongoDriver.build(global['__MONGO_URI__']);
-    dataStore = driver.learningOutcomeStore
+    dataStore = driver.learningOutcomeStore;
     LearningOutcomeRouteHandler.initialize({ router, dataStore });
-  })
+  });
   describe('POST /learning-objects/:id/learning-outcomes', () => {
     it('should return a status of 200 and the id of the inserted outcome', done => {
       request
