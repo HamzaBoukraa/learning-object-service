@@ -1,5 +1,7 @@
 import { LearningObject, User, LearningOutcome } from '../entity';
 import 'dotenv/config';
+//@ts-ignore
+import * as SEED_DATA from '../../test_environment/sharedIds';
 
 export const MOCK_OBJECTS = {
   TOTAL_RECORDS: 1,
@@ -110,7 +112,7 @@ export const MOCK_OBJECTS = {
     emailVerified: true,
     accessGroups: ['admin', 'reviewer@nccp'],
   },
-  USER_MOCK: {
+  AUTHOR_MOCK: {
     _id: 'mock_author_id',
     username: 'Bob',
     name: 'Uncle Bob',
@@ -122,7 +124,7 @@ export const MOCK_OBJECTS = {
     bio: 'random text random text random text random text random text random text random text random text random text random text',
     createdAt: '1534558693394',
   },
-  DUPLICATE_USER_MOCK: {
+  DUPLICATE_AUTHOR_MOCK: {
     username: 'unittest',
     name: 'Uncle Bob',
     email: 'unitTest13@gmail.com',
@@ -204,7 +206,7 @@ export const MOCK_OBJECTS = {
   OUTCOME: new LearningOutcome({ id: '123' }),
   USER_ID: '5a9583401405cb053272ced1',
   CHANGELOG_TEXT: 'Hello',
-
+  MONGO_IDS: SEED_DATA,
   seedTestID: 'parent_object_1',
 };
 

@@ -5,6 +5,7 @@ import * as supertest from 'supertest';
 import * as LearningOutcomeRouteHandler from './LearningOutcomeRouteHandler';
 import { LearningOutcome } from '../entity';
 import { LearningOutcomeDatastore } from './LearningOutcomeInteractor';
+import {MOCK_OBJECTS} from '../tests/mocks';
 
 const app = express();
 const router = express.Router();
@@ -51,7 +52,7 @@ describe('LearningOutcomeRouteHandler', () => {
     it('should return a response body that can be converted to a valid Learning Outcome', done => {
       request
         .get(
-          '/learning-objects/someObjectId/learning-outcomes/5af72b914803270dfc9aeae4',
+          `/learning-objects/someObjectId/learning-outcomes/${MOCK_OBJECTS.MONGO_IDS.OUTCOME.EXPLAIN}`,
         )
         .expect('Content-Type', /json/)
         .expect(200)
@@ -68,7 +69,7 @@ describe('LearningOutcomeRouteHandler', () => {
     it('should return a status of 200 and a Learning Outcome', done => {
       request
         .patch(
-          '/learning-objects/someObjectId/learning-outcomes/5af72b914803270dfc9aeae4',
+          `/learning-objects/someObjectId/learning-outcomes/${MOCK_OBJECTS.MONGO_IDS.OUTCOME.EXPLAIN}`,
         )
         .send({ outcome: { bloom: 'remember and understand', verb: 'remember' } })
         .expect('Content-Type', /json/)
