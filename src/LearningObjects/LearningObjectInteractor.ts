@@ -81,7 +81,9 @@ export async function addLearningObjectFile({
       ],
       mustProvide: ['name', 'fileType', 'url', 'date', 'size'],
     });
-    const loFile: LearningObject.Material.File = null;
+    const loFile: LearningObject.Material.File = generateLearningObjectFile(
+      fileMeta,
+    );
     const loFileId = await dataStore.addToFiles({
       loFile,
       id: learningObjectId,
@@ -91,6 +93,48 @@ export async function addLearningObjectFile({
   } catch (e) {
     handleError(e);
   }
+}
+
+/**
+ * Generates new LearningObject.Material.File Object
+ *
+ * @private
+ * @param {FileMeta} file
+ * @param {string} url
+ * @returns
+ */
+function generateLearningObjectFile(
+  file: FileMeta,
+): LearningObject.Material.File {
+  const learningObjectFile: Partial<LearningObject.Material.File> = {
+    url: file.url,
+    date: file.date,
+    name: file.name,
+    fileType: file.fileType,
+    extension: file.extension,
+    fullPath: file.fullPath,
+    size: +file.size,
+    packageable: isPackageable(+file.size),
+  };
+
+  // Sanitize object. Remove undefined or null values
+  const keys = Object.keys(learningObjectFile);
+  for (const key of keys) {
+    const prop = learningObjectFile[key];
+    if (!prop && prop !== 0) {
+      delete learningObjectFile[key];
+    }
+  }
+
+  return learningObjectFile as LearningObject.Material.File;
+}
+
+// 100 MB in bytes; File size is in bytes
+const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
+function isPackageable(size: number) {
+  // if dztotalfilesize doesn't exist it must not be a chunk upload.
+  // this means by default it must be a packageable file size
+  return !(size > MAX_PACKAGEABLE_FILE_SIZE);
 }
 
 /**
