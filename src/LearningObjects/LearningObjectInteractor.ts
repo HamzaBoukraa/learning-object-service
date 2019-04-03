@@ -14,6 +14,13 @@ import {
 } from '../interactors/AuthorizationManager';
 import { reportError } from '../drivers/SentryConnector';
 import { LearningObject } from '../entity';
+import { handleError } from '../interactors/LearningObjectInteractor';
+import {
+  authorizeRequest,
+  requesterIsAuthor,
+  requesterIsAdminOrEditor,
+} from './AuthorizationManager';
+import { FileMeta } from './typings';
 
 const LearningObjectState = {
   UNRELEASED: [
@@ -35,6 +42,94 @@ const LearningObjectState = {
     LearningObject.Status.RELEASED,
   ],
 };
+
+/**
+ * Adds or updates Learning Object file metadata
+ * *** Only the author of Learning Object, admins, and editors are allowed to add file metadata to a Learning Object ***
+ * @export
+ * @param {DataStore} dataStore [Driver for datastore]
+ * @param {UserToken} requester [Object containing information about the requester]
+ * @param {string} authorUsername [Learning Object's author's username]
+ * @param {string} learningObjectId [Id of the Learning Object to add the file metadata to]
+ * @param {FileMeta} fileMeta [Object containing metadata about the file]
+ * @returns {Promise<string>} [Id of the file metadata]
+ */
+export async function addLearningObjectFile({
+  dataStore,
+  requester,
+  authorUsername,
+  learningObjectId,
+  fileMeta,
+}: {
+  dataStore: DataStore;
+  requester: UserToken;
+  authorUsername: string;
+  learningObjectId: string;
+  fileMeta: FileMeta;
+}): Promise<string> {
+  try {
+    const isAuthor = requesterIsAuthor({ authorUsername, requester });
+    const isAdminOrEditor = requesterIsAdminOrEditor(requester);
+    authorizeRequest([isAuthor, isAdminOrEditor]);
+    validateRequestParams({
+      params: [
+        fileMeta.name,
+        fileMeta.fileType,
+        fileMeta.url,
+        fileMeta.date,
+        fileMeta.size,
+      ],
+      mustProvide: ['name', 'fileType', 'url', 'date', 'size'],
+    });
+    const loFile: LearningObject.Material.File = null;
+    const loFileId = await dataStore.addToFiles({
+      loFile,
+      id: learningObjectId,
+    });
+    updateObjectLastModifiedDate({ dataStore, id: learningObjectId });
+    return loFileId;
+  } catch (e) {
+    handleError(e);
+  }
+}
+
+/**
+ * Validates all required values are provided for request
+ *
+ * @param {any[]} params
+ * @param {string[]} [mustProvide]
+ * @returns {(void | never)}
+ */
+function validateRequestParams({
+  params,
+  mustProvide,
+}: {
+  params: any[];
+  mustProvide?: string[];
+}): void | never {
+  const values = [...params].map(val => {
+    if (typeof val === 'string') {
+      val = val.trim();
+    }
+    return val;
+  });
+  if (
+    values.includes(null) ||
+    values.includes('null') ||
+    values.includes(undefined) ||
+    values.includes('undefined') ||
+    values.includes('')
+  ) {
+    const multipleParams = mustProvide.length > 1;
+    let message = 'Invalid parameters provided';
+    if (Array.isArray(mustProvide)) {
+      message = `Must provide ${multipleParams ? '' : 'a'} valid value${
+        multipleParams ? 's' : ''
+      } for ${mustProvide}`;
+    }
+    throw new ResourceError(message, ResourceErrorReason.BAD_REQUEST);
+  }
+}
 
 /**
  * Performs update operation on learning object's date
@@ -242,7 +337,7 @@ async function releaseLearningObject({
   const releasableObject = new LearningObject({
     ...object.toPlainObject(),
     children,
-    });
+  });
   return dataStore.addToReleased(releasableObject);
 }
 
@@ -284,7 +379,7 @@ export async function getLearningObjectChildrenById(
   const childrenOrder = await dataStore.loadChildObjects({
     id: objectId,
     full: true,
-    status: LearningObjectState.ALL
+    status: LearningObjectState.ALL,
   });
   //array to return the children in correct order
   const children: LearningObject[] = [];
