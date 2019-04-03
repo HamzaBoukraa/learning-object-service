@@ -161,7 +161,7 @@ export function initializePrivate({
         dataStore,
         id,
       );
-      res.status(200).json(children);
+      res.status(200).json(children.map(c => c.toPlainObject()));
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
       res.status(code).json({ message });

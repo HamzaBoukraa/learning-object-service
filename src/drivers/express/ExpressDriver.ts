@@ -14,13 +14,12 @@ import * as http from 'http';
 import * as logger from 'morgan';
 import * as cors from 'cors';
 import * as cookieParser from 'cookie-parser';
-import * as raven from 'raven';
 import {
   enforceAuthenticatedAccess,
   processToken,
   handleProcessTokenError,
 } from '../../middleware';
-import { reportError } from '../SentryConnector';
+import { sentryRequestHandler, sentryErrorHandler } from '../SentryConnector';
 
 export class ExpressDriver {
   static app = express();
@@ -30,10 +29,10 @@ export class ExpressDriver {
     fileManager: FileManager,
     library: LibraryCommunicator,
   ) {
-    raven.config(process.env.SENTRY_DSN).install();
 
-    this.app.use(raven.requestHandler());
-    this.app.use(raven.errorHandler());
+   // These sentry handlers must come first
+    this.app.use(sentryRequestHandler);
+    this.app.use(sentryErrorHandler);
     // configure app to use bodyParser()
     this.app.use(
       bodyParser.urlencoded({
