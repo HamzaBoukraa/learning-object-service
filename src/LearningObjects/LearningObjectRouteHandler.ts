@@ -5,6 +5,7 @@ import { FileManager, LibraryCommunicator } from '../interfaces/interfaces';
 import { UserToken } from '../types';
 import * as LearningObjectInteractor from './LearningObjectInteractor';
 import { LearningObject } from '../entity';
+import { FileMeta } from './typings';
 
 /**
  * Initializes an express router with endpoints for public Retrieving
@@ -88,7 +89,8 @@ export function initializePrivate({
       if (
         object &&
         object.name &&
-        e.message === `A learning object with name '${object.name}' already exists.`
+        e.message ===
+          `A learning object with name '${object.name}' already exists.`
       ) {
         status = 409;
       }
@@ -125,7 +127,7 @@ export function initializePrivate({
       res.sendStatus(200);
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
-      res.status(code).json({message});
+      res.status(code).json({ message });
     }
   };
   const deleteLearningObject = async (req: Request, res: Response) => {
@@ -162,7 +164,28 @@ export function initializePrivate({
       res.status(200).json(children.map(c => c.toPlainObject()));
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
-      res.status(code).json({message});
+      res.status(code).json({ message });
+    }
+  };
+
+  const addFileMeta = async (req: Request, res: Response) => {
+    try {
+      const requester: UserToken = req.user;
+      const authorUsername: string = req.params.username;
+      const learningObjectId: string = req.params.learningObjectId;
+      const fileMeta: FileMeta = req.body.fileMeta;
+
+      const fileMetaId = await LearningObjectInteractor.addLearningObjectFile({
+        dataStore,
+        requester,
+        authorUsername,
+        learningObjectId,
+        fileMeta,
+      });
+      res.status(200).send(fileMetaId);
+    } catch (e) {
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({ message });
     }
   };
 
@@ -173,5 +196,9 @@ export function initializePrivate({
   router.get(
     '/learning-objects/:id/children/summary',
     getLearningObjectChildren,
+  );
+  router.post(
+    '/users/:username/learning-objects/:learningObjectId/materials/files',
+    addFileMeta,
   );
 }
