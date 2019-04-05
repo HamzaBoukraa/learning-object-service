@@ -62,7 +62,7 @@
     "jest": "^24.5.0",
     "mongodb-memory-server": "^2.7.4",
     "supertest": "^3.3.0",
-    "ts-jest": "^24.0.0",
+    "ts-jest": "^24.0.2",
     "tslint": "^5.8.0",
     "typescript": "^2.5.3"
   },
