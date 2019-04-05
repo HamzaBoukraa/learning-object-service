@@ -1,6 +1,6 @@
 import { LearningObject, User, LearningOutcome } from '../entity';
 import 'dotenv/config';
-//@ts-ignore
+// @ts-ignore
 import * as SEED_DATA from '../../test_environment/sharedIds';
 
 export const MOCK_OBJECTS = {
