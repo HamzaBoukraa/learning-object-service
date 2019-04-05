@@ -149,7 +149,7 @@ export interface DataStore
   addToFiles(params: {
     id: string;
     loFile: LearningObject.Material.File;
-  }): Promise<void>;
+  }): Promise<string>;
   removeFromFiles(params: { objectId: string; fileId: string }): Promise<void>;
   updateFileDescription(params: {
     learningObjectId: string;

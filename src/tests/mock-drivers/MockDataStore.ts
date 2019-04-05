@@ -323,8 +323,8 @@ export class MockDataStore implements DataStore {
   addToFiles(params: {
     id: string;
     loFile: LearningObject.Material.File;
-  }): Promise<void> {
-    return Promise.resolve();
+  }): Promise<string> {
+    return Promise.resolve('');
   }
 
   insertMultipartUploadStatus(params: {
