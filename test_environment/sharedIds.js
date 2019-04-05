@@ -2,7 +2,7 @@
 const IDS = {
     PARENT: {
         released_1: 'parent_object_1',
-        unreleased_1 : 'unreleased_object_1',
+        Proofing_1 : 'proofing_object_1',
         waiting_1 : 'waiting_object_1'
     },
     CHILD: {

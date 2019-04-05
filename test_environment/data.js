@@ -43,7 +43,7 @@ const SEED_OBJECTS = {
             url:"https://neutrino-file-uploads.s3.us-east-2.amazonaws.com/skaza/5aa0013becba9a264dcd8030/0ReadMeFirst%20-%20Buffer%20Overflow%20-%20CS0%20-%20C%2B%2B.pdf"
         }
     },
-    children: [IDS.CHILD.released_1],
+    children: [IDS.CHILD.released_1, IDS.CHILD.waiting_1],
     levels:["undergraduate"],
     contributors:[],
     collection:"secinj",
@@ -92,8 +92,8 @@ const SEED_OBJECTS = {
     children: [IDS.CHILD.waiting_1],
     contributors: [],
     collection: 'nccp',
-    _id: IDS.PARENT.unreleased_1,
-    status: 'unreleased',
+    _id: IDS.PARENT.Proofing_1,
+    status: 'proofing',
   },
   LEARNING_OBJECT_WAITING : {
     authorID: IDS.AUTHOR.Bob,
@@ -229,8 +229,6 @@ AUTHOR_MOCK : {
     bio: "random text random text random text random text random text random text random text random text random text random text",
     createdAt:"1534558693394",
     emailVerified: true,
-    accessGroups: ['admin','reviewer@nccp']
-    
 },
 ADMIN_MOCK : { 
     _id: IDS.PRIVILEGED_USER.admin,
@@ -274,7 +272,7 @@ EDITOR_MOCK : {
     bio: "random text random text random text random text random text random text random text random text random text random text",
     createdAt:"1534558693394",
     emailVerified: true,
-    accessGroups: ['curator@nccp']
+    accessGroups: ['editor']
 },
 
 REVIEWER_MOCK : { 
