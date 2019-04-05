@@ -1,5 +1,5 @@
 import { MongoDriver } from '../drivers/MongoDriver';
-import { MOCK_OBJECTS} from '../tests/mocks';
+import { MOCK_OBJECTS, SEED_DB_IDS} from '../tests/mocks';
 import { generateToken } from '../tests/mock-token-manager';
 import * as LearningObjectRouteHandler from './LearningObjectRouteHandler';
 import * as express from 'express';
@@ -19,7 +19,7 @@ app.use(cookieParser());
 app.use(processToken, handleProcessTokenError);
 app.use(router);
 const request = supertest(app);
-const testObjectID = MOCK_OBJECTS.seedTestID;
+const testObjectID = SEED_DB_IDS.PARENT.released_1;
 describe('LearningObjectRouteHandler', () => {
     let dataStore: MongoDriver;
     let fileManager: FileManager;

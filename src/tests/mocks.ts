@@ -206,7 +206,6 @@ export const MOCK_OBJECTS = {
   OUTCOME: new LearningOutcome({ id: '123' }),
   USER_ID: '5a9583401405cb053272ced1',
   CHANGELOG_TEXT: 'Hello',
-  MONGO_IDS: SEED_DATA,
   seedTestID: 'parent_object_1',
 };
 
@@ -228,5 +227,9 @@ export const INVALID_LEARNING_OBJECTS = {
     id: 'no_name_id',
     name: '',
   },
+};
+
+export const SEED_DB_IDS = {
+  ...SEED_DATA,
 };
 
