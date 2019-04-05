@@ -2,7 +2,7 @@ import { DataStore } from '../interfaces/DataStore';
 import { hasLearningObjectWriteAccess } from '../interactors/AuthorizationManager';
 import { UserToken } from '../types';
 import { ResourceError, ResourceErrorReason } from '../errors';
-import { ChangeLogDocument } from '../types/Changelog';
+import { ChangeLogDocument } from '../types/changelog';
 
 /**
  * Instruct the data store to create a new log in the change logs collection
@@ -15,22 +15,39 @@ import { ChangeLogDocument } from '../types/Changelog';
  * @returns {void}
  */
 export async function createChangelog(params: {
-  dataStore: DataStore,
-  learningObjectId: string,
-  user: UserToken,
-  changelogText: string,
+  dataStore: DataStore;
+  learningObjectId: string;
+  user: UserToken;
+  changelogText: string;
 }): Promise<void> {
-  const hasAccess = hasLearningObjectWriteAccess(params.user, params.dataStore, params.learningObjectId);
+  const hasAccess = hasLearningObjectWriteAccess(
+    params.user,
+    params.dataStore,
+    params.learningObjectId,
+  );
   if (hasAccess) {
     const authorID = await params.dataStore.findUser(params.user.username);
-    const objectId = await params.dataStore.checkLearningObjectExistence(params.learningObjectId);
+    const objectId = await params.dataStore.checkLearningObjectExistence(
+      params.learningObjectId,
+    );
     if (objectId && objectId.length > 0) {
-      await params.dataStore.createChangelog(params.learningObjectId, authorID, params.changelogText);
+      await params.dataStore.createChangelog(
+        params.learningObjectId,
+        authorID,
+        params.changelogText,
+      );
     } else {
-      return Promise.reject(new ResourceError('Learning Object not found.', ResourceErrorReason.NOT_FOUND));
+      return Promise.reject(
+        new ResourceError(
+          'Learning Object not found.',
+          ResourceErrorReason.NOT_FOUND,
+        ),
+      );
     }
   } else {
-    return Promise.reject(new ResourceError('Invalid Access', ResourceErrorReason.INVALID_ACCESS));
+    return Promise.reject(
+      new ResourceError('Invalid Access', ResourceErrorReason.INVALID_ACCESS),
+    );
   }
 }
 
