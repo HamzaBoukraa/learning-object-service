@@ -18,19 +18,32 @@ export async function createChangelog(params: {
   dataStore: DataStore,
   learningObjectId: string,
   user: UserToken,
+  userId: string,
   changelogText: string,
 }): Promise<void> {
   const hasAccess = hasLearningObjectWriteAccess(params.user, params.dataStore, params.learningObjectId);
   if (hasAccess) {
-    const authorID = await params.dataStore.findUser(params.user.username);
-    const objectId = await params.dataStore.checkLearningObjectExistence(params.learningObjectId);
-    if (objectId && objectId.length > 0) {
-      await params.dataStore.createChangelog(params.learningObjectId, authorID, params.changelogText);
+    const objectId = await params.dataStore.checkLearningObjectExistence(
+      params.learningObjectId,
+      params.userId,
+    );
+    if (objectId) {
+      await params.dataStore.createChangelog(
+        params.learningObjectId,
+        params.userId,
+        params.changelogText,
+      );
     } else {
-      return Promise.reject(new ResourceError('Learning Object not found.', ResourceErrorReason.NOT_FOUND));
+      throw new ResourceError(
+        `Learning Object ${params.learningObjectId} not found ${params.userId}.`,
+        ResourceErrorReason.NOT_FOUND,
+      );
     }
   } else {
-    return Promise.reject(new ResourceError('Invalid Access', ResourceErrorReason.INVALID_ACCESS));
+    throw new ResourceError(
+      'Invalid Access',
+      ResourceErrorReason.INVALID_ACCESS,
+    );
   }
 }
 
@@ -42,11 +55,30 @@ export async function createChangelog(params: {
  *
  * @returns {ChangeLogDocument}
  */
-export async function getRecentChangelog(
+export async function getRecentChangelog(params: {
   dataStore: DataStore,
   learningObjectId: string,
-): Promise<ChangeLogDocument> {
-  return await dataStore.fetchRecentChangelog(learningObjectId);
+  userId: string,
+  user: UserToken,
+}): Promise<ChangeLogDocument> {
+  if (hasLearningObjectWriteAccess(params.user, params.dataStore, params.learningObjectId)) {
+    const changelog = await params.dataStore.fetchRecentChangelog(
+      params.userId,
+      params.learningObjectId
+    );
+    if (changelog) {
+      return changelog;
+    }
+    throw new ResourceError(
+      `Learning Object ${params.learningObjectId} not found for user ${params.userId}`,
+      ResourceErrorReason.NOT_FOUND,
+    );
+  } else {
+    throw new ResourceError(
+      'Invalid Access',
+      ResourceErrorReason.INVALID_ACCESS,
+    );
+  }
 }
 
 /**
@@ -57,9 +89,28 @@ export async function getRecentChangelog(
  *
  * @returns {ChangeLogDocument[]}
  */
-export async function getAllChangelogs(
+export async function getAllChangelogs(params: {
   dataStore: DataStore,
   learningObjectId: string,
-): Promise<ChangeLogDocument[]> {
-  return await dataStore.fetchAllChangelogs(learningObjectId);
+  userId: string,
+}): Promise<ChangeLogDocument[]> {
+  if (hasLearningObjectWriteAccess(params.user, params.dataStore, params.learningObjectId)) {
+    const changelogs = await params.dataStore.fetchAllChangelogs(
+      params.learningObjectId,
+      params.userId,
+    );
+    if (changelogs) {
+      return changelogs;
+    }
+    throw new ResourceError(
+      `Learning Object ${params.learningObjectId} not found for user ${params.userId}`,
+      ResourceErrorReason.NOT_FOUND,
+    );
+  } else {
+    throw new ResourceError(
+      'Invalid Access',
+      ResourceErrorReason.INVALID_ACCESS,
+    );
+  }
+
 }
