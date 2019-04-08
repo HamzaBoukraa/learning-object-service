@@ -40,11 +40,26 @@ export async function createChangelog(params: {
  * @param {DataStore} dataStore An instance of DataStore
  * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
  *
- * @returns {void}
+ * @returns {ChangeLogDocument}
  */
 export async function getRecentChangelog(
   dataStore: DataStore,
   learningObjectId: string,
 ): Promise<ChangeLogDocument> {
   return await dataStore.fetchRecentChangelog(learningObjectId);
+}
+
+/**
+ * Fetches all change logs for a specific learning object from the data store .
+ *
+ * @param {DataStore} dataStore An instance of DataStore
+ * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
+ *
+ * @returns {ChangeLogDocument[]}
+ */
+export async function getAllChangelogs(
+  dataStore: DataStore,
+  learningObjectId: string,
+): Promise<ChangeLogDocument[]> {
+  return await dataStore.fetchAllChangelogs(learningObjectId);
 }

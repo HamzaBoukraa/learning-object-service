@@ -70,6 +70,16 @@ export class ChangelogDataStore {
     }
   }
 
+  async fetchAllChangelogs(learningObjectId: string): Promise<ChangeLogDocument[]> {
+    const changelogs = await this.db
+      .collection(COLLECTIONS.CHANGLOG)
+      .find({
+        learningObjectId,
+      })
+      .toArray();
+    return changelogs;
+  }
+
   /**
    * Removes an entire document from the changelogs collection. This function is only triggered when its
    * corresponding learning object is deleted.

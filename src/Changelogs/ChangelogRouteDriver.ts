@@ -35,8 +35,8 @@ export function initialize({
   }
 
   const getRecentChangelog = async (req: Request, res: Response) => {
-    const learningObjectId = req.params.learningObjectId;
     try {
+      const learningObjectId = req.params.learningObjectId;
       const changelog = await ChangelogInteractor.getRecentChangelog(
         dataStore,
         learningObjectId,
@@ -48,6 +48,21 @@ export function initialize({
     }
   };
 
+  const getAllChangelogs = async (req: Request, res: Response) => {
+    try {
+      const learningObjectId = req.params.learningObjectId;
+      const changelogs = await ChangelogInteractor.getAllChangelogs(
+        dataStore,
+        learningObjectId,
+      );
+      res.status(200).json(changelogs);
+    } catch (e) {
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({message});
+    }
+  };
+
   router.post('/learning-objects/:learningObjectId/changelog', createLog);
+  router.get('/learning-objects/:learningObjectId/changelogs', getAllChangelogs);
   router.get('/learning-objects/:learningObjectId/changelog/:changelogId', getRecentChangelog);
 }

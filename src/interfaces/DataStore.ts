@@ -33,6 +33,9 @@ export interface DataStore
     userId: string,
     changelogText: string,
   ): Promise<void>;
+  fetchAllChangelogs(
+    learningObjectId: string,
+  ): Promise<ChangeLogDocument[]>;
   /*
    * READ Operations
    */

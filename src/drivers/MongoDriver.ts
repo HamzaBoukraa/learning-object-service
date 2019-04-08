@@ -728,6 +728,10 @@ export class MongoDriver implements DataStore {
     return this.changelogStore.deleteChangelog(learningObjectId);
   }
 
+  async fetchAllChangelogs(learningObjectId: string): Promise<ChangeLogDocument[]> {
+    return await this.changelogStore.fetchAllChangelogs(learningObjectId);
+  }
+
   /**
    * Updates or inserts LearningObjectFile into learning object's files array
    *
