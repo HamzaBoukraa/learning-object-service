@@ -29,6 +29,7 @@ import {
 } from '../../entity';
 
 export class MockDataStore implements DataStore {
+
   connect(file: string): Promise<void> {
     return Promise.resolve();
   }
@@ -89,12 +90,23 @@ export class MockDataStore implements DataStore {
   fetchLearningObjectCollection(id: string): Promise<string> {
     return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT.collection);
   }
-  checkLearningObjectExistence(learningObjectId: string): Promise<string[]> {
-    return Promise.resolve([MOCK_OBJECTS.LEARNING_OBJECT_ID]);
+  checkLearningObjectExistence(params: {
+    learningObjectId: string,
+    userId: string,
+  }): Promise<any> {
+    return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT);
   }
 
-  deleteChangelog(learningObjectId: String): Promise<void> {
+  deleteChangelog(params: {
+    learningObjectId: string,
+  }): Promise<void> {
     return Promise.resolve();
+  }
+
+  fetchAllChangelogs(params: {
+    learningObjectId: string,
+  }): Promise<ChangeLogDocument[]> {
+    return Promise.resolve([MOCK_OBJECTS.CHANGELOG]);
   }
 
   searchAllObjects(
@@ -240,15 +252,17 @@ export class MockDataStore implements DataStore {
   }): Promise<any[]> {
     return Promise.resolve([MOCK_OBJECTS.LEARNING_OBJECT]);
   }
-  createChangelog(
+  createChangelog(params: {
     learningObjectId: string,
     userId: string,
     changelogText: string,
-  ): Promise<void> {
+  }): Promise<void> {
     return Promise.resolve();
   }
 
-  fetchRecentChangelog(learningObjectId: string): Promise<ChangeLogDocument> {
+  fetchRecentChangelog(params: {
+    learningObjectId: string,
+  }): Promise<ChangeLogDocument> {
     return Promise.resolve(MOCK_OBJECTS.CHANGELOG);
   }
 

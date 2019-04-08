@@ -10,7 +10,9 @@ describe('MongoDriver', () => {
   describe('getRecentChangelog', () => {
     it('The function should return the last element of the logs array', async () => {
       const learningObjectId = 'default_id';
-      return expect(driver.fetchRecentChangelog(learningObjectId))
+      return expect(driver.fetchRecentChangelog({
+        learningObjectId,
+      }))
         .resolves.toEqual({
           _id: '5c3e2cab7da238008fcd771c',
           learningObjectId: 'default_id',
@@ -28,7 +30,9 @@ describe('MongoDriver', () => {
   describe('deleteChangelog', () => {
     it('The function should return void', async () => {
         const learningObjectId = 'default_id';
-        return expect(driver.deleteChangelog(learningObjectId))
+        return expect(driver.deleteChangelog({
+          learningObjectId,
+        }))
             .resolves.toBe(undefined);
     });
   });
