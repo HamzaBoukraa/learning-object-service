@@ -63,10 +63,10 @@ export function initialize({
   };
 
   router.post('/users/:userId/learning-objects/:learningObjectId/changelog', createLog);
-  router.get('/users/:userId/learning-objects/:learningObjectId/changelogs/', getAllChangelogs);
+  router.get('/users/:userId/learning-objects/:learningObjectId/changelogs', getAllChangelogs);
   router.get('/users/:userId/learning-objects/:learningObjectId/changelog', getRecentChangelog);
 
   // Legacy routes
   router.post('/learning-objects/:learningObjectId/changelog', createLog);
-  router.get('/learning-objects/:learningObjectId/changelog', getRecentChangelog);
+  router.get('/learning-objects/:learningObjectId/changelog/:changelogId', getRecentChangelog);
 }
