@@ -2059,16 +2059,16 @@ export class MongoDriver implements DataStore {
     }
   }
 
-  async createChangelog(
+  async createChangelog(params: {
     learningObjectId: string,
     userId: string,
     changelogText: string,
-  ): Promise<void> {
-    return this.changelogStore.createChangelog(
-      learningObjectId,
-      userId,
-      changelogText,
-    );
+  }): Promise<void> {
+    return this.changelogStore.createChangelog({
+      learningObjectId: params.learningObjectId,
+      userId: params.userId,
+      changelogText: params.changelogText,
+    });
   }
 
   ////////////////////////////////////////////////

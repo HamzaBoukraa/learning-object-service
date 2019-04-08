@@ -40,9 +40,9 @@ describe('MongoDriver', () => {
   describe('createChangelog', () => {
     it('The function should return void', async () => {
         const learningObjectId = '5ad8f5a6824dd17351adf1e1';
-        const userID = '12356';
-        const text = 'hello world';
-        return expect(driver.createChangelog(learningObjectId, userID, text))
+        const userId = '12356';
+        const changelogText = 'hello world';
+        return expect(driver.createChangelog({learningObjectId, userId, changelogText}))
            .resolves.toBe(undefined);
     });
   });
