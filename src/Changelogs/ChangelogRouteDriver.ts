@@ -43,12 +43,14 @@ export function initialize({
 
   const getRecentChangelog = async (req: Request, res: Response) => {
     try {
+      const user = req.user;
       const userId = req.params.userId;
       const learningObjectId = req.params.learningObjectId;
       const changelog = await ChangelogInteractor.getRecentChangelog({
         dataStore,
         learningObjectId,
         userId,
+        user,
       });
       res.status(200).send(changelog);
     } catch (e) {
@@ -66,7 +68,7 @@ export function initialize({
         dataStore,
         learningObjectId,
         userId,
-        user
+        user,
       });
       res.status(200).json(changelogs);
     } catch (e) {

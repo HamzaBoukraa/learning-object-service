@@ -16,32 +16,26 @@ export class ChangelogDataStore {
    *
    * @returns {void}
    */
-  public async createChangelog(
+  public async createChangelog(params: {
     learningObjectId: string,
     userId: string,
     changelogText: string,
-  ): Promise<void> {
-    try {
-      // FIXME: update is deprecated, consult docs for fix.
-      await this.db.collection(COLLECTIONS.CHANGLOG).update(
-        { learningObjectId },
-        {
-          $push: {
-            logs: {
-              userId: userId,
-              date: Date.now(),
-              text: changelogText,
-            },
+  }): Promise<void> {
+    await this.db.collection(COLLECTIONS.CHANGLOG).updateOne(
+      { learningObjectId: params.learningObjectId },
+      {
+        $push: {
+          logs: {
+            userId: params.userId,
+            date: Date.now(),
+            text: params.changelogText,
           },
         },
-        {
-          upsert: true,
-        },
-      );
-    } catch (e) {
-      reportError(e);
-      return Promise.reject(new ServiceError(ServiceErrorReason.INTERNAL));
-    }
+      },
+      {
+        upsert: true,
+      },
+    );
   }
 
   /**
@@ -52,29 +46,32 @@ export class ChangelogDataStore {
    *
    * @returns {ChangeLogDocument} A single changelog object with only the last element in the logs array
    */
-  async getRecentChangelog(learningObjectId: string): Promise<ChangeLogDocument> {
-    try {
+  async getRecentChangelog(params: {
+    learningObjectId: string,
+  }): Promise<ChangeLogDocument> {
       const changelog = await this.db
         .collection(COLLECTIONS.CHANGLOG)
         .findOne(
-          { learningObjectId },
+          { learningObjectId: params.learningObjectId },
           { projection: { learningObjectId: 1, logs: { $slice: -1 } } },
         );
-      if (changelog === null) {
-        return Promise.reject(new ResourceError('Changelog not found.', ResourceErrorReason.NOT_FOUND));
-      }
       return changelog;
-    } catch (e) {
-      reportError(e);
-      return Promise.reject(new ServiceError(ServiceErrorReason.INTERNAL));
-    }
   }
 
-  async fetchAllChangelogs(learningObjectId: string): Promise<ChangeLogDocument[]> {
+  /**
+   * Get all changelogs for a specified learning object
+   *
+   * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
+   *
+   * @returns {ChangeLogDocument[]} All changelogs for a learning object
+   */
+  async fetchAllChangelogs(params: {
+    learningObjectId: string,
+  }): Promise<ChangeLogDocument[]> {
     const changelogs = await this.db
       .collection(COLLECTIONS.CHANGLOG)
       .find({
-        learningObjectId,
+        learningObjectId: params.learningObjectId,
       })
       .toArray();
     return changelogs;
@@ -88,14 +85,11 @@ export class ChangelogDataStore {
    *
    * @returns {void}
    */
-  async deleteChangelog(learningObjectId: string): Promise<void> {
-    try {
-      await this.db
-        .collection(COLLECTIONS.CHANGLOG)
-        .remove({ learningObjectId: learningObjectId });
-    } catch (e) {
-      reportError(e);
-      return Promise.reject(new ServiceError(ServiceErrorReason.INTERNAL));
-    }
+  async deleteChangelog(params: {
+    learningObjectId: string,
+  }): Promise<void> {
+    await this.db
+      .collection(COLLECTIONS.CHANGLOG)
+      .remove({ learningObjectId: params.learningObjectId });
   }
 }
