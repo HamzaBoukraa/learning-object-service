@@ -22,7 +22,7 @@ export async function createChangelog(params: {
   userId: string,
   changelogText: string,
 }): Promise<void> {
-  await validateErrors({
+  await authorizeRequest({
     dataStore: params.dataStore,
     learningObjectId: params.learningObjectId,
     userId: params.userId,
@@ -40,6 +40,8 @@ export async function createChangelog(params: {
  *
  * @param {DataStore} dataStore An instance of DataStore
  * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
+ * @param {string} userId The id of learning object author
+ * @param {UserToken} user information about the requester
  *
  * @returns {ChangeLogDocument}
  */
@@ -49,7 +51,7 @@ export async function getRecentChangelog(params: {
   userId: string,
   user: UserToken,
 }): Promise<ChangeLogDocument> {
-  await validateErrors({
+  await authorizeRequest({
     dataStore: params.dataStore,
     learningObjectId: params.learningObjectId,
     userId: params.userId,
@@ -65,6 +67,8 @@ export async function getRecentChangelog(params: {
  *
  * @param {DataStore} dataStore An instance of DataStore
  * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
+ * @param {string} userId The id of learning object author
+ * @param {UserToken} user information about the requester
  *
  * @returns {ChangeLogDocument[]}
  */
@@ -74,7 +78,7 @@ export async function getAllChangelogs(params: {
   userId: string,
   user: UserToken,
 }): Promise<ChangeLogDocument[]> {
-  await validateErrors({
+  await authorizeRequest({
     dataStore: params.dataStore,
     learningObjectId: params.learningObjectId,
     userId: params.userId,
@@ -85,7 +89,19 @@ export async function getAllChangelogs(params: {
   });
 }
 
-async function validateErrors(params: {
+/**
+ * Determines if the request is valid
+ * Ensure that the user making the reuqest has access to modify changelogs
+ * Checks if the requested learning object exists 
+ *
+ * @param {DataStore} dataStore An instance of DataStore
+ * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
+ * @param {string} userId The id of learning object author
+ * @param {UserToken} user information about the requester
+ *
+ * @returns {ChangeLogDocument[]}
+ */
+async function authorizeRequest(params: {
   dataStore: DataStore,
   learningObjectId: string,
   userId: string,
