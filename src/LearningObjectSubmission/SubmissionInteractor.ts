@@ -15,48 +15,52 @@ export async function submitForReview(params: {
   id: string;
   collection: string;
 }): Promise<void> {
-  try {
-    const user = await params.dataStore.fetchUser(params.username);
-    if (!user.emailVerified) {
-      throw new ResourceError(
-        'Invalid Access',
-        ResourceErrorReason.INVALID_ACCESS,
-      );
-    }
-    const object = await params.dataStore.fetchLearningObject({
-      id: params.id,
-      full: true,
-    });
-    // tslint:disable-next-line:no-unused-expression
-    new SubmittableLearningObject(object);
-    await params.dataStore.submitLearningObjectToCollection(
-      params.username,
-      params.id,
-      params.collection,
-    );
-    const submission: Submission = {
-      collection: params.collection,
-      timestamp: Date.now().toString(),
-    };
-    await params.dataStore.recordSubmission({
-      submission,
-    });
-    await updateReadme({
-      dataStore: params.dataStore,
-      fileManager: params.fileManager,
-      id: params.id,
-    });
-  } catch (e) {
-    console.log(e);
-    // TODO: Convey that this is an internal server error
-    return Promise.reject(
-      e instanceof Error ? e : new Error(`Problem submitting learning object.`),
-    );
-  }
+  await validateRequest({
+    dataStore: params.dataStore,
+    username: params.username,
+  });
+  const object = await params.dataStore.fetchLearningObject({
+    id: params.id,
+    full: true,
+  });
+  // tslint:disable-next-line:no-unused-expression
+  new SubmittableLearningObject(object);
+  await params.dataStore.submitLearningObjectToCollection(
+    params.username,
+    params.id,
+    params.collection,
+  );
+  const submission: Submission = {
+    collection: params.collection,
+    timestamp: Date.now().toString(),
+  };
+  await params.dataStore.recordSubmission({
+    submission,
+  });
+  await updateReadme({
+    dataStore: params.dataStore,
+    fileManager: params.fileManager,
+    id: params.id,
+  });
 }
+
 export async function cancelSubmission(
   dataStore: DataStore,
   id: string,
 ): Promise<void> {
   await dataStore.unsubmitLearningObject(id);
 }
+
+async function validateRequest(params:{
+  dataStore: DataStore,
+  username: string,
+}): Promise<void> {
+  const user = await params.dataStore.fetchUser(params.username);
+  if (!user.emailVerified) {
+    throw new ResourceError(
+      'Invalid Access',
+      ResourceErrorReason.INVALID_ACCESS,
+    );
+  }
+}
+

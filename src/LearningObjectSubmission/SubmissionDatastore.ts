@@ -38,12 +38,12 @@ export class SubmissionDatastore {
     );
   }
 
-  public async recordSubmission(params: {
+  public async recordSubmission(
     submission: Submission,
-  }): Promise<void> {
+  ): Promise<void> {
     await this.db.collection(COLLECTIONS.SUBMISSIONS)
       .insertOne({
-        submission: params.submission,
+        submission,
       });
   }
 
