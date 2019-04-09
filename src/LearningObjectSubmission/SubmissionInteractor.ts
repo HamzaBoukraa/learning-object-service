@@ -65,35 +65,18 @@ export async function checkFirstSubmission(params: {
   : false;
 }
 
-export async function cancelSubmission(
+export async function cancelSubmission(params: {
   dataStore: DataStore,
-  id: string,
-): Promise<void> {
-  await dataStore.unsubmitLearningObject(id);
-}
-
-async function authorizeSubmissionRequest(params: {
-  dataStore: DataStore,
-  username: string,
-  userId: string,
   learningObjectId: string,
+  userId: string,
+  username: string,
 }): Promise<void> {
-  const user = await params.dataStore.fetchUser(params.username);
-  if (!user.emailVerified) {
-    throw new ResourceError(
-      'Invalid Access',
-      ResourceErrorReason.INVALID_ACCESS,
-    );
-  }
-
-  if (!(await params.dataStore.checkLearningObjectExistence({
-    learningObjectId: params.learningObjectId,
+  await authorizeSubmissionRequest({
+    dataStore: params.dataStore,
     userId: params.userId,
-  }))) {
-    throw new ResourceError(
-      `Learning Object ${params.learningObjectId} not found for user ${params.userId}`,
-      ResourceErrorReason.NOT_FOUND,
-    );
-  }
+    learningObjectId: params.learningObjectId,
+    username: params.username,
+  });
+  await params.dataStore.unsubmitLearningObject(params.learningObjectId);
 }
 

@@ -70,9 +70,16 @@ export function initialize({
 
   async function cancel(req: Request, res: Response) {
     try {
-      const id = req.params.learningObjectId;
+      const learningObjectId = req.params.learningObjectId;
+      const userId = req.params.userId;
+      const username = req.user.username;
 
-      await cancelSubmission(dataStore, id);
+      await cancelSubmission({
+        dataStore,
+        learningObjectId,
+        userId,
+        username,
+      });
       res.sendStatus(200);
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
