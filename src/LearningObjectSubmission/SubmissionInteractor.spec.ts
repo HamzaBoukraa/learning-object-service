@@ -19,7 +19,8 @@ describe('submitForReview', () => {
           dataStore,
           fileManager,
           username: MOCK_OBJECTS.USERNAME,
-          id: SUBMITTABLE_LEARNING_OBJECT.id,
+          learningObjectId: SUBMITTABLE_LEARNING_OBJECT.id,
+          userId: MOCK_OBJECTS.USER_ID,
           collection: SUBMITTABLE_LEARNING_OBJECT.collection,
         }),
       ).resolves.toBe(undefined);
@@ -35,7 +36,8 @@ describe('submitForReview', () => {
           dataStore,
           fileManager,
           username: MOCK_OBJECTS.USERNAME,
-          id: SUBMITTABLE_LEARNING_OBJECT.id,
+          learningObjectId: SUBMITTABLE_LEARNING_OBJECT.id,
+          userId: MOCK_OBJECTS.USER_ID,
           collection: SUBMITTABLE_LEARNING_OBJECT.collection,
         });
       } catch (e) {
@@ -50,7 +52,8 @@ describe('submitForReview', () => {
           dataStore,
           fileManager,
           username: MOCK_OBJECTS.USERNAME,
-          id: SUBMITTABLE_LEARNING_OBJECT.id,
+          learningObjectId: SUBMITTABLE_LEARNING_OBJECT.id,
+          userId: MOCK_OBJECTS.USER_ID,
           collection: SUBMITTABLE_LEARNING_OBJECT.collection,
         });
       } catch (e) {
@@ -65,7 +68,8 @@ describe('submitForReview', () => {
           dataStore,
           fileManager,
           username: MOCK_OBJECTS.USERNAME,
-          id: SUBMITTABLE_LEARNING_OBJECT.id,
+          learningObjectId: SUBMITTABLE_LEARNING_OBJECT.id,
+          userId: MOCK_OBJECTS.USER_ID,
           collection: SUBMITTABLE_LEARNING_OBJECT.collection,
         });
       } catch (e) {
@@ -80,7 +84,12 @@ describe('cancelSubmission', () => {
   it('should cancel the submission given a valid username and id', async done => {
     try {
       await expect(
-        cancelSubmission(dataStore, SUBMITTABLE_LEARNING_OBJECT.id),
+        cancelSubmission({
+          dataStore,
+          userId: MOCK_OBJECTS.USER_ID,
+          username: MOCK_OBJECTS.USERNAME,
+          learningObjectId: SUBMITTABLE_LEARNING_OBJECT.id,
+        }),
       ).resolves.toBe(undefined);
       done();
     } catch (error) {
