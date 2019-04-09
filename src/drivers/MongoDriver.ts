@@ -527,6 +527,10 @@ export class MongoDriver implements DataStore {
     return this.submissionStore.recordSubmission(submission);
   }
 
+  fetchSubmission(collection: string, learningObjectId: string): Promise<Submission> {
+    return this.submissionStore.fetchSubmission(collection, learningObjectId);
+  }
+
   /**
    * Unsubmit an object but keep it's collection property intact
    * @param id the id of the object to unsubmit
