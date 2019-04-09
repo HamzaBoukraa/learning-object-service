@@ -3,6 +3,7 @@ import { Db } from 'mongodb';
 import * as ObjectMapper from '../drivers/Mongo/ObjectMapper';
 import { UserDocument } from '../types';
 import { LearningObject, User } from '../entity';
+import { Submission } from './types/Submission';
 
 const ERROR_MESSAGE = {
   INVALID_ACCESS: `Invalid access. User must be verified to release Learning Objects`,
@@ -25,27 +26,25 @@ export class SubmissionDatastore {
     id: string,
     collection: string,
   ): Promise<void> {
-    try {
-      const user = await this.fetchUser(username);
-
-      if (!user.emailVerified) {
-        return Promise.reject(ERROR_MESSAGE.INVALID_ACCESS);
-      }
-
-      await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).update(
-        { _id: id },
-        {
-          $set: {
-            published: true,
-            status: 'waiting',
-            collection,
-          },
+    await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).update(
+      { _id: id },
+      {
+        $set: {
+          published: true,
+          status: 'waiting',
+          collection,
         },
-      );
-      return Promise.resolve();
-    } catch (e) {
-      return Promise.reject(e);
-    }
+      },
+    );
+  }
+
+  public async recordSubmission(params: {
+    submission: Submission,
+  }): Promise<void> {
+    await this.db.collection(COLLECTIONS.SUBMISSIONS)
+      .insertOne({
+        submission: params.submission,
+      });
   }
 
   /**

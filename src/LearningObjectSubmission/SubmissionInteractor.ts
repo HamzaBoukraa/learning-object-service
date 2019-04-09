@@ -6,6 +6,7 @@ import { hasLearningObjectWriteAccess } from '../interactors/AuthorizationManage
 import { UserToken } from '../types';
 import { ResourceError, ResourceErrorReason } from '../errors';
 import { SubmittableLearningObject } from '../entity';
+import { Submission } from './types/Submission';
 
 export async function submitForReview(params: {
   dataStore: DataStore;
@@ -15,6 +16,13 @@ export async function submitForReview(params: {
   collection: string;
 }): Promise<void> {
   try {
+    const user = await params.dataStore.fetchUser(params.username);
+    if (!user.emailVerified) {
+      throw new ResourceError(
+        'Invalid Access',
+        ResourceErrorReason.INVALID_ACCESS,
+      );
+    }
     const object = await params.dataStore.fetchLearningObject({
       id: params.id,
       full: true,
@@ -26,6 +34,13 @@ export async function submitForReview(params: {
       params.id,
       params.collection,
     );
+    const submission: Submission = {
+      collection: params.collection,
+      timestamp: Date.now().toString(),
+    };
+    await params.dataStore.recordSubmission({
+      submission,
+    });
     await updateReadme({
       dataStore: params.dataStore,
       fileManager: params.fileManager,
@@ -44,49 +59,4 @@ export async function cancelSubmission(
   id: string,
 ): Promise<void> {
   await dataStore.unsubmitLearningObject(id);
-}
-
-/**
- * Instruct the datastore to create a new log in the changelogs collection
- *
- * @param {DataStore} dataStore An instance of DataStore
- * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
- * @param {string} userId The id of the user that wrote the incoming changelog
- * @param {string} changelogText The contents of the incoming changelog
- *
- * @returns {void}
- */
-export async function createChangelog(params: {
-  dataStore: DataStore;
-  learningObjectId: string;
-  user: UserToken;
-  changelogText: string;
-}): Promise<void> {
-  try {
-    const hasAccess = hasLearningObjectWriteAccess(
-      params.user,
-      params.dataStore,
-      params.learningObjectId,
-    );
-    if (hasAccess) {
-      const objectId = await params.dataStore.checkLearningObjectExistence(
-        params.learningObjectId,
-      );
-      if (objectId && objectId.length > 0) {
-        const authorID = await params.dataStore.findUser(params.user.username);
-        await params.dataStore.createChangelog(
-          params.learningObjectId,
-          authorID,
-          params.changelogText,
-        );
-      } else {
-        return Promise.reject(new ResourceError('Learning Object not found.', ResourceErrorReason.NOT_FOUND));
-      }
-    } else {
-      return Promise.reject(new ResourceError('Invalid Access', ResourceErrorReason.INVALID_ACCESS));
-    }
-  } catch (e) {
-    reportError(e);
-    return Promise.reject(e instanceof Error ? e : new Error(e));
-  }
 }
