@@ -92,7 +92,7 @@ export async function getAllChangelogs(params: {
 /**
  * Determines if the request is valid
  * Ensure that the user making the reuqest has access to modify changelogs
- * Checks if the requested learning object exists 
+ * Checks if the requested learning object exists
  *
  * @param {DataStore} dataStore An instance of DataStore
  * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
