@@ -181,4 +181,5 @@ export const INVALID_LEARNING_OBJECTS = {
 export const SUBMISSION = {
   collection: 'c5',
   timestamp: 'date',
+  learningObjectId: 'default_id',
 };
