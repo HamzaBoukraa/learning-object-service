@@ -63,7 +63,6 @@ export async function cancelSubmission(
 ): Promise<void> {
   await dataStore.unsubmitLearningObject(id);
 }
-<<<<<<< HEAD
 
 async function validateSubmissionRequest(params: {
   dataStore: DataStore,
@@ -84,5 +83,3 @@ async function validateSubmissionRequest(params: {
   )
 }
 
-=======
->>>>>>> e2a953eed3d000ca24eb58f20534ad289dee41c8
