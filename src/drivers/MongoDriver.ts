@@ -718,14 +718,28 @@ export class MongoDriver implements DataStore {
     }
   }
 
-  async fetchRecentChangelog(
+  async fetchRecentChangelog(params: {
     learningObjectId: string,
-  ): Promise<ChangeLogDocument> {
-    return this.changelogStore.getRecentChangelog(learningObjectId);
+  }): Promise<ChangeLogDocument> {
+    return this.changelogStore.getRecentChangelog({
+      learningObjectId: params.learningObjectId,
+    });
   }
 
-  async deleteChangelog(learningObjectId: string): Promise<void> {
-    return this.changelogStore.deleteChangelog(learningObjectId);
+  async deleteChangelog(params: {
+    learningObjectId: string,
+  }): Promise<void> {
+    return this.changelogStore.deleteChangelog({
+      learningObjectId: params.learningObjectId,
+    });
+  }
+
+  async fetchAllChangelogs(params: {
+    learningObjectId: string,
+  }): Promise<ChangeLogDocument[]> {
+    return await this.changelogStore.fetchAllChangelogs({
+      learningObjectId: params.learningObjectId,
+    });
   }
 
   /**
@@ -1416,20 +1430,16 @@ export class MongoDriver implements DataStore {
    *
    * @returns {array}
    */
-  async checkLearningObjectExistence(
+  async checkLearningObjectExistence(params: {
     learningObjectId: string,
-  ): Promise<string[]> {
-    try {
-      const arr = await this.db
-        .collection(COLLECTIONS.LEARNING_OBJECTS)
-        .find({ _id: learningObjectId })
-        .project({ _id: 1 })
-        .toArray();
-      return arr;
-    } catch (e) {
-      reportError(e);
-      return Promise.reject(new ServiceError(ServiceErrorReason.INTERNAL));
-    }
+    userId: string,
+  }): Promise<LearningObject> {
+    return await this.db
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .findOne({
+        _id: params.learningObjectId,
+        authorID: params.userId,
+      });
   }
 
   /**
@@ -2049,16 +2059,16 @@ export class MongoDriver implements DataStore {
     }
   }
 
-  async createChangelog(
+  async createChangelog(params: {
     learningObjectId: string,
     userId: string,
     changelogText: string,
-  ): Promise<void> {
-    return this.changelogStore.createChangelog(
-      learningObjectId,
-      userId,
-      changelogText,
-    );
+  }): Promise<void> {
+    return this.changelogStore.createChangelog({
+      learningObjectId: params.learningObjectId,
+      userId: params.userId,
+      changelogText: params.changelogText,
+    });
   }
 
   ////////////////////////////////////////////////
