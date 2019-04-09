@@ -177,3 +177,8 @@ export const INVALID_LEARNING_OBJECTS = {
     name: '',
   },
 };
+
+export const SUBMISSION = {
+  collection: 'c5',
+  timestamp: 'date',
+};

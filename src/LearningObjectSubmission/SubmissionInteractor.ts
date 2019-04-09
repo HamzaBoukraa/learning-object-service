@@ -34,7 +34,6 @@ export async function submitForReview(params: {
     collection: params.collection,
     timestamp: Date.now().toString(),
   };
-  const firstSubmission = await params.dataStore.
   await params.dataStore.recordSubmission(submission);
   await updateReadme({
     dataStore: params.dataStore,
