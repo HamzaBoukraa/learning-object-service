@@ -1,12 +1,9 @@
 import { DataStore } from '../interfaces/DataStore';
 import { updateReadme } from '../LearningObjects/LearningObjectInteractor';
 import { FileManager } from '../interfaces/interfaces';
-import { reportError } from '../drivers/SentryConnector';
-import { hasLearningObjectWriteAccess } from '../interactors/AuthorizationManager';
-import { UserToken } from '../types';
-import { ResourceError, ResourceErrorReason } from '../errors';
 import { SubmittableLearningObject } from '../entity';
 import { Submission } from './types/Submission';
+import { authorizeSubmissionRequest } from './AuthorizationManager';
 
 export async function submitForReview(params: {
   dataStore: DataStore;
@@ -16,8 +13,10 @@ export async function submitForReview(params: {
   userId: string;
   collection: string;
 }): Promise<void> {
-  await validateSubmissionRequest({
+  await authorizeSubmissionRequest({
     dataStore: params.dataStore,
+    userId: params.userId,
+    learningObjectId: params.learningObjectId,
     username: params.username,
   });
   const object = await params.dataStore.fetchLearningObject({
