@@ -154,7 +154,7 @@ export const MOCK_OBJECTS = {
   },
   USER: new User({ id: '123' }),
   OUTCOME: new LearningOutcome({ id: '123' }),
-  USER_ID: '5a9583401405cb053272ced1',
+  USER_ID: '5a70fb5ed45bde3f9d65agfd',
   CHANGELOG_TEXT: 'Hello',
 };
 

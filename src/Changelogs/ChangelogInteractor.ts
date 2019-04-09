@@ -3,6 +3,7 @@ import { hasLearningObjectWriteAccess } from '../interactors/AuthorizationManage
 import { UserToken } from '../types';
 import { ResourceError, ResourceErrorReason } from '../errors';
 import { ChangeLogDocument } from '../types/Changelog';
+import { hasChangelogAccess } from './AuthManager';
 
 /**
  * Instruct the data store to create a new log in the change logs collection
@@ -90,12 +91,17 @@ async function validateErrors(params: {
   userId: string,
   user: UserToken,
 }): Promise<void> {
-  if (!(await hasLearningObjectWriteAccess(params.user, params.dataStore, params.learningObjectId))) {
+  if (!(await hasChangelogAccess({
+    user: params.user,
+    dataStore: params.dataStore,
+    learningObjectId: params.learningObjectId,
+  }))) {
     throw new ResourceError(
       'Invalid Access',
       ResourceErrorReason.INVALID_ACCESS,
     );
   }
+
   if (!(await params.dataStore.checkLearningObjectExistence({
     learningObjectId: params.learningObjectId,
     userId: params.userId,
