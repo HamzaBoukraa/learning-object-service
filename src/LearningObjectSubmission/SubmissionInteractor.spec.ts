@@ -1,4 +1,4 @@
-import { submitForReview, cancelSubmission, createChangelog } from './SubmissionInteractor';
+import { submitForReview, cancelSubmission } from './SubmissionInteractor';
 import {
   MOCK_OBJECTS,
   SUBMITTABLE_LEARNING_OBJECT,

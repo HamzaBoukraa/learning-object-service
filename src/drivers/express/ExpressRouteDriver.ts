@@ -125,11 +125,12 @@ export class ExpressRouteDriver {
         if (e instanceof ResourceError || e instanceof ServiceError) {
           const { code, message } = mapErrorToResponseData(e);
           res.status(code).json({ message });
-        }
-        if (e instanceof Error && e.message === 'User not found') {
-          res.status(404).send(`No user with username ${req.params.username}.`);
         } else {
-          res.status(500).send('Internal Server Error');
+          if (e instanceof Error && e.message === 'User not found') {
+            res.status(404).send(`No user with username ${req.params.username}.`);
+          } else {
+            res.status(500).send('Internal Server Error');
+          }
         }
       }
     });

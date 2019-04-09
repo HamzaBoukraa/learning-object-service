@@ -415,7 +415,7 @@ export async function getLearningObjectChildrenById(
   dataStore: DataStore,
   objectId: string,
 ) {
-  //Retrieve the ids of the children in the order in which they were set by user
+  // Retrieve the ids of the children in the order in which they were set by user
   const childrenIDs = await dataStore.findChildObjectIds({
     parentId: objectId,
   });
@@ -425,10 +425,10 @@ export async function getLearningObjectChildrenById(
     full: true,
     status: LearningObjectState.ALL,
   });
-  //array to return the children in correct order
+  // array to return the children in correct order
   const children: LearningObject[] = [];
 
-  //fill children array with correct order of children
+  // fill children array with correct order of children
   let cIDs = 0;
   let c = 0;
 
@@ -476,7 +476,7 @@ export async function deleteLearningObject(params: {
           ),
         );
       });
-      params.dataStore.deleteChangelog(object.id).catch(e => {
+      params.dataStore.deleteChangelog({learningObjectId: object.id}).catch(e => {
         reportError(
           new Error(
             `Problem deleting changelogs for ${
