@@ -51,11 +51,14 @@ export function initialize({
       const learningObjectId = req.params.learningObjectId;
       const userId = req.params.userId;
       const collection = req.params.collectionName;
+      const username = req.user.username;
 
       const isFirstSubmission = await checkFirstSubmission({
         dataStore,
         learningObjectId,
         collection,
+        username,
+        userId,
       });
 
       res.send(200).json(isFirstSubmission);

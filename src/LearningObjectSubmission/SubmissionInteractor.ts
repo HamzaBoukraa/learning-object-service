@@ -48,7 +48,15 @@ export async function checkFirstSubmission(params: {
   dataStore: DataStore,
   collection: string,
   learningObjectId: string,
+  userId: string,
+  username: string,
 }): Promise<boolean> {
+  await authorizeSubmissionRequest({
+    dataStore: params.dataStore,
+    userId: params.userId,
+    learningObjectId: params.learningObjectId,
+    username: params.username,
+  });
   return await params.dataStore.fetchSubmission(
     params.collection,
     params.learningObjectId,
@@ -64,10 +72,11 @@ export async function cancelSubmission(
   await dataStore.unsubmitLearningObject(id);
 }
 
-async function validateSubmissionRequest(params: {
+async function authorizeSubmissionRequest(params: {
   dataStore: DataStore,
   username: string,
   userId: string,
+  learningObjectId: string,
 }): Promise<void> {
   const user = await params.dataStore.fetchUser(params.username);
   if (!user.emailVerified) {
@@ -77,9 +86,14 @@ async function validateSubmissionRequest(params: {
     );
   }
 
-  const object = await params.dataStore.checkLearningObjectExistence(
-    params.learningObjectId,
-    params.userId,
-  )
+  if (!(await params.dataStore.checkLearningObjectExistence({
+    learningObjectId: params.learningObjectId,
+    userId: params.userId,
+  }))) {
+    throw new ResourceError(
+      `Learning Object ${params.learningObjectId} not found for user ${params.userId}`,
+      ResourceErrorReason.NOT_FOUND,
+    );
+  }
 }
 
