@@ -15,7 +15,7 @@ export async function submitForReview(params: {
   id: string;
   collection: string;
 }): Promise<void> {
-  await validateRequest({
+  await validateSubmissionRequest({
     dataStore: params.dataStore,
     username: params.username,
   });
@@ -51,7 +51,7 @@ export async function cancelSubmission(
   await dataStore.unsubmitLearningObject(id);
 }
 
-async function validateRequest(params:{
+async function validateSubmissionRequest(params: {
   dataStore: DataStore,
   username: string,
 }): Promise<void> {

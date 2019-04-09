@@ -41,6 +41,7 @@ import {
 } from '../errors';
 import { reportError } from './SentryConnector';
 import { LearningObject, LearningOutcome, User } from '../entity';
+import { Submission } from '../LearningObjectSubmission/types/Submission';
 
 export enum COLLECTIONS {
   USERS = 'users',
@@ -518,6 +519,12 @@ export class MongoDriver implements DataStore {
       id,
       collection,
     );
+  }
+
+  recordSubmission(
+    submission: Submission,
+  ): Promise<void> {
+    return this.submissionStore.recordSubmission(submission);
   }
 
   /**
