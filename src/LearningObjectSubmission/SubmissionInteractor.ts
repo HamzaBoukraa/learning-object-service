@@ -31,6 +31,7 @@ export async function submitForReview(params: {
     params.collection,
   );
   const submission: Submission = {
+    learningObjectId: params.learningObjectId,
     collection: params.collection,
     timestamp: Date.now().toString(),
   };
