@@ -142,6 +142,7 @@ export interface DataStore
     collection: string,
   ): Promise<void>;
   recordSubmission(submission: Submission): Promise<void>;
+  fetchSubmission(collection: string, learningObjectId: string): Promise<Submission>;
   unsubmitLearningObject(id: string): Promise<void>;
   setChildren(parentId: string, children: string[]): Promise<void>;
   deleteChild(parentId: string, childId: string): Promise<void>;

@@ -47,6 +47,18 @@ export class SubmissionDatastore {
       });
   }
 
+  public async fetchSubmission(
+    collection: string,
+    learningObjectId: string,
+  ): Promise<Submission> {
+    const submission = await this.db.collection(COLLECTIONS.SUBMISSIONS)
+      .findOne({
+        collection,
+        learningObjectId,
+      });
+    return submission;
+  }
+
   /**
    * Removes all properties classifying a Learning Object as having
    * been submitted to a collection.

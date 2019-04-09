@@ -1,7 +1,8 @@
 import { Request, Response, Router } from 'express';
 import { DataStore } from '../interfaces/DataStore';
 import { FileManager } from '../interfaces/interfaces';
-import { cancelSubmission, submitForReview } from './SubmissionInteractor';
+import { cancelSubmission, submitForReview, checkFirstSubmission } from './SubmissionInteractor';
+import { mapErrorToResponseData } from '../errors';
 
 /**
  * Initializes an express router with endpoints to publish and unpublish a learning object.
@@ -24,7 +25,8 @@ export function initialize({
 }) {
   async function submit(req: Request, res: Response) {
     try {
-      const id = req.params.learningObjectId;
+      const learningObjectId = req.params.learningObjectId;
+      const userId = req.params.userId;
       const username = req.user.username;
       const collection = req.body.collection;
 
@@ -32,14 +34,34 @@ export function initialize({
         dataStore,
         fileManager,
         username,
-        id,
+        learningObjectId,
+        userId,
         collection,
       });
 
       res.sendStatus(200);
     } catch (e) {
-      console.error(e);
-      res.status(500).send(e);
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({message});
+    }
+  }
+
+  async function fetchSubmission(req: Request, res: Response) {
+    try {
+      const learningObjectId = req.params.learningObjectId;
+      const userId = req.params.userId;
+      const collection = req.params.collectionName;
+
+      const isFirstSubmission = await checkFirstSubmission({
+        dataStore,
+        learningObjectId,
+        collection,
+      });
+
+      res.send(200).json(isFirstSubmission);
+    } catch (e) {
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({message});
     }
   }
 
@@ -50,15 +72,12 @@ export function initialize({
       await cancelSubmission(dataStore, id);
       res.sendStatus(200);
     } catch (e) {
-      if (e instanceof Error) {
-        console.error(e);
-        res.status(500).send(e.message);
-      } else {
-        res.status(400).send(e);
-      }
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({message});
     }
   }
 
-  router.post('/learning-objects/:learningObjectId/submission', submit);
-  router.delete('/learning-objects/:learningObjectId/submission', cancel);
+  router.get('users/:userId/learning-objects/:learningObjectId/submission/collections/:collectionName', fetchSubmission);
+  router.post('users/:userId/learning-objects/:learningObjectId/submission', submit);
+  router.delete('users/:userId/learning-objects/:learningObjectId/submission', cancel);
 }
