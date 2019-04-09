@@ -1,5 +1,5 @@
-import { UserToken } from "../types";
-import { DataStore } from "../interfaces/DataStore";
+import { UserToken } from '../types';
+import { DataStore } from '../interfaces/DataStore';
 
 
 const ROLE = {
