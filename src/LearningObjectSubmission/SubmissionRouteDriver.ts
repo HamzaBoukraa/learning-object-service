@@ -3,6 +3,7 @@ import { DataStore } from '../interfaces/DataStore';
 import { FileManager } from '../interfaces/interfaces';
 import { cancelSubmission, submitForReview, checkFirstSubmission } from './SubmissionInteractor';
 import { mapErrorToResponseData } from '../errors';
+import { UserToken } from '../types';
 
 /**
  * Initializes an express router with endpoints to publish and unpublish a learning object.
@@ -27,13 +28,13 @@ export function initialize({
     try {
       const learningObjectId = req.params.learningObjectId;
       const userId = req.params.userId;
-      const username = req.user.username;
+      const user: UserToken = req.user;
       const collection = req.body.collection;
 
       await submitForReview({
         dataStore,
         fileManager,
-        username,
+        user,
         learningObjectId,
         userId,
         collection,
@@ -51,17 +52,17 @@ export function initialize({
       const learningObjectId = req.params.learningObjectId;
       const userId = req.params.userId;
       const collection = req.params.collectionName;
-      const username = req.user.username;
+      const emailVerified = req.user.emailVerified;
 
       const isFirstSubmission = await checkFirstSubmission({
         dataStore,
         learningObjectId,
         collection,
-        username,
+        emailVerified,
         userId,
       });
 
-      res.send(200).json(isFirstSubmission);
+      res.status(200).json({isFirstSubmission});
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
       res.status(code).json({message});
@@ -72,13 +73,13 @@ export function initialize({
     try {
       const learningObjectId = req.params.learningObjectId;
       const userId = req.params.userId;
-      const username = req.user.username;
+      const emailVerified = req.user.emailVerified;
 
       await cancelSubmission({
         dataStore,
         learningObjectId,
         userId,
-        username,
+        emailVerified,
       });
       res.sendStatus(200);
     } catch (e) {
@@ -87,7 +88,7 @@ export function initialize({
     }
   }
 
-  router.get('users/:userId/learning-objects/:learningObjectId/submission/collections/:collectionName', fetchSubmission);
-  router.post('users/:userId/learning-objects/:learningObjectId/submission', submit);
-  router.delete('users/:userId/learning-objects/:learningObjectId/submission', cancel);
+  router.get('/users/:userId/learning-objects/:learningObjectId/submission/collections/:collectionName', fetchSubmission);
+  router.post('/users/:userId/learning-objects/:learningObjectId/submission', submit);
+  router.delete('/users/:userId/learning-objects/:learningObjectId/submission', cancel);
 }

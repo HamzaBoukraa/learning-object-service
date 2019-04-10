@@ -3,12 +3,11 @@ import { ResourceError, ResourceErrorReason } from '../errors';
 
 export async function authorizeSubmissionRequest(params: {
     dataStore: DataStore,
-    username: string,
+    emailVerified: boolean,
     userId: string,
     learningObjectId: string,
   }): Promise<void> {
-    const user = await params.dataStore.fetchUser(params.username);
-    if (!user.emailVerified) {
+    if (!params.emailVerified) {
       throw new ResourceError(
         'Invalid Access',
         ResourceErrorReason.INVALID_ACCESS,

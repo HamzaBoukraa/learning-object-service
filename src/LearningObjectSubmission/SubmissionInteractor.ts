@@ -4,11 +4,12 @@ import { FileManager } from '../interfaces/interfaces';
 import { SubmittableLearningObject } from '../entity';
 import { Submission } from './types/Submission';
 import { authorizeSubmissionRequest } from './AuthorizationManager';
+import { UserToken } from '../types';
 
 export async function submitForReview(params: {
   dataStore: DataStore;
   fileManager: FileManager;
-  username: string;
+  user: UserToken;
   learningObjectId: string;
   userId: string;
   collection: string;
@@ -17,7 +18,7 @@ export async function submitForReview(params: {
     dataStore: params.dataStore,
     userId: params.userId,
     learningObjectId: params.learningObjectId,
-    username: params.username,
+    emailVerified: params.user.emailVerified,
   });
   const object = await params.dataStore.fetchLearningObject({
     id: params.learningObjectId,
@@ -26,7 +27,7 @@ export async function submitForReview(params: {
   // tslint:disable-next-line:no-unused-expression
   new SubmittableLearningObject(object);
   await params.dataStore.submitLearningObjectToCollection(
-    params.username,
+    params.user.username,
     params.learningObjectId,
     params.collection,
   );
@@ -48,33 +49,35 @@ export async function checkFirstSubmission(params: {
   collection: string,
   learningObjectId: string,
   userId: string,
-  username: string,
+  emailVerified: boolean,
 }): Promise<boolean> {
   await authorizeSubmissionRequest({
     dataStore: params.dataStore,
     userId: params.userId,
     learningObjectId: params.learningObjectId,
-    username: params.username,
+    emailVerified: params.emailVerified,
   });
+
+  console.log('auth');
   return await params.dataStore.fetchSubmission(
     params.collection,
     params.learningObjectId,
   )
-  ? true
-  : false;
+  ? false
+  : true;
 }
 
 export async function cancelSubmission(params: {
   dataStore: DataStore,
   learningObjectId: string,
   userId: string,
-  username: string,
+  emailVerified: boolean,
 }): Promise<void> {
   await authorizeSubmissionRequest({
     dataStore: params.dataStore,
     userId: params.userId,
     learningObjectId: params.learningObjectId,
-    username: params.username,
+    emailVerified: params.emailVerified,
   });
   await params.dataStore.unsubmitLearningObject(params.learningObjectId);
 }
