@@ -42,9 +42,9 @@ export class SubmissionDatastore {
     submission: Submission,
   ): Promise<void> {
     await this.db.collection(COLLECTIONS.SUBMISSIONS)
-      .insertOne({
+      .insertOne(
         submission,
-      });
+      );
   }
 
   public async fetchSubmission(
