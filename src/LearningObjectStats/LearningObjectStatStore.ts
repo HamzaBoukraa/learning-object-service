@@ -28,8 +28,8 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
   async fetchStats(params: { query: any }): Promise<LearningObjectStats> {
     const releasedCount$ = this.db
       .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
-      .find({})
       .count();
+
     // Perform aggregation on Learning Objects collection to get length distribution, total number of objects, and number of released objects
     const statCursor = this.db
       .collection(COLLECTIONS.LEARNING_OBJECTS)
@@ -149,7 +149,8 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
         stats.status.proofing += stat.proofing;
       });
       // Set review property to statuses in review stage
-      stats.review = stats.status.waiting + stats.status.peerReview + stats.status.proofing;
+      stats.review =
+        stats.status.waiting + stats.status.peerReview + stats.status.proofing;
     }
     // If downloadSavesData update stats
     if (downloadSavesData) {
