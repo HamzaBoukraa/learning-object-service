@@ -47,6 +47,34 @@ export class SubmissionDatastore {
       );
   }
 
+  public async recordCancellation(
+    learningObjectId: string,
+  ): Promise<void> {
+    await this.db.collection(COLLECTIONS.SUBMISSIONS)
+      .findOneAndUpdate(
+        { learningObjectId },
+        {
+          $set: { cancelDate: Date.now().toString() },
+        },
+        { sort: { timestamp: -1 } },
+      );
+  }
+
+  public async fetchRecentSubmission(
+    learningObjectId: string,
+  ): Promise<Submission> {
+    const submission = await this.db.collection(COLLECTIONS.SUBMISSIONS)
+      .find({
+        learningObjectId,
+      })
+      .sort({
+        timestamp: -1,
+      })
+      .limit(1)
+      .toArray();
+    return submission[0];
+  }
+
   public async fetchSubmission(
     collection: string,
     learningObjectId: string,

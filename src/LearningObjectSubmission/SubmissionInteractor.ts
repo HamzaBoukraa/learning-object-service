@@ -5,6 +5,7 @@ import { SubmittableLearningObject } from '../entity';
 import { Submission } from './types/Submission';
 import { authorizeSubmissionRequest } from './AuthorizationManager';
 import { UserToken } from '../types';
+import { ResourceError, ResourceErrorReason } from '../errors';
 
 export async function submitForReview(params: {
   dataStore: DataStore;
@@ -58,7 +59,6 @@ export async function checkFirstSubmission(params: {
     emailVerified: params.emailVerified,
   });
 
-  console.log('auth');
   return await params.dataStore.fetchSubmission(
     params.collection,
     params.learningObjectId,
@@ -79,6 +79,14 @@ export async function cancelSubmission(params: {
     learningObjectId: params.learningObjectId,
     emailVerified: params.emailVerified,
   });
+  const submission = await params.dataStore.fetchRecentSubmission(params.learningObjectId);
+  if (submission.cancelDate) {
+    throw new ResourceError(
+      'This submission has already been canceled',
+      ResourceErrorReason.BAD_REQUEST,
+    );
+  }
+  await params.dataStore.recordCancellation(params.learningObjectId);
   await params.dataStore.unsubmitLearningObject(params.learningObjectId);
 }
 

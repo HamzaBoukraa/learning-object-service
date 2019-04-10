@@ -527,8 +527,18 @@ export class MongoDriver implements DataStore {
     return this.submissionStore.recordSubmission(submission);
   }
 
+  recordCancellation(
+    learningObjectId: string,
+  ): Promise<void> {
+    return this.submissionStore.recordCancellation(learningObjectId);
+  }
+
   fetchSubmission(collection: string, learningObjectId: string): Promise<Submission> {
     return this.submissionStore.fetchSubmission(collection, learningObjectId);
+  }
+
+  fetchRecentSubmission(learningObjectId: string): Promise<Submission> {
+    return this.submissionStore.fetchRecentSubmission(learningObjectId);
   }
 
   /**
