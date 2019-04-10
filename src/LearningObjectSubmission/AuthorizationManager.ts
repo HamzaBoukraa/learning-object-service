@@ -25,10 +25,11 @@ export async function authorizeSubmissionRequest(params: {
       );
     }
 
-    if (!(await params.dataStore.checkLearningObjectExistence({
+    const learningObject = await params.dataStore.checkLearningObjectExistence({
       learningObjectId: params.learningObjectId,
       userId: params.userId,
-    }))) {
+    });
+    if (!learningObject) {
       throw new ResourceError(
         `Learning Object ${params.learningObjectId} not found for user ${params.userId}`,
         ResourceErrorReason.NOT_FOUND,
