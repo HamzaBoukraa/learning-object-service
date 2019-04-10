@@ -93,7 +93,7 @@ export function initialize({
     }
   }
 
-  router.get('/users/:userId/learning-objects/:learningObjectId/submission', fetchSubmission);
-  router.post('/users/:userId/learning-objects/:learningObjectId/submission', submit);
-  router.delete('/users/:userId/learning-objects/:learningObjectId/submission', cancel);
+  router.get('/users/:userId/learning-objects/:learningObjectId/submissions', fetchSubmission);
+  router.post('/users/:userId/learning-objects/:learningObjectId/submissions', submit);
+  router.delete('/users/:userId/learning-objects/:learningObjectId/submissions', cancel);
 }
