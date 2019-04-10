@@ -38,6 +38,11 @@ export class SubmissionDatastore {
     );
   }
 
+  /**
+   * Store all metadata for each learning object submission in the submissions collection
+   *
+   * @param submission submission object to be recorded
+   */
   public async recordSubmission(
     submission: Submission,
   ): Promise<void> {
@@ -47,6 +52,11 @@ export class SubmissionDatastore {
       );
   }
 
+  /**
+   * Add cancel date property to learning object submissions that are canceled
+   *
+   * @param learningObjectId id of the learning object that is being moved back to unreleased
+   */
   public async recordCancellation(
     learningObjectId: string,
   ): Promise<void> {
@@ -60,6 +70,11 @@ export class SubmissionDatastore {
       );
   }
 
+  /**
+   * Gets the newest submission for a specified learning object
+   *
+   * @param learningObjectId id of the learning object to search for
+   */
   public async fetchRecentSubmission(
     learningObjectId: string,
   ): Promise<Submission> {
@@ -75,6 +90,13 @@ export class SubmissionDatastore {
     return submission[0];
   }
 
+  /**
+   * Return the first instance of a submission with
+   * specified collection name and learning object id
+   *
+   * @param collection name of collection to search for
+   * @param learningObjectId id of the learning object to search for
+   */
   public async fetchSubmission(
     collection: string,
     learningObjectId: string,
