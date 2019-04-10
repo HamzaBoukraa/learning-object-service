@@ -7,6 +7,16 @@ import { authorizeSubmissionRequest } from './AuthorizationManager';
 import { UserToken } from '../types';
 import { ResourceError, ResourceErrorReason } from '../errors';
 
+/**
+ * Submit a learning object to a collection
+ *
+ * @param dataStore instance of dataStore
+ * @param userId id of learning object author
+ * @param learningObjectId id of the learning object to search for
+ * @param fileManager instance of FileManager
+ * @param user metadata about current user (instance of UserToken)
+ * @param collection name of collection to submit learning object to
+ */
 export async function submitForReview(params: {
   dataStore: DataStore;
   fileManager: FileManager;
@@ -45,6 +55,16 @@ export async function submitForReview(params: {
   });
 }
 
+/**
+ * Check if learning object is being submitted to a collection
+ * for the first time.
+ *
+ * @param dataStore instance of dataStore
+ * @param emailVerified boolean to check if current user has a verified email
+ * @param userId id of learning object author
+ * @param learningObjectId id of the learning object to search for
+ * @param collection name of collection to search for in submission collection
+ */
 export async function checkFirstSubmission(params: {
   dataStore: DataStore,
   collection: string,
@@ -67,6 +87,15 @@ export async function checkFirstSubmission(params: {
   : true;
 }
 
+/**
+ * Cancels a learning object submission
+ * Throws an error if requested submission has already been canceled
+ *
+ * @param dataStore instance of dataStore
+ * @param emailVerified boolean to check if current user has a verified email
+ * @param userId id of learning object author
+ * @param learningObjectId id of the learning object to search for
+ */
 export async function cancelSubmission(params: {
   dataStore: DataStore,
   learningObjectId: string,
