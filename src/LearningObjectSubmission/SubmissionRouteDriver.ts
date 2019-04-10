@@ -51,18 +51,23 @@ export function initialize({
     try {
       const learningObjectId = req.params.learningObjectId;
       const userId = req.params.userId;
-      const collection = req.params.collectionName;
+      const collection = req.query.collection;
+      const hasSubmission = req.query.hasSubmission;
       const emailVerified = req.user.emailVerified;
 
-      const isFirstSubmission = await checkFirstSubmission({
-        dataStore,
-        learningObjectId,
-        collection,
-        emailVerified,
-        userId,
-      });
+      if (!collection || !hasSubmission) {
+        res.status(501).json({message: 'Not Implemented'});
+      } else {
+        const isFirstSubmission = await checkFirstSubmission({
+          dataStore,
+          learningObjectId,
+          collection,
+          emailVerified,
+          userId,
+        });
 
-      res.status(200).json({isFirstSubmission});
+        res.status(200).json({isFirstSubmission});
+      }
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
       res.status(code).json({message});
@@ -88,7 +93,7 @@ export function initialize({
     }
   }
 
-  router.get('/users/:userId/learning-objects/:learningObjectId/submission/collections/:collectionName', fetchSubmission);
+  router.get('/users/:userId/learning-objects/:learningObjectId/submission', fetchSubmission);
   router.post('/users/:userId/learning-objects/:learningObjectId/submission', submit);
   router.delete('/users/:userId/learning-objects/:learningObjectId/submission', cancel);
 }
