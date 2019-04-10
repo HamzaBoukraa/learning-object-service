@@ -4,6 +4,7 @@ import * as ObjectMapper from '../drivers/Mongo/ObjectMapper';
 import { UserDocument } from '../types';
 import { LearningObject, User } from '../entity';
 import { Submission } from './types/Submission';
+import { ResourceError, ResourceErrorReason } from '../errors';
 
 const ERROR_MESSAGE = {
   INVALID_ACCESS: `Invalid access. User must be verified to release Learning Objects`,
@@ -87,6 +88,12 @@ export class SubmissionDatastore {
       })
       .limit(1)
       .toArray();
+    if (!submission || submission.length === 0) {
+      throw new ResourceError(
+        `Recent submission for learning object ${learningObjectId} not found`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
     return submission[0];
   }
 
