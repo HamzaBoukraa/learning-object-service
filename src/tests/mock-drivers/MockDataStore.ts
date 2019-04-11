@@ -324,6 +324,13 @@ export class MockDataStore implements DataStore {
     return Promise.resolve(SUBMISSION);
   }
 
+  recordCancellation(learningObjectId: string): Promise<void> {
+    return Promise.resolve();
+  }
+  fetchRecentSubmission(learningObjectId: string): Promise<Submission> {
+   return Promise.resolve(SUBMISSION);
+  }
+
   unsubmitLearningObject(id: string): Promise<void> {
     return Promise.resolve();
   }
