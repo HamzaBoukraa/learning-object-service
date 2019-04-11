@@ -2136,7 +2136,6 @@ export class MongoDriver implements DataStore {
     full?: boolean,
   ): Promise<LearningObject> {
     // Logic for loading any learning object
-    let materials: LearningObject.Material;
     let contributors: User[] = [];
     let outcomes: LearningOutcome[] = [];
     let children: LearningObject[] = [];
@@ -2150,9 +2149,6 @@ export class MongoDriver implements DataStore {
 
     // If full object requested, load up non-summary properties
     if (full) {
-      // Logic for loading 'full' learning objects
-      materials = <LearningObject.Material>record.materials;
-
       // load outcomes
       outcomes = await this.getAllLearningOutcomes({
         source: record._id,
@@ -2168,7 +2164,7 @@ export class MongoDriver implements DataStore {
       collection: record.collection,
       status: record.status as LearningObject.Status,
       description: record.description,
-      materials,
+      materials: record.materials as LearningObject.Material,
       contributors,
       outcomes,
       hasRevision: record.hasRevision,
