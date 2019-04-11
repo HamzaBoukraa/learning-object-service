@@ -5,6 +5,7 @@ import { LearningObjectStatDatastore } from '../LearningObjectStats/LearningObje
 import { CollectionDataStore } from '../Collections/CollectionDataStore';
 import { ChangeLogDocument } from '../types/changelog';
 import { LearningObject, User, Collection } from '../entity';
+import { Submission } from '../LearningObjectSubmission/types/Submission';
 
 export interface DataStore
   extends LearningOutcomeDatastore,
@@ -149,6 +150,10 @@ export interface DataStore
     id: string,
     collection: string,
   ): Promise<void>;
+  recordSubmission(submission: Submission): Promise<void>;
+  recordCancellation(learningObjectId: string): Promise<void>;
+  fetchSubmission(collection: string, learningObjectId: string): Promise<Submission>;
+  fetchRecentSubmission(learningObjectId: string): Promise<Submission>;
   unsubmitLearningObject(id: string): Promise<void>;
   setChildren(parentId: string, children: string[]): Promise<void>;
   deleteChild(parentId: string, childId: string): Promise<void>;
