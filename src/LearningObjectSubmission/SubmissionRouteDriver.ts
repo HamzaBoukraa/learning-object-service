@@ -56,7 +56,7 @@ export function initialize({
       const emailVerified = req.user.emailVerified;
 
       if (!collection || !hasSubmission) {
-        res.status(501).json({message: 'Not Implemented'});
+        res.status(501).json({message: 'This route currently requires both the collection and hasSubmission query parameters.'});
       } else {
         const isFirstSubmission = await checkFirstSubmission({
           dataStore,
