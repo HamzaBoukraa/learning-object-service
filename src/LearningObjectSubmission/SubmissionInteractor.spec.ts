@@ -18,7 +18,7 @@ describe('submitForReview', () => {
         await submitForReview({
           dataStore,
           fileManager,
-          username: MOCK_OBJECTS.USERNAME,
+          user: MOCK_OBJECTS.USERTOKEN,
           learningObjectId: SUBMITTABLE_LEARNING_OBJECT.id,
           userId: MOCK_OBJECTS.USER_ID,
           collection: SUBMITTABLE_LEARNING_OBJECT.collection,
@@ -35,7 +35,7 @@ describe('submitForReview', () => {
         await submitForReview({
           dataStore,
           fileManager,
-          username: MOCK_OBJECTS.USERNAME,
+          user: MOCK_OBJECTS.USERTOKEN,
           learningObjectId: SUBMITTABLE_LEARNING_OBJECT.id,
           userId: MOCK_OBJECTS.USER_ID,
           collection: SUBMITTABLE_LEARNING_OBJECT.collection,
@@ -51,7 +51,7 @@ describe('submitForReview', () => {
         await submitForReview({
           dataStore,
           fileManager,
-          username: MOCK_OBJECTS.USERNAME,
+          user: MOCK_OBJECTS.USERTOKEN,
           learningObjectId: SUBMITTABLE_LEARNING_OBJECT.id,
           userId: MOCK_OBJECTS.USER_ID,
           collection: SUBMITTABLE_LEARNING_OBJECT.collection,
@@ -67,7 +67,7 @@ describe('submitForReview', () => {
         await submitForReview({
           dataStore,
           fileManager,
-          username: MOCK_OBJECTS.USERNAME,
+          user: MOCK_OBJECTS.USERTOKEN,
           learningObjectId: SUBMITTABLE_LEARNING_OBJECT.id,
           userId: MOCK_OBJECTS.USER_ID,
           collection: SUBMITTABLE_LEARNING_OBJECT.collection,
@@ -87,7 +87,7 @@ describe('cancelSubmission', () => {
         cancelSubmission({
           dataStore,
           userId: MOCK_OBJECTS.USER_ID,
-          username: MOCK_OBJECTS.USERNAME,
+          emailVerified: true,
           learningObjectId: SUBMITTABLE_LEARNING_OBJECT.id,
         }),
       ).resolves.toBe(undefined);
