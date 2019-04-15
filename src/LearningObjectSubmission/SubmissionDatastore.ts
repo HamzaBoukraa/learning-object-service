@@ -88,12 +88,7 @@ export class SubmissionDatastore {
       })
       .limit(1)
       .toArray();
-    if (!submission || submission.length === 0) {
-      throw new ResourceError(
-        `Recent submission for learning object ${learningObjectId} not found`,
-        ResourceErrorReason.NOT_FOUND,
-      );
-    }
+    // TODO: Check for submission not found after data is backfilled
     return submission[0];
   }
 
