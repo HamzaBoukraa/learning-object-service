@@ -88,6 +88,7 @@ export class SubmissionDatastore {
       })
       .limit(1)
       .toArray();
+    // TODO: Check for submission not found after data is backfilled
     return submission[0];
   }
 
