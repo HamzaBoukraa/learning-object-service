@@ -25,7 +25,7 @@
   "dependencies": {
     "@cyber4all/clark-taxonomy": "^4.0.2",
     "@sentry/node": "^4.6.6",
-    "aws-sdk": "^2.211.0",
+    "aws-sdk": "^2.439.0",
     "cookie-parser": "^1.4.3",
     "cors": "^2.8.4",
     "dotenv": "^6.0.0",
