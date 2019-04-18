@@ -41,6 +41,7 @@ import {
 } from '../errors';
 import { reportError } from './SentryConnector';
 import { LearningObject, LearningOutcome, User } from '../entity';
+import { Submission } from '../LearningObjectSubmission/types/Submission';
 
 export enum COLLECTIONS {
   USERS = 'users',
@@ -51,6 +52,7 @@ export enum COLLECTIONS {
   LO_COLLECTIONS = 'collections',
   MULTIPART_STATUSES = 'multipart-upload-statuses',
   CHANGLOG = 'changelogs',
+  SUBMISSIONS = 'submissions',
 }
 
 export class MongoDriver implements DataStore {
@@ -517,6 +519,26 @@ export class MongoDriver implements DataStore {
       id,
       collection,
     );
+  }
+
+  recordSubmission(
+    submission: Submission,
+  ): Promise<void> {
+    return this.submissionStore.recordSubmission(submission);
+  }
+
+  recordCancellation(
+    learningObjectId: string,
+  ): Promise<void> {
+    return this.submissionStore.recordCancellation(learningObjectId);
+  }
+
+  fetchSubmission(collection: string, learningObjectId: string): Promise<Submission> {
+    return this.submissionStore.fetchSubmission(collection, learningObjectId);
+  }
+
+  fetchRecentSubmission(learningObjectId: string): Promise<Submission> {
+    return this.submissionStore.fetchRecentSubmission(learningObjectId);
   }
 
   /**

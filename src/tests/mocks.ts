@@ -152,7 +152,14 @@ export const MOCK_OBJECTS = {
     saves: 23,
     downloads: 4,
   },
-  USER: new User({ id: '123' }),
+  USER: new User({
+    id: '123',
+    username: 'unittestalt',
+    name: 'unit test',
+    email: 'unit@test.com',
+    organization: 'unittesting',
+    emailVerified: true,
+  }),
   OUTCOME: new LearningOutcome({ id: '123' }),
   USER_ID: '5a70fb5ed45bde3f9d65agfd',
   CHANGELOG_TEXT: 'Hello',
@@ -176,4 +183,10 @@ export const INVALID_LEARNING_OBJECTS = {
     id: 'no_name_id',
     name: '',
   },
+};
+
+export const SUBMISSION = {
+  collection: 'c5',
+  timestamp: 'date',
+  learningObjectId: 'default_id',
 };
