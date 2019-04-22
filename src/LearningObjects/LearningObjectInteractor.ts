@@ -96,6 +96,46 @@ export async function addLearningObjectFile({
 }
 
 /**
+ * Adds or updates Learning Object mutliple file metadata
+ * *** Only the author of Learning Object, admins, and editors are allowed to add file metadata to a Learning Object ***
+ * @export
+ * @param {DataStore} dataStore [Driver for datastore]
+ * @param {UserToken} requester [Object containing information about the requester]
+ * @param {string} authorUsername [Learning Object's author's username]
+ * @param {string} learningObjectId [Id of the Learning Object to add the file metadata to]
+ * @param {FileMeta[]} fileMeta [Object containing metadata about the file]
+ * @returns {Promise<string>} [Id of the file metadata]
+ */
+export async function addLearningObjectFiles({
+  dataStore,
+  requester,
+  authorUsername,
+  learningObjectId,
+  fileMeta,
+}: {
+  dataStore: DataStore;
+  requester: UserToken;
+  authorUsername: string;
+  learningObjectId: string;
+  fileMeta: FileMeta[];
+}): Promise<string[]> {
+  try {
+    const promises$ = fileMeta.map(file => {
+      return addLearningObjectFile({
+        dataStore,
+        authorUsername,
+        learningObjectId,
+        fileMeta: file,
+        requester,
+      });
+    });
+    return await Promise.all(promises$);
+  } catch (e) {
+    handleError(e);
+  }
+}
+
+/**
  * Generates new LearningObject.Material.File Object
  *
  * @private
@@ -476,15 +516,17 @@ export async function deleteLearningObject(params: {
           ),
         );
       });
-      params.dataStore.deleteChangelog({learningObjectId: object.id}).catch(e => {
-        reportError(
-          new Error(
-            `Problem deleting changelogs for ${
-              params.learningObjectName
-            }: ${e}`,
-          ),
-        );
-      });
+      params.dataStore
+        .deleteChangelog({ learningObjectId: object.id })
+        .catch(e => {
+          reportError(
+            new Error(
+              `Problem deleting changelogs for ${
+                params.learningObjectName
+              }: ${e}`,
+            ),
+          );
+        });
     } else {
       return Promise.reject(
         new Error('User does not have authorization to perform this action'),
