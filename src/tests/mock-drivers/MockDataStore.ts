@@ -256,7 +256,12 @@ export class MockDataStore implements DataStore {
   }
   createChangelog(params: {
     learningObjectId: string,
-    userId: string,
+    author: {
+      userId: string,
+      name: string,
+      role: string,
+      profileImage: string,
+    },
     changelogText: string,
   }): Promise<void> {
     return Promise.resolve();
