@@ -26,7 +26,6 @@ export class ChangelogDataStore {
     },
     changelogText: string,
   }): Promise<void> {
-    console.log(params.author);
     await this.db.collection(COLLECTIONS.CHANGLOG).updateOne(
       { learningObjectId: params.learningObjectId },
       {

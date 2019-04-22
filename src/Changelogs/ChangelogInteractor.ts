@@ -3,7 +3,7 @@ import { UserToken } from '../types';
 import { ResourceError, ResourceErrorReason } from '../errors';
 import { ChangeLogDocument } from '../types/Changelog';
 import { hasChangelogAccess } from './AuthManager';
-import * as md5 from 'md5'
+import * as md5 from 'md5';
 
 /**
  * Instruct the data store to create a new log in the change logs collection
