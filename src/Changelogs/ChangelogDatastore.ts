@@ -18,15 +18,21 @@ export class ChangelogDataStore {
    */
   public async createChangelog(params: {
     learningObjectId: string,
-    userId: string,
+    author: {
+      userId: string,
+      name: string,
+      role: string,
+      profileImage: string,
+    },
     changelogText: string,
   }): Promise<void> {
+    console.log(params.author);
     await this.db.collection(COLLECTIONS.CHANGLOG).updateOne(
       { learningObjectId: params.learningObjectId },
       {
         $push: {
           logs: {
-            userId: params.userId,
+            author: params.author,
             date: Date.now(),
             text: params.changelogText,
           },
