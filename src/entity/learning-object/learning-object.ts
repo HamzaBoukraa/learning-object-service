@@ -48,7 +48,6 @@ export class LearningObject {
   set name(name: string) {
     if (this.isValidName(name)) {
       this._name = name.trim();
-      this.updateDate();
     } else {
       throw new EntityError(LEARNING_OBJECT_ERRORS.INVALID_NAME, 'name');
     }
@@ -88,7 +87,6 @@ export class LearningObject {
   set description(description: string) {
     if (description !== undefined && description !== null) {
       this._description = description.trim();
-      this.updateDate();
     } else {
       throw new EntityError(
         LEARNING_OBJECT_ERRORS.INVALID_DESCRIPTION,
@@ -106,18 +104,6 @@ export class LearningObject {
     return this._date;
   }
 
-  /**
-   * Updates LearningObject's last-modified date
-   *
-   * @private
-   * @memberof LearningObject
-   */
-  private updateDate() {
-    if (this._constructed) {
-      this._date = Date.now().toString();
-    }
-  }
-
   private _length!: LearningObject.Length;
   /**
    * @property {string} length
@@ -131,7 +117,6 @@ export class LearningObject {
   set length(length: LearningObject.Length) {
     if (this.isValidLength(length)) {
       this._length = length;
-      this.updateDate();
     } else {
       throw new EntityError(
         LEARNING_OBJECT_ERRORS.INVALID_LENGTH(length),
@@ -179,7 +164,6 @@ export class LearningObject {
     const [alreadyAdded, isValid] = this.isValidLevel(level);
     if (!alreadyAdded && isValid) {
       this._levels.push(level);
-      this.updateDate();
     } else if (alreadyAdded) {
       throw new EntityError(
         LEARNING_OBJECT_ERRORS.LEVEL_EXISTS(level),
@@ -204,7 +188,6 @@ export class LearningObject {
     if (this.levels.length > 1 && index > -1) {
       // tslint:disable-next-line:no-unused-expression
       this._levels.splice(index, 1)[0];
-      this.updateDate();
     } else {
       throw new EntityError(
         index <= -1
@@ -256,7 +239,7 @@ export class LearningObject {
       outcome instanceof LearningOutcome
         ? outcome
         : new LearningOutcome(outcome);
-    this.updateDate();
+
     return this._outcomes.push(addingOutcome) - 1;
   }
   /**
@@ -266,7 +249,6 @@ export class LearningObject {
    * @returns {LearningOutcome} the learning outcome which was removed
    */
   removeOutcome(index: number): LearningOutcome {
-    this.updateDate();
     return this._outcomes.splice(index, 1)[0];
   }
 
@@ -280,7 +262,6 @@ export class LearningObject {
   }
   set materials(material: LearningObject.Material) {
     if (material) {
-      this.updateDate();
       this._materials = material;
     } else {
       throw new EntityError(
@@ -322,7 +303,7 @@ export class LearningObject {
     if (object) {
       const addingObject =
         object instanceof LearningObject ? object : new LearningObject(object);
-      this.updateDate();
+
       return this._children.push(addingObject) - 1;
     } else {
       throw new EntityError(LEARNING_OBJECT_ERRORS.INVALID_CHILD, 'children');
@@ -335,7 +316,6 @@ export class LearningObject {
    * @returns {LearningObject} the child object which was removed
    */
   removeChild(index: number): LearningObject {
-    this.updateDate();
     return this._children.splice(index, 1)[0];
   }
 
@@ -359,7 +339,7 @@ export class LearningObject {
     if (contributor) {
       const addingUser =
         contributor instanceof User ? contributor : new User(contributor);
-      this.updateDate();
+
       return this._contributors.push(addingUser) - 1;
     } else {
       throw new EntityError(
@@ -375,7 +355,6 @@ export class LearningObject {
    * @returns {User} the user object which was removed
    */
   removeContributor(index: number): User {
-    this.updateDate();
     return this._contributors.splice(index, 1)[0];
   }
 
@@ -390,7 +369,6 @@ export class LearningObject {
   set collection(collection: string) {
     if (collection !== undefined && collection !== null) {
       this._collection = collection;
-      this.updateDate();
     } else {
       throw new EntityError(
         LEARNING_OBJECT_ERRORS.INVALID_COLLECTION,
@@ -412,7 +390,6 @@ export class LearningObject {
     status = this.remapStatus(status);
     if (this.isValidStatus(status)) {
       this._status = status;
-      this.updateDate();
     } else {
       throw new EntityError(
         LEARNING_OBJECT_ERRORS.INVALID_STATUS(status),
@@ -420,11 +397,11 @@ export class LearningObject {
       );
     }
   }
-/**
- * @property {boolean} hasRevision
- * An optional field on a learning object, denoting whether or not the object
- * has a working copy with a different status in the working collection.
- */
+  /**
+   * @property {boolean} hasRevision
+   * An optional field on a learning object, denoting whether or not the object
+   * has a working copy with a different status in the working collection.
+   */
   private _hasRevision?: boolean;
 
   get hasRevision(): boolean {
