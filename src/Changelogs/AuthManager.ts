@@ -14,7 +14,7 @@ export async function hasChangelogAccess(params: {
     dataStore: DataStore,
     learningObjectId: string,
 }) {
-    return determineRole({
+    return await determineRole({
         accessGroups: params.user.accessGroups,
         dataStore: params.dataStore,
         user: params.user,
