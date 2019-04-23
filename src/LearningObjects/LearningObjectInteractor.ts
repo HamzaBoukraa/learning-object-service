@@ -52,7 +52,7 @@ const LearningObjectState = {
  * @param {string} authorUsername [Learning Object's author's username]
  * @param {string} learningObjectId [Id of the Learning Object to add the file metadata to]
  * @param {FileMeta} fileMeta [Object containing metadata about the file]
- * @returns {Promise<string>} [Id of the file metadata]
+ * @returns {Promise<string>} [Id of the added Learning Object file]
  */
 export async function addLearningObjectFile({
   dataStore,
@@ -96,14 +96,13 @@ export async function addLearningObjectFile({
 
 /**
  * Adds or updates Learning Object mutliple file metadata
- * *** Only the author of Learning Object, admins, and editors are allowed to add file metadata to a Learning Object ***
  * @export
  * @param {DataStore} dataStore [Driver for datastore]
  * @param {UserToken} requester [Object containing information about the requester]
  * @param {string} authorUsername [Learning Object's author's username]
  * @param {string} learningObjectId [Id of the Learning Object to add the file metadata to]
  * @param {FileMeta[]} fileMeta [Object containing metadata about the file]
- * @returns {Promise<string>} [Id of the file metadata]
+ * @returns {Promise<string[]>} [Ids of the added Learning Object files]
  */
 export async function addLearningObjectFiles({
   dataStore,
