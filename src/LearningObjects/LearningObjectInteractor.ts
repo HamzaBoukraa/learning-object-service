@@ -76,10 +76,9 @@ export async function addLearningObjectFile({
         fileMeta.name,
         fileMeta.fileType,
         fileMeta.url,
-        fileMeta.date,
         fileMeta.size,
       ],
-      mustProvide: ['name', 'fileType', 'url', 'date', 'size'],
+      mustProvide: ['name', 'fileType', 'url', 'size'],
     });
     const loFile: LearningObject.Material.File = generateLearningObjectFile(
       fileMeta,
@@ -148,7 +147,7 @@ function generateLearningObjectFile(
 ): LearningObject.Material.File {
   const learningObjectFile: Partial<LearningObject.Material.File> = {
     url: file.url,
-    date: file.date,
+    date: Date.now().toString(),
     name: file.name,
     fileType: file.fileType,
     extension: file.extension,
