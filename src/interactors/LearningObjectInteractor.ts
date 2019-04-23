@@ -233,7 +233,7 @@ export class LearningObjectInteractor {
         revision,
       } = params;
 
-      const fullChildren = false;
+      const fullChildren = true;
       let loadWorkingCopies = false;
 
       if (!revision) {

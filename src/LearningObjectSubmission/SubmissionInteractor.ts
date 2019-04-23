@@ -1,92 +1,121 @@
 import { DataStore } from '../interfaces/DataStore';
 import { updateReadme } from '../LearningObjects/LearningObjectInteractor';
 import { FileManager } from '../interfaces/interfaces';
-import { reportError } from '../drivers/SentryConnector';
-import { hasLearningObjectWriteAccess } from '../interactors/AuthorizationManager';
+import { SubmittableLearningObject } from '../entity';
+import { Submission } from './types/Submission';
+import { authorizeSubmissionRequest } from './AuthorizationManager';
 import { UserToken } from '../types';
 import { ResourceError, ResourceErrorReason } from '../errors';
-import { SubmittableLearningObject } from '../entity';
 
+/**
+ * Submit a learning object to a collection
+ *
+ * @param dataStore instance of dataStore
+ * @param userId id of learning object author
+ * @param learningObjectId id of the learning object to search for
+ * @param fileManager instance of FileManager
+ * @param user metadata about current user (instance of UserToken)
+ * @param collection name of collection to submit learning object to
+ */
 export async function submitForReview(params: {
   dataStore: DataStore;
   fileManager: FileManager;
-  username: string;
-  id: string;
+  user: UserToken;
+  learningObjectId: string;
+  userId: string;
   collection: string;
 }): Promise<void> {
-  try {
-    const object = await params.dataStore.fetchLearningObject({
-      id: params.id,
-      full: true,
-    });
-    // tslint:disable-next-line:no-unused-expression
-    new SubmittableLearningObject(object);
-    await params.dataStore.submitLearningObjectToCollection(
-      params.username,
-      params.id,
-      params.collection,
-    );
-    await updateReadme({
-      dataStore: params.dataStore,
-      fileManager: params.fileManager,
-      id: params.id,
-    });
-  } catch (e) {
-    console.log(e);
-    // TODO: Convey that this is an internal server error
-    return Promise.reject(
-      e instanceof Error ? e : new Error(`Problem submitting learning object.`),
-    );
-  }
-}
-export async function cancelSubmission(
-  dataStore: DataStore,
-  id: string,
-): Promise<void> {
-  await dataStore.unsubmitLearningObject(id);
+  await authorizeSubmissionRequest({
+    dataStore: params.dataStore,
+    userId: params.userId,
+    learningObjectId: params.learningObjectId,
+    emailVerified: params.user.emailVerified,
+  });
+  const object = await params.dataStore.fetchLearningObject({
+    id: params.learningObjectId,
+    full: true,
+  });
+  // tslint:disable-next-line:no-unused-expression
+  new SubmittableLearningObject(object);
+  await params.dataStore.submitLearningObjectToCollection(
+    params.user.username,
+    params.learningObjectId,
+    params.collection,
+  );
+  const submission: Submission = {
+    learningObjectId: params.learningObjectId,
+    collection: params.collection,
+    timestamp: Date.now().toString(),
+  };
+  await params.dataStore.recordSubmission(submission);
+  await updateReadme({
+    dataStore: params.dataStore,
+    fileManager: params.fileManager,
+    id: params.learningObjectId,
+  });
 }
 
 /**
- * Instruct the datastore to create a new log in the changelogs collection
+ * Check if learning object is being submitted to a collection
+ * for the first time.
  *
- * @param {DataStore} dataStore An instance of DataStore
- * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
- * @param {string} userId The id of the user that wrote the incoming changelog
- * @param {string} changelogText The contents of the incoming changelog
- *
- * @returns {void}
+ * @param dataStore instance of dataStore
+ * @param emailVerified boolean to check if current user has a verified email
+ * @param userId id of learning object author
+ * @param learningObjectId id of the learning object to search for
+ * @param collection name of collection to search for in submission collection
  */
-export async function createChangelog(params: {
-  dataStore: DataStore;
-  learningObjectId: string;
-  user: UserToken;
-  changelogText: string;
-}): Promise<void> {
-  try {
-    const hasAccess = hasLearningObjectWriteAccess(
-      params.user,
-      params.dataStore,
-      params.learningObjectId,
-    );
-    if (hasAccess) {
-      const objectId = await params.dataStore.checkLearningObjectExistence(
-        params.learningObjectId,
-      );
-      if (objectId && objectId.length > 0) {
-        const authorID = await params.dataStore.findUser(params.user.username);
-        await params.dataStore.createChangelog(
-          params.learningObjectId,
-          authorID,
-          params.changelogText,
-        );
-      } else {
-        return Promise.reject(new ResourceError('Learning Object not found.', ResourceErrorReason.NOT_FOUND));
-      }
-    } else {
-      return Promise.reject(new ResourceError('Invalid Access', ResourceErrorReason.INVALID_ACCESS));
-    }
-  } catch (e) {
-    reportError(e);
-    return Promise.reject(e instanceof Error ? e : new Error(e));
-  }
+export async function checkFirstSubmission(params: {
+  dataStore: DataStore,
+  collection: string,
+  learningObjectId: string,
+  userId: string,
+  emailVerified: boolean,
+}): Promise<boolean> {
+  await authorizeSubmissionRequest({
+    dataStore: params.dataStore,
+    userId: params.userId,
+    learningObjectId: params.learningObjectId,
+    emailVerified: params.emailVerified,
+  });
+
+  return await params.dataStore.fetchSubmission(
+    params.collection,
+    params.learningObjectId,
+  )
+  ? false
+  : true;
 }
+
+/**
+ * Cancels a learning object submission
+ * Throws an error if requested submission has already been canceled
+ *
+ * @param dataStore instance of dataStore
+ * @param emailVerified boolean to check if current user has a verified email
+ * @param userId id of learning object author
+ * @param learningObjectId id of the learning object to search for
+ */
+export async function cancelSubmission(params: {
+  dataStore: DataStore,
+  learningObjectId: string,
+  userId: string,
+  emailVerified: boolean,
+}): Promise<void> {
+  await authorizeSubmissionRequest({
+    dataStore: params.dataStore,
+    userId: params.userId,
+    learningObjectId: params.learningObjectId,
+    emailVerified: params.emailVerified,
+  });
+  const submission = await params.dataStore.fetchRecentSubmission(params.learningObjectId);
+  if (submission && submission.cancelDate) {
+    throw new ResourceError(
+      'This submission has already been canceled',
+      ResourceErrorReason.BAD_REQUEST,
+    );
+  }
+  await params.dataStore.recordCancellation(params.learningObjectId);
+  await params.dataStore.unsubmitLearningObject(params.learningObjectId);
+}
+

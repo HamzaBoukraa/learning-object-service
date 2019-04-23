@@ -1,4 +1,4 @@
-import { submitForReview, cancelSubmission, createChangelog } from './SubmissionInteractor';
+import { submitForReview, cancelSubmission } from './SubmissionInteractor';
 import {
   MOCK_OBJECTS,
   SUBMITTABLE_LEARNING_OBJECT,
@@ -18,8 +18,9 @@ describe('submitForReview', () => {
         await submitForReview({
           dataStore,
           fileManager,
-          username: MOCK_OBJECTS.USERNAME,
-          id: SUBMITTABLE_LEARNING_OBJECT.id,
+          user: MOCK_OBJECTS.USERTOKEN,
+          learningObjectId: SUBMITTABLE_LEARNING_OBJECT.id,
+          userId: MOCK_OBJECTS.USER_ID,
           collection: SUBMITTABLE_LEARNING_OBJECT.collection,
         }),
       ).resolves.toBe(undefined);
@@ -34,8 +35,9 @@ describe('submitForReview', () => {
         await submitForReview({
           dataStore,
           fileManager,
-          username: MOCK_OBJECTS.USERNAME,
-          id: SUBMITTABLE_LEARNING_OBJECT.id,
+          user: MOCK_OBJECTS.USERTOKEN,
+          learningObjectId: SUBMITTABLE_LEARNING_OBJECT.id,
+          userId: MOCK_OBJECTS.USER_ID,
           collection: SUBMITTABLE_LEARNING_OBJECT.collection,
         });
       } catch (e) {
@@ -49,8 +51,9 @@ describe('submitForReview', () => {
         await submitForReview({
           dataStore,
           fileManager,
-          username: MOCK_OBJECTS.USERNAME,
-          id: SUBMITTABLE_LEARNING_OBJECT.id,
+          user: MOCK_OBJECTS.USERTOKEN,
+          learningObjectId: SUBMITTABLE_LEARNING_OBJECT.id,
+          userId: MOCK_OBJECTS.USER_ID,
           collection: SUBMITTABLE_LEARNING_OBJECT.collection,
         });
       } catch (e) {
@@ -64,8 +67,9 @@ describe('submitForReview', () => {
         await submitForReview({
           dataStore,
           fileManager,
-          username: MOCK_OBJECTS.USERNAME,
-          id: SUBMITTABLE_LEARNING_OBJECT.id,
+          user: MOCK_OBJECTS.USERTOKEN,
+          learningObjectId: SUBMITTABLE_LEARNING_OBJECT.id,
+          userId: MOCK_OBJECTS.USER_ID,
           collection: SUBMITTABLE_LEARNING_OBJECT.collection,
         });
       } catch (e) {
@@ -80,7 +84,12 @@ describe('cancelSubmission', () => {
   it('should cancel the submission given a valid username and id', async done => {
     try {
       await expect(
-        cancelSubmission(dataStore, SUBMITTABLE_LEARNING_OBJECT.id),
+        cancelSubmission({
+          dataStore,
+          userId: MOCK_OBJECTS.USER_ID,
+          emailVerified: true,
+          learningObjectId: SUBMITTABLE_LEARNING_OBJECT.id,
+        }),
       ).resolves.toBe(undefined);
       done();
     } catch (error) {

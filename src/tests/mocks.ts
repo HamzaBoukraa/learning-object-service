@@ -135,6 +135,46 @@ export const MOCK_OBJECTS = {
     bio: 'text random text random text random text random text random text random text',
     createdAt: '1534556893394',
   },
+  USERTOKEN_ALT: {
+    username: 'unittestalt',
+    name: 'unit test',
+    email: 'unit@test.com',
+    organization: 'unittesting',
+    emailVerified: true,
+    accessGroups: [''],
+  },
+  USERTOKEN_ADMIN: {
+    username: 'unittest',
+    name: 'unit test',
+    email: 'unit@test.com',
+    organization: 'unittesting',
+    emailVerified: true,
+    accessGroups: ['admin'],
+  },
+  USERTOKEN_EDITOR: {
+    username: 'unittest',
+    name: 'unit test',
+    email: 'unit@test.com',
+    organization: 'unittesting',
+    emailVerified: true,
+    accessGroups: ['editor'],
+  },
+  USERTOKEN_CURATOR_C5: {
+    username: 'unittest',
+    name: 'unit test',
+    email: 'unit@test.com',
+    organization: 'unittesting',
+    emailVerified: true,
+    accessGroups: ['curator@c5'],
+  },
+  USERTOKEN_REVIEWER_C5: {
+    username: 'unittest',
+    name: 'unit test',
+    email: 'unit@test.com',
+    organization: 'unittesting',
+    emailVerified: true,
+    accessGroups: ['reviewer@c5'],
+  },
   CHANGELOG: {
     _id: '1234',
     learningObjectId: 'default_id',
@@ -202,9 +242,16 @@ export const MOCK_OBJECTS = {
     saves: 23,
     downloads: 4,
   },
-  USER: new User({ id: '123' }),
+  USER: new User({
+    id: '123',
+    username: 'unittestalt',
+    name: 'unit test',
+    email: 'unit@test.com',
+    organization: 'unittesting',
+    emailVerified: true,
+  }),
   OUTCOME: new LearningOutcome({ id: '123' }),
-  USER_ID: '5a9583401405cb053272ced1',
+  USER_ID: '5a70fb5ed45bde3f9d65agfd',
   CHANGELOG_TEXT: 'Hello',
   seedTestID: 'parent_object_1',
 };
@@ -233,3 +280,8 @@ export const SEED_DB_IDS = {
   ...SEED_DATA,
 };
 
+export const SUBMISSION = {
+  collection: 'c5',
+  timestamp: 'date',
+  learningObjectId: 'default_id',
+};
