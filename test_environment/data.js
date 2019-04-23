@@ -225,7 +225,6 @@ AUTHOR_MOCK : {
     organization: "Towson University",
     password: '$2b$10$Xo4wAJimokUp8Yha4c9boeiFufdf/UnxEuhbGHNuFrgqkHp.96P5a', //hash of 'password',
     objects:['parent_object_1','child_object_1'],
-    emailVerified: true,
     bio: "random text random text random text random text random text random text random text random text random text random text",
     createdAt:"1534558693394",
     emailVerified: true,
@@ -238,10 +237,10 @@ ADMIN_MOCK : {
     organization: "Towson University",
     password: '$2b$10$Xo4wAJimokUp8Yha4c9boeiFufdf/UnxEuhbGHNuFrgqkHp.96P5a', //hash of 'password',
     objects:[],
+    // tslint:disable-next-line
     emailVerified: true,
     bio: "random text random text random text random text random text random text random text random text random text random text",
     createdAt:"1534558693394",
-    emailVerified: true,
     accessGroups: ['admin']
 },
 
@@ -256,7 +255,6 @@ CURATOR_MOCK : {
     emailVerified: true,
     bio: "random text random text random text random text random text random text random text random text random text random text",
     createdAt:"1534558693394",
-    emailVerified: true,
     accessGroups: ['curator@nccp']
 },
 
@@ -271,7 +269,6 @@ EDITOR_MOCK : {
     emailVerified: true,
     bio: "random text random text random text random text random text random text random text random text random text random text",
     createdAt:"1534558693394",
-    emailVerified: true,
     accessGroups: ['editor']
 },
 
@@ -286,7 +283,6 @@ REVIEWER_MOCK : {
     emailVerified: true,
     bio: "random text random text random text random text random text random text random text random text random text random text",
     createdAt:"1534558693394",
-    emailVerified: true,
     accessGroups: ['curator@nccp']
 },
 
