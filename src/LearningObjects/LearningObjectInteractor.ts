@@ -72,13 +72,8 @@ export async function addLearningObjectFile({
     const isAdminOrEditor = requesterIsAdminOrEditor(requester);
     authorizeRequest([isAuthor, isAdminOrEditor]);
     validateRequestParams({
-      params: [
-        fileMeta.name,
-        fileMeta.fileType,
-        fileMeta.url,
-        fileMeta.size,
-      ],
-      mustProvide: ['name', 'fileType', 'url', 'size'],
+      params: [fileMeta.name, fileMeta.url, fileMeta.size],
+      mustProvide: ['name', 'url', 'size'],
     });
     const loFile: LearningObject.Material.File = generateLearningObjectFile(
       fileMeta,
@@ -144,12 +139,14 @@ export async function addLearningObjectFiles({
 function generateLearningObjectFile(
   file: FileMeta,
 ): LearningObject.Material.File {
+  const extension = file.name.split('.').pop();
+  const fileType = file.fileType || '';
   const learningObjectFile: Partial<LearningObject.Material.File> = {
+    extension,
+    fileType,
     url: file.url,
     date: Date.now().toString(),
     name: file.name,
-    fileType: file.fileType,
-    extension: file.extension,
     fullPath: file.fullPath,
     size: +file.size,
     packageable: isPackageable(+file.size),
