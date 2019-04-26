@@ -521,19 +521,18 @@ export class MongoDriver implements DataStore {
     );
   }
 
-  recordSubmission(
-    submission: Submission,
-  ): Promise<void> {
+  recordSubmission(submission: Submission): Promise<void> {
     return this.submissionStore.recordSubmission(submission);
   }
 
-  recordCancellation(
-    learningObjectId: string,
-  ): Promise<void> {
+  recordCancellation(learningObjectId: string): Promise<void> {
     return this.submissionStore.recordCancellation(learningObjectId);
   }
 
-  fetchSubmission(collection: string, learningObjectId: string): Promise<Submission> {
+  fetchSubmission(
+    collection: string,
+    learningObjectId: string,
+  ): Promise<Submission> {
     return this.submissionStore.fetchSubmission(collection, learningObjectId);
   }
 
@@ -741,23 +740,21 @@ export class MongoDriver implements DataStore {
   }
 
   async fetchRecentChangelog(params: {
-    learningObjectId: string,
+    learningObjectId: string;
   }): Promise<ChangeLogDocument> {
     return this.changelogStore.getRecentChangelog({
       learningObjectId: params.learningObjectId,
     });
   }
 
-  async deleteChangelog(params: {
-    learningObjectId: string,
-  }): Promise<void> {
+  async deleteChangelog(params: { learningObjectId: string }): Promise<void> {
     return this.changelogStore.deleteChangelog({
       learningObjectId: params.learningObjectId,
     });
   }
 
   async fetchAllChangelogs(params: {
-    learningObjectId: string,
+    learningObjectId: string;
   }): Promise<ChangeLogDocument[]> {
     return await this.changelogStore.fetchAllChangelogs({
       learningObjectId: params.learningObjectId,
@@ -791,8 +788,10 @@ export class MongoDriver implements DataStore {
                 params.loFile.packageable,
             },
           },
-          // @ts-ignore: arrayFilters is in fact a property defined by documentation. Property does not exist in type definition.
-          { arrayFilters: [{ 'element.url': params.loFile.url }] },
+          {
+            arrayFilters: [{ 'element.url': params.loFile.url }],
+            projection: { _id: 0, 'materials.files.$': 1 },
+          },
         );
       if (!existingDoc.value) {
         params.loFile.id = new ObjectID().toHexString();
@@ -803,7 +802,9 @@ export class MongoDriver implements DataStore {
           { $push: { 'materials.files': params.loFile } },
         );
       } else {
-        params.loFile.id = existingDoc.value.id;
+        const materials = existingDoc.value.materials;
+        const file = materials.files[0];
+        params.loFile.id = file.id;
       }
       return params.loFile.id;
     } catch (e) {
@@ -1453,15 +1454,13 @@ export class MongoDriver implements DataStore {
    * @returns {array}
    */
   async checkLearningObjectExistence(params: {
-    learningObjectId: string,
-    userId: string,
+    learningObjectId: string;
+    userId: string;
   }): Promise<LearningObject> {
-    return await this.db
-      .collection(COLLECTIONS.LEARNING_OBJECTS)
-      .findOne({
-        _id: params.learningObjectId,
-        authorID: params.userId,
-      });
+    return await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).findOne({
+      _id: params.learningObjectId,
+      authorID: params.userId,
+    });
   }
 
   /**
@@ -2082,9 +2081,9 @@ export class MongoDriver implements DataStore {
   }
 
   async createChangelog(params: {
-    learningObjectId: string,
-    userId: string,
-    changelogText: string,
+    learningObjectId: string;
+    userId: string;
+    changelogText: string;
   }): Promise<void> {
     return this.changelogStore.createChangelog({
       learningObjectId: params.learningObjectId,
