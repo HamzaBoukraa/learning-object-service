@@ -1,4 +1,7 @@
 import { LearningObject, User, LearningOutcome } from '../entity';
+import 'dotenv/config';
+// @ts-ignore
+import * as SEED_DATA from '../../test_environment/sharedIds';
 
 export const MOCK_OBJECTS = {
   TOTAL_RECORDS: 1,
@@ -22,14 +25,38 @@ export const MOCK_OBJECTS = {
     learningObjects: <any>[],
   },
   LEARNING_OBJECT: {
-    author: '5a70fb5ed45bde3f9d65agfd',
-    name: 'Input Validation - CS0 - C',
+    author: 'mock_author_id',
+    name: 'Input Validation - CS0 - JAVA',
     date: '1523479539862',
     length: 'nanomodule',
     levels: <any>[],
     goals: <any>[],
     outcomes: <any>[],
-    materials: {},
+    materials:
+    {
+      files: <any>[],
+      urls: [
+        {
+          title: 'An Awesome File',
+          url: 'http://cis1.towson.edu/~cyber4all/modules/nanomodules/Buffer_Overflow-CS0_C++.html',
+        },
+        {
+          title: 'Another Awesome File',
+          url: 'https://youtu.be/MH_RD1jh0AE',
+        },
+        {
+          title: 'Yeet',
+          url: 'https://youtu.be/u47q-qX52JI',
+        },
+      ],
+      notes: '',
+      folderDescriptions: <any>[],
+      pdf:
+      {
+        name: '0ReadMeFirst - Buffer Overflow - CS0 - C++.pdf',
+        url: 'https://neutrino-file-uploads.s3.us-east-2.amazonaws.com/skaza/5aa0013becba9a264dcd8030/0ReadMeFirst%20-%20Buffer%20Overflow%20-%20CS0%20-%20C%2B%2B.pdf',
+      },
+    },
     metrics: {},
     children: <any>[],
     contributors: <any>[],
@@ -37,13 +64,76 @@ export const MOCK_OBJECTS = {
     id: 'default_id',
     status: LearningObject.Status.RELEASED,
   },
+  LEARNING_OBJECT_CHILD: {
+    authorID: '5b967621f7a3ce2f6cbf5ba1',
+    name: 'Input Validation - CS0 - JAVA',
+    date: '1523479539862',
+    length: 'nanomodule',
+    levels: <any>[],
+    goals: <any>[],
+    outcomes: <any>[],
+    materials:
+    {
+      files: <any>[],
+      urls: [
+        {
+          title: 'An Awesome File',
+          url: 'http://cis1.towson.edu/~cyber4all/modules/nanomodules/Buffer_Overflow-CS0_C++.html',
+        },
+        {
+          title: 'Another Awesome File',
+          url: 'https://youtu.be/MH_RD1jh0AE',
+        },
+        {
+          title: 'Yeet',
+          url: 'https://youtu.be/u47q-qX52JI',
+        },
+      ],
+      notes: '',
+      folderDescriptions: <any>[],
+      pdf:
+      {
+        name: '0ReadMeFirst - Buffer Overflow - CS0 - C++.pdf',
+        url: 'https://neutrino-file-uploads.s3.us-east-2.amazonaws.com/skaza/5aa0013becba9a264dcd8030/0ReadMeFirst%20-%20Buffer%20Overflow%20-%20CS0%20-%20C%2B%2B.pdf',
+      },
+    },
+    metrics: {},
+    children: <any>[],
+    contributors: <any>[],
+    collection: 'nccp',
+    // id: 'default_id',
+    status: 'released',
+  },
   USERTOKEN: {
-    username: 'unittest',
-    name: 'unit test',
-    email: 'unit@test.com',
-    organization: 'unittesting',
+    username: 'Bob',
+    name: 'uncle Bob',
+    email: 'unitTest12@gmail.com',
+    organization: 'Towson University',
     emailVerified: true,
-    accessGroups: [''],
+    accessGroups: ['admin', 'reviewer@nccp'],
+  },
+  AUTHOR_MOCK: {
+    _id: 'mock_author_id',
+    username: 'Bob',
+    name: 'Uncle Bob',
+    email: 'unitTest12@gmail.com',
+    organization: 'Towson University',
+    password: '$2b$10$Xo4wAJimokUp8Yha4c9boeiFufdf/UnxEuhbGHNuFrgqkHp.96P5a', // hash of 'password',
+    objects: <any>[],
+    emailVerified: true,
+    bio: 'random text random text random text random text random text random text random text random text random text random text',
+    createdAt: '1534558693394',
+  },
+  DUPLICATE_AUTHOR_MOCK: {
+    username: 'unittest',
+    name: 'Uncle Bob',
+    email: 'unitTest13@gmail.com',
+    organization: 'Towson University',
+    password: '$2b$10$Xo4wAJimokUp8Yha4c9obeiFufdf/UnxEuhbGHNuFrgqkHp.96P5a', // hash of 'password',
+    objects: <any>[],
+    emailVerified: true,
+    bio: 'text random text random text random text random text random text random text',
+    createdAt: '1534556893394',
   },
   USERTOKEN_ALT: {
     username: 'unittestalt',
@@ -163,11 +253,12 @@ export const MOCK_OBJECTS = {
   OUTCOME: new LearningOutcome({ id: '123' }),
   USER_ID: '5a70fb5ed45bde3f9d65agfd',
   CHANGELOG_TEXT: 'Hello',
+  seedTestID: 'parent_object_1',
 };
 
 export const SUBMITTABLE_LEARNING_OBJECT = {
   ...MOCK_OBJECTS.LEARNING_OBJECT,
-  id: 'submittable_id',
+  // id: 'submittable_id',
   outcomes: ['notarealoutcomeid'],
   goals: [{ text: 'a description' }],
 };
@@ -183,6 +274,10 @@ export const INVALID_LEARNING_OBJECTS = {
     id: 'no_name_id',
     name: '',
   },
+};
+
+export const SEED_DB_IDS = {
+  ...SEED_DATA,
 };
 
 export const SUBMISSION = {

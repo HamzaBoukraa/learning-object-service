@@ -12,7 +12,7 @@ describe('MongoDriver', () => {
     it('The function should return an object with total and objects', async () => {
       expect.assertions(1);
       const result = await driver.searchAllObjects({
-        conditions: [{ nccp: [LearningObject.Status.RELEASED] }],
+        collection: ['nccp'],
       });
       expect(result).toBeDefined();
     });
@@ -34,9 +34,9 @@ describe('MongoDriver', () => {
   describe('findParentObjectIds', () => {
     it('The function should return an array', async () => {
       expect.assertions(1);
-      const learningObjectId = 'default_id';
+      const learningObjectId = 'parent_object_1';
       const parents = await driver.findParentObjectIds({
-        childId: learningObjectId,
+      childId: learningObjectId,
       });
       expect(Array.isArray(parents)).toBe(true);
     });
@@ -45,12 +45,12 @@ describe('MongoDriver', () => {
   describe('checkLearningObjectExistence', () => {
     it('The function should return an array', async () => {
       expect.assertions(1);
-      const learningObjectId = 'default_id';
-      const userId = '5b967621f7a3ce2f6cbf5ba1';
-      const result = await driver.checkLearningObjectExistence({
-        learningObjectId,
-        userId,
-      });
+      const learningObjectId = 'child_object_1';
+      const userId = 'mock_author_id';
+      const result = await driver.checkLearningObjectExistence(
+        {learningObjectId,
+         userId},
+      );
       expect(result).toBeTruthy();
     });
   });
@@ -58,10 +58,9 @@ describe('MongoDriver', () => {
   describe('getUserObjects', () => {
     it('The function should return an array of ids', async () => {
       expect.assertions(1);
-
-      const username = 'unittester';
+      const username = 'mock_author_id';
       const ids = await driver.getUserObjects(username);
-      expect(ids).toEqual([ 'default_id' ]);
+      expect(ids).toBeInstanceOf(Array);
     });
   });
 

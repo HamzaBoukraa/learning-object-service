@@ -181,7 +181,7 @@ export class MockDataStore implements DataStore {
   }
   insertLearningOutcome(params: {
     source: string;
-    outcome: LearningOutcomeInsert;
+    outcome: Partial<LearningOutcome>;
   }): Promise<string> {
     return Promise.resolve(MOCK_OBJECTS.OUTCOME.id);
   }

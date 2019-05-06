@@ -506,7 +506,7 @@ export async function deleteLearningObject(params: {
         reportError(
           new Error(
             `Problem deleting files for ${
-              params.learningObjectName
+            params.learningObjectName
             }: ${path}. ${e}`,
           ),
         );
@@ -641,7 +641,7 @@ export async function removeFile(params: {
     if (file) {
       const path = `${params.username}/${params.objectId}/${
         file.fullPath ? file.fullPath : file.name
-      }`;
+        }`;
       await params.dataStore.removeFromFiles({
         objectId: params.objectId,
         fileId: params.fileId,

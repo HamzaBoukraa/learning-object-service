@@ -691,7 +691,7 @@ export class MongoDriver implements DataStore {
   // LearningOutcome Ops
   insertLearningOutcome(params: {
     source: string;
-    outcome: LearningOutcomeInput & LearningOutcomeInsert;
+    outcome: Partial<LearningOutcome>;
   }): Promise<string> {
     return this.learningOutcomeStore.insertLearningOutcome(params);
   }
