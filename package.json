@@ -24,7 +24,7 @@
   "homepage": "https://github.com/Cyber4All/learning-object-service#readme",
   "dependencies": {
     "@cyber4all/clark-taxonomy": "^4.0.2",
-    "@sentry/node": "^4.6.6",
+    "@sentry/node": "^5.2.0",
     "aws-sdk": "^2.211.0",
     "cookie-parser": "^1.4.3",
     "cors": "^2.8.4",
