@@ -75,10 +75,9 @@ export class ChangelogDataStore {
   }): Promise<ChangeLogDocument[]> {
     const changelogs = await this.db
       .collection(COLLECTIONS.CHANGLOG)
-      .find({
+      .findOne({
         learningObjectId: params.learningObjectId,
-      })
-      .toArray();
+      });
     return changelogs;
   }
 

@@ -136,11 +136,17 @@ async function authorizeRequest(params: {
   return role;
 }
 
+/**
+ * Creates a gravatar profile profile image url from the user's email.
+ *
+ * @param {string} email user's email
+ *
+ * @returns {string}
+ */
 function generateProfileImageUrl(params: {
   email: string,
 }): string {
   const defaultIcon = 'identicon';
-  // r=pg checks the rating of the Gravatar image
   return (
     'https://www.gravatar.com/avatar/' +
     md5(params.email) +
