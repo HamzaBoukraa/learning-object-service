@@ -24,7 +24,7 @@ export class LearningOutcomeMongoDatastore implements LearningOutcomeDatastore {
    */
   async insertLearningOutcome(params: {
     source: string;
-    outcome: LearningOutcomeInput & LearningOutcomeInsert;
+    outcome: Partial<LearningOutcome>;
   }): Promise<string> {
     const id = new ObjectID().toHexString();
     params.outcome['_id'] = id;

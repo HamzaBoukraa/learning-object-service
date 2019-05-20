@@ -173,16 +173,26 @@ export function initializePrivate({
       const requester: UserToken = req.user;
       const authorUsername: string = req.params.username;
       const learningObjectId: string = req.params.learningObjectId;
-      const fileMeta: FileMeta = req.body.fileMeta;
-
-      const fileMetaId = await LearningObjectInteractor.addLearningObjectFile({
-        dataStore,
-        requester,
-        authorUsername,
-        learningObjectId,
-        fileMeta,
-      });
-      res.status(200).send(fileMetaId);
+      const fileMeta: FileMeta | FileMeta[] = req.body.fileMeta;
+      let fileMetaId;
+      if (Array.isArray(fileMeta)) {
+        fileMetaId = await LearningObjectInteractor.addLearningObjectFiles({
+          dataStore,
+          requester,
+          authorUsername,
+          learningObjectId,
+          fileMeta,
+        });
+      } else {
+        fileMetaId = await LearningObjectInteractor.addLearningObjectFile({
+          dataStore,
+          requester,
+          authorUsername,
+          learningObjectId,
+          fileMeta,
+        });
+      }
+      res.status(200).send({ fileMetaId });
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
       res.status(code).json({ message });

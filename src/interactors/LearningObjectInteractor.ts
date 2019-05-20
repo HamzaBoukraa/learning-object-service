@@ -95,6 +95,11 @@ export class LearningObjectInteractor {
     } = params;
     try {
       let summary: LearningObject[] = [];
+// tslint:disable-next-line: no-shadowed-variable
+      const { dataStore, library, username, loadChildren, query } = params;
+
+      const formattedQuery = this.formatSearchQuery(query);
+      let { status, orderBy, sortType } = formattedQuery;
 
       // This will throw an error if there is no user with that username
       await dataStore.findUser(username);
@@ -111,10 +116,6 @@ export class LearningObjectInteractor {
           ResourceErrorReason.INVALID_ACCESS,
         );
       }
-
-      const formattedQuery = this.formatSearchQuery(query);
-      let { status, orderBy, sortType } = formattedQuery;
-
       if (!status) {
         status = LearningObjectState.ALL;
       }
