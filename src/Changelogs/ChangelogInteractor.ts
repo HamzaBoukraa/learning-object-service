@@ -121,12 +121,12 @@ async function authorizeRequest(params: {
     learningObjectId: params.learningObjectId,
   });
 
-  const learningObject = await params.dataStore.checkLearningObjectExistence({
+  const isOwnedByAuthor = await params.dataStore.checkLearningObjectExistence({
     learningObjectId: params.learningObjectId,
     userId: params.userId,
   });
 
-  if (!learningObject) {
+  if (!isOwnedByAuthor) {
     throw new ResourceError(
       `Learning Object ${params.learningObjectId} not found for user ${params.userId}`,
       ResourceErrorReason.NOT_FOUND,
