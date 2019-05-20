@@ -75,9 +75,13 @@ export class ChangelogDataStore {
   }): Promise<ChangeLogDocument[]> {
     const changelogs = await this.db
       .collection(COLLECTIONS.CHANGLOG)
-      .findOne({
-        learningObjectId: params.learningObjectId,
-      });
+      .aggregate([
+        { $match: { learningObjectId: params.learningObjectId } },
+        { $unwind: '$logs' },
+        { $sort: { 'logs.date': -1 } },
+        { $group: { _id: '$learningObjectId', logs: { $push: '$logs' } } },
+      ])
+      .toArray();
     return changelogs;
   }
 
