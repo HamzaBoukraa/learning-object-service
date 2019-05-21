@@ -18,7 +18,12 @@ export class ChangelogDataStore {
    */
   public async createChangelog(params: {
     learningObjectId: string,
-    userId: string,
+    author: {
+      userId: string,
+      name: string,
+      role: string,
+      profileImage: string,
+    },
     changelogText: string,
   }): Promise<void> {
     await this.db.collection(COLLECTIONS.CHANGLOG).updateOne(
@@ -26,7 +31,7 @@ export class ChangelogDataStore {
       {
         $push: {
           logs: {
-            userId: params.userId,
+            author: params.author,
             date: Date.now(),
             text: params.changelogText,
           },
@@ -70,9 +75,12 @@ export class ChangelogDataStore {
   }): Promise<ChangeLogDocument[]> {
     const changelogs = await this.db
       .collection(COLLECTIONS.CHANGLOG)
-      .find({
-        learningObjectId: params.learningObjectId,
-      })
+      .aggregate([
+        { $match: { learningObjectId: params.learningObjectId } },
+        { $unwind: '$logs' },
+        { $sort: { 'logs.date': -1 } },
+        { $group: { _id: '$learningObjectId', logs: { $push: '$logs' } } },
+      ])
       .toArray();
     return changelogs;
   }

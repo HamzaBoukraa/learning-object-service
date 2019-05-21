@@ -31,7 +31,12 @@ export interface DataStore
   // Changelog
   createChangelog(params: {
     learningObjectId: string,
-    userId: string,
+    author: {
+      userId: string,
+      name: string,
+      role: string,
+      profileImage: string,
+    },
     changelogText: string,
   }): Promise<void>;
   fetchAllChangelogs(params: {

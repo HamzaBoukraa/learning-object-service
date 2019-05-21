@@ -1,9 +1,9 @@
 import { DataStore } from '../interfaces/DataStore';
-import { hasLearningObjectWriteAccess } from '../interactors/AuthorizationManager';
 import { UserToken } from '../types';
 import { ResourceError, ResourceErrorReason } from '../errors';
 import { ChangeLogDocument } from '../types/Changelog';
 import { hasChangelogAccess } from './AuthManager';
+import * as md5 from 'md5';
 
 /**
  * Instruct the data store to create a new log in the change logs collection
@@ -22,15 +22,23 @@ export async function createChangelog(params: {
   userId: string,
   changelogText: string,
 }): Promise<void> {
-  await authorizeRequest({
+  const role = await authorizeRequest({
     dataStore: params.dataStore,
     learningObjectId: params.learningObjectId,
     userId: params.userId,
     user: params.user,
   });
+  const author = {
+    userId: await params.dataStore.findUser(params.user.username),
+    name: params.user.name,
+    role,
+    profileImage: generateProfileImageUrl({
+      email: params.user.email,
+    }),
+  };
   await params.dataStore.createChangelog({
     learningObjectId: params.learningObjectId,
-    userId: params.userId,
+    author,
     changelogText: params.changelogText,
   });
 }
@@ -106,25 +114,43 @@ async function authorizeRequest(params: {
   learningObjectId: string,
   userId: string,
   user: UserToken,
-}): Promise<void> {
-  if (!(await hasChangelogAccess({
+}): Promise<string> {
+  const role = await hasChangelogAccess({
     user: params.user,
     dataStore: params.dataStore,
     learningObjectId: params.learningObjectId,
-  }))) {
-    throw new ResourceError(
-      'Invalid Access',
-      ResourceErrorReason.INVALID_ACCESS,
-    );
-  }
+  });
 
-  if (!(await params.dataStore.checkLearningObjectExistence({
+  const isOwnedByAuthor = await params.dataStore.checkLearningObjectExistence({
     learningObjectId: params.learningObjectId,
     userId: params.userId,
-  }))) {
+  });
+
+  if (!isOwnedByAuthor) {
     throw new ResourceError(
       `Learning Object ${params.learningObjectId} not found for user ${params.userId}`,
       ResourceErrorReason.NOT_FOUND,
     );
   }
+
+  return role;
+}
+
+/**
+ * Creates a gravatar profile profile image url from the user's email.
+ *
+ * @param {string} email user's email
+ *
+ * @returns {string}
+ */
+function generateProfileImageUrl(params: {
+  email: string,
+}): string {
+  const defaultIcon = 'identicon';
+  return (
+    'https://www.gravatar.com/avatar/' +
+    md5(params.email) +
+    '?s=200?r=pg&d=' +
+    defaultIcon
+  );
 }
