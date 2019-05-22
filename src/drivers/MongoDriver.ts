@@ -1969,14 +1969,14 @@ export class MongoDriver implements DataStore {
     return docs.map(doc => doc._id);
   }
   /**
-   * Fetches Learning Objects that have learning outcomes 
+   * Fetches Learning Objects that have learning outcomes
    * that have been mapped to a specifc set of guidelines
    * @param guidelines
    * @param standardOutcomeIDs
    */
   private async matchGuidelines(guidelines: string[], standardOutcomeIDs: string[]) {
     console.log(guidelines);
-  };
+  }
   /**
    * Search for users that match author or text param
    *
