@@ -198,6 +198,7 @@ export class MongoDriver implements DataStore {
       collection,
       length,
       level,
+      guidelines,
       standardOutcomeIDs,
       text,
       conditions,
@@ -1724,6 +1725,7 @@ export class MongoDriver implements DataStore {
    * @param {string[]} authorIDs
    * @param {string[]} length
    * @param {string[]} level
+   * @param {string[]} guidelines
    * @param {string[]} outcomeIDs
    * @param {string} name
    * @returns
@@ -1735,6 +1737,7 @@ export class MongoDriver implements DataStore {
     status?: string[];
     length?: string[];
     level?: string[];
+    guidelines?: string[];
     outcomeIDs?: string[];
     name?: string;
     collection?: string[];
@@ -1777,6 +1780,7 @@ export class MongoDriver implements DataStore {
     status?: string[];
     length?: string[];
     level?: string[];
+    guidelines?: string[];
     outcomeIDs?: string[];
     collection?: string[];
   }) {
@@ -1964,6 +1968,15 @@ export class MongoDriver implements DataStore {
       .toArray();
     return docs.map(doc => doc._id);
   }
+  /**
+   * Fetches Learning Objects that have learning outcomes 
+   * that have been mapped to a specifc set of guidelines
+   * @param guidelines
+   * @param standardOutcomeIDs
+   */
+  private async matchGuidelines(guidelines: string[], standardOutcomeIDs: string[]) {
+    console.log(guidelines);
+  };
   /**
    * Search for users that match author or text param
    *
