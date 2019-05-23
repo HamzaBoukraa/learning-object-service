@@ -2,7 +2,7 @@ import 'dotenv/config';
 import * as jwt from 'jsonwebtoken';
 import { Request, Response } from 'express';
 import { getToken } from './functions';
-import { reportError } from '../drivers/SentryConnector';
+import { reportError } from '../../SentryConnector';
 
 /**
  * Checks if decoded token is set in request.

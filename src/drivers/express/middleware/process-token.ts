@@ -2,7 +2,7 @@ import 'dotenv/config';
 import * as jwt from 'express-jwt';
 import { getToken } from './functions';
 import { NextFunction, Response, Request } from 'express';
-import { reportError } from '../drivers/SentryConnector';
+import { reportError } from '../../SentryConnector';
 
 /**
  * Validates and decodes token from cookie or authorization headers. Then sets request.user to decoded token.
