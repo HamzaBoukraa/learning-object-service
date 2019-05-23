@@ -1,5 +1,5 @@
 import * as PDFKit from 'pdfkit';
-import { LEARNING_OBJECT_ROUTES } from '../routes';
+import { LEARNING_OBJECT_ROUTES } from '../shared/routes';
 import { FileManager } from '../shared/interfaces/interfaces';
 import { FileUpload } from '../shared/interfaces/FileManager';
 import * as striptags from 'striptags';
