@@ -5,7 +5,7 @@ import {
 } from './types';
 import { UserToken } from '../shared/types';
 import { sanitizeObject } from '../shared/functions';
-import { LearningOutcome } from '../entity';
+import { LearningOutcome } from '../shared/entity';
 
 export interface LearningOutcomeDatastore {
   insertLearningOutcome(params: {

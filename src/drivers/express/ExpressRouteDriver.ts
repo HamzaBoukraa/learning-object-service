@@ -15,7 +15,7 @@ import {
   mapErrorToResponseData,
   ServiceError,
 } from '../../errors';
-import { LearningObject } from '../../entity';
+import { LearningObject } from '../../shared/entity';
 import { initializePublic as initializePublicHierarchyRoutes } from '../../LearningObjects/Hierarchy/HierarchyRouteHandler';
 
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.

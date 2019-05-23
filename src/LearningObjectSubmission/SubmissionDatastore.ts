@@ -2,7 +2,7 @@ import { COLLECTIONS } from '../drivers/MongoDriver';
 import { Db } from 'mongodb';
 import * as ObjectMapper from '../drivers/Mongo/ObjectMapper';
 import { UserDocument } from '../shared/types';
-import { LearningObject, User } from '../entity';
+import { LearningObject, User } from '../shared/entity';
 import { Submission } from './types/Submission';
 import { ResourceError, ResourceErrorReason } from '../errors';
 

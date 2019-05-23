@@ -40,7 +40,7 @@ import {
   ServiceErrorReason,
 } from '../errors';
 import { reportError } from './SentryConnector';
-import { LearningObject, LearningOutcome, User } from '../entity';
+import { LearningObject, LearningOutcome, User } from '../shared/entity';
 import { Submission } from '../LearningObjectSubmission/types/Submission';
 
 export enum COLLECTIONS {

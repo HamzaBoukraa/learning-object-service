@@ -27,7 +27,7 @@ import {
   User,
   LearningOutcome,
   Collection,
-} from '../../entity';
+} from '../../shared/entity';
 import { Submission } from '../../LearningObjectSubmission/types/Submission';
 
 export class MockDataStore implements DataStore {

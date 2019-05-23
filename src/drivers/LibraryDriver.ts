@@ -2,7 +2,7 @@ import * as request from 'request-promise';
 import { LibraryCommunicator } from '../shared/interfaces/LibraryCommunicator';
 import { LIBRARY_ROUTES } from '../routes';
 import { generateServiceToken } from './TokenManager';
-import { LearningObject } from '../entity';
+import { LearningObject } from '../shared/entity';
 
 export class LibraryDriver implements LibraryCommunicator {
   private options = {

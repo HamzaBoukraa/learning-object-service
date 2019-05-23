@@ -13,7 +13,7 @@ import {
   isPrivilegedUser,
 } from '../shared/AuthorizationManager';
 import { reportError } from '../drivers/SentryConnector';
-import { LearningObject } from '../entity';
+import { LearningObject } from '../shared/entity';
 import { handleError } from '../interactors/LearningObjectInteractor';
 import {
   authorizeRequest,

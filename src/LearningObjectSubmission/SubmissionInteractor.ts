@@ -1,7 +1,7 @@
 import { DataStore } from '../shared/interfaces/DataStore';
 import { updateReadme } from '../LearningObjects/LearningObjectInteractor';
 import { FileManager } from '../shared/interfaces/interfaces';
-import { SubmittableLearningObject } from '../entity';
+import { SubmittableLearningObject } from '../shared/entity';
 import { Submission } from './types/Submission';
 import { authorizeSubmissionRequest } from './AuthorizationManager';
 import { UserToken } from '../shared/types';

@@ -33,7 +33,7 @@ import {
   ServiceError,
   ServiceErrorReason,
 } from '../errors';
-import { LearningObject } from '../entity';
+import { LearningObject } from '../shared/entity';
 import { accessGroups } from '../shared/types/user-token';
 
 // file size is in bytes

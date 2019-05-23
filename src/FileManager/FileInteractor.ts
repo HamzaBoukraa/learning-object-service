@@ -5,7 +5,7 @@ import {
   MultipartFileUploadStatus,
 } from '../shared/interfaces/FileManager';
 import { FileManager } from '../shared/interfaces/interfaces';
-import { LearningObject } from '../entity';
+import { LearningObject } from '../shared/entity';
 
 /**
  * Creates multipart upload and saves metadata for upload

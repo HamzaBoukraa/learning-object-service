@@ -4,7 +4,7 @@ import { LearningOutcomeDatastore } from '../../LearningOutcomes/LearningOutcome
 import { LearningObjectStatDatastore } from '../../LearningObjectStats/LearningObjectStatsInteractor';
 import { CollectionDataStore } from '../../Collections/CollectionDataStore';
 import { ChangeLogDocument } from '../types/changelog';
-import { LearningObject, User, Collection } from '../../entity';
+import { LearningObject, User, Collection } from '../entity';
 import { Submission } from '../../LearningObjectSubmission/types/Submission';
 
 export interface DataStore

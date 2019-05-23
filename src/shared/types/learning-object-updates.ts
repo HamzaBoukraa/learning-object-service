@@ -1,4 +1,4 @@
-import { LearningObject } from '../../entity';
+import { LearningObject } from '../entity';
 
 export interface LearningObjectUpdates {
   name?: string;
