@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { DataStore } from '../../shared/interfaces/DataStore';
 import { LearningObjectInteractor } from '../../interactors/interactors';
 import { fetchParents } from './HierarchyInteractor';
-import { mapErrorToResponseData } from '../../errors';
+import { mapErrorToResponseData } from '../../shared/errors';
 
 export function initializePublic({ router, dataStore}: { router: Router, dataStore: DataStore }) {
   const getParents = async (req: Request, res: Response) => {

@@ -1,5 +1,5 @@
 import { Request, Response, Router } from 'express';
-import { mapErrorToResponseData, ResourceErrorReason } from '../errors';
+import { mapErrorToResponseData, ResourceErrorReason } from '../shared/errors';
 import { DataStore } from '../shared/interfaces/DataStore';
 import { FileManager, LibraryCommunicator } from '../shared/interfaces/interfaces';
 import { UserToken } from '../shared/types';

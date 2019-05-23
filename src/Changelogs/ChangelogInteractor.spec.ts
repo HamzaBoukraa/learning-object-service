@@ -7,7 +7,7 @@ import {
   getAllChangelogs,
 } from './ChangelogInteractor';
 import { get } from 'http';
-import { ResourceError } from '../errors';
+import { ResourceError } from '../shared/errors';
 import { rejects } from 'assert';
 
 const dataStore: DataStore = new MockDataStore(); // DataStore

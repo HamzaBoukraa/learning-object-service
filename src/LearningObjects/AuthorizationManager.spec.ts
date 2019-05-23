@@ -1,5 +1,5 @@
 import * as auth from './AuthorizationManager';
-import { ResourceError } from '../errors';
+import { ResourceError } from '../shared/errors';
 import { UserToken } from '../shared/types';
 
 describe('LearningObjectDownload: AuthorizationManager', () => {

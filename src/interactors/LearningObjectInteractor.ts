@@ -32,7 +32,7 @@ import {
   ResourceErrorReason,
   ServiceError,
   ServiceErrorReason,
-} from '../errors';
+} from '../shared/errors';
 import { LearningObject } from '../shared/entity';
 import { accessGroups } from '../shared/types/user-token';
 

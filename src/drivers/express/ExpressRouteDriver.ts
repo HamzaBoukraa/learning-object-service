@@ -14,7 +14,7 @@ import {
   ResourceError,
   mapErrorToResponseData,
   ServiceError,
-} from '../../errors';
+} from '../../shared/errors';
 import { LearningObject } from '../../shared/entity';
 import { initializePublic as initializePublicHierarchyRoutes } from '../../LearningObjects/Hierarchy/HierarchyRouteHandler';
 

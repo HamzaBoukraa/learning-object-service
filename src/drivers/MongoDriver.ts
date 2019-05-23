@@ -38,7 +38,7 @@ import {
   ResourceErrorReason,
   ServiceError,
   ServiceErrorReason,
-} from '../errors';
+} from '../shared/errors';
 import { reportError } from './SentryConnector';
 import { LearningObject, LearningOutcome, User } from '../shared/entity';
 import { Submission } from '../LearningObjectSubmission/types/Submission';

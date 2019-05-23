@@ -7,7 +7,7 @@ import {
   UserToken,
   VALID_LEARNING_OBJECT_UPDATES,
 } from '../shared/types';
-import { ResourceError, ResourceErrorReason } from '../errors';
+import { ResourceError, ResourceErrorReason } from '../shared/errors';
 import {
   hasLearningObjectWriteAccess,
   isPrivilegedUser,

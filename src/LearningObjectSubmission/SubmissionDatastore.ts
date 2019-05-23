@@ -4,7 +4,7 @@ import * as ObjectMapper from '../drivers/Mongo/ObjectMapper';
 import { UserDocument } from '../shared/types';
 import { LearningObject, User } from '../shared/entity';
 import { Submission } from './types/Submission';
-import { ResourceError, ResourceErrorReason } from '../errors';
+import { ResourceError, ResourceErrorReason } from '../shared/errors';
 
 const ERROR_MESSAGE = {
   INVALID_ACCESS: `Invalid access. User must be verified to release Learning Objects`,

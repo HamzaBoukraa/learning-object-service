@@ -2,7 +2,7 @@ import { DataStore, ParentLearningObjectQuery } from '../../shared/interfaces/Da
 import { UserToken } from '../../shared/types';
 import { LearningObject } from '../../shared/entity';
 import { toArray, hasReadAccessByCollection, LearningObjectState, handleError } from '../../interactors/LearningObjectInteractor';
-import { ResourceError, ResourceErrorReason } from '../../errors';
+import { ResourceError, ResourceErrorReason } from '../../shared/errors';
 
 /**
  * Fetches the parents of a Learning Object.

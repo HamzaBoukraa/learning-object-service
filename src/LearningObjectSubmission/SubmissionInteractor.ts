@@ -5,7 +5,7 @@ import { SubmittableLearningObject } from '../shared/entity';
 import { Submission } from './types/Submission';
 import { authorizeSubmissionRequest } from './AuthorizationManager';
 import { UserToken } from '../shared/types';
-import { ResourceError, ResourceErrorReason } from '../errors';
+import { ResourceError, ResourceErrorReason } from '../shared/errors';
 
 /**
  * Submit a learning object to a collection

@@ -1,7 +1,7 @@
 import { Db } from 'mongodb';
 import { COLLECTIONS } from '../drivers/MongoDriver';
 import { reportError } from '../drivers/SentryConnector';
-import { ResourceError, ResourceErrorReason, ServiceError, ServiceErrorReason } from '../errors';
+import { ResourceError, ResourceErrorReason, ServiceError, ServiceErrorReason } from '../shared/errors';
 import { ChangeLogDocument } from '../shared/types/Changelog';
 
 export class ChangelogDataStore {
