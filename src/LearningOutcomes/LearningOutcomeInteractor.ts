@@ -4,7 +4,7 @@ import {
   LearningOutcomeUpdate,
 } from './types';
 import { UserToken } from '../shared/types';
-import { sanitizeObject } from '../functions';
+import { sanitizeObject } from '../shared/functions';
 import { LearningOutcome } from '../entity';
 
 export interface LearningOutcomeDatastore {
