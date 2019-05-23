@@ -18,7 +18,7 @@ import {
   enforceAuthenticatedAccess,
   processToken,
   handleProcessTokenError,
-} from '../../middleware';
+} from './middleware';
 import { sentryRequestHandler, sentryErrorHandler } from '../SentryConnector';
 
 export class ExpressDriver {

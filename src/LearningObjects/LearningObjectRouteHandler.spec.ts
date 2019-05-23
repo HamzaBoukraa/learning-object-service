@@ -9,7 +9,7 @@ import { MockLibraryDriver } from '../tests/mock-drivers/MockLibraryDriver';
 import { MockS3Driver } from '../tests/mock-drivers/MockS3Driver';
 import { LibraryCommunicator, FileManager } from '../shared/interfaces/interfaces';
 import * as cookieParser from 'cookie-parser';
-import { processToken, handleProcessTokenError } from '../middleware';
+import { processToken, handleProcessTokenError } from '../drivers/express/middleware';
 
 const app = express();
 const router = express.Router();
