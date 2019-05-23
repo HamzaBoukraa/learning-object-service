@@ -1,5 +1,5 @@
 import * as request from 'request-promise';
-import { LibraryCommunicator } from '../interfaces/LibraryCommunicator';
+import { LibraryCommunicator } from '../shared/interfaces/LibraryCommunicator';
 import { LIBRARY_ROUTES } from '../routes';
 import { generateServiceToken } from './TokenManager';
 import { LearningObject } from '../entity';

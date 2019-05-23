@@ -1,6 +1,6 @@
 import { Request, Response, Router } from 'express';
-import { DataStore } from '../interfaces/DataStore';
-import { FileManager } from '../interfaces/interfaces';
+import { DataStore } from '../shared/interfaces/DataStore';
+import { FileManager } from '../shared/interfaces/interfaces';
 import { cancelSubmission, submitForReview, checkFirstSubmission } from './SubmissionInteractor';
 import { mapErrorToResponseData } from '../errors';
 import { UserToken } from '../types';

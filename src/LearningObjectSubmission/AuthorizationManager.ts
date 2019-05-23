@@ -1,4 +1,4 @@
-import { DataStore } from '../interfaces/DataStore';
+import { DataStore } from '../shared/interfaces/DataStore';
 import { ResourceError, ResourceErrorReason } from '../errors';
 
 

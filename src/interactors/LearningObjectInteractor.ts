@@ -7,13 +7,13 @@ import {
   LearningObjectQuery,
   QueryCondition,
   ParentLearningObjectQuery,
-} from '../interfaces/DataStore';
-import { DZFile, FileUpload } from '../interfaces/FileManager';
+} from '../shared/interfaces/DataStore';
+import { DZFile, FileUpload } from '../shared/interfaces/FileManager';
 import {
   DataStore,
   FileManager,
   LibraryCommunicator,
-} from '../interfaces/interfaces';
+} from '../shared/interfaces/interfaces';
 import {
   updateObjectLastModifiedDate,
   updateParentsDate,

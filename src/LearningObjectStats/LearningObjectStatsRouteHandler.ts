@@ -1,6 +1,6 @@
 import * as LearningObjectStatsInteractor from './LearningObjectStatsInteractor';
 import { Request, Response, Router } from 'express';
-import { DataStore } from '../interfaces/DataStore';
+import { DataStore } from '../shared/interfaces/DataStore';
 
 /**
  * Initializes an express router with endpoints to get stats for Learning Objects

@@ -1,10 +1,10 @@
-import { DataStore } from '../interfaces/DataStore';
+import { DataStore } from '../shared/interfaces/DataStore';
 import {
   DZFile,
   FileUpload,
   MultipartFileUploadStatus,
-} from '../interfaces/FileManager';
-import { FileManager } from '../interfaces/interfaces';
+} from '../shared/interfaces/FileManager';
+import { FileManager } from '../shared/interfaces/interfaces';
 import { LearningObject } from '../entity';
 
 /**

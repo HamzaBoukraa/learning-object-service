@@ -2,7 +2,7 @@ import {
   DataStore,
   FileManager,
   LibraryCommunicator,
-} from '../../interfaces/interfaces';
+} from '../../shared/interfaces/interfaces';
 import { Router } from 'express';
 import { LearningObjectInteractor } from '../../interactors/interactors';
 import * as LearningObjectStatsRouteHandler from '../../LearningObjectStats/LearningObjectStatsRouteHandler';

@@ -4,7 +4,7 @@ import {
   DataStore,
   FileManager,
   LibraryCommunicator,
-} from '../../interfaces/interfaces';
+} from '../../shared/interfaces/interfaces';
 import {
   ExpressRouteDriver,
   ExpressAdminRouteDriver,

@@ -1,5 +1,5 @@
 import { Cursor, Db, MongoClient, ObjectID } from 'mongodb';
-import { DataStore } from '../interfaces/interfaces';
+import { DataStore } from '../shared/interfaces/interfaces';
 import {
   Filters,
   LearningObjectCollection,
@@ -7,11 +7,11 @@ import {
   QueryCondition,
   LearningObjectQuery,
   ParentLearningObjectQuery,
-} from '../interfaces/DataStore';
+} from '../shared/interfaces/DataStore';
 import {
   CompletedPart,
   MultipartFileUploadStatus,
-} from '../interfaces/FileManager';
+} from '../shared/interfaces/FileManager';
 import * as ObjectMapper from './Mongo/ObjectMapper';
 import { SubmissionDatastore } from '../LearningObjectSubmission/SubmissionDatastore';
 import {

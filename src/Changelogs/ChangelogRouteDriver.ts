@@ -1,6 +1,6 @@
 import { Request, Response, Router } from 'express';
 import { mapErrorToResponseData } from '../errors';
-import { DataStore } from '../interfaces/DataStore';
+import { DataStore } from '../shared/interfaces/DataStore';
 import { UserToken } from '../types';
 import * as ChangelogInteractor from './ChangelogInteractor';
 

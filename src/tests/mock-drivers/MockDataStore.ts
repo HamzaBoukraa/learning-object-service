@@ -3,12 +3,12 @@ import {
   ReleasedLearningObjectQuery,
   LearningObjectQuery,
   ParentLearningObjectQuery,
-} from '../../interfaces/DataStore';
+} from '../../shared/interfaces/DataStore';
 import {
   MultipartFileUploadStatus,
   MultipartFileUploadStatusUpdates,
   CompletedPart,
-} from '../../interfaces/FileManager';
+} from '../../shared/interfaces/FileManager';
 import {
   MOCK_OBJECTS,
   SUBMITTABLE_LEARNING_OBJECT,

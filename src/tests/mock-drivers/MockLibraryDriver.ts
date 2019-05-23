@@ -1,4 +1,4 @@
-import { LibraryCommunicator } from '../../interfaces/LibraryCommunicator';
+import { LibraryCommunicator } from '../../shared/interfaces/LibraryCommunicator';
 import { MOCK_OBJECTS } from '../mocks';
 import { LearningObject } from '../../entity';
 

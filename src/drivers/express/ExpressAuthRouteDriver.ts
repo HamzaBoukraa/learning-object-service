@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import * as multer from 'multer';
 import { LearningObjectInteractor } from '../../interactors/interactors';
-import { DZFile, DZFileMetadata } from '../../interfaces/FileManager';
+import { DZFile, DZFileMetadata } from '../../shared/interfaces/FileManager';
 import {
   DataStore,
   FileManager,
   LibraryCommunicator,
-} from '../../interfaces/interfaces';
+} from '../../shared/interfaces/interfaces';
 import {
   updateReadme,
   removeFile,

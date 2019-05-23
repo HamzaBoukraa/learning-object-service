@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { UserToken, ServiceToken } from '../types';
-import { DataStore } from '../interfaces/DataStore';
+import { DataStore } from '../shared/interfaces/DataStore';
 
 enum UserRole {
   ADMIN = 'admin',

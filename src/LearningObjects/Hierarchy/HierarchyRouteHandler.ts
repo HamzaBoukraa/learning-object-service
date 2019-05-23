@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { DataStore } from '../../interfaces/DataStore';
+import { DataStore } from '../../shared/interfaces/DataStore';
 import { LearningObjectInteractor } from '../../interactors/interactors';
 import { fetchParents } from './HierarchyInteractor';
 import { mapErrorToResponseData } from '../../errors';

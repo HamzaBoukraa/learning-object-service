@@ -1,4 +1,4 @@
-import { DataStore, ParentLearningObjectQuery } from '../../interfaces/DataStore';
+import { DataStore, ParentLearningObjectQuery } from '../../shared/interfaces/DataStore';
 import { UserToken } from '../../types';
 import { LearningObject } from '../../entity';
 import { toArray, hasReadAccessByCollection, LearningObjectState, handleError } from '../../interactors/LearningObjectInteractor';

@@ -1,4 +1,4 @@
-import { DataStore } from '../interfaces/DataStore';
+import { DataStore } from '../shared/interfaces/DataStore';
 import { UserToken } from '../types';
 import { ResourceError, ResourceErrorReason } from '../errors';
 import { ChangeLogDocument } from '../types/Changelog';

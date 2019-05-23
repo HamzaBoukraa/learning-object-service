@@ -3,8 +3,8 @@ import { Router, Response, Request } from 'express';
 import { fileNotFound } from '../assets/filenotfound';
 import { LEARNING_OBJECT_ROUTES } from '../routes';
 import { reportError } from '../drivers/SentryConnector';
-import { DataStore } from '../interfaces/DataStore';
-import { FileManager } from '../interfaces/FileManager';
+import { DataStore } from '../shared/interfaces/DataStore';
+import { FileManager } from '../shared/interfaces/FileManager';
 
 // TODO: Define DataStore just for this Feature Module
 export function initializeSingleFileDownloadRouter({
