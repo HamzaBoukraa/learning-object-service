@@ -26,7 +26,7 @@ import {
   isAdminOrEditor,
   isPrivilegedUser,
   hasServiceLevelAccess,
-} from './AuthorizationManager';
+} from '../shared/AuthorizationManager';
 import {
   ResourceError,
   ResourceErrorReason,

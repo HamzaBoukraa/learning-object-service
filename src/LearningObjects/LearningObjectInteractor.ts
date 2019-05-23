@@ -11,7 +11,7 @@ import { ResourceError, ResourceErrorReason } from '../errors';
 import {
   hasLearningObjectWriteAccess,
   isPrivilegedUser,
-} from '../interactors/AuthorizationManager';
+} from '../shared/AuthorizationManager';
 import { reportError } from '../drivers/SentryConnector';
 import { LearningObject } from '../entity';
 import { handleError } from '../interactors/LearningObjectInteractor';
