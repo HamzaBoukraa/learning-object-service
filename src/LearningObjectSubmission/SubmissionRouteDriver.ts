@@ -3,7 +3,7 @@ import { DataStore } from '../shared/interfaces/DataStore';
 import { FileManager } from '../shared/interfaces/interfaces';
 import { cancelSubmission, submitForReview, checkFirstSubmission } from './SubmissionInteractor';
 import { mapErrorToResponseData } from '../errors';
-import { UserToken } from '../types';
+import { UserToken } from '../shared/types';
 
 /**
  * Initializes an express router with endpoints to publish and unpublish a learning object.

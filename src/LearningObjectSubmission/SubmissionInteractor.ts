@@ -4,7 +4,7 @@ import { FileManager } from '../shared/interfaces/interfaces';
 import { SubmittableLearningObject } from '../entity';
 import { Submission } from './types/Submission';
 import { authorizeSubmissionRequest } from './AuthorizationManager';
-import { UserToken } from '../types';
+import { UserToken } from '../shared/types';
 import { ResourceError, ResourceErrorReason } from '../errors';
 
 /**

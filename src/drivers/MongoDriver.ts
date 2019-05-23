@@ -20,7 +20,7 @@ import {
   UserDocument,
   LearningOutcomeDocument,
   StandardOutcomeDocument,
-} from '../types';
+} from '../shared/types';
 import { LearningOutcomeMongoDatastore } from '../LearningOutcomes/LearningOutcomeMongoDatastore';
 import {
   LearningOutcomeInput,
@@ -31,7 +31,7 @@ import { LearningObjectStatStore } from '../LearningObjectStats/LearningObjectSt
 import { LearningObjectStats } from '../LearningObjectStats/LearningObjectStatsInteractor';
 import { lengths } from '@cyber4all/clark-taxonomy';
 import { LearningObjectDataStore } from '../LearningObjects/LearningObjectDatastore';
-import { ChangeLogDocument } from '../types/changelog';
+import { ChangeLogDocument } from '../shared/types/changelog';
 import { ChangelogDataStore } from '../Changelogs/ChangelogDatastore';
 import {
   ResourceError,

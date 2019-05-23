@@ -18,7 +18,7 @@ import {
   updateObjectLastModifiedDate,
   updateParentsDate,
 } from '../LearningObjects/LearningObjectInteractor';
-import { UserToken, ServiceToken } from '../types';
+import { UserToken, ServiceToken } from '../shared/types';
 import {
   getAccessGroupCollections,
   hasMultipleLearningObjectWriteAccesses,
@@ -34,7 +34,7 @@ import {
   ServiceErrorReason,
 } from '../errors';
 import { LearningObject } from '../entity';
-import { accessGroups } from '../types/user-token';
+import { accessGroups } from '../shared/types/user-token';
 
 // file size is in bytes
 const MAX_PACKAGEABLE_FILE_SIZE = 100000000;

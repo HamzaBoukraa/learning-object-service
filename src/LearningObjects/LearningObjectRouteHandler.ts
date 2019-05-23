@@ -2,7 +2,7 @@ import { Request, Response, Router } from 'express';
 import { mapErrorToResponseData, ResourceErrorReason } from '../errors';
 import { DataStore } from '../shared/interfaces/DataStore';
 import { FileManager, LibraryCommunicator } from '../shared/interfaces/interfaces';
-import { UserToken } from '../types';
+import { UserToken } from '../shared/types';
 import * as LearningObjectInteractor from './LearningObjectInteractor';
 import { LearningObject } from '../entity';
 import { FileMeta } from './typings';

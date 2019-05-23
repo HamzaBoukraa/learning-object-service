@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { UserToken, ServiceToken } from '../types';
+import { UserToken, ServiceToken } from '../shared/types';
 import { DataStore } from '../shared/interfaces/DataStore';
 
 enum UserRole {

@@ -1,9 +1,9 @@
 import { CompletedPart, MultipartFileUploadStatus } from './FileManager';
-import { LearningObjectUpdates } from '../../types';
+import { LearningObjectUpdates } from '../types';
 import { LearningOutcomeDatastore } from '../../LearningOutcomes/LearningOutcomeInteractor';
 import { LearningObjectStatDatastore } from '../../LearningObjectStats/LearningObjectStatsInteractor';
 import { CollectionDataStore } from '../../Collections/CollectionDataStore';
-import { ChangeLogDocument } from '../../types/changelog';
+import { ChangeLogDocument } from '../types/changelog';
 import { LearningObject, User, Collection } from '../../entity';
 import { Submission } from '../../LearningObjectSubmission/types/Submission';
 

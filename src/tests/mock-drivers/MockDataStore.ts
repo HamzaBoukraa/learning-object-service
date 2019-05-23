@@ -15,8 +15,8 @@ import {
   INVALID_LEARNING_OBJECTS,
   SUBMISSION,
 } from '../mocks';
-import { LearningObjectUpdates } from '../../types';
-import { ChangeLogDocument } from '../../types/changelog';
+import { LearningObjectUpdates } from '../../shared/types';
+import { ChangeLogDocument } from '../../shared/types/changelog';
 import {
   LearningOutcomeInsert,
   LearningOutcomeUpdate,

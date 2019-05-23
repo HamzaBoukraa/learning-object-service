@@ -1,4 +1,4 @@
-import { UserDocument } from '../../types';
+import { UserDocument } from '../../shared/types';
 import { User } from '../../entity';
 
 /**

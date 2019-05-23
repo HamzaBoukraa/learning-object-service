@@ -18,7 +18,7 @@ import * as LearningOutcomeRouteHandler from '../../LearningOutcomes/LearningOut
 import * as SubmissionRouteDriver from '../../LearningObjectSubmission/SubmissionRouteDriver';
 import * as ChangelogRouteHandler from '../../Changelogs/ChangelogRouteDriver';
 import { reportError } from '../SentryConnector';
-import { UserToken } from '../../types';
+import { UserToken } from '../../shared/types';
 import { ResourceErrorReason, mapErrorToResponseData } from '../../errors';
 export class ExpressAuthRouteDriver {
   private upload = multer({ storage: multer.memoryStorage() });

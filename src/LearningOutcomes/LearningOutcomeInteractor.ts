@@ -3,7 +3,7 @@ import {
   LearningOutcomeInsert,
   LearningOutcomeUpdate,
 } from './types';
-import { UserToken } from '../types';
+import { UserToken } from '../shared/types';
 import { sanitizeObject } from '../functions';
 import { LearningOutcome } from '../entity';
 

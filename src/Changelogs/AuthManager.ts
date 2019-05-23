@@ -1,4 +1,4 @@
-import { UserToken } from '../types';
+import { UserToken } from '../shared/types';
 import { DataStore } from '../shared/interfaces/DataStore';
 import { ResourceError, ResourceErrorReason } from '../errors';
 

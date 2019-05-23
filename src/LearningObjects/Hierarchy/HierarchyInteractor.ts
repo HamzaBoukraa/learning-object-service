@@ -1,5 +1,5 @@
 import { DataStore, ParentLearningObjectQuery } from '../../shared/interfaces/DataStore';
-import { UserToken } from '../../types';
+import { UserToken } from '../../shared/types';
 import { LearningObject } from '../../entity';
 import { toArray, hasReadAccessByCollection, LearningObjectState, handleError } from '../../interactors/LearningObjectInteractor';
 import { ResourceError, ResourceErrorReason } from '../../errors';

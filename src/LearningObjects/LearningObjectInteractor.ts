@@ -6,7 +6,7 @@ import {
   LearningObjectUpdates,
   UserToken,
   VALID_LEARNING_OBJECT_UPDATES,
-} from '../types';
+} from '../shared/types';
 import { ResourceError, ResourceErrorReason } from '../errors';
 import {
   hasLearningObjectWriteAccess,

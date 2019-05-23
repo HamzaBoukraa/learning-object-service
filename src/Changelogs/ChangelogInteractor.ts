@@ -1,7 +1,7 @@
 import { DataStore } from '../shared/interfaces/DataStore';
-import { UserToken } from '../types';
+import { UserToken } from '../shared/types';
 import { ResourceError, ResourceErrorReason } from '../errors';
-import { ChangeLogDocument } from '../types/Changelog';
+import { ChangeLogDocument } from '../shared/types/Changelog';
 import { hasChangelogAccess } from './AuthManager';
 import * as md5 from 'md5';
 
