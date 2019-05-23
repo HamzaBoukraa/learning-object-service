@@ -1,6 +1,6 @@
 import { downloadSingleFile } from './SingleFileDownloadInteractor';
 import { Router, Response, Request } from 'express';
-import { fileNotFound } from '../assets/filenotfound';
+import { fileNotFound } from './assets/filenotfound';
 import { LEARNING_OBJECT_ROUTES } from '../routes';
 import { reportError } from '../drivers/SentryConnector';
 import { DataStore } from '../shared/interfaces/DataStore';
