@@ -1375,10 +1375,8 @@ export class MongoDriver implements DataStore {
    * Fetch the learning object document associated with the given id.
    * FIXME x 1000: clean this query up after files collection is created
    *
-   * The first query fetches the specified unreleased learning object and sorts the files by date (newest first)
-   * The first query will fail if the learning object does not contain files
-   * The second query looks again for the learning object but does not perform file sorting
-   * If both of these queries fail, the function throws a 404 Resource Error.
+   * The query fetches the specified released learning object and sorts the files by date (newest first)
+   * If the query fails, the function throws a 404 Resource Error.
    * @async
    *
    * @param id database id
@@ -1396,7 +1394,7 @@ export class MongoDriver implements DataStore {
           // match learning object by params.id
           $match: { _id: params.id },
         },
-        { $unwind: '$materials.files' },
+        { $unwind: { path: '$materials.files', preserveNullAndEmptyArrays: true } },
         { $sort: { 'materials.files.date': -1 } },
         { $addFields: { orderedFiles: ''} },
         { $group: {
@@ -1424,13 +1422,6 @@ export class MongoDriver implements DataStore {
       const author = await this.fetchUser(object[0].authorID);
       return this.generateLearningObject(author, object[0], params.full);
     }
-    const objectNoFiles = await this.db
-      .collection<LearningObjectDocument>(COLLECTIONS.LEARNING_OBJECTS)
-      .findOne({_id: params.id});
-    if (objectNoFiles) {
-      const author = await this.fetchUser(objectNoFiles.authorID);
-      return this.generateLearningObject(author, objectNoFiles, params.full);
-    }
     throw new ResourceError('Learning Object not found', ResourceErrorReason.NOT_FOUND);
   }
 
@@ -1439,10 +1430,8 @@ export class MongoDriver implements DataStore {
    * working collection, then checking the status of the duplicate to determine whether or not to set hasRevision to true or false.
    * FIXME x 1000: clean this query up after files collection is created
    *
-   * The first query fetches the specified released learning object and sorts the files by date (newest first)
-   * The first query will fail if the learning object does not contain files
-   * The second query looks again for the learning object but does not perform file sorting
-   * If both of these queries fail, the function throws a 404 Resource Error.
+   * The query fetches the specified released learning object and sorts the files by date (newest first)
+   * If the query fails, the function throws a 404 Resource Error.
    * @param {{
    *     id: string;
    *     full?: boolean;
@@ -1461,7 +1450,7 @@ export class MongoDriver implements DataStore {
           // match learning object by params.id
           $match: { _id: params.id },
         },
-        { $unwind: '$materials.files' },
+        { $unwind: { path: '$materials.files', preserveNullAndEmptyArrays: true } },
         { $sort: { 'materials.files.date': -1 } },
         { $addFields: { orderedFiles: ''} },
         { $group: {
@@ -1510,41 +1499,6 @@ export class MongoDriver implements DataStore {
       delete object[0]['orderedFiles'];
       const author = await this.fetchUser(object[0].authorID);
       return this.generateLearningObject(author, object[0], params.full);
-    }
-    const objectNoFiles = await this.db
-      .collection<LearningObjectDocument>(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
-      .aggregate([
-        {
-          // match learning object by params.id
-          $match: { _id: params.id },
-        },
-        // perform a lookup and store the working copy of the object under the "Copy" array.
-        {
-          $lookup: {
-            from: 'objects',
-            localField: '_id',
-            foreignField: '_id',
-            as: 'copy',
-          },
-        },
-        // unwind copy from array to object so we can check certain fields.
-        { $unwind: { path: '$copy', preserveNullAndEmptyArrays: true } },
-        // if the copys' status differs from the released objects status, then the object has a revision.
-        // so we add a the field 'hasRevision' with a true value
-        {
-          $addFields: {
-            hasRevision: {
-              $cond: [{ $ne: ['$copy.status', 'released'] }, true, false],
-            },
-          },
-        },
-        { $project: { copy: 0 } },
-      ])
-      .toArray();
-
-    if (objectNoFiles[0]) {
-      const author = await this.fetchUser(objectNoFiles[0].authorID);
-      return this.generateLearningObject(author, objectNoFiles[0], params.full);
     }
     throw new ResourceError('Learning Object not found', ResourceErrorReason.NOT_FOUND);
   }
