@@ -109,8 +109,5 @@ describe('LearningObjectRouteHandler', () => {
                 });
         });
     });
-    afterAll(() => {
-        dataStore.disconnect();
-        console.log('Disconnected from Database');
-    });
+    afterAll(() => dataStore.disconnect());
 });
