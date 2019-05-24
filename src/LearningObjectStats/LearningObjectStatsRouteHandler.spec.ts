@@ -29,7 +29,5 @@ describe('LearningObjectStatsRouteHandler', () => {
             });
         });
     });
-    afterAll(() => {
-        dataStore.disconnect();
-    });
+    afterAll(() => dataStore.disconnect());
 });
