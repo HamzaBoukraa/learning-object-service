@@ -1,4 +1,4 @@
-import { UserToken } from '../types';
+import { UserToken } from './types';
 import { hasLearningObjectWriteAccess } from './AuthorizationManager';
 
 jest.mock('../drivers/MongoDriver');

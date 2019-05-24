@@ -2,8 +2,8 @@
  * Set of reusable functions used to authorize requests within this module
  */
 
-import { ResourceError, ResourceErrorReason } from '../errors';
-import { UserToken } from '../types';
+import { ResourceError, ResourceErrorReason } from '../shared/errors';
+import { UserToken } from '../shared/types';
 
 enum AccessGroup {
   ADMIN = 'admin',

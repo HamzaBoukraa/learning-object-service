@@ -1,10 +1,10 @@
 import { Request, Response, Router } from 'express';
-import { mapErrorToResponseData, ResourceErrorReason } from '../errors';
-import { DataStore } from '../interfaces/DataStore';
-import { FileManager, LibraryCommunicator } from '../interfaces/interfaces';
-import { UserToken } from '../types';
+import { mapErrorToResponseData, ResourceErrorReason } from '../shared/errors';
+import { DataStore } from '../shared/interfaces/DataStore';
+import { FileManager, LibraryCommunicator } from '../shared/interfaces/interfaces';
+import { UserToken } from '../shared/types';
 import * as LearningObjectInteractor from './LearningObjectInteractor';
-import { LearningObject } from '../entity';
+import { LearningObject } from '../shared/entity';
 import { FileMeta } from './typings';
 
 /**

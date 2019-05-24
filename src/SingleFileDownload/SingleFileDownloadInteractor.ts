@@ -1,5 +1,5 @@
-import { DataStore } from '../interfaces/DataStore';
-import { FileManager } from '../interfaces/FileManager';
+import { DataStore } from '../shared/interfaces/DataStore';
+import { FileManager } from '../shared/interfaces/FileManager';
 import { Readable } from 'stream';
 
 /**

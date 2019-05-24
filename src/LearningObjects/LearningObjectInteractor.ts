@@ -1,19 +1,19 @@
 import { LearningObjectInteractor } from '../interactors/interactors';
-import { DataStore } from '../interfaces/DataStore';
-import { FileManager, LibraryCommunicator } from '../interfaces/interfaces';
+import { DataStore } from '../shared/interfaces/DataStore';
+import { FileManager, LibraryCommunicator } from '../shared/interfaces/interfaces';
 import { generatePDF } from './PDFKitDriver';
 import {
   LearningObjectUpdates,
   UserToken,
   VALID_LEARNING_OBJECT_UPDATES,
-} from '../types';
-import { ResourceError, ResourceErrorReason } from '../errors';
+} from '../shared/types';
+import { ResourceError, ResourceErrorReason } from '../shared/errors';
 import {
   hasLearningObjectWriteAccess,
   isPrivilegedUser,
-} from '../interactors/AuthorizationManager';
+} from '../shared/AuthorizationManager';
 import { reportError } from '../drivers/SentryConnector';
-import { LearningObject } from '../entity';
+import { LearningObject } from '../shared/entity';
 import { handleError } from '../interactors/LearningObjectInteractor';
 import {
   authorizeRequest,
