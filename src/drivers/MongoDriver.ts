@@ -1374,6 +1374,11 @@ export class MongoDriver implements DataStore {
   /**
    * Fetch the learning object document associated with the given id.
    * FIXME x 1000: clean this query up after files collection is created
+   *
+   * The first query fetches the specified unreleased learning object and sorts the files by date (newest first)
+   * The first query will fail if the learning object does not contain files
+   * The second query looks again for the learning object but does not perform file sorting
+   * If both of these queries fail, the function throws a 404 Resource Error.
    * @async
    *
    * @param id database id
@@ -1433,6 +1438,11 @@ export class MongoDriver implements DataStore {
    * Fetches released object through aggregation pipeline by performing a match based on the object id, finding the duplicate object in the
    * working collection, then checking the status of the duplicate to determine whether or not to set hasRevision to true or false.
    * FIXME x 1000: clean this query up after files collection is created
+   *
+   * The first query fetches the specified released learning object and sorts the files by date (newest first)
+   * The first query will fail if the learning object does not contain files
+   * The second query looks again for the learning object but does not perform file sorting
+   * If both of these queries fail, the function throws a 404 Resource Error.
    * @param {{
    *     id: string;
    *     full?: boolean;
