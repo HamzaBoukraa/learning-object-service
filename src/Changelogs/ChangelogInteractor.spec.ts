@@ -1,4 +1,4 @@
-import { DataStore } from '../interfaces/DataStore';
+import { DataStore } from '../shared/interfaces/DataStore';
 import { MockDataStore } from '../tests/mock-drivers/MockDataStore';
 import { MOCK_OBJECTS } from '../tests/mocks';
 import {
@@ -7,7 +7,7 @@ import {
   getAllChangelogs,
 } from './ChangelogInteractor';
 import { get } from 'http';
-import { ResourceError } from '../errors';
+import { ResourceError } from '../shared/errors';
 import { rejects } from 'assert';
 
 const dataStore: DataStore = new MockDataStore(); // DataStore

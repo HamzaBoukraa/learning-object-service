@@ -7,7 +7,7 @@ import {
 import { Db, ObjectID } from 'mongodb';
 import { COLLECTIONS } from '../drivers/MongoDriver';
 import { mapId } from '../drivers/Mongo/functions';
-import { LearningOutcome, StandardOutcome } from '../entity';
+import { LearningOutcome, StandardOutcome } from '../shared/entity';
 
 export class LearningOutcomeMongoDatastore implements LearningOutcomeDatastore {
   constructor(private db: Db) {}

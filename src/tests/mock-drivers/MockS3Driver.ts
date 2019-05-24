@@ -1,5 +1,5 @@
-import { FileManager } from '../../interfaces/interfaces';
-import { FileUpload, CompletedPartList } from '../../interfaces/FileManager';
+import { FileManager } from '../../shared/interfaces/interfaces';
+import { FileUpload, CompletedPartList } from '../../shared/interfaces/FileManager';
 import { MOCK_OBJECTS } from '../mocks';
 import { CompletedPart } from 'aws-sdk/clients/s3';
 import { Readable } from 'stream';

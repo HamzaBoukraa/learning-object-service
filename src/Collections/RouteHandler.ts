@@ -1,7 +1,7 @@
 import {Request, Response, Router} from 'express';
 import * as CollectionInteractor from './CollectionInteractor';
 import {CollectionDataStore} from './CollectionDataStore';
-import { mapErrorToResponseData } from '../errors';
+import { mapErrorToResponseData } from '../shared/errors';
 
 export function initializeCollectionRouter({ router, dataStore }: { router: Router, dataStore: CollectionDataStore}) {
   /**

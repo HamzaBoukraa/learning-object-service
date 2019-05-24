@@ -1,4 +1,4 @@
-import { Collection } from '../entity';
+import { Collection } from '../shared/entity';
 
 export interface CollectionDataStore {
   fetchCollections(loadObjects?: boolean): Promise<Collection[]>;

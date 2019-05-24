@@ -3,9 +3,9 @@ import {
   MOCK_OBJECTS,
   SUBMITTABLE_LEARNING_OBJECT,
 } from '../tests/mocks';
-import { DataStore } from '../interfaces/DataStore';
+import { DataStore } from '../shared/interfaces/DataStore';
 import { MockDataStore } from '../tests/mock-drivers/MockDataStore';
-import { FileManager } from '../interfaces/interfaces';
+import { FileManager } from '../shared/interfaces/interfaces';
 import { MockS3Driver } from '../tests/mock-drivers/MockS3Driver';
 
 const dataStore: DataStore = new MockDataStore(); // DataStore
