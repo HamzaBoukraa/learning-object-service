@@ -6,6 +6,7 @@ import {
 } from './shared/interfaces/interfaces';
 import * as dotenv from 'dotenv';
 import { LibraryDriver } from './drivers/LibraryDriver';
+import { MongoConnector } from './shared/Mongo/MongoConnector';
 dotenv.config();
 // ----------------------------------------------------------------------------------
 // Initializations
@@ -37,6 +38,19 @@ switch (process.env.NODE_ENV) {
 }
 const fileManager: FileManager = new S3Driver();
 const library: LibraryCommunicator = new LibraryDriver();
-MongoDriver.build(dburi).then(dataStore => {
+
+/**
+ * This is written as a self-invoking function to enable the syntactic sugar
+ * of async-await.
+ * FIXME: Both the MongoConnector and the MongoDriver are called here. This
+ * enables us to leave the legacy code (MongoDriver) running as-is while we
+ * begin to work on building and refactoring modules in this service.
+ * Eventually, the MongoDriver should be completely removed, along with the
+ * call to its build function here.
+ */
+(async () => {
+  await MongoConnector.open(dburi);
+  const dataStore = await MongoDriver.build(dburi);
   ExpressDriver.start(dataStore, fileManager, library);
-});
+})();
+
