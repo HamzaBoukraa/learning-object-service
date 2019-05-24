@@ -1426,7 +1426,7 @@ export class MongoDriver implements DataStore {
       const author = await this.fetchUser(objectNoFiles.authorID);
       return this.generateLearningObject(author, objectNoFiles, params.full);
     }
-    return null;
+    throw new ResourceError('Learning Object not found', ResourceErrorReason.NOT_FOUND);
   }
 
   /**
@@ -1536,7 +1536,7 @@ export class MongoDriver implements DataStore {
       const author = await this.fetchUser(objectNoFiles[0].authorID);
       return this.generateLearningObject(author, objectNoFiles[0], params.full);
     }
-    return null;
+    throw new ResourceError('Learning Object not found', ResourceErrorReason.NOT_FOUND);
   }
 
   /**
