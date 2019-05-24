@@ -1373,7 +1373,7 @@ export class MongoDriver implements DataStore {
 
   /**
    * Fetch the learning object document associated with the given id.
-   * FIXME x 1000: clean this query up after database refactor
+   * FIXME x 1000: clean this query up after files collection is created
    * @async
    *
    * @param id database id
@@ -1432,7 +1432,7 @@ export class MongoDriver implements DataStore {
   /**
    * Fetches released object through aggregation pipeline by performing a match based on the object id, finding the duplicate object in the
    * working collection, then checking the status of the duplicate to determine whether or not to set hasRevision to true or false.
-   * FIXME x 1000: clean this query up after database refactor
+   * FIXME x 1000: clean this query up after files collection is created
    * @param {{
    *     id: string;
    *     full?: boolean;
