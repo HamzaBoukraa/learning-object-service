@@ -1416,6 +1416,27 @@ export class MongoDriver implements DataStore {
           // match learning object by params.id
           $match: { _id: params.id },
         },
+        { $unwind: '$materials.files' },
+        { $sort: { 'materials.files.date': -1 } },
+        { $addFields: { orderedFiles: ''} },
+        { $group: {
+          _id: '$_id',
+          orderedFiles: {
+            $push: '$materials.files',
+          },
+          authorID: { $first: '$authorID' },
+          name: { $first: '$name' },
+          date: { $first: '$date' },
+          length: { $first: '$length' },
+          levels: { $first: '$levels' },
+          goals: { $first: '$goals' },
+          outcomes: { $first: '$outcomes' },
+          materials: { $first: '$materials' },
+          contributors: { $first: '$contributors' },
+          collection: { $first: '$collection' },
+          status: { $first: '$status' },
+          description: { $first: '$description' },
+        } },
         // perform a lookup and store the working copy of the object under the "Copy" array.
         {
           $lookup: {
@@ -1440,6 +1461,8 @@ export class MongoDriver implements DataStore {
       ])
       .toArray();
     if (object) {
+      object[0].materials.files = object[0]['orderedFiles'];
+      delete object[0]['orderedFiles'];
       const author = await this.fetchUser(object[0].authorID);
       return this.generateLearningObject(author, object[0], params.full);
     }
