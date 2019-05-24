@@ -1373,6 +1373,7 @@ export class MongoDriver implements DataStore {
 
   /**
    * Fetch the learning object document associated with the given id.
+   * FIXME x 1000: clean this query up after database refactor
    * @async
    *
    * @param id database id
@@ -1385,19 +1386,53 @@ export class MongoDriver implements DataStore {
   }): Promise<LearningObject> {
     const object = await this.db
       .collection<LearningObjectDocument>(COLLECTIONS.LEARNING_OBJECTS)
-      .findOne({ _id: params.id });
-    if (object) {
-      const author = await this.fetchUser(object.authorID);
-      return this.generateLearningObject(author, object, params.full);
+      .aggregate([
+        {
+          // match learning object by params.id
+          $match: { _id: params.id },
+        },
+        { $unwind: '$materials.files' },
+        { $sort: { 'materials.files.date': -1 } },
+        { $addFields: { orderedFiles: ''} },
+        { $group: {
+          _id: '$_id',
+          orderedFiles: {
+            $push: '$materials.files',
+          },
+          authorID: { $first: '$authorID' },
+          name: { $first: '$name' },
+          date: { $first: '$date' },
+          length: { $first: '$length' },
+          levels: { $first: '$levels' },
+          goals: { $first: '$goals' },
+          outcomes: { $first: '$outcomes' },
+          materials: { $first: '$materials' },
+          contributors: { $first: '$contributors' },
+          collection: { $first: '$collection' },
+          status: { $first: '$status' },
+          description: { $first: '$description' },
+        } },
+      ]).toArray();
+    if (object[0]) {
+      object[0].materials.files = object[0]['orderedFiles'];
+      delete object[0]['orderedFiles'];
+      const author = await this.fetchUser(object[0].authorID);
+      return this.generateLearningObject(author, object[0], params.full);
     }
-
+    const objectNoFiles = await this.db
+      .collection<LearningObjectDocument>(COLLECTIONS.LEARNING_OBJECTS)
+      .findOne({_id: params.id});
+    if (objectNoFiles) {
+      const author = await this.fetchUser(objectNoFiles.authorID);
+      return this.generateLearningObject(author, objectNoFiles, params.full);
+    }
     return null;
   }
 
   /**
    * Fetches released object through aggregation pipeline by performing a match based on the object id, finding the duplicate object in the
    * working collection, then checking the status of the duplicate to determine whether or not to set hasRevision to true or false.
-   *
+   * FIXME x 1000: clean this query up after database refactor
    * @param {{
    *     id: string;
    *     full?: boolean;
@@ -1460,11 +1495,46 @@ export class MongoDriver implements DataStore {
         { $project: { copy: 0 } },
       ])
       .toArray();
-    if (object) {
+    if (object[0]) {
       object[0].materials.files = object[0]['orderedFiles'];
       delete object[0]['orderedFiles'];
       const author = await this.fetchUser(object[0].authorID);
       return this.generateLearningObject(author, object[0], params.full);
+    }
+    const objectNoFiles = await this.db
+      .collection<LearningObjectDocument>(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
+      .aggregate([
+        {
+          // match learning object by params.id
+          $match: { _id: params.id },
+        },
+        // perform a lookup and store the working copy of the object under the "Copy" array.
+        {
+          $lookup: {
+            from: 'objects',
+            localField: '_id',
+            foreignField: '_id',
+            as: 'copy',
+          },
+        },
+        // unwind copy from array to object so we can check certain fields.
+        { $unwind: { path: '$copy', preserveNullAndEmptyArrays: true } },
+        // if the copys' status differs from the released objects status, then the object has a revision.
+        // so we add a the field 'hasRevision' with a true value
+        {
+          $addFields: {
+            hasRevision: {
+              $cond: [{ $ne: ['$copy.status', 'released'] }, true, false],
+            },
+          },
+        },
+        { $project: { copy: 0 } },
+      ])
+      .toArray();
+
+    if (objectNoFiles[0]) {
+      const author = await this.fetchUser(objectNoFiles[0].authorID);
+      return this.generateLearningObject(author, objectNoFiles[0], params.full);
     }
     return null;
   }
