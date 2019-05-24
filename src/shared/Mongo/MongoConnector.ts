@@ -39,7 +39,7 @@ export class MongoConnector {
 
   /**
    * Connect to the database. Must be called before any other functions.
-   * @param {string} dbIP the host and port on which mongodb is running
+   * @param {string} dbURI the host and port on which mongodb is running
    */
   private async connect(dbURI: string, retryAttempt?: number): Promise<void> {
     try {
