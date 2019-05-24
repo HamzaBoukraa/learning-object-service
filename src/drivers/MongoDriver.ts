@@ -81,6 +81,10 @@ export class MongoDriver implements DataStore {
     return driver;
   }
 
+  async disconnect() {
+    return MongoConnector.disconnect();
+  }
+
   /**
    * Initializes module stores
    *

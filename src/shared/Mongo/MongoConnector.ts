@@ -60,7 +60,7 @@ export class MongoConnector {
    * and scripts using the database, so only do this if it's very
    * important or if you are sure that *everything* is finished.
    */
-  disconnect(): void {
-    MongoConnector.mongoClient.close();
+  static disconnect(): Promise<void> {
+    return MongoConnector.mongoClient.close();
   }
 }
