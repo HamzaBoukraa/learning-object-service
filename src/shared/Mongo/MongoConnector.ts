@@ -43,15 +43,11 @@ export class MongoConnector {
    */
   private async connect(dbURI: string, retryAttempt?: number): Promise<void> {
     try {
-      MongoConnector.mongoClient = await new MongoClient(dbURI, {reconnectTries: 1).connect();
+      MongoConnector.mongoClient = await new MongoClient(dbURI, { reconnectTries: 1 }).connect();
     } catch (e) {
-      if (!retryAttempt) {
-        this.connect(dbURI, 1);
-      } else {
-        return Promise.reject(
-          'Problem connecting to database at ' + dbURI + ':\n\t' + e,
-        );
-      }
+      return Promise.reject(
+        'Problem connecting to database at ' + dbURI + ':\n\t' + e,
+      );
     }
   }
 
