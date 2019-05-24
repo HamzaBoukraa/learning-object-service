@@ -1,6 +1,6 @@
-import { UserToken } from '../types';
-import { DataStore } from '../interfaces/DataStore';
-import { ResourceError, ResourceErrorReason } from '../errors';
+import { UserToken } from '../shared/types';
+import { DataStore } from '../shared/interfaces/DataStore';
+import { ResourceError, ResourceErrorReason } from '../shared/errors';
 
 
 const ROLE = {

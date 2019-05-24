@@ -1,4 +1,4 @@
-import { LearningObject, User, LearningOutcome } from '../entity';
+import { LearningObject, User, LearningOutcome } from '../shared/entity';
 import 'dotenv/config';
 // @ts-ignore
 import * as SEED_DATA from '../../test_environment/sharedIds';

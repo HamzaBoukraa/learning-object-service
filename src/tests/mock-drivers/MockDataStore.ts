@@ -3,20 +3,20 @@ import {
   ReleasedLearningObjectQuery,
   LearningObjectQuery,
   ParentLearningObjectQuery,
-} from '../../interfaces/DataStore';
+} from '../../shared/interfaces/DataStore';
 import {
   MultipartFileUploadStatus,
   MultipartFileUploadStatusUpdates,
   CompletedPart,
-} from '../../interfaces/FileManager';
+} from '../../shared/interfaces/FileManager';
 import {
   MOCK_OBJECTS,
   SUBMITTABLE_LEARNING_OBJECT,
   INVALID_LEARNING_OBJECTS,
   SUBMISSION,
 } from '../mocks';
-import { LearningObjectUpdates } from '../../types';
-import { ChangeLogDocument } from '../../types/changelog';
+import { LearningObjectUpdates } from '../../shared/types';
+import { ChangeLogDocument } from '../../shared/types/changelog';
 import {
   LearningOutcomeInsert,
   LearningOutcomeUpdate,
@@ -27,7 +27,7 @@ import {
   User,
   LearningOutcome,
   Collection,
-} from '../../entity';
+} from '../../shared/entity';
 import { Submission } from '../../LearningObjectSubmission/types/Submission';
 
 export class MockDataStore implements DataStore {

@@ -1,5 +1,5 @@
 import { MongoDriver } from './MongoDriver';
-import { LearningObject } from '../entity';
+import { LearningObject } from '../shared/entity';
 
 describe('MongoDriver', () => {
   let driver: MongoDriver;

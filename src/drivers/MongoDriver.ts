@@ -1,5 +1,5 @@
 import { Cursor, Db, MongoClient, ObjectID } from 'mongodb';
-import { DataStore } from '../interfaces/interfaces';
+import { DataStore } from '../shared/interfaces/interfaces';
 import {
   Filters,
   LearningObjectCollection,
@@ -7,11 +7,11 @@ import {
   QueryCondition,
   LearningObjectQuery,
   ParentLearningObjectQuery,
-} from '../interfaces/DataStore';
+} from '../shared/interfaces/DataStore';
 import {
   CompletedPart,
   MultipartFileUploadStatus,
-} from '../interfaces/FileManager';
+} from '../shared/interfaces/FileManager';
 import * as ObjectMapper from './Mongo/ObjectMapper';
 import { SubmissionDatastore } from '../LearningObjectSubmission/SubmissionDatastore';
 import {
@@ -20,7 +20,7 @@ import {
   UserDocument,
   LearningOutcomeDocument,
   StandardOutcomeDocument,
-} from '../types';
+} from '../shared/types';
 import { LearningOutcomeMongoDatastore } from '../LearningOutcomes/LearningOutcomeMongoDatastore';
 import {
   LearningOutcomeInput,
@@ -31,16 +31,16 @@ import { LearningObjectStatStore } from '../LearningObjectStats/LearningObjectSt
 import { LearningObjectStats } from '../LearningObjectStats/LearningObjectStatsInteractor';
 import { lengths } from '@cyber4all/clark-taxonomy';
 import { LearningObjectDataStore } from '../LearningObjects/LearningObjectDatastore';
-import { ChangeLogDocument } from '../types/changelog';
+import { ChangeLogDocument } from '../shared/types/changelog';
 import { ChangelogDataStore } from '../Changelogs/ChangelogDatastore';
 import {
   ResourceError,
   ResourceErrorReason,
   ServiceError,
   ServiceErrorReason,
-} from '../errors';
+} from '../shared/errors';
 import { reportError } from './SentryConnector';
-import { LearningObject, LearningOutcome, User } from '../entity';
+import { LearningObject, LearningOutcome, User } from '../shared/entity';
 import { Submission } from '../LearningObjectSubmission/types/Submission';
 
 export enum COLLECTIONS {

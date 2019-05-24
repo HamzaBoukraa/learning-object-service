@@ -1,7 +1,7 @@
 import * as LearningOutcomeInteractor from './LearningOutcomeInteractor';
 import { Request, Response, Router } from 'express';
 import { LearningOutcomeInput, LearningOutcomeUpdate } from './types';
-import { UserToken } from '../types';
+import { UserToken } from '../shared/types';
 
 /**
  * Initializes an express router with endpoints to Create, Update, and Delete

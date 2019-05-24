@@ -2,23 +2,23 @@
 import * as stopword from 'stopword';
 import { reportError } from '../drivers/SentryConnector';
 import { processMultipartUpload } from '../FileManager/FileInteractor';
-import { sanitizeObject, sanitizeText } from '../functions';
+import { sanitizeObject, sanitizeText } from '../shared/functions';
 import {
   LearningObjectQuery,
   QueryCondition,
   ParentLearningObjectQuery,
-} from '../interfaces/DataStore';
-import { DZFile, FileUpload } from '../interfaces/FileManager';
+} from '../shared/interfaces/DataStore';
+import { DZFile, FileUpload } from '../shared/interfaces/FileManager';
 import {
   DataStore,
   FileManager,
   LibraryCommunicator,
-} from '../interfaces/interfaces';
+} from '../shared/interfaces/interfaces';
 import {
   updateObjectLastModifiedDate,
   updateParentsDate,
 } from '../LearningObjects/LearningObjectInteractor';
-import { UserToken, ServiceToken } from '../types';
+import { UserToken, ServiceToken } from '../shared/types';
 import {
   getAccessGroupCollections,
   hasMultipleLearningObjectWriteAccesses,
@@ -26,15 +26,15 @@ import {
   isAdminOrEditor,
   isPrivilegedUser,
   hasServiceLevelAccess,
-} from './AuthorizationManager';
+} from '../shared/AuthorizationManager';
 import {
   ResourceError,
   ResourceErrorReason,
   ServiceError,
   ServiceErrorReason,
-} from '../errors';
-import { LearningObject } from '../entity';
-import { accessGroups } from '../types/user-token';
+} from '../shared/errors';
+import { LearningObject } from '../shared/entity';
+import { accessGroups } from '../shared/types/user-token';
 
 // file size is in bytes
 const MAX_PACKAGEABLE_FILE_SIZE = 100000000;

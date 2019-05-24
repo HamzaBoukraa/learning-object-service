@@ -3,7 +3,7 @@ import * as bodyParser from 'body-parser';
 import { MongoDriver } from '../drivers/MongoDriver';
 import * as supertest from 'supertest';
 import * as LearningOutcomeRouteHandler from './LearningOutcomeRouteHandler';
-import { LearningOutcome } from '../entity';
+import { LearningOutcome } from '../shared/entity';
 import { LearningOutcomeDatastore } from './LearningOutcomeInteractor';
 import {MOCK_OBJECTS, SEED_DB_IDS} from '../tests/mocks';
 

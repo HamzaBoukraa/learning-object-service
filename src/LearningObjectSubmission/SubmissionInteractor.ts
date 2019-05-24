@@ -1,11 +1,11 @@
-import { DataStore } from '../interfaces/DataStore';
+import { DataStore } from '../shared/interfaces/DataStore';
 import { updateReadme } from '../LearningObjects/LearningObjectInteractor';
-import { FileManager } from '../interfaces/interfaces';
-import { SubmittableLearningObject } from '../entity';
+import { FileManager } from '../shared/interfaces/interfaces';
+import { SubmittableLearningObject } from '../shared/entity';
 import { Submission } from './types/Submission';
 import { authorizeSubmissionRequest } from './AuthorizationManager';
-import { UserToken } from '../types';
-import { ResourceError, ResourceErrorReason } from '../errors';
+import { UserToken } from '../shared/types';
+import { ResourceError, ResourceErrorReason } from '../shared/errors';
 
 /**
  * Submit a learning object to a collection

@@ -1,5 +1,5 @@
-import { UserDocument } from '../../types';
-import { User } from '../../entity';
+import { UserDocument } from '../../shared/types';
+import { User } from '../../shared/entity';
 
 /**
  * Generates User object from Document

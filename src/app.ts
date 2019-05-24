@@ -3,7 +3,7 @@ import {
   DataStore,
   FileManager,
   LibraryCommunicator,
-} from './interfaces/interfaces';
+} from './shared/interfaces/interfaces';
 import * as dotenv from 'dotenv';
 import { LibraryDriver } from './drivers/LibraryDriver';
 dotenv.config();

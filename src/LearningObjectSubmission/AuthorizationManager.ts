@@ -1,5 +1,5 @@
-import { DataStore } from '../interfaces/DataStore';
-import { ResourceError, ResourceErrorReason } from '../errors';
+import { DataStore } from '../shared/interfaces/DataStore';
+import { ResourceError, ResourceErrorReason } from '../shared/errors';
 
 
 /**

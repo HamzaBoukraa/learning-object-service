@@ -1,9 +1,9 @@
 import { Request, Response, Router } from 'express';
-import { DataStore } from '../interfaces/DataStore';
-import { FileManager } from '../interfaces/interfaces';
+import { DataStore } from '../shared/interfaces/DataStore';
+import { FileManager } from '../shared/interfaces/interfaces';
 import { cancelSubmission, submitForReview, checkFirstSubmission } from './SubmissionInteractor';
-import { mapErrorToResponseData } from '../errors';
-import { UserToken } from '../types';
+import { mapErrorToResponseData } from '../shared/errors';
+import { UserToken } from '../shared/types';
 
 /**
  * Initializes an express router with endpoints to publish and unpublish a learning object.
