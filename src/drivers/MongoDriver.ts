@@ -198,7 +198,6 @@ export class MongoDriver implements DataStore {
       collection,
       length,
       level,
-      guidelines,
       standardOutcomeIDs,
       text,
       conditions,
@@ -252,6 +251,7 @@ export class MongoDriver implements DataStore {
       objectDocs,
     );
     const total = results.total[0] ? results.total[0].total : 0;
+    console.log(results);
     return { total, objects };
   }
 
@@ -1603,6 +1603,7 @@ export class MongoDriver implements DataStore {
         text,
         length,
         level,
+        guidelines,
         standardOutcomeIDs,
         name,
         collection,
@@ -1613,12 +1614,17 @@ export class MongoDriver implements DataStore {
         full,
       } = params;
 
+      console.log(params);
       // Query for users
       const authors = await this.matchUsers(author, text);
 
       // Query by LearningOutcomes' mappings
-      const outcomeIDs: string[] = await this.matchOutcomes(standardOutcomeIDs);
-
+      let outcomeIDs: string[] = await this.matchOutcomes(standardOutcomeIDs);
+      console.log(outcomeIDs);
+      if (guidelines !== undefined) {
+        outcomeIDs = await this.matchGuidelines(guidelines, outcomeIDs);
+      }
+      console.log(outcomeIDs);
       let query: any = this.buildSearchQuery({
         text,
         authors,
@@ -1791,6 +1797,7 @@ export class MongoDriver implements DataStore {
       status,
       length,
       level,
+      guidelines,
       outcomeIDs,
       collection,
     } = params;
@@ -1968,15 +1975,29 @@ export class MongoDriver implements DataStore {
       .toArray();
     return docs.map(doc => doc._id);
   }
+
   /**
    * Fetches Learning Objects that have learning outcomes
    * that have been mapped to a specifc set of guidelines
    * @param guidelines
    * @param standardOutcomeIDs
    */
-  private async matchGuidelines(guidelines: string[], standardOutcomeIDs: string[]) {
-    console.log(guidelines);
+  private async matchGuidelines(guidelines: string[], standardOutcomeIDs: string[]): Promise<string[]> {
+    const docs = await this.db
+      .collection(COLLECTIONS.LEARNING_OUTCOMES)
+      .find<LearningOutcomeDocument>(
+        {
+          mappings: { $all: standardOutcomeIDs },
+        },
+        {
+          projection: {_id: 1 },
+        },
+      )
+      .toArray();
+
+    return docs.map(doc => doc._id);
   }
+
   /**
    * Search for users that match author or text param
    *
