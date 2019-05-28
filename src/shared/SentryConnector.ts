@@ -27,4 +27,11 @@ switch (environment) {
 
 export const sentryRequestHandler = Sentry.Handlers.requestHandler() as express.RequestHandler;
 export const sentryErrorHandler = Sentry.Handlers.errorHandler() as express.ErrorRequestHandler;
+
+/**
+ * Sends the provided error to the reporting service registered for the current environment.
+ *
+ * @example
+ * reportError(new Error('Oh no! We broke the API!'));
+ */
 export const reportError = _reportError;
