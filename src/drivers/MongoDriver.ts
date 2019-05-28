@@ -1987,7 +1987,7 @@ export class MongoDriver implements DataStore {
       .collection(COLLECTIONS.LEARNING_OUTCOMES)
       .find<LearningOutcomeDocument>(
         {
-          mappings: { $all: standardOutcomeIDs },
+          mappings: { $in: guidelines },
         },
         {
           projection: {_id: 1 },
