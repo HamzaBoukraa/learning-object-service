@@ -1,6 +1,6 @@
 // @ts-ignore
 import * as stopword from 'stopword';
-import { reportError } from '../drivers/SentryConnector';
+import { reportError } from '../shared/SentryConnector';
 import { processMultipartUpload } from '../FileManager/FileInteractor';
 import { sanitizeObject, sanitizeText } from '../shared/functions';
 import {

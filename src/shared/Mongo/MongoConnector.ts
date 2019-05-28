@@ -1,5 +1,5 @@
 import { MongoClient, Db } from 'mongodb';
-import { reportError } from '../../drivers/SentryConnector';
+import { reportError } from '../SentryConnector';
 import { ServiceError, ServiceErrorReason } from '../errors';
 
 export class MongoConnector {
