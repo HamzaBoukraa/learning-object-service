@@ -17,7 +17,7 @@ import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjec
 import * as LearningOutcomeRouteHandler from '../../LearningOutcomes/LearningOutcomeRouteHandler';
 import * as SubmissionRouteDriver from '../../LearningObjectSubmission/SubmissionRouteDriver';
 import * as ChangelogRouteHandler from '../../Changelogs/ChangelogRouteDriver';
-import { reportError } from '../SentryConnector';
+import { reportError } from '../../shared/SentryConnector';
 import { UserToken } from '../../shared/types';
 import { ResourceErrorReason, mapErrorToResponseData } from '../../shared/errors';
 export class ExpressAuthRouteDriver {

@@ -12,7 +12,7 @@ import {
   hasLearningObjectWriteAccess,
   isPrivilegedUser,
 } from '../shared/AuthorizationManager';
-import { reportError } from '../drivers/SentryConnector';
+import { reportError } from '../shared/SentryConnector';
 import { LearningObject } from '../shared/entity';
 import { handleError } from '../interactors/LearningObjectInteractor';
 import {

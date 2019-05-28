@@ -39,7 +39,7 @@ import {
   ServiceError,
   ServiceErrorReason,
 } from '../shared/errors';
-import { reportError } from './SentryConnector';
+import { reportError } from '../shared/SentryConnector';
 import { LearningObject, LearningOutcome, User } from '../shared/entity';
 import { Submission } from '../LearningObjectSubmission/types/Submission';
 import { MongoConnector } from '../shared/Mongo/MongoConnector';

@@ -2,7 +2,7 @@ import { downloadSingleFile } from './SingleFileDownloadInteractor';
 import { Router, Response, Request } from 'express';
 import { fileNotFound } from './assets/filenotfound';
 import { LEARNING_OBJECT_ROUTES } from '../shared/routes';
-import { reportError } from '../drivers/SentryConnector';
+import { reportError } from '../shared/SentryConnector';
 import { DataStore } from '../shared/interfaces/DataStore';
 import { FileManager } from '../shared/interfaces/FileManager';
 
