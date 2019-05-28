@@ -77,7 +77,7 @@ export function initialize({
         user,
         id,
       });
-      res.sendStatus(200);
+      res.sendStatus(204);
     } catch (e) {
       console.error(e);
       res.status(500).send(e);
