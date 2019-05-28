@@ -1,3 +1,10 @@
+/**
+ * This module exports an error reporting function for use in error cases we cannot recover from.
+ * Depending on the environment, reported errors are directed to different locations. In development,
+ * errors are reported on the stderr stream, while in production they are sent to Sentry.
+ *
+ * @module shared/SentryConnector
+ */
 import * as Sentry from '@sentry/node';
 import * as express from 'express';
 
