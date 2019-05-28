@@ -1,5 +1,5 @@
 import { MongoDriver } from '../drivers/MongoDriver';
-import { MOCK_OBJECTS, SEED_DB_IDS} from '../tests/mocks';
+import { MOCK_OBJECTS, SEED_DB_IDS } from '../tests/mocks';
 import { generateToken } from '../tests/mock-token-manager';
 import * as LearningObjectRouteHandler from './LearningObjectRouteHandler';
 import * as express from 'express';
@@ -10,6 +10,7 @@ import { MockS3Driver } from '../tests/mock-drivers/MockS3Driver';
 import { LibraryCommunicator, FileManager } from '../shared/interfaces/interfaces';
 import * as cookieParser from 'cookie-parser';
 import { processToken, handleProcessTokenError } from '../drivers/express/middleware';
+import { LearningObject } from '../shared/entity';
 
 const app = express();
 const router = express.Router();
@@ -30,6 +31,7 @@ describe('LearningObjectRouteHandler', () => {
         dataStore = await MongoDriver.build(global['__MONGO_URI__']);
         fileManager = new MockS3Driver();
         LibraryDriver = new MockLibraryDriver();
+        // FIXME: This user is both an admin and a reviewer@nccp
         token = generateToken(MOCK_OBJECTS.USERTOKEN);
         authorization = { Cookie: `presence=${token}`, 'Content-Type': 'application/json' };
         LearningObjectRouteHandler.initializePublic({ router, dataStore });
@@ -84,6 +86,39 @@ describe('LearningObjectRouteHandler', () => {
                     done();
                 },
                 );
+        });
+        describe('when the payload contains status set to \'released\'', () => {
+            describe('and the requester is an admin', () => {
+                it('should update the requested Learning Object and return a status of 200', done => {
+                    request
+                        .patch(`/learning-objects/${testObjectID}`)
+                        .set('Authorization', `Bearer ${token}`)
+                        .send({ learningObject: { status: LearningObject.Status.RELEASED } })
+                        .expect(200)
+                        .then(res => {
+                            done();
+                        },
+                        );
+                });
+            });
+            describe('and the requester is an editor', () => {
+                it('should update the requested Learning Object and return a status of 200', done => {
+                    const editorToken = generateToken({
+                        ...MOCK_OBJECTS.USERTOKEN,
+                        accessGroups: ['editor'],
+                    });
+                    request
+                        .patch(`/learning-objects/${testObjectID}`)
+                        .set('Authorization', `Bearer ${editorToken}`)
+                        .send({ learningObject: { status: LearningObject.Status.RELEASED } })
+                        .expect(200)
+                        .then(res => {
+                            done();
+                        },
+                        );
+                });
+            });
+            // TODO: Add case for non-editor/admin trying to update the status to released
         });
     });
     describe('GET /learning-objects/:id/children/summary', () => {
