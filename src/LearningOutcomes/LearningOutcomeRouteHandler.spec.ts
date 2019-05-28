@@ -98,10 +98,10 @@ describe('LearningOutcomeRouteHandler', () => {
   });
 
   describe('DELETE /learning-objects/:id/learning-outcomes/:outcomeId', () => {
-    it('should return a status of 200', done => {
+    it('should return a status of 204', done => {
       request
         .delete('/learning-objects/:id/learning-outcomes/:outcomeId')
-        .expect(200)
+        .expect(204)
         .then(res => {
           done();
         });
