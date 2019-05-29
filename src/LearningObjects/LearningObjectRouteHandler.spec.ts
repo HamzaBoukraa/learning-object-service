@@ -103,10 +103,7 @@ describe('LearningObjectRouteHandler', () => {
             });
             describe('and the requester is an editor', () => {
                 it('should update the requested Learning Object and return a status of 200', done => {
-                    const editorToken = generateToken({
-                        ...MOCK_OBJECTS.USERTOKEN,
-                        accessGroups: ['editor'],
-                    });
+                    const editorToken = generateToken(MOCK_OBJECTS.USERTOKEN_EDITOR);
                     request
                         .patch(`/learning-objects/${testObjectID}`)
                         .set('Authorization', `Bearer ${editorToken}`)
