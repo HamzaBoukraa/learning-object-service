@@ -33,6 +33,9 @@ describe('when a Learning Object is sent for indexing', () => {
   it('should not contain the children property', () => {
     expect(publishingGateway.cleanDocument(l).children).toBeUndefined();
   });
+  it('should not contain the materials property', () => {
+    expect(publishingGateway.cleanDocument(l).materials).toBeUndefined();
+  });
   describe('the author object', () => {
     it('should contain the author\'s username', () => {
       expect(publishingGateway.cleanDocument(l).author.username).toBe(MOCK_OBJECTS.AUTHOR_MOCK.username);

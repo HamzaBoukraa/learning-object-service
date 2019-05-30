@@ -38,6 +38,7 @@ export class ElasticSearchPublishingGateway implements PublishingDataStore {
     };
     delete doc.children;
     delete doc.metrics;
+    delete doc.materials;
     return doc;
   }
 }
