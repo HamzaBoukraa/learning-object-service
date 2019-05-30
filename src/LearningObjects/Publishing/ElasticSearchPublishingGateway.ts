@@ -12,6 +12,32 @@ const INDEX_LOCATION = `${process.env.ELASTICSEARCH_DOMAIN}/released-objects`;
 export class ElasticSearchPublishingGateway implements PublishingDataStore {
   async addToReleased(releasableObject: LearningObject): Promise<void> {
     const URI = `${INDEX_LOCATION}/_doc/${releasableObject.id}`;
-    await request.put(URI, { body: releasableObject });
+    await request.put(URI, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(this.cleanDocument(releasableObject)),
+    });
+  }
+
+  cleanDocument(releasableObject: LearningObject) {
+    const doc = {
+      ...releasableObject.toPlainObject(),
+      author: {
+        name: releasableObject.author.name,
+        username: releasableObject.author.username,
+        email: releasableObject.author.email,
+        organization: releasableObject.author.organization,
+      },
+      contributors: releasableObject.contributors.map(c => ({
+        name: c.name,
+        username: c.username,
+        email: c.email,
+        organization: c.organization,
+      })),
+    };
+    delete doc.children;
+    delete doc.metrics;
+    return doc;
   }
 }
