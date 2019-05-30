@@ -1,6 +1,6 @@
 import { releaseLearningObject, PublishingDataStore } from './interactor';
 import { LearningObject } from '../../shared/entity';
-import { ReleaseRequestDuplicator } from './ReleaseRequestDuplicator';
+import { ElasticMongoReleaseRequestDuplicator } from './ElasticMongoReleaseRequestDuplicator';
 import { UserToken } from '../../shared/types';
 
 // FIXME: Replace with direct export of ElasticSearchPublishingGateway#releaseLearningObject
@@ -10,7 +10,7 @@ const setupElasticToggle = ({ userToken, dataStore, releasableObject }: {
   dataStore: PublishingDataStore;
   releasableObject: LearningObject;
 }) => {
-  const toggle = new ReleaseRequestDuplicator(dataStore);
+  const toggle = new ElasticMongoReleaseRequestDuplicator(dataStore);
   releaseLearningObject({ userToken, dataStore: toggle, releasableObject });
 };
 

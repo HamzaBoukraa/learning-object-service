@@ -1,6 +1,6 @@
 import { DataStore } from '../../shared/interfaces/DataStore';
 import { LearningObject } from '../../shared/entity';
-import { ReleaseRequestDuplicator } from './ReleaseRequestDuplicator';
+import { ElasticMongoReleaseRequestDuplicator } from './ElasticMongoReleaseRequestDuplicator';
 import { ResourceError, ResourceErrorReason } from '../../shared/errors';
 import { isAdminOrEditor } from '../../shared/AuthorizationManager';
 import { UserToken } from '../../shared/types';

@@ -9,7 +9,7 @@ import { ElasticSearchPublishingGateway } from './ElasticSearchPublishingGateway
  * running in "dark mode", where we index data into it but do not read data
  * out of it.
  */
-export class ReleaseRequestDuplicator implements PublishingDataStore {
+export class ElasticMongoReleaseRequestDuplicator implements PublishingDataStore {
   elasticSearchStore: PublishingDataStore;
   constructor(private mongoStore: PublishingDataStore) {
     this.elasticSearchStore = new ElasticSearchPublishingGateway();
