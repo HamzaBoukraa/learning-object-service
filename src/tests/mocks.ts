@@ -30,7 +30,7 @@ export const MOCK_OBJECTS = {
     date: '1523479539862',
     length: 'nanomodule',
     levels: <any>[],
-    goals: <any>[],
+    description: 'A mock description',
     outcomes: <any>[],
     materials:
     {
@@ -57,7 +57,10 @@ export const MOCK_OBJECTS = {
         url: 'https://neutrino-file-uploads.s3.us-east-2.amazonaws.com/skaza/5aa0013becba9a264dcd8030/0ReadMeFirst%20-%20Buffer%20Overflow%20-%20CS0%20-%20C%2B%2B.pdf',
       },
     },
-    metrics: {},
+    metrics: {
+      saves: 0,
+      downloads: 0,
+    },
     children: <any>[],
     contributors: <any>[],
     collection: 'nccp',
