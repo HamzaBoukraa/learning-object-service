@@ -4,6 +4,11 @@ import * as request from 'request-promise';
 import { cleanLearningObject } from '../../shared/elasticsearch';
 
 const INDEX_LOCATION = `${process.env.ELASTICSEARCH_DOMAIN}/released-objects`;
+/**
+ * Splits the domain on the delimiter following the network protocol and takes the
+ * rightwards half, which is the host without the protocol.
+ */
+const HOST = process.env.ELASTICSEARCH_DOMAIN.split('://')[1];
 
 /**
  * Sends a PUT request to ElasticSearch to index the Learning Object at a
@@ -16,6 +21,7 @@ export class ElasticSearchPublishingGateway implements PublishingDataStore {
     await request.put(URI, {
       headers: {
         'Content-Type': 'application/json',
+        'Host': HOST,
       },
       body: JSON.stringify(cleanLearningObject(releasableObject)),
     });
