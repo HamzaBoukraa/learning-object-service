@@ -39,9 +39,10 @@ import {
   ServiceError,
   ServiceErrorReason,
 } from '../shared/errors';
-import { reportError } from './SentryConnector';
+import { reportError } from '../shared/SentryConnector';
 import { LearningObject, LearningOutcome, User } from '../shared/entity';
 import { Submission } from '../LearningObjectSubmission/types/Submission';
+import { MongoConnector } from '../shared/Mongo/MongoConnector';
 
 export enum COLLECTIONS {
   USERS = 'users',
@@ -69,47 +70,19 @@ export class MongoDriver implements DataStore {
 
   static async build(dburi: string) {
     const driver = new MongoDriver();
-    await driver.connect(dburi);
+    // FIXME: This is here to prevent existing tests that use this class from
+    // breaking with the introduction of the MongoConnector
+    if (!MongoConnector.client()) {
+      await MongoConnector.open(dburi);
+    }
+    driver.mongoClient = MongoConnector.client();
+    driver.db = driver.mongoClient.db();
     await driver.initializeModules();
     return driver;
   }
 
-  /**
-   * Connect to the database. Must be called before any other functions.
-   * @async
-   *
-   * NOTE: This function will attempt to connect to the database every
-   *       time it is called, but since it assigns the result to a local
-   *       variable which can only ever be created once, only one
-   *       connection will ever be active at a time.
-   *
-   * TODO: Verify that connections are automatically closed
-   *       when they no longer have a reference.
-   *
-   * @param {string} dbIP the host and port on which mongodb is running
-   */
-  async connect(dbURI: string, retryAttempt?: number): Promise<void> {
-    try {
-      this.mongoClient = await MongoClient.connect(dbURI);
-      this.db = this.mongoClient.db();
-    } catch (e) {
-      if (!retryAttempt) {
-        this.connect(dbURI, 1);
-      } else {
-        return Promise.reject(
-          'Problem connecting to database at ' + dbURI + ':\n\t' + e,
-        );
-      }
-    }
-  }
-
-  /**
-   * Close the database. Note that this will affect all services
-   * and scripts using the database, so only do this if it's very
-   * important or if you are sure that *everything* is finished.
-   */
-  disconnect(): void {
-    this.mongoClient.close();
+  async disconnect() {
+    return MongoConnector.disconnect();
   }
 
   /**

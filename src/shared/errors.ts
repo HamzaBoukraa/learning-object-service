@@ -1,4 +1,4 @@
-import { reportError } from '../drivers/SentryConnector';
+import { reportError } from './SentryConnector';
 
 /**
  * The reasons for which a ServiceError may be thrown.

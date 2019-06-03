@@ -19,7 +19,7 @@ import {
   processToken,
   handleProcessTokenError,
 } from './middleware';
-import { sentryRequestHandler, sentryErrorHandler } from '../SentryConnector';
+import { sentryRequestHandler, sentryErrorHandler } from '../../shared/SentryConnector';
 
 export class ExpressDriver {
   static app = express();

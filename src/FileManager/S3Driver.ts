@@ -2,7 +2,7 @@ import 'dotenv/config';
 import * as AWS from 'aws-sdk';
 import { AWSError } from 'aws-sdk';
 import { Readable } from 'stream';
-import { reportError } from '../drivers/SentryConnector';
+import { reportError } from '../shared/SentryConnector';
 import {
   CompletedPart,
   CompletedPartList,

@@ -26,19 +26,6 @@ jobs:
           paths: 
               - ./package.json
               - ./deploy.sh
-  integration-test:
-    <<: *defaults
-    steps:
-      - attach_workspace: 
-          at: ~/learning-object-service
-      - setup_remote_docker
-      - run:
-          name: Pull Image
-          command: docker pull "${DOCKER_USER_ORG}/learning-object-service:${CIRCLE_SHA1}"
-      - run:
-          name: Run Integration Test
-          command: |
-            echo docker run -it learning-object-service:$CIRCLE_SHA1 npm test
 
   deploy-production:
     <<: *defaults
@@ -71,9 +58,6 @@ workflows:
   build-and-test:
     jobs:
       - build
-      - integration-test:
-          requires:
-            - build
 
   build-test-and-deploy-production:
     jobs:
@@ -81,15 +65,9 @@ workflows:
           filters:
             branches:
               only: /master/
-      - integration-test:
-          requires:
-            - build
-          filters:
-            branches:
-              only: /master/
       - deploy-production:
           requires:
-            - integration-test
+            - build
           filters:
             branches:
               only: /master/

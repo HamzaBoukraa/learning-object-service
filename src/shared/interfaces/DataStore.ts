@@ -12,11 +12,6 @@ export interface DataStore
     LearningObjectStatDatastore,
     CollectionDataStore {
   /*
-   * Datastore Connection Management
-   */
-  connect(dburi: string): Promise<void>;
-  disconnect(): void;
-  /*
    * CREATE Operations
    */
 
