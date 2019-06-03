@@ -1420,7 +1420,10 @@ export class MongoDriver implements DataStore {
       object[0].materials.files = object[0]['orderedFiles'];
       delete object[0]['orderedFiles'];
       const author = await this.fetchUser(object[0].authorID);
-      return this.generateLearningObject(author, object[0], params.full);
+      if (author) {
+        return this.generateLearningObject(author, object[0], params.full);
+      }
+      throw new ResourceError('Learning Object Author not found', ResourceErrorReason.NOT_FOUND);
     }
     throw new ResourceError('Learning Object not found', ResourceErrorReason.NOT_FOUND);
   }
@@ -1498,7 +1501,10 @@ export class MongoDriver implements DataStore {
       object[0].materials.files = object[0]['orderedFiles'];
       delete object[0]['orderedFiles'];
       const author = await this.fetchUser(object[0].authorID);
-      return this.generateLearningObject(author, object[0], params.full);
+      if (author) {
+        return this.generateLearningObject(author, object[0], params.full);
+      }
+      throw new ResourceError('Learning Object Author not found', ResourceErrorReason.NOT_FOUND);
     }
     throw new ResourceError('Learning Object not found', ResourceErrorReason.NOT_FOUND);
   }
