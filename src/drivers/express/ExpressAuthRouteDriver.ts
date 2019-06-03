@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import * as multer from 'multer';
 import { LearningObjectInteractor } from '../../interactors/interactors';
-import { DZFile, DZFileMetadata } from '../../interfaces/FileManager';
+import { DZFile, DZFileMetadata } from '../../shared/interfaces/FileManager';
 import {
   DataStore,
   FileManager,
   LibraryCommunicator,
-} from '../../interfaces/interfaces';
+} from '../../shared/interfaces/interfaces';
 import {
   updateReadme,
   removeFile,
@@ -17,9 +17,9 @@ import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjec
 import * as LearningOutcomeRouteHandler from '../../LearningOutcomes/LearningOutcomeRouteHandler';
 import * as SubmissionRouteDriver from '../../LearningObjectSubmission/SubmissionRouteDriver';
 import * as ChangelogRouteHandler from '../../Changelogs/ChangelogRouteDriver';
-import { reportError } from '../SentryConnector';
-import { UserToken } from '../../types';
-import { ResourceErrorReason, mapErrorToResponseData } from '../../errors';
+import { reportError } from '../../shared/SentryConnector';
+import { UserToken } from '../../shared/types';
+import { ResourceErrorReason, mapErrorToResponseData } from '../../shared/errors';
 export class ExpressAuthRouteDriver {
   private upload = multer({ storage: multer.memoryStorage() });
 

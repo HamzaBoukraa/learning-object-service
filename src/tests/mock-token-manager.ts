@@ -1,4 +1,4 @@
-import { UserToken } from '../types';
+import { UserToken } from '../shared/types';
 import 'dotenv/config';
 import * as jwt from 'jsonwebtoken';
 const Issuer = process.env.ISSUER;

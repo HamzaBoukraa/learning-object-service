@@ -2,13 +2,13 @@ import 'dotenv/config';
 import * as AWS from 'aws-sdk';
 import { AWSError } from 'aws-sdk';
 import { Readable } from 'stream';
-import { reportError } from '../drivers/SentryConnector';
+import { reportError } from '../shared/SentryConnector';
 import {
   CompletedPart,
   CompletedPartList,
   FileUpload,
-} from '../interfaces/FileManager';
-import { FileManager } from '../interfaces/interfaces';
+} from '../shared/interfaces/FileManager';
+import { FileManager } from '../shared/interfaces/interfaces';
 import { AWS_SDK_CONFIG } from './aws-sdk.config';
 
 AWS.config.credentials = AWS_SDK_CONFIG.credentials;

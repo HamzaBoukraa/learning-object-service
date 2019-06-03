@@ -3,9 +3,9 @@ import {
   LearningOutcomeInsert,
   LearningOutcomeUpdate,
 } from './types';
-import { UserToken } from '../types';
-import { sanitizeObject } from '../functions';
-import { LearningOutcome } from '../entity';
+import { UserToken } from '../shared/types';
+import { sanitizeObject } from '../shared/functions';
+import { LearningOutcome } from '../shared/entity';
 
 export interface LearningOutcomeDatastore {
   insertLearningOutcome(params: {

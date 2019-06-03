@@ -2,7 +2,7 @@ import 'dotenv/config';
 import * as jwt from 'jsonwebtoken';
 import { Request, Response } from 'express';
 import { getToken } from './functions';
-import { reportError } from '../drivers/SentryConnector';
+import { reportError } from '../../../shared/SentryConnector';
 
 /**
  * Checks if decoded token is set in request.
@@ -42,7 +42,7 @@ function decodeToken(req: Request) {
     const token = getToken(req);
     user = jwt.verify(token, process.env.KEY);
   } catch (e) {
-    if (e.name !== 'UnauthorizedError') {
+    if (e.name !== 'UnauthorizedError' && e.name !== 'JsonWebTokenError') {
       reportError(e);
     }
   }

@@ -1,21 +1,16 @@
 import { CompletedPart, MultipartFileUploadStatus } from './FileManager';
 import { LearningObjectUpdates } from '../types';
-import { LearningOutcomeDatastore } from '../LearningOutcomes/LearningOutcomeInteractor';
-import { LearningObjectStatDatastore } from '../LearningObjectStats/LearningObjectStatsInteractor';
-import { CollectionDataStore } from '../Collections/CollectionDataStore';
+import { LearningOutcomeDatastore } from '../../LearningOutcomes/LearningOutcomeInteractor';
+import { LearningObjectStatDatastore } from '../../LearningObjectStats/LearningObjectStatsInteractor';
+import { CollectionDataStore } from '../../Collections/CollectionDataStore';
 import { ChangeLogDocument } from '../types/changelog';
 import { LearningObject, User, Collection } from '../entity';
-import { Submission } from '../LearningObjectSubmission/types/Submission';
+import { Submission } from '../../LearningObjectSubmission/types/Submission';
 
 export interface DataStore
   extends LearningOutcomeDatastore,
     LearningObjectStatDatastore,
     CollectionDataStore {
-  /*
-   * Datastore Connection Management
-   */
-  connect(dburi: string): Promise<void>;
-  disconnect(): void;
   /*
    * CREATE Operations
    */

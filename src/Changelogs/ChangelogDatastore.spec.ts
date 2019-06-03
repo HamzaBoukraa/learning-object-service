@@ -52,8 +52,5 @@ describe('MongoDriver', () => {
     });
   });
 
-  afterAll(() => {
-    driver.disconnect();
-    console.log('Disconnected from Database');
-  });
+  afterAll(() => driver.disconnect());
 });

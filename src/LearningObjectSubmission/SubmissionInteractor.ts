@@ -1,11 +1,12 @@
-import { DataStore } from '../interfaces/DataStore';
+import { DataStore } from '../shared/interfaces/DataStore';
 import { updateReadme } from '../LearningObjects/LearningObjectInteractor';
-import { FileManager } from '../interfaces/interfaces';
-import { SubmittableLearningObject } from '../entity';
+import { FileManager } from '../shared/interfaces/interfaces';
+import { SubmittableLearningObject } from '../shared/entity';
 import { Submission } from './types/Submission';
 import { authorizeSubmissionRequest } from './AuthorizationManager';
-import { UserToken } from '../types';
-import { ResourceError, ResourceErrorReason } from '../errors';
+import { UserToken } from '../shared/types';
+import { ResourceError, ResourceErrorReason } from '../shared/errors';
+import { EntityError } from '../shared/entity/errors/entity-error';
 
 /**
  * Submit a learning object to a collection
@@ -35,8 +36,14 @@ export async function submitForReview(params: {
     id: params.learningObjectId,
     full: true,
   });
-  // tslint:disable-next-line:no-unused-expression
-  new SubmittableLearningObject(object);
+  try {
+    // tslint:disable-next-line:no-unused-expression
+    new SubmittableLearningObject(object);
+  } catch (error) {
+    if (error instanceof EntityError) {
+      throw new ResourceError(error.message, ResourceErrorReason.BAD_REQUEST);
+    } else throw error;
+  }
   await params.dataStore.submitLearningObjectToCollection(
     params.user.username,
     params.learningObjectId,

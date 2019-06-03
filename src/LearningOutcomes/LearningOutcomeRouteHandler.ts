@@ -1,7 +1,7 @@
 import * as LearningOutcomeInteractor from './LearningOutcomeInteractor';
 import { Request, Response, Router } from 'express';
 import { LearningOutcomeInput, LearningOutcomeUpdate } from './types';
-import { UserToken } from '../types';
+import { UserToken } from '../shared/types';
 
 /**
  * Initializes an express router with endpoints to Create, Update, and Delete
@@ -77,7 +77,7 @@ export function initialize({
         user,
         id,
       });
-      res.sendStatus(200);
+      res.sendStatus(204);
     } catch (e) {
       console.error(e);
       res.status(500).send(e);

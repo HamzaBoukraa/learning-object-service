@@ -1,5 +1,5 @@
 import { Cursor, Db, MongoClient, ObjectID } from 'mongodb';
-import { DataStore } from '../interfaces/interfaces';
+import { DataStore } from '../shared/interfaces/interfaces';
 import {
   Filters,
   LearningObjectCollection,
@@ -7,11 +7,11 @@ import {
   QueryCondition,
   LearningObjectQuery,
   ParentLearningObjectQuery,
-} from '../interfaces/DataStore';
+} from '../shared/interfaces/DataStore';
 import {
   CompletedPart,
   MultipartFileUploadStatus,
-} from '../interfaces/FileManager';
+} from '../shared/interfaces/FileManager';
 import * as ObjectMapper from './Mongo/ObjectMapper';
 import { SubmissionDatastore } from '../LearningObjectSubmission/SubmissionDatastore';
 import {
@@ -20,7 +20,7 @@ import {
   UserDocument,
   LearningOutcomeDocument,
   StandardOutcomeDocument,
-} from '../types';
+} from '../shared/types';
 import { LearningOutcomeMongoDatastore } from '../LearningOutcomes/LearningOutcomeMongoDatastore';
 import {
   LearningOutcomeInput,
@@ -31,17 +31,18 @@ import { LearningObjectStatStore } from '../LearningObjectStats/LearningObjectSt
 import { LearningObjectStats } from '../LearningObjectStats/LearningObjectStatsInteractor';
 import { lengths } from '@cyber4all/clark-taxonomy';
 import { LearningObjectDataStore } from '../LearningObjects/LearningObjectDatastore';
-import { ChangeLogDocument } from '../types/changelog';
+import { ChangeLogDocument } from '../shared/types/changelog';
 import { ChangelogDataStore } from '../Changelogs/ChangelogDatastore';
 import {
   ResourceError,
   ResourceErrorReason,
   ServiceError,
   ServiceErrorReason,
-} from '../errors';
-import { reportError } from './SentryConnector';
-import { LearningObject, LearningOutcome, User } from '../entity';
+} from '../shared/errors';
+import { reportError } from '../shared/SentryConnector';
+import { LearningObject, LearningOutcome, User } from '../shared/entity';
 import { Submission } from '../LearningObjectSubmission/types/Submission';
+import { MongoConnector } from '../shared/Mongo/MongoConnector';
 
 export enum COLLECTIONS {
   USERS = 'users',
@@ -69,47 +70,19 @@ export class MongoDriver implements DataStore {
 
   static async build(dburi: string) {
     const driver = new MongoDriver();
-    await driver.connect(dburi);
+    // FIXME: This is here to prevent existing tests that use this class from
+    // breaking with the introduction of the MongoConnector
+    if (!MongoConnector.client()) {
+      await MongoConnector.open(dburi);
+    }
+    driver.mongoClient = MongoConnector.client();
+    driver.db = driver.mongoClient.db();
     await driver.initializeModules();
     return driver;
   }
 
-  /**
-   * Connect to the database. Must be called before any other functions.
-   * @async
-   *
-   * NOTE: This function will attempt to connect to the database every
-   *       time it is called, but since it assigns the result to a local
-   *       variable which can only ever be created once, only one
-   *       connection will ever be active at a time.
-   *
-   * TODO: Verify that connections are automatically closed
-   *       when they no longer have a reference.
-   *
-   * @param {string} dbIP the host and port on which mongodb is running
-   */
-  async connect(dbURI: string, retryAttempt?: number): Promise<void> {
-    try {
-      this.mongoClient = await MongoClient.connect(dbURI);
-      this.db = this.mongoClient.db();
-    } catch (e) {
-      if (!retryAttempt) {
-        this.connect(dbURI, 1);
-      } else {
-        return Promise.reject(
-          'Problem connecting to database at ' + dbURI + ':\n\t' + e,
-        );
-      }
-    }
-  }
-
-  /**
-   * Close the database. Note that this will affect all services
-   * and scripts using the database, so only do this if it's very
-   * important or if you are sure that *everything* is finished.
-   */
-  disconnect(): void {
-    this.mongoClient.close();
+  async disconnect() {
+    return MongoConnector.disconnect();
   }
 
   /**
@@ -1377,6 +1350,10 @@ export class MongoDriver implements DataStore {
 
   /**
    * Fetch the learning object document associated with the given id.
+   * FIXME x 1000: clean this query up after files collection is created
+   *
+   * The query fetches the specified released learning object and sorts the files by date (newest first)
+   * If the query fails, the function throws a 404 Resource Error.
    * @async
    *
    * @param id database id
@@ -1389,19 +1366,52 @@ export class MongoDriver implements DataStore {
   }): Promise<LearningObject> {
     const object = await this.db
       .collection<LearningObjectDocument>(COLLECTIONS.LEARNING_OBJECTS)
-      .findOne({ _id: params.id });
-    if (object) {
-      const author = await this.fetchUser(object.authorID);
-      return this.generateLearningObject(author, object, params.full);
+      .aggregate([
+        {
+          // match learning object by params.id
+          $match: { _id: params.id },
+        },
+        { $unwind: { path: '$materials.files', preserveNullAndEmptyArrays: true } },
+        { $sort: { 'materials.files.date': -1 } },
+        { $addFields: { orderedFiles: ''} },
+        { $group: {
+          _id: '$_id',
+          orderedFiles: {
+            $push: '$materials.files',
+          },
+          authorID: { $first: '$authorID' },
+          name: { $first: '$name' },
+          date: { $first: '$date' },
+          length: { $first: '$length' },
+          levels: { $first: '$levels' },
+          goals: { $first: '$goals' },
+          outcomes: { $first: '$outcomes' },
+          materials: { $first: '$materials' },
+          contributors: { $first: '$contributors' },
+          collection: { $first: '$collection' },
+          status: { $first: '$status' },
+          description: { $first: '$description' },
+        } },
+      ]).toArray();
+    if (object[0]) {
+      object[0].materials.files = object[0]['orderedFiles'];
+      delete object[0]['orderedFiles'];
+      const author = await this.fetchUser(object[0].authorID);
+      if (author) {
+        return this.generateLearningObject(author, object[0], params.full);
+      }
+      throw new ResourceError('Learning Object Author not found', ResourceErrorReason.NOT_FOUND);
     }
-
-    return null;
+    throw new ResourceError('Learning Object not found', ResourceErrorReason.NOT_FOUND);
   }
 
   /**
    * Fetches released object through aggregation pipeline by performing a match based on the object id, finding the duplicate object in the
    * working collection, then checking the status of the duplicate to determine whether or not to set hasRevision to true or false.
+   * FIXME x 1000: clean this query up after files collection is created
    *
+   * The query fetches the specified released learning object and sorts the files by date (newest first)
+   * If the query fails, the function throws a 404 Resource Error.
    * @param {{
    *     id: string;
    *     full?: boolean;
@@ -1420,6 +1430,27 @@ export class MongoDriver implements DataStore {
           // match learning object by params.id
           $match: { _id: params.id },
         },
+        { $unwind: { path: '$materials.files', preserveNullAndEmptyArrays: true } },
+        { $sort: { 'materials.files.date': -1 } },
+        { $addFields: { orderedFiles: ''} },
+        { $group: {
+          _id: '$_id',
+          orderedFiles: {
+            $push: '$materials.files',
+          },
+          authorID: { $first: '$authorID' },
+          name: { $first: '$name' },
+          date: { $first: '$date' },
+          length: { $first: '$length' },
+          levels: { $first: '$levels' },
+          goals: { $first: '$goals' },
+          outcomes: { $first: '$outcomes' },
+          materials: { $first: '$materials' },
+          contributors: { $first: '$contributors' },
+          collection: { $first: '$collection' },
+          status: { $first: '$status' },
+          description: { $first: '$description' },
+        } },
         // perform a lookup and store the working copy of the object under the "Copy" array.
         {
           $lookup: {
@@ -1443,11 +1474,16 @@ export class MongoDriver implements DataStore {
         { $project: { copy: 0 } },
       ])
       .toArray();
-    if (object) {
+    if (object[0]) {
+      object[0].materials.files = object[0]['orderedFiles'];
+      delete object[0]['orderedFiles'];
       const author = await this.fetchUser(object[0].authorID);
-      return this.generateLearningObject(author, object[0], params.full);
+      if (author) {
+        return this.generateLearningObject(author, object[0], params.full);
+      }
+      throw new ResourceError('Learning Object Author not found', ResourceErrorReason.NOT_FOUND);
     }
-    return null;
+    throw new ResourceError('Learning Object not found', ResourceErrorReason.NOT_FOUND);
   }
 
   /**

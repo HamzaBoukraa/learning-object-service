@@ -1,7 +1,7 @@
 import { LearningObjectInteractor } from '../interactors/interactors';
 import { MOCK_OBJECTS } from '../tests/mocks';
-import { DataStore } from '../interfaces/DataStore';
-import { LibraryCommunicator } from '../interfaces/interfaces';
+import { DataStore } from '../shared/interfaces/DataStore';
+import { LibraryCommunicator } from '../shared/interfaces/interfaces';
 import { MockDataStore } from '../tests/mock-drivers/MockDataStore';
 import { MockLibraryDriver } from '../tests/mock-drivers/MockLibraryDriver';
 

@@ -4,7 +4,7 @@ import {
 } from './LearningObjectStatsInteractor';
 import { Db } from 'mongodb';
 import { COLLECTIONS } from '../drivers/MongoDriver';
-import { LearningObject } from '../entity';
+import { LearningObject } from '../shared/entity';
 
 const USAGE_STATS_COLLECTION = 'usage-stats';
 const BLOOMS_DISTRIBUTION_COLLECTION = 'blooms_outcome_distribution';

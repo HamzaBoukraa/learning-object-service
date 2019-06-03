@@ -1,5 +1,5 @@
 import { MongoDriver } from './MongoDriver';
-import { LearningObject } from '../entity';
+import { LearningObject } from '../shared/entity';
 
 describe('MongoDriver', () => {
   let driver: MongoDriver;
@@ -64,8 +64,5 @@ describe('MongoDriver', () => {
     });
   });
 
-  afterAll(() => {
-    driver.disconnect();
-    console.log('Disconnected from Database');
-  });
+  afterAll(() => driver.disconnect());
 });

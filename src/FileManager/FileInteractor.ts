@@ -1,11 +1,11 @@
-import { DataStore } from '../interfaces/DataStore';
+import { DataStore } from '../shared/interfaces/DataStore';
 import {
   DZFile,
   FileUpload,
   MultipartFileUploadStatus,
-} from '../interfaces/FileManager';
-import { FileManager } from '../interfaces/interfaces';
-import { LearningObject } from '../entity';
+} from '../shared/interfaces/FileManager';
+import { FileManager } from '../shared/interfaces/interfaces';
+import { LearningObject } from '../shared/entity';
 
 /**
  * Creates multipart upload and saves metadata for upload

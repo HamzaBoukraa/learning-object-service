@@ -3,7 +3,7 @@ import * as bodyParser from 'body-parser';
 import { MongoDriver } from '../drivers/MongoDriver';
 import * as supertest from 'supertest';
 import * as LearningOutcomeRouteHandler from './LearningOutcomeRouteHandler';
-import { LearningOutcome } from '../entity';
+import { LearningOutcome } from '../shared/entity';
 import { LearningOutcomeDatastore } from './LearningOutcomeInteractor';
 import {MOCK_OBJECTS, SEED_DB_IDS} from '../tests/mocks';
 
@@ -98,18 +98,15 @@ describe('LearningOutcomeRouteHandler', () => {
   });
 
   describe('DELETE /learning-objects/:id/learning-outcomes/:outcomeId', () => {
-    it('should return a status of 200', done => {
+    it('should return a status of 204', done => {
       request
         .delete('/learning-objects/:id/learning-outcomes/:outcomeId')
-        .expect(200)
+        .expect(204)
         .then(res => {
           done();
         });
     });
   });
-  afterAll(() => {
-    driver.disconnect();
-    console.log('Disconnected from Database');
-  });
+  afterAll(() => driver.disconnect());
 });
 

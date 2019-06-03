@@ -1,19 +1,19 @@
 import { LearningObjectInteractor } from '../interactors/interactors';
-import { DataStore } from '../interfaces/DataStore';
-import { FileManager, LibraryCommunicator } from '../interfaces/interfaces';
+import { DataStore } from '../shared/interfaces/DataStore';
+import { FileManager, LibraryCommunicator } from '../shared/interfaces/interfaces';
 import { generatePDF } from './PDFKitDriver';
 import {
   LearningObjectUpdates,
   UserToken,
   VALID_LEARNING_OBJECT_UPDATES,
-} from '../types';
-import { ResourceError, ResourceErrorReason } from '../errors';
+} from '../shared/types';
+import { ResourceError, ResourceErrorReason } from '../shared/errors';
 import {
   hasLearningObjectWriteAccess,
   isPrivilegedUser,
-} from '../interactors/AuthorizationManager';
-import { reportError } from '../drivers/SentryConnector';
-import { LearningObject } from '../entity';
+} from '../shared/AuthorizationManager';
+import { reportError } from '../shared/SentryConnector';
+import { LearningObject } from '../shared/entity';
 import { handleError } from '../interactors/LearningObjectInteractor';
 import {
   authorizeRequest,
@@ -21,6 +21,7 @@ import {
   requesterIsAdminOrEditor,
 } from './AuthorizationManager';
 import { FileMeta } from './typings';
+import * as PublishingService from './Publishing';
 
 const LearningObjectState = {
   UNRELEASED: [
@@ -366,11 +367,10 @@ export async function updateLearningObject(params: {
         id,
         updates: cleanUpdates,
       });
-      if (
-        isPrivilegedUser(userToken.accessGroups) &&
-        cleanUpdates.status === LearningObject.Status.RELEASED
-      ) {
-        await releaseLearningObject({ dataStore, id });
+      // Infer if this Learning Object is being released
+      if (cleanUpdates.status === LearningObject.Status.RELEASED) {
+        const releasableObject = await generateReleasableLearningObject(dataStore, id);
+        await PublishingService.releaseLearningObject({ userToken, dataStore, releasableObject });
       }
     } else {
       return Promise.reject(
@@ -386,38 +386,23 @@ export async function updateLearningObject(params: {
 }
 
 /**
- * Releases a LearningObject by adding object to released collection of objects
- *
  * FIXME: Once the return type of `fetchLearningObject` is updated to the `Datastore's` schema type,
  * this function should be updated to not fetch children ids as they should be returned with the document
- *
- * @param {DataStore} datastore [Driver for the datastore]
- * @param {string} id [Id of the LearningObject to be copied]
- * @returns {Promise<void>}
  */
-async function releaseLearningObject({
-  dataStore,
-  id,
-}: {
-  dataStore: DataStore;
-  id: string;
-}): Promise<void> {
+async function generateReleasableLearningObject(dataStore: DataStore, id: string) {
   const [object, childIds] = await Promise.all([
-    dataStore.fetchLearningObject({
-      id,
-      full: true,
-    }),
-    dataStore.findChildObjectIds({ parentId: id }),
+      dataStore.fetchLearningObject({id, full: true }),
+      dataStore.findChildObjectIds({parentId: id}),
   ]);
   let children: LearningObject[] = [];
   if (Array.isArray(childIds)) {
-    children = childIds.map(childId => new LearningObject({ id: childId }));
+      children = childIds.map(childId => new LearningObject({id: childId}));
   }
   const releasableObject = new LearningObject({
-    ...object.toPlainObject(),
-    children,
+      ...object.toPlainObject(),
+      children,
   });
-  return dataStore.addToReleased(releasableObject);
+  return releasableObject;
 }
 
 /**
