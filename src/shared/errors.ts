@@ -21,6 +21,7 @@ export class ServiceError extends Error {
  * The reasons for which a ResourceError may be thrown.
  */
 export enum ResourceErrorReason {
+  FORBIDDEN = 'Forbidden',
   INVALID_ACCESS = 'InvalidAccess',
   NOT_FOUND = 'NotFound',
   BAD_REQUEST = 'BadRequest',
@@ -59,6 +60,9 @@ export function mapErrorToResponseData(error: Error): { code: number, message: s
       break;
     case ResourceErrorReason.INVALID_ACCESS:
       status.code = 401;
+      break;
+    case ResourceErrorReason.FORBIDDEN:
+      status.code = 403;
       break;
     case ResourceErrorReason.NOT_FOUND:
       status.code = 404;
