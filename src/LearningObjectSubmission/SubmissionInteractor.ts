@@ -3,9 +3,10 @@ import { updateReadme } from '../LearningObjects/LearningObjectInteractor';
 import { FileManager } from '../shared/interfaces/interfaces';
 import { SubmittableLearningObject } from '../shared/entity';
 import { Submission } from './types/Submission';
-import { authorizeSubmissionRequest } from './AuthorizationManager';
 import { UserToken } from '../shared/types';
 import { ResourceError, ResourceErrorReason } from '../shared/errors';
+import { SubmissionDataStore } from './SubmissionDataStore';
+import { LearningObjectAdapter } from '../LearningObjects/LearningObjectAdapter';
 import { EntityError } from '../shared/entity/errors/entity-error';
 
 /**
@@ -19,23 +20,21 @@ import { EntityError } from '../shared/entity/errors/entity-error';
  * @param collection name of collection to submit learning object to
  */
 export async function submitForReview(params: {
-  dataStore: DataStore;
+  dataStore: SubmissionDataStore;
   fileManager: FileManager;
   user: UserToken;
   learningObjectId: string;
   userId: string;
   collection: string;
 }): Promise<void> {
-  await authorizeSubmissionRequest({
-    dataStore: params.dataStore,
-    userId: params.userId,
-    learningObjectId: params.learningObjectId,
-    emailVerified: params.user.emailVerified,
-  });
-  const object = await params.dataStore.fetchLearningObject({
-    id: params.learningObjectId,
-    full: true,
-  });
+  if (!params.user.emailVerified) {
+    throw new ResourceError(
+      'Please verify your email address to submit a Learning Object',
+      ResourceErrorReason.FORBIDDEN,
+    );
+  }
+  const object = await LearningObjectAdapter.getInstance().getLearningObjectById(params.learningObjectId);
+
   try {
     // tslint:disable-next-line:no-unused-expression
     new SubmittableLearningObject(object);
@@ -55,9 +54,8 @@ export async function submitForReview(params: {
     timestamp: Date.now().toString(),
   };
   await params.dataStore.recordSubmission(submission);
-  await updateReadme({
-    dataStore: params.dataStore,
-    fileManager: params.fileManager,
+
+  await LearningObjectAdapter.getInstance().updateReadme({
     id: params.learningObjectId,
   });
 }
@@ -73,7 +71,7 @@ export async function submitForReview(params: {
  * @param collection name of collection to search for in submission collection
  */
 export async function checkFirstSubmission(params: {
-  dataStore: DataStore,
+  dataStore: SubmissionDataStore,
   collection: string,
   learningObjectId: string,
   userId: string,
@@ -104,7 +102,7 @@ export async function checkFirstSubmission(params: {
  * @param learningObjectId id of the learning object to search for
  */
 export async function cancelSubmission(params: {
-  dataStore: DataStore,
+  dataStore: SubmissionDataStore,
   learningObjectId: string,
   userId: string,
   emailVerified: boolean,

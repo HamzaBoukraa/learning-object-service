@@ -3,10 +3,11 @@ import {
   MOCK_OBJECTS,
   SUBMITTABLE_LEARNING_OBJECT,
 } from '../tests/mocks';
-import { DataStore } from '../shared/interfaces/DataStore';
 import { MockDataStore } from '../tests/mock-drivers/MockDataStore';
+import { DataStore } from '../shared/interfaces/DataStore';
+import { SubmissionDataStore } from './SubmissionDatastore';
 
-const dataStore: DataStore = new MockDataStore();
+const dataStore: SubmissionDataStore = new MockDataStore();
 
 describe('cancelSubmission', () => {
   it('should cancel the submission given a valid username and id', async done => {
