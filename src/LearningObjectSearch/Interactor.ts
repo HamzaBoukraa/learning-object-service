@@ -118,14 +118,6 @@ function formatSearchQuery(
       ? formattedQuery.sortType
       : 1;
 
-  if (formattedQuery.text) {
-    const firstChar = formattedQuery.text.charAt(0);
-    const lastChar = formattedQuery.text.charAt(formattedQuery.text.length - 1);
-    if (firstChar !== `"` && lastChar !== `"`) {
-      formattedQuery.text = this.removeStopwords(formattedQuery.text);
-    }
-  }
-
   return sanitizeObject({ object: formattedQuery }, false);
 }
 
