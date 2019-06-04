@@ -5,7 +5,14 @@ describe('LearningObjectDownload: AuthorizationManager', () => {
   let requester: Requester;
 
   beforeEach(() => {
-    requester = null;
+    requester = {
+      name: 'Test User',
+      username: 'testuser',
+      email: 'someemail@e.com',
+      organization: '',
+      emailVerified: true,
+      accessGroups: [],
+    };
   });
 
   describe('requesterIsPrivileged', () => {
