@@ -1022,6 +1022,7 @@ export class LearningObjectInteractor {
         collection,
         length,
         level,
+        guidelines,
         standardOutcomeIDs,
         text,
         orderBy,
@@ -1059,6 +1060,7 @@ export class LearningObjectInteractor {
           collection,
           length,
           level,
+          guidelines,
           standardOutcomeIDs,
           text,
           status,
@@ -1075,6 +1077,7 @@ export class LearningObjectInteractor {
           collection,
           length,
           level,
+          guidelines,
           standardOutcomeIDs,
           text,
           orderBy,
@@ -1194,6 +1197,9 @@ export class LearningObjectInteractor {
     formattedQuery.collection = toArray(formattedQuery.collection);
     formattedQuery.standardOutcomeIDs = toArray(
       formattedQuery.standardOutcomeIDs,
+    );
+    formattedQuery.guidelines = toArray(
+      formattedQuery.guidelines,
     );
     formattedQuery.page = toNumber(formattedQuery.page);
     formattedQuery.limit = toNumber(formattedQuery.limit);
