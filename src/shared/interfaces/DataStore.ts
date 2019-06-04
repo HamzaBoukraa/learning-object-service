@@ -205,6 +205,7 @@ export interface ReleasedLearningObjectQuery extends Filters {
   author?: string;
   length?: string[];
   level?: string[];
+  guidelines?: string[];
   standardOutcomeIDs?: string[];
   text?: string;
   full?: boolean;
