@@ -172,6 +172,7 @@ export class MongoDriver implements DataStore {
       length,
       level,
       standardOutcomeIDs,
+      guidelines,
       text,
       conditions,
       orderBy,
@@ -188,7 +189,10 @@ export class MongoDriver implements DataStore {
     // Query for users
     const authors = await this.matchUsers(author, text);
     // Query by LearningOutcomes' mappings
-    const outcomeIDs: string[] = await this.matchOutcomes(standardOutcomeIDs);
+    const outcomeIDs: string[] = await this.matchOutcomesByGuidelines({
+      guidelineIds: standardOutcomeIDs,
+      guidelineSources: guidelines,
+    });
 
     const searchQuery = this.buildSearchQuery({
       name,
@@ -1638,6 +1642,7 @@ export class MongoDriver implements DataStore {
         text,
         length,
         level,
+        guidelines,
         standardOutcomeIDs,
         name,
         collection,
@@ -1652,7 +1657,10 @@ export class MongoDriver implements DataStore {
       const authors = await this.matchUsers(author, text);
 
       // Query by LearningOutcomes' mappings
-      const outcomeIDs: string[] = await this.matchOutcomes(standardOutcomeIDs);
+      const outcomeIDs: string[] = await this.matchOutcomesByGuidelines({
+        guidelineIds: standardOutcomeIDs,
+        guidelineSources: guidelines,
+      });
 
       let query: any = this.buildSearchQuery({
         text,
@@ -1760,6 +1768,7 @@ export class MongoDriver implements DataStore {
    * @param {string[]} authorIDs
    * @param {string[]} length
    * @param {string[]} level
+   * @param {string[]} guidelines
    * @param {string[]} outcomeIDs
    * @param {string} name
    * @returns
@@ -1771,6 +1780,7 @@ export class MongoDriver implements DataStore {
     status?: string[];
     length?: string[];
     level?: string[];
+    guidelines?: string[];
     outcomeIDs?: string[];
     name?: string;
     collection?: string[];
@@ -1813,6 +1823,7 @@ export class MongoDriver implements DataStore {
     status?: string[];
     length?: string[];
     level?: string[];
+    guidelines?: string[];
     outcomeIDs?: string[];
     collection?: string[];
   }) {
@@ -1823,6 +1834,7 @@ export class MongoDriver implements DataStore {
       status,
       length,
       level,
+      guidelines,
       outcomeIDs,
       collection,
     } = params;
@@ -1978,28 +1990,103 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Gets Learning Outcome IDs that contain Standard Outcome IDs
+   * Gets Learning Outcome IDs that are mapped to specific Guidelines
+   * *** Note  to prevent matching when params are undefined, `null` is returned instead of an empty array ***
    *
    * @private
-   * @param {string[]} standardOutcomeIDs
+   * @param {string[]} guidelineIds
    * @returns {Promise<LearningOutcomeDocument[]>}
    * @memberof MongoDriver
    */
-  private async matchOutcomes(standardOutcomeIDs: string[]): Promise<string[]> {
-    if (!standardOutcomeIDs) {
-      return null;
-    }
+  private async matchOutcomesByGuidelines({
+    guidelineIds,
+    guidelineSources,
+  }: {
+    guidelineIds?: string[];
+    guidelineSources?: string[];
+  }): Promise<string[]> {
+    if (guidelineSources) {
+      return this.matchOutcomesByGuidelineSource({
+        guidelineIds,
+        guidelineSources,
+      });
+    } else if (guidelineIds) {
     const docs = await this.db
       .collection(COLLECTIONS.LEARNING_OUTCOMES)
       .find<LearningOutcomeDocument>(
         {
-          mappings: { $all: standardOutcomeIDs },
+            mappings: { $all: guidelineIds },
         },
         { projection: { _id: 1 } },
       )
       .toArray();
     return docs.map(doc => doc._id);
   }
+    return null;
+  }
+
+  /**
+   * Retrieves ids for Learning Outcomes that match specified source or specified source and mapping ids
+   *
+   * @private
+   * @param {string[]} guidelineIds [List of guideline/mappings ids to be matched]
+   * @param {string[]} guidelineSources [List of guideline/mappings sources to be matched]
+   * @returns {Promise<string[]>}
+   * @memberof MongoDriver
+   */
+  private async matchOutcomesByGuidelineSource({
+    guidelineIds,
+    guidelineSources,
+  }: {
+    guidelineIds: string[];
+    guidelineSources: string[];
+  }): Promise<string[]> {
+    const learningOutcomeMatcher: {
+      $match: {
+        $expr: {
+          [index: string]: any;
+        };
+        mappings?: {
+          $all: string[];
+        };
+      };
+    } = {
+      $match: { $expr: { $eq: ['$$guideline_id', '$mappings'] } },
+    };
+    if (Array.isArray(guidelineIds)) {
+      learningOutcomeMatcher.$match.mappings = { $all: guidelineIds };
+    }
+    const results = await this.db
+      .collection(COLLECTIONS.STANDARD_OUTCOMES)
+      .aggregate<{ outcomeIds: string[] }>([
+        { $match: { source: { $in: guidelineSources } } },
+        {
+          $lookup: {
+            from: COLLECTIONS.LEARNING_OUTCOMES,
+            let: { guideline_id: '$_id' },
+            pipeline: [
+              { $unwind: '$mappings' },
+              learningOutcomeMatcher,
+              { $project: { _id: 1 } },
+            ],
+            as: 'outcomes',
+          },
+        },
+        { $unwind: '$outcomes' },
+        {
+          $group: {
+            _id: 1,
+            outcomeIds: { $addToSet: '$outcomes._id' },
+          },
+        },
+      ])
+      .toArray();
+    if (results[0]) {
+      return results[0].outcomeIds;
+    }
+    return [];
+  }
+
   /**
    * Search for users that match author or text param
    *
