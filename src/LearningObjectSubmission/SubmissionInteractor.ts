@@ -10,7 +10,10 @@ import { LearningObjectAdapter } from '../LearningObjects/LearningObjectAdapter'
 import { EntityError } from '../shared/entity/errors/entity-error';
 
 /**
- * Submit a learning object to a collection
+ * submitForReview checks that the user has a verified email address, and that the Learning Object
+ * passes the validation required to create a new SubmittableLearningObject. In that case, the
+ * Learning Object is updated in storage to reflect it being submitted to a collection, and the
+ * submission is recorded.
  *
  * @param dataStore instance of dataStore
  * @param userId id of learning object author
@@ -34,7 +37,9 @@ export async function submitForReview(params: {
     );
   }
   const object = await LearningObjectAdapter.getInstance().getLearningObjectById(params.learningObjectId);
-
+  if (params.userId !== object.author.id) {
+    throw new ResourceError('Only the Learning Object author may make a submission.', ResourceErrorReason.FORBIDDEN);
+  }
   try {
     // tslint:disable-next-line:no-unused-expression
     new SubmittableLearningObject(object);
@@ -77,13 +82,6 @@ export async function checkFirstSubmission(params: {
   userId: string,
   emailVerified: boolean,
 }): Promise<boolean> {
-  await authorizeSubmissionRequest({
-    dataStore: params.dataStore,
-    userId: params.userId,
-    learningObjectId: params.learningObjectId,
-    emailVerified: params.emailVerified,
-  });
-
   return await params.dataStore.fetchSubmission(
     params.collection,
     params.learningObjectId,
@@ -107,18 +105,16 @@ export async function cancelSubmission(params: {
   userId: string,
   emailVerified: boolean,
 }): Promise<void> {
-  await authorizeSubmissionRequest({
-    dataStore: params.dataStore,
-    userId: params.userId,
-    learningObjectId: params.learningObjectId,
-    emailVerified: params.emailVerified,
-  });
   const submission = await params.dataStore.fetchRecentSubmission(params.learningObjectId);
   if (submission && submission.cancelDate) {
     throw new ResourceError(
       'This submission has already been canceled',
       ResourceErrorReason.BAD_REQUEST,
     );
+  }
+  const object = await LearningObjectAdapter.getInstance().getLearningObjectById(params.learningObjectId);
+  if (params.userId !== object.author.id) {
+    throw new ResourceError('Only the author may cancel a submission.', ResourceErrorReason.FORBIDDEN);
   }
   await params.dataStore.recordCancellation(params.learningObjectId);
   await params.dataStore.unsubmitLearningObject(params.learningObjectId);
