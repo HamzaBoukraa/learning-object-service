@@ -42,7 +42,7 @@ export function sanitizeObject<T>(
 }
 
 /**
- * Returns new array with element(s) from value param or undefined if value was not defined
+ * Returns new array with element(s) from value param or null if value was not defined
  *
  * @template T
  * @param {*} value
