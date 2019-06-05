@@ -36,6 +36,8 @@ export async function submitForReview(params: {
     collection: params.collection,
     timestamp: Date.now().toString(),
   });
+  // The decision to fetch the Learning Object agian was made to ensure consistency, in the chance that the business
+  // logic used when updating a Learning Object modifies a property other than the ones we specifically request.
   const submittableLearningObject = await LearningObjectAdapter.getInstance().getLearningObjectById(params.learningObjectId);
   await params.publisher.publishSubmission(submittableLearningObject);
 }
