@@ -1,11 +1,7 @@
-import { DataStore } from '../../shared/interfaces/DataStore';
 import { LearningObject } from '../../shared/entity';
-import { ElasticMongoReleaseRequestDuplicator } from './ElasticMongoReleaseRequestDuplicator';
-import { ResourceError, ResourceErrorReason, ServiceError, ServiceErrorReason, mapResponseDataToError } from '../../shared/errors';
+import { ResourceError, ResourceErrorReason } from '../../shared/errors';
 import { isAdminOrEditor } from '../../shared/AuthorizationManager';
 import { UserToken } from '../../shared/types';
-import { generateServiceToken } from '../../drivers/TokenManager';
-import * as https from 'https';
 
 export interface PublishingDataStore {
     addToReleased(releasableObject: LearningObject): Promise<void>;
@@ -22,39 +18,6 @@ export async function releaseLearningObject({ userToken, dataStore, releasableOb
     releasableObject: LearningObject;
 }): Promise<void> {
     if (isAdminOrEditor(userToken.accessGroups)) {
-        const postData = JSON.stringify({
-            learningObjectName: releasableObject.name,
-            authorName: releasableObject.author.name,
-            collection: releasableObject.collection,
-            authorEmail: releasableObject.author.email,
-            username: releasableObject.author.username,
-        });
-
-        const options = {
-            // When host name is set to an empty string, an internal service error is thrown.
-            hostname: process.env.RELEASE_EMAIL_INVOCATION ? process.env.RELEASE_EMAIL_INVOCATION.split('/')[0] : '',
-            method: 'POST',
-            path: process.env.RELEASE_EMAIL_INVOCATION ? `/${process.env.RELEASE_EMAIL_INVOCATION.split('/')[1]}` : '',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Content-Length': postData.length,
-                'Authorization': `Bearer ${generateServiceToken()}`,
-            },
-        };
-
-        const req = https.request(options, (res) => {
-            if (res.statusCode !== 200) {
-                const error = mapResponseDataToError(res.statusCode, res.statusMessage);
-                throw error;
-            }
-        });
-
-        req.on('error', (e) => {
-          throw new ServiceError(ServiceErrorReason.INTERNAL);
-        });
-
-        req.write(postData);
-        req.end();
         return dataStore.addToReleased(releasableObject);
     }
     throw new ResourceError(`${userToken.username} does not have access to release this Learning Object`, ResourceErrorReason.INVALID_ACCESS);
