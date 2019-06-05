@@ -77,7 +77,7 @@ function isEmptyValue(value: any): boolean {
 export function toNumber(value: any): number {
   const num = parseInt(`${value}`, 10);
   if (!isNaN(num)) {
-    return +value;
+    return num;
   }
   return null;
 }
