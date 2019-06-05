@@ -1,5 +1,4 @@
-import { FileManager } from '../../shared/interfaces/interfaces';
-import { SubmittableLearningObject } from '../../shared/entity';
+import { SubmittableLearningObject, LearningObject } from '../../shared/entity';
 import { Submission } from '../types/Submission';
 import { UserToken } from '../../shared/types';
 import { ResourceError, ResourceErrorReason } from '../../shared/errors';
@@ -16,13 +15,11 @@ import { EntityError } from '../../shared/entity/errors/entity-error';
  * @param dataStore instance of dataStore
  * @param userId id of learning object author
  * @param learningObjectId id of the learning object to search for
- * @param fileManager instance of FileManager
  * @param user metadata about current user (instance of UserToken)
  * @param collection name of collection to submit learning object to
  */
 export async function submitForReview(params: {
   dataStore: SubmissionDataStore;
-  fileManager: FileManager;
   user: UserToken;
   learningObjectId: string;
   userId: string;

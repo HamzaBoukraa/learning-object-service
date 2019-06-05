@@ -1,5 +1,4 @@
 import { Request, Response, Router } from 'express';
-import { FileManager } from '../shared/interfaces/interfaces';
 import { cancelSubmission, submitForReview, checkFirstSubmission } from './interactors';
 import { mapErrorToResponseData } from '../shared/errors';
 import { UserToken } from '../shared/types';
@@ -18,11 +17,9 @@ import { SubmissionDataStore } from './SubmissionDatastore';
 export function initialize({
   router,
   dataStore,
-  fileManager,
 }: {
   router: Router;
   dataStore: SubmissionDataStore;
-  fileManager: FileManager;
 }) {
   async function submit(req: Request, res: Response) {
     try {
@@ -33,7 +30,6 @@ export function initialize({
 
       await submitForReview({
         dataStore,
-        fileManager,
         user,
         learningObjectId,
         userId,
