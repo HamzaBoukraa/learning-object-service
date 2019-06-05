@@ -314,14 +314,6 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
     ]);
   }
 
-  submitLearningObjectToCollection(
-    username: string,
-    id: string,
-    collection: string,
-  ): Promise<void> {
-    return Promise.resolve();
-  }
-
   recordSubmission(submission: Submission): Promise<void> {
     return Promise.resolve();
   }

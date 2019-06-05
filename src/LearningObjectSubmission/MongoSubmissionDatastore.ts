@@ -14,31 +14,6 @@ export class MongoSubmissionDatastore implements SubmissionDataStore {
   }
 
   /**
-   * Updates a Learning Object document as having been submitted to a given collection.
-   * Will not work if the user's email is not verified.
-   *
-   * @param username the user requesting the submission
-   * @param id the identifier of the Learning Object to be submitted
-   * @param collection the collection for the Learning Object to be submitted to
-   */
-  public async submitLearningObjectToCollection(
-    username: string,
-    id: string,
-    collection: string,
-  ): Promise<void> {
-    await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).updateOne(
-      { _id: id },
-      {
-        $set: {
-          published: true,
-          status: 'waiting',
-          collection,
-        },
-      },
-    );
-  }
-
-  /**
    * Store all metadata for each learning object submission in the submissions collection
    *
    * @param submission submission object to be recorded
