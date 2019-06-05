@@ -2,6 +2,7 @@ import { releaseLearningObject, PublishingDataStore } from './interactor';
 import { LearningObject } from '../../shared/entity';
 import { ElasticMongoReleaseRequestDuplicator } from './ElasticMongoReleaseRequestDuplicator';
 import { UserToken } from '../../shared/types';
+import { LambdaGatewayFactory } from './lambda-gateway-factory';
 
 // FIXME: Replace with direct export of ElasticSearchPublishingGateway#releaseLearningObject
 // once we do away with the released-objects collection in Mongo
@@ -11,7 +12,8 @@ const setupElasticToggle = ({ userToken, dataStore, releasableObject }: {
   releasableObject: LearningObject;
 }) => {
   const toggle = new ElasticMongoReleaseRequestDuplicator(dataStore);
-  releaseLearningObject({ userToken, dataStore: toggle, releasableObject });
+  const releaseEmailGateway = LambdaGatewayFactory.getLambdaGatewayInstance();
+  releaseLearningObject({ userToken, dataStore: toggle, releasableObject, releaseEmailGateway });
 };
 
 export { setupElasticToggle as releaseLearningObject };
