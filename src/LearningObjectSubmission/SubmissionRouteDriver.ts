@@ -3,6 +3,7 @@ import { cancelSubmission, submitForReview, checkFirstSubmission } from './inter
 import { mapErrorToResponseData } from '../shared/errors';
 import { UserToken } from '../shared/types';
 import { SubmissionDataStore } from './SubmissionDatastore';
+import { SubmissionPublisher } from './interactors/submitForReview';
 
 /**
  * Initializes an express router with endpoints to publish and unpublish a learning object.
@@ -17,9 +18,11 @@ import { SubmissionDataStore } from './SubmissionDatastore';
 export function initialize({
   router,
   dataStore,
+  publisher,
 }: {
   router: Router;
   dataStore: SubmissionDataStore;
+  publisher: SubmissionPublisher;
 }) {
   async function submit(req: Request, res: Response) {
     try {
@@ -30,6 +33,7 @@ export function initialize({
 
       await submitForReview({
         dataStore,
+        publisher,
         user,
         learningObjectId,
         userId,

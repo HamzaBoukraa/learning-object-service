@@ -20,6 +20,7 @@ import { EntityError } from '../../shared/entity/errors/entity-error';
  */
 export async function submitForReview(params: {
   dataStore: SubmissionDataStore;
+  publisher: SubmissionPublisher;
   user: UserToken;
   learningObjectId: string;
   userId: string;
@@ -35,8 +36,12 @@ export async function submitForReview(params: {
     collection: params.collection,
     timestamp: Date.now().toString(),
   });
+  const submittableLearningObject = await LearningObjectAdapter.getInstance().getLearningObjectById(params.learningObjectId);
+  await params.publisher.publishSubmission(submittableLearningObject);
+}
 
-  // TODO: Index LO into Elastic
+export interface SubmissionPublisher {
+  publishSubmission(submission: LearningObject): Promise<void>;
 }
 
 /**
@@ -49,9 +54,17 @@ export async function submitForReview(params: {
  * @param params.collection name of collection to submit the Learning Object to
  */
 async function updateLearningObjectFields(params: { dataStore: SubmissionDataStore; user: UserToken; learningObjectId: string; collection: string; }) {
-  // FIXME: This should be an update request to the LearningObjectGateway
-  await params.dataStore.submitLearningObjectToCollection(params.user.username, params.learningObjectId, params.collection);
-  await LearningObjectAdapter.getInstance().updateReadme({
+  const LearningObjectGateway = LearningObjectAdapter.getInstance();
+  await LearningObjectGateway.updateLearningObject({
+    id: params.learningObjectId,
+    userToken: params.user,
+    updates: {
+      published: true,
+      status: LearningObject.Status.WAITING,
+      collection: params.collection,
+    },
+  });
+  await LearningObjectGateway.updateReadme({
     id: params.learningObjectId,
   });
 }

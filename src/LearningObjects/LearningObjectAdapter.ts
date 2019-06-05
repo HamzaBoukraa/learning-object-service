@@ -1,7 +1,8 @@
 import { DataStore } from '../shared/interfaces/DataStore';
 import { LearningObject } from '../shared/entity';
 import { FileManager } from '../shared/interfaces/interfaces';
-import { updateReadme, getLearningObjectById } from './LearningObjectInteractor';
+import { updateReadme, getLearningObjectById, updateLearningObject } from './LearningObjectInteractor';
+import { UserToken } from '../shared/types';
 
 export class LearningObjectAdapter {
   private static _instance: LearningObjectAdapter;
@@ -35,6 +36,19 @@ export class LearningObjectAdapter {
       fileManager: this.fileManager,
       object: params.object,
       id: params.id,
+    });
+  }
+
+  async updateLearningObject(params: {
+    userToken: UserToken;
+    id: string;
+    updates: { [index: string]: any };
+  }): Promise<void> {
+    return updateLearningObject({
+      userToken: params.userToken,
+      id: params.id,
+      updates: params.updates,
+      dataStore: this.dataStore,
     });
   }
 }
