@@ -4,6 +4,7 @@ import { ElasticMongoReleaseRequestDuplicator } from './ElasticMongoReleaseReque
 import { ResourceError, ResourceErrorReason } from '../../shared/errors';
 import { isAdminOrEditor } from '../../shared/AuthorizationManager';
 import { UserToken } from '../../shared/types';
+import { generateServiceToken } from '../../drivers/TokenManager';
 
 export interface PublishingDataStore {
     addToReleased(releasableObject: LearningObject): Promise<void>;
@@ -20,6 +21,20 @@ export async function releaseLearningObject({ userToken, dataStore, releasableOb
     releasableObject: LearningObject;
 }): Promise<void> {
     if (isAdminOrEditor(userToken.accessGroups)) {
+        fetch(process.env.RELEASE_EMAIL_INVOCATION, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${generateServiceToken()}`,
+            },
+            body: JSON.stringify({
+                learningObjectName: releasableObject.name,
+                authorName: releasableObject.author.name,
+                collection: releasableObject.collection,
+                authorEmail: releasableObject.author.email,
+                username: releasableObject.author.username,
+            }),
+        });
         return dataStore.addToReleased(releasableObject);
     }
     throw new ResourceError(`${userToken.username} does not have access to release this Learning Object`, ResourceErrorReason.INVALID_ACCESS);
