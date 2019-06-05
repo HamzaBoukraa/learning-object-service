@@ -13,7 +13,6 @@ import {
   MultipartFileUploadStatus,
 } from '../shared/interfaces/FileManager';
 import * as ObjectMapper from './Mongo/ObjectMapper';
-import { SubmissionDatastore } from '../LearningObjectSubmission/SubmissionDatastore';
 import {
   LearningObjectUpdates,
   LearningObjectDocument,
@@ -57,7 +56,6 @@ export enum COLLECTIONS {
 }
 
 export class MongoDriver implements DataStore {
-  submissionStore: SubmissionDatastore;
   learningOutcomeStore: LearningOutcomeMongoDatastore;
   statStore: LearningObjectStatStore;
   learningObjectStore: LearningObjectDataStore;
@@ -91,7 +89,6 @@ export class MongoDriver implements DataStore {
    * @memberof MongoDriver
    */
   initializeModules() {
-    this.submissionStore = new SubmissionDatastore(this.db);
     this.learningOutcomeStore = new LearningOutcomeMongoDatastore(this.db);
     this.statStore = new LearningObjectStatStore(this.db);
     this.learningObjectStore = new LearningObjectDataStore(this.db);
@@ -478,51 +475,6 @@ export class MongoDriver implements DataStore {
       orConditions.push(query);
     });
     return orConditions;
-  }
-
-  /**
-   * Submit a learning object to a specified collection
-   * @param username the username of the requester
-   * @param id the id of the learning object
-   * @param collection the abreviated name of the collection to which to submit the object
-   */
-  submitLearningObjectToCollection(
-    username: string,
-    id: string,
-    collection: string,
-  ): Promise<void> {
-    return this.submissionStore.submitLearningObjectToCollection(
-      username,
-      id,
-      collection,
-    );
-  }
-
-  recordSubmission(submission: Submission): Promise<void> {
-    return this.submissionStore.recordSubmission(submission);
-  }
-
-  recordCancellation(learningObjectId: string): Promise<void> {
-    return this.submissionStore.recordCancellation(learningObjectId);
-  }
-
-  fetchSubmission(
-    collection: string,
-    learningObjectId: string,
-  ): Promise<Submission> {
-    return this.submissionStore.fetchSubmission(collection, learningObjectId);
-  }
-
-  fetchRecentSubmission(learningObjectId: string): Promise<Submission> {
-    return this.submissionStore.fetchRecentSubmission(learningObjectId);
-  }
-
-  /**
-   * Unsubmit an object but keep it's collection property intact
-   * @param id the id of the object to unsubmit
-   */
-  unsubmitLearningObject(id: string): Promise<void> {
-    return this.submissionStore.unsubmitLearningObject(id);
   }
 
   /**

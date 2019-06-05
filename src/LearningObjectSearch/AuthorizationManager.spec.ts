@@ -16,23 +16,23 @@ describe('LearningObjectDownload: AuthorizationManager', () => {
   });
 
   describe('requesterIsPrivileged', () => {
-    it('should return true (Only admin accessGroup)', () => {
+    it('should return true when accessGroups contain only the admin privilege', () => {
       requester.accessGroups = ['admin'];
       expect(auth.requesterIsPrivileged(requester)).toBe(true);
     });
-    it('should return true (Only editor accessGroup)', () => {
+    it('should return true when accessGroups contain only the editor privilege', () => {
       requester.accessGroups = ['editor'];
       expect(auth.requesterIsPrivileged(requester)).toBe(true);
     });
-    it('should return true (Only curator@collection accessGroup)', () => {
+    it('should return true when accessGroups contain only the curator@collection privilege', () => {
       requester.accessGroups = ['curator@collection'];
       expect(auth.requesterIsPrivileged(requester)).toBe(true);
     });
-    it('should return true (Only reviewer@collection accessGroup)', () => {
+    it('should return true when accessGroups contain only the reviewer@collection privilege', () => {
       requester.accessGroups = ['reviewer@collection'];
       expect(auth.requesterIsPrivileged(requester)).toBe(true);
     });
-    it('should return true (All accessGroups)', () => {
+    it('should return true when accessGroups contain all privileges', () => {
       requester.accessGroups = [
         'admin',
         'editor',
@@ -41,16 +41,16 @@ describe('LearningObjectDownload: AuthorizationManager', () => {
       ];
       expect(auth.requesterIsPrivileged(requester)).toBe(true);
     });
-    it('should return false (No accessGroups)', () => {
+    it('should return false when accessGroups contain no privileges', () => {
       requester.accessGroups = [];
       expect(auth.requesterIsPrivileged(requester)).toBe(false);
     });
-    it('should return false (undefined requester)', () => {
+    it('should return false when requester data is undefined', () => {
       // @ts-ignore
       requester = undefined;
       expect(auth.requesterIsPrivileged(requester)).toBe(false);
     });
-    it('should return false (undefined accessGroups)', () => {
+    it('should return false when accessGroups are undefined', () => {
       // @ts-ignore
       requester.accessGroups = undefined;
       expect(auth.requesterIsPrivileged(requester)).toBe(false);
@@ -58,11 +58,11 @@ describe('LearningObjectDownload: AuthorizationManager', () => {
   });
 
   describe('requesterIsAdmin', () => {
-    it('should return true (Only admin accessGroup)', () => {
+    it('should return true when accessGroups contain only the admin privilege', () => {
       requester.accessGroups = ['admin'];
       expect(auth.requesterIsAdmin(requester)).toBe(true);
     });
-    it('should return true (All accessGroups)', () => {
+    it('should return true when accessGroups contain all privileges', () => {
       requester.accessGroups = [
         'admin',
         'editor',
@@ -71,19 +71,19 @@ describe('LearningObjectDownload: AuthorizationManager', () => {
       ];
       expect(auth.requesterIsAdmin(requester)).toBe(true);
     });
-    it('should return false (No accessGroups)', () => {
+    it('should return false when accessGroups contain no privileges', () => {
       requester.accessGroups = [];
       expect(auth.requesterIsAdmin(requester)).toBe(false);
     });
-    it('should return false (Only editor accessGroup)', () => {
+    it('should return false when accessGroups contain only the editor privilege', () => {
       requester.accessGroups = ['editor'];
       expect(auth.requesterIsAdmin(requester)).toBe(false);
     });
-    it('should return false (Only curator@collection accessGroup)', () => {
+    it('should return false when accessGroups contain only the curator@colllection privilege', () => {
       requester.accessGroups = ['curator@collection'];
       expect(auth.requesterIsAdmin(requester)).toBe(false);
     });
-    it('should return false (Only reviewer@collection accessGroup)', () => {
+    it('should return false when accessGroups contain only the reviewer@colllection privilege', () => {
       requester.accessGroups = ['reviewer@collection'];
       expect(auth.requesterIsAdmin(requester)).toBe(false);
     });
@@ -95,12 +95,12 @@ describe('LearningObjectDownload: AuthorizationManager', () => {
       ];
       expect(auth.requesterIsAdmin(requester)).toBe(false);
     });
-    it('should return false (undefined requester)', () => {
+    it('should return false when requester is undefined', () => {
       // @ts-ignore
       requester = undefined;
       expect(auth.requesterIsAdmin(requester)).toBe(false);
     });
-    it('should return false (undefined accessGroups)', () => {
+    it('should return false when accessGroups is undefined', () => {
       // @ts-ignore
       requester.accessGroups = undefined;
       expect(auth.requesterIsAdmin(requester)).toBe(false);
@@ -108,15 +108,15 @@ describe('LearningObjectDownload: AuthorizationManager', () => {
   });
 
   describe('requesterIsAdminOrEditor', () => {
-    it('should return true (Only admin accessGroup)', () => {
+    it('should return true when accessGroups contain only the admin privilege', () => {
       requester.accessGroups = ['admin'];
       expect(auth.requesterIsAdminOrEditor(requester)).toBe(true);
     });
-    it('should return true (Only editor accessGroup)', () => {
+    it('should return true when accessGroups contain only the editor privilege', () => {
       requester.accessGroups = ['editor'];
       expect(auth.requesterIsAdminOrEditor(requester)).toBe(true);
     });
-    it('should return true (All accessGroups)', () => {
+    it('should return true when accessGroups contain all privileges', () => {
       requester.accessGroups = [
         'admin',
         'editor',
@@ -129,11 +129,11 @@ describe('LearningObjectDownload: AuthorizationManager', () => {
       requester.accessGroups = [];
       expect(auth.requesterIsAdminOrEditor(requester)).toBe(false);
     });
-    it('should return false (Only curator@collection accessGroup)', () => {
+    it('should return false when accessGroups contain only the curator@colllection privilege', () => {
       requester.accessGroups = ['curator@collection'];
       expect(auth.requesterIsAdminOrEditor(requester)).toBe(false);
     });
-    it('should return false (Only reviewer@collection accessGroup)', () => {
+    it('should return false when accessGroups contain only the reviewer@colllection privilege', () => {
       requester.accessGroups = ['reviewer@collection'];
       expect(auth.requesterIsAdminOrEditor(requester)).toBe(false);
     });
@@ -141,12 +141,12 @@ describe('LearningObjectDownload: AuthorizationManager', () => {
       requester.accessGroups = ['curator@collection', 'reviewer@collection'];
       expect(auth.requesterIsAdminOrEditor(requester)).toBe(false);
     });
-    it('should return false (undefined requester)', () => {
+    it('should return false when requester is undefined', () => {
       // @ts-ignore
       requester = undefined;
       expect(auth.requesterIsAdminOrEditor(requester)).toBe(false);
     });
-    it('should return false (undefined accessGroups)', () => {
+    it('should return false when accessGroups is undefined', () => {
       // @ts-ignore
       requester.accessGroups = undefined;
       expect(auth.requesterIsAdminOrEditor(requester)).toBe(false);
@@ -154,31 +154,31 @@ describe('LearningObjectDownload: AuthorizationManager', () => {
   });
 
   describe('hasReadAccessByCollection', () => {
-    it('should return true (Only admin accessGroup)', () => {
+    it('should return true when accessGroups contain only the admin privilege', () => {
       requester.accessGroups = ['admin'];
       expect(
         auth.hasReadAccessByCollection({ requester, collection: 'collection' }),
       ).toBe(true);
     });
-    it('should return true (Only editor accessGroup)', () => {
+    it('should return true when accessGroups contain only the editor privilege', () => {
       requester.accessGroups = ['editor'];
       expect(
         auth.hasReadAccessByCollection({ requester, collection: 'collection' }),
       ).toBe(true);
     });
-    it('should return true (Only curator@collection accessGroup)', () => {
+    it('should return true when accessGroups contain only the curator@colllection privilege', () => {
       requester.accessGroups = ['curator@collection'];
       expect(
         auth.hasReadAccessByCollection({ requester, collection: 'collection' }),
       ).toBe(true);
     });
-    it('should return true (Only reviewer@collection accessGroup)', () => {
+    it('should return true when accessGroups contain only the reviewer@colllection privilege', () => {
       requester.accessGroups = ['reviewer@collection'];
       expect(
         auth.hasReadAccessByCollection({ requester, collection: 'collection' }),
       ).toBe(true);
     });
-    it('should return true (All accessGroups)', () => {
+    it('should return true when accessGroups contain all privileges', () => {
       requester.accessGroups = [
         'admin',
         'editor',
@@ -201,14 +201,14 @@ describe('LearningObjectDownload: AuthorizationManager', () => {
         auth.hasReadAccessByCollection({ requester, collection: 'collection' }),
       ).toBe(false);
     });
-    it('should return false (undefined requester)', () => {
+    it('should return false when requester is undefined', () => {
       // @ts-ignore
       requester = undefined;
       expect(
         auth.hasReadAccessByCollection({ requester, collection: 'collection' }),
       ).toBe(false);
     });
-    it('should return false (undefined accessGroups)', () => {
+    it('should return false when accessGroups is undefined', () => {
       // @ts-ignore
       requester.accessGroups = undefined;
       expect(

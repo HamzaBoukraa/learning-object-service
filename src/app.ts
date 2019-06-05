@@ -7,6 +7,7 @@ import {
 import * as dotenv from 'dotenv';
 import { LibraryDriver } from './drivers/LibraryDriver';
 import { MongoConnector } from './shared/Mongo/MongoConnector';
+import { LearningObjectAdapter } from './LearningObjects/LearningObjectAdapter';
 dotenv.config();
 // ----------------------------------------------------------------------------------
 // Initializations
@@ -51,6 +52,7 @@ const library: LibraryCommunicator = new LibraryDriver();
 (async () => {
   await MongoConnector.open(dburi);
   const dataStore = await MongoDriver.build(dburi);
+  LearningObjectAdapter.open(dataStore, fileManager);
   ExpressDriver.start(dataStore, fileManager, library);
 })();
 

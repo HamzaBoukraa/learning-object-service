@@ -4,14 +4,14 @@ import {
   LearningObjectSearchResult,
 } from '../typings';
 
-export abstract class LearningObjectSearchGateway {
+export abstract class LearningObjectDatastore {
   /**
    * Performs search on Released Learning Objects
    *
    * @abstract
    * @param {ReleasedLearningObjectSearchQuery} params [Search and filter parameters]
    * @returns {Promise<LearningObjectSearchResult>}
-   * @memberof LearningObjectSearchGateway
+   * @memberof LearningObjectDatastore
    */
   abstract searchReleasedObjects(
     params: ReleasedLearningObjectSearchQuery,
@@ -23,7 +23,7 @@ export abstract class LearningObjectSearchGateway {
    * @abstract
    * @param {LearningObjectSearchQuery} params [Search and filter parameters]
    * @returns {Promise<LearningObjectSearchResult>}
-   * @memberof LearningObjectSearchGateway
+   * @memberof LearningObjectDatastore
    */
   abstract searchAllObjects(
     params: LearningObjectSearchQuery,
