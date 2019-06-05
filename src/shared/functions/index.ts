@@ -58,6 +58,12 @@ export function toArray<T>(value: any): T[] {
   return [value].filter(v => !isEmptyValue(v));
 }
 
+/**
+ * Checks if provided value is null or an empty string
+ *
+ * @param {*} value [The value being checked]
+ * @returns {boolean}
+ */
 function isEmptyValue(value: any): boolean {
   if (value == null || value === '') {
     return true;
