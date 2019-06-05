@@ -2,6 +2,7 @@ import { mapResponseDataToError, ServiceError, ServiceErrorReason } from '../../
 import * as https from 'https';
 import { generateServiceToken } from '../../drivers/TokenManager';
 import { ReleaseEmailGateway } from './release-email-gateway';
+import { reportError } from '../../shared/SentryConnector';
 
 export class LambdaGateway implements ReleaseEmailGateway {
 
@@ -42,7 +43,7 @@ export class LambdaGateway implements ReleaseEmailGateway {
         const req = https.request(options, (res) => {
             if (res.statusCode !== 200) {
                 const error = mapResponseDataToError(res.statusCode, res.statusMessage);
-                throw error;
+                reportError(error);
             }
         });
 
