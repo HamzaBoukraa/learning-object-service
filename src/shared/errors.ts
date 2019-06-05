@@ -89,27 +89,26 @@ export function mapErrorToResponseData(error: Error): { code: number, message: s
  */
 export function mapResponseDataToError(
   statusCode: number,
-  message: string,
 ): ResourceError | ServiceError {
   switch (statusCode) {
     case 400:
       return new ResourceError(
-        message,
+        'Bad Request',
         ResourceErrorReason.BAD_REQUEST,
       );
     case 401:
       return new ResourceError(
-        message,
+        'Invalid Access',
         ResourceErrorReason.INVALID_ACCESS,
       );
     case 403:
       return  new ResourceError(
-        message,
+        'Forbidden',
         ResourceErrorReason.FORBIDDEN,
       );
     case 404:
       return  new ResourceError(
-        message,
+        'Resource Not Found',
         ResourceErrorReason.NOT_FOUND,
       );
     default:

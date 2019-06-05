@@ -42,7 +42,7 @@ export class LambdaGateway implements ReleaseEmailGateway {
 
         const req = https.request(options, (res) => {
             if (res.statusCode !== 200) {
-                const error = mapResponseDataToError(res.statusCode, res.statusMessage);
+                const error = mapResponseDataToError(res.statusCode);
                 reportError(error);
             }
         });
