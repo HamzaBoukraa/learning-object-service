@@ -3,7 +3,7 @@ import { LearningObject } from '../../shared/entity';
 import * as request from 'request-promise';
 import { cleanLearningObject } from '../../shared/elasticsearch';
 
-const INDEX_LOCATION = `${process.env.ELASTICSEARCH_DOMAIN}/released-objects`;
+const INDEX_LOCATION = `${process.env.ELASTICSEARCH_DOMAIN}/learning-objects`;
 /**
  * Splits the domain on the delimiter following the network protocol and takes the
  * rightwards half, which is the host without the protocol.

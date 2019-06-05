@@ -4,7 +4,7 @@ import { cleanLearningObject } from '../shared/elasticsearch';
 import { SubmissionPublisher } from './interactors/submitForReview';
 
 
-const INDEX_LOCATION = `${process.env.ELASTICSEARCH_DOMAIN}/submissions`;
+const INDEX_LOCATION = `${process.env.ELASTICSEARCH_DOMAIN}/learning-objects`;
 /**
  * Splits the domain on the delimiter following the network protocol and takes the
  * rightwards half, which is the host without the protocol.
