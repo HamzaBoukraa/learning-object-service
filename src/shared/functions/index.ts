@@ -40,3 +40,50 @@ export function sanitizeObject<T>(
   }
   return params.object;
 }
+
+/**
+ * Returns new array with element(s) from value param or null if value was not defined
+ *
+ * @template T
+ * @param {*} value
+ * @returns {T[]}
+ */
+export function toArray<T>(value: any): T[] {
+  if (value == null || value === '') {
+    return null;
+  }
+  if (value && Array.isArray(value)) {
+    return [...value].filter(v => !isEmptyValue(v));
+  }
+  return [value].filter(v => !isEmptyValue(v));
+}
+
+/**
+ * Checks if provided value is null or an empty string
+ *
+ * @param {*} value [The value being checked]
+ * @returns {boolean}
+ */
+function isEmptyValue(value: any): boolean {
+  if (value == null || value === '') {
+    return true;
+  }
+  if (typeof value === 'string') {
+    return sanitizeText(value) === '';
+  }
+  return false;
+}
+
+/**
+ *
+ * Converts non-number value to number if defined else returns null
+ * @param {*} value
+ * @returns {number}
+ */
+export function toNumber(value: any): number {
+  const num = parseInt(`${value}`, 10);
+  if (!isNaN(num)) {
+    return num;
+  }
+  return null;
+}
