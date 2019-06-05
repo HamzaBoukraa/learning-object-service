@@ -25,12 +25,53 @@ export async function submitForReview(params: {
   userId: string;
   collection: string;
 }): Promise<void> {
-  if (!params.user.emailVerified) {
-    throw new ResourceError('Please verify your email address to submit a Learning Object', ResourceErrorReason.FORBIDDEN);
-  }
   const object = await LearningObjectAdapter.getInstance().getLearningObjectById(params.learningObjectId);
+  verifyIsSubmittable(params, object);
+
+  await updateLearningObjectFields(params);
+
+  await params.dataStore.recordSubmission({
+    learningObjectId: params.learningObjectId,
+    collection: params.collection,
+    timestamp: Date.now().toString(),
+  });
+
+  // TODO: Index LO into Elastic
+}
+
+/**
+ * updateLearningObjectFields makes requests to update fields on the Learning Object that are affected by
+ * the creation of a submission. Additionally, it requests the README file for the Learning Object is
+ * regenerated to ensure that it has up-to-date information when viewed by a reviewer.
+ * @param params.dataStore storage for Learning Object submissions
+ * @param params.user the user requesting a submission be made for this Learning Object
+ * @param params.learningObjectId id of the learning object to search for
+ * @param params.collection name of collection to submit the Learning Object to
+ */
+async function updateLearningObjectFields(params: { dataStore: SubmissionDataStore; user: UserToken; learningObjectId: string; collection: string; }) {
+  // FIXME: This should be an update request to the LearningObjectGateway
+  await params.dataStore.submitLearningObjectToCollection(params.user.username, params.learningObjectId, params.collection);
+  await LearningObjectAdapter.getInstance().updateReadme({
+    id: params.learningObjectId,
+  });
+}
+
+/**
+ * verifyIsSubmittable checks that a user is authorized to make a submission, and that
+ * the request made is valid based on defined business rules.
+ *
+ * If the request is invalid for any reason, an error will be thrown. Otherwise, the interactor
+ * may proceed to make the submission.
+ * @param params.user the user requesting a submission be made for this Learning Object
+ * @param params.userId the ID of the requesting user
+ * @param object the Learning Object to submit
+ */
+function verifyIsSubmittable(params: { user: UserToken; userId: string; }, object: LearningObject) {
   if (params.userId !== object.author.id) {
     throw new ResourceError('Only the Learning Object author may make a submission.', ResourceErrorReason.FORBIDDEN);
+  }
+  if (!params.user.emailVerified) {
+    throw new ResourceError('Please verify your email address to submit a Learning Object', ResourceErrorReason.FORBIDDEN);
   }
   try {
     // tslint:disable-next-line:no-unused-expression
@@ -40,14 +81,4 @@ export async function submitForReview(params: {
       throw new ResourceError(error.message, ResourceErrorReason.BAD_REQUEST);
     } else throw error;
   }
-  await params.dataStore.submitLearningObjectToCollection(params.user.username, params.learningObjectId, params.collection);
-  const submission: Submission = {
-    learningObjectId: params.learningObjectId,
-    collection: params.collection,
-    timestamp: Date.now().toString(),
-  };
-  await params.dataStore.recordSubmission(submission);
-  await LearningObjectAdapter.getInstance().updateReadme({
-    id: params.learningObjectId,
-  });
 }
