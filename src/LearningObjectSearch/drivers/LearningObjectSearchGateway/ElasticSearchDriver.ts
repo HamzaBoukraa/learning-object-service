@@ -5,7 +5,7 @@ import {
   LearningObjectSearchQuery,
   LearningObjectSearchResult,
 } from '../../typings';
-import { LearningObjectSearchGateway } from '../../interfaces';
+import { LearningObjectDatastore } from '../../interfaces';
 
 const SEARCHABLE_FIELDS = [
   'name',
@@ -22,7 +22,7 @@ const SEARCHABLE_FIELDS = [
 
 const DEFAULT_QUERY_SIZE = 200;
 
-export class ElasticSearchDriver implements LearningObjectSearchGateway {
+export class ElasticSearchDriver implements LearningObjectDatastore {
   searchReleasedObjects(
     params: ReleasedLearningObjectSearchQuery,
   ): Promise<LearningObjectSearchResult> {

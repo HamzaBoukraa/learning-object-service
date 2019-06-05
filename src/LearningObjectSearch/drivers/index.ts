@@ -1,3 +1,3 @@
-import { ElasticSearchDriver } from './LearningObjectSearchGateway/ElasticSearchDriver';
+import { ElasticSearchDriver } from './LearningObjectDatastore/ElasticSearchDriver';
 
 export { ElasticSearchDriver };
