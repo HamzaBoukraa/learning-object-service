@@ -15,7 +15,7 @@ import {
 import * as FileInteractor from '../../FileManager/FileInteractor';
 import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
 import * as LearningOutcomeRouteHandler from '../../LearningOutcomes/LearningOutcomeRouteHandler';
-import * as SubmissionRouteDriver from '../../LearningObjectSubmission/SubmissionRouteDriver';
+import * as SubmissionRouteDriver from '../../LearningObjectSubmission';
 import * as ChangelogRouteHandler from '../../Changelogs/ChangelogRouteDriver';
 import { reportError } from '../../shared/SentryConnector';
 import { UserToken } from '../../shared/types';
@@ -77,7 +77,6 @@ export class ExpressAuthRouteDriver {
 
     SubmissionRouteDriver.initialize({
       router,
-      dataStore: this.dataStore,
       fileManager: this.fileManager,
     });
 

@@ -25,7 +25,17 @@ export const MOCK_OBJECTS = {
     learningObjects: <any>[],
   },
   LEARNING_OBJECT: {
-    author: 'mock_author_id',
+    authorID: 'mock_author_id',
+    author: {
+      id: 'mock_author_id',
+      username: 'Bob',
+      name: 'Uncle Bob',
+      email: 'unitTest12@gmail.com',
+      organization: 'Towson University',
+      emailVerified: true,
+      bio: 'random text random text random text random text random text random text random text random text random text random text',
+      createdAt: '1534558693394',
+    },
     name: 'Input Validation - CS0 - JAVA',
     date: '1523479539862',
     length: 'nanomodule',
