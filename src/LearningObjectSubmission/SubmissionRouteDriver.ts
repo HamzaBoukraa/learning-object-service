@@ -1,9 +1,9 @@
 import { Request, Response, Router } from 'express';
-import { DataStore } from '../shared/interfaces/DataStore';
 import { FileManager } from '../shared/interfaces/interfaces';
 import { cancelSubmission, submitForReview, checkFirstSubmission } from './SubmissionInteractor';
 import { mapErrorToResponseData } from '../shared/errors';
 import { UserToken } from '../shared/types';
+import { SubmissionDataStore } from './SubmissionDatastore';
 
 /**
  * Initializes an express router with endpoints to publish and unpublish a learning object.
@@ -21,7 +21,7 @@ export function initialize({
   fileManager,
 }: {
   router: Router;
-  dataStore: DataStore;
+  dataStore: SubmissionDataStore;
   fileManager: FileManager;
 }) {
   async function submit(req: Request, res: Response) {

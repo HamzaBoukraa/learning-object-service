@@ -29,8 +29,9 @@ import {
   Collection,
 } from '../../shared/entity';
 import { Submission } from '../../LearningObjectSubmission/types/Submission';
+import { SubmissionDataStore } from '../../LearningObjectSubmission/SubmissionDataStore';
 
-export class MockDataStore implements DataStore {
+export class MockDataStore implements DataStore, SubmissionDataStore {
 
   connect(file: string): Promise<void> {
     return Promise.resolve();
