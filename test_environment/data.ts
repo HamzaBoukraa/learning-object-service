@@ -1,5 +1,5 @@
-//This learning object is in the objects collection and the released collection
-const IDS = require('./sharedIds');
+// This learning object is in the objects collection and the released collection
+import * as IDS from './sharedIds';
 
 const SEED_OBJECTS = {
     LEARNING_OBJECT_RELEASED_1 : { 
