@@ -77,3 +77,42 @@ export function mapErrorToResponseData(error: Error): { code: number, message: s
   }
   return status;
 }
+
+/**
+ * Takes an http status code and error message, and maps it to a defined ResourceError or ServiceError.
+ *
+ * Any status code that is not defined below will default to
+ * a 500.
+ * @param statusCode number represneting an http status code
+ * @param message string error message
+ * @returns ResourceError or ServiceError
+ */
+export function mapResponseDataToError(
+  statusCode: number,
+  message: string,
+): ResourceError | ServiceError {
+  switch (statusCode) {
+    case 400:
+      return new ResourceError(
+        message,
+        ResourceErrorReason.BAD_REQUEST,
+      );
+    case 401:
+      return new ResourceError(
+        message,
+        ResourceErrorReason.INVALID_ACCESS,
+      );
+    case 403:
+      return  new ResourceError(
+        message,
+        ResourceErrorReason.FORBIDDEN,
+      );
+    case 404:
+      return  new ResourceError(
+        message,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    default:
+      return new ServiceError(ServiceErrorReason.INTERNAL);
+  }
+}

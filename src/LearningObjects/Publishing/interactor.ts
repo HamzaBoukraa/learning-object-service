@@ -1,7 +1,7 @@
 import { DataStore } from '../../shared/interfaces/DataStore';
 import { LearningObject } from '../../shared/entity';
 import { ElasticMongoReleaseRequestDuplicator } from './ElasticMongoReleaseRequestDuplicator';
-import { ResourceError, ResourceErrorReason, ServiceError, ServiceErrorReason } from '../../shared/errors';
+import { ResourceError, ResourceErrorReason, ServiceError, ServiceErrorReason, mapResponseDataToError } from '../../shared/errors';
 import { isAdminOrEditor } from '../../shared/AuthorizationManager';
 import { UserToken } from '../../shared/types';
 import { generateServiceToken } from '../../drivers/TokenManager';
@@ -43,25 +43,9 @@ export async function releaseLearningObject({ userToken, dataStore, releasableOb
         };
 
         const req = https.request(options, (res) => {
-            switch (res.statusCode) {
-                case 400:
-                    throw new ResourceError(
-                        res.statusMessage,
-                        ResourceErrorReason.BAD_REQUEST,
-                    );
-                case 401:
-                    throw new ResourceError(
-                        res.statusMessage,
-                        ResourceErrorReason.INVALID_ACCESS,
-                    );
-                case 403:
-                    throw new ResourceError(
-                        res.statusMessage,
-                        ResourceErrorReason.FORBIDDEN,
-                    );
-                case 500:
-                    throw new ServiceError(ServiceErrorReason.INTERNAL);
-                default:
+            if (res.statusCode !== 200) {
+                const error = mapResponseDataToError(res.statusCode, res.statusMessage);
+                throw error;
             }
         });
 
