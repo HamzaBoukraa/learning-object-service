@@ -41,7 +41,7 @@ describe('LearningObjectDownload: AuthorizationManager', () => {
       ];
       expect(auth.requesterIsPrivileged(requester)).toBe(true);
     });
-    it('should return fale when accessGroups contain no privileges', () => {
+    it('should return false when accessGroups contain no privileges', () => {
       requester.accessGroups = [];
       expect(auth.requesterIsPrivileged(requester)).toBe(false);
     });
