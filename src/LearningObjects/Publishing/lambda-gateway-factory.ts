@@ -8,7 +8,14 @@ export class LambdaGatewayFactory {
     static instance: ReleaseEmailGateway;
     private constructor() {}
 
-    static getLambdaGatewayInstance() {
+    /**
+     * Returns an instance of ReleaseEmailGateway
+     * Follows a singleton pattern to ensiure only instance exists
+     * Determines which ReleaseEmailGateway to use by looking
+     * at NODE_ENV. This prevents developers from sening accidental
+     * emails from development and allows for ease of testing.
+     */
+    static getLambdaGatewayInstance(): ReleaseEmailGateway {
         if (!this.instance) {
             switch (process.env.NODE_ENV) {
                 case 'testing':

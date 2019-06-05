@@ -5,6 +5,13 @@ import { ReleaseEmailGateway } from './release-email-gateway';
 
 export class LambdaGateway implements ReleaseEmailGateway {
 
+    /**
+     * Trigger for Lambda function that is responsible for
+     * dispatching release emails to learning object authors.
+     *
+     * The request must include a service token with the signature
+     * of a ServiceToken sent from the Learning Object Service.
+     */
     invokeReleaseNotification(params: {
         learningObjectName: string,
         authorName: string,
@@ -40,7 +47,7 @@ export class LambdaGateway implements ReleaseEmailGateway {
         });
 
         req.on('error', (e) => {
-        throw new ServiceError(ServiceErrorReason.INTERNAL);
+            throw new ServiceError(ServiceErrorReason.INTERNAL);
         });
 
         req.write(postData);
