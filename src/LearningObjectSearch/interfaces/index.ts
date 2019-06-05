@@ -1,3 +1,3 @@
-import { LearningObjectSearchGateway } from './LearningObjectDatastore';
+import { LearningObjectDatastore } from './LearningObjectDatastore';
 
-export { LearningObjectSearchGateway };
+export { LearningObjectDatastore };

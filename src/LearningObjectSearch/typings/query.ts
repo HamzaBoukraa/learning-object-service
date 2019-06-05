@@ -20,5 +20,4 @@ export interface QueryCondition {
 
 export interface LearningObjectSearchQuery extends ReleasedLearningObjectSearchQuery {
   status?: string[];
-  conditions?: QueryCondition[];
 }

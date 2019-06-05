@@ -18,13 +18,13 @@ import {
   requesterIsPrivileged,
   requesterIsAdminOrEditor,
 } from './AuthorizationManager';
-import { LearningObjectSearchGateway } from './interfaces';
+import { LearningObjectDatastore } from './interfaces';
 import { getAccessGroupCollections } from '../shared/AuthorizationManager';
 import { ResourceErrorReason, ResourceError } from '../shared/errors';
 
-namespace Gateways {
-  export const searchGateway = () =>
-    Module.resolveDependency(LearningObjectSearchGateway);
+namespace Drivers {
+  export const datastore = () =>
+    Module.resolveDependency(LearningObjectDatastore);
 }
 
 const LearningObjectState = {
@@ -75,14 +75,13 @@ export async function searchObjects({
       } else {
         status = getAuthAdminEditorStatuses(status);
       }
-      return await Gateways.searchGateway().searchAllObjects({
+      return await Drivers.datastore().searchAllObjects({
         ...formattedQuery,
         collection,
         status,
-        conditions,
       });
     }
-    return await Gateways.searchGateway().searchReleasedObjects(formattedQuery);
+    return await Drivers.datastore().searchReleasedObjects(formattedQuery);
   } catch (e) {
     handleError(e);
   }
