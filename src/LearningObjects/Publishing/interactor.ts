@@ -31,13 +31,14 @@ export async function releaseLearningObject({ userToken, dataStore, releasableOb
         });
 
         const options = {
-          hostname: process.env.RELEASE_EMAIL_INVOCATION.split('/')[0],
-          method: 'POST',
-          path: `/${process.env.RELEASE_EMAIL_INVOCATION.split('/')[1]}`,
-          headers: {
-               'Content-Type': 'application/x-www-form-urlencoded',
-               'Content-Length': postData.length,
-               'Authorization': `Bearer ${generateServiceToken()}`,
+            // When host name is set to an empty string, an internal service error is thrown.
+            hostname: process.env.RELEASE_EMAIL_INVOCATION ? process.env.RELEASE_EMAIL_INVOCATION.split('/')[0] : '',
+            method: 'POST',
+            path: process.env.RELEASE_EMAIL_INVOCATION ? `/${process.env.RELEASE_EMAIL_INVOCATION.split('/')[1]}` : '',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Content-Length': postData.length,
+                'Authorization': `Bearer ${generateServiceToken()}`,
             },
         };
 
