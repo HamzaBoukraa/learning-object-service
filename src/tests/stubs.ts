@@ -25,6 +25,7 @@ export class Stubs {
     private _submission: any;
     private _learningObjectFile: LearningObject.Material.File;
     private _uploadStatus: any;
+    private _metrics: { saves: number, downloads: number };
 
     constructor() {
         this._user = new User({...SEED_DATA.AUTHOR_MOCK, id: SEED_DATA.AUTHOR_MOCK._id});
@@ -62,6 +63,7 @@ export class Stubs {
         };
         this._learningObjectFile = SEED_DATA.LEARNING_OBJECT_FILE;
         this._uploadStatus = SEED_DATA.MULTIPART_UPLOAD_STATUS;
+        this._metrics = SEED_DATA.METRICS;
     }
 
     get learningObject(): LearningObject {
@@ -158,6 +160,14 @@ export class Stubs {
 
     set uploadStatus(uploadStatus: any) {
         this._uploadStatus = uploadStatus;
+    }
+
+    get metrics(): { saves: number, downloads: number } {
+        return this._metrics;
+    }
+
+    set metrics(metrics: { saves: number, downloads: number}) {
+        this._metrics = metrics;
     }
   /**
    * Generates Learning Object from untyped js module object
