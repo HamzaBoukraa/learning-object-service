@@ -372,6 +372,6 @@ LEARNING_OBJECT_FILE: {
     size: 132,
     description: 'test',
     packageable: true,
-}},
+}}
 
 module.exports = SEED_OBJECTS;
