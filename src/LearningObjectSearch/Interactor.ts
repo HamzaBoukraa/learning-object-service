@@ -36,11 +36,15 @@ const LearningObjectState = {
 };
 
 /**
+ * Searches for Learning Objects based on provided query parameters and access level
  *
+ * If the user is not privileged, their search is only applied to released Learning Objects
+ * If the user is privileged, the requested statuses must not contain statuses with restrictive access,
+ * additionally, if the user is a curator or reviewer, we must appropriately apply specified statuses and collection filters based on their access level on a per collection basis
  *
  * @export
  * @param  {Requester} [Data about the user requesting to search]
- * @param {LearningObjectSearchQuery} []
+ * @param {LearningObjectSearchQuery} [Search query parameters]
  *
  * @returns {Promise<LearningObjectSearchResult>}
  */
@@ -56,7 +60,7 @@ export async function searchObjects({
     if (requesterIsPrivileged(requester)) {
       let collectionRestrictions: CollectionAccessMap;
       let { collection, status } = formattedQuery;
-      status = getAuthorizedPrivilegedStatuses(status);
+      status = getAuthorizedStatuses(status);
       if (!requesterIsAdminOrEditor(requester)) {
         const privilegedCollections = getAccessGroupCollections(requester);
         collectionRestrictions = getCollectionAccessMap(
@@ -113,27 +117,28 @@ function formatSearchQuery(
 /**
  * Returns Map of collections to statuses representing read access privilege over associated collection
  *
- * @param {string[]} requestedCollections
- * @param {string[]} privilegedCollections
+ * @param {string[]} requestedCollections [List of collections the user has specified]
+ * @param {string[]} privilegedCollections [List of collections the user has privileged access on]
+ * @param {string[]} requestedStatuses [List of requested statuses]
  * @returns CollectionAccessMap
  */
 function getCollectionAccessMap(
   requestedCollections: string[],
   privilegedCollections: string[],
-  statuses: string[],
+  requestedStatuses: string[],
 ): CollectionAccessMap {
   const accessMap = {};
   if (requestedCollections && requestedCollections.length) {
     for (const filter of requestedCollections) {
       if (privilegedCollections.includes(filter)) {
-        accessMap[filter] = statuses;
+        accessMap[filter] = requestedStatuses;
       } else {
         accessMap[filter] = LearningObjectState.RELEASED;
       }
     }
   } else {
     for (const collection of privilegedCollections) {
-      accessMap[collection] = statuses;
+      accessMap[collection] = requestedStatuses;
     }
   }
 
@@ -146,7 +151,7 @@ function getCollectionAccessMap(
  * @param {string[]} [status]
  * @returns {string[]}
  */
-function getAuthorizedPrivilegedStatuses(status?: string[]): string[] {
+function getAuthorizedStatuses(status?: string[]): string[] {
   enforceStatusRestrictions(status);
   if (!status || (status && !status.length)) {
     return [...LearningObjectState.IN_REVIEW, ...LearningObjectState.RELEASED];
