@@ -349,6 +349,29 @@ STANDARD_OUTCOME : {
     outcome: 'Knowledge of concepts, terminology, and operations of a wide range of ...',
     source: 'NCWF KSAs',
     name: 'K0108',
-}}
+},
+MULTIPART_UPLOAD_STATUS: {
+    _id: 'id',
+    uploadId: 'upload id',
+    partsUploaded: 2,
+    totalParts: 2,
+    fileSize: 134,
+    path: 'path',
+    bytesUploaded: 132,
+    completedParts: [],
+    createdAt: 'time',
+},
+LEARNING_OBJECT_FILE: {
+    id: '123456789',
+    name: 'test',
+    fileType: 'text',
+    extension: 'txt',
+    url: 'url',
+    date: 'date',
+    fullPath: 'path',
+    size: 132,
+    description: 'test',
+    packageable: true,
+}},
 
 module.exports = SEED_OBJECTS;

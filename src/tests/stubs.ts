@@ -7,6 +7,7 @@ import {
     StandardOutcome,
 } from '../shared/entity';
 import { UserToken } from '../shared/types';
+import { ChangeLogDocument } from '../shared/types/changelog';
 
 // tslint:disable-next-line:no-require-imports
 let SEED_DATA = require('../test_environment/data');
@@ -15,12 +16,15 @@ export class Stubs {
     private _learningObject: LearningObject;
     private _learningObjectChild: LearningObject;
     private _collection: Collection;
-    private _changelog: any;
+    private _changelog: ChangeLogDocument;
     private _outcome: Outcome;
     private _standardOutcome: StandardOutcome;
     private _learningOutcome: LearningOutcome;
     private _user: User;
     private _userToken: UserToken;
+    private _submission: any;
+    private _learningObjectFile: LearningObject.Material.File;
+    private _uploadStatus: any;
 
     constructor() {
         this._user = new User(SEED_DATA.AUTHOR_MOCK);
@@ -50,7 +54,14 @@ export class Stubs {
             organization:  this.user.organization,
             emailVerified: this.user.emailVerified,
             accessGroups: [],
-          };
+        };
+        this._submission = {
+            collection: 'c5',
+            timestamp: 'date',
+            learningObjectId: 'default_id',
+        };
+        this._learningObjectFile = SEED_DATA.LEARNING_OBJECT_FILE;
+        this._uploadStatus = SEED_DATA.MULTIPART_UPLOAD_STATUS;
     }
 
     get learningObject(): LearningObject {
@@ -77,11 +88,11 @@ export class Stubs {
         this._collection = collection;
     }
 
-    get changelog(): any {
+    get changelog(): ChangeLogDocument {
         return this._changelog;
     }
 
-    set changelog(changelog: any) {
+    set changelog(changelog: ChangeLogDocument) {
         this._changelog = changelog;
     }
 
@@ -123,6 +134,30 @@ export class Stubs {
 
     set userToken(userToken: UserToken) {
         this._userToken = userToken;
+    }
+
+    get submission(): any {
+        return this._submission;
+    }
+
+    set submission(submission: any) {
+        this._submission = submission;
+    }
+
+    get learningObjectFile(): LearningObject.Material.File {
+        return this._learningObjectFile;
+    }
+
+    set learningObjectFile(learningObjectFile: LearningObject.Material.File) {
+        this._learningObjectFile = learningObjectFile;
+    }
+
+    get uploadStatus(): any {
+        return this._uploadStatus;
+    }
+
+    set uploadStatus(uploadStatus: any) {
+        this._uploadStatus = uploadStatus;
     }
   /**
    * Generates Learning Object from untyped js module object
