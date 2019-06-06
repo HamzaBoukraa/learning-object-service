@@ -1,5 +1,5 @@
 // This learning object is in the objects collection and the released collection
-import * as IDS from './sharedIds';
+const IDS = require('./sharedIds');
 
 const SEED_OBJECTS = {
     LEARNING_OBJECT_RELEASED_1 : { 
@@ -341,6 +341,14 @@ LEARNING_OUTCOME_MOCK : {
     assessments:[],
     strategies:[],
     mappings:["5a674e2d04aa5f2a5ce97b0e"]
+},
+STANDARD_OUTCOME : {
+    _id: '5a674e2d04aa5f2a5ce97d7f',
+    author: 'NICE Workforce Framework KSAs',
+    date: '2017',
+    outcome: 'Knowledge of concepts, terminology, and operations of a wide range of ...',
+    source: 'NCWF KSAs',
+    name: 'K0108',
 }}
 
 module.exports = SEED_OBJECTS;
