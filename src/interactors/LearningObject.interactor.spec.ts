@@ -3,7 +3,7 @@ import { DataStore } from '../shared/interfaces/DataStore';
 import { LibraryCommunicator } from '../shared/interfaces/interfaces';
 import { MockDataStore } from '../tests/mock-drivers/MockDataStore';
 import { MockLibraryDriver } from '../tests/mock-drivers/MockLibraryDriver';
-import { Stubs } from '../stubs';
+import { Stubs } from '../tests/stubs';
 
 const dataStore: DataStore = new MockDataStore();
 const library: LibraryCommunicator = new MockLibraryDriver();

@@ -10,7 +10,7 @@ import { LibraryCommunicator, FileManager } from '../shared/interfaces/interface
 import * as cookieParser from 'cookie-parser';
 import { processToken, handleProcessTokenError } from '../drivers/express/middleware';
 import { LearningObject } from '../shared/entity';
-import { Stubs } from '../stubs';
+import { Stubs } from '../tests/stubs';
 
 const app = express();
 const router = express.Router();

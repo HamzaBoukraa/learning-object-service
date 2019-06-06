@@ -1,7 +1,7 @@
 import { cancelSubmission } from './SubmissionInteractor';
 import { MockDataStore } from '../tests/mock-drivers/MockDataStore';
 import { LearningObjectAdapter } from '../LearningObjects/LearningObjectAdapter';
-import { Stubs } from '../stubs';
+import { Stubs } from '../tests/stubs';
 
 const dataStore = new MockDataStore();
 const stubs = new Stubs();

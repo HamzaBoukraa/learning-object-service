@@ -7,7 +7,7 @@ import {
   getAllChangelogs,
 } from './ChangelogInteractor';
 
-import { Stubs } from '../stubs';
+import { Stubs } from '../tests/stubs';
 
 const dataStore: DataStore = new MockDataStore();
 const stubs = new Stubs();

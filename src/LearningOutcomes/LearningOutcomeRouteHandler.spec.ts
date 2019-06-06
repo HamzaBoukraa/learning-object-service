@@ -5,7 +5,7 @@ import * as supertest from 'supertest';
 import * as LearningOutcomeRouteHandler from './LearningOutcomeRouteHandler';
 import { LearningOutcome } from '../shared/entity';
 import { LearningOutcomeDatastore } from './LearningOutcomeInteractor';
-import { Stubs } from '../stubs';
+import { Stubs } from '../tests/stubs';
 
 const app = express();
 const router = express.Router();

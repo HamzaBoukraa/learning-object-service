@@ -1,5 +1,5 @@
 import { MongoDriver } from './MongoDriver';
-import { Stubs } from '../stubs';
+import { Stubs } from '../tests/stubs';
 
 describe('MongoDriver', () => {
   let driver: MongoDriver;

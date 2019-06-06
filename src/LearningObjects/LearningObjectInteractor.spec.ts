@@ -5,7 +5,7 @@ import {
   updateParentsDate,
   getLearningObjectChildrenById,
 } from './LearningObjectInteractor';
-import { Stubs } from '../stubs';
+import { Stubs } from '../tests/stubs';
 
 const dataStore: DataStore = new MockDataStore();
 const stubs = new Stubs();

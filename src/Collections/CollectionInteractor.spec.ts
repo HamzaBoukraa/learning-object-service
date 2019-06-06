@@ -1,7 +1,7 @@
 import * as CollectionInteractor from './CollectionInteractor';
 import {MockDataStore} from '../tests/mock-drivers/MockDataStore';
 import {CollectionDataStore} from './CollectionDataStore';
-import { Stubs } from '../stubs';
+import { Stubs } from '../tests/stubs';
 
 const mockStore: CollectionDataStore = new MockDataStore();
 const stubs = new Stubs();
