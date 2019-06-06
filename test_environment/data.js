@@ -304,7 +304,7 @@ C5_COLLECTION_MOCK : {
 },
 CHANGELOG_MOCK : {
     _id: "5c3e2cab7da238008fcd771c",
-    learningObjectId: "default_id",
+    learningObjectId: IDS.PARENT.released_1,
     logs:[
         {
             userId:"1234",
