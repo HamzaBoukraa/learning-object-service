@@ -24,6 +24,7 @@ export interface ElasticSearchQuery {
       ];
     };
   };
+  sort?: { [x: string]: { order: string } }[];
 }
 
 export interface PostFilterQuery {

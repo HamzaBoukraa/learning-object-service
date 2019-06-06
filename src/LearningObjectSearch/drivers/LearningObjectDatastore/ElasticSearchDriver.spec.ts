@@ -1,10 +1,10 @@
 import { ElasticSearchDriver } from './ElasticSearchDriver';
-import { ReleasedLearningObjectSearchQuery, LearningObjectSearchResult } from '../../typings';
+import { PrivilegedLearningObjectSearchQuery, LearningObjectSearchResult } from '../../typings';
 import { LearningObjectDatastore } from '../../interfaces';
 
 
 describe('ElasticSearchDriver', () => {
-    let params: ReleasedLearningObjectSearchQuery;
+    let params: PrivilegedLearningObjectSearchQuery;
     let driver: LearningObjectDatastore = new ElasticSearchDriver;
     describe('SearchReleasedObjects', () => {
         it('should return an a set of learning objects found in the elastic search index', async (done) => {

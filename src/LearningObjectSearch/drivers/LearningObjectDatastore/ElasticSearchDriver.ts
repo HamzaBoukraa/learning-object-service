@@ -1,8 +1,8 @@
 import {
   ElasticSearchQuery,
   FilteredElasticSearchQuery,
-  ReleasedLearningObjectSearchQuery,
   LearningObjectSearchQuery,
+  PrivilegedLearningObjectSearchQuery,
   LearningObjectSearchResult,
   PostFilterQuery,
 } from '../../typings';
@@ -22,38 +22,42 @@ const SEARCHABLE_FIELDS = [
   'outcomes.bloom',
   'outcomes.outcome',
 ];
-const filters = {
-  LENGTH: 'length',
-  LEVELS: 'level',
-  COLLECTION: 'collection',
-};
+
 const MOCK_URI = 'http://localhost:9200/released_objects/_search';
 const DEFAULT_QUERY_SIZE = 10;
 
 export class ElasticSearchDriver implements LearningObjectDatastore {
   searchReleasedObjects(
-    params: ReleasedLearningObjectSearchQuery,
+    params: LearningObjectSearchQuery,
   ): Promise<LearningObjectSearchResult> {
-    const elasticQuery: Partial<ElasticSearchQuery> = this.buildSearchQuery(params);
+    const elasticQuery: Partial<ElasticSearchQuery> = this.buildSearchQuery(
+      params,
+    );
+
     if (params.sortType && params.orderBy) {
-      this.appendSortingandPagination(elasticQuery);
+      const { sortType, orderBy } = params;
+      this.appendSorting({
+        query: elasticQuery,
+        sortType,
+        orderBy,
+      });
     }
     return new Promise<LearningObjectSearchResult>((resolve, reject) => {
       request({
         uri: MOCK_URI,
         json: true,
         body: elasticQuery,
-      }).then(res => {
-        resolve(res);
-      }).catch(err => {
-        reject(err);
-      });
+      })
+        .then(res => {
+          resolve(this.toPaginatedLearningObjects(res));
+        })
+        .catch(err => {
+          reject(err);
+        });
     });
-
-    throw new Error('Method not implemented.');
   }
   searchAllObjects(
-    params: LearningObjectSearchQuery,
+    params: PrivilegedLearningObjectSearchQuery,
   ): Promise<LearningObjectSearchResult> {
     throw new Error('Method not implemented.');
   }
@@ -62,15 +66,14 @@ export class ElasticSearchDriver implements LearningObjectDatastore {
     length,
     level,
     collection,
-    limit
-  }: ReleasedLearningObjectSearchQuery) {
-
+    limit,
+  }: LearningObjectSearchQuery) {
     const queryFilters = sanitizeObject({
       object: {
         length,
         level,
         collection,
-      }
+      },
     });
 
     let body: ElasticSearchQuery = {
@@ -101,7 +104,9 @@ export class ElasticSearchDriver implements LearningObjectDatastore {
       },
     };
     if (Object.keys(queryFilters).length !== 0) {
-      const post_filter = queryFilters ? this.appendPostFilterStage(queryFilters) : null;
+      const post_filter = queryFilters
+        ? this.appendPostFilterStage(queryFilters)
+        : null;
       return { ...body, post_filter };
     }
 
@@ -113,25 +118,39 @@ export class ElasticSearchDriver implements LearningObjectDatastore {
     level?: String[];
     collection?: String[];
   }) {
-    let Query = {
+    let query = {
       bool: {
         // @ts-ignore Empty array assignment is valid
         must: [],
       },
     };
-    let termBody: { [x: string]: string[]; };
+    let termBody: { [x: string]: string[] };
     Object.keys(filters).forEach(objectKey => {
       if (filters[objectKey]) {
         termBody = {};
         termBody[`${objectKey}`] = filters[objectKey];
-        Query.bool.must.push({ terms: termBody });
+        query.bool.must.push({ terms: termBody });
       }
     });
-    console.log(Query);
-    return Query;
+    console.log(query);
+    return query;
   }
 
-  private appendSortingandPagination(query: Partial<ElasticSearchQuery>) {
+  private appendSorting(params: {
+    query: Partial<ElasticSearchQuery>;
+    sortType: number;
+    orderBy: string;
+  }) {
+    const { query, sortType, orderBy } = params;
+    const sorter = {};
+    sorter[`${orderBy}.keyword`] = { order: sortType === -1 ? 'decs' : 'asc' };
+    query.sort = [sorter];
+    return query;
+  }
 
-}
+  private toPaginatedLearningObjects(results: any): LearningObjectSearchResult {
+    const total = results.hits.total;
+    let objects = results.hits.hits;
+    return { total, objects };
+  }
 }

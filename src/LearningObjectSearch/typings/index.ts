@@ -8,8 +8,7 @@ import {
 import {
   Filters,
   LearningObjectSearchQuery,
-  ReleasedLearningObjectSearchQuery,
-  QueryCondition,
+  PrivilegedLearningObjectSearchQuery,
 } from './query';
 
 export {
@@ -19,9 +18,8 @@ export {
   PostFilterQuery,
   FilteredElasticSearchQuery,
   Filters,
-  QueryCondition,
-  ReleasedLearningObjectSearchQuery,
   LearningObjectSearchQuery,
+  PrivilegedLearningObjectSearchQuery,
 };
 
 export interface LearningObjectSearchResult {
