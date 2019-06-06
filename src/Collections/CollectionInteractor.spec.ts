@@ -1,9 +1,10 @@
 import * as CollectionInteractor from './CollectionInteractor';
-import {MOCK_OBJECTS} from '../tests/mocks';
 import {MockDataStore} from '../tests/mock-drivers/MockDataStore';
 import {CollectionDataStore} from './CollectionDataStore';
+import { Stubs } from '../stubs';
 
 const mockStore: CollectionDataStore = new MockDataStore();
+const stubs = new Stubs();
 
 describe('fetchCollections', () => {
   it('should return an array of objects - these objects contain lo IDs', done => {
@@ -18,7 +19,7 @@ describe('fetchCollection', () => {
   it('should return an object - contains an array of learning objects ', done => {
     return CollectionInteractor.fetchCollection(
       mockStore,
-      MOCK_OBJECTS.COLLECTION_NAME,
+      stubs.collection.name,
     ).then(val => {
       expect(val).toBeDefined();
       done();
