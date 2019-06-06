@@ -8,7 +8,9 @@ import {
 import {
   Filters,
   LearningObjectSearchQuery,
+  ReleasedLearningObjectSearchQuery,
   PrivilegedLearningObjectSearchQuery,
+  CollectionAccessMap,
 } from './query';
 
 export {
@@ -19,14 +21,12 @@ export {
   FilteredElasticSearchQuery,
   Filters,
   LearningObjectSearchQuery,
+  ReleasedLearningObjectSearchQuery,
   PrivilegedLearningObjectSearchQuery,
+  CollectionAccessMap,
 };
 
 export interface LearningObjectSearchResult {
   total: number;
   objects: LearningObject[];
-}
-
-export interface CollectionAccessMap {
-  [index: string]: string[];
 }
