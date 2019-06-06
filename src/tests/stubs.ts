@@ -27,7 +27,7 @@ export class Stubs {
     private _uploadStatus: any;
 
     constructor() {
-        this._user = new User(SEED_DATA.AUTHOR_MOCK);
+        this._user = new User({...SEED_DATA.AUTHOR_MOCK, id: SEED_DATA.AUTHOR_MOCK._id});
         this._learningObjectChild = new LearningObject(
             this.generateLearningObject(
                 this.user,
