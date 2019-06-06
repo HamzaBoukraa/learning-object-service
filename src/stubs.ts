@@ -8,6 +8,7 @@ import {
 } from './shared/entity';
 import { UserToken } from './shared/types';
 
+// tslint:disable-next-line:no-require-imports
 let SEED_DATA = require('../test_environment/data');
 
 export class Stubs {
