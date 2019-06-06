@@ -46,8 +46,8 @@ export class Stubs {
         this._collection = SEED_DATA.C5_COLLECTION_MOCK;
         this._changelog = SEED_DATA.CHANGELOG_MOCK;
         this._outcome = SEED_DATA.OUTCOME_MOCK;
-        this._standardOutcome = new StandardOutcome(SEED_DATA.STANDARD_OUTCOME);
-        this._learningOutcome = new LearningOutcome(SEED_DATA.LEARNING_OUTCOME_MOCK);
+        this._standardOutcome = new StandardOutcome({...SEED_DATA.STANDARD_OUTCOME, id: SEED_DATA.STANDARD_OUTCOME._id});
+        this._learningOutcome = new LearningOutcome({...SEED_DATA.LEARNING_OUTCOME_MOCK, id: SEED_DATA.LEARNING_OUTCOME_MOCK.id});
         this._userToken = {
             username: this.user.username,
             name: this.user.name,

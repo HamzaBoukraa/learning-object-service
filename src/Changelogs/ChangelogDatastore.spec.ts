@@ -1,7 +1,9 @@
 import { MongoDriver } from '../drivers/MongoDriver';
+import { Stubs } from '../tests/stubs';
 
 describe('MongoDriver', () => {
   let driver: MongoDriver;
+  const stubs = new Stubs();
 
   beforeAll(async () => {
     driver = await MongoDriver.build(global['__MONGO_URI__']);
@@ -9,21 +11,10 @@ describe('MongoDriver', () => {
 
   describe('getRecentChangelog', () => {
     it('The function should return the last element of the logs array', async () => {
-      const learningObjectId = 'default_id';
       return expect(driver.fetchRecentChangelog({
-        learningObjectId,
+        learningObjectId: stubs.learningObject.id,
       }))
-        .resolves.toEqual({
-          _id: '5c3e2cab7da238008fcd771c',
-          learningObjectId: 'default_id',
-          logs: [
-              {
-                  userId: '5678',
-                  date: '2019-01-15T18:55:39.000Z',
-                  text: 'hello two',
-              },
-            ],
-        });
+        .resolves.toEqual(stubs.changelog);
     });
   });
 
