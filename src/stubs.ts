@@ -6,7 +6,7 @@ import {
     LearningOutcome,
     StandardOutcome,
 } from './shared/entity';
-import { AnyMxRecord } from 'dns';
+import { UserToken } from './shared/types';
 
 let SEED_DATA = require('../test_environment/data');
 
@@ -19,6 +19,7 @@ export class Stubs {
     private _standardOutcome: StandardOutcome;
     private _learningOutcome: LearningOutcome;
     private _user: User;
+    private _userToken: UserToken;
 
     constructor() {
         this._user = new User(SEED_DATA.AUTHOR_MOCK);
@@ -41,6 +42,14 @@ export class Stubs {
         this._outcome = SEED_DATA.OUTCOME_MOCK;
         this._standardOutcome = new StandardOutcome(SEED_DATA.STANDARD_OUTCOME);
         this._learningOutcome = new LearningOutcome(SEED_DATA.LEARNING_OUTCOME_MOCK);
+        this._userToken = {
+            username: this.user.username,
+            name: this.user.name,
+            email: this.user.email,
+            organization:  this.user.organization,
+            emailVerified: this.user.emailVerified,
+            accessGroups: [],
+          };
     }
 
     get learningObject(): LearningObject {
@@ -107,6 +116,13 @@ export class Stubs {
         this._user = user;
     }
 
+    get userToken(): UserToken {
+        return this._userToken;
+    }
+
+    set userToken(userToken: UserToken) {
+        this._userToken = userToken;
+    }
   /**
    * Generates Learning Object from untyped js module object
    *
@@ -159,6 +175,7 @@ export class Stubs {
         throw error;
     }
   }
+
 }
 
 
