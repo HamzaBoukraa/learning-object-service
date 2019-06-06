@@ -1,3 +1,5 @@
+import { LearningObject } from '.';
+
 export interface Filters {
   orderBy?: string;
   sortType?: -1 | 1;
@@ -5,7 +7,7 @@ export interface Filters {
   limit?: number;
 }
 
-export interface LearningObjectSearchQuery extends Filters {
+export interface ReleasedLearningObjectSearchQuery extends Filters {
   name?: string;
   author?: string;
   length?: string[];
@@ -15,7 +17,16 @@ export interface LearningObjectSearchQuery extends Filters {
   collection?: string[];
 }
 
+export interface LearningObjectSearchQuery
+  extends ReleasedLearningObjectSearchQuery {
+  status?: string[];
+}
+
 export interface PrivilegedLearningObjectSearchQuery
   extends LearningObjectSearchQuery {
-  collectionRestrictions?: string[];
+  collectionRestrictions?: CollectionAccessMap;
+}
+
+export interface CollectionAccessMap {
+  [collection: string]: LearningObject.Status[];
 }
