@@ -5,7 +5,7 @@ export interface Filters {
   limit?: number;
 }
 
-export interface ReleasedLearningObjectSearchQuery extends Filters {
+export interface LearningObjectSearchQuery extends Filters {
   name?: string;
   author?: string;
   length?: string[];
@@ -14,10 +14,8 @@ export interface ReleasedLearningObjectSearchQuery extends Filters {
   text?: string;
   collection?: string[];
 }
-export interface QueryCondition {
-  [index: string]: string | string[];
-}
 
-export interface LearningObjectSearchQuery extends ReleasedLearningObjectSearchQuery {
-  status?: string[];
+export interface PrivilegedLearningObjectSearchQuery
+  extends LearningObjectSearchQuery {
+  collectionRestrictions?: string[];
 }
