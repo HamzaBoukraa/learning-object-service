@@ -10,7 +10,7 @@ import { UserToken } from '../shared/types';
 import { ChangeLogDocument } from '../shared/types/changelog';
 
 // tslint:disable-next-line:no-require-imports
-let SEED_DATA = require('../test_environment/data');
+let SEED_DATA = require('../../test_environment/data');
 
 export class Stubs {
     private _learningObject: LearningObject;
