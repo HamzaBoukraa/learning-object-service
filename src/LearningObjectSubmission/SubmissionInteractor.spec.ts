@@ -1,7 +1,4 @@
 import { cancelSubmission } from './SubmissionInteractor';
-import {
-  SUBMITTABLE_LEARNING_OBJECT,
-} from '../tests/mocks';
 import { MockDataStore } from '../tests/mock-drivers/MockDataStore';
 import { LearningObjectAdapter } from '../LearningObjects/LearningObjectAdapter';
 import { Stubs } from '../stubs';
