@@ -6,6 +6,7 @@ import {
   LearningObjectSearchResult,
   PostFilterQuery,
 } from '../../typings';
+import { LearningObject } from '../../../shared/entity';
 import * as request from 'request-promise';
 import { LearningObjectDatastore } from '../../interfaces';
 import { sanitizeObject } from '../../../shared/functions';
@@ -59,6 +60,7 @@ export class ElasticSearchDriver implements LearningObjectDatastore {
   searchAllObjects(
     params: PrivilegedLearningObjectSearchQuery,
   ): Promise<LearningObjectSearchResult> {
+    this.buildSearchQuery(params)
     throw new Error('Method not implemented.');
   }
   private buildSearchQuery({
@@ -67,7 +69,8 @@ export class ElasticSearchDriver implements LearningObjectDatastore {
     level,
     collection,
     limit,
-  }: LearningObjectSearchQuery) {
+    collectionRestrictions
+  }: PrivilegedLearningObjectSearchQuery) {
     const queryFilters = sanitizeObject({
       object: {
         length,
@@ -75,41 +78,48 @@ export class ElasticSearchDriver implements LearningObjectDatastore {
         collection,
       },
     });
-
-    let body: ElasticSearchQuery = {
-      size: limit ? limit : DEFAULT_QUERY_SIZE,
-      query: {
-        bool: {
-          should: [
-            {
-              multi_match: {
-                fields: SEARCHABLE_FIELDS,
-                query: text,
-                fuzziness: 'AUTO',
-                slop: 3,
-                analyzer: 'stop',
-              },
-            },
-            {
-              match_phrase_prefix: {
-                description: {
+    let body: ElasticSearchQuery;
+    let post_filter: PostFilterQuery;
+    if(text && text.length>1){
+      body = {
+        size: limit ? limit : DEFAULT_QUERY_SIZE,
+        query: {
+          bool: {
+            should: [
+              {
+                multi_match: {
+                  fields: SEARCHABLE_FIELDS,
                   query: text,
-                  max_expansions: 50,
-                  slop: 50,
+                  fuzziness: 'AUTO',
+                  slop: 3,
+                  analyzer: 'stop',
                 },
               },
-            },
-          ],
+              {
+                match_phrase_prefix: {
+                  description: {
+                    query: text,
+                    max_expansions: 50,
+                    slop: 50,
+                  },
+                },
+              },
+            ],
+          },
         },
-      },
-    };
+      };
+    }
     if (Object.keys(queryFilters).length !== 0) {
-      const post_filter = queryFilters
-        ? this.appendPostFilterStage(queryFilters)
-        : null;
+      post_filter = queryFilters ? this.appendPostFilterStage(queryFilters) : null ;
+      console.log(post_filter.bool.must);
+    }
+    if(!collectionRestrictions){
+
+      const releasedTermsFilter = {terms: {published: [true] } };
+
+      post_filter.bool.must.push(releasedTermsFilter);
       return { ...body, post_filter };
     }
-
     return { ...body };
   }
 
@@ -132,7 +142,6 @@ export class ElasticSearchDriver implements LearningObjectDatastore {
         query.bool.must.push({ terms: termBody });
       }
     });
-    console.log(query);
     return query;
   }
 
@@ -149,8 +158,15 @@ export class ElasticSearchDriver implements LearningObjectDatastore {
   }
 
   private toPaginatedLearningObjects(results: any): LearningObjectSearchResult {
-    const total = results.hits.total;
+    const total = results.hits.total.value;
     let objects = results.hits.hits;
-    return { total, objects };
+    let learningObjects:LearningObject[]=[]
+    objects.forEach((set:any)=>{
+      learningObjects.push(set._source)
+    })
+    return { total, objects: learningObjects };
+  }
+  private addRestrictions(){
+
   }
 }

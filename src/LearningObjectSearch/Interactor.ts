@@ -3,6 +3,7 @@ import {
   LearningObjectSearchResult,
   Requester,
   LearningObjectSearchQuery,
+  PrivilegedLearningObjectSearchQuery,
 } from './typings';
 import { handleError } from '../interactors/LearningObjectInteractor';
 import {
@@ -43,7 +44,7 @@ export async function searchObjects({
     if (requesterIsPrivileged(requester)) {
       return await Drivers.datastore().searchAllObjects(formattedQuery);
     }
-    return await Drivers.datastore().searchReleasedObjects(formattedQuery);
+    return await Drivers.datastore().searchReleasedObjects(formattedQuery as PrivilegedLearningObjectSearchQuery);
   } catch (e) {
     handleError(e);
   }
