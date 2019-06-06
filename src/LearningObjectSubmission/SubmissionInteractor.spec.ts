@@ -1,14 +1,13 @@
 import { cancelSubmission } from './SubmissionInteractor';
 import {
-  MOCK_OBJECTS,
   SUBMITTABLE_LEARNING_OBJECT,
 } from '../tests/mocks';
 import { MockDataStore } from '../tests/mock-drivers/MockDataStore';
-import { DataStore } from '../shared/interfaces/DataStore';
-import { SubmissionDataStore } from './SubmissionDatastore';
 import { LearningObjectAdapter } from '../LearningObjects/LearningObjectAdapter';
+import { Stubs } from '../stubs';
 
 const dataStore = new MockDataStore();
+const stubs = new Stubs();
 LearningObjectAdapter.open(dataStore, null);
 
 describe('cancelSubmission', () => {
@@ -16,9 +15,9 @@ describe('cancelSubmission', () => {
     await expect(
       cancelSubmission({
         dataStore,
-        userId: MOCK_OBJECTS.AUTHOR_MOCK._id,
+        userId: stubs.learningObject.author.id,
         emailVerified: true,
-        learningObjectId: SUBMITTABLE_LEARNING_OBJECT.id,
+        learningObjectId: stubs.learningObject.id,
       }),
     ).resolves.toBe(undefined);
     done();
