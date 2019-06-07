@@ -171,7 +171,7 @@ function getAuthorizedStatuses(status?: string[]): string[] {
  *
  * If statues requested contain a restricted status, An invalid access error is thrown
  *
- * *** Restricted status filters: `REJECTED`, `RELEASED` ***
+ * *** Restricted status filters include Working Stage statuses ***
  *
  * @param {string[]} status
  */
