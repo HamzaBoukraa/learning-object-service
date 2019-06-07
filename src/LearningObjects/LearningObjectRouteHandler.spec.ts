@@ -75,11 +75,11 @@ describe('LearningObjectRouteHandler', () => {
         });
     });
     describe(`PATCH /learning-objects/:id`, () => {
-
+        const userToken = generateToken({...stubs.userToken, accessGroups: null});
         it('should update the requested learning object and return a status of 200', done => {
             request
                 .patch(`/learning-objects/${stubs.learningObject.id}`)
-                .set('Authorization', `Bearer ${token}`)
+                .set('Authorization', `Bearer ${userToken}`)
                 .send({ learningObject: { name: 'Java stuff' } })
                 .expect(200)
                 .then(res => {
