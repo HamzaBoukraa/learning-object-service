@@ -44,11 +44,12 @@ describe('MongoDriver', () => {
   describe('checkLearningObjectExistence', () => {
     it('The function should return an array', async () => {
       expect.assertions(1);
-      const result = await driver.checkLearningObjectExistence({
-        learningObjectId: stubs.learningObject.id,
-        userId: stubs.learningObject.author.id,
-      });
-      expect(result).toBeTruthy();
+      await expect(
+        driver.checkLearningObjectExistence({
+          learningObjectId: stubs.learningObject.id,
+          userId: stubs.learningObject.author.id,
+        }),
+      ).resolves.toBeTruthy();
     });
   });
 
