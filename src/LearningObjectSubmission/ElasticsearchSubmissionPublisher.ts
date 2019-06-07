@@ -28,6 +28,9 @@ export class ElasticsearchSubmissionPublisher implements SubmissionPublisher {
     });
   }
 
+  /**
+   * @inheritdoc
+   */
   async withdrawlSubmission(learningObjectID: string) {
     const response = await this.client.deleteByQuery({
       index: INDEX_NAME,
