@@ -5,6 +5,7 @@ import { ResourceError, ResourceErrorReason } from '../../shared/errors';
 import { SubmissionDataStore } from '../SubmissionDataStore';
 import { LearningObjectAdapter } from '../../LearningObjects/LearningObjectAdapter';
 import { EntityError } from '../../shared/entity/errors/entity-error';
+import { SubmissionPublisher } from './SubmissionPublisher';
 
 /**
  * submitForReview checks that the user has a verified email address, and that the Learning Object
@@ -40,10 +41,6 @@ export async function submitForReview(params: {
   // logic used when updating a Learning Object modifies a property other than the ones we specifically request.
   const submittableLearningObject = await LearningObjectAdapter.getInstance().getLearningObjectById(params.learningObjectId);
   await params.publisher.publishSubmission(submittableLearningObject);
-}
-
-export interface SubmissionPublisher {
-  publishSubmission(submission: LearningObject): Promise<void>;
 }
 
 /**

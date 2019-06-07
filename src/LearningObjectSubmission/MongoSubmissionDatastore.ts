@@ -84,24 +84,6 @@ export class MongoSubmissionDatastore implements SubmissionDataStore {
                  });
   }
 
-  /**
-   * Removes all properties classifying a Learning Object as having
-   * been submitted to a collection.
-   *
-   * @param id the Learning Object's identifier
-   */
-  public async unsubmitLearningObject(id: string): Promise<void> {
-    await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).findOneAndUpdate(
-      { _id: id },
-      {
-        $set: {
-          published: false,
-          status: LearningObject.Status.UNRELEASED,
-        },
-      },
-    );
-  }
-
   // TODO: Should this be an external helper?
   /**
    * Fetches a user, given their username.

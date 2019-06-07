@@ -1,6 +1,9 @@
 import { SubmissionDataStore } from '../SubmissionDatastore';
 import { ResourceError, ResourceErrorReason } from '../../shared/errors';
 import { LearningObjectAdapter } from '../../LearningObjects/LearningObjectAdapter';
+import { SubmissionPublisher } from './SubmissionPublisher';
+import { LearningObject } from '../../shared/entity';
+import { UserToken } from '../../shared/types';
 
 /**
  * Cancels a learning object submission
@@ -13,18 +16,29 @@ import { LearningObjectAdapter } from '../../LearningObjects/LearningObjectAdapt
  */
 export async function cancelSubmission(params: {
   dataStore: SubmissionDataStore;
+  publisher: SubmissionPublisher;
   learningObjectId: string;
   userId: string;
+  user: UserToken;
   emailVerified: boolean;
 }): Promise<void> {
+  const LearningObjectGateway = LearningObjectAdapter.getInstance();
   const submission = await params.dataStore.fetchRecentSubmission(params.learningObjectId);
   if (submission && submission.cancelDate) {
     throw new ResourceError('This submission has already been canceled', ResourceErrorReason.BAD_REQUEST);
   }
-  const object = await LearningObjectAdapter.getInstance().getLearningObjectById(params.learningObjectId);
+  const object = await LearningObjectGateway.getLearningObjectById(params.learningObjectId);
   if (params.userId !== object.author.id) {
     throw new ResourceError('Only the author may cancel a submission.', ResourceErrorReason.FORBIDDEN);
   }
   await params.dataStore.recordCancellation(params.learningObjectId);
-  await params.dataStore.unsubmitLearningObject(params.learningObjectId);
+  await LearningObjectGateway.updateLearningObject({
+    userToken: params.user,
+    id: params.learningObjectId,
+    updates: {
+      published: false,
+      status: LearningObject.Status.UNRELEASED,
+    },
+  });
+  await params.publisher.withdrawlSubmission(params.learningObjectId);
 }
