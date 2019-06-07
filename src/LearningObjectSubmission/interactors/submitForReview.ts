@@ -52,7 +52,7 @@ export async function submitForReview(params: {
  * @param params.learningObjectId id of the learning object to search for
  * @param params.collection name of collection to submit the Learning Object to
  */
-async function updateLearningObjectFields(params: { dataStore: SubmissionDataStore; user: UserToken; learningObjectId: string; collection: string; }) {
+async function updateLearningObjectFields(params: { user: UserToken; learningObjectId: string; collection: string; }) {
   const LearningObjectGateway = LearningObjectAdapter.getInstance();
   await LearningObjectGateway.updateLearningObject({
     id: params.learningObjectId,
