@@ -14,7 +14,7 @@ describe('MongoDriver', () => {
       return expect(driver.fetchRecentChangelog({
         learningObjectId: stubs.learningObject.id,
       }))
-        .resolves.toEqual(stubs.changelog);
+        .resolves.toEqual({...stubs.changelog, logs: [ stubs.changelog.logs[1] ]});
     });
   });
 

@@ -90,9 +90,10 @@ describe('LearningObjectRouteHandler', () => {
         describe('when the payload contains status set to \'released\'', () => {
             describe('and the requester is an admin', () => {
                 it('should update the requested Learning Object and return a status of 200', done => {
+                    const adminToken = generateToken({...stubs.userToken, accessGroups: ['admin']});
                     request
                         .patch(`/learning-objects/${stubs.learningObject.id}`)
-                        .set('Authorization', `Bearer ${token}`)
+                        .set('Authorization', `Bearer ${adminToken}`)
                         .send({ learningObject: { status: LearningObject.Status.RELEASED } })
                         .expect(200)
                         .then(res => {
