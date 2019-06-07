@@ -5,16 +5,6 @@ import { SubmissionPublisher } from './interactors/SubmissionPublisher';
 import { Client } from '@elastic/elasticsearch';
 
 const INDEX_NAME = 'released-objects';
-const INDEX_LOCATION = `${process.env.ELASTICSEARCH_DOMAIN}/${INDEX_NAME}`;
-
-
-/**
- * Splits the domain on the delimiter following the network protocol and takes the
- * rightwards half, which is the host without the protocol.
- */
-const HOST = process.env.ELASTICSEARCH_DOMAIN
-  ? process.env.ELASTICSEARCH_DOMAIN.split('://')[1]
-  : undefined;
 
 export class ElasticsearchSubmissionPublisher implements SubmissionPublisher {
   client: Client;
@@ -22,14 +12,19 @@ export class ElasticsearchSubmissionPublisher implements SubmissionPublisher {
     this.client = new Client({ node: process.env.ELASTICSEARCH_DOMAIN });
   }
 
+  /**
+   * @description
+   * The refresh strategy defaults to false, this means the document will be availible
+   * for search at some point after the request has returned. We use this strategy because
+   * the availability of a document for search by reviewers/curators should not halt the
+   * progress of the author in the application.
+   * @inheritdoc
+   */
   async publishSubmission(submission: LearningObject): Promise<void> {
-    const URI = `${INDEX_LOCATION}/_doc/${submission.id}`;
-    await request.put(URI, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Host': HOST,
-      },
-      body: JSON.stringify(cleanLearningObject(submission)),
+    await this.client.index({
+      index: INDEX_NAME,
+      type: '_doc',
+      body: cleanLearningObject(submission),
     });
   }
 
