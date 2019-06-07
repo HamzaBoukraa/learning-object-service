@@ -27,15 +27,22 @@ export interface ElasticSearchQuery {
   sort?: { [x: string]: { order: string } }[];
 }
 
+export interface ElasticSearchBrowseQuery {
+  size: number;
+  query: {
+    queryString: {
+      query: string;
+    };
+  };
+}
+
 export interface PostFilterQuery {
   bool: {
-    must: [
-      {
-        terms: {
-          [x: string]: any;
-        };
-      }
-    ];
+    must: {
+      terms: {
+        [x: string]: any;
+      };
+    }[];
   };
 }
 
