@@ -2,15 +2,7 @@ import { PublishingDataStore } from './interactor';
 import { LearningObject } from '../../shared/entity';
 import * as request from 'request-promise';
 import { cleanLearningObject } from '../../shared/elasticsearch';
-
-const INDEX_LOCATION = `${process.env.ELASTICSEARCH_DOMAIN}/learning-objects`;
-/**
- * Splits the domain on the delimiter following the network protocol and takes the
- * rightwards half, which is the host without the protocol.
- */
-const HOST = process.env.ELASTICSEARCH_DOMAIN
-  ? process.env.ELASTICSEARCH_DOMAIN.split('://')[1]
-  : undefined;
+import { Client } from '@elastic/elasticsearch';
 
 /**
  * Sends a PUT request to ElasticSearch to index the Learning Object at a
@@ -18,14 +10,15 @@ const HOST = process.env.ELASTICSEARCH_DOMAIN
  * for ease of lookup.
  */
 export class ElasticSearchPublishingGateway implements PublishingDataStore {
+  client: Client;
+  constructor() {
+    this.client = new Client({ node: process.env.ELASTICSEARCH_DOMAIN });
+  }
   async addToReleased(releasableObject: LearningObject): Promise<void> {
-    const URI = `${INDEX_LOCATION}/_doc/${releasableObject.id}`;
-    await request.put(URI, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Host': HOST,
-      },
-      body: JSON.stringify(cleanLearningObject(releasableObject)),
+    await this.client.index({
+      index: 'learning-objects',
+      type: '_doc',
+      body: cleanLearningObject(releasableObject),
     });
   }
 }

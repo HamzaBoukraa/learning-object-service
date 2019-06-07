@@ -4,7 +4,7 @@ import { cleanLearningObject } from '../shared/elasticsearch';
 import { SubmissionPublisher } from './interactors/SubmissionPublisher';
 import { Client } from '@elastic/elasticsearch';
 
-const INDEX_NAME = 'released-objects';
+const INDEX_NAME = 'learning-objects';
 
 export class ElasticsearchSubmissionPublisher implements SubmissionPublisher {
   client: Client;
