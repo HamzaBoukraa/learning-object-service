@@ -69,7 +69,7 @@ export class ElasticSearchDriver implements LearningObjectDatastore {
     level,
     collection,
     limit,
-    collectionRestrictions
+    collectionRestrictions,
   }: PrivilegedLearningObjectSearchQuery) {
     const queryFilters = sanitizeObject({
       object: {
@@ -79,8 +79,8 @@ export class ElasticSearchDriver implements LearningObjectDatastore {
       },
     });
     let body: ElasticSearchQuery;
-    let post_filter: PostFilterQuery;
-    if(text && text.length>1){
+    let post_filter: any;
+    if (text && text.length > 1) {
       body = {
         size: limit ? limit : DEFAULT_QUERY_SIZE,
         query: {
@@ -109,15 +109,13 @@ export class ElasticSearchDriver implements LearningObjectDatastore {
         },
       };
     }
-    if (Object.keys(queryFilters).length !== 0) {
-      post_filter = queryFilters ? this.appendPostFilterStage(queryFilters) : null ;
-      console.log(post_filter.bool.must);
+    if (Object.keys(queryFilters).length !== 0 && !collectionRestrictions) {
+      post_filter = queryFilters ? this.appendPostFilterStage(queryFilters) : null;
+      console.log(post_filter);
+      return { ...body, post_filter };
     }
-    if(!collectionRestrictions){
-
-      const releasedTermsFilter = {terms: {published: [true] } };
-
-      post_filter.bool.must.push(releasedTermsFilter);
+    if (collectionRestrictions) {
+      post_filter = this.addRestrictionsandFilters(collectionRestrictions, queryFilters);
       return { ...body, post_filter };
     }
     return { ...body };
@@ -160,13 +158,52 @@ export class ElasticSearchDriver implements LearningObjectDatastore {
   private toPaginatedLearningObjects(results: any): LearningObjectSearchResult {
     const total = results.hits.total.value;
     let objects = results.hits.hits;
-    let learningObjects:LearningObject[]=[]
-    objects.forEach((set:any)=>{
-      learningObjects.push(set._source)
-    })
+    let learningObjects: LearningObject[] = [];
+    objects.forEach((set: any) => {
+      learningObjects.push(set._source);
+    });
     return { total, objects: learningObjects };
   }
-  private addRestrictions(){
-
+  private addRestrictionsandFilters(
+    restrictions: any,
+    filters?: {
+      length?: String[];
+      level?: String[];
+      collection?: String[];
+    },
+  ) {
+    let query: {
+      bool: {
+        should: {
+          bool: {
+            must: any[],
+          },
+        }[],
+        filter?: {},
+      },
+    } = {
+      bool: {
+        should: [
+          {
+            bool: {
+              // @ts-ignore Empty array assignment is valid
+              must: [],
+            },
+          },
+        ],
+      },
+    };
+    Object.keys(restrictions).forEach(collectionName => {
+      if (restrictions[collectionName]) {
+        let term = {};
+        term[collectionName] = restrictions[collectionName];
+        query.bool.should[0].bool.must.push({ terms: term });
+      }
+    });
+    if (filters) {
+      let filter = this.appendPostFilterStage(filters);
+      query.bool.filter = filter;
+    }
+    return query;
   }
 }
