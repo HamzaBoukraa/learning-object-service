@@ -12,8 +12,8 @@ const setupElasticToggle = ({ userToken, dataStore, releasableObject }: {
   releasableObject: LearningObject;
 }) => {
   const toggle = new ElasticMongoReleaseRequestDuplicator(dataStore);
-  const releaseEmailGateway = LambdaGatewayFactory.getLambdaGatewayInstance();
-  releaseLearningObject({ userToken, dataStore: toggle, releasableObject, releaseEmailGateway });
+  const releaseEmailGateway = new LambdaGatewayFactory();
+  releaseLearningObject({ userToken, dataStore: toggle, releasableObject, releaseEmailGateway: releaseEmailGateway.instance });
 };
 
 export { setupElasticToggle as releaseLearningObject };
