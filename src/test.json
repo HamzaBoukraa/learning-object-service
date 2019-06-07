@@ -1,0 +1,140 @@
+{
+    "size": 10,
+    "query": {
+        "bool": {
+            "should": [
+                {
+                    "multi_match": {
+                        "fields": [
+                            "name",
+                            "levels",
+                            "collection.keyword",
+                            "description",
+                            "author.name",
+                            "author.email",
+                            "author.organization",
+                            "outcomes.text",
+                            "outcomes.bloom",
+                            "outcomes.outcome"
+                        ],
+                        "query": "interger error",
+                        "fuzziness": "AUTO",
+                        "slop": 3,
+                        "analyzer": "stop"
+                    }
+                },
+                {
+                    "match_phrase_prefix": {
+                        "description": {
+                            "query": "interger error",
+                            "max_expansions": 50,
+                            "slop": 50
+                        }
+                    }
+                }
+            ]
+        }
+    },
+    "post_filter": {
+        "bool": {
+            "should": [
+                {
+                    "bool": {
+                        "must": [
+                            {
+                                "terms": {
+                                    "length": [
+                                        "micromodule",
+                                        "module"
+                                    ]
+                                }
+                            },
+                            {
+                                "terms": {
+                                    "collection": [
+                                        "nccp"
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    "bool": {
+                        "must": [
+                            {
+                                "bool": {
+                                    "should": [
+                                        {
+                                            "bool": {
+                                                "must": [
+                                                    {
+                                                        "term": {
+                                                            "collection": {
+                                                                "value": "nccp"
+                                                            }
+                                                        }
+                                                    },
+                                                    {
+                                                        "terms": {
+                                                            "status": [
+                                                                "released",
+                                                                "waiting"
+                                                            ]
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "bool": {
+                                                "must": [
+                                                    {
+                                                        "term": {
+                                                            "collection": {
+                                                                "value": "secinj"
+                                                            }
+                                                        }
+                                                    },
+                                                    {
+                                                        "terms": {
+                                                            "status": [
+                                                                "waiting",
+                                                                "proofing"
+                                                            ]
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                }
+                            },
+                            {
+                                "bool": {
+                                    "must": [
+                                        {
+                                            "terms": {
+                                                "length": [
+                                                    "micromodule",
+                                                    "module"
+                                                ]
+                                            }
+                                        },
+                                        {
+                                            "terms": {
+                                                "collection": [
+                                                    "nccp"
+                                                ]
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+    }
+}

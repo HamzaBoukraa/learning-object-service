@@ -132,8 +132,6 @@ function getCollectionAccessMap(
     for (const filter of requestedCollections) {
       if (privilegedCollections.includes(filter)) {
         accessMap[filter] = requestedStatuses;
-      } else {
-        accessMap[filter] = LearningObjectState.RELEASED;
       }
     }
   } else {
