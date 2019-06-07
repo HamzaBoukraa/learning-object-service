@@ -18,8 +18,8 @@ import {
   requesterIsAdminOrEditor,
 } from './AuthorizationManager';
 import { LearningObjectDatastore } from './interfaces';
-import { ResourceError, ResourceErrorReason } from '../shared/errors';
 import { getAccessGroupCollections } from '../shared/AuthorizationManager';
+import { ResourceErrorReason, ResourceError } from '../shared/errors';
 
 namespace Drivers {
   export const datastore = () =>
