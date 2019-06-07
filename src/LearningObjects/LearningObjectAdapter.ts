@@ -4,6 +4,10 @@ import { FileManager } from '../shared/interfaces/interfaces';
 import { updateReadme, getLearningObjectById, updateLearningObject } from './LearningObjectInteractor';
 import { UserToken } from '../shared/types';
 
+/**
+ * FIXME: THe duplication of JSDoc comments here is not ideal, as it means a change
+ * must take place in two places.
+ */
 export class LearningObjectAdapter {
   private static _instance: LearningObjectAdapter;
   private constructor(private dataStore: DataStore, private fileManager: FileManager) { }
@@ -27,6 +31,19 @@ export class LearningObjectAdapter {
     return getLearningObjectById(this.dataStore, id);
   }
 
+  /**
+   * Updates Readme PDF for Learning Object
+   *
+   * @static
+   * @param {{
+   *     dataStore: DataStore;
+   *     fileManager: FileManager;
+   *     object?: LearningObject;
+   *     id?: string;
+   *   }} params
+   * @returns {Promise<LearningObject>}
+   * @memberof LearningObjectInteractor
+   */
   async updateReadme(params: {
     object?: LearningObject;
     id?: string;
@@ -39,6 +56,17 @@ export class LearningObjectAdapter {
     });
   }
 
+  /**
+   * Update an existing learning object record.
+   * NOTE: promise rejected if another learning object
+   *       tied to the same author and with the same 'name' field
+   *       already exists
+   *
+   * @async
+   *
+   * @param {LearningObjectID} id - database id of the record to change
+   * @param {LearningObject} object - entity with values to update to
+   */
   async updateLearningObject(params: {
     userToken: UserToken;
     id: string;
