@@ -12,6 +12,18 @@ import { ChangeLogDocument } from '../shared/types/changelog';
 // tslint:disable-next-line:no-require-imports
 let SEED_DATA = require('../../test_environment/data');
 
+/**
+ * This class reads all of the data from the data.js file and
+ * uses it to instantiate typed instance variables (LearningObject,
+ * LearningOutcome, etc...).
+ * All of our unit tests create an instance of the Stubs class and
+ * use its instance variables. The instance variables are fairly generic.
+ * Rather than storing a new object variation for every test, we can
+ * destructure the instance variables in each test case. The Stubs class
+ * also exposes getter and setter methods for each instance variable to
+ * add flexibility. Because the instance variables are typed,
+ * entity methods are also available.
+ */
 export class Stubs {
     private _learningObject: LearningObject;
     private _learningObjectChild: LearningObject;
