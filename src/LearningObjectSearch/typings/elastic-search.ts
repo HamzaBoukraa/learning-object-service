@@ -20,7 +20,7 @@ export interface ElasticSearchQuery {
               slop: number;
             };
           };
-        },
+        }
       ];
     };
   };
@@ -34,16 +34,15 @@ export interface ElasticSearchBrowseQuery {
       query: string;
     };
   };
-};
+}
 
 export interface PostFilterQuery {
   bool: {
-    must:
-      {
-        terms: {
-          [x: string]: any;
-        };
-      }[];
+    must: {
+      terms: {
+        [x: string]: any;
+      };
+    }[];
   };
 }
 
