@@ -24,7 +24,10 @@ export async function cancelSubmission(params: {
 }): Promise<void> {
   const LearningObjectGateway = LearningObjectAdapter.getInstance();
   const submission = await params.dataStore.fetchRecentSubmission(params.learningObjectId);
-  if (submission && submission.cancelDate) {
+  if (!submission) {
+    throw new ResourceError('There is no submission for this Learning Object', ResourceErrorReason.NOT_FOUND);
+  }
+  if (submission.cancelDate) {
     throw new ResourceError('This submission has already been canceled', ResourceErrorReason.BAD_REQUEST);
   }
   const object = await LearningObjectGateway.getLearningObjectById(params.learningObjectId);
