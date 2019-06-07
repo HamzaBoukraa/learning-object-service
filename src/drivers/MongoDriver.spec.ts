@@ -41,18 +41,6 @@ describe('MongoDriver', () => {
     });
   });
 
-  describe('checkLearningObjectExistence', () => {
-    it('The function should return an array', async () => {
-      expect.assertions(1);
-      await expect(
-        driver.checkLearningObjectExistence({
-          learningObjectId: stubs.learningObject.id,
-          userId: stubs.learningObject.author.id,
-        }),
-      ).resolves.toBeTruthy();
-    });
-  });
-
   describe('getUserObjects', () => {
     it('The function should return an array of ids', async () => {
       expect.assertions(1);

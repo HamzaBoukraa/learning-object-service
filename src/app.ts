@@ -51,9 +51,6 @@ const library: LibraryCommunicator = new LibraryDriver();
  * call to its build function here.
  */
 (async () => {
-  const stubs = new Stubs();
-  console.log(stubs.learningObject);
-  console.log(stubs.learningObject.id);
   await MongoConnector.open(dburi);
   const dataStore = await MongoDriver.build(dburi);
   LearningObjectAdapter.open(dataStore, fileManager);

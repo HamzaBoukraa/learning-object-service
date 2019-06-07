@@ -9,15 +9,6 @@ describe('MongoDriver', () => {
     driver = await MongoDriver.build(global['__MONGO_URI__']);
   });
 
-  describe('getRecentChangelog', () => {
-    it('The function should return the last element of the logs array', async () => {
-      return expect(driver.fetchRecentChangelog({
-        learningObjectId: stubs.learningObject.id,
-      }))
-        .resolves.toEqual({...stubs.changelog, logs: [ stubs.changelog.logs[1] ]});
-    });
-  });
-
   describe('deleteChangelog', () => {
     it('The function should return void', async () => {
         const learningObjectId = 'default_id';
