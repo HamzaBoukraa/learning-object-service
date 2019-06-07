@@ -146,7 +146,12 @@ function getCollectionAccessMap(
 }
 
 /**
- * Validates and returns authorized statuses for privileged users
+ * Checks status filters do not contain restricted statuses and returns a list of accessible statuses
+ *
+ * If status filters are not defined or are empty; All accessible status filters are returned;
+ * If they are defined and do not contain restricted statuses the requested statuses are returned;
+ *
+ * *** Accessible status filters include Review Stage and Released statuses ***
  *
  * @param {string[]} [status]
  * @returns {string[]}
@@ -164,6 +169,8 @@ function getAuthorizedStatuses(status?: string[]): string[] {
  * Validates requested statuses do not contain restricted statuses
  *
  * If statues requested contain a restricted status, An invalid access error is thrown
+ *
+ * *** Restricted status filters include Working Stage statuses ***
  *
  * @param {string[]} status
  */

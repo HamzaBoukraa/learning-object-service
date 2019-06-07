@@ -60,8 +60,21 @@ export class ElasticSearchDriver implements LearningObjectDatastore {
   searchAllObjects(
     params: PrivilegedLearningObjectSearchQuery,
   ): Promise<LearningObjectSearchResult> {
-    this.buildSearchQuery(params)
-    throw new Error('Method not implemented.');
+    const elasticQuery: Partial<ElasticSearchQuery> = this.buildSearchQuery(params);
+
+    return new Promise<LearningObjectSearchResult>((resolve, reject) => {
+      request({
+        uri: MOCK_URI,
+        json: true,
+        body: elasticQuery,
+      })
+        .then(res => {
+          resolve(this.toPaginatedLearningObjects(res));
+        })
+        .catch(err => {
+          reject(err);
+        });
+    });
   }
   private buildSearchQuery({
     text,

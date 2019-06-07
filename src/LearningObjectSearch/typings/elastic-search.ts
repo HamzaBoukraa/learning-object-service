@@ -43,7 +43,6 @@ export interface PostFilterQuery {
         [x: string]: any;
       };
     }[];
-    filter?: { [x: string]: { order: string }};
   };
 }
 
