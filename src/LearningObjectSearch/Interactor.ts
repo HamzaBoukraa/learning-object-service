@@ -3,7 +3,6 @@ import {
   LearningObjectSearchResult,
   Requester,
   LearningObjectSearchQuery,
-  PrivilegedLearningObjectSearchQuery,
   LearningObject,
   CollectionAccessMap,
 } from './typings';
@@ -77,7 +76,7 @@ export async function searchObjects({
         collectionRestrictions,
       });
     }
-    return await Drivers.datastore().searchReleasedObjects(formattedQuery as PrivilegedLearningObjectSearchQuery);
+    return await Drivers.datastore().searchReleasedObjects(formattedQuery);
   } catch (e) {
     handleError(e);
   }
