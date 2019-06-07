@@ -1,6 +1,6 @@
 import {
   ReleasedLearningObjectSearchQuery,
-  LearningObjectSearchQuery,
+  PrivilegedLearningObjectSearchQuery,
   LearningObjectSearchResult,
 } from '../typings';
 
@@ -21,11 +21,11 @@ export abstract class LearningObjectDatastore {
    * Performs search on all Released and Submitted Learning Objects
    *
    * @abstract
-   * @param {LearningObjectSearchQuery} params [Search and filter parameters]
+   * @param {PrivilegedLearningObjectSearchQuery} params [Search and filter parameters]
    * @returns {Promise<LearningObjectSearchResult>}
    * @memberof LearningObjectDatastore
    */
   abstract searchAllObjects(
-    params: LearningObjectSearchQuery,
+    params: PrivilegedLearningObjectSearchQuery,
   ): Promise<LearningObjectSearchResult>;
 }
