@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import * as http from 'http';
 import * as express from 'express';
 import * as bodyParser from 'body-parser';
@@ -27,7 +28,6 @@ import {
   LibraryCommunicator,
   DataStore,
 } from './shared/interfaces/interfaces';
-import 'dotenv/config';
 import { LibraryDriver } from './drivers/LibraryDriver';
 import { MongoConnector } from './shared/Mongo/MongoConnector';
 import { LearningObjectAdapter } from './LearningObjects/LearningObjectAdapter';
