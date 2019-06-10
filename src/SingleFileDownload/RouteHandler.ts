@@ -39,7 +39,6 @@ export function initializeSingleFileDownloadRouter({
       if (e.message === 'File not found') {
         fileNotFoundResponse(e.object, req, res);
       } else {
-        console.error(e);
         reportError(e);
         res.status(500).send('Internal Server Error');
       }

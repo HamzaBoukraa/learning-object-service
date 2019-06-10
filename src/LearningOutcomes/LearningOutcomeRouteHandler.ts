@@ -27,7 +27,6 @@ export function initialize({
       });
       res.status(200).send(id);
     } catch (e) {
-      console.error(e);
       res.status(500).send(e);
     }
   };
@@ -45,7 +44,6 @@ export function initialize({
       );
       res.status(200).send(learningOutcome.toPlainObject());
     } catch (e) {
-      console.error(e);
       res.status(500).send(e);
     }
   };
@@ -63,7 +61,6 @@ export function initialize({
       });
       res.status(200).send(outcome.toPlainObject());
     } catch (e) {
-      console.error(e);
       res.status(500).send(e);
     }
   };
@@ -79,7 +76,6 @@ export function initialize({
       });
       res.sendStatus(204);
     } catch (e) {
-      console.error(e);
       res.status(500).send(e);
     }
   };

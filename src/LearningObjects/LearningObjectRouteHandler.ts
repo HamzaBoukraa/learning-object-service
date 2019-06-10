@@ -32,7 +32,6 @@ export function initializePublic({
       );
       res.status(200).send(learningObject.toPlainObject());
     } catch (e) {
-      console.error(e);
       res.status(500).send(e);
     }
   };
@@ -81,7 +80,6 @@ export function initializePrivate({
       );
       res.status(200).send(learningObject.toPlainObject());
     } catch (e) {
-      console.error(e);
 
       let status = 500;
 
@@ -107,7 +105,6 @@ export function initializePrivate({
       });
       res.status(200).send(materials);
     } catch (e) {
-      console.error(e);
       res.status(500).send(e);
     }
   };
@@ -143,7 +140,6 @@ export function initializePrivate({
       });
       res.sendStatus(200);
     } catch (e) {
-      console.error(e);
 
       let status = 500;
 

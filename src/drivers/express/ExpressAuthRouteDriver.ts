@@ -111,7 +111,6 @@ export class ExpressAuthRouteDriver {
           );
           res.sendStatus(200);
         } catch (e) {
-          console.error(e);
           res.status(500).send(e);
         }
       },
@@ -305,7 +304,6 @@ export class ExpressAuthRouteDriver {
               );
           }
         } catch (e) {
-          console.error(e);
           res.status(500).send(e);
         }
       },
@@ -369,7 +367,6 @@ export class ExpressAuthRouteDriver {
           });
           res.sendStatus(200);
         } catch (e) {
-          console.error(e);
           res.status(500).send(e);
         }
       })
@@ -387,7 +384,6 @@ export class ExpressAuthRouteDriver {
           });
           res.sendStatus(200);
         } catch (e) {
-          console.error(e);
           res.status(500).send(e);
         }
       });
@@ -401,7 +397,6 @@ export class ExpressAuthRouteDriver {
         });
         res.sendStatus(200);
       } catch (e) {
-        console.error(e);
         res.status(500).send(e);
       }
     });
@@ -422,7 +417,6 @@ export class ExpressAuthRouteDriver {
           res.sendStatus(200);
 
         } catch (e) {
-          console.error(e);
           res.status(500).send(e);
         }
       })
@@ -439,7 +433,6 @@ export class ExpressAuthRouteDriver {
           });
           res.sendStatus(200);
         } catch (e) {
-          console.error(e);
           res.status(500).send(e);
         }
       });
@@ -478,7 +471,6 @@ export class ExpressAuthRouteDriver {
         });
         res.status(200).send(objects.map(obj => obj.toPlainObject()));
       } catch (e) {
-        console.error(e);
         res.status(500).send(e);
       }
     });
@@ -495,7 +487,6 @@ export class ExpressAuthRouteDriver {
         });
         res.status(200).send(objects.map(obj => obj.toPlainObject()));
       } catch (e) {
-        console.error(e);
         res.status(500).send(e);
       }
     });

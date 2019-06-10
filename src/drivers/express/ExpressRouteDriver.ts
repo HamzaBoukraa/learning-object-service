@@ -96,7 +96,6 @@ export class ExpressRouteDriver {
           });
           res.status(200).send(object.toPlainObject());
         } catch (e) {
-          console.error(e);
           const { code, message } = mapErrorToResponseData(e);
           res.status(code).json({message});
         }
