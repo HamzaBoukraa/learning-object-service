@@ -1,8 +1,10 @@
 import { LearningObject } from '.';
 
+export type SortOrder = 1 | -1;
+
 export interface Filters {
   orderBy?: string;
-  sortType?: -1 | 1;
+  sortType?: SortOrder;
   page?: number;
   limit?: number;
 }
