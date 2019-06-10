@@ -1,4 +1,5 @@
 import { SubmissionDataStore } from '../SubmissionDataStore';
+
 /**
  * Check if learning object is being submitted to a collection
  * for the first time.
@@ -16,7 +17,5 @@ export async function checkFirstSubmission(params: {
   userId: string;
   emailVerified: boolean;
 }): Promise<boolean> {
-  return await params.dataStore.fetchSubmission(params.collection, params.learningObjectId)
-    ? false
-    : true;
+  return await params.dataStore.hasSubmission(params.collection, params.learningObjectId);
 }

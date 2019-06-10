@@ -84,6 +84,22 @@ export class MongoSubmissionDatastore implements SubmissionDataStore {
                  });
   }
 
+  /**
+   * @description
+   * The first array index will contain a projected submission document if one
+   * or more submissions exist (meaning this is not the first submission), or
+   * undefined if none have been made yet.
+   * The projection and limit of 1 are here to ensure the query executes quickly.
+   * @inheritdoc
+   */
+  public async hasSubmission(learningObjectId: string, collection: string) {
+    const submission = this.db.collection(COLLECTIONS.SUBMISSIONS)
+      .find({ _id: learningObjectId }, { projection: { _id: 1 }})
+      .limit(1)
+      .toArray()[0];
+    return submission !== undefined;
+  }
+
   // TODO: Should this be an external helper?
   /**
    * Fetches a user, given their username.
