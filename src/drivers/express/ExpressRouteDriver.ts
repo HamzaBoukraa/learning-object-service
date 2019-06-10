@@ -121,16 +121,8 @@ export class ExpressRouteDriver {
         );
         res.status(200).send(objects.map(obj => obj.toPlainObject()));
       } catch (e) {
-        if (e instanceof ResourceError || e instanceof ServiceError) {
-          const { code, message } = mapErrorToResponseData(e);
-          res.status(code).json({ message });
-        } else {
-          if (e instanceof Error && e.message === 'User not found') {
-            res.status(404).send(`No user with username ${req.params.username}.`);
-          } else {
-            res.status(500).send('Internal Server Error');
-          }
-        }
+        const { code, message } = mapErrorToResponseData(e);
+        res.status(code).json({ message });
       }
     });
 
@@ -146,7 +138,8 @@ export class ExpressRouteDriver {
 
           res.status(200).send(objects.map(x => x.toPlainObject()));
         } catch (e) {
-          res.status(500).send(e);
+          const { code, message } = mapErrorToResponseData(e);
+          res.status(code).json({message});
         }
       },
     );
