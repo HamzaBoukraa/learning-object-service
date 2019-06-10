@@ -1,7 +1,8 @@
 import * as LearningOutcomeInteractor from './LearningOutcomeInteractor';
 import { Request, Response, Router } from 'express';
-import { LearningOutcomeInput, LearningOutcomeUpdate } from './types';
+import { LearningOutcomeUpdate } from './types';
 import { UserToken } from '../shared/types';
+import { mapErrorToResponseData } from '../shared/errors';
 
 /**
  * Initializes an express router with endpoints to Create, Update, and Delete
@@ -27,7 +28,8 @@ export function initialize({
       });
       res.status(200).send(id);
     } catch (e) {
-      res.status(500).send(e);
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({message});
     }
   };
 
@@ -44,7 +46,8 @@ export function initialize({
       );
       res.status(200).send(learningOutcome.toPlainObject());
     } catch (e) {
-      res.status(500).send(e);
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({message});
     }
   };
 
@@ -61,7 +64,8 @@ export function initialize({
       });
       res.status(200).send(outcome.toPlainObject());
     } catch (e) {
-      res.status(500).send(e);
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({message});
     }
   };
 
@@ -76,7 +80,8 @@ export function initialize({
       });
       res.sendStatus(204);
     } catch (e) {
-      res.status(500).send(e);
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({message});
     }
   };
 

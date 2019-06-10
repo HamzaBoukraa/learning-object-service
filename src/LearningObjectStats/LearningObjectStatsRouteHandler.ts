@@ -1,6 +1,7 @@
 import * as LearningObjectStatsInteractor from './LearningObjectStatsInteractor';
 import { Request, Response, Router } from 'express';
 import { DataStore } from '../shared/interfaces/DataStore';
+import { mapErrorToResponseData } from '../shared/errors';
 
 /**
  * Initializes an express router with endpoints to get stats for Learning Objects
@@ -23,7 +24,8 @@ export function initialize({
 
       res.status(200).send(stats);
     } catch (e) {
-      res.status(500).send(e);
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({message});
     }
   };
 
