@@ -1,9 +1,8 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Request, Response } from 'express';
 import * as Interactor from '../Interactor';
 import { Requester } from '../typings';
 import { mapErrorToResponseData } from '../../shared/errors';
 import { LearningObjectQuery } from '../../shared/interfaces/DataStore';
-import { requesterIsAdmin } from '../../LearningObjects/AuthorizationManager';
 
 /**
  * Builds the Express Router for this module
@@ -23,16 +22,12 @@ export function buildRouter() {
  * @param {Request} req [The express request object]
  * @param {Response} res [The express response object]
  */
-async function searchObjects(req: Request, res: Response, next: NextFunction) {
+async function searchObjects(req: Request, res: Response) {
   try {
     const requester: Requester = req.user;
-    if (requesterIsAdmin(requester)) {
-      const query: LearningObjectQuery = req.query;
-      const results = await Interactor.searchObjects({ requester, query });
-      res.send(results);
-    } else {
-      next();
-    }
+    const query: LearningObjectQuery = req.query;
+    const results = await Interactor.searchObjects({ requester, query });
+    res.send(results);
   } catch (e) {
     const { code, message } = mapErrorToResponseData(e);
     res.status(code).json({ message });
