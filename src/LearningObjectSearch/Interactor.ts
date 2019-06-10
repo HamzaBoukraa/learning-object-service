@@ -97,6 +97,7 @@ function formatSearchQuery(
   const formattedQuery = { ...query };
   formattedQuery.text = sanitizeText(formattedQuery.text) || null;
   formattedQuery.orderBy = sanitizeText(formattedQuery.orderBy, false) || null;
+  formattedQuery.status = toArray(formattedQuery.status);
   formattedQuery.length = toArray(formattedQuery.length);
   formattedQuery.level = toArray(formattedQuery.level);
   formattedQuery.collection = toArray(formattedQuery.collection);
