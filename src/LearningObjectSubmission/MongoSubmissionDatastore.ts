@@ -14,31 +14,6 @@ export class MongoSubmissionDatastore implements SubmissionDataStore {
   }
 
   /**
-   * Updates a Learning Object document as having been submitted to a given collection.
-   * Will not work if the user's email is not verified.
-   *
-   * @param username the user requesting the submission
-   * @param id the identifier of the Learning Object to be submitted
-   * @param collection the collection for the Learning Object to be submitted to
-   */
-  public async submitLearningObjectToCollection(
-    username: string,
-    id: string,
-    collection: string,
-  ): Promise<void> {
-    await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).updateOne(
-      { _id: id },
-      {
-        $set: {
-          published: true,
-          status: 'waiting',
-          collection,
-        },
-      },
-    );
-  }
-
-  /**
    * Store all metadata for each learning object submission in the submissions collection
    *
    * @param submission submission object to be recorded
@@ -110,21 +85,19 @@ export class MongoSubmissionDatastore implements SubmissionDataStore {
   }
 
   /**
-   * Removes all properties classifying a Learning Object as having
-   * been submitted to a collection.
-   *
-   * @param id the Learning Object's identifier
+   * @description
+   * The first array index will contain a projected submission document if one
+   * or more submissions exist (meaning this is not the first submission), or
+   * undefined if none have been made yet.
+   * The projection and limit of 1 are here to ensure the query executes quickly.
+   * @inheritdoc
    */
-  public async unsubmitLearningObject(id: string): Promise<void> {
-    await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).findOneAndUpdate(
-      { _id: id },
-      {
-        $set: {
-          published: false,
-          status: LearningObject.Status.UNRELEASED,
-        },
-      },
-    );
+  public async hasSubmission(learningObjectId: string, collection: string) {
+    const submission = this.db.collection(COLLECTIONS.SUBMISSIONS)
+      .find({ _id: learningObjectId }, { projection: { _id: 1 }})
+      .limit(1)
+      .toArray()[0];
+    return submission !== undefined;
   }
 
   // TODO: Should this be an external helper?

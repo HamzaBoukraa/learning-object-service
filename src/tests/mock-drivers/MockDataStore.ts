@@ -312,14 +312,6 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
     ]);
   }
 
-  submitLearningObjectToCollection(
-    username: string,
-    id: string,
-    collection: string,
-  ): Promise<void> {
-    return Promise.resolve();
-  }
-
   recordSubmission(submission: Submission): Promise<void> {
     return Promise.resolve();
   }
@@ -334,7 +326,9 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
   fetchRecentSubmission(learningObjectId: string): Promise<Submission> {
    return Promise.resolve(this.stubs.submission);
   }
-
+  hasSubmission(learningObjectId: string, collection: string): Promise<boolean> {
+    return Promise.resolve(true);
+  }
   unsubmitLearningObject(id: string): Promise<void> {
     return Promise.resolve();
   }
