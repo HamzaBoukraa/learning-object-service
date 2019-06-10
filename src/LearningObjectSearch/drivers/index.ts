@@ -1,3 +1,3 @@
-import { ElasticSearchDriver } from './LearningObjectDatastore/ElasticSearchDriver';
+import { ElasticSearchLearningObjectDatastore } from './LearningObjectDatastore/ElasticSearchLearningObjectDatastore';
 
-export { ElasticSearchDriver };
+export { ElasticSearchLearningObjectDatastore };

@@ -49,7 +49,8 @@ const QUERY_DEFAULTS = {
   MATCH_PHRASE_PREFIX_EXPANSIONS: 50,
 };
 
-export class ElasticSearchDriver implements LearningObjectDatastore {
+export class ElasticSearchLearningObjectDatastore
+  implements LearningObjectDatastore {
   /**
    * Performs a search on learning objects in the elastic search index and only returns released objects.
    *
