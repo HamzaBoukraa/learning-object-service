@@ -75,7 +75,6 @@ export class ExpressAuthRouteDriver {
 
     SubmissionRouteDriver.initialize({
       router,
-      fileManager: this.fileManager,
     });
 
     LearningObjectRouteHandler.initializePrivate({
