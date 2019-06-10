@@ -1,6 +1,6 @@
 import { LearningObject } from '.';
 
-export type SortOrder = 1 | -1
+export type SortOrder = 1 | -1;
 
 export interface Filters {
   orderBy?: string;
