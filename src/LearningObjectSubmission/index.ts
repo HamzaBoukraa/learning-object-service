@@ -1,17 +1,17 @@
 import { initialize } from './SubmissionRouteDriver';
 import { Router } from 'express-serve-static-core';
-import { FileManager } from '../shared/interfaces/interfaces';
 import { MongoSubmissionDatastore } from './MongoSubmissionDatastore';
+import { ElasticsearchSubmissionPublisher } from './ElasticsearchSubmissionPublisher';
 
-function wrap({ router, fileManager }: {
+function wrap({ router }: {
   router: Router;
-  fileManager: FileManager;
 }) {
   const dataStore = new MongoSubmissionDatastore();
+  const publisher = new ElasticsearchSubmissionPublisher();
   return initialize({
     dataStore,
     router,
-    fileManager,
+    publisher,
   });
 }
 
