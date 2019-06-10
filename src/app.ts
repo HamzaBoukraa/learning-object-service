@@ -153,6 +153,7 @@ function attachConfigHandlers(app: express.Express) {
  * @param {Express} app [The express app to attach handlers to]
  */
 function attachPublicRouters(app: express.Express) {
+  app.use(LearningObjectSearch.expressRouter);
   app.use(ExpressRouteDriver.buildRouter(dataStore, library, fileManager));
 }
 
