@@ -36,7 +36,7 @@ const SEARCHABLE_FIELDS = [
 ];
 
 const ELASTICSEARCH_DOMAIN = process.env.ELASTICSEARCH_DOMAIN;
-const LEARNING_OBJECT_INDEX = 'released-objects';
+const LEARNING_OBJECT_INDEX = 'learning-objects';
 
 const INDEX_URI = (index: string) => `${ELASTICSEARCH_DOMAIN}/${index}/_search`;
 
