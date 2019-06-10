@@ -1,6 +1,10 @@
+import { LearningObject } from '.';
+
+export type SortOrder = 1 | -1;
+
 export interface Filters {
   orderBy?: string;
-  sortType?: -1 | 1;
+  sortType?: SortOrder;
   page?: number;
   limit?: number;
 }
@@ -14,10 +18,17 @@ export interface ReleasedLearningObjectSearchQuery extends Filters {
   text?: string;
   collection?: string[];
 }
-export interface QueryCondition {
-  [index: string]: string | string[];
+
+export interface LearningObjectSearchQuery
+  extends ReleasedLearningObjectSearchQuery {
+  status?: string[];
 }
 
-export interface LearningObjectSearchQuery extends ReleasedLearningObjectSearchQuery {
-  status?: string[];
+export interface PrivilegedLearningObjectSearchQuery
+  extends LearningObjectSearchQuery {
+  collectionRestrictions?: CollectionAccessMap;
+}
+
+export interface CollectionAccessMap {
+  [collection: string]: LearningObject.Status[];
 }

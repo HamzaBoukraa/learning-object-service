@@ -8,6 +8,7 @@ import * as dotenv from 'dotenv';
 import { LibraryDriver } from './drivers/LibraryDriver';
 import { MongoConnector } from './shared/Mongo/MongoConnector';
 import { LearningObjectAdapter } from './LearningObjects/LearningObjectAdapter';
+import { Stubs } from './tests/stubs';
 dotenv.config();
 // ----------------------------------------------------------------------------------
 // Initializations
