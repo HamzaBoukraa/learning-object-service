@@ -1,5 +1,4 @@
 import { MongoDriver } from '../drivers/MongoDriver';
-import { MOCK_OBJECTS, SEED_DB_IDS } from '../tests/mocks';
 import { generateToken } from '../tests/mock-token-manager';
 import * as LearningObjectRouteHandler from './LearningObjectRouteHandler';
 import * as express from 'express';
@@ -11,16 +10,17 @@ import { LibraryCommunicator, FileManager } from '../shared/interfaces/interface
 import * as cookieParser from 'cookie-parser';
 import { processToken, handleProcessTokenError } from '../drivers/express/middleware';
 import { LearningObject } from '../shared/entity';
+import { Stubs } from '../tests/stubs';
 
 const app = express();
 const router = express.Router();
+const stubs = new Stubs();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(processToken, handleProcessTokenError);
 app.use(router);
 const request = supertest(app);
-const testObjectID = SEED_DB_IDS.PARENT.released_1;
 describe('LearningObjectRouteHandler', () => {
     let dataStore: MongoDriver;
     let fileManager: FileManager;
@@ -32,7 +32,7 @@ describe('LearningObjectRouteHandler', () => {
         fileManager = new MockS3Driver();
         LibraryDriver = new MockLibraryDriver();
         // FIXME: This user is both an admin and a reviewer@nccp
-        token = generateToken(MOCK_OBJECTS.USERTOKEN);
+        token = generateToken(stubs.userToken);
         authorization = { Cookie: `presence=${token}`, 'Content-Type': 'application/json' };
         LearningObjectRouteHandler.initializePublic({ router, dataStore });
         LearningObjectRouteHandler.initializePrivate({
@@ -46,16 +46,16 @@ describe('LearningObjectRouteHandler', () => {
 
         it('should return a learing object based on the id', done => {
             request
-                .get(`/learning-objects/${testObjectID}`)
+                .get(`/learning-objects/${stubs.learningObject.id}`)
                 .expect(200)
                 .then(res => {
-                    expect(res.text).toContain(`${testObjectID}`);
+                    expect(res.text).toContain(`${stubs.learningObject.id}`);
                     done();
                 });
         });
         it('should return a status of 500 and an Error message', done => {
             request
-                .get(`/learning-objects/${testObjectID}123`)
+                .get(`/learning-objects/${stubs.learningObject.id}123`)
                 .expect(500)
                 .then(res => {
                     expect(res).toBeDefined();
@@ -66,7 +66,7 @@ describe('LearningObjectRouteHandler', () => {
     describe(`GET /learning-objects/:someobjID/materials/all`, () => {
         it('should return the materials for the specified learning object', done => {
             request
-                .get(`/learning-objects/${testObjectID}/materials/all`)
+                .get(`/learning-objects/${stubs.learningObject.id}/materials/all`)
                 .expect(200)
                 .then(res => {
                     expect(res.text).toContain('url');
@@ -75,11 +75,11 @@ describe('LearningObjectRouteHandler', () => {
         });
     });
     describe(`PATCH /learning-objects/:id`, () => {
-
+        const userToken = generateToken({...stubs.userToken, accessGroups: null});
         it('should update the requested learning object and return a status of 200', done => {
             request
-                .patch(`/learning-objects/${testObjectID}`)
-                .set('Authorization', `Bearer ${token}`)
+                .patch(`/learning-objects/${stubs.learningObject.id}`)
+                .set('Authorization', `Bearer ${userToken}`)
                 .send({ learningObject: { name: 'Java stuff' } })
                 .expect(200)
                 .then(res => {
@@ -90,9 +90,10 @@ describe('LearningObjectRouteHandler', () => {
         describe('when the payload contains status set to \'released\'', () => {
             describe('and the requester is an admin', () => {
                 it('should update the requested Learning Object and return a status of 200', done => {
+                    const adminToken = generateToken({...stubs.userToken, accessGroups: ['admin']});
                     request
-                        .patch(`/learning-objects/${testObjectID}`)
-                        .set('Authorization', `Bearer ${token}`)
+                        .patch(`/learning-objects/${stubs.learningObject.id}`)
+                        .set('Authorization', `Bearer ${adminToken}`)
                         .send({ learningObject: { status: LearningObject.Status.RELEASED } })
                         .expect(200)
                         .then(res => {
@@ -103,9 +104,9 @@ describe('LearningObjectRouteHandler', () => {
             });
             describe('and the requester is an editor', () => {
                 it('should update the requested Learning Object and return a status of 200', done => {
-                    const editorToken = generateToken(MOCK_OBJECTS.USERTOKEN_EDITOR);
+                    const editorToken = generateToken({...stubs.userToken, accessGroups: ['editor']});
                     request
-                        .patch(`/learning-objects/${testObjectID}`)
+                        .patch(`/learning-objects/${stubs.learningObject.id}`)
                         .set('Authorization', `Bearer ${editorToken}`)
                         .send({ learningObject: { status: LearningObject.Status.RELEASED } })
                         .expect(200)
@@ -121,7 +122,7 @@ describe('LearningObjectRouteHandler', () => {
     describe('GET /learning-objects/:id/children/summary', () => {
         it('should return the children of the parent object.', done => {
             request
-                .get(`/learning-objects/${testObjectID}/children/summary`)
+                .get(`/learning-objects/${stubs.learningObject.id}/children/summary`)
                 .expect(200)
                 .then(res => {
                     expect(res.text).toContain('author');

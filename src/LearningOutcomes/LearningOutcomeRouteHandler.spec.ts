@@ -5,7 +5,7 @@ import * as supertest from 'supertest';
 import * as LearningOutcomeRouteHandler from './LearningOutcomeRouteHandler';
 import { LearningOutcome } from '../shared/entity';
 import { LearningOutcomeDatastore } from './LearningOutcomeInteractor';
-import {MOCK_OBJECTS, SEED_DB_IDS} from '../tests/mocks';
+import { Stubs } from '../tests/stubs';
 
 const app = express();
 const router = express.Router();
@@ -15,6 +15,7 @@ app.use(router);
 let dataStore: LearningOutcomeDatastore;
 let driver: MongoDriver;
 const request = supertest(app);
+const stubs = new Stubs();
 
 describe('LearningOutcomeRouteHandler', () => {
   beforeAll(async () => {
@@ -52,7 +53,7 @@ describe('LearningOutcomeRouteHandler', () => {
     it('should return a response body that can be converted to a valid Learning Outcome', done => {
       request
         .get(
-          `/learning-objects/someObjectId/learning-outcomes/${SEED_DB_IDS.OUTCOME.EXPLAIN}`,
+          `/learning-objects/someObjectId/learning-outcomes/${stubs.learningOutcome.id}`,
         )
         .expect('Content-Type', /json/)
         .expect(200)
@@ -69,7 +70,7 @@ describe('LearningOutcomeRouteHandler', () => {
     it('should return a status of 200 and a Learning Outcome', done => {
       request
         .patch(
-          `/learning-objects/someObjectId/learning-outcomes/${SEED_DB_IDS.OUTCOME.EXPLAIN}`,
+          `/learning-objects/someObjectId/learning-outcomes/${stubs.learningOutcome.id}`,
         )
         .send({ outcome: { bloom: 'remember and understand', verb: 'remember' } })
         .expect('Content-Type', /json/)
