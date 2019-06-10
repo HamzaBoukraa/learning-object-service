@@ -3,7 +3,6 @@ import {
   LearningObjectSearchResult,
   Requester,
   LearningObjectSearchQuery,
-  QueryCondition,
   LearningObject,
   CollectionAccessMap,
 } from './typings';
@@ -19,8 +18,8 @@ import {
   requesterIsAdminOrEditor,
 } from './AuthorizationManager';
 import { LearningObjectDatastore } from './interfaces';
+import { ResourceError, ResourceErrorReason } from '../shared/errors';
 import { getAccessGroupCollections } from '../shared/AuthorizationManager';
-import { ResourceErrorReason, ResourceError } from '../shared/errors';
 
 namespace Drivers {
   export const datastore = () =>
@@ -37,11 +36,15 @@ const LearningObjectState = {
 };
 
 /**
+ * Searches for Learning Objects based on provided query parameters and access level
  *
+ * If the user is not privileged, their search is only applied to released Learning Objects
+ * If the user is privileged, the requested statuses must not contain statuses with restrictive access,
+ * additionally, if the user is a curator or reviewer, we must appropriately apply specified statuses and collection filters based on their access level on a per collection basis
  *
  * @export
  * @param  {Requester} [Data about the user requesting to search]
- * @param {LearningObjectSearchQuery} []
+ * @param {LearningObjectSearchQuery} [Search query parameters]
  *
  * @returns {Promise<LearningObjectSearchResult>}
  */
@@ -55,30 +58,22 @@ export async function searchObjects({
   try {
     const formattedQuery = formatSearchQuery(query);
     if (requesterIsPrivileged(requester)) {
-      let conditions: QueryCondition[];
+      let collectionRestrictions: CollectionAccessMap;
       let { collection, status } = formattedQuery;
+      status = getAuthorizedStatuses(status);
       if (!requesterIsAdminOrEditor(requester)) {
         const privilegedCollections = getAccessGroupCollections(requester);
-        const collectionAccessMap = getCollectionAccessMap(
+        collectionRestrictions = getCollectionAccessMap(
           collection,
           privilegedCollections,
           status,
         );
-        const requestedCollections = collection && collection.length > 0;
-        conditions = buildCollectionQueryConditions({
-          requestedCollections,
-          requestedStatuses: status,
-          collectionAccessMap,
-        });
-        collection = null;
-        status = null;
-      } else {
-        status = getAuthAdminEditorStatuses(status);
+        status = LearningObjectState.RELEASED;
       }
       return await Drivers.datastore().searchAllObjects({
         ...formattedQuery,
-        collection,
         status,
+        collectionRestrictions,
       });
     }
     return await Drivers.datastore().searchReleasedObjects(formattedQuery);
@@ -123,8 +118,9 @@ function formatSearchQuery(
 /**
  * Returns Map of collections to statuses representing read access privilege over associated collection
  *
- * @param {string[]} requestedCollections
- * @param {string[]} privilegedCollections
+ * @param {string[]} requestedCollections [List of collections the user has specified]
+ * @param {string[]} privilegedCollections [List of collections the user has privileged access on]
+ * @param {string[]} requestedStatuses [List of requested statuses]
  * @returns CollectionAccessMap
  */
 function getCollectionAccessMap(
@@ -132,34 +128,16 @@ function getCollectionAccessMap(
   privilegedCollections: string[],
   requestedStatuses: string[],
 ): CollectionAccessMap {
-  if (
-    requestedStatuses &&
-    (requestedStatuses.includes(LearningObject.Status.REJECTED) ||
-      requestedStatuses.includes(LearningObject.Status.UNRELEASED))
-  ) {
-    throw new ResourceError(
-      'Invalid Access',
-      ResourceErrorReason.INVALID_ACCESS,
-    );
-  }
-
   const accessMap = {};
-  const authStatuses =
-    requestedStatuses && requestedStatuses.length
-      ? requestedStatuses
-      : [...LearningObjectState.IN_REVIEW, ...LearningObjectState.RELEASED];
-
   if (requestedCollections && requestedCollections.length) {
     for (const filter of requestedCollections) {
       if (privilegedCollections.includes(filter)) {
-        accessMap[filter] = authStatuses;
-      } else {
-        accessMap[filter] = LearningObjectState.RELEASED;
+        accessMap[filter] = requestedStatuses;
       }
     }
   } else {
     for (const collection of privilegedCollections) {
-      accessMap[collection] = authStatuses;
+      accessMap[collection] = requestedStatuses;
     }
   }
 
@@ -167,71 +145,43 @@ function getCollectionAccessMap(
 }
 
 /**
- * Builds QueryConditions based on requested collections and collectionAccessMap
+ * Checks status filters do not contain restricted statuses and returns a list of accessible statuses
  *
- * @private
- * @static
- * @param {boolean} requestedCollections [Represents whether or not specific collections were requested]
- * @param {string[]} requestedStatuses [Array of requested statuses]
- * @param {CollectionAccessMap} collectionAccessMap
- * @returns {QueryCondition[]}
- * @memberof LearningObjectInteractor
- */
-function buildCollectionQueryConditions(params: {
-  requestedCollections: boolean;
-  requestedStatuses: string[];
-  collectionAccessMap: CollectionAccessMap;
-}): QueryCondition[] {
-  const {
-    requestedCollections,
-    requestedStatuses,
-    collectionAccessMap,
-  } = params;
-  const conditions: QueryCondition[] = [];
-  if (!requestedCollections) {
-    if (
-      !requestedStatuses ||
-      (requestedStatuses &&
-        requestedStatuses.length === 1 &&
-        requestedStatuses[0] === LearningObject.Status.RELEASED)
-    ) {
-      conditions.push({
-        status: LearningObject.Status.RELEASED,
-      });
-    }
-  }
-
-  const mapKeys = Object.keys(collectionAccessMap);
-  for (const key of mapKeys) {
-    const status = collectionAccessMap[key];
-    conditions.push({ collection: key, status });
-  }
-  return conditions;
-}
-
-/**
- * Returns statuses admin and editors have access to. Throws an error if  unauthorized statuses are requested
+ * If status filters are not defined or are empty; All accessible status filters are returned;
+ * If they are defined and do not contain restricted statuses the requested statuses are returned;
  *
- * @private
- * @static
- * @param {string[]} status [Array of requested statuses]
- * @returns
- * @memberof LearningObjectInteractor
+ * *** Accessible status filters include Review Stage and Released statuses ***
+ *
+ * @param {string[]} [status]
+ * @returns {string[]}
  */
-function getAuthAdminEditorStatuses(status?: string[]): string[] {
+function getAuthorizedStatuses(status?: string[]): string[] {
+  enforceStatusRestrictions(status);
   if (!status || (status && !status.length)) {
     return [...LearningObjectState.IN_REVIEW, ...LearningObjectState.RELEASED];
   }
 
+  return status;
+}
+
+/**
+ * Validates requested statuses do not contain restricted statuses
+ *
+ * If statues requested contain a restricted status, An invalid access error is thrown
+ *
+ * *** Restricted status filters include Working Stage statuses ***
+ *
+ * @param {string[]} status
+ */
+function enforceStatusRestrictions(status: string[]) {
   if (
-    status.includes(LearningObject.Status.REJECTED) ||
-    status.includes(LearningObject.Status.UNRELEASED)
+    status &&
+    (status.includes(LearningObject.Status.REJECTED) ||
+      status.includes(LearningObject.Status.UNRELEASED))
   ) {
     throw new ResourceError(
-      'Invalid Access',
+      'The statuses requested are not permitted.',
       ResourceErrorReason.INVALID_ACCESS,
     );
   }
-
-  return status;
 }

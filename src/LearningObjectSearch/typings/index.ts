@@ -2,33 +2,41 @@ import { LearningObject } from '../../shared/entity';
 import { UserToken as Requester } from '../../shared/types/user-token';
 import {
   ElasticSearchQuery,
-  FilteredElasticSearchQuery,
-  PostFilterQuery,
+  SortOperation,
+  BoolOperation,
+  MultiMatchQuery,
+  MatchPhrasePrefixQuery,
+  TermQuery,
+  TermsQuery,
 } from './elastic-search';
 import {
   Filters,
+  SortOrder,
   LearningObjectSearchQuery,
   ReleasedLearningObjectSearchQuery,
-  QueryCondition,
+  PrivilegedLearningObjectSearchQuery,
+  CollectionAccessMap,
 } from './query';
 
 export {
   LearningObject,
   Requester,
   ElasticSearchQuery,
-  PostFilterQuery,
-  FilteredElasticSearchQuery,
+  SortOperation,
+  BoolOperation,
+  MultiMatchQuery,
+  MatchPhrasePrefixQuery,
+  TermQuery,
+  TermsQuery,
   Filters,
-  QueryCondition,
-  ReleasedLearningObjectSearchQuery,
+  SortOrder,
   LearningObjectSearchQuery,
+  ReleasedLearningObjectSearchQuery,
+  PrivilegedLearningObjectSearchQuery,
+  CollectionAccessMap,
 };
 
 export interface LearningObjectSearchResult {
   total: number;
   objects: LearningObject[];
-}
-
-export interface CollectionAccessMap {
-  [index: string]: string[];
 }
