@@ -219,11 +219,11 @@ export class ElasticSearchLearningObjectDatastore
       elasticQuery.post_filter ||
       ({
         bool: {
-          // @ts-ignore Empty array assignment is valid
-          should: [],
+          should: [{ bool: { must: [] } }],
         },
       } as BoolOperation);
-    (elasticQuery.post_filter as BoolOperation).bool.should.push(
+    // @ts-ignore  (elasticQuery.post_filter as BoolOperation).bool.should[0] is of type BoolOperation and cannot be properly casted
+    (elasticQuery.post_filter as BoolOperation).bool.should[0].bool.must.push(
       releasedFilter,
     );
   }
