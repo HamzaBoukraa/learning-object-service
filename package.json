@@ -1,12 +1,12 @@
 {
   "name": "learning-object-service",
-  "version": "2.20.0-5",
+  "version": "2.21.0-1",
   "description": "Learning Object Microservice.",
   "main": "app.ts",
   "scripts": {
     "start": "npm run gulp-tsc",
     "build": "node_modules/.bin/gulp tsc",
-    "test": "node_modules/.bin/jest --verbose  --coverage --detectOpenHandles",
+    "test": "node_modules/.bin/jest --verbose --coverage --detectOpenHandles",
     "gulp-tsc": "node_modules/.bin/gulp start",
     "pack": "npm run build && cp ./package.json ./dist && cp -r ./.ebextensions ./dist && cd ./dist && zip -r ../dist.zip  ./* & cd ..",
     "zip": "cp ./package.json ./dist && cp -r ./.ebextensions ./dist && cd ./dist && zip -r ../dist.zip  ./* & cd ..",
@@ -24,6 +24,7 @@
   "homepage": "https://github.com/Cyber4All/learning-object-service#readme",
   "dependencies": {
     "@cyber4all/clark-taxonomy": "^4.0.2",
+    "@elastic/elasticsearch": "^6.8.0",
     "@sentry/node": "^4.6.6",
     "aws-sdk": "^2.211.0",
     "cookie-parser": "^1.4.3",

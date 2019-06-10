@@ -1,20 +1,22 @@
 import { LearningObjectInteractor } from '../interactors/interactors';
-import { MOCK_OBJECTS } from '../tests/mocks';
 import { DataStore } from '../shared/interfaces/DataStore';
 import { LibraryCommunicator } from '../shared/interfaces/interfaces';
 import { MockDataStore } from '../tests/mock-drivers/MockDataStore';
 import { MockLibraryDriver } from '../tests/mock-drivers/MockLibraryDriver';
+import { Stubs } from '../tests/stubs';
 
-const dataStore: DataStore = new MockDataStore(); // DataStore
+const dataStore: DataStore = new MockDataStore();
 const library: LibraryCommunicator = new MockLibraryDriver();
+const stubs = new Stubs();
 
 describe('loadUsersObjectSummaries', () => {
   it('should load learning object summary', done => {
+    // FIXME: Why does this function take a usertoken and a username?
     return LearningObjectInteractor.loadUsersObjectSummaries({
       dataStore,
       library,
-      userToken: MOCK_OBJECTS.USERTOKEN,
-      username: MOCK_OBJECTS.USERTOKEN.username,
+      userToken: stubs.userToken,
+      username: stubs.userToken.username,
     })
       .then(val => {
         expect(val).toBeInstanceOf(Array);
@@ -30,8 +32,8 @@ describe('loadProfile', () => {
   it('should return an array of learning object summaries', done => {
     return LearningObjectInteractor.loadProfile({
       dataStore,
-      userToken: MOCK_OBJECTS.USERTOKEN,
-      username: MOCK_OBJECTS.USERTOKEN.username,
+      userToken: stubs.userToken,
+      username: stubs.userToken.username,
     })
       .then(val => {
         expect(val).toBeInstanceOf(Array);
@@ -43,7 +45,7 @@ describe('loadProfile', () => {
     return LearningObjectInteractor.loadProfile({
       dataStore,
       userToken: undefined,
-      username: MOCK_OBJECTS.USERTOKEN.username,
+      username: stubs.userToken.username,
     })
       .then(val => {
         expect(val).toBeInstanceOf(Array);
@@ -57,7 +59,7 @@ describe('fetchObjectsByIDs', () => {
     return LearningObjectInteractor.fetchObjectsByIDs({
       dataStore,
       library,
-      ids: [MOCK_OBJECTS.LEARNING_OBJECT_ID],
+      ids: [stubs.learningObject.id],
     })
       .then(val => {
         expect(val).toBeInstanceOf(Array);
@@ -69,7 +71,7 @@ describe('fetchObjectsByIDs', () => {
     return LearningObjectInteractor.fetchObjectsByIDs({
       dataStore,
       library,
-      ids: [MOCK_OBJECTS.EMPTY_STRING],
+      ids: [],
     })
       .then(val => {
         expect(val).toBeInstanceOf(Array);
@@ -82,12 +84,12 @@ describe('getLearningObjectId', () => {
   it('should find a learning object ID', done => {
     return LearningObjectInteractor.getLearningObjectId({
       dataStore,
-      username: MOCK_OBJECTS.USERNAME,
-      learningObjectName: MOCK_OBJECTS.LEARNING_OBJECT_NAME,
-      userToken: MOCK_OBJECTS.USERTOKEN,
+      username: stubs.learningObject.author.username,
+      learningObjectName: stubs.learningObject.name,
+      userToken: stubs.userToken,
     })
       .then(val => {
-        expect(val).toEqual(MOCK_OBJECTS.LEARNING_OBJECT_ID);
+        expect(val).toEqual(stubs.learningObject.id);
         done();
       });
   });
