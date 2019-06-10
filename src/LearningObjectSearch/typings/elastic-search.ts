@@ -1,35 +1,37 @@
-
- type SortOrder = 'asc' | 'desc'
+type SortOrder = 'asc' | 'desc';
 export interface ElasticSearchQuery {
   size: number;
+  from: number;
   query: QueryOperation;
   sort?: SortOperation;
   post_filter?: QueryOperation;
 }
 
-export interface SortOperation{
-  [orderBy: string]: { order: SortOrder }
+export interface SortOperation {
+  [orderBy: string]: { order: SortOrder };
 }
 
 //  type LogicalOperator = 'must' | 'should'
 
+type QueryOperation =
+  | BoolOperation
+  | MultiMatchQuery
+  | MatchPhrasePrefixQuery
+  | TermQuery
+  | TermsQuery;
 
-
- type QueryOperation = BoolOperation | MultiMatchQuery | MatchPhrasePrefixQuery |TermQuery | TermsQuery
-
- export interface BoolOperation{
-  bool: {should?: QueryOperation[], must?: QueryOperation[]}
+export interface BoolOperation {
+  bool: { should?: QueryOperation[]; must?: QueryOperation[] };
 }
 
-
-export interface MultiMatchQuery{
+export interface MultiMatchQuery {
   multi_match: {
     fields: string[];
     query: string;
     fuzziness: string;
     slop: number;
     analyzer: string;
-  }
+  };
 }
 
 export interface MatchPhrasePrefixQuery {
@@ -39,19 +41,19 @@ export interface MatchPhrasePrefixQuery {
       max_expansions: number;
       slop: number;
     };
-  }
+  };
 }
 
-export interface TermQuery{
+export interface TermQuery {
   term?: {
     [property: string]: {
-      value: any,
-    },
-  },
+      value: any;
+    };
+  };
 }
 
-export interface TermsQuery{
+export interface TermsQuery {
   terms?: {
-    [property: string]: any[]
-  },
+    [property: string]: any[];
+  };
 }
