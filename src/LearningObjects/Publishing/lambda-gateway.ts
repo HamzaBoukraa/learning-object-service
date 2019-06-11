@@ -1,8 +1,8 @@
 import { ServiceError, ServiceErrorReason } from '../../shared/errors';
-import * as https from 'https';
 import { generateServiceToken } from '../../drivers/TokenManager';
 import { ReleaseEmailGateway } from './release-email-gateway';
 import { reportError } from '../../shared/SentryConnector';
+import * as request from 'request-promise';
 
 export class LambdaGateway implements ReleaseEmailGateway {
 
@@ -28,31 +28,21 @@ export class LambdaGateway implements ReleaseEmailGateway {
             username: params.username,
         });
 
-        const options = {
-            // When host name is set to an empty string, an internal service error is thrown.
-            hostname: process.env.RELEASE_EMAIL_INVOCATION ? process.env.RELEASE_EMAIL_INVOCATION.split('/')[0] : '',
-            method: 'POST',
-            path: process.env.RELEASE_EMAIL_INVOCATION ? `/${process.env.RELEASE_EMAIL_INVOCATION.split('/')[1]}` : '',
+        request({
+            uri: process.env.RELEASE_EMAIL_INVOCATION,
+            json: true,
+            body: postData,
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Content-Length': postData.length,
                 'Authorization': `Bearer ${generateServiceToken()}`,
             },
-        };
-
-        const req = https.request(options, (res) => {
-            if (res.statusCode !== 200) {
-                const error = new Error(res.statusMessage);
-                reportError(error);
-                console.error(res);
-            }
+            method: 'POST',
+        })
+        .catch((e) => {
+            const error = new Error(e.message);
+            reportError(error);
+            console.error(e);
         });
-
-        req.on('error', (e) => {
-            throw new ServiceError(ServiceErrorReason.INTERNAL);
-        });
-
-        req.write(postData);
-        req.end();
     }
 }
