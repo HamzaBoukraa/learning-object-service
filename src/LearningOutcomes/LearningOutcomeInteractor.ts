@@ -6,6 +6,7 @@ import {
 import { UserToken } from '../shared/types';
 import { sanitizeObject } from '../shared/functions';
 import { LearningOutcome } from '../shared/entity';
+import { ResourceError, ResourceErrorReason } from '../shared/errors';
 
 export interface LearningOutcomeDatastore {
   insertLearningOutcome(params: {
@@ -41,17 +42,20 @@ export async function addLearningOutcome(params: {
   source: string;
   outcomeInput: Partial<LearningOutcome>;
 }): Promise<string> {
+  const {dataStore, user, source, outcomeInput} = params;
+  let outcome: Partial<LearningOutcome>;
   try {
-    // FIXME: add authorization
-    const {dataStore, user, source, outcomeInput} = params;
-    const outcome = new LearningOutcome(outcomeInput);
-    return await dataStore.insertLearningOutcome({
-      outcome: outcome.toPlainObject(),
-      source,
-    });
+    outcome = new LearningOutcome(outcomeInput);
   } catch (e) {
-    return Promise.reject(`Problem adding learning outcome. ${e}`);
+    throw new ResourceError(
+      'Bad Request',
+      ResourceErrorReason.BAD_REQUEST,
+    );
   }
+  return await dataStore.insertLearningOutcome({
+    outcome: outcome.toPlainObject(),
+    source,
+  });
 }
 
 /**
@@ -93,20 +97,14 @@ export async function updateLearningOutcome(params: {
   id: string;
   updates: LearningOutcomeUpdate;
 }): Promise<LearningOutcome> {
-  try {
-    const updates: LearningOutcomeUpdate & LearningOutcomeInsert = {
-      ...sanitizeObject<LearningOutcomeUpdate>({ object: params.updates }),
-      date: Date.now().toString(),
-    };
-    return await params.dataStore.updateLearningOutcome({
-      updates,
-      id: params.id,
-    });
-  } catch (e) {
-    return Promise.reject(
-      `Problem updating learning outcome: ${params.id}. ${e}`,
-    );
-  }
+  const updates: LearningOutcomeUpdate & LearningOutcomeInsert = {
+    ...sanitizeObject<LearningOutcomeUpdate>({ object: params.updates }),
+    date: Date.now().toString(),
+  };
+  return await params.dataStore.updateLearningOutcome({
+    updates,
+    id: params.id,
+  });
 }
 
 /**
@@ -135,6 +133,3 @@ export async function deleteLearningOutcome(params: {
   }
 }
 
-export function authorizeLearningOutcomeOperation() {
-  // Some Auth Here
-}
