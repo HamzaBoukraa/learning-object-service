@@ -2134,7 +2134,7 @@ export class MongoDriver implements DataStore {
     try {
       const meta: any = await this.db
         .collection(COLLECTIONS.LO_COLLECTIONS)
-        .findOne({ name }, <any>{ name: 1, abstracts: 1 });
+        .findOne({ $or: [ { name }, {abvName: name} ] }, <any>{ name: 1, abstracts: 1 });
       return meta;
     } catch (e) {
       return Promise.reject(e);
