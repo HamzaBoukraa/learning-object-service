@@ -82,7 +82,6 @@ describe('Class: SubmittableLearningObject', () => {
         children: [new LearningObject(), validObject],
       }),
     );
-    console.log('ERRORS: ', errors);
     expect(errors).toBeDefined();
   });
 });

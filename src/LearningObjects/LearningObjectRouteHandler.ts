@@ -32,8 +32,8 @@ export function initializePublic({
       );
       res.status(200).send(learningObject.toPlainObject());
     } catch (e) {
-      console.error(e);
-      res.status(500).send(e);
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({message});
     }
   };
 
@@ -81,10 +81,6 @@ export function initializePrivate({
       );
       res.status(200).send(learningObject.toPlainObject());
     } catch (e) {
-      console.error(e);
-
-      let status = 500;
-
       // if the error was that the object has a duplicate name, send a 409 error code
       if (
         object &&
@@ -92,10 +88,12 @@ export function initializePrivate({
         e.message ===
           `A learning object with name '${object.name}' already exists.`
       ) {
-        status = 409;
+        const status = 409;
+        res.status(status).send(e);
+      } else {
+        const { code, message } = mapErrorToResponseData(e);
+        res.status(code).json({message});
       }
-
-      res.status(status).send(e);
     }
   };
   const getMaterials = async (req: Request, res: Response) => {
@@ -107,8 +105,8 @@ export function initializePrivate({
       });
       res.status(200).send(materials);
     } catch (e) {
-      console.error(e);
-      res.status(500).send(e);
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({message});
     }
   };
   const updateLearningObject = async (req: Request, res: Response) => {
@@ -143,14 +141,8 @@ export function initializePrivate({
       });
       res.sendStatus(200);
     } catch (e) {
-      console.error(e);
-
-      let status = 500;
-
-      if (e.name === ResourceErrorReason.INVALID_ACCESS) {
-        status = 401;
-      }
-      res.status(status).send(e);
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({message});
     }
   };
 
