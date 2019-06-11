@@ -8,3 +8,4 @@ dist.zip
 npm-debug.log
 .idea
 test_environment/globalConfig.json
+.vscode

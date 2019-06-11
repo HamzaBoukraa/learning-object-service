@@ -18,8 +18,8 @@ import {
   requesterIsAdminOrEditor,
 } from './AuthorizationManager';
 import { LearningObjectDatastore } from './interfaces';
+import { ResourceError, ResourceErrorReason } from '../shared/errors';
 import { getAccessGroupCollections } from '../shared/AuthorizationManager';
-import { ResourceErrorReason, ResourceError } from '../shared/errors';
 
 namespace Drivers {
   export const datastore = () =>
@@ -133,8 +133,6 @@ function getCollectionAccessMap(
     for (const filter of requestedCollections) {
       if (privilegedCollections.includes(filter)) {
         accessMap[filter] = requestedStatuses;
-      } else {
-        accessMap[filter] = LearningObjectState.RELEASED;
       }
     }
   } else {
