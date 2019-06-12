@@ -183,6 +183,7 @@ export class ElasticSearchLearningObjectDatastore
 
   /**
    * Returns all defined query filters
+   * Some filters are re-mapped to adhere to the documents structure within the index
    *
    * @private
    * @param {LearningObjectSearchQuery} params [Object containing search text, and field queries]
@@ -192,13 +193,22 @@ export class ElasticSearchLearningObjectDatastore
   private getQueryFilters(
     params: LearningObjectSearchQuery,
   ): Partial<LearningObjectSearchQuery> {
-    const { length, level, collection, status } = params;
+    const {
+      length,
+      level,
+      collection,
+      status,
+      standardOutcomeIDs,
+      guidelines,
+    } = params;
     const queryFilters = sanitizeObject({
       object: {
         length,
         level,
         collection,
         status,
+        'outcomes.mappings.id': standardOutcomeIDs,
+        'outcomes.mappings.source': guidelines,
       },
     });
     return queryFilters || {};
