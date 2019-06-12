@@ -484,7 +484,7 @@ export class ElasticSearchLearningObjectDatastore
             top_hits: {
               sort: [
                 {
-                  'date.keyword': { order: 'asc' },
+                  'revision': { order: 'asc' },
                 },
               ],
               size: 1,
