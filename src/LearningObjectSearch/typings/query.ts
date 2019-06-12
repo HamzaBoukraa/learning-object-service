@@ -17,6 +17,7 @@ export interface ReleasedLearningObjectSearchQuery extends Filters {
   standardOutcomeIDs?: string[];
   text?: string;
   collection?: string[];
+  guidelines?: string[];
 }
 
 export interface LearningObjectSearchQuery
