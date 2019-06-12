@@ -14,7 +14,6 @@ import {
   User,
 } from '../../typings';
 import { SearchResponse } from 'elasticsearch';
-import { LearningObject } from '../../../shared/entity';
 import * as request from 'request-promise';
 import { LearningObjectDatastore } from '../../interfaces';
 import { sanitizeObject } from '../../../shared/functions';
@@ -28,15 +27,12 @@ import {
 
 const SEARCHABLE_FIELDS = [
   'name',
-  'levels',
   'collection.keyword',
   'description',
   'author.name',
   'author.email',
   'author.organization',
   'outcomes.text',
-  'outcomes.bloom',
-  'outcomes.outcome',
 ];
 
 const ELASTICSEARCH_DOMAIN = process.env.ELASTICSEARCH_DOMAIN;
@@ -51,6 +47,8 @@ const QUERY_DEFAULTS = {
   ANALYZER: 'stop',
   MATCH_PHRASE_PREFIX_SLOP: 50,
   MATCH_PHRASE_PREFIX_EXPANSIONS: 50,
+  MATCH_OUTCOME_PHRASE_SLOP: 5,
+  MATCH_OUTCOME_EXPANSIONS: 5,
 };
 
 export class ElasticSearchLearningObjectDatastore
@@ -156,6 +154,15 @@ export class ElasticSearchLearningObjectDatastore
                   query: text,
                   max_expansions: QUERY_DEFAULTS.MATCH_PHRASE_PREFIX_EXPANSIONS,
                   slop: QUERY_DEFAULTS.MATCH_PHRASE_PREFIX_SLOP,
+                },
+              },
+            },
+            {
+              match_phrase_prefix: {
+                'outcomes.text': {
+                  query: text,
+                  max_expansions: QUERY_DEFAULTS.MATCH_OUTCOME_EXPANSIONS,
+                  slop: QUERY_DEFAULTS.MATCH_OUTCOME_PHRASE_SLOP,
                 },
               },
             },
