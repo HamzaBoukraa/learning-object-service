@@ -183,6 +183,7 @@ export class ElasticSearchLearningObjectDatastore
 
   /**
    * Returns all defined query filters
+   * Some filters are re-mapped to adhere to the documents structure within the index
    *
    * @private
    * @param {LearningObjectSearchQuery} params [Object containing search text, and field queries]
@@ -206,8 +207,8 @@ export class ElasticSearchLearningObjectDatastore
         level,
         collection,
         status,
-        standardOutcomeIDs,
-        guidelines,
+        'outcomes.mappings.id': standardOutcomeIDs,
+        'outcomes.mappings.source': guidelines,
       },
     });
     return queryFilters || {};
@@ -384,7 +385,6 @@ export class ElasticSearchLearningObjectDatastore
 
   /**
    * Constructs array of terms filter objects from filters
-   * Some properties are re-mapped to match the document storage structure
    *
    * @private
    * @param {Partial<LearningObjectSearchQuery>} filters [Object containing filters to be applied to set]
@@ -395,14 +395,6 @@ export class ElasticSearchLearningObjectDatastore
     filters: Partial<LearningObjectSearchQuery>,
   ): TermsQuery[] {
     const termsQueries: TermsQuery[] = [];
-    if (filters.standardOutcomeIDs) {
-      filters['outcomes.mappings.id'] = filters.standardOutcomeIDs;
-      delete filters.standardOutcomeIDs;
-    }
-    if (filters.guidelines) {
-      filters['outcomes.mappings.source'] = filters.guidelines;
-      delete filters.guidelines;
-    }
     Object.keys(filters).forEach(objectKey => {
       const termBody: { [property: string]: string[] } = {};
       termBody[`${objectKey}`] = filters[objectKey];
