@@ -41,7 +41,7 @@ export function initializeCollectionRouter({ router, dataStore }: { router: Rout
     try {
       const collectionMeta = await CollectionInteractor.fetchCollectionMeta(
         dataStore,
-        req.params.name,
+        req.params.abvName,
       );
       res.status(200).send(collectionMeta);
     } catch (e) {
@@ -52,5 +52,5 @@ export function initializeCollectionRouter({ router, dataStore }: { router: Rout
 
   router.get('/collections', getAllCollections);
   router.get('/collections/:name', getCollection);
-  router.get('/collections/:name/meta', getCollectionMetadata);
+  router.get('/collections/:abvName/meta', getCollectionMetadata);
 }
