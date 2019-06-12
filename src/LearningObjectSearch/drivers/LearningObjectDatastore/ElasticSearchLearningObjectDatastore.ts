@@ -8,9 +8,12 @@ import {
   BoolOperation,
   SortOperation,
   TermsQuery,
+  LearningObjectSummary,
+  AuthorSummary,
+  LearningObject,
+  User,
 } from '../../typings';
 import { SearchResponse } from 'elasticsearch';
-import { LearningObject } from '../../../shared/entity';
 import * as request from 'request-promise';
 import { LearningObjectDatastore } from '../../interfaces';
 import { sanitizeObject } from '../../../shared/functions';
@@ -24,15 +27,12 @@ import {
 
 const SEARCHABLE_FIELDS = [
   'name',
-  'levels',
   'collection.keyword',
   'description',
   'author.name',
   'author.email',
   'author.organization',
   'outcomes.text',
-  'outcomes.bloom',
-  'outcomes.outcome',
 ];
 
 const ELASTICSEARCH_DOMAIN = process.env.ELASTICSEARCH_DOMAIN;
@@ -47,6 +47,8 @@ const QUERY_DEFAULTS = {
   ANALYZER: 'stop',
   MATCH_PHRASE_PREFIX_SLOP: 50,
   MATCH_PHRASE_PREFIX_EXPANSIONS: 50,
+  MATCH_OUTCOME_PHRASE_SLOP: 5,
+  MATCH_OUTCOME_EXPANSIONS: 5,
 };
 
 export class ElasticSearchLearningObjectDatastore
@@ -152,6 +154,15 @@ export class ElasticSearchLearningObjectDatastore
                   query: text,
                   max_expansions: QUERY_DEFAULTS.MATCH_PHRASE_PREFIX_EXPANSIONS,
                   slop: QUERY_DEFAULTS.MATCH_PHRASE_PREFIX_SLOP,
+                },
+              },
+            },
+            {
+              match_phrase_prefix: {
+                'outcomes.text': {
+                  query: text,
+                  max_expansions: QUERY_DEFAULTS.MATCH_OUTCOME_EXPANSIONS,
+                  slop: QUERY_DEFAULTS.MATCH_OUTCOME_PHRASE_SLOP,
                 },
               },
             },
@@ -440,11 +451,50 @@ export class ElasticSearchLearningObjectDatastore
   ): LearningObjectSearchResult {
     const total = results.hits.total;
     const hits = results.hits.hits;
-    const objects: LearningObject[] = [];
-    hits.forEach(set => {
-      objects.push(set._source as LearningObject);
-    });
+    const objects: LearningObjectSummary[] = hits.map(doc =>
+      this.mapLearningObjectToSummary(doc._source),
+    );
     return { total, objects };
+  }
+
+  /**
+   * Converts partial ElasticSearch LearningObject type into LearningObjectSummary
+   *
+   * @private
+   * @param {Partial<LearningObject>} object [The document data to convert to AuthorSummary]
+   * @returns {LearningObjectSummary}
+   * @memberof ElasticSearchLearningObjectDatastore
+   */
+  private mapLearningObjectToSummary(
+    object: Partial<LearningObject>,
+  ): LearningObjectSummary {
+    return {
+      id: object.id,
+      author: this.mapAuthorToSummary(object.author),
+      collection: object.collection,
+      contributors: object.contributors.map(this.mapAuthorToSummary),
+      date: object.date,
+      description: object.description,
+      length: object.length,
+      name: object.name,
+      status: object.status,
+    };
+  }
+
+  /**
+   * Converts Partial ElasticSearch User type into AuthorSummary
+   *
+   * @private
+   * @param {Partial<User>} author [The document data to convert to AuthorSummary]
+   * @returns {AuthorSummary}
+   * @memberof ElasticSearchLearningObjectDatastore
+   */
+  private mapAuthorToSummary(author: Partial<User>): AuthorSummary {
+    return {
+      id: author.id,
+      name: author.name,
+      organization: author.organization,
+    };
   }
 
   /**
