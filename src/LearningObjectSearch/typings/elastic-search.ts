@@ -5,6 +5,7 @@ export interface ElasticSearchQuery {
   query: QueryOperation;
   sort?: SortOperation;
   post_filter?: QueryOperation;
+  aggs?: any;
 }
 
 export interface SortOperation {
