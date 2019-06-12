@@ -77,18 +77,5 @@
   "prettier": {
     "singleQuote": true,
     "trailingComma": "all"
-  },
-  "nodemonConfig": {
-    "ignore": [
-      "**/*.test.ts",
-      "**/*.spec.ts",
-      ".git",
-      "node_modules"
-    ],
-    "watch": [
-      "src"
-    ],
-    "exec": "npm run serve",
-    "ext": "ts"
   }
 }
