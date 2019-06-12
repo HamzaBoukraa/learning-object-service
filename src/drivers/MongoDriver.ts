@@ -2134,7 +2134,7 @@ export class MongoDriver implements DataStore {
     try {
       const meta: any = await this.db
         .collection(COLLECTIONS.LO_COLLECTIONS)
-        .findOne({ abvName }, <any>{ name: 1, abstracts: 1 });
+        .findOne({ $or: [ { name: abvName }, {abvName} ] }, <any>{ name: 1, abstracts: 1 });
       if (!meta) {
         throw new ResourceError(
           'Collection Not Found',
