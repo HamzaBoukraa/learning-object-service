@@ -1,4 +1,4 @@
-import { SubmissionDataStore } from '../SubmissionDataStore';
+import { SubmissionDataStore } from '../SubmissionDatastore';
 
 /**
  * Check if learning object is being submitted to a collection
