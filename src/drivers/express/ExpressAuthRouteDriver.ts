@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import * as multer from 'multer';
 import { LearningObjectInteractor } from '../../interactors/interactors';
-import { DZFile, DZFileMetadata } from '../../interfaces/FileManager';
+import { DZFile, DZFileMetadata } from '../../shared/interfaces/FileManager';
 import {
   DataStore,
   FileManager,
   LibraryCommunicator,
-} from '../../interfaces/interfaces';
+} from '../../shared/interfaces/interfaces';
 import {
   updateReadme,
   removeFile,
@@ -15,11 +15,11 @@ import {
 import * as FileInteractor from '../../FileManager/FileInteractor';
 import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
 import * as LearningOutcomeRouteHandler from '../../LearningOutcomes/LearningOutcomeRouteHandler';
-import * as SubmissionRouteDriver from '../../LearningObjectSubmission/SubmissionRouteDriver';
+import * as SubmissionRouteDriver from '../../LearningObjectSubmission';
 import * as ChangelogRouteHandler from '../../Changelogs/ChangelogRouteDriver';
-import { reportError } from '../SentryConnector';
-import { UserToken } from '../../types';
-import { ResourceErrorReason, mapErrorToResponseData } from '../../errors';
+import { reportError } from '../../shared/SentryConnector';
+import { UserToken } from '../../shared/types';
+import { ResourceErrorReason, mapErrorToResponseData } from '../../shared/errors';
 export class ExpressAuthRouteDriver {
   private upload = multer({ storage: multer.memoryStorage() });
 
@@ -48,7 +48,6 @@ export class ExpressAuthRouteDriver {
             'The user property must be defined on the request object to access these routes.',
           );
         } catch (e) {
-          console.log(e.message);
           reportError(e);
         }
       }
@@ -67,7 +66,6 @@ export class ExpressAuthRouteDriver {
             } was retrieved from the token. Should be lowercase`,
           );
         } catch (e) {
-          console.log(e.message);
           reportError(e);
         }
         req.user.username = req.user.username.toLowerCase();
@@ -77,8 +75,6 @@ export class ExpressAuthRouteDriver {
 
     SubmissionRouteDriver.initialize({
       router,
-      dataStore: this.dataStore,
-      fileManager: this.fileManager,
     });
 
     LearningObjectRouteHandler.initializePrivate({
@@ -112,8 +108,8 @@ export class ExpressAuthRouteDriver {
           );
           res.sendStatus(200);
         } catch (e) {
-          console.error(e);
-          res.status(500).send(e);
+          const { code, message } = mapErrorToResponseData(e);
+          res.status(code).json({message});
         }
       },
     );
@@ -163,7 +159,8 @@ export class ExpressAuthRouteDriver {
           });
           res.status(200).send({ uploadId });
         } catch (e) {
-          res.status(500).send(e);
+          const { code, message } = mapErrorToResponseData(e);
+          res.status(code).json({message});
         }
       })
       .patch(async (req, res) => {
@@ -184,7 +181,8 @@ export class ExpressAuthRouteDriver {
           });
           res.sendStatus(200);
         } catch (e) {
-          res.status(500).send(e);
+          const { code, message } = mapErrorToResponseData(e);
+          res.status(code).json({message});
         }
       })
       .delete(async (req, res) => {
@@ -197,7 +195,8 @@ export class ExpressAuthRouteDriver {
           });
           res.sendStatus(200);
         } catch (e) {
-          res.status(500).send(e);
+          const { code, message } = mapErrorToResponseData(e);
+          res.status(code).json({message});
         }
       });
 
@@ -221,8 +220,8 @@ export class ExpressAuthRouteDriver {
           });
           res.status(200).send({ uploadId });
         } catch (e) {
-          const response = mapErrorToResponseData(e);
-          res.status(response.code).json(response.message);
+          const { code, message } = mapErrorToResponseData(e);
+          res.status(code).json({message});
         }
       })
       .patch(async (req, res) => {
@@ -243,8 +242,8 @@ export class ExpressAuthRouteDriver {
           });
           res.sendStatus(200);
         } catch (e) {
-          const response = mapErrorToResponseData(e);
-          res.status(response.code).json(response.message);
+          const { code, message } = mapErrorToResponseData(e);
+          res.status(code).json({message});
         }
       })
       .delete(async (req, res) => {
@@ -257,8 +256,8 @@ export class ExpressAuthRouteDriver {
           });
           res.sendStatus(200);
         } catch (e) {
-          const response = mapErrorToResponseData(e);
-          res.status(response.code).json(response.message);
+          const { code, message } = mapErrorToResponseData(e);
+          res.status(code).json({message});
         }
       });
     /**
@@ -306,8 +305,8 @@ export class ExpressAuthRouteDriver {
               );
           }
         } catch (e) {
-          console.error(e);
-          res.status(500).send(e);
+          const { code, message } = mapErrorToResponseData(e);
+          res.status(code).json({message});
         }
       },
     );
@@ -350,8 +349,8 @@ export class ExpressAuthRouteDriver {
               );
           }
         } catch (e) {
-          const response = mapErrorToResponseData(e);
-          res.status(response.code).json(response.message);
+          const { code, message } = mapErrorToResponseData(e);
+          res.status(code).json({message});
         }
       },
     );
@@ -370,8 +369,8 @@ export class ExpressAuthRouteDriver {
           });
           res.sendStatus(200);
         } catch (e) {
-          console.error(e);
-          res.status(500).send(e);
+          const { code, message } = mapErrorToResponseData(e);
+          res.status(code).json({message});
         }
       })
       .delete(async (req, res) => {
@@ -388,8 +387,8 @@ export class ExpressAuthRouteDriver {
           });
           res.sendStatus(200);
         } catch (e) {
-          console.error(e);
-          res.status(500).send(e);
+          const { code, message } = mapErrorToResponseData(e);
+          res.status(code).json({message});
         }
       });
     router.patch('/learning-objects/:id/pdf', async (req, res) => {
@@ -402,8 +401,8 @@ export class ExpressAuthRouteDriver {
         });
         res.sendStatus(200);
       } catch (e) {
-        console.error(e);
-        res.status(500).send(e);
+        const { code, message } = mapErrorToResponseData(e);
+        res.status(code).json({message});
       }
     });
     router
@@ -423,8 +422,8 @@ export class ExpressAuthRouteDriver {
           res.sendStatus(200);
 
         } catch (e) {
-          console.error(e);
-          res.status(500).send(e);
+          const { code, message } = mapErrorToResponseData(e);
+          res.status(code).json({message});
         }
       })
       .delete(async (req, res) => {
@@ -440,8 +439,8 @@ export class ExpressAuthRouteDriver {
           });
           res.sendStatus(200);
         } catch (e) {
-          console.error(e);
-          res.status(500).send(e);
+          const { code, message } = mapErrorToResponseData(e);
+          res.status(code).json({message});
         }
       });
     router.delete(
@@ -458,12 +457,8 @@ export class ExpressAuthRouteDriver {
           });
           res.sendStatus(200);
         } catch (e) {
-          let status = 500;
-
-          if (e.name === ResourceErrorReason.INVALID_ACCESS) {
-            status = 401;
-          }
-          res.status(status).send(e);
+          const { code, message } = mapErrorToResponseData(e);
+          res.status(code).json({message});
         }
       },
     );
@@ -479,8 +474,8 @@ export class ExpressAuthRouteDriver {
         });
         res.status(200).send(objects.map(obj => obj.toPlainObject()));
       } catch (e) {
-        console.error(e);
-        res.status(500).send(e);
+        const { code, message } = mapErrorToResponseData(e);
+        res.status(code).json({message});
       }
     });
 
@@ -496,8 +491,8 @@ export class ExpressAuthRouteDriver {
         });
         res.status(200).send(objects.map(obj => obj.toPlainObject()));
       } catch (e) {
-        console.error(e);
-        res.status(500).send(e);
+        const { code, message } = mapErrorToResponseData(e);
+        res.status(code).json({message});
       }
     });
   }

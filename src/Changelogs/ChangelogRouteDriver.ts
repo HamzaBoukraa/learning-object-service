@@ -1,7 +1,7 @@
 import { Request, Response, Router } from 'express';
-import { mapErrorToResponseData } from '../errors';
-import { DataStore } from '../interfaces/DataStore';
-import { UserToken } from '../types';
+import { mapErrorToResponseData } from '../shared/errors';
+import { DataStore } from '../shared/interfaces/DataStore';
+import { UserToken } from '../shared/types';
 import * as ChangelogInteractor from './ChangelogInteractor';
 
 /**
@@ -23,10 +23,17 @@ export function initialize({
 }) {
   async function createLog(req: Request, res: Response) {
     try {
+      const userId = req.params.userId;
       const learningObjectId = req.params.learningObjectId;
       const user: UserToken = req.user;
       const changelogText = req.body.changelogText;
-      await ChangelogInteractor.createChangelog({dataStore, learningObjectId, user, changelogText});
+      await ChangelogInteractor.createChangelog({
+        dataStore,
+        learningObjectId,
+        user,
+        userId,
+        changelogText,
+      });
       res.sendStatus(200);
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
@@ -35,12 +42,16 @@ export function initialize({
   }
 
   const getRecentChangelog = async (req: Request, res: Response) => {
-    const learningObjectId = req.params.learningObjectId;
     try {
-      const changelog = await ChangelogInteractor.getRecentChangelog(
+      const user = req.user;
+      const userId = req.params.userId;
+      const learningObjectId = req.params.learningObjectId;
+      const changelog = await ChangelogInteractor.getRecentChangelog({
         dataStore,
         learningObjectId,
-      );
+        userId,
+        user,
+      });
       res.status(200).send(changelog);
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
@@ -48,6 +59,25 @@ export function initialize({
     }
   };
 
-  router.post('/learning-objects/:learningObjectId/changelog', createLog);
-  router.get('/learning-objects/:learningObjectId/changelog/:changelogId', getRecentChangelog);
+  const getAllChangelogs = async (req: Request, res: Response) => {
+    try {
+      const user = req.user;
+      const userId = req.params.userId;
+      const learningObjectId = req.params.learningObjectId;
+      const changelogs = await ChangelogInteractor.getAllChangelogs({
+        dataStore,
+        learningObjectId,
+        userId,
+        user,
+      });
+      res.status(200).json(changelogs);
+    } catch (e) {
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({message});
+    }
+  };
+
+  router.post('/users/:userId/learning-objects/:learningObjectId/changelog', createLog);
+  router.get('/users/:userId/learning-objects/:learningObjectId/changelogs', getAllChangelogs);
+  router.get('/users/:userId/learning-objects/:learningObjectId/changelog', getRecentChangelog);
 }

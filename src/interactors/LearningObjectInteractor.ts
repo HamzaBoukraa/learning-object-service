@@ -1,24 +1,24 @@
 // @ts-ignore
 import * as stopword from 'stopword';
-import { reportError } from '../drivers/SentryConnector';
+import { reportError } from '../shared/SentryConnector';
 import { processMultipartUpload } from '../FileManager/FileInteractor';
-import { sanitizeObject, sanitizeText } from '../functions';
+import { sanitizeObject, sanitizeText } from '../shared/functions';
 import {
   LearningObjectQuery,
   QueryCondition,
   ParentLearningObjectQuery,
-} from '../interfaces/DataStore';
-import { DZFile, FileUpload } from '../interfaces/FileManager';
+} from '../shared/interfaces/DataStore';
+import { DZFile, FileUpload } from '../shared/interfaces/FileManager';
 import {
   DataStore,
   FileManager,
   LibraryCommunicator,
-} from '../interfaces/interfaces';
+} from '../shared/interfaces/interfaces';
 import {
   updateObjectLastModifiedDate,
   updateParentsDate,
 } from '../LearningObjects/LearningObjectInteractor';
-import { UserToken, ServiceToken } from '../types';
+import { UserToken, ServiceToken } from '../shared/types';
 import {
   getAccessGroupCollections,
   hasMultipleLearningObjectWriteAccesses,
@@ -26,15 +26,15 @@ import {
   isAdminOrEditor,
   isPrivilegedUser,
   hasServiceLevelAccess,
-} from './AuthorizationManager';
+} from '../shared/AuthorizationManager';
 import {
   ResourceError,
   ResourceErrorReason,
   ServiceError,
   ServiceErrorReason,
-} from '../errors';
-import { LearningObject } from '../entity';
-import { accessGroups } from '../types/user-token';
+} from '../shared/errors';
+import { LearningObject } from '../shared/entity';
+import { accessGroups } from '../shared/types/user-token';
 
 // file size is in bytes
 const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
@@ -95,6 +95,11 @@ export class LearningObjectInteractor {
     } = params;
     try {
       let summary: LearningObject[] = [];
+// tslint:disable-next-line: no-shadowed-variable
+      const { dataStore, library, username, loadChildren, query } = params;
+
+      const formattedQuery = this.formatSearchQuery(query);
+      let { status, orderBy, sortType } = formattedQuery;
 
       // This will throw an error if there is no user with that username
       await dataStore.findUser(username);
@@ -111,10 +116,6 @@ export class LearningObjectInteractor {
           ResourceErrorReason.INVALID_ACCESS,
         );
       }
-
-      const formattedQuery = this.formatSearchQuery(query);
-      let { status, orderBy, sortType } = formattedQuery;
-
       if (!status) {
         status = LearningObjectState.ALL;
       }
@@ -232,7 +233,7 @@ export class LearningObjectInteractor {
         revision,
       } = params;
 
-      const fullChildren = false;
+      const fullChildren = true;
       let loadWorkingCopies = false;
 
       if (!revision) {
@@ -1021,6 +1022,7 @@ export class LearningObjectInteractor {
         collection,
         length,
         level,
+        guidelines,
         standardOutcomeIDs,
         text,
         orderBy,
@@ -1058,6 +1060,7 @@ export class LearningObjectInteractor {
           collection,
           length,
           level,
+          guidelines,
           standardOutcomeIDs,
           text,
           status,
@@ -1074,6 +1077,7 @@ export class LearningObjectInteractor {
           collection,
           length,
           level,
+          guidelines,
           standardOutcomeIDs,
           text,
           orderBy,
@@ -1193,6 +1197,9 @@ export class LearningObjectInteractor {
     formattedQuery.collection = toArray(formattedQuery.collection);
     formattedQuery.standardOutcomeIDs = toArray(
       formattedQuery.standardOutcomeIDs,
+    );
+    formattedQuery.guidelines = toArray(
+      formattedQuery.guidelines,
     );
     formattedQuery.page = toNumber(formattedQuery.page);
     formattedQuery.limit = toNumber(formattedQuery.limit);

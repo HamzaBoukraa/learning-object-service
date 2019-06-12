@@ -1,7 +1,8 @@
 import * as LearningOutcomeInteractor from './LearningOutcomeInteractor';
 import { Request, Response, Router } from 'express';
-import { LearningOutcomeInput, LearningOutcomeUpdate } from './types';
-import { UserToken } from '../types';
+import { LearningOutcomeUpdate } from './types';
+import { UserToken } from '../shared/types';
+import { mapErrorToResponseData } from '../shared/errors';
 
 /**
  * Initializes an express router with endpoints to Create, Update, and Delete
@@ -17,7 +18,7 @@ export function initialize({
   const addLearningOutcome = async (req: Request, res: Response) => {
     try {
       const user: UserToken = req.user;
-      const outcomeInput: LearningOutcomeInput = req.body.outcome;
+      const outcomeInput = req.body.outcome;
       const source: string = req.params.id;
       const id = await LearningOutcomeInteractor.addLearningOutcome({
         dataStore,
@@ -27,8 +28,8 @@ export function initialize({
       });
       res.status(200).send(id);
     } catch (e) {
-      console.error(e);
-      res.status(500).send(e);
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({message});
     }
   };
 
@@ -45,8 +46,8 @@ export function initialize({
       );
       res.status(200).send(learningOutcome.toPlainObject());
     } catch (e) {
-      console.error(e);
-      res.status(500).send(e);
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({message});
     }
   };
 
@@ -63,8 +64,8 @@ export function initialize({
       });
       res.status(200).send(outcome.toPlainObject());
     } catch (e) {
-      console.error(e);
-      res.status(500).send(e);
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({message});
     }
   };
 
@@ -77,10 +78,10 @@ export function initialize({
         user,
         id,
       });
-      res.sendStatus(200);
+      res.sendStatus(204);
     } catch (e) {
-      console.error(e);
-      res.status(500).send(e);
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({message});
     }
   };
 

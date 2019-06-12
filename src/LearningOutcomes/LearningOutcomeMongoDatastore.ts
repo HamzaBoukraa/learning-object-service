@@ -7,7 +7,8 @@ import {
 import { Db, ObjectID } from 'mongodb';
 import { COLLECTIONS } from '../drivers/MongoDriver';
 import { mapId } from '../drivers/Mongo/functions';
-import { LearningOutcome, StandardOutcome } from '../entity';
+import { LearningOutcome, StandardOutcome } from '../shared/entity';
+import { ResourceError, ResourceErrorReason } from '../shared/errors';
 
 export class LearningOutcomeMongoDatastore implements LearningOutcomeDatastore {
   constructor(private db: Db) {}
@@ -24,7 +25,7 @@ export class LearningOutcomeMongoDatastore implements LearningOutcomeDatastore {
    */
   async insertLearningOutcome(params: {
     source: string;
-    outcome: LearningOutcomeInput & LearningOutcomeInsert;
+    outcome: Partial<LearningOutcome>;
   }): Promise<string> {
     const id = new ObjectID().toHexString();
     params.outcome['_id'] = id;
@@ -49,8 +50,12 @@ export class LearningOutcomeMongoDatastore implements LearningOutcomeDatastore {
       outcomeDoc.mappings = await this.getAllStandardOutcomes({
         ids: outcomeDoc.mappings,
       });
+      return new LearningOutcome({ id: outcomeDoc._id, ...outcomeDoc });
     }
-    return new LearningOutcome({ id: outcomeDoc._id, ...outcomeDoc });
+    throw new ResourceError(
+      'Learning Outcome Not Found',
+      ResourceErrorReason.NOT_FOUND,
+    );
   }
   /**
    * Fetches Standard Outcome
@@ -133,7 +138,14 @@ export class LearningOutcomeMongoDatastore implements LearningOutcomeDatastore {
     await this.db
       .collection<LearningOutcome>(COLLECTIONS.LEARNING_OUTCOMES)
       .updateOne({ _id: params.id }, { $set: params.updates });
-    return this.getLearningOutcome({ id: params.id });
+    const learningOutcome = await this.getLearningOutcome({ id: params.id });
+    if (!learningOutcome) {
+      throw new ResourceError(
+        'Learning Outcome Not Found',
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+    return learningOutcome;
   }
 
   /**

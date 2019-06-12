@@ -3,19 +3,14 @@ import {
   ReleasedLearningObjectQuery,
   LearningObjectQuery,
   ParentLearningObjectQuery,
-} from '../../interfaces/DataStore';
+} from '../../shared/interfaces/DataStore';
 import {
   MultipartFileUploadStatus,
   MultipartFileUploadStatusUpdates,
   CompletedPart,
-} from '../../interfaces/FileManager';
-import {
-  MOCK_OBJECTS,
-  SUBMITTABLE_LEARNING_OBJECT,
-  INVALID_LEARNING_OBJECTS,
-} from '../mocks';
-import { LearningObjectUpdates } from '../../types';
-import { ChangeLogDocument } from '../../types/changelog';
+} from '../../shared/interfaces/FileManager';
+import { LearningObjectUpdates } from '../../shared/types';
+import { ChangeLogDocument } from '../../shared/types/changelog';
 import {
   LearningOutcomeInsert,
   LearningOutcomeUpdate,
@@ -26,9 +21,15 @@ import {
   User,
   LearningOutcome,
   Collection,
-} from '../../entity';
+} from '../../shared/entity';
+import { Submission } from '../../LearningObjectSubmission/types/Submission';
+import { SubmissionDataStore } from '../../LearningObjectSubmission/SubmissionDataStore';
+import { Stubs } from '../stubs';
 
-export class MockDataStore implements DataStore {
+export class MockDataStore implements DataStore, SubmissionDataStore {
+
+  stubs = new Stubs();
+
   connect(file: string): Promise<void> {
     return Promise.resolve();
   }
@@ -38,7 +39,7 @@ export class MockDataStore implements DataStore {
   }
 
   fetchLearningObjectAuthorUsername(id: string): Promise<string> {
-    return Promise.resolve(MOCK_OBJECTS.USERNAME);
+    return Promise.resolve(this.stubs.learningObject.author.username);
   }
   fetchParentObjects(params: {
     query: ParentLearningObjectQuery;
@@ -56,27 +57,27 @@ export class MockDataStore implements DataStore {
     authorId: string;
     name: string;
   }): Promise<string> {
-    return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT_ID);
+    return Promise.resolve(this.stubs.learningObject.id);
   }
   findReleasedLearningObject(params: {
     authorId: string;
     name: string;
   }): Promise<string> {
-    return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT_ID);
+    return Promise.resolve(this.stubs.learningObject.id);
   }
 
   fetchReleasedLearningObject(params: {
     id: string;
     full?: boolean;
   }): Promise<LearningObject> {
-    return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT as any);
+    return Promise.resolve(this.stubs.learningObject as any);
   }
   loadReleasedChildObjects(params: {
     id: string;
     full?: boolean;
     status: string[];
   }): Promise<LearningObject[]> {
-    return Promise.resolve([MOCK_OBJECTS.LEARNING_OBJECT as any]);
+    return Promise.resolve([this.stubs.learningObjectChild as any]);
   }
 
   addToReleased(object: LearningObject): Promise<void> {
@@ -84,17 +85,28 @@ export class MockDataStore implements DataStore {
   }
 
   fetchLearningObjectStatus(id: string): Promise<string> {
-    return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT.status);
+    return Promise.resolve(this.stubs.learningObject.status);
   }
   fetchLearningObjectCollection(id: string): Promise<string> {
-    return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT.collection);
+    return Promise.resolve(this.stubs.learningObject.collection);
   }
-  checkLearningObjectExistence(learningObjectId: string): Promise<string[]> {
-    return Promise.resolve([MOCK_OBJECTS.LEARNING_OBJECT_ID]);
+  checkLearningObjectExistence(params: {
+    learningObjectId: string,
+    userId: string,
+  }): Promise<any> {
+    return Promise.resolve(this.stubs.learningObject);
   }
 
-  deleteChangelog(learningObjectId: String): Promise<void> {
+  deleteChangelog(params: {
+    learningObjectId: string,
+  }): Promise<void> {
     return Promise.resolve();
+  }
+
+  fetchAllChangelogs(params: {
+    learningObjectId: string,
+  }): Promise<ChangeLogDocument[]> {
+    return Promise.resolve([this.stubs.changelog]);
   }
 
   searchAllObjects(
@@ -104,8 +116,8 @@ export class MockDataStore implements DataStore {
     objects: LearningObject[];
   }> {
     return Promise.resolve({
-      objects: [MOCK_OBJECTS.LEARNING_OBJECT as any],
-      total: MOCK_OBJECTS.TOTAL_RECORDS,
+      objects: [this.stubs.learningObject as any],
+      total: 1,
     });
   }
 
@@ -123,11 +135,11 @@ export class MockDataStore implements DataStore {
     return Promise.resolve([]);
   }
   fetchUser(id: string): Promise<User> {
-    return Promise.resolve(MOCK_OBJECTS.USER);
+    return Promise.resolve(this.stubs.user);
   }
 
   getLearningOutcome(params: { id: string }): Promise<LearningOutcome> {
-    return Promise.resolve(MOCK_OBJECTS.OUTCOME);
+    return Promise.resolve(this.stubs.learningOutcome);
   }
   getAllLearningOutcomes(params: {
     source: string;
@@ -144,7 +156,7 @@ export class MockDataStore implements DataStore {
   getLearningObjectMaterials(params: {
     id: string;
   }): Promise<LearningObject.Material> {
-    return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT.materials as any);
+    return Promise.resolve(this.stubs.learningObject.materials as any);
   }
   removeFromFiles(params: { objectId: string; fileId: string }): Promise<void> {
     return Promise.resolve();
@@ -154,10 +166,10 @@ export class MockDataStore implements DataStore {
     fileId: string;
     description: string;
   }): Promise<LearningObject.Material.File> {
-    return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT_FILE);
+    return Promise.resolve(this.stubs.learningObjectFile);
   }
   findUser(username: string): Promise<string> {
-    return Promise.resolve(MOCK_OBJECTS.USER.id);
+    return Promise.resolve(this.stubs.user.id);
   }
   peek<T>(params: {
     query: { [index: string]: string };
@@ -167,15 +179,15 @@ export class MockDataStore implements DataStore {
   }
   insertLearningOutcome(params: {
     source: string;
-    outcome: LearningOutcomeInsert;
+    outcome: Partial<LearningOutcome>;
   }): Promise<string> {
-    return Promise.resolve(MOCK_OBJECTS.OUTCOME.id);
+    return Promise.resolve(this.stubs.learningOutcome.id);
   }
   updateLearningOutcome(params: {
     id: string;
     updates: LearningOutcomeUpdate & LearningOutcomeInsert;
   }): Promise<LearningOutcome> {
-    return Promise.resolve(MOCK_OBJECTS.OUTCOME);
+    return Promise.resolve(this.stubs.learningOutcome);
   }
   deleteLearningOutcome(params: { id: string }): Promise<void> {
     return Promise.resolve();
@@ -188,7 +200,7 @@ export class MockDataStore implements DataStore {
   }
 
   insertLearningObject(object: LearningObject): Promise<string> {
-    return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT_ID);
+    return Promise.resolve(this.stubs.learningObject.id);
   }
 
   reorderOutcome(id: string, outcomeID: string, index: number): Promise<void> {
@@ -215,19 +227,19 @@ export class MockDataStore implements DataStore {
   }
 
   getUserObjects(username: string): Promise<string[]> {
-    return Promise.resolve([MOCK_OBJECTS.LEARNING_OBJECT_ID]);
+    return Promise.resolve([this.stubs.learningObject.id]);
   }
 
   fetchLearningObject(params: { id: string; full?: boolean }): Promise<any> {
     switch (params.id) {
-      case SUBMITTABLE_LEARNING_OBJECT.id:
-        return Promise.resolve(SUBMITTABLE_LEARNING_OBJECT);
-      case INVALID_LEARNING_OBJECTS.NO_DESCRIPTION.id:
-        return Promise.resolve(INVALID_LEARNING_OBJECTS.NO_DESCRIPTION);
-      case INVALID_LEARNING_OBJECTS.NO_NAME.id:
-        return Promise.resolve(INVALID_LEARNING_OBJECTS.NO_NAME);
+      case this.stubs.learningObject.id:
+        return Promise.resolve(this.stubs.learningObject);
+      case 'no_description_id':
+        return Promise.resolve({...this.stubs.learningObject, description: ''});
+      case 'no_name_id':
+        return Promise.resolve({...this.stubs.learningObject, name: ''});
       default:
-        return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT);
+        return Promise.resolve(this.stubs.learningObject);
     }
   }
 
@@ -238,18 +250,25 @@ export class MockDataStore implements DataStore {
     orderBy?: string;
     sortType?: number;
   }): Promise<any[]> {
-    return Promise.resolve([MOCK_OBJECTS.LEARNING_OBJECT]);
+    return Promise.resolve([this.stubs.learningObject]);
   }
-  createChangelog(
+  createChangelog(params: {
     learningObjectId: string,
-    userId: string,
+    author: {
+      userId: string,
+      name: string,
+      role: string,
+      profileImage: string,
+    },
     changelogText: string,
-  ): Promise<void> {
+  }): Promise<void> {
     return Promise.resolve();
   }
 
-  fetchRecentChangelog(learningObjectId: string): Promise<ChangeLogDocument> {
-    return Promise.resolve(MOCK_OBJECTS.CHANGELOG);
+  fetchRecentChangelog(params: {
+    learningObjectId: string,
+  }): Promise<ChangeLogDocument> {
+    return Promise.resolve(this.stubs.changelog);
   }
 
   fetchAllObjects(params: {
@@ -260,8 +279,8 @@ export class MockDataStore implements DataStore {
     sortType?: number;
   }): Promise<{ objects: any[]; total: number }> {
     return Promise.resolve({
-      objects: [new LearningObject(MOCK_OBJECTS.LEARNING_OBJECT as any)],
-      total: MOCK_OBJECTS.TOTAL_RECORDS,
+      objects: [new LearningObject(this.stubs.learningObject as any)],
+      total: 1,
     });
   }
 
@@ -269,37 +288,47 @@ export class MockDataStore implements DataStore {
     params: ReleasedLearningObjectQuery,
   ): Promise<{ objects: any[]; total: number }> {
     return Promise.resolve({
-      objects: [new LearningObject(MOCK_OBJECTS.LEARNING_OBJECT as any)],
-      total: MOCK_OBJECTS.TOTAL_RECORDS,
+      objects: [new LearningObject(this.stubs.learningObject as any)],
+      total: 1,
     });
   }
 
   fetchCollections(loadObjects?: boolean): Promise<Collection[]> {
-    return Promise.resolve([MOCK_OBJECTS.COLLECTION]);
+    return Promise.resolve([this.stubs.collection]);
   }
 
   fetchCollection(name: string): Promise<Collection> {
-    return Promise.resolve(MOCK_OBJECTS.COLLECTION);
+    return Promise.resolve(this.stubs.collection);
   }
 
   fetchCollectionMeta(name: string): Promise<any> {
-    return Promise.resolve(MOCK_OBJECTS.COLLECTION_META);
+    const collectionName = this.stubs.collection.name;
+    return Promise.resolve({name: collectionName, abstracts: ['']});
   }
 
   fetchCollectionObjects(name: string): Promise<any[]> {
     return Promise.resolve([
-      new LearningObject(MOCK_OBJECTS.LEARNING_OBJECT as any),
+      new LearningObject(this.stubs.learningObject as any),
     ]);
   }
 
-  submitLearningObjectToCollection(
-    username: string,
-    id: string,
-    collection: string,
-  ): Promise<void> {
+  recordSubmission(submission: Submission): Promise<void> {
     return Promise.resolve();
   }
 
+  fetchSubmission(collection: string, learningObjectId: string): Promise<Submission> {
+    return Promise.resolve(this.stubs.submission);
+  }
+
+  recordCancellation(learningObjectId: string): Promise<void> {
+    return Promise.resolve();
+  }
+  fetchRecentSubmission(learningObjectId: string): Promise<Submission> {
+   return Promise.resolve(this.stubs.submission);
+  }
+  hasSubmission(learningObjectId: string, collection: string): Promise<boolean> {
+    return Promise.resolve(true);
+  }
   unsubmitLearningObject(id: string): Promise<void> {
     return Promise.resolve();
   }
@@ -316,7 +345,7 @@ export class MockDataStore implements DataStore {
     query: ReleasedLearningObjectQuery;
   }): Promise<any[]> {
     return Promise.resolve([
-      new LearningObject(MOCK_OBJECTS.LEARNING_OBJECT as any),
+      new LearningObject(this.stubs.learningObject as any),
     ]);
   }
 
@@ -336,7 +365,7 @@ export class MockDataStore implements DataStore {
   fetchMultipartUploadStatus(params: {
     id: string;
   }): Promise<MultipartFileUploadStatus> {
-    return Promise.resolve(MOCK_OBJECTS.MULTIPART_UPLOAD_STATUS);
+    return Promise.resolve(this.stubs.uploadStatus);
   }
 
   updateMultipartUploadStatus(params: {
@@ -359,6 +388,6 @@ export class MockDataStore implements DataStore {
     learningObjectId: string;
     fileId: string;
   }): Promise<LearningObject.Material.File> {
-    return Promise.resolve(MOCK_OBJECTS.LEARNING_OBJECT_FILE);
+    return Promise.resolve(this.stubs.learningObjectFile);
   }
 }

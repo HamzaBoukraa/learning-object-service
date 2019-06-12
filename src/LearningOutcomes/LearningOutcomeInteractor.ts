@@ -3,14 +3,15 @@ import {
   LearningOutcomeInsert,
   LearningOutcomeUpdate,
 } from './types';
-import { UserToken } from '../types';
-import { sanitizeObject } from '../functions';
-import { LearningOutcome } from '../entity';
+import { UserToken } from '../shared/types';
+import { sanitizeObject } from '../shared/functions';
+import { LearningOutcome } from '../shared/entity';
+import { ResourceError, ResourceErrorReason } from '../shared/errors';
 
 export interface LearningOutcomeDatastore {
   insertLearningOutcome(params: {
     source: string;
-    outcome: LearningOutcomeInput & LearningOutcomeInsert;
+    outcome: Partial<LearningOutcome>;
   }): Promise<string>;
   getLearningOutcome(params: { id: string }): Promise<LearningOutcome>;
   getAllLearningOutcomes(params: {
@@ -39,23 +40,22 @@ export async function addLearningOutcome(params: {
   dataStore: LearningOutcomeDatastore;
   user: UserToken;
   source: string;
-  outcomeInput: LearningOutcomeInput;
+  outcomeInput: Partial<LearningOutcome>;
 }): Promise<string> {
+  const {dataStore, user, source, outcomeInput} = params;
+  let outcome: Partial<LearningOutcome>;
   try {
-    const outcome: LearningOutcomeInput & LearningOutcomeInsert = {
-      ...sanitizeObject<LearningOutcomeInput>(
-        { object: params.outcomeInput },
-        false,
-      ),
-      date: Date.now().toString(),
-    };
-    return await params.dataStore.insertLearningOutcome({
-      outcome,
-      source: params.source,
-    });
+    outcome = new LearningOutcome(outcomeInput);
   } catch (e) {
-    return Promise.reject(`Problem adding learning outcome. ${e}`);
+    throw new ResourceError(
+      'Bad Request',
+      ResourceErrorReason.BAD_REQUEST,
+    );
   }
+  return await dataStore.insertLearningOutcome({
+    outcome: outcome.toPlainObject(),
+    source,
+  });
 }
 
 /**
@@ -97,20 +97,14 @@ export async function updateLearningOutcome(params: {
   id: string;
   updates: LearningOutcomeUpdate;
 }): Promise<LearningOutcome> {
-  try {
-    const updates: LearningOutcomeUpdate & LearningOutcomeInsert = {
-      ...sanitizeObject<LearningOutcomeUpdate>({ object: params.updates }),
-      date: Date.now().toString(),
-    };
-    return await params.dataStore.updateLearningOutcome({
-      updates,
-      id: params.id,
-    });
-  } catch (e) {
-    return Promise.reject(
-      `Problem updating learning outcome: ${params.id}. ${e}`,
-    );
-  }
+  const updates: LearningOutcomeUpdate & LearningOutcomeInsert = {
+    ...sanitizeObject<LearningOutcomeUpdate>({ object: params.updates }),
+    date: Date.now().toString(),
+  };
+  return await params.dataStore.updateLearningOutcome({
+    updates,
+    id: params.id,
+  });
 }
 
 /**
@@ -139,6 +133,3 @@ export async function deleteLearningOutcome(params: {
   }
 }
 
-export function authorizeLearningOutcomeOperation() {
-  // Some Auth Here
-}

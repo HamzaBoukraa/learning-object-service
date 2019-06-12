@@ -1,8 +1,8 @@
 import { Db } from 'mongodb';
 import { COLLECTIONS } from '../drivers/MongoDriver';
-import { reportError } from '../drivers/SentryConnector';
-import { ResourceError, ResourceErrorReason, ServiceError, ServiceErrorReason } from '../errors';
-import { ChangeLogDocument } from '../types/changelog';
+import { reportError } from '../shared/SentryConnector';
+import { ResourceError, ResourceErrorReason, ServiceError, ServiceErrorReason } from '../shared/errors';
+import { ChangeLogDocument } from '../shared/types/changelog';
 
 export class ChangelogDataStore {
   constructor(private db: Db) { }
@@ -16,32 +16,31 @@ export class ChangelogDataStore {
    *
    * @returns {void}
    */
-  public async createChangelog(
+  public async createChangelog(params: {
     learningObjectId: string,
-    userId: string,
+    author: {
+      userId: string,
+      name: string,
+      role: string,
+      profileImage: string,
+    },
     changelogText: string,
-  ): Promise<void> {
-    try {
-      // FIXME: update is deprecated, consult docs for fix.
-      await this.db.collection(COLLECTIONS.CHANGLOG).update(
-        { learningObjectId },
-        {
-          $push: {
-            logs: {
-              userId: userId,
-              date: Date.now(),
-              text: changelogText,
-            },
+  }): Promise<void> {
+    await this.db.collection(COLLECTIONS.CHANGLOG).updateOne(
+      { learningObjectId: params.learningObjectId },
+      {
+        $push: {
+          logs: {
+            author: params.author,
+            date: Date.now(),
+            text: params.changelogText,
           },
         },
-        {
-          upsert: true,
-        },
-      );
-    } catch (e) {
-      reportError(e);
-      return Promise.reject(new ServiceError(ServiceErrorReason.INTERNAL));
-    }
+      },
+      {
+        upsert: true,
+      },
+    );
   }
 
   /**
@@ -52,22 +51,38 @@ export class ChangelogDataStore {
    *
    * @returns {ChangeLogDocument} A single changelog object with only the last element in the logs array
    */
-  async getRecentChangelog(learningObjectId: string): Promise<ChangeLogDocument> {
-    try {
+  async getRecentChangelog(params: {
+    learningObjectId: string,
+  }): Promise<ChangeLogDocument> {
       const changelog = await this.db
         .collection(COLLECTIONS.CHANGLOG)
         .findOne(
-          { learningObjectId },
+          { learningObjectId: params.learningObjectId },
           { projection: { learningObjectId: 1, logs: { $slice: -1 } } },
         );
-      if (changelog === null) {
-        return Promise.reject(new ResourceError('Changelog not found.', ResourceErrorReason.NOT_FOUND));
-      }
       return changelog;
-    } catch (e) {
-      reportError(e);
-      return Promise.reject(new ServiceError(ServiceErrorReason.INTERNAL));
-    }
+  }
+
+  /**
+   * Get all changelogs for a specified learning object
+   *
+   * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
+   *
+   * @returns {ChangeLogDocument[]} All changelogs for a learning object
+   */
+  async fetchAllChangelogs(params: {
+    learningObjectId: string,
+  }): Promise<ChangeLogDocument[]> {
+    const changelogs = await this.db
+      .collection(COLLECTIONS.CHANGLOG)
+      .aggregate([
+        { $match: { learningObjectId: params.learningObjectId } },
+        { $unwind: '$logs' },
+        { $sort: { 'logs.date': -1 } },
+        { $group: { _id: '$learningObjectId', logs: { $push: '$logs' } } },
+      ])
+      .toArray();
+    return changelogs;
   }
 
   /**
@@ -78,14 +93,11 @@ export class ChangelogDataStore {
    *
    * @returns {void}
    */
-  async deleteChangelog(learningObjectId: string): Promise<void> {
-    try {
-      await this.db
-        .collection(COLLECTIONS.CHANGLOG)
-        .remove({ learningObjectId: learningObjectId });
-    } catch (e) {
-      reportError(e);
-      return Promise.reject(new ServiceError(ServiceErrorReason.INTERNAL));
-    }
+  async deleteChangelog(params: {
+    learningObjectId: string,
+  }): Promise<void> {
+    await this.db
+      .collection(COLLECTIONS.CHANGLOG)
+      .remove({ learningObjectId: params.learningObjectId });
   }
 }

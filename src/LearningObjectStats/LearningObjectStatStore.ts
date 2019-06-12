@@ -4,7 +4,7 @@ import {
 } from './LearningObjectStatsInteractor';
 import { Db } from 'mongodb';
 import { COLLECTIONS } from '../drivers/MongoDriver';
-import { LearningObject } from '../entity';
+import { LearningObject } from '../shared/entity';
 
 const USAGE_STATS_COLLECTION = 'usage-stats';
 const BLOOMS_DISTRIBUTION_COLLECTION = 'blooms_outcome_distribution';
@@ -26,6 +26,10 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
    * @memberof LearningObjectStatStore
    */
   async fetchStats(params: { query: any }): Promise<LearningObjectStats> {
+    const releasedCount$ = this.db
+      .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
+      .count();
+
     // Perform aggregation on Learning Objects collection to get length distribution, total number of objects, and number of released objects
     const statCursor = this.db
       .collection(COLLECTIONS.LEARNING_OBJECTS)
@@ -33,7 +37,6 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
         _id: string;
         ids: string[];
         count: number;
-        released: number;
         waiting: number;
         peerReview: number;
         proofing: number;
@@ -43,15 +46,6 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
           $group: {
             _id: '$length',
             count: { $sum: 1 },
-            released: {
-              $sum: {
-                $cond: [
-                  { $eq: ['$status', LearningObject.Status.RELEASED] },
-                  1,
-                  0,
-                ],
-              },
-            },
             waiting: {
               $sum: {
                 $cond: [
@@ -99,7 +93,13 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
       .count();
 
     // Convert cursors to arrays
-    const [objectStats, bloomsData, downloadSavesData] = await Promise.all([
+    const [
+      releasedCount,
+      objectStats,
+      bloomsData,
+      downloadSavesData,
+    ] = await Promise.all([
+      releasedCount$,
       statCursor.toArray(),
       bloomsCursor.toArray(),
       downloadSaves,
@@ -128,7 +128,7 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
         number: 0,
       },
       total: 0,
-      released: 0,
+      released: releasedCount,
       review: 0,
       downloads: 0,
       saves: 0,
@@ -143,15 +143,14 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
         stats.lengths[stat._id] = stat.count;
         // Increment total by number in count
         stats.total += stat.count;
-        // Increment released by number in released
-        stats.released += stat.released;
         // Increment status by according status
         stats.status.waiting += stat.waiting;
         stats.status.peerReview += stat.peerReview;
         stats.status.proofing += stat.proofing;
       });
       // Set review property to statuses in review stage
-      stats.review = stats.status.waiting + stats.status.peerReview + stats.status.proofing;
+      stats.review =
+        stats.status.waiting + stats.status.peerReview + stats.status.proofing;
     }
     // If downloadSavesData update stats
     if (downloadSavesData) {

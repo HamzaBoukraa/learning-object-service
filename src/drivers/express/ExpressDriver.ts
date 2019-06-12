@@ -4,7 +4,7 @@ import {
   DataStore,
   FileManager,
   LibraryCommunicator,
-} from '../../interfaces/interfaces';
+} from '../../shared/interfaces/interfaces';
 import {
   ExpressRouteDriver,
   ExpressAdminRouteDriver,
@@ -18,8 +18,8 @@ import {
   enforceAuthenticatedAccess,
   processToken,
   handleProcessTokenError,
-} from '../../middleware';
-import { sentryRequestHandler, sentryErrorHandler } from '../SentryConnector';
+} from './middleware';
+import { sentryRequestHandler, sentryErrorHandler } from '../../shared/SentryConnector';
 
 export class ExpressDriver {
   static app = express();

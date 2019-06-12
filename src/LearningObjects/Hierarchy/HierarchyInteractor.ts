@@ -1,8 +1,8 @@
-import { DataStore, ParentLearningObjectQuery } from '../../interfaces/DataStore';
-import { UserToken } from '../../types';
-import { LearningObject } from '../../entity';
+import { DataStore, ParentLearningObjectQuery } from '../../shared/interfaces/DataStore';
+import { UserToken } from '../../shared/types';
+import { LearningObject } from '../../shared/entity';
 import { toArray, hasReadAccessByCollection, LearningObjectState, handleError } from '../../interactors/LearningObjectInteractor';
-import { ResourceError, ResourceErrorReason } from '../../errors';
+import { ResourceError, ResourceErrorReason } from '../../shared/errors';
 
 /**
  * Fetches the parents of a Learning Object.

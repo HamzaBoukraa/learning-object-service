@@ -1,19 +1,19 @@
 import { LearningObjectInteractor } from '../interactors/interactors';
-import { DataStore } from '../interfaces/DataStore';
-import { FileManager, LibraryCommunicator } from '../interfaces/interfaces';
+import { DataStore } from '../shared/interfaces/DataStore';
+import { FileManager, LibraryCommunicator } from '../shared/interfaces/interfaces';
 import { generatePDF } from './PDFKitDriver';
 import {
   LearningObjectUpdates,
   UserToken,
   VALID_LEARNING_OBJECT_UPDATES,
-} from '../types';
-import { ResourceError, ResourceErrorReason } from '../errors';
+} from '../shared/types';
+import { ResourceError, ResourceErrorReason } from '../shared/errors';
 import {
   hasLearningObjectWriteAccess,
   isPrivilegedUser,
-} from '../interactors/AuthorizationManager';
-import { reportError } from '../drivers/SentryConnector';
-import { LearningObject } from '../entity';
+} from '../shared/AuthorizationManager';
+import { reportError } from '../shared/SentryConnector';
+import { LearningObject } from '../shared/entity';
 import { handleError } from '../interactors/LearningObjectInteractor';
 import {
   authorizeRequest,
@@ -21,6 +21,7 @@ import {
   requesterIsAdminOrEditor,
 } from './AuthorizationManager';
 import { FileMeta } from './typings';
+import * as PublishingService from './Publishing';
 
 const LearningObjectState = {
   UNRELEASED: [
@@ -52,7 +53,7 @@ const LearningObjectState = {
  * @param {string} authorUsername [Learning Object's author's username]
  * @param {string} learningObjectId [Id of the Learning Object to add the file metadata to]
  * @param {FileMeta} fileMeta [Object containing metadata about the file]
- * @returns {Promise<string>} [Id of the file metadata]
+ * @returns {Promise<string>} [Id of the added Learning Object file]
  */
 export async function addLearningObjectFile({
   dataStore,
@@ -72,14 +73,8 @@ export async function addLearningObjectFile({
     const isAdminOrEditor = requesterIsAdminOrEditor(requester);
     authorizeRequest([isAuthor, isAdminOrEditor]);
     validateRequestParams({
-      params: [
-        fileMeta.name,
-        fileMeta.fileType,
-        fileMeta.url,
-        fileMeta.date,
-        fileMeta.size,
-      ],
-      mustProvide: ['name', 'fileType', 'url', 'date', 'size'],
+      params: [fileMeta.name, fileMeta.url, fileMeta.size],
+      mustProvide: ['name', 'url', 'size'],
     });
     const loFile: LearningObject.Material.File = generateLearningObjectFile(
       fileMeta,
@@ -96,6 +91,45 @@ export async function addLearningObjectFile({
 }
 
 /**
+ * Adds or updates Learning Object mutliple file metadata
+ * @export
+ * @param {DataStore} dataStore [Driver for datastore]
+ * @param {UserToken} requester [Object containing information about the requester]
+ * @param {string} authorUsername [Learning Object's author's username]
+ * @param {string} learningObjectId [Id of the Learning Object to add the file metadata to]
+ * @param {FileMeta[]} fileMeta [Object containing metadata about the file]
+ * @returns {Promise<string[]>} [Ids of the added Learning Object files]
+ */
+export async function addLearningObjectFiles({
+  dataStore,
+  requester,
+  authorUsername,
+  learningObjectId,
+  fileMeta,
+}: {
+  dataStore: DataStore;
+  requester: UserToken;
+  authorUsername: string;
+  learningObjectId: string;
+  fileMeta: FileMeta[];
+}): Promise<string[]> {
+  try {
+    const promises$ = fileMeta.map(file => {
+      return addLearningObjectFile({
+        dataStore,
+        authorUsername,
+        learningObjectId,
+        fileMeta: file,
+        requester,
+      });
+    });
+    return await Promise.all(promises$);
+  } catch (e) {
+    handleError(e);
+  }
+}
+
+/**
  * Generates new LearningObject.Material.File Object
  *
  * @private
@@ -106,12 +140,14 @@ export async function addLearningObjectFile({
 function generateLearningObjectFile(
   file: FileMeta,
 ): LearningObject.Material.File {
+  const extension = file.name.split('.').pop();
+  const fileType = file.fileType || '';
   const learningObjectFile: Partial<LearningObject.Material.File> = {
+    extension,
+    fileType,
     url: file.url,
-    date: file.date,
+    date: Date.now().toString(),
     name: file.name,
-    fileType: file.fileType,
-    extension: file.extension,
     fullPath: file.fullPath,
     size: +file.size,
     packageable: isPackageable(+file.size),
@@ -331,11 +367,10 @@ export async function updateLearningObject(params: {
         id,
         updates: cleanUpdates,
       });
-      if (
-        isPrivilegedUser(userToken.accessGroups) &&
-        cleanUpdates.status === LearningObject.Status.RELEASED
-      ) {
-        await releaseLearningObject({ dataStore, id });
+      // Infer if this Learning Object is being released
+      if (cleanUpdates.status === LearningObject.Status.RELEASED) {
+        const releasableObject = await generateReleasableLearningObject(dataStore, id);
+        await PublishingService.releaseLearningObject({ userToken, dataStore, releasableObject });
       }
     } else {
       return Promise.reject(
@@ -351,38 +386,23 @@ export async function updateLearningObject(params: {
 }
 
 /**
- * Releases a LearningObject by adding object to released collection of objects
- *
  * FIXME: Once the return type of `fetchLearningObject` is updated to the `Datastore's` schema type,
  * this function should be updated to not fetch children ids as they should be returned with the document
- *
- * @param {DataStore} datastore [Driver for the datastore]
- * @param {string} id [Id of the LearningObject to be copied]
- * @returns {Promise<void>}
  */
-async function releaseLearningObject({
-  dataStore,
-  id,
-}: {
-  dataStore: DataStore;
-  id: string;
-}): Promise<void> {
+async function generateReleasableLearningObject(dataStore: DataStore, id: string) {
   const [object, childIds] = await Promise.all([
-    dataStore.fetchLearningObject({
-      id,
-      full: true,
-    }),
-    dataStore.findChildObjectIds({ parentId: id }),
+      dataStore.fetchLearningObject({id, full: true }),
+      dataStore.findChildObjectIds({parentId: id}),
   ]);
   let children: LearningObject[] = [];
   if (Array.isArray(childIds)) {
-    children = childIds.map(childId => new LearningObject({ id: childId }));
+      children = childIds.map(childId => new LearningObject({id: childId}));
   }
   const releasableObject = new LearningObject({
-    ...object.toPlainObject(),
-    children,
+      ...object.toPlainObject(),
+      children,
   });
-  return dataStore.addToReleased(releasableObject);
+  return releasableObject;
 }
 
 /**
@@ -397,11 +417,7 @@ export async function getLearningObjectById(
   dataStore: DataStore,
   id: string,
 ): Promise<LearningObject> {
-  try {
-    return await dataStore.fetchLearningObject({ id, full: true });
-  } catch (e) {
-    return Promise.reject(`Problem fetching Learning Object. ${e}`);
-  }
+  return await dataStore.fetchLearningObject({ id, full: true });
 }
 
 /**
@@ -415,7 +431,7 @@ export async function getLearningObjectChildrenById(
   dataStore: DataStore,
   objectId: string,
 ) {
-  //Retrieve the ids of the children in the order in which they were set by user
+  // Retrieve the ids of the children in the order in which they were set by user
   const childrenIDs = await dataStore.findChildObjectIds({
     parentId: objectId,
   });
@@ -425,10 +441,10 @@ export async function getLearningObjectChildrenById(
     full: true,
     status: LearningObjectState.ALL,
   });
-  //array to return the children in correct order
+  // array to return the children in correct order
   const children: LearningObject[] = [];
 
-  //fill children array with correct order of children
+  // fill children array with correct order of children
   let cIDs = 0;
   let c = 0;
 
@@ -471,20 +487,22 @@ export async function deleteLearningObject(params: {
         reportError(
           new Error(
             `Problem deleting files for ${
-              params.learningObjectName
+            params.learningObjectName
             }: ${path}. ${e}`,
           ),
         );
       });
-      params.dataStore.deleteChangelog(object.id).catch(e => {
-        reportError(
-          new Error(
-            `Problem deleting changelogs for ${
-              params.learningObjectName
-            }: ${e}`,
-          ),
-        );
-      });
+      params.dataStore
+        .deleteChangelog({ learningObjectId: object.id })
+        .catch(e => {
+          reportError(
+            new Error(
+              `Problem deleting changelogs for ${
+                params.learningObjectName
+              }: ${e}`,
+            ),
+          );
+        });
     } else {
       return Promise.reject(
         new Error('User does not have authorization to perform this action'),
@@ -604,7 +622,7 @@ export async function removeFile(params: {
     if (file) {
       const path = `${params.username}/${params.objectId}/${
         file.fullPath ? file.fullPath : file.name
-      }`;
+        }`;
       await params.dataStore.removeFromFiles({
         objectId: params.objectId,
         fileId: params.fileId,
