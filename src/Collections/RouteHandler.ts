@@ -14,7 +14,6 @@ export function initializeCollectionRouter({ router, dataStore }: { router: Rout
       );
       res.status(200).send(collections);
     } catch (e) {
-      console.error(e);
       const { code, message } = mapErrorToResponseData(e);
       res.status(code).json({message});
     }
@@ -31,7 +30,6 @@ export function initializeCollectionRouter({ router, dataStore }: { router: Rout
       );
       res.status(200).send(collection);
     } catch (e) {
-      console.error(e);
       const { code, message } = mapErrorToResponseData(e);
       res.status(code).json({message});
     }
@@ -47,7 +45,6 @@ export function initializeCollectionRouter({ router, dataStore }: { router: Rout
       );
       res.status(200).send(collectionMeta);
     } catch (e) {
-      console.error(e);
       const { code, message } = mapErrorToResponseData(e);
       res.status(code).json({message});
     }

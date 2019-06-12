@@ -28,7 +28,6 @@ describe('Class: SubmittableLearningOutcome', () => {
     const errors = SubmittableLearningOutcome.validateOutcome(
       new LearningOutcome(),
     );
-    console.log('ERRORS: ', errors);
     expect(errors).toBeDefined();
   });
   it('should set invalid outcome text and thrown an error', () => {

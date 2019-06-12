@@ -1,13 +1,14 @@
 import { DataStore } from '../shared/interfaces/DataStore';
 import { MockDataStore } from '../tests/mock-drivers/MockDataStore';
-import { MOCK_OBJECTS } from '../tests/mocks';
 import {
   updateObjectLastModifiedDate,
   updateParentsDate,
   getLearningObjectChildrenById,
 } from './LearningObjectInteractor';
+import { Stubs } from '../tests/stubs';
 
-const dataStore: DataStore = new MockDataStore(); // DataStore
+const dataStore: DataStore = new MockDataStore();
+const stubs = new Stubs();
 
 describe('Interactor: LearningObjectInteractor', () => {
   it(`should update an object's last modified date and recursively update the child's parents' last modified date`, async () => {
@@ -15,7 +16,7 @@ describe('Interactor: LearningObjectInteractor', () => {
     await expect(
       updateObjectLastModifiedDate({
         dataStore,
-        id: MOCK_OBJECTS.LEARNING_OBJECT_ID,
+        id: stubs.learningObject.id,
       }),
     ).resolves.toBe(undefined);
   });
@@ -24,7 +25,7 @@ describe('Interactor: LearningObjectInteractor', () => {
     await expect(
       updateParentsDate({
         dataStore,
-        childId: MOCK_OBJECTS.LEARNING_OBJECT_ID,
+        childId: stubs.learningObject.id,
         date: Date.now().toString(),
       }),
     ).resolves.toBe(undefined);
@@ -34,7 +35,7 @@ describe('Interactor: LearningObjectInteractor', () => {
     await expect(
       getLearningObjectChildrenById(
         dataStore,
-        MOCK_OBJECTS.LEARNING_OBJECT_ID,
+        stubs.learningObject.id,
       ),
     ). resolves.toEqual([]);
   });

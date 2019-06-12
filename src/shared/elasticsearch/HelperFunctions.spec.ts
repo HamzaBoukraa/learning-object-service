@@ -1,7 +1,8 @@
-
-import { MOCK_OBJECTS } from '../../tests/mocks';
 import { LearningObject, User } from '../../shared/entity';
 import { cleanLearningObject } from '.';
+import { Stubs } from '../../tests/stubs';
+
+const stubs = new Stubs();
 
 /**
  * These tests describe the essential pieces of a Learning Object that we expect are
@@ -12,42 +13,42 @@ import { cleanLearningObject } from '.';
  */
 describe('when a Learning Object is sent for indexing', () => {
   const l = new LearningObject({
-    ...MOCK_OBJECTS.LEARNING_OBJECT,
-    author: new User(MOCK_OBJECTS.AUTHOR_MOCK),
+    ...stubs.learningObject,
+    author: new User(stubs.user),
   } as Partial<LearningObject>);
   it('should contain the name property', () => {
-    expect(cleanLearningObject(l).name).toBe(MOCK_OBJECTS.LEARNING_OBJECT.name);
+    expect(cleanLearningObject(stubs.learningObject).name).toBe(stubs.learningObject.name);
   });
   it('should contain the description property', () => {
-    expect(cleanLearningObject(l).description).toBe(MOCK_OBJECTS.LEARNING_OBJECT.description);
+    expect(cleanLearningObject(stubs.learningObject).description).toBe(stubs.learningObject.description);
   });
   it('should contain the date property', () => {
-    expect(cleanLearningObject(l).date).toBe(MOCK_OBJECTS.LEARNING_OBJECT.date);
+    expect(cleanLearningObject(stubs.learningObject).date).toBe(stubs.learningObject.date);
   });
   it('should contain the length property', () => {
-    expect(cleanLearningObject(l).length).toBe(MOCK_OBJECTS.LEARNING_OBJECT.length);
+    expect(cleanLearningObject(stubs.learningObject).length).toBe(stubs.learningObject.length);
   });
   it('should not contain the metrics property', () => {
-    expect(cleanLearningObject(l).metrics).toBeUndefined();
+    expect(cleanLearningObject(stubs.learningObject).metrics).toBeUndefined();
   });
   it('should not contain the children property', () => {
-    expect(cleanLearningObject(l).children).toBeUndefined();
+    expect(cleanLearningObject(stubs.learningObject).children).toBeUndefined();
   });
   it('should not contain the materials property', () => {
-    expect(cleanLearningObject(l).materials).toBeUndefined();
+    expect(cleanLearningObject(stubs.learningObject).materials).toBeUndefined();
   });
   describe('the author object', () => {
     it('should contain the author\'s username', () => {
-      expect(cleanLearningObject(l).author.username).toBe(MOCK_OBJECTS.AUTHOR_MOCK.username);
+      expect(cleanLearningObject(stubs.learningObject).author.username).toBe(stubs.learningObject.author.username);
     });
     it('should contain the author\'s name', () => {
-      expect(cleanLearningObject(l).author.name).toBe(MOCK_OBJECTS.AUTHOR_MOCK.name);
+      expect(cleanLearningObject(stubs.learningObject).author.name).toBe(stubs.learningObject.author.name);
     });
     it('should contain the author\'s email', () => {
-      expect(cleanLearningObject(l).author.email).toBe(MOCK_OBJECTS.AUTHOR_MOCK.email);
+      expect(cleanLearningObject(stubs.learningObject).author.email).toBe(stubs.learningObject.author.email);
     });
     it('should contain the author\'s organization', () => {
-      expect(cleanLearningObject(l).author.organization).toBe(MOCK_OBJECTS.AUTHOR_MOCK.organization);
+      expect(cleanLearningObject(stubs.learningObject).author.organization).toBe(stubs.learningObject.author.organization);
     });
   });
 });
