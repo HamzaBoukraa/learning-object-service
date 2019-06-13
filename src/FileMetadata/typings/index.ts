@@ -18,7 +18,7 @@ export interface FileMetadataDocument {
    */
   createdDate: string;
   /**
-   * User inputted information about the contents of the file
+   * User supplied information about the contents of the file
    */
   description: string;
   /**
@@ -30,7 +30,7 @@ export interface FileMetadataDocument {
    */
   extension: string;
   /**
-   * The location the file was uploaded to within the file system's hierarchy
+   * The location the file was uploaded to within the Learning Object’s file system hierarchy
    */
   fullPath: string;
   /**
