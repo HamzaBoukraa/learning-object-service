@@ -18,7 +18,7 @@ export interface FileMetadataDocument {
    */
   createdDate: string;
   /**
-   * User inputted information about the contents of the file
+   * User supplied information about the contents of the file
    */
   description: string;
   /**
