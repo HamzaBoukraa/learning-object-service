@@ -5,6 +5,7 @@ export interface ElasticSearchQuery {
   query: QueryOperation;
   sort?: SortOperation;
   post_filter?: QueryOperation;
+  aggs?: any;
 }
 
 export interface SortOperation {
@@ -36,7 +37,7 @@ export interface MultiMatchQuery {
 
 export interface MatchPhrasePrefixQuery {
   match_phrase_prefix: {
-    description: {
+    [x: string]: {
       query: string;
       max_expansions: number;
       slop: number;

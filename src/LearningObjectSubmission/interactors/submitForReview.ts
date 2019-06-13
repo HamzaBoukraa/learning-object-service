@@ -2,7 +2,7 @@ import { SubmittableLearningObject, LearningObject } from '../../shared/entity';
 import { Submission } from '../types/Submission';
 import { UserToken } from '../../shared/types';
 import { ResourceError, ResourceErrorReason } from '../../shared/errors';
-import { SubmissionDataStore } from '../SubmissionDataStore';
+import { SubmissionDataStore } from '../SubmissionDatastore';
 import { LearningObjectAdapter } from '../../LearningObjects/LearningObjectAdapter';
 import { EntityError } from '../../shared/entity/errors/entity-error';
 import { SubmissionPublisher } from './SubmissionPublisher';

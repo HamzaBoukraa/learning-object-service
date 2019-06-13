@@ -40,6 +40,7 @@ ENV PATH /opt/node_modules/.bin:$PATH
 
 # Swtich working dir to opt to use node_modules for testing
 WORKDIR /opt
+ARG NODE_ENV=development
 RUN npm test
 
 FROM node:8-alpine

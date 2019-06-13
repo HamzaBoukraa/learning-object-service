@@ -8,9 +8,12 @@ import {
   BoolOperation,
   SortOperation,
   TermsQuery,
+  LearningObjectSummary,
+  AuthorSummary,
+  LearningObject,
+  User,
 } from '../../typings';
 import { SearchResponse } from 'elasticsearch';
-import { LearningObject } from '../../../shared/entity';
 import * as request from 'request-promise';
 import { LearningObjectDatastore } from '../../interfaces';
 import { sanitizeObject } from '../../../shared/functions';
@@ -22,23 +25,20 @@ import {
   ServiceErrorReason,
 } from '../../../shared/errors';
 
+const ELASTICSEARCH_DOMAIN = process.env.ELASTICSEARCH_DOMAIN;
+const LEARNING_OBJECT_INDEX = 'learning-objects';
+
+const INDEX_URI = (index: string) => `${ELASTICSEARCH_DOMAIN}/${index}/_search`;
+
 const SEARCHABLE_FIELDS = [
   'name',
-  'levels',
   'collection.keyword',
   'description',
   'author.name',
   'author.email',
   'author.organization',
   'outcomes.text',
-  'outcomes.bloom',
-  'outcomes.outcome',
 ];
-
-const ELASTICSEARCH_DOMAIN = process.env.ELASTICSEARCH_DOMAIN;
-const LEARNING_OBJECT_INDEX = 'learning-objects';
-
-const INDEX_URI = (index: string) => `${ELASTICSEARCH_DOMAIN}/${index}/_search`;
 
 const QUERY_DEFAULTS = {
   SIZE: 10,
@@ -47,6 +47,13 @@ const QUERY_DEFAULTS = {
   ANALYZER: 'stop',
   MATCH_PHRASE_PREFIX_SLOP: 50,
   MATCH_PHRASE_PREFIX_EXPANSIONS: 50,
+  MATCH_OUTCOME_PHRASE_SLOP: 5,
+  MATCH_OUTCOME_EXPANSIONS: 5,
+};
+
+const AGGREGATION_DEFAULTS = {
+  // High threshold is set so that all buckets are considered in later stages of the aggregation
+  TERMS_MAX_SIZE: 100000,
 };
 
 export class ElasticSearchLearningObjectDatastore
@@ -57,13 +64,14 @@ export class ElasticSearchLearningObjectDatastore
    * @param {LearningObjectSearchQuery} params Object containing search text and field queries
    * @returns {Promise<{ total: number, object: LearningObject[] }>}
    */
-  searchReleasedObjects(
+  async searchReleasedObjects(
     params: LearningObjectSearchQuery,
   ): Promise<LearningObjectSearchResult> {
     const elasticQuery: ElasticSearchQuery = this.buildReleasedSearchQuery(
       params,
     );
-    return this.executeQuery(elasticQuery);
+    const results = await this.executeQuery(elasticQuery);
+    return this.convertHitsToLearningObjectSearchResult(results);
   }
 
   /**
@@ -72,13 +80,14 @@ export class ElasticSearchLearningObjectDatastore
    * @param {PrivilegedLearningObjectSearchQuery} params Object containing search text and field queries with {collectionRestrictions} for privileged users.
    * @returns {Promise<{LearningObjectSearchResult}>}
    */
-  searchAllObjects(
+  async searchAllObjects(
     params: PrivilegedLearningObjectSearchQuery,
   ): Promise<LearningObjectSearchResult> {
     const elasticQuery: ElasticSearchQuery = this.buildPrivilegedSearchQuery(
       params,
     );
-    return this.executeQuery(elasticQuery);
+    const results = await this.executeQuery(elasticQuery);
+    return this.convertAggregationToLearningObjectSearchResult(results);
   }
 
   /**
@@ -98,6 +107,9 @@ export class ElasticSearchLearningObjectDatastore
   /**
    * Builds ElasticSearchQuery for searching all Learning Objects by applying LearningObjectSearchQuery params and restricting set based on provided collection restrictions
    *
+   * *** NOTE ***
+   * Limit is reset to 0 because hits do not need to be returned
+   *
    * @private
    * @param {PrivilegedLearningObjectSearchQuery} params [Object containing search text, field queries, and collection restrictions]
    * @returns {ElasticSearchQuery}
@@ -106,9 +118,14 @@ export class ElasticSearchLearningObjectDatastore
   private buildPrivilegedSearchQuery(
     params: PrivilegedLearningObjectSearchQuery,
   ): ElasticSearchQuery {
-    const query = this.buildSearchQuery(params);
+    const query = this.buildSearchQuery({
+      ...(params as LearningObjectSearchQuery),
+      limit: 0,
+    });
     const { collectionRestrictions } = params;
-    const queryFilters = this.getQueryFilters(params);
+    const queryFilters = this.getQueryFilters(
+      params as LearningObjectSearchQuery,
+    );
     if (collectionRestrictions && Object.keys(collectionRestrictions).length) {
       this.appendCollectionRestrictionsFilter({
         query,
@@ -116,6 +133,7 @@ export class ElasticSearchLearningObjectDatastore
         restrictions: collectionRestrictions,
       });
     }
+    this.appendDuplicateFilterAggregation({ query, filters: params });
     return query;
   }
 
@@ -155,6 +173,15 @@ export class ElasticSearchLearningObjectDatastore
                 },
               },
             },
+            {
+              match_phrase_prefix: {
+                'outcomes.text': {
+                  query: text,
+                  max_expansions: QUERY_DEFAULTS.MATCH_OUTCOME_EXPANSIONS,
+                  slop: QUERY_DEFAULTS.MATCH_OUTCOME_PHRASE_SLOP,
+                },
+              },
+            },
           ],
         },
       };
@@ -183,6 +210,7 @@ export class ElasticSearchLearningObjectDatastore
 
   /**
    * Returns all defined query filters
+   * Some filters are re-mapped to adhere to the documents structure within the index
    *
    * @private
    * @param {LearningObjectSearchQuery} params [Object containing search text, and field queries]
@@ -192,13 +220,22 @@ export class ElasticSearchLearningObjectDatastore
   private getQueryFilters(
     params: LearningObjectSearchQuery,
   ): Partial<LearningObjectSearchQuery> {
-    const { length, level, collection, status } = params;
+    const {
+      length,
+      level,
+      collection,
+      status,
+      standardOutcomeIDs,
+      guidelines,
+    } = params;
     const queryFilters = sanitizeObject({
       object: {
         length,
         level,
         collection,
         status,
+        'outcomes.mappings.id': standardOutcomeIDs,
+        'outcomes.mappings.source': guidelines,
       },
     });
     return queryFilters || {};
@@ -272,9 +309,29 @@ export class ElasticSearchLearningObjectDatastore
     sortType: SortOrder;
     orderBy: string;
   }): void {
+    const sorter: SortOperation = this.getSorter({ orderBy, sortType });
+    query.sort = sorter;
+  }
+
+  /**
+   * Returns a SortOperation object that applies `orderBy` and sorts either `asc` or `desc` depending on the value fo `sortType`
+   *
+   * @private
+   * @param {string} orderBy [The property to order by]
+   * @param {number} sortType [The direction of the sort]
+   * @returns
+   * @memberof ElasticSearchLearningObjectDatastore
+   */
+  private getSorter({
+    orderBy,
+    sortType,
+  }: {
+    orderBy: string;
+    sortType: number;
+  }) {
     const sorter: SortOperation = {};
     sorter[`${orderBy}.keyword`] = { order: sortType === -1 ? 'desc' : 'asc' };
-    query.sort = sorter;
+    return sorter;
   }
 
   /**
@@ -300,12 +357,23 @@ export class ElasticSearchLearningObjectDatastore
     page: number;
   }): void {
     query.size = limit;
-    query.from = 0;
-    if (page != null) {
-      page = page <= 0 ? 1 : page;
-      const skip = (page - 1) * limit;
-      query.from = skip;
+    query.from = this.formatFromValue(page);
+  }
+
+  /**
+   * Ensures the `from` value is valid by setting a default of `0` if the passed value is undefined or less than `0`
+   *
+   * @private
+   * @param {number} value [From value to be formatted]
+   * @returns {number}
+   * @memberof ElasticSearchLearningObjectDatastore
+   */
+  private formatFromValue(value: number): number {
+    let formattedPage = 0;
+    if (value != null) {
+      formattedPage = value < 0 ? 0 : value;
     }
+    return formattedPage;
   }
 
   /**
@@ -374,6 +442,74 @@ export class ElasticSearchLearningObjectDatastore
   }
 
   /**
+   * Appends aggregation stage to filter out duplicate objects and only return furthest along Learning Object by:
+   *
+   * Grouping results by `id` to place Learning Object copies within the same bucket
+   * Sorting the items within the bucket by `revision` in ascending order
+   * Returning only the first item in the sorted bucket
+   *
+   * *** NOTE ***
+   * If no sort if specified the default sort will be by score/relevancy
+   *
+   * `terms.size` is set to a high threshold to allow allow bucket results to be filtered in sub-aggregations
+   * Performance issues noted here https://github.com/elastic/elasticsearch/issues/4915 and here https://github.com/elastic/elasticsearch/issues/21487,
+   * should not be an issue because each bucket filtered by terms will have a cardinality <= 2 which is the number of released objects and unreleased objects
+   * with the same `id`. Or in other words, only two copies of the same object can exist at any point in time in the index, one released and one submitted for review.
+   *
+   * @private
+   * @param {ElasticSearchQuery} query [The query object to append the aggregation to]
+   * @param {Partial<LearningObjectSearchQuery>} filters [Filters that will be applied to the aggregation]
+   * @memberof ElasticSearchLearningObjectDatastore
+   */
+  private appendDuplicateFilterAggregation({
+    query,
+    filters,
+  }: {
+    query: ElasticSearchQuery;
+    filters: Partial<LearningObjectSearchQuery>;
+  }): void {
+    const { limit, page, sortType, orderBy } = filters;
+    let sorter: SortOperation = { score: { order: 'desc' } };
+    if (orderBy) {
+      sorter = this.getSorter({ orderBy, sortType });
+    }
+    query.aggs = {
+      results: {
+        terms: {
+          field: 'id.keyword',
+          size: AGGREGATION_DEFAULTS.TERMS_MAX_SIZE,
+        },
+        aggs: {
+          objects: {
+            top_hits: {
+              sort: [
+                {
+                  'revision': { order: 'asc' },
+                },
+              ],
+              size: 1,
+            },
+          },
+          score: {
+            max: {
+              script: {
+                source: '_score',
+              },
+            },
+          },
+          objects_bucket_sort: {
+            bucket_sort: {
+              sort: [sorter],
+              size: limit || QUERY_DEFAULTS.SIZE,
+              from: this.formatFromValue(page),
+            },
+          },
+        },
+      },
+    };
+  }
+
+  /**
    * Constructs array of terms filter objects from filters
    *
    * @private
@@ -398,43 +534,104 @@ export class ElasticSearchLearningObjectDatastore
    *
    * @private
    * @param {ElasticSearchQuery} query [Query to be performed don the Learning Objects index]
-   * @returns {Promise<LearningObjectSearchResult>}
+   * @returns {Promise<SearchResponse<Partial<LearningObject>>>}
    * @memberof ElasticSearchDriver
    */
   private executeQuery(
     query: ElasticSearchQuery,
-  ): Promise<LearningObjectSearchResult> {
-    return new Promise<LearningObjectSearchResult>((resolve, reject) => {
-      request({
-        uri: INDEX_URI(LEARNING_OBJECT_INDEX),
-        json: true,
-        body: query,
-      })
-        .then((res: SearchResponse<Partial<LearningObject>>) => {
-          resolve(this.toPaginatedLearningObjects(res));
+  ): Promise<SearchResponse<Partial<LearningObject>>> {
+    return new Promise<SearchResponse<Partial<LearningObject>>>(
+      (resolve, reject) => {
+        request({
+          uri: INDEX_URI(LEARNING_OBJECT_INDEX),
+          json: true,
+          body: query,
         })
-        .catch(this.transformRequestError)
-        .catch((e: Error) => reject(e));
-    });
+          .then(resolve)
+          .catch(this.transformRequestError)
+          .catch((e: Error) => reject(e));
+      },
+    );
   }
 
   /**
-   *  Converts ElasticSearch SearchResponse to object with document totals and objects
+   *  Converts ElasticSearch SearchResponse hits results to LearningObjectSearchResult
    *
    * @private
    * @param {SearchResponse<Partial<LearningObject>>} results
    * @returns {{ total: number; objects: LearningObject[] }}
    */
-  private toPaginatedLearningObjects(
+  private convertHitsToLearningObjectSearchResult(
     results: SearchResponse<Partial<LearningObject>>,
   ): LearningObjectSearchResult {
     const total = results.hits.total;
     const hits = results.hits.hits;
-    const objects: LearningObject[] = [];
-    hits.forEach(set => {
-      objects.push(set._source as LearningObject);
-    });
+    const objects: LearningObjectSummary[] = hits.map(doc =>
+      this.mapLearningObjectToSummary(doc._source),
+    );
     return { total, objects };
+  }
+
+  /**
+   *  Converts ElasticSearch SearchResponse aggregation to LearningObjectSearchResult
+   *
+   * @private
+   * @param {SearchResponse<Partial<LearningObject>>} results
+   * @returns {{ total: number; objects: LearningObject[] }}
+   */
+  private convertAggregationToLearningObjectSearchResult(
+    results: SearchResponse<Partial<LearningObject>>,
+  ): LearningObjectSearchResult {
+    const total = results.hits.total;
+    const aggregationResults = results.aggregations.results;
+    const buckets = aggregationResults.buckets;
+    const objects: LearningObjectSummary[] = buckets.map(
+      (bucket: {
+        objects: { hits: { hits: [{ _source: Partial<LearningObject> }] } };
+      }) =>
+        this.mapLearningObjectToSummary(bucket.objects.hits.hits[0]._source),
+    );
+    return { total, objects };
+  }
+
+  /**
+   * Converts partial ElasticSearch LearningObject type into LearningObjectSummary
+   *
+   * @private
+   * @param {Partial<LearningObject>} object [The document data to convert to AuthorSummary]
+   * @returns {LearningObjectSummary}
+   * @memberof ElasticSearchLearningObjectDatastore
+   */
+  private mapLearningObjectToSummary(
+    object: Partial<LearningObject>,
+  ): LearningObjectSummary {
+    return {
+      id: object.id,
+      author: this.mapAuthorToSummary(object.author),
+      collection: object.collection,
+      contributors: object.contributors.map(this.mapAuthorToSummary),
+      date: object.date,
+      description: object.description,
+      length: object.length,
+      name: object.name,
+      status: object.status,
+    };
+  }
+
+  /**
+   * Converts Partial ElasticSearch User type into AuthorSummary
+   *
+   * @private
+   * @param {Partial<User>} author [The document data to convert to AuthorSummary]
+   * @returns {AuthorSummary}
+   * @memberof ElasticSearchLearningObjectDatastore
+   */
+  private mapAuthorToSummary(author: Partial<User>): AuthorSummary {
+    return {
+      id: author.id,
+      name: author.name,
+      organization: author.organization,
+    };
   }
 
   /**

@@ -1,4 +1,4 @@
-import { LearningObject } from '../../shared/entity';
+import { LearningObject, User } from '../../shared/entity';
 import { UserToken as Requester } from '../../shared/types/user-token';
 import {
   ElasticSearchQuery,
@@ -20,6 +20,7 @@ import {
 
 export {
   LearningObject,
+  User,
   Requester,
   ElasticSearchQuery,
   SortOperation,
@@ -36,7 +37,25 @@ export {
   CollectionAccessMap,
 };
 
+export interface AuthorSummary {
+  id: string;
+  name: string;
+  organization: string;
+}
+
+export interface LearningObjectSummary {
+  id: string;
+  author: AuthorSummary;
+  collection: string;
+  contributors: AuthorSummary[];
+  date: string;
+  description: string;
+  length: string;
+  name: string;
+  status: string;
+}
+
 export interface LearningObjectSearchResult {
   total: number;
-  objects: LearningObject[];
+  objects: LearningObjectSummary[];
 }
