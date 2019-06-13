@@ -66,7 +66,6 @@ async function startApp() {
   try {
     await MongoConnector.open(dburi);
     dataStore = await MongoDriver.build(dburi);
-    LearningObjectAdapter.open(dataStore, fileManager);
     initModules();
     const app = ExpressDriver.build(dataStore, fileManager, library);
     startHttpServer(app);
@@ -79,6 +78,7 @@ async function startApp() {
  *
  */
 function initModules() {
+  LearningObjectAdapter.open(dataStore, fileManager);
   LearningObjectSearch.initialize();
 }
 
