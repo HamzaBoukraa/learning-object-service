@@ -1,28 +1,9 @@
 import 'dotenv/config';
 import * as http from 'http';
 import * as express from 'express';
-import * as bodyParser from 'body-parser';
-import * as logger from 'morgan';
-import * as cors from 'cors';
-import * as cookieParser from 'cookie-parser';
-import {
-  enforceAuthenticatedAccess,
-  processToken,
-  handleProcessTokenError,
-} from './middleware';
-import {
-  sentryRequestHandler,
-  sentryErrorHandler,
-  reportError,
-} from './shared/SentryConnector';
+import { reportError } from './shared/SentryConnector';
 
-import {
-  MongoDriver,
-  S3Driver,
-  ExpressRouteDriver,
-  ExpressAuthRouteDriver,
-  ExpressAdminRouteDriver,
-} from './drivers/drivers';
+import { MongoDriver, S3Driver, ExpressDriver } from './drivers/drivers';
 import {
   FileManager,
   LibraryCommunicator,
@@ -71,7 +52,8 @@ let dataStore: DataStore;
  * Starts the application by
  * Establishing DB connections
  * Initializing modules
- * Initializing express server
+ * Building express server
+ * Starting Http Server
  *
  *  FIXME: Both the MongoConnector and the MongoDriver are called here. This
  * enables us to leave the legacy code (MongoDriver) running as-is while we
@@ -86,7 +68,8 @@ async function startApp() {
     dataStore = await MongoDriver.build(dburi);
     LearningObjectAdapter.open(dataStore, fileManager);
     initModules();
-    initExpressServer();
+    const app = ExpressDriver.build(dataStore, fileManager, library);
+    startHttpServer(app);
   } catch (e) {
     reportError(e);
   }
@@ -97,75 +80,6 @@ async function startApp() {
  */
 function initModules() {
   LearningObjectSearch.initialize();
-}
-
-/**
- * Initializes express server
- *
- */
-function initExpressServer() {
-  const app = express();
-  attachConfigHandlers(app);
-
-  /**
-   * Public Access Routers
-   */
-  attachPublicRouters(app);
-
-  /**
-   * Authenticated Access Routers
-   */
-  attachAuthenticatedRouters(app);
-
-  /**
-   * Start HTTP Server
-   */
-  startHttpServer(app);
-}
-
-/**
- * Attaches app configuration handlers to Express app
- *
- * @param {Express} app [The express app to attach handlers to]
- */
-function attachConfigHandlers(app: express.Express) {
-  // These sentry handlers must come first
-  app.use(sentryRequestHandler);
-  app.use(sentryErrorHandler);
-  app.use(logger('dev'));
-  app.use(
-    bodyParser.urlencoded({
-      extended: true,
-    }),
-  );
-  app.use(bodyParser.json());
-  app.use(cors({ origin: true, credentials: true }));
-  app.set('trust proxy', true);
-  app.use(cookieParser());
-
-  // Attempt to parse token on all requests
-  app.use(processToken, handleProcessTokenError);
-}
-
-/**
- * Attaches public route handlers to Express app
- *
- * @param {Express} app [The express app to attach handlers to]
- */
-function attachPublicRouters(app: express.Express) {
-  app.use(ExpressRouteDriver.buildRouter(dataStore, library, fileManager));
-}
-
-/**
- * Attaches route handlers that require authentication to Express app
- *
- * @param {Express} app [The express app to attach handlers to]
- */
-function attachAuthenticatedRouters(app: express.Express) {
-  app.use(enforceAuthenticatedAccess);
-  app.use(ExpressAuthRouteDriver.buildRouter(dataStore, fileManager, library));
-  // TODO: Deprecate admin router and middleware in favor of default router with proper authorization logic in interactors
-  app.use('/admin', ExpressAdminRouteDriver.buildRouter());
 }
 
 /**
