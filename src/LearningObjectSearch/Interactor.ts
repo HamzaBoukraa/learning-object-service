@@ -104,6 +104,7 @@ function formatSearchQuery(
   formattedQuery.standardOutcomeIDs = toArray(
     formattedQuery.standardOutcomeIDs,
   );
+  formattedQuery.guidelines = toArray(formattedQuery.guidelines);
   formattedQuery.page = toNumber(formattedQuery.page);
   formattedQuery.limit = toNumber(formattedQuery.limit);
   formattedQuery.sortType = <1 | -1>toNumber(formattedQuery.sortType);

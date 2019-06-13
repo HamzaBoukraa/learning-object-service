@@ -36,14 +36,14 @@ describe('LearningOutcomeRouteHandler', () => {
         });
     });
 
-    it('should return a status of 500 and an error message', done => {
+    it('should return a status of 400 and an error message', done => {
       request
         .post('/learning-objects/someObjectId/learning-outcomes')
         .send({ outcome: { bloom: 'bad bloom', verb: 'badverb' } })
-        .expect('Content-Type', /text/)
-        .expect(500)
+        .expect('Content-Type', /json/)
+        .expect(400)
         .then(res => {
-          expect(res.text).toMatch('Problem');
+          expect(res.text).toMatch('Bad Request');
           done();
         });
     });
@@ -83,16 +83,16 @@ describe('LearningOutcomeRouteHandler', () => {
         });
     });
 
-    it('should return a status of 500 and an error message', done => {
+    it('should return a status of 404 and an error message', done => {
       request
         .patch(
           '/learning-objects/someObjectId/learning-outcomes/5af72b914803270dfc9aeae4',
         )
         .send({ outcome: { bloom: 'bad bloom', verb: 'badverb' } })
-        .expect('Content-Type', /text/)
-        .expect(500)
+        .expect('Content-Type', /json/)
+        .expect(404)
         .then(res => {
-          expect(res.text).toMatch('Problem');
+          expect(res.text).toMatch('Not Found');
           done();
         });
     });

@@ -23,7 +23,7 @@ import {
   Collection,
 } from '../../shared/entity';
 import { Submission } from '../../LearningObjectSubmission/types/Submission';
-import { SubmissionDataStore } from '../../LearningObjectSubmission/SubmissionDataStore';
+import { SubmissionDataStore } from '../../LearningObjectSubmission/SubmissionDatastore';
 import { Stubs } from '../stubs';
 
 export class MockDataStore implements DataStore, SubmissionDataStore {
