@@ -6,11 +6,19 @@ import { Client } from '@elastic/elasticsearch';
 import { reportError } from '../shared/SentryConnector';
 
 const INDEX_NAME = 'learning-objects';
+/**
+ * In the case where the ELASTICSEARCH_DOMAIN is defined in the environment,
+ * the URI will point there. Otherwise, it will default to looking for an
+ * Elasticsearch node at its default port on the current host.
+ */
+const URI = process.env.ELASTICSEARCH_DOMAIN
+  ? process.env.ELASTICSEARCH_DOMAIN
+  : 'http://localhost:9200';
 
 export class ElasticsearchSubmissionPublisher implements SubmissionPublisher {
   client: Client;
   constructor() {
-    this.client = new Client({ node: process.env.ELASTICSEARCH_DOMAIN });
+    this.client = new Client({ node: URI });
   }
 
   /**
