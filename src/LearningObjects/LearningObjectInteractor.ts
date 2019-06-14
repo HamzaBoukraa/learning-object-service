@@ -312,6 +312,7 @@ export async function addLearningObject(
       ...object.toPlainObject(),
       author,
     });
+    objectInsert.revision = 0;
     const learningObjectID = await dataStore.insertLearningObject(objectInsert);
     objectInsert.id = learningObjectID;
     return objectInsert;

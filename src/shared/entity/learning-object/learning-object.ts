@@ -408,6 +408,18 @@ export class LearningObject {
     return this._hasRevision;
   }
 
+  private _revision!: number;
+  /**
+   * @property {string} revision The version number of the Learning Object
+   *
+   */
+  get revision(): number {
+    return this._revision;
+  }
+  set revision(revision: number) {
+    this._revision = revision;
+  }
+
   /**
    * Map deprecated status values to new LearningObject.Status values
    *
@@ -477,6 +489,7 @@ export class LearningObject {
     this._collection = '';
     this._status = LearningObject.Status.UNRELEASED;
     this._metrics = { saves: 0, downloads: 0 };
+    this._revision = 0;
     if (object) {
       this.copyObject(object);
     }
@@ -530,6 +543,9 @@ export class LearningObject {
     }
     if (object.hasRevision === true) {
       this._hasRevision = object.hasRevision;
+    }
+    if (object.revision != null) {
+      this.revision = object.revision;
     }
     this.collection = <string>object.collection || this.collection;
     this.status = <LearningObject.Status>object.status || this.status;
