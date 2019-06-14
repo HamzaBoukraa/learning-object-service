@@ -19,15 +19,15 @@ export async function releaseLearningObject({ userToken, dataStore, releasableOb
     releasableObject: LearningObject;
     releaseEmailGateway: ReleaseEmailGateway,
 }): Promise<void> {
-    if (isAdminOrEditor(userToken.accessGroups)) {
-        releaseEmailGateway.invokeReleaseNotification({
-            learningObjectName: releasableObject.name,
-            authorName: releasableObject.author.name,
-            collection: releasableObject.collection,
-            authorEmail: releasableObject.author.email,
-            username: releasableObject.author.username,
-        });
-        return dataStore.addToReleased(releasableObject);
+    if (!isAdminOrEditor(userToken.accessGroups)) {
+        throw new ResourceError(`${userToken.username} does not have access to release this Learning Object`, ResourceErrorReason.INVALID_ACCESS);
     }
-    throw new ResourceError(`${userToken.username} does not have access to release this Learning Object`, ResourceErrorReason.INVALID_ACCESS);
+    await dataStore.addToReleased(releasableObject);
+    releaseEmailGateway.invokeReleaseNotification({
+        learningObjectName: releasableObject.name,
+        authorName: releasableObject.author.name,
+        collection: releasableObject.collection,
+        authorEmail: releasableObject.author.email,
+        username: releasableObject.author.username,
+    });
 }
