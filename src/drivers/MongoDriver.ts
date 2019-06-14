@@ -2281,6 +2281,7 @@ export class MongoDriver implements DataStore {
       outcomes,
       hasRevision: record.hasRevision,
       children,
+      revision: record.revision,
     });
 
     return learningObject;
