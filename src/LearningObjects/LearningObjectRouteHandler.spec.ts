@@ -11,6 +11,7 @@ import * as cookieParser from 'cookie-parser';
 import { processToken, handleProcessTokenError } from '../middleware';
 import { LearningObject } from '../shared/entity';
 import { Stubs } from '../tests/stubs';
+import { HierarchyAdapter } from './Hierarchy/HierarchyAdapter';
 
 const app = express();
 const router = express.Router();
@@ -29,6 +30,7 @@ describe('LearningObjectRouteHandler', () => {
     let authorization = {};
     beforeAll(async () => {
         dataStore = await MongoDriver.build(global['__MONGO_URI__']);
+        HierarchyAdapter.open(dataStore);
         fileManager = new MockS3Driver();
         LibraryDriver = new MockLibraryDriver();
         // FIXME: This user is both an admin and a reviewer@nccp
