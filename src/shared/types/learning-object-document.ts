@@ -15,6 +15,7 @@ export interface LearningObjectDocument {
   collection: string;
   status: string;
   hasRevision?: boolean;
+  revision: number;
 }
 
 export interface MaterialDocument {

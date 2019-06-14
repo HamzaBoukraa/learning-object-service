@@ -2217,6 +2217,7 @@ export class MongoDriver implements DataStore {
         collection: object.collection,
         status: object.status,
         children: object.children.map(obj => obj.id),
+        revision: object.revision,
       };
 
       return doc;
@@ -2280,6 +2281,7 @@ export class MongoDriver implements DataStore {
       outcomes,
       hasRevision: record.hasRevision,
       children,
+      revision: record.revision,
     });
 
     return learningObject;
