@@ -12,7 +12,7 @@ export interface PublishingDataStore {
 /**
  * If the user is an admin or editor (the only roles that can release a Learning Object),
  * then request the data store marks the Learning Object as released. Otherwise, throw a
- * ResourceError. An email will on;y be sent to the Learning Object author if the
+ * ResourceError. An email will only be sent to the Learning Object author if the
  * Learning Object being released is a top-level (parent) objct
  */
 export async function releaseLearningObject({ userToken, dataStore, releasableObject, releaseEmailGateway }: {
