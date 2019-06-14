@@ -16,8 +16,9 @@ export class HierarchyAdapter {
     static open(dataStore: DataStore) {
         if (!this._instance) {
             this._instance = new HierarchyAdapter(dataStore);
+        } else {
+            throw new Error('HierarchyAdapter has already been created.');
         }
-        throw new Error('HierarchyAdapter has already been created.');
     }
 
     /**
@@ -27,8 +28,9 @@ export class HierarchyAdapter {
     static getInstance() {
         if (this._instance) {
             return this._instance;
+        } else {
+            throw new Error('HierarchyAdapter has not been created yet.');
         }
-        throw new Error('HierarchyAdapter has not been created yet.');
     }
 
     /**

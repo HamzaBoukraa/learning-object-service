@@ -22,12 +22,15 @@ app.use(cookieParser());
 app.use(processToken, handleProcessTokenError);
 app.use(router);
 const request = supertest(app);
+
 describe('LearningObjectRouteHandler', () => {
+
     let dataStore: MongoDriver;
     let fileManager: FileManager;
     let LibraryDriver: LibraryCommunicator;
     let token: string;
     let authorization = {};
+
     beforeAll(async () => {
         dataStore = await MongoDriver.build(global['__MONGO_URI__']);
         HierarchyAdapter.open(dataStore);
@@ -44,6 +47,7 @@ describe('LearningObjectRouteHandler', () => {
             library: LibraryDriver,
         });
     });
+
     describe('GET /learning-objects/:learningObjectId', () => {
 
         it('should return a learing object based on the id', done => {
