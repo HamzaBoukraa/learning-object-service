@@ -1,5 +1,5 @@
 import { DataStore } from '../../shared/interfaces/DataStore';
-import { fetchParents } from './HierarchyInteractor';
+import { isTopLevelLearningObject } from './HierarchyInteractor';
 import { UserToken } from '../../shared/types';
 import { LearningObject } from '../../shared/entity';
 
@@ -37,14 +37,13 @@ export class HierarchyAdapter {
      * Proxy function to call fetchParents function in
      * HierarchyInteractor
      */
-    async fetchParents(params: {
+    async isTopLevelLearningObject(params: {
         learningObjectID: string,
         userToken: UserToken,
-    }): Promise<LearningObject[]> {
-        return await fetchParents({
+    }): Promise<boolean> {
+        return await isTopLevelLearningObject({
             dataStore: this.dataStore,
             learningObjectID: params.learningObjectID,
-            userToken: params.userToken,
         });
     }
 }

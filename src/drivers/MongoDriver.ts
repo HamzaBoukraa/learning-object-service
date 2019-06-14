@@ -517,6 +517,29 @@ export class MongoDriver implements DataStore {
   }
 
   /**
+   * Returns a single parent id for a given child object id
+   * This is used for checking if a learning object is a top level object
+   *
+   * @param {{ childId: string }} params
+   * @returns {Promise<string[]>}
+   * @memberof MongoDriver
+   */
+  async findParentObjectId(params: { childId: string }): Promise<string[]> {
+    const docs = await this.db
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .find<{ _id: string }>(
+        { children: params.childId },
+        { projection: { _id: 1 } },
+      )
+      .limit(1)
+      .toArray();
+    if (docs) {
+      return docs.map(doc => doc._id);
+    }
+    return [];
+  }
+
+  /**
    * Returns array of ids associated with the learning object's children objects
    * @param {{ parentId: string }} params
    * @return {Promise<string[]>}

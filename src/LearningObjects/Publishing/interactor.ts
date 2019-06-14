@@ -22,11 +22,11 @@ export async function releaseLearningObject({ userToken, dataStore, releasableOb
     releaseEmailGateway: ReleaseEmailGateway,
 }): Promise<void> {
     if (isAdminOrEditor(userToken.accessGroups)) {
-        const parentObjects = await HierarchyAdapter.getInstance().fetchParents({
+        const isTopLevelObject = await HierarchyAdapter.getInstance().isTopLevelLearningObject({
             learningObjectID: releasableObject.id,
             userToken,
         });
-        if (!parentObjects) {
+        if (isTopLevelObject) {
             releaseEmailGateway.invokeReleaseNotification({
                 learningObjectName: releasableObject.name,
                 authorName: releasableObject.author.name,
