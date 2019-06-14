@@ -34,7 +34,7 @@ export class HierarchyAdapter {
     }
 
     /**
-     * Proxy function to call fetchParents function in
+     * Proxy function to call isTopLevelLearningObject function in
      * HierarchyInteractor
      */
     async isTopLevelLearningObject(params: {
