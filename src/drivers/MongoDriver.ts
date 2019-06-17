@@ -533,7 +533,7 @@ export class MongoDriver implements DataStore {
       )
       .limit(1)
       .toArray();
-    if (docs) {
+    if (docs[0]) {
       const id = docs.map(doc => doc._id)[0];
       return id;
     }

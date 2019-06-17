@@ -62,10 +62,7 @@ export async function isTopLevelLearningObject(params: {
   const parentId = await dataStore.findParentObjectId({
     childId: learningObjectID,
   });
-  if (parentId) {
-    return false;
-  }
-  return true;
+  return parentId === null;
 }
 
 /**
