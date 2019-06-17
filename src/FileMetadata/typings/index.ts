@@ -2,16 +2,12 @@ import { LearningObject } from '../../shared/entity';
 export type LearningObjectFile = LearningObject.Material.File;
 
 /**
- * An interface representation of the FileMetadataDocument type
+ * An interface representation of the FileMetadataInsert type
  *
  * @export
- * @interface FileMetadataDocument
+ * @interface FileMetadataInsert
  */
-export interface FileMetadataDocument {
-  /**
-   * Unique identifier of the file document
-   */
-  id: string;
+export interface FileMetadataInsert {
   /**
    * Time at which the file metadata was created (When the file was first ever uploaded)
    * Value is a string representing the milliseconds elapsed since the UNIX epoch
@@ -79,4 +75,26 @@ export interface FileMetadataDocument {
    * The `storageRevision` of File 1 will now be `3`, to point to the newly uploaded file
    */
   storageRevision: number;
+}
+
+/**
+ * An interface representation of the FileMetadataUpdate type
+ *
+ * @export
+ * @interface FileMetadataUpdate
+ * @extends {Partial<FileMetadataInsert>}
+ */
+export interface FileMetadataUpdate extends Partial<FileMetadataInsert> {}
+
+/**
+ * An interface representation of the FileMetadataDocument type
+ *
+ * @export
+ * @interface FileMetadataDocument
+ */
+export interface FileMetadataDocument extends FileMetadataInsert {
+  /**
+   * Unique identifier of the file document
+   */
+  id: string;
 }
