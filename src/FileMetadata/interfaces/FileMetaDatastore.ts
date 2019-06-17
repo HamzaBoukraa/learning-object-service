@@ -37,7 +37,7 @@ export abstract class FileMetaDatastore {
   abstract fetchFileMeta(id: string): Promise<FileMetadataDocument>;
 
   /**
-   * Fetches all FileMetadataDocuments match  `learningObjectId` and `learningObjectRevision`
+   * Fetches all FileMetadataDocuments that match the specified `learningObjectId` and `learningObjectRevision`
    *
    * @abstract
    * @param {string} learningObjectId [Id of the Learning Object]
@@ -81,7 +81,7 @@ export abstract class FileMetaDatastore {
   abstract deleteFileMeta(id: string): Promise<void>;
 
   /**
-   * Deletes all FileMetadataDocuments that match  `learningObjectId` and `learningObjectRevision`
+   * Deletes all FileMetadataDocuments that match the specified `learningObjectId` and `learningObjectRevision`
    *
    * @abstract
    * @param {string} learningObjectId [Id of the Learning Object]
