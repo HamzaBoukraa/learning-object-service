@@ -7,7 +7,7 @@ import {
 import { Db, ObjectId } from 'mongodb';
 import { MongoConnector } from '../../../shared/Mongo/MongoConnector';
 
-const FILES_DB = process.env.FILES_DB_NAME;
+const FILES_DB = process.env.FILE_DB_NAME;
 
 const FILE_META_COLLECTION = 'files';
 
