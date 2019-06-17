@@ -391,7 +391,7 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
     return Promise.resolve(this.stubs.learningObjectFile);
   }
 
-  findParentObjectId(params: { childId: string; }): Promise<string[]> {
-    return Promise.resolve([this.stubs.learningObject.id]);
+  findParentObjectId(params: { childId: string; }): Promise<string> {
+    return Promise.resolve(this.stubs.learningObject.id);
   }
 }

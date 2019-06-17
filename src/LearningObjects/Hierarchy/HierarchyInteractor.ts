@@ -59,10 +59,10 @@ export async function isTopLevelLearningObject(params: {
   learningObjectID: string;
 }): Promise<boolean> {
   const { dataStore, learningObjectID } = params;
-  const parentIds = await dataStore.findParentObjectId({
+  const parentId = await dataStore.findParentObjectId({
     childId: learningObjectID,
   });
-  if (parentIds[0]) {
+  if (parentId) {
     return false;
   }
   return true;
