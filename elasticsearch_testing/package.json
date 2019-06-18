@@ -12,6 +12,8 @@
     "@babel/plugin-proposal-class-properties": "^7.4.4",
     "@babel/preset-env": "^7.4.5",
     "@elastic/elasticsearch": "^6.8.0",
-    "jest": "^24.5.0"
+    "dotenv": "^8.0.0",
+    "jest": "^24.5.0",
+    "jsonwebtoken": "^8.5.1"
   }
 }

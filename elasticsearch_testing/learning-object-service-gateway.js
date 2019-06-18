@@ -1,4 +1,6 @@
 const request = require('request-promise');
+var jwt = require('jsonwebtoken');
+const fs = require('fs');
 
 class LearningObjectServiceGateway {
 
@@ -20,6 +22,7 @@ class LearningObjectServiceGateway {
                 },
             });
             if (response) {
+                // fs.writeFile('response.txt', response);
                 return JSON.parse(response);
             }
             throw new Error('Unexpected response');
