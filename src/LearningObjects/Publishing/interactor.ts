@@ -28,6 +28,14 @@ export async function releaseLearningObject({ userToken, dataStore, releasableOb
     await sendEmail(releasableObject, userToken, releaseEmailGateway);
 }
 
+/**
+ * sendEmail determines if the Learning Object author should recieve an email about the release,
+ * and triggers the send email action if it does. Authors should only be notified if the Learning
+ * Object being released has no parent.
+ * @param releasableObject the Learning Object being released
+ * @param userToken the user who triggered the release
+ * @param releaseEmailGateway the Gateway that makes the API calls to send release emails
+ */
 async function sendEmail(releasableObject: LearningObject, userToken: UserToken, releaseEmailGateway: ReleaseEmailGateway) {
     const isTopLevelObject = await HierarchyAdapter.getInstance().isTopLevelLearningObject({
         learningObjectID: releasableObject.id,
