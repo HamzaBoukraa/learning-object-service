@@ -2,7 +2,7 @@ import { LearningObject } from '../../shared/entity';
 import { ResourceError, ResourceErrorReason } from '../../shared/errors';
 import { isAdminOrEditor } from '../../shared/AuthorizationManager';
 import { UserToken } from '../../shared/types';
-import { ReleaseEmailGateway } from './release-email-gateway';
+import { ReleaseEmailGateway } from './ReleaseEmails/release-email-gateway';
 import { HierarchyAdapter } from '../Hierarchy/HierarchyAdapter';
 
 export interface PublishingDataStore {
