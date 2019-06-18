@@ -1,3 +1,6 @@
+import { LearningObject, User } from '../entity';
+import { LearningObjectSummary, AuthorSummary } from '../types';
+
 /**
  * Formats text properly for usage in DataStore
  *
@@ -86,4 +89,44 @@ export function toNumber(value: any): number {
     return num;
   }
   return null;
+}
+
+/**
+ * Converts LearningObject type into LearningObjectSummary
+ *
+ * @private
+ * @param {Partial<LearningObject>} object [The document data to convert to AuthorSummary]
+ * @returns {LearningObjectSummary}
+ */
+export function mapLearningObjectToSummary(
+  object: Partial<LearningObject>,
+): LearningObjectSummary {
+  return {
+    id: object.id,
+    author: mapAuthorToSummary(object.author),
+    collection: object.collection,
+    contributors: object.contributors.map(mapAuthorToSummary),
+    date: object.date,
+    description: object.description,
+    length: object.length,
+    name: object.name,
+    revision: object.revision,
+    status: object.status,
+  };
+}
+
+/**
+ * Converts  User type into AuthorSummary
+ *
+ * @private
+ * @param {Partial<User>} author [The document data to convert to AuthorSummary]
+ * @returns {AuthorSummary}
+ */
+export function mapAuthorToSummary(author: Partial<User>): AuthorSummary {
+  return {
+    id: author.id,
+    username: author.username,
+    name: author.name,
+    organization: author.organization,
+  };
 }
