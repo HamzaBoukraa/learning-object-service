@@ -11,10 +11,10 @@ describe('Sends a request to the learning object service search route', () => {
         await initElasticsearchNode();
     });
 
-    // it('Search as a user/visitor', () => {
-    //     expect.assertions(1);
-    //     return expect(learningObjectService.searchLearningObjects('', 'user/visitor')).resolves.toEqual(expectedResponse);    
-    // });
+    it('Search as a user/visitor', () => {
+        expect.assertions(1);
+        return expect(learningObjectService.searchLearningObjects('', 'user/visitor')).resolves.toEqual(expectedResponse);    
+    });
 
     it('Search as a reviewer@nccp', () => {
         expect.assertions(1);
@@ -23,17 +23,17 @@ describe('Sends a request to the learning object service search route', () => {
 
     it('Search as a curator@c5', () => {
         expect.assertions(1);
-        return expect(learningObjectService.searchLearningObjects('')).resolves.toEqual(expectedResponse);    
+        return expect(learningObjectService.searchLearningObjects('', 'curator@c5')).resolves.toEqual(expectedResponse);    
     });
 
     it('Search as an editor', () => {
         expect.assertions(1);
-        return expect(learningObjectService.searchLearningObjects('')).resolves.toEqual(expectedResponse);    
+        return expect(learningObjectService.searchLearningObjects('', 'editor')).resolves.toEqual(expectedResponse);    
     });
 
     it('Search as an admin', () => {
         expect.assertions(1);
-        return expect(learningObjectService.searchLearningObjects('')).resolves.toEqual(expectedResponse);    
+        return expect(learningObjectService.searchLearningObjects('', 'admin')).resolves.toEqual(expectedResponse);    
     });
 
     afterAll(async () => {
