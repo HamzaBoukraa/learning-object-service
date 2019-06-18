@@ -49,6 +49,23 @@ export async function fetchParents(params: {
 }
 
 /**
+ * Checks if the given learning object id belongs to a parent object
+ *
+ *
+ * @returns {Promise<boolean>} false if Learning Object has one or more parents
+ */
+export async function isTopLevelLearningObject(params: {
+  dataStore: DataStore;
+  learningObjectID: string;
+}): Promise<boolean> {
+  const { dataStore, learningObjectID } = params;
+  const parentId = await dataStore.findParentObjectId({
+    childId: learningObjectID,
+  });
+  return parentId === null;
+}
+
+/**
  * Creates a ParentLearningObjectQuery based on information about the requester.
  *
  * @param learningObjectID the id of the Learning Object to find parents for.
