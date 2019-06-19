@@ -1,3 +1,7 @@
+/**
+ * This object contains settings and mapping options
+ * that are passed into Elasticsearch during Index creation
+ */
 export const mapping = 
 {
     "settings": {

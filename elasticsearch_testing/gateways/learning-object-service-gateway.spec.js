@@ -1,6 +1,6 @@
 import { searchLearningObjects } from './learning-object-service-gateway';
 import { initElasticsearchNode } from './elasticsearch_gateway';
-import { expectedVisitorResponse } from '../elasticsearch-data/elasticsearch-response-visitor';
+import { expectedVisitorResponse, expectedEditorAdminResponse } from '../elasticsearch-data/elasticsearch-responses';
 import 'dotenv/config';
 
 describe('Sends a request to the learning object service search route', () => {
@@ -38,24 +38,17 @@ describe('Sends a request to the learning object service search route', () => {
     //         });    
     // });
 
-    it('Search as an editor', () => {
-        expect.assertions(1);
-        return expect(searchLearningObjects('', 'editor'))
-            .resolves
-            .toEqual({
-                total: 10,
-                objects: [],
-            });   
+    it('Search as an editor', async () => {
+        expect.assertions(2);
+        const results = await searchLearningObjects('', 'editor');
+        expect(results.total).toBe(expectedEditorAdminResponse.total);
+        expect(new Set(results.objects)).toEqual(new Set(expectedEditorAdminResponse.objects));    
     });
 
     it('Search as an admin', async () => {
-        expect.assertions(1);
-        return expect(searchLearningObjects('', 'admin'))
-            .resolves
-            .toEqual({
-                total: 10,
-                objects: [],
-            });    
+        expect.assertions(2);
+        const results = await searchLearningObjects('', 'admin');
+        expect(results.total).toBe(expectedEditorAdminResponse.total);
+        expect(new Set(results.objects)).toEqual(new Set(expectedEditorAdminResponse.objects));    
     });
-
 });

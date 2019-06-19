@@ -1,8 +1,16 @@
 const request = require('request-promise');
-var jwt = require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
+const fs = require('fs');
 
 const searchURI = process.env.LEARNING_OBJECT_API ? process.env.LEARNING_OBJECT_API : `http://localhost:5000/`;
 
+/**
+ * Makes a request to Learning Object Service to search for Learning Objects
+ * Creates Bearer token based off of given privilege
+ * 
+ * @param query string
+ * @param privilege string : user/visitor|reviewer@collecitonName|curator@collectionName|editor|admin
+ */
 export async function searchLearningObjects(query, privilege) {
     try {
         const token = generateUserToken(privilege);
@@ -16,6 +24,7 @@ export async function searchLearningObjects(query, privilege) {
             },
         });
         if (response) {
+            fs.writeFile('response.txt', response);
             return JSON.parse(response);
         }
         throw new Error('Unexpected response');
@@ -26,6 +35,10 @@ export async function searchLearningObjects(query, privilege) {
     }
 }
 
+/**
+ * Creates Bearer token based off of given privilege
+ * @param privilege string : user/visitor|reviewer@collecitonName|curator@collectionName|editor|admin
+ */
 function generateUserToken(privilege) {
     const payload = {
         id: 'test_id',

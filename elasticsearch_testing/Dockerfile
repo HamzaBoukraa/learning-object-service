@@ -11,6 +11,4 @@ COPY gateways ./gateways
 RUN ls
 RUN npm install && npm cache clean --force
 
-# Jest will automatically set NODE_ENV to testing
-
 RUN npm test

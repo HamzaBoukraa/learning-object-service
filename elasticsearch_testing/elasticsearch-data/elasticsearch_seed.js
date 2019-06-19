@@ -1,3 +1,7 @@
+/**
+ * This array is passed into the Elasticsearch Bulk API
+ * immediately after Index creation
+ */
 export const seedData =
 [
     {"index":{"_index":"learning-objects", "_type":"_doc"}},
