@@ -60,6 +60,24 @@ export class MongoFileMetaDatastore implements FileMetaDatastore {
    *
    * @memberof MongoFileMetaDatastore
    */
+  async fetchRevisionId(id: string): Promise<number> {
+    const doc = await this.db
+      .collection<FileMetadataDocument>(FILE_META_COLLECTION)
+      .findOne(
+        { _id: new ObjectId(id) },
+        { projection: { _id: 0, learningObjectRevision: 1 } },
+      );
+    if (doc) {
+      return doc.learningObjectRevision;
+    }
+    return null;
+  }
+
+  /**
+   * @inheritdoc
+   *
+   * @memberof MongoFileMetaDatastore
+   */
   fetchAllFileMeta({
     learningObjectId,
     learningObjectRevision,

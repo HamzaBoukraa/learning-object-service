@@ -28,6 +28,15 @@ export abstract class FileMetaDatastore {
   }): Promise<boolean>;
 
   /**
+   * Fetches the Learning Object revision id a file belongs to
+   *
+   * @abstract
+   * @param {string} id [Id of the FileMetadataDocument]
+   * @returns {Promise<number>}
+   */
+  abstract fetchRevisionId(id: string): Promise<number>;
+
+  /**
    * Fetches FileMetadataDocument by id
    *
    * @abstract
