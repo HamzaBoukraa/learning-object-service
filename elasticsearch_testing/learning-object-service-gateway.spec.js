@@ -9,11 +9,11 @@ describe('Sends a request to the learning object service search route', () => {
         await initElasticsearchNode();
     });
 
-    it('Search as a user/visitor', () => {
-        expect.assertions(1);
-        return expect(searchLearningObjects('', 'user/visitor'))
-            .resolves
-            .toEqual(expectedVisitorResponse);    
+    it('Search as a user/visitor', async () => {
+        expect.assertions(2);
+        const results = await searchLearningObjects('', 'user/visitor');
+        expect(results.total).toBe(expectedVisitorResponse.total);
+        expect(new Set(results.objects)).toEqual(new Set(expectedVisitorResponse.objects));    
     });
 
     it('Search as a reviewer@nccp', () => {
