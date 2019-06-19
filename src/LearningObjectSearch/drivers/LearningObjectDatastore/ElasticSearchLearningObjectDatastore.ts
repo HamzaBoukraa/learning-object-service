@@ -9,14 +9,15 @@ import {
   SortOperation,
   TermsQuery,
   LearningObjectSummary,
-  AuthorSummary,
   LearningObject,
-  User,
 } from '../../typings';
 import { SearchResponse } from 'elasticsearch';
 import * as request from 'request-promise';
 import { LearningObjectDatastore } from '../../interfaces';
-import { sanitizeObject } from '../../../shared/functions';
+import {
+  sanitizeObject,
+  mapLearningObjectToSummary,
+} from '../../../shared/functions';
 import { RequestError, StatusCodeError } from 'request-promise/errors';
 import {
   ResourceError,
@@ -484,7 +485,7 @@ export class ElasticSearchLearningObjectDatastore
             top_hits: {
               sort: [
                 {
-                  'revision': { order: 'asc' },
+                  revision: { order: 'asc' },
                 },
               ],
               size: 1,
@@ -567,7 +568,7 @@ export class ElasticSearchLearningObjectDatastore
     const total = results.hits.total;
     const hits = results.hits.hits;
     const objects: LearningObjectSummary[] = hits.map(doc =>
-      this.mapLearningObjectToSummary(doc._source),
+      mapLearningObjectToSummary(doc._source),
     );
     return { total, objects };
   }
@@ -588,50 +589,9 @@ export class ElasticSearchLearningObjectDatastore
     const objects: LearningObjectSummary[] = buckets.map(
       (bucket: {
         objects: { hits: { hits: [{ _source: Partial<LearningObject> }] } };
-      }) =>
-        this.mapLearningObjectToSummary(bucket.objects.hits.hits[0]._source),
+      }) => mapLearningObjectToSummary(bucket.objects.hits.hits[0]._source),
     );
     return { total, objects };
-  }
-
-  /**
-   * Converts partial ElasticSearch LearningObject type into LearningObjectSummary
-   *
-   * @private
-   * @param {Partial<LearningObject>} object [The document data to convert to AuthorSummary]
-   * @returns {LearningObjectSummary}
-   * @memberof ElasticSearchLearningObjectDatastore
-   */
-  private mapLearningObjectToSummary(
-    object: Partial<LearningObject>,
-  ): LearningObjectSummary {
-    return {
-      id: object.id,
-      author: this.mapAuthorToSummary(object.author),
-      collection: object.collection,
-      contributors: object.contributors.map(this.mapAuthorToSummary),
-      date: object.date,
-      description: object.description,
-      length: object.length,
-      name: object.name,
-      status: object.status,
-    };
-  }
-
-  /**
-   * Converts Partial ElasticSearch User type into AuthorSummary
-   *
-   * @private
-   * @param {Partial<User>} author [The document data to convert to AuthorSummary]
-   * @returns {AuthorSummary}
-   * @memberof ElasticSearchLearningObjectDatastore
-   */
-  private mapAuthorToSummary(author: Partial<User>): AuthorSummary {
-    return {
-      id: author.id,
-      name: author.name,
-      organization: author.organization,
-    };
   }
 
   /**
