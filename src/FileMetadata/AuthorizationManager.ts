@@ -4,13 +4,7 @@
 
 import { ResourceError, ResourceErrorReason } from '../shared/errors';
 import { Requester } from './typings';
-
-enum AccessGroup {
-  ADMIN = 'admin',
-  EDITOR = 'editor',
-  CURATOR = 'curator',
-  REVIEWER = 'reviewer',
-}
+import { AccessGroup } from '../shared/types';
 
 /**
  * Checks if the requester is the author by comparing `authorUsername` against requester's username
