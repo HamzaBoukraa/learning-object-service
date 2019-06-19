@@ -1,5 +1,5 @@
-import { mapping } from './elasticsearch-data/elasticsearch_learning-object_mapping';
-import { seedData } from './elasticsearch-data/elasticsearch_seed';
+import { mapping } from '../elasticsearch-data/elasticsearch_learning-object_mapping';
+import { seedData } from '../elasticsearch-data/elasticsearch_seed';
 const request = require('request-promise');
 const { Client } = require('@elastic/elasticsearch')
 const client = new Client({ node:  process.env.ELASTIC_SEARCH_TEST_NODE_URI ? process.env.ELASTIC_SEARCH_TEST_NODE_URI : 'http://localhost:9200' });

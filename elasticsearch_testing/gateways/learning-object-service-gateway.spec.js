@@ -1,6 +1,6 @@
 import { searchLearningObjects } from './learning-object-service-gateway';
 import { initElasticsearchNode } from './elasticsearch_gateway';
-import { expectedVisitorResponse } from './elasticsearch-data/elasticsearch-response-visitor';
+import { expectedVisitorResponse } from '../elasticsearch-data/elasticsearch-response-visitor';
 import 'dotenv/config';
 
 describe('Sends a request to the learning object service search route', () => {
