@@ -602,9 +602,9 @@ export class ElasticSearchLearningObjectDatastore
   private convertAggregationToLearningObjectSearchResult(
     results: SearchResponse<Partial<LearningObject>>,
   ): LearningObjectSearchResult {
-    const total = results.aggregations.accessible.buckets[0].doc_count;
-    const aggregationResults =
-      results.aggregations.accessible.buckets[0].results;
+    const resultBucket = results.aggregations.accessible.buckets[0];
+    const total = resultBucket.doc_count;
+    const aggregationResults = resultBucket.results;
     const buckets = aggregationResults.buckets;
     const objects: LearningObjectSummary[] = buckets.map(
       (bucket: {
