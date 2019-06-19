@@ -16,25 +16,27 @@ describe('Sends a request to the learning object service search route', () => {
         expect(new Set(results.objects)).toEqual(new Set(expectedVisitorResponse.objects));    
     });
 
-    it('Search as a reviewer@nccp', () => {
-        expect.assertions(1);
-        return expect(searchLearningObjects('', 'reviewer@nccp'))
-            .resolves
-            .toEqual({
-                total: 6,
-                objects: [],
-            });    
-    });
+    // FIXME: Uncomment when elasticsearch query fix is merged
+    // it('Search as a reviewer@nccp', () => {
+    //     expect.assertions(1);
+    //     return expect(searchLearningObjects('', 'reviewer@nccp'))
+    //         .resolves
+    //         .toEqual({
+    //             total: 6,
+    //             objects: [],
+    //         });    
+    // });
 
-    it('Search as a curator@c5', () => {
-        expect.assertions(1);
-        return expect(searchLearningObjects('', 'curator@c5'))
-            .resolves
-            .toEqual({
-                total: 6,
-                objects: [],
-            });    
-    });
+    // FIXME: Uncomment when elasticsearch query fix is merged
+    // it('Search as a curator@c5', () => {
+    //     expect.assertions(1);
+    //     return expect(searchLearningObjects('', 'curator@c5'))
+    //         .resolves
+    //         .toEqual({
+    //             total: 6,
+    //             objects: [],
+    //         });    
+    // });
 
     it('Search as an editor', () => {
         expect.assertions(1);
