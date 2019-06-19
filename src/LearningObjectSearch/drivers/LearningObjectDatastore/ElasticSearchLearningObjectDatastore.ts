@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import {
   ElasticSearchQuery,
   LearningObjectSearchQuery,
@@ -25,6 +26,7 @@ import {
   ServiceError,
   ServiceErrorReason,
 } from '../../../shared/errors';
+import { ReleasedLearningObjectQuery } from '../../../shared/interfaces/DataStore';
 
 const ELASTICSEARCH_DOMAIN = process.env.ELASTICSEARCH_DOMAIN;
 const LEARNING_OBJECT_INDEX = 'learning-objects';
@@ -87,6 +89,7 @@ export class ElasticSearchLearningObjectDatastore
     const elasticQuery: ElasticSearchQuery = this.buildPrivilegedSearchQuery(
       params,
     );
+
     const results = await this.executeQuery(elasticQuery);
     return this.convertAggregationToLearningObjectSearchResult(results);
   }
@@ -101,6 +104,7 @@ export class ElasticSearchLearningObjectDatastore
     params: LearningObjectSearchQuery,
   ): ElasticSearchQuery {
     const query = this.buildSearchQuery(params);
+    this.appendReleasedPostFiltersandPaginator(params, query);
     this.appendReleasedStatusFilter(query);
     return query;
   }
@@ -124,17 +128,10 @@ export class ElasticSearchLearningObjectDatastore
       limit: 0,
     });
     const { collectionRestrictions } = params;
-    const queryFilters = this.getQueryFilters(
-      params as LearningObjectSearchQuery,
-    );
     if (collectionRestrictions && Object.keys(collectionRestrictions).length) {
-      this.appendCollectionRestrictionsFilter({
-        query,
-        filters: queryFilters,
-        restrictions: collectionRestrictions,
-      });
+      this.appendDuplicateFilterAggregation({ query, filters: params, restrictions: collectionRestrictions });
     }
-    this.appendDuplicateFilterAggregation({ query, filters: params });
+
     return query;
   }
 
@@ -149,7 +146,7 @@ export class ElasticSearchLearningObjectDatastore
   private buildSearchQuery(
     params: LearningObjectSearchQuery,
   ): ElasticSearchQuery {
-    const { text, limit, page, sortType, orderBy } = params;
+    const { text } = params;
 
     const elasticQuery: Partial<ElasticSearchQuery> = {};
     if (text) {
@@ -187,26 +184,30 @@ export class ElasticSearchLearningObjectDatastore
         },
       };
     }
+    return elasticQuery as ElasticSearchQuery;
+  }
+
+  private appendReleasedPostFiltersandPaginator(params: ReleasedLearningObjectQuery, query: ElasticSearchQuery) {
+    const { limit, page, sortType, orderBy } = params;
     const queryFilters = this.getQueryFilters(params);
     if (Object.keys(queryFilters).length) {
       this.appendQueryFilters({
-        query: elasticQuery as ElasticSearchQuery,
+        query,
         filters: queryFilters,
       });
     }
     if (orderBy) {
       this.appendSortStage({
-        query: elasticQuery as ElasticSearchQuery,
+        query,
         sortType,
         orderBy,
       });
     }
     this.appendPaginator({
-      query: elasticQuery as ElasticSearchQuery,
+      query,
       limit,
       page,
     });
-    return elasticQuery as ElasticSearchQuery;
   }
 
   /**
@@ -395,16 +396,20 @@ export class ElasticSearchLearningObjectDatastore
     filters: Partial<LearningObjectSearchQuery>;
     restrictions: CollectionAccessMap;
   }): void {
-    query.post_filter = query.post_filter || {
+    query.aggs = { accessible: { filters: [], aggs: {} } }
+    query.aggs.accessible.filters[0].filters = {
       bool: {
         should: [{ bool: { must: this.convertQueryFiltersToTerms(filters) } }],
       },
     };
 
-    const propertyFilters: Partial<LearningObjectSearchQuery> = filters;
-    delete propertyFilters.collection;
-    delete propertyFilters.status;
+    const restrictionsFilter = this.convertRestrictionstoTerms(filters, restrictions);
 
+    (query.aggs.accessible.filters[0].filters as BoolOperation).bool.should.push(restrictionsFilter);
+  }
+
+  private convertRestrictionstoTerms(filters: Partial<LearningObjectSearchQuery>, restrictions: CollectionAccessMap) {
+    const propertyFilters: Partial<LearningObjectSearchQuery> = filters;
     const restrictionsFilter = {
       bool: {
         must: [
@@ -418,7 +423,6 @@ export class ElasticSearchLearningObjectDatastore
         ],
       },
     };
-
     Object.keys(restrictions).forEach(collectionName => {
       const restriction = {
         bool: {
@@ -438,8 +442,7 @@ export class ElasticSearchLearningObjectDatastore
       };
       restrictionsFilter.bool.must[0].bool.should.push(restriction);
     });
-
-    (query.post_filter as BoolOperation).bool.should.push(restrictionsFilter);
+    return restrictionsFilter;
   }
 
   /**
@@ -465,49 +468,61 @@ export class ElasticSearchLearningObjectDatastore
   private appendDuplicateFilterAggregation({
     query,
     filters,
+    restrictions,
   }: {
     query: ElasticSearchQuery;
     filters: Partial<LearningObjectSearchQuery>;
+    restrictions: CollectionAccessMap;
   }): void {
+    const queryFilters = this.getQueryFilters(
+      filters as LearningObjectSearchQuery,
+    );
     const { limit, page, sortType, orderBy } = filters;
     let sorter: SortOperation = { score: { order: 'desc' } };
     if (orderBy) {
       sorter = this.getSorter({ orderBy, sortType });
     }
     query.aggs = {
-      results: {
-        terms: {
-          field: 'id.keyword',
-          size: AGGREGATION_DEFAULTS.TERMS_MAX_SIZE,
-        },
-        aggs: {
-          objects: {
-            top_hits: {
-              sort: [
-                {
-                  revision: { order: 'asc' },
-                },
-              ],
-              size: 1,
-            },
+      accessible: {
+          filters: {
+            filters: [this.convertRestrictionstoTerms(queryFilters, restrictions)],
           },
-          score: {
-            max: {
-              script: {
-                source: '_score',
+        aggs: {results: {
+          terms: {
+            field: 'id.keyword',
+            size: AGGREGATION_DEFAULTS.TERMS_MAX_SIZE,
+          },
+          aggs: {
+            objects: {
+              top_hits: {
+                sort: [
+                  {
+                    revision: { order: 'asc' },
+                  },
+                ],
+                size: 1,
               },
             },
-          },
-          objects_bucket_sort: {
-            bucket_sort: {
-              sort: [sorter],
-              size: limit || QUERY_DEFAULTS.SIZE,
-              from: this.formatFromValue(page),
+            score: {
+              max: {
+                script: {
+                  source: '_score',
+                },
+              },
+            },
+            objects_bucket_sort: {
+              bucket_sort: {
+                sort: [sorter],
+                size: limit || QUERY_DEFAULTS.SIZE,
+                from: this.formatFromValue(page),
+              },
             },
           },
         },
       },
+    },
     };
+    console.log(JSON.stringify(query));
   }
 
   /**
@@ -519,7 +534,7 @@ export class ElasticSearchLearningObjectDatastore
    * @memberof ElasticSearchDriver
    */
   private convertQueryFiltersToTerms(
-    filters: Partial<LearningObjectSearchQuery>,
+      filters: Partial<LearningObjectSearchQuery>,
   ): TermsQuery[] {
     const termsQueries: TermsQuery[] = [];
     Object.keys(filters).forEach(objectKey => {
@@ -583,8 +598,8 @@ export class ElasticSearchLearningObjectDatastore
   private convertAggregationToLearningObjectSearchResult(
     results: SearchResponse<Partial<LearningObject>>,
   ): LearningObjectSearchResult {
-    const total = results.hits.total;
-    const aggregationResults = results.aggregations.results;
+    const total = results.aggregations.accessible.buckets[0].doc_count;
+    const aggregationResults = results.aggregations.accessible.buckets[0].results;
     const buckets = aggregationResults.buckets;
     const objects: LearningObjectSummary[] = buckets.map(
       (bucket: {

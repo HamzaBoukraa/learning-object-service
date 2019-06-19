@@ -58,3 +58,10 @@ export interface TermsQuery {
     [property: string]: any[];
   };
 }
+
+export interface AggsQuery {
+  accessible: {
+    filters?: any;
+    aggs: any;
+  };
+}
