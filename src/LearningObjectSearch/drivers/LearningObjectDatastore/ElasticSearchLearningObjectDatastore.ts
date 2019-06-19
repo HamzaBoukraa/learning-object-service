@@ -89,7 +89,6 @@ export class ElasticSearchLearningObjectDatastore
     const elasticQuery: ElasticSearchQuery = this.buildPrivilegedSearchQuery(
       params,
     );
-
     const results = await this.executeQuery(elasticQuery);
     return this.convertAggregationToLearningObjectSearchResult(results);
   }
@@ -104,7 +103,26 @@ export class ElasticSearchLearningObjectDatastore
     params: LearningObjectSearchQuery,
   ): ElasticSearchQuery {
     const query = this.buildSearchQuery(params);
-    this.appendReleasedPostFiltersandPaginator(params, query);
+    const queryFilters = this.getQueryFilters(params);
+    const { limit, page, sortType, orderBy } = params;
+    if (Object.keys(queryFilters).length) {
+      this.appendQueryFilters({
+        query,
+        filters: queryFilters,
+      });
+    }
+    if (orderBy) {
+      this.appendSortStage({
+        query,
+        sortType,
+        orderBy,
+      });
+    }
+    this.appendPaginator({
+      query,
+      limit,
+      page,
+    });
     this.appendReleasedStatusFilter(query);
     return query;
   }
@@ -113,7 +131,7 @@ export class ElasticSearchLearningObjectDatastore
    * Builds ElasticSearchQuery for searching all Learning Objects by applying LearningObjectSearchQuery params and restricting set based on provided collection restrictions
    *
    * *** NOTE ***
-   * Limit is reset to 0 because hits do not need to be returned
+   * Size is set to 0 because hits do not need to be returned
    *
    * @private
    * @param {PrivilegedLearningObjectSearchQuery} params [Object containing search text, field queries, and collection restrictions]
@@ -123,14 +141,14 @@ export class ElasticSearchLearningObjectDatastore
   private buildPrivilegedSearchQuery(
     params: PrivilegedLearningObjectSearchQuery,
   ): ElasticSearchQuery {
-    const query = this.buildSearchQuery({
-      ...(params as LearningObjectSearchQuery),
-      limit: 0,
-    });
+    const query = this.buildSearchQuery(params);
+    query.size = 0;
     const { collectionRestrictions } = params;
-    if (collectionRestrictions && Object.keys(collectionRestrictions).length) {
-      this.appendDuplicateFilterAggregation({ query, filters: params, restrictions: collectionRestrictions });
-    }
+    this.appendDuplicateFilterAggregation({
+      query,
+      filters: params,
+      restrictions: collectionRestrictions,
+    });
 
     return query;
   }
@@ -185,29 +203,6 @@ export class ElasticSearchLearningObjectDatastore
       };
     }
     return elasticQuery as ElasticSearchQuery;
-  }
-
-  private appendReleasedPostFiltersandPaginator(params: ReleasedLearningObjectQuery, query: ElasticSearchQuery) {
-    const { limit, page, sortType, orderBy } = params;
-    const queryFilters = this.getQueryFilters(params);
-    if (Object.keys(queryFilters).length) {
-      this.appendQueryFilters({
-        query,
-        filters: queryFilters,
-      });
-    }
-    if (orderBy) {
-      this.appendSortStage({
-        query,
-        sortType,
-        orderBy,
-      });
-    }
-    this.appendPaginator({
-      query,
-      limit,
-      page,
-    });
   }
 
   /**
@@ -379,50 +374,39 @@ export class ElasticSearchLearningObjectDatastore
   }
 
   /**
-   * Appends filters to restrict access to unreleased Learning Objects based on specified collection access
+   * Constructions bool filter to apply collection restrictions
    *
    * @private
-   * @param {ElasticSearchQuery} query [The query object to apply collection restrictions to]
-   * @param {Partial<LearningObjectSearchQuery>} filters [Object containing filters to be applied to set]
-   * @param {CollectionAccessMap} restrictions [Object mapping collections to accessible statuses]
-   * @memberof ElasticSearchDriver
+   * @param {Partial<LearningObjectSearchQuery>} filters
+   * @param {CollectionAccessMap} restrictions
+   * @returns
+   * @memberof ElasticSearchLearningObjectDatastore
    */
-  private appendCollectionRestrictionsFilter({
-    query,
+  private buildCollectionRestrictionFilter({
     filters,
     restrictions,
   }: {
-    query: ElasticSearchQuery;
     filters: Partial<LearningObjectSearchQuery>;
     restrictions: CollectionAccessMap;
-  }): void {
-    query.aggs = { accessible: { filters: [], aggs: {} } }
-    query.aggs.accessible.filters[0].filters = {
-      bool: {
-        should: [{ bool: { must: this.convertQueryFiltersToTerms(filters) } }],
-      },
-    };
+  }) {
+    const queryFilters: Partial<LearningObjectSearchQuery> = { ...filters };
+    delete queryFilters.collection;
+    delete queryFilters.status;
 
-    const restrictionsFilter = this.convertRestrictionstoTerms(filters, restrictions);
-
-    (query.aggs.accessible.filters[0].filters as BoolOperation).bool.should.push(restrictionsFilter);
-  }
-
-  private convertRestrictionstoTerms(filters: Partial<LearningObjectSearchQuery>, restrictions: CollectionAccessMap) {
-    const propertyFilters: Partial<LearningObjectSearchQuery> = filters;
-    const restrictionsFilter = {
+    const boolFilter: any = {
       bool: {
         must: [
-          // @ts-ignore Empty array assignment is valid
-          { bool: { should: [] } },
           {
             bool: {
-              must: this.convertQueryFiltersToTerms(propertyFilters),
+              must: this.convertQueryFiltersToTerms(queryFilters),
             },
           },
         ],
       },
     };
+
+    const collectionRestrictions: any[] = [];
+
     Object.keys(restrictions).forEach(collectionName => {
       const restriction = {
         bool: {
@@ -440,9 +424,12 @@ export class ElasticSearchLearningObjectDatastore
           ],
         },
       };
-      restrictionsFilter.bool.must[0].bool.should.push(restriction);
+      collectionRestrictions.push(restriction);
     });
-    return restrictionsFilter;
+
+    boolFilter.bool.must.push({ bool: { should: collectionRestrictions } });
+
+    return boolFilter;
   }
 
   /**
@@ -482,47 +469,67 @@ export class ElasticSearchLearningObjectDatastore
     if (orderBy) {
       sorter = this.getSorter({ orderBy, sortType });
     }
+    let aggFilters: any = {
+      bool: {
+        // @ts-ignore Empty array assignment is valid
+        must: [
+          {
+            bool: {
+              must: this.convertQueryFiltersToTerms(queryFilters),
+            },
+          },
+        ],
+      },
+    };
+
+    if (restrictions && Object.keys(restrictions).length) {
+      aggFilters = this.buildCollectionRestrictionFilter({
+        filters: queryFilters,
+        restrictions,
+      });
+    }
+
     query.aggs = {
       accessible: {
-          filters: {
-            filters: [this.convertRestrictionstoTerms(queryFilters, restrictions)],
-          },
-        aggs: {results: {
-          terms: {
-            field: 'id.keyword',
-            size: AGGREGATION_DEFAULTS.TERMS_MAX_SIZE,
-          },
-          aggs: {
-            objects: {
-              top_hits: {
-                sort: [
-                  {
-                    revision: { order: 'asc' },
-                  },
-                ],
-                size: 1,
-              },
+        filters: {
+          filters: [aggFilters],
+        },
+        aggs: {
+          results: {
+            terms: {
+              field: 'id.keyword',
+              size: AGGREGATION_DEFAULTS.TERMS_MAX_SIZE,
             },
-            score: {
-              max: {
-                script: {
-                  source: '_score',
+            aggs: {
+              objects: {
+                top_hits: {
+                  sort: [
+                    {
+                      revision: { order: 'asc' },
+                    },
+                  ],
+                  size: 1,
                 },
               },
-            },
-            objects_bucket_sort: {
-              bucket_sort: {
-                sort: [sorter],
-                size: limit || QUERY_DEFAULTS.SIZE,
-                from: this.formatFromValue(page),
+              score: {
+                max: {
+                  script: {
+                    source: '_score',
+                  },
+                },
+              },
+              objects_bucket_sort: {
+                bucket_sort: {
+                  sort: [sorter],
+                  size: limit || QUERY_DEFAULTS.SIZE,
+                  from: this.formatFromValue(page),
+                },
               },
             },
           },
         },
       },
-    },
     };
-    console.log(JSON.stringify(query));
   }
 
   /**
@@ -534,7 +541,7 @@ export class ElasticSearchLearningObjectDatastore
    * @memberof ElasticSearchDriver
    */
   private convertQueryFiltersToTerms(
-      filters: Partial<LearningObjectSearchQuery>,
+    filters: Partial<LearningObjectSearchQuery>,
   ): TermsQuery[] {
     const termsQueries: TermsQuery[] = [];
     Object.keys(filters).forEach(objectKey => {
@@ -599,7 +606,8 @@ export class ElasticSearchLearningObjectDatastore
     results: SearchResponse<Partial<LearningObject>>,
   ): LearningObjectSearchResult {
     const total = results.aggregations.accessible.buckets[0].doc_count;
-    const aggregationResults = results.aggregations.accessible.buckets[0].results;
+    const aggregationResults =
+      results.aggregations.accessible.buckets[0].results;
     const buckets = aggregationResults.buckets;
     const objects: LearningObjectSummary[] = buckets.map(
       (bucket: {
