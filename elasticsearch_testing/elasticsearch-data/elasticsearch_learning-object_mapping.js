@@ -1,5 +1,39 @@
 export const mapping = 
 {
+    "settings": {
+        "analysis": {
+           "analyzer": {
+              "clark_custom_analyzer": {
+                 "type": "custom",
+                  "tokenizer": "standard",
+                  "filter": [
+                  "standard",
+                  "lowercase",
+                  "stop",
+                  "asciifolding"
+                  ],
+              "char_filter": [
+                "html_strip"
+              ]
+              },
+              "clark_custom_stop_words":{
+                  "type": "stop",
+                  "tokenizer": "standard",
+                  "filter": ["clark_stop"]
+              }
+           },
+           "filter": {
+            "english_stop": { 
+              "type": "stop",
+              "stopwords": "_english_"
+            },
+            "clark_stop":{
+                "type": "stop",
+                "stopwords": ["_english_", "college", "university", "school"]
+            }
+          }
+        }
+    },
     "mappings": {
         "_doc": {
             "properties": {
@@ -25,6 +59,8 @@ export const mapping =
                         },
                         "organization": {
                             "type": "text",
+                            "analyzer": "clark_custom_analyzer",
+                            "search_analyzer": "clark_custom_stop_words",
                             "fields": {
                                 "keyword": {
                                     "type": "keyword",
@@ -72,6 +108,8 @@ export const mapping =
                     },
                     "description": {
                         "type": "text",
+                        "analyzer": "clark_custom_analyzer",
+                        "search_analyzer": "clark_custom_analyzer",
                         "fields": {
                             "keyword": {
                                 "type": "keyword",

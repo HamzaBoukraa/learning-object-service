@@ -1,14 +1,15 @@
 module.exports = {
-    testMatch: ["**/*.spec.js"],
-    transform: {
-      '^.+\\.js$': 'babel-jest'
-    },
-    moduleFileExtensions: [
-      "js",
-      "jsx"
-    ],
-    transformIgnorePatterns: ['<rootDir>/node_modules/']
-  };
+  setupFilesAfterEnv: ['./jest.setup.js'],
+  testMatch: ["**/*.spec.js"],
+  transform: {
+    '^.+\\.js$': 'babel-jest'
+  },
+  moduleFileExtensions: [
+    "js",
+    "jsx"
+  ],
+  transformIgnorePatterns: ['<rootDir>/node_modules/']
+};
 
 
 
