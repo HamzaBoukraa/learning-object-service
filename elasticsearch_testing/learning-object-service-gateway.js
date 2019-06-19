@@ -1,7 +1,5 @@
 const request = require('request-promise');
 var jwt = require('jsonwebtoken');
-const fs = require('fs');
-
 
 const searchURI = process.env.LEARNING_OBJECT_API ? process.env.LEARNING_OBJECT_API : `http://localhost:5000/`;
 
@@ -18,7 +16,6 @@ export async function searchLearningObjects(query, privilege) {
             },
         });
         if (response) {
-            fs.writeFile('response.txt', response);
             return JSON.parse(response);
         }
         throw new Error('Unexpected response');

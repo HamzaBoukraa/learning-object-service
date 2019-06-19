@@ -8,7 +8,6 @@ export async function initElasticsearchNode() {
     try {
         await createLearningObjectIndex();
         await insertElasticsearchTestData();
-        // await waitForStatusGreen();
     } catch(err) {
         console.error(err);
         throw err;
@@ -28,22 +27,6 @@ async function insertElasticsearchTestData() {
         refresh: 'wait_for',
     });
 }
-
-// async function waitForStatusGreen() {
-//     try {
-//         const response = await request({
-//             method: 'GET',
-//             uri: process.env.ELASTIC_SEARCH_TEST_NODE_URI + `/_cluster/health?wait_for_status=yellow&timeout=50s`,
-//             headers: {
-//                 'Content-Type': 'application/json',
-//             },
-//         });
-//          return response;
-//     } catch (err) {
-//         console.log(err);
-//         throw err;
-//     }
-// }
 
 export async function destroyElasticsearchIndex() {
     return await client.indices.delete({
