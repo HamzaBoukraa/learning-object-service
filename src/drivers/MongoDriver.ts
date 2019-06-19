@@ -43,6 +43,7 @@ import { reportError } from '../shared/SentryConnector';
 import { LearningObject, LearningOutcome, User } from '../shared/entity';
 import { Submission } from '../LearningObjectSubmission/types/Submission';
 import { MongoConnector } from '../shared/Mongo/MongoConnector';
+import { mapLearningObjectToSummary } from '../shared/functions';
 
 export enum COLLECTIONS {
   USERS = 'users',
