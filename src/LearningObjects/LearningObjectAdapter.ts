@@ -1,8 +1,15 @@
 import { DataStore } from '../shared/interfaces/DataStore';
 import { LearningObject } from '../shared/entity';
 import { FileManager } from '../shared/interfaces/interfaces';
-import { updateReadme, getLearningObjectById, updateLearningObject } from './LearningObjectInteractor';
-import { UserToken } from '../shared/types';
+import {
+  updateReadme,
+  getLearningObjectById,
+  updateLearningObject,
+  getLearningObjectRevisionSummary,
+  getWorkingLearningObjectSummary,
+  getActiveLearningObjectSummary,
+} from './LearningObjectInteractor';
+import { UserToken, LearningObjectSummary } from '../shared/types';
 
 /**
  * FIXME: THe duplication of JSDoc comments here is not ideal, as it means a change
@@ -10,15 +17,88 @@ import { UserToken } from '../shared/types';
  */
 export class LearningObjectAdapter {
   private static _instance: LearningObjectAdapter;
-  private constructor(private dataStore: DataStore, private fileManager: FileManager) { }
+  private constructor(
+    private dataStore: DataStore,
+    private fileManager: FileManager,
+  ) {}
   static open(dataStore: DataStore, fileManager: FileManager) {
-    LearningObjectAdapter._instance = new LearningObjectAdapter(dataStore, fileManager);
+    LearningObjectAdapter._instance = new LearningObjectAdapter(
+      dataStore,
+      fileManager,
+    );
   }
   static getInstance(): LearningObjectAdapter {
     if (this._instance) {
       return this._instance;
     }
     throw new Error('LearningObjectAdapter has not been created yet.');
+  }
+  /**
+   * Retrieves a summary of the working copy Learning Object
+   *
+   * @param {UserToken} requester [Object containing information about the requester]
+   * @param {string} id [Id of the Learning Object]
+   * @returns {Promise<LearningObjectSummary>}
+   */
+  async getWorkingLearningObjectSummary({
+    requester,
+    id,
+  }: {
+    requester: UserToken;
+    id: string;
+  }): Promise<LearningObjectSummary> {
+    return getWorkingLearningObjectSummary({
+      dataStore: this.dataStore,
+      requester,
+      id,
+    });
+  }
+  /**
+   * Retrieves the Learning Object copy that is furthest along in the review pipeline
+   *
+   * @param {UserToken} requester [Object containing information about the requester]
+   * @param {string} id [Id of the Learning Object]
+   * @returns {Promise<LearningObjectSummary>}
+   */
+  async getActiveLearningObjectSummary({
+    requester,
+    id,
+  }: {
+    requester: UserToken;
+    id: string;
+  }): Promise<LearningObjectSummary> {
+    return getActiveLearningObjectSummary({
+      dataStore: this.dataStore,
+      requester,
+      id,
+    });
+  }
+
+  /**
+   *  Retrieves Learning Object summary by id and revision number
+   *
+   * @param {DataStore} dataStore [Driver for datastore]
+   * @param {UserToken} requester [Object containing information about the requester]
+   * @param {string} id [Id of the Learning Object]
+   * @param {number} revision [Revision number of the Learning Object]
+   * @returns {Promise<LearningObjectSummary>}
+   * @memberof LearningObjectAdapter
+   */
+  async getLearningObjectRevisionSummary({
+    requester,
+    id,
+    revision,
+  }: {
+    requester: UserToken;
+    id: string;
+    revision: number;
+  }): Promise<LearningObjectSummary> {
+    return getLearningObjectRevisionSummary({
+      dataStore: this.dataStore,
+      requester,
+      id,
+      revision,
+    });
   }
   /**
    * Fetches a learning object by ID
@@ -80,4 +160,3 @@ export class LearningObjectAdapter {
     });
   }
 }
-
