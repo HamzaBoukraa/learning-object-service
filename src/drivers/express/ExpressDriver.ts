@@ -85,14 +85,13 @@ export class ExpressDriver {
    *
    */
   private static attachPublicRouters() {
-    this.app.use(LearningObjectSearch.expressRouter);
-    // this.app.use(
-    //   ExpressRouteDriver.buildRouter(
-    //     this.dataStore,
-    //     this.library,
-    //     this.fileManager,
-    //   ),
-    // );
+    this.app.use(
+      ExpressRouteDriver.buildRouter(
+        this.dataStore,
+        this.library,
+        this.fileManager,
+      ),
+    );
   }
 
   /**
