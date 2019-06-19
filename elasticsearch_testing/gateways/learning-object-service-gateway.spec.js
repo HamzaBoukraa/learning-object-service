@@ -9,13 +9,14 @@ describe('Sends a request to the Learning Object service search route', () => {
         //await initElasticsearchNode();
     });
 
-    it('as a user/visitor', async () => {
-        expect.assertions(2);
-        const results = await searchLearningObjects('', '');
-        expect(results.total).toBe(expectedVisitorResponse.total);
-        expect(new Set(results.objects)).toEqual(new Set(expectedVisitorResponse.objects));    
+    describe('as a user/visitor', () => {
+        it('Make sure response only contains released objects', async () => {
+            expect.assertions(2);
+            const results = await searchLearningObjects('', '');
+            expect(results.total).toBe(expectedVisitorResponse.total);
+            expect(new Set(results.objects)).toEqual(new Set(expectedVisitorResponse.objects));    
+        });
     });
-
     // FIXME: Uncomment when elasticsearch query fix is merged
     // it('as a reviewer@nccp', () => {
     //     expect.assertions(1);
@@ -37,18 +38,21 @@ describe('Sends a request to the Learning Object service search route', () => {
     //             objects: [],
     //         });    
     // });
-
-    it('as an editor', async () => {
-        expect.assertions(2);
-        const results = await searchLearningObjects('', 'editor');
-        expect(results.total).toBe(expectedEditorAdminResponse.total);
-        expect(new Set(results.objects)).toEqual(new Set(expectedEditorAdminResponse.objects));    
+    describe('as an editor', () => {
+        it('Ensure all objects are returned', async () => {
+            expect.assertions(2);
+            const results = await searchLearningObjects('', 'editor');
+            expect(results.total).toBe(expectedEditorAdminResponse.total);
+            expect(new Set(results.objects)).toEqual(new Set(expectedEditorAdminResponse.objects));    
+        });
     });
 
-    it('as an admin', async () => {
-        expect.assertions(2);
-        const results = await searchLearningObjects('', 'admin');
-        expect(results.total).toBe(expectedEditorAdminResponse.total);
-        expect(new Set(results.objects)).toEqual(new Set(expectedEditorAdminResponse.objects));    
+    describe('as an admin', () => {
+        it('Ensure all objects are returned', async () => {
+            expect.assertions(2);
+            const results = await searchLearningObjects('', 'admin');
+            expect(results.total).toBe(expectedEditorAdminResponse.total);
+            expect(new Set(results.objects)).toEqual(new Set(expectedEditorAdminResponse.objects));    
+        });
     });
 });
