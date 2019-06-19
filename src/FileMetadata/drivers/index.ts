@@ -1,3 +1,4 @@
 import { MongoFileMetaDatastore } from './FileMetaDatastore/MongoFileMetaDatastore';
+import { ModuleLearningObjectGateway } from './LearningObjectGateway/ModuleLearningObjectGateway';
 
-export { MongoFileMetaDatastore };
+export { MongoFileMetaDatastore, ModuleLearningObjectGateway };
