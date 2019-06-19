@@ -25,7 +25,6 @@ import {
   ServiceError,
   ServiceErrorReason,
 } from '../../../shared/errors';
-import { ReleasedLearningObjectQuery } from '../../../shared/interfaces/DataStore';
 
 const ELASTICSEARCH_DOMAIN = process.env.ELASTICSEARCH_DOMAIN;
 const LEARNING_OBJECT_INDEX = 'learning-objects';
