@@ -9,7 +9,10 @@ import {
   MultipartFileUploadStatusUpdates,
   CompletedPart,
 } from '../../shared/interfaces/FileManager';
-import { LearningObjectUpdates } from '../../shared/types';
+import {
+  LearningObjectUpdates,
+  LearningObjectSummary,
+} from '../../shared/types';
 import { ChangeLogDocument } from '../../shared/types/changelog';
 import {
   LearningOutcomeInsert,
@@ -25,9 +28,9 @@ import {
 import { Submission } from '../../LearningObjectSubmission/types/Submission';
 import { SubmissionDataStore } from '../../LearningObjectSubmission/SubmissionDatastore';
 import { Stubs } from '../stubs';
+import { mapLearningObjectToSummary } from '../../shared/functions';
 
 export class MockDataStore implements DataStore, SubmissionDataStore {
-
   stubs = new Stubs();
 
   connect(file: string): Promise<void> {
@@ -36,6 +39,15 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
 
   disconnect(): void {
     return;
+  }
+
+  fetchLearningObjectRevisionSummary(params: {
+    id: string;
+    revision: number;
+  }): Promise<LearningObjectSummary> {
+    return Promise.resolve(
+      mapLearningObjectToSummary(this.stubs.learningObject),
+    );
   }
 
   fetchLearningObjectAuthorUsername(id: string): Promise<string> {
