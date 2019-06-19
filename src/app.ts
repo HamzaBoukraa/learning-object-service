@@ -13,6 +13,7 @@ import { LibraryDriver } from './drivers/LibraryDriver';
 import { MongoConnector } from './shared/Mongo/MongoConnector';
 import { LearningObjectAdapter } from './LearningObjects/LearningObjectAdapter';
 import { LearningObjectSearch } from './LearningObjectSearch';
+import { HierarchyAdapter } from './LearningObjects/Hierarchy/HierarchyAdapter';
 
 // ----------------------------------------------------------------------------------
 // Initializations
@@ -78,6 +79,7 @@ async function startApp() {
  *
  */
 function initModules() {
+  HierarchyAdapter.open(dataStore);
   LearningObjectAdapter.open(dataStore, fileManager);
   LearningObjectSearch.initialize();
 }
