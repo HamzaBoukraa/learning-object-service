@@ -469,7 +469,6 @@ export class ElasticSearchLearningObjectDatastore
     }
     let aggFilters: any = {
       bool: {
-        // @ts-ignore Empty array assignment is valid
         must: [
           {
             bool: {
