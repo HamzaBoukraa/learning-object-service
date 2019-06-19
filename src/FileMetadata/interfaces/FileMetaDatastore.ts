@@ -6,26 +6,25 @@ import {
 
 export abstract class FileMetaDatastore {
   /**
-   * Checks if FileMetadataDocument exists by the file's `fullPath` for a given Learning Object revision
+   * Finds FileMetadataDocument by the file's `fullPath` for a given Learning Object revision
    *
    * *** NOTE ***
    * The FileMetadataDocument is found using `fullPath` because this represents the location the file was uploaded to within the Learning Object’s file system hierarchy
    * which is unique as no two files can have the same path within the file system hierarchy
    *
    * @abstract
-   * @param {{
-   *     learningObjectId: string;
-   *     learningObjectRevision: string;
-   *     fullPath: string;
-   *   }} params
-   * @returns {Promise<boolean>}
+   * @param {string} learningObjectId [The id of the Learning Object the file metadata belongs to]
+   * @param {number} learningObjectRevision [The revision number of the Learning Object the file metadata belongs to]
+   * @param {string} fullPath [The location the file was uploaded to within the Learning Object’s file system hierarchy]
+   *
+   * @returns {Promise<FileMetadataDocument>}
    * @memberof FileMetaDatastore
    */
-  abstract fileMetaExists(params: {
+  abstract findFileMetadata(params: {
     learningObjectId: string;
-    learningObjectRevision: string;
+    learningObjectRevision: number;
     fullPath: string;
-  }): Promise<boolean>;
+  }): Promise<FileMetadataDocument>;
 
   /**
    * Fetches the Learning Object revision id a file belongs to
@@ -63,9 +62,11 @@ export abstract class FileMetaDatastore {
    *
    * @abstract
    * @param {FileMetadataInsert} fileMeta [FileMetadataDocument to insert]
-   * @returns {Promise<string>}
+   * @returns {Promise<FileMetadataDocument>}
    */
-  abstract insertFileMeta(fileMeta: FileMetadataInsert): Promise<string>;
+  abstract insertFileMeta(
+    fileMeta: FileMetadataInsert,
+  ): Promise<FileMetadataDocument>;
 
   /**
    * Updates FileMetadataDocument

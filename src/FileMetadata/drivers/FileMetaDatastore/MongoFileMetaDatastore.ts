@@ -22,26 +22,18 @@ export class MongoFileMetaDatastore implements FileMetaDatastore {
    *
    * @memberof MongoFileMetaDatastore
    */
-  async fileMetaExists({
+  findFileMetadata({
     learningObjectId,
     learningObjectRevision,
     fullPath,
   }: {
     learningObjectId: string;
-    learningObjectRevision: string;
+    learningObjectRevision: number;
     fullPath: string;
-  }): Promise<boolean> {
-    const doc = await this.db
+  }): Promise<FileMetadataDocument> {
+    return this.db
       .collection(FILE_META_COLLECTION)
-      .findOne(
-        { learningObjectId, learningObjectRevision, fullPath },
-        { projection: { _id: 1 } },
-      );
-    if (doc) {
-      return true;
-    }
-
-    return false;
+      .findOne({ learningObjectId, learningObjectRevision, fullPath });
   }
 
   /**
@@ -96,11 +88,13 @@ export class MongoFileMetaDatastore implements FileMetaDatastore {
    *
    * @memberof MongoFileMetaDatastore
    */
-  async insertFileMeta(fileMeta: FileMetadataInsert): Promise<string> {
+  async insertFileMeta(
+    fileMeta: FileMetadataInsert,
+  ): Promise<FileMetadataDocument> {
     const result = await this.db
       .collection(FILE_META_COLLECTION)
       .insertOne(fileMeta);
-    return result.insertedId.toHexString();
+    return { ...fileMeta, id: result.insertedId.toHexString() };
   }
 
   /**
