@@ -8,14 +8,14 @@ import {
 } from '../elasticsearch-data/elasticsearch-responses';
 import 'dotenv/config';
 
-describe('Sends a request to the Learning Object service search route', () => {
+describe('Learning Object Service search', () => {
 
     beforeAll(async () => {
         await initElasticsearchNode();
     });
 
-    describe('as a user/visitor', () => {
-        it('Make sure response only contains released objects', async () => {
+    describe('a user with the privilege of user or visitor', () => {
+        it('should respond with only released objects', async () => {
             expect.assertions(2);
             const results = await searchLearningObjects('', '');
             expect(results.total).toBe(expectedVisitorResponse.total);
@@ -23,8 +23,8 @@ describe('Sends a request to the Learning Object service search route', () => {
         });
     });
 
-    describe('as a reviewer@nccp', () => {
-        it('Make sure response contains submitted objects in nccp collection', async () => {
+    describe('a user with the privilege of reviewer@nccp', () => {
+        it('should respond with released objects and submissions to the nccp collection', async () => {
             expect.assertions(2);
             const results = await searchLearningObjects('', 'reviewer@nccp');
             expect(results.total).toBe(expectedReviewerNCCPResponse.total);
@@ -32,17 +32,17 @@ describe('Sends a request to the Learning Object service search route', () => {
         });
     });
 
-    describe('as a curator@c5', () => {
-        it('Make sure response contains submitted objects in c5 collection', () => {
+    describe('a user with the privilege of curator@c5', () => {
+        it('should respond with released objects and submissions to the c5 collection', async () => {
             expect.assertions(2);
-            const results = await searchLearningObjects('', 'reviewer@nccp');
+            const results = await searchLearningObjects('', 'curator@c5');
             expect(results.total).toBe(expectedCuratorC5Response.total);
             expect(new Set(results.objects)).toEqual(new Set(expectedCuratorC5Response.objects));  
         });
     });
 
-    describe('as an editor', () => {
-        it('Ensure all objects are returned', async () => {
+    describe('a user with the privilege of editor', () => {
+        it('should respond with released objects and submissions to all collections', async () => {
             expect.assertions(2);
             const results = await searchLearningObjects('', 'editor');
             expect(results.total).toBe(expectedEditorAdminResponse.total);
@@ -50,8 +50,8 @@ describe('Sends a request to the Learning Object service search route', () => {
         });
     });
 
-    describe('as an admin', () => {
-        it('Ensure all objects are returned', async () => {
+    describe('a user with the privilege of admin', () => {
+        it('should respond with released objects and submissions to all collections', async () => {
             expect.assertions(2);
             const results = await searchLearningObjects('', 'admin');
             expect(results.total).toBe(expectedEditorAdminResponse.total);
