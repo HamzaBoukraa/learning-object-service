@@ -14,7 +14,7 @@ describe('Learning Object Service search', () => {
         await initElasticsearchNode();
     });
 
-    describe('a user with the privilege of user or visitor', () => {
+    describe('a request by a user with the privilege of user or visitor', () => {
         it('should respond with only released objects', async () => {
             expect.assertions(2);
             const results = await searchLearningObjects('', '');
@@ -23,7 +23,7 @@ describe('Learning Object Service search', () => {
         });
     });
 
-    describe('a user with the privilege of reviewer@nccp', () => {
+    describe('a request by a user with the privilege of reviewer@nccp', () => {
         it('should respond with released objects and submissions to the nccp collection', async () => {
             expect.assertions(2);
             const results = await searchLearningObjects('', 'reviewer@nccp');
@@ -32,7 +32,7 @@ describe('Learning Object Service search', () => {
         });
     });
 
-    describe('a user with the privilege of curator@c5', () => {
+    describe('a request by a user with the privilege of curator@c5', () => {
         it('should respond with released objects and submissions to the c5 collection', async () => {
             expect.assertions(2);
             const results = await searchLearningObjects('', 'curator@c5');
@@ -41,7 +41,7 @@ describe('Learning Object Service search', () => {
         });
     });
 
-    describe('a user with the privilege of editor', () => {
+    describe('a request by a user with the privilege of editor', () => {
         it('should respond with released objects and submissions to all collections', async () => {
             expect.assertions(2);
             const results = await searchLearningObjects('', 'editor');
@@ -50,7 +50,7 @@ describe('Learning Object Service search', () => {
         });
     });
 
-    describe('a user with the privilege of admin', () => {
+    describe('a request by a user with the privilege of admin', () => {
         it('should respond with released objects and submissions to all collections', async () => {
             expect.assertions(2);
             const results = await searchLearningObjects('', 'admin');
