@@ -1,11 +1,10 @@
 import { CompletedPart, MultipartFileUploadStatus } from './FileManager';
-import { LearningObjectUpdates } from '../types';
+import { LearningObjectUpdates, LearningObjectSummary } from '../types';
 import { LearningOutcomeDatastore } from '../../LearningOutcomes/LearningOutcomeInteractor';
 import { LearningObjectStatDatastore } from '../../LearningObjectStats/LearningObjectStatsInteractor';
 import { CollectionDataStore } from '../../Collections/CollectionDataStore';
 import { ChangeLogDocument } from '../types/changelog';
 import { LearningObject, User, Collection } from '../entity';
-import { Submission } from '../../LearningObjectSubmission/types/Submission';
 
 export interface DataStore
   extends LearningOutcomeDatastore,
@@ -48,6 +47,19 @@ export interface DataStore
    */
 
   // Learning Objects
+
+  /**
+   * Fetches summary of Learning Object by id and revision number
+   *
+   * @param {string} id [Id of the LearningObject]
+   * @param {number} revision [The revision number of the LearningObject]
+   * @returns {Promise<LearningObjectSummary>}
+   * @memberof DataStore
+   */
+  fetchLearningObjectRevisionSummary(params: {
+    id: string;
+    revision: number;
+  }): Promise<LearningObjectSummary>;
   getUserObjects(username: string): Promise<string[]>;
   findLearningObject(params: {
     authorId: string;
@@ -94,6 +106,7 @@ export interface DataStore
     full?: boolean;
   }): Promise<LearningObject[]>;
   findParentObjectIds(params: { childId: string }): Promise<string[]>;
+  findParentObjectId(params: { childId: string }): Promise<string>;
   findChildObjectIds(params: { parentId: string }): Promise<string[]>;
   loadChildObjects(params: {
     id: string;
