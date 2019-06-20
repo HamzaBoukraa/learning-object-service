@@ -1,12 +1,17 @@
 import { searchLearningObjects } from './learning-object-service-gateway';
 import { initElasticsearchNode } from './elasticsearch_gateway';
-import { expectedVisitorResponse, expectedEditorAdminResponse } from '../elasticsearch-data/elasticsearch-responses';
+import { 
+    expectedVisitorResponse,
+    expectedEditorAdminResponse,
+    expectedReviewerNCCPResponse,
+    expectedCuratorC5Response,
+} from '../elasticsearch-data/elasticsearch-responses';
 import 'dotenv/config';
 
 describe('Sends a request to the Learning Object service search route', () => {
 
     beforeAll(async () => {
-        //await initElasticsearchNode();
+        await initElasticsearchNode();
     });
 
     describe('as a user/visitor', () => {
@@ -17,27 +22,25 @@ describe('Sends a request to the Learning Object service search route', () => {
             expect(new Set(results.objects)).toEqual(new Set(expectedVisitorResponse.objects));    
         });
     });
-    // FIXME: Uncomment when elasticsearch query fix is merged
-    // it('as a reviewer@nccp', () => {
-    //     expect.assertions(1);
-    //     return expect(searchLearningObjects('', 'reviewer@nccp'))
-    //         .resolves
-    //         .toEqual({
-    //             total: 6,
-    //             objects: [],
-    //         });    
-    // });
 
-    // FIXME: Uncomment when elasticsearch query fix is merged
-    // it('as a curator@c5', () => {
-    //     expect.assertions(1);
-    //     return expect(searchLearningObjects('', 'curator@c5'))
-    //         .resolves
-    //         .toEqual({
-    //             total: 6,
-    //             objects: [],
-    //         });    
-    // });
+    describe('as a reviewer@nccp', () => {
+        it('Make sure response contains submitted objects in nccp collection', async () => {
+            expect.assertions(2);
+            const results = await searchLearningObjects('', 'reviewer@nccp');
+            expect(results.total).toBe(expectedReviewerNCCPResponse.total);
+            expect(new Set(results.objects)).toEqual(new Set(expectedReviewerNCCPResponse.objects)); 
+        });
+    });
+
+    describe('as a curator@c5', () => {
+        it('Make sure response contains submitted objects in c5 collection', () => {
+            expect.assertions(2);
+            const results = await searchLearningObjects('', 'reviewer@nccp');
+            expect(results.total).toBe(expectedCuratorC5Response.total);
+            expect(new Set(results.objects)).toEqual(new Set(expectedCuratorC5Response.objects));  
+        });
+    });
+
     describe('as an editor', () => {
         it('Ensure all objects are returned', async () => {
             expect.assertions(2);
