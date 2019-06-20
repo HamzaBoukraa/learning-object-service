@@ -6,7 +6,7 @@ import { LearningObjectQuery } from '../../shared/interfaces/DataStore';
 import { requesterIsAdmin } from '../../LearningObjects/AuthorizationManager';
 
 const ALLOW_ELASTICSEARCH_TEST_TRAFFIC =
-  process.env.ALLOW_ELASTICSEARCH_TEST_TRAFFIC;
+  process.env.ALLOW_ELASTICSEARCH_TEST_TRAFFIC === 'true';
 
 /**
  * Builds the Express Router for this module
@@ -49,7 +49,5 @@ async function searchObjects(req: Request, res: Response, next: NextFunction) {
  * @returns {boolean}
  */
 function allowTraffic(requester: Requester): boolean {
-  return (
-    JSON.parse(ALLOW_ELASTICSEARCH_TEST_TRAFFIC) || requesterIsAdmin(requester)
-  );
+  return ALLOW_ELASTICSEARCH_TEST_TRAFFIC || requesterIsAdmin(requester);
 }
