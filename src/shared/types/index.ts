@@ -17,6 +17,7 @@ import {
   LearningObjectSummary,
   AuthorSummary,
 } from './learning-object-summary';
+import { AccessGroup } from './access-groups';
 
 export {
   UserToken,
@@ -32,4 +33,5 @@ export {
   StandardOutcomeDocument,
   LearningObjectSummary,
   AuthorSummary,
+  AccessGroup,
 };
