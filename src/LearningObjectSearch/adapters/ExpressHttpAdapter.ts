@@ -5,6 +5,9 @@ import { mapErrorToResponseData } from '../../shared/errors';
 import { LearningObjectQuery } from '../../shared/interfaces/DataStore';
 import { requesterIsAdmin } from '../../LearningObjects/AuthorizationManager';
 
+const ALLOW_ELASTICSEARCH_TEST_TRAFFIC =
+  process.env.ALLOW_ELASTICSEARCH_TEST_TRAFFIC;
+
 /**
  * Builds the Express Router for this module
  *
@@ -26,7 +29,7 @@ export function buildRouter() {
 async function searchObjects(req: Request, res: Response, next: NextFunction) {
   try {
     const requester: Requester = req.user;
-    if (requesterIsAdmin(requester)) {
+    if (allowTraffic(requester)) {
       const query: LearningObjectQuery = req.query;
       const results = await Interactor.searchObjects({ requester, query });
       res.send(results);
@@ -37,4 +40,16 @@ async function searchObjects(req: Request, res: Response, next: NextFunction) {
     const { code, message } = mapErrorToResponseData(e);
     res.status(code).json({ message });
   }
+}
+
+/**
+ * Determines whether or not traffic should be routed
+ *
+ * @param {Requester} requester [Information about the requester]
+ * @returns {boolean}
+ */
+function allowTraffic(requester: Requester): boolean {
+  return (
+    JSON.parse(ALLOW_ELASTICSEARCH_TEST_TRAFFIC) || requesterIsAdmin(requester)
+  );
 }
