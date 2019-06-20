@@ -469,7 +469,7 @@ export class ElasticSearchLearningObjectDatastore
     }
     let aggFilters: any = {
       bool: {
-        must: [
+        should: [
           {
             bool: {
               must: this.convertQueryFiltersToTerms(queryFilters),
@@ -480,10 +480,11 @@ export class ElasticSearchLearningObjectDatastore
     };
 
     if (restrictions && Object.keys(restrictions).length) {
-      aggFilters = this.buildCollectionRestrictionFilter({
+      const restrictionFilter = this.buildCollectionRestrictionFilter({
         filters: queryFilters,
         restrictions,
       });
+      aggFilters.bool.should.push(restrictionFilter);
     }
 
     query.aggs = {
