@@ -1,7 +1,7 @@
 defaults: &defaults
   working_directory: ~/learning-object-service
   docker:
-    - image: cyber4all/circleci-aws:node-alpine
+    - image: cyber4all/circleci-aws:docker-git
 version: 2
 jobs:
   build:
@@ -35,7 +35,7 @@ jobs:
       - run:
           name: Clone Elasticsearch Smoke Test Repository 
           command: >-
-            git clone https://${github_username}:${github_password}@github.com/nvisal1/Elasticsearch-Smoke-Test-Environment.git
+            cd .. && git clone https://${github_username}:${github_password}@github.com/nvisal1/Elasticsearch-Smoke-Test-Environment.git
       - run: 
           name: Install Docker Compose
           command: |
@@ -46,7 +46,7 @@ jobs:
       - run: 
           name: Run Environment
           command: |
-            cd ./Elasticsearch-Smoke-Test-Environment
+            cd ../Elasticsearch-Smoke-Test-Environment
             docker-compose up
 
   deploy-production:
