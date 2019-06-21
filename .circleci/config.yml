@@ -34,7 +34,7 @@ jobs:
       - run:
           name: Clone Elasticsearch Smoke Test Repository 
           command: >-
-          git clone https://${github_username}:${github_password}@github.com/nvisal1/Elasticsearch-Smoke-Test-Environment.git
+            git clone https://${github_username}:${github_password}@github.com/nvisal1/Elasticsearch-Smoke-Test-Environment.git
       - setup_remote_docker
       - run: 
           name: Run Environment
@@ -68,8 +68,9 @@ jobs:
             
 workflows:
   version: 2
-  build-and-test:
+  build-and-elasticsearch-smoke-test:
     jobs:
+      - build
       - elasticsearch-smoke-test
 
   build-test-and-deploy-production:
