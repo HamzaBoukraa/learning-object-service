@@ -28,6 +28,7 @@ jobs:
               - ./deploy.sh
 
   elasticsearch-smoke-test:
+    <<: *defaults
     steps:
       - attach_workspace : 
           at: ~/learning-object-service
