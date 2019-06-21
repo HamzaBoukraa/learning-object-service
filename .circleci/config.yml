@@ -35,7 +35,7 @@ jobs:
       - run:
           name: Clone Elasticsearch Smoke Test Repository 
           command: >-
-            cd .. && git clone https://${github_username}:${github_password}@github.com/nvisal1/Elasticsearch-Smoke-Test-Environment.git
+            ls && cd .. && git clone https://${github_username}:${github_password}@github.com/nvisal1/Elasticsearch-Smoke-Test-Environment.git
       - run: 
           name: Install Docker Compose
           command: |
