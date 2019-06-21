@@ -1,7 +1,7 @@
 defaults: &defaults
   working_directory: ~/learning-object-service
   docker:
-    - image: cyber4all/circleci-aws:docker-git
+    - image: cyber4all/circleci-aws:node-alpine
 version: 2
 jobs:
   build:
@@ -45,7 +45,9 @@ jobs:
       - setup_remote_docker
       - run: 
           name: Run Environment
-          command: docker-compose up
+          command: |
+            cd ./Elasticsearch-Smoke-Test-Environment
+            docker-compose up
 
   deploy-production:
     <<: *defaults
