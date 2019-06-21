@@ -2,7 +2,7 @@ const request = require('request-promise');
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
 
-const searchURI = process.env.LEARNING_OBJECT_API ? process.env.LEARNING_OBJECT_API : `http://localhost:5000/`;
+const searchURI = process.env.LEARNING_OBJECT_API ? process.env.LEARNING_OBJECT_API : `http://localhost:5000`;
 
 /**
  * Makes a request to Learning Object Service to search for Learning Objects
@@ -17,7 +17,7 @@ export async function searchLearningObjects(query, privilege) {
         
         const response = await request({
             method: 'GET',
-            uri: searchURI + `learning-objects?text=${query}&currPage=1&limit=20`,
+            uri: searchURI + `/learning-objects?text=${query}&currPage=1&limit=20`,
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer ' + token,
