@@ -1,17 +1,17 @@
-import { LearningObjectInteractor } from '../interactors/interactors';
 import { DataStore } from '../shared/interfaces/DataStore';
-import { FileManager, LibraryCommunicator } from '../shared/interfaces/interfaces';
+import {
+  FileManager,
+  LibraryCommunicator,
+} from '../shared/interfaces/interfaces';
 import { generatePDF } from './PDFKitDriver';
 import {
   LearningObjectUpdates,
   UserToken,
   VALID_LEARNING_OBJECT_UPDATES,
+  LearningObjectSummary,
 } from '../shared/types';
 import { ResourceError, ResourceErrorReason } from '../shared/errors';
-import {
-  hasLearningObjectWriteAccess,
-  isPrivilegedUser,
-} from '../shared/AuthorizationManager';
+import { hasLearningObjectWriteAccess } from '../shared/AuthorizationManager';
 import { reportError } from '../shared/SentryConnector';
 import { LearningObject } from '../shared/entity';
 import { handleError } from '../interactors/LearningObjectInteractor';
@@ -19,9 +19,11 @@ import {
   authorizeRequest,
   requesterIsAuthor,
   requesterIsAdminOrEditor,
+  hasReadAccessByCollection,
 } from './AuthorizationManager';
 import { FileMeta } from './typings';
 import * as PublishingService from './Publishing';
+import { mapLearningObjectToSummary } from '../shared/functions';
 
 const LearningObjectState = {
   UNRELEASED: [
@@ -43,6 +45,188 @@ const LearningObjectState = {
     LearningObject.Status.RELEASED,
   ],
 };
+
+/**
+ * Retrieves a summary of the working copy Learning Object
+ *
+ * The working copy can only be returned if
+ * The requester is the author
+ * The requester is a reviewer/curator@<Learning Object's collection> && the Learning Object is not unreleased
+ * The requester is an admin/editor && the Learning Object is not unreleased
+ *
+ * @export
+ * @param {DataStore} dataStore [Driver for datastore]
+ * @param {UserToken} requester [Object containing information about the requester]
+ * @param {string} id [Id of the Learning Object]
+ * @returns {Promise<LearningObjectSummary>}
+ */
+export async function getWorkingLearningObjectSummary({
+  dataStore,
+  requester,
+  id,
+}: {
+  dataStore: DataStore;
+  requester: UserToken;
+  id: string;
+}): Promise<LearningObjectSummary> {
+  try {
+    const object = await dataStore.fetchLearningObject({ id, full: false });
+    if (!object) {
+      throw new ResourceError(
+        `Learning Object ${id} does not exist.`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+    const authorAccess = requesterIsAuthor({
+      requester,
+      authorUsername: object.author.username,
+    });
+    const isUnreleased = LearningObjectState.UNRELEASED.includes(
+      object.status as LearningObject.Status,
+    );
+    const reviewerCuratorAccess =
+      !isUnreleased &&
+      hasReadAccessByCollection({
+        requester,
+        collection: object.collection,
+      });
+    const adminEditorAccess =
+      !isUnreleased && requesterIsAdminOrEditor(requester);
+    authorizeRequest([authorAccess, reviewerCuratorAccess, adminEditorAccess]);
+    return mapLearningObjectToSummary(object);
+  } catch (e) {
+    handleError(e);
+  }
+}
+
+/**
+ * Retrieves the Learning Object copy that is furthest along in the review pipeline
+ *
+ * The working copy can only be returned if
+ * The requester is the author
+ * The requester is a reviewer/curator@<Learning Object's collection> && the Learning Object is not unreleased
+ * The requester is an admin/editor && the Learning Object is not unreleased
+ *
+ * @export
+ * @param {DataStore} dataStore [Driver for datastore]
+ * @param {UserToken} requester [Object containing information about the requester]
+ * @param {string} id [Id of the Learning Object]
+ * @returns {Promise<LearningObjectSummary>}
+ */
+export async function getActiveLearningObjectSummary({
+  dataStore,
+  requester,
+  id,
+}: {
+  dataStore: DataStore;
+  requester: UserToken;
+  id: string;
+}): Promise<LearningObjectSummary> {
+  try {
+    const object =
+      (await dataStore.fetchReleasedLearningObject({
+        id,
+      })) || (await dataStore.fetchLearningObject({ id, full: false }));
+    if (!object) {
+      throw new ResourceError(
+        `Learning Object ${id} does not exist.`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+
+    const releasedAccess = object.status === LearningObject.Status.RELEASED;
+    const authorAccess = requesterIsAuthor({
+      requester,
+      authorUsername: object.author.username,
+    });
+    const isUnreleased = LearningObjectState.UNRELEASED.includes(
+      object.status as LearningObject.Status,
+    );
+    const reviewerCuratorAccess =
+      !isUnreleased &&
+      hasReadAccessByCollection({
+        requester,
+        collection: object.collection,
+      });
+    const adminEditorAccess =
+      !isUnreleased && requesterIsAdminOrEditor(requester);
+    authorizeRequest([
+      releasedAccess,
+      authorAccess,
+      reviewerCuratorAccess,
+      adminEditorAccess,
+    ]);
+    return mapLearningObjectToSummary(object);
+  } catch (e) {
+    handleError(e);
+  }
+}
+
+/**
+ * Retrieves Learning Object summary by id and revision number
+ *
+ * The working copy can only be returned if
+ * The requester is the author
+ * The requester is a reviewer/curator@<Learning Object's collection> && the Learning Object is not unreleased
+ * The requester is an admin/editor && the Learning Object is not unreleased
+ *
+ * @export
+ * @param {DataStore} dataStore [Driver for datastore]
+ * @param {UserToken} requester [Object containing information about the requester]
+ * @param {string} id [Id of the Learning Object]
+ * @param {number} revision [Revision number of the Learning Object]
+ * @returns {Promise<LearningObjectSummary>}
+ */
+export async function getLearningObjectRevisionSummary({
+  dataStore,
+  requester,
+  id,
+  revision,
+}: {
+  dataStore: DataStore;
+  requester: UserToken;
+  id: string;
+  revision: number;
+}): Promise<LearningObjectSummary> {
+  try {
+    const object = await dataStore.fetchLearningObjectRevisionSummary({
+      id,
+      revision,
+    });
+    if (!object) {
+      throw new ResourceError(
+        `Cannot find revision ${revision} of Learning Object ${id}.`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+
+    const releasedAccess = object.status === LearningObject.Status.RELEASED;
+    const authorAccess = requesterIsAuthor({
+      requester,
+      authorUsername: object.author.username,
+    });
+    const isUnreleased = LearningObjectState.UNRELEASED.includes(
+      object.status as LearningObject.Status,
+    );
+    const reviewerCuratorAccess =
+      !isUnreleased &&
+      hasReadAccessByCollection({
+        requester,
+        collection: object.collection,
+      });
+    const adminEditorAccess =
+      !isUnreleased && requesterIsAdminOrEditor(requester);
+    authorizeRequest([
+      releasedAccess,
+      authorAccess,
+      reviewerCuratorAccess,
+      adminEditorAccess,
+    ]);
+    return object;
+  } catch (e) {
+    handleError(e);
+  }
+}
 
 /**
  * Adds or updates Learning Object file metadata

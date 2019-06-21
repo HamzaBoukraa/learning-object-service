@@ -1,10 +1,39 @@
 /**
+ * An interface representation of the FileMetadata type
+ *
+ * @export
+ * @interface FileMetadata
+ */
+export interface FileMetadata {
+  /**
+   * Server generated hash of the file's content
+   */
+  ETag: string;
+  /**
+   * The location the file was uploaded to within the Learning Object’s file system hierarchy
+   */
+  fullPath: string;
+  /**
+   * Multipurpose Internet Mail Extensions or media type of the file
+   */
+  mimeType: string;
+  /**
+   * The name of the file
+   */
+  name: string;
+  /**
+   * The size of the file in bytes
+   */
+  size: number;
+}
+
+/**
  * An interface representation of the FileMetadataInsert type
  *
  * @export
  * @interface FileMetadataInsert
  */
-export interface FileMetadataInsert {
+export interface FileMetadataInsert extends FileMetadata {
   /**
    * Time at which the file metadata was created (When the file was first ever uploaded)
    * Value is a string representing the milliseconds elapsed since the UNIX epoch
@@ -15,17 +44,9 @@ export interface FileMetadataInsert {
    */
   description: string;
   /**
-   * Server generated hash of the file's content
-   */
-  ETag: string;
-  /**
    * Suffix identifier indicating file's type or characteristics of the file's contents
    */
   extension: string;
-  /**
-   * The location the file was uploaded to within the Learning Object’s file system hierarchy
-   */
-  fullPath: string;
   /**
    * Time at which the file metadata was last updated
    * Value is a string representing the milliseconds elapsed since the UNIX epoch
@@ -40,21 +61,9 @@ export interface FileMetadataInsert {
    */
   learningObjectRevision: number;
   /**
-   * Multipurpose Internet Mail Extensions or media type of the file
-   */
-  mimeType: string;
-  /**
-   * The name of the file
-   */
-  name: string;
-  /**
    * Flag indicating whether or not the file can be included in the Learning Object bundle
    */
   packageable: boolean;
-  /**
-   * The size of the file in bytes
-   */
-  size: number;
   /**
    * Revision number the file copy is stored under in S3
    * *** Example ***

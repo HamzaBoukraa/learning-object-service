@@ -19,6 +19,7 @@ import {
   UserDocument,
   LearningOutcomeDocument,
   StandardOutcomeDocument,
+  LearningObjectSummary,
 } from '../shared/types';
 import { LearningOutcomeMongoDatastore } from '../LearningOutcomes/LearningOutcomeMongoDatastore';
 import {
@@ -42,6 +43,7 @@ import { reportError } from '../shared/SentryConnector';
 import { LearningObject, LearningOutcome, User } from '../shared/entity';
 import { Submission } from '../LearningObjectSubmission/types/Submission';
 import { MongoConnector } from '../shared/Mongo/MongoConnector';
+import { mapLearningObjectToSummary } from '../shared/functions';
 
 export enum COLLECTIONS {
   USERS = 'users',
@@ -93,6 +95,39 @@ export class MongoDriver implements DataStore {
     this.statStore = new LearningObjectStatStore(this.db);
     this.learningObjectStore = new LearningObjectDataStore(this.db);
     this.changelogStore = new ChangelogDataStore(this.db);
+  }
+
+  /**
+   * @inheritdoc
+   *
+   * Searches both collections for Learning Object matching the specified id and revision number
+   *
+   * *** Example ***
+   * `id`='exampleId', `revision`=1
+   * If revision 1 of Learning Object exampleId was released, it's latest version will be stored in the released objects collection
+   * If revision 1 is still be drafted or is in review, it will only exist in the working objects collection
+   *
+   * @returns {Promise<LearningObjectSummary>}
+   * @memberof MongoDriver
+   */
+  async fetchLearningObjectRevisionSummary({
+    id,
+    revision,
+  }: {
+    id: string;
+    revision: number;
+  }): Promise<LearningObjectSummary> {
+    const doc =
+      (await this.db
+        .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
+        .findOne({ _id: id, revision })) ||
+      (await this.db
+        .collection(COLLECTIONS.LEARNING_OBJECTS)
+        .findOne({ _id: id, revision }));
+    if (doc) {
+      return this.generateLearningObjectSummary(doc);
+    }
+    return null;
   }
 
   /**
@@ -2250,6 +2285,30 @@ export class MongoDriver implements DataStore {
         `Problem creating document for Learning Object. Error:${e}`,
       );
     }
+  }
+
+  /**
+   * Converts LearningObjectDocument to LearningObjectSummary
+   *
+   * @private
+   * @param {LearningObjectDocument} record [Learning Object data]
+   * @returns {Promise<LearningObjectSummary>}
+   * @memberof MongoDriver
+   */
+  private async generateLearningObjectSummary(
+    record: LearningObjectDocument,
+  ): Promise<LearningObjectSummary> {
+    const author$ = this.fetchUser(record.authorID);
+    const contributors$ = Promise.all(
+      record.contributors.map(id => this.fetchUser(id)),
+    );
+    const [author, contributors] = await Promise.all([author$, contributors$]);
+    return mapLearningObjectToSummary({
+      ...(record as any),
+      author,
+      contributors,
+      id: record._id,
+    });
   }
 
   /**

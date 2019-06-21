@@ -13,6 +13,11 @@ import { UserDocument } from './user-document';
 import { LearningOutcomeDocument } from './learning-outcome-document';
 import { StandardOutcomeDocument } from './standard-outcome-document';
 import { ServiceToken } from './service-token';
+import {
+  LearningObjectSummary,
+  AuthorSummary,
+} from './learning-object-summary';
+import { AccessGroup } from './access-groups';
 
 export {
   UserToken,
@@ -26,4 +31,7 @@ export {
   UrlDocument,
   LearningOutcomeDocument,
   StandardOutcomeDocument,
+  LearningObjectSummary,
+  AuthorSummary,
+  AccessGroup,
 };
