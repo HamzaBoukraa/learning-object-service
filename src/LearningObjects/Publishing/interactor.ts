@@ -2,7 +2,7 @@ import { LearningObject } from '../../shared/entity';
 import { ResourceError, ResourceErrorReason } from '../../shared/errors';
 import { isAdminOrEditor } from '../../shared/AuthorizationManager';
 import { UserToken } from '../../shared/types';
-import { ReleaseEmailGateway } from './release-email-gateway';
+import { ReleaseEmailGateway } from './ReleaseEmails/release-email-gateway';
 import { HierarchyAdapter } from '../Hierarchy/HierarchyAdapter';
 
 export interface PublishingDataStore {
@@ -21,22 +21,33 @@ export async function releaseLearningObject({ userToken, dataStore, releasableOb
     releasableObject: LearningObject;
     releaseEmailGateway: ReleaseEmailGateway,
 }): Promise<void> {
-    if (isAdminOrEditor(userToken.accessGroups)) {
-        const isTopLevelObject = await HierarchyAdapter.getInstance().isTopLevelLearningObject({
-            learningObjectID: releasableObject.id,
-            userToken,
-        });
-        if (isTopLevelObject) {
-            releaseEmailGateway.invokeReleaseNotification({
-                learningObjectName: releasableObject.name,
-                authorName: releasableObject.author.name,
-                collection: releasableObject.collection,
-                authorEmail: releasableObject.author.email,
-                username: releasableObject.author.username,
-            });
-        }
-        return dataStore.addToReleased(releasableObject);
+    if (!isAdminOrEditor(userToken.accessGroups)) {
+        throw new ResourceError(`${userToken.username} does not have access to release this Learning Object`, ResourceErrorReason.INVALID_ACCESS);
     }
-    throw new ResourceError(`${userToken.username} does not have access to release this Learning Object`, ResourceErrorReason.INVALID_ACCESS);
+    await dataStore.addToReleased(releasableObject);
+    await sendEmail(releasableObject, userToken, releaseEmailGateway);
 }
 
+/**
+ * sendEmail determines if the Learning Object author should recieve an email about the release,
+ * and triggers the send email action if it does. Authors should only be notified if the Learning
+ * Object being released has no parent.
+ * @param releasableObject the Learning Object being released
+ * @param userToken the user who triggered the release
+ * @param releaseEmailGateway the Gateway that makes the API calls to send release emails
+ */
+async function sendEmail(releasableObject: LearningObject, userToken: UserToken, releaseEmailGateway: ReleaseEmailGateway) {
+    const isTopLevelObject = await HierarchyAdapter.getInstance().isTopLevelLearningObject({
+        learningObjectID: releasableObject.id,
+        userToken,
+    });
+    if (isTopLevelObject) {
+        releaseEmailGateway.invokeReleaseNotification({
+            learningObjectName: releasableObject.name,
+            authorName: releasableObject.author.name,
+            collection: releasableObject.collection,
+            authorEmail: releasableObject.author.email,
+            username: releasableObject.author.username,
+        });
+    }
+}
