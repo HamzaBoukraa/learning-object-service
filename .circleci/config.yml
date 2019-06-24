@@ -35,10 +35,10 @@ jobs:
       - checkout
       - setup_remote_docker
       - run:
-          name: Clone Elasticsearch Smoke Test Repository 
+          name: Clone Elasticsearch Smoke Test Repository
           command: >-
             cd .. && git clone https://${github_username}:${github_password}@github.com/nvisal1/Elasticsearch-Smoke-Test-Environment.git
-      - run: 
+      - run:
           name: Run Environment
           command: |
             cd ../Elasticsearch-Smoke-Test-Environment
