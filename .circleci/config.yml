@@ -31,9 +31,14 @@ jobs:
     <<: *defaults
     steps:
       - run:
-          name: Notify Sentry
-          command: 
-            - curl -X POST https://sentry.io/api/organizations/cyber4all/releases/ -H "Authorization=Bearer ${SENTRY_RELEASE_TOKEN}" -H "Content-Type=application/json" -d '{projects=["learning-object-service"], ref=$CIRCLE_SHA1, version=$CIRCLE_TAG}'
+          name: Install Sentry CLI
+          command: curl -sL <https://sentry.io/get-cli/> | bash
+      - run:
+          name: Create Sentry Release Object
+          command: |
+            sentry-cli releases -p ${SENTRY_PROJECT_NAME} new ${CIRCLE_TAG}
+            sentry-cli releases -p ${SENTRY_PROJECT_NAME} set-commits --auto ${CIRCLE_TAG}
+            sentry-cli releases -p ${SENTRY_PROJECT_NAME} finalize ${CIRCLE_TAG}
 
   elasticsearch-smoke-test:
     <<: *defaults
@@ -103,3 +108,4 @@ workflows:
           filters:
             branches:
               only: /master/
+
