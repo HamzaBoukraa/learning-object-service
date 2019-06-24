@@ -1,7 +1,7 @@
-import { ServiceError, ServiceErrorReason } from '../../shared/errors';
-import { generateServiceToken } from '../../drivers/TokenManager';
+import { ServiceError, ServiceErrorReason } from '../../../shared/errors';
+import { generateServiceToken } from '../../../drivers/TokenManager';
 import { ReleaseEmailGateway } from './release-email-gateway';
-import { reportError } from '../../shared/SentryConnector';
+import { reportError } from '../../../shared/SentryConnector';
 import * as request from 'request-promise';
 
 export class LambdaGateway implements ReleaseEmailGateway {
