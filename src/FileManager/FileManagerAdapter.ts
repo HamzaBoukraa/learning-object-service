@@ -20,19 +20,18 @@ export class FileManagerAdapter {
     }
 
     /**
-     * Instructs file manager to upload a single file
+     * Proxies request to FileInteractor uploadFile function
      *
      * @export
      * @param {{ FileManager }} fileManager
      * @param {{ FileUpload }} file
      * @returns {string}
      */
-    async uploadfile(params: {
-        fileManager: FileManager,
+    async uploadFile(params: {
         file: FileUpload,
     }) {
         return await uploadFile({
-            fileManager: params.fileManager,
+            fileManager: this.fileManager,
             file: params.file,
         });
     }
