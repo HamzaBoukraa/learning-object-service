@@ -26,6 +26,22 @@ jobs:
           paths: 
               - ./package.json
               - ./deploy.sh
+    
+  create-sentry-release:
+    <<: *defaults
+    docker:
+      - image: circleci/node:8
+    steps:
+      - checkout
+      - run:
+          name: Install Sentry CLI
+          command: curl -sL https://sentry.io/get-cli/ | bash
+      - run:
+          name: Create Sentry Release Object
+          command: |
+            sentry-cli releases -p ${SENTRY_PROJECT_NAME} new ${CIRCLE_SHA1}
+            sentry-cli releases -p ${SENTRY_PROJECT_NAME} set-commits --auto ${CIRCLE_SHA1}
+            sentry-cli releases -p ${SENTRY_PROJECT_NAME} finalize ${CIRCLE_SHA1}
 
   deploy-production:
     <<: *defaults
@@ -52,12 +68,13 @@ jobs:
             export DOCKER_IMAGE="${DOCKER_USER_ORG}/learning-object-service:${SEMVER}"
             chmod +x ./deploy.sh
             sh ./deploy.sh
-            
+
 workflows:
   version: 2
-  build-and-test:
+  build-test-and-create-sentry-release:
     jobs:
       - build
+      - create-sentry-release
 
   build-test-and-deploy-production:
     jobs:
