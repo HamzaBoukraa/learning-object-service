@@ -29,10 +29,13 @@ jobs:
     
   create-sentry-release:
     <<: *defaults
+    docker:
+      - image: circleci/node:8
     steps:
+      - checkout
       - run:
           name: Install Sentry CLI
-          command: curl -sL https://sentry.io/get-cli
+          command: curl -sL <https://sentry.io/get-cli/> | bash
       - run:
           name: Create Sentry Release Object
           command: |
