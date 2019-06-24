@@ -220,7 +220,7 @@ export class ElasticSearchLearningObjectDatastore
       level,
       collection,
       status,
-      standardOutcomeIDs,
+      standardOutcomes,
       guidelines,
     } = params;
     const queryFilters = sanitizeObject({
@@ -229,7 +229,7 @@ export class ElasticSearchLearningObjectDatastore
         levels: level,
         collection,
         status,
-        'outcomes.mappings.id': standardOutcomeIDs,
+        'outcomes.mappings.id': standardOutcomes,
         'outcomes.mappings.source': guidelines,
       },
     });
