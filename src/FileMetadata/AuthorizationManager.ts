@@ -3,8 +3,17 @@
  */
 
 import { ResourceError, ResourceErrorReason } from '../shared/errors';
-import { Requester } from './typings';
-import { AccessGroup } from '../shared/types';
+import { Requester, LearningObjectStatus } from './typings';
+import { AccessGroup, LearningObjectSummary } from '../shared/types';
+
+const LearningObjectState = {
+  UNRELEASED: [LearningObjectStatus.REJECTED, LearningObjectStatus.UNRELEASED],
+  IN_REVIEW: [
+    LearningObjectStatus.WAITING,
+    LearningObjectStatus.REVIEW,
+    LearningObjectStatus.PROOFING,
+  ],
+};
 
 /**
  * Checks if the requester is the author by comparing `authorUsername` against requester's username
@@ -105,4 +114,76 @@ export function authorizeRequest(authorizationCases: boolean[]) {
       ResourceErrorReason.INVALID_ACCESS,
     );
   }
+}
+
+/**
+ * Authorizes read access to file metadata
+ *
+ * If the Learning Object is released, all requesters are authorized to read file metadata
+ * If the Learning Object is in review, the author, reviewers/curators@<Learning Object Collection>, and admins/editors can read file metadata
+ * If the Learning Object is unreleased or rejected only the author can read file metadata
+ *
+ * @param {LearningObjectSummary} learningObject
+ * @param {Requester} requester
+ */
+export function authorizeReadAccess({
+  learningObject,
+  requester,
+}: {
+  learningObject: LearningObjectSummary;
+  requester: Requester;
+}) {
+  const releasedAccess =
+    learningObject.status === LearningObjectStatus.RELEASED;
+  const authorAccess = requesterIsAuthor({
+    authorUsername: learningObject.author.username,
+    requester,
+  });
+  const isUnreleased = LearningObjectState.UNRELEASED.includes(
+    learningObject.status as LearningObjectStatus,
+  );
+  const reviewerCuratorAccess =
+    hasReadAccessByCollection({
+      requester,
+      collection: learningObject.collection,
+    }) && !isUnreleased;
+  const adminEditorAccess =
+    requesterIsAdminOrEditor(requester) && !isUnreleased;
+
+  authorizeRequest([
+    releasedAccess,
+    authorAccess,
+    reviewerCuratorAccess,
+    adminEditorAccess,
+  ]);
+}
+
+/**
+ * Authorizes write access to file metadata
+ *
+ * If the Learning Object is unreleased, only the author has write access to file metadata
+ * If the Learning Object is in review, only admins/editors have write access to file metadata
+ *
+ * @param {LearningObjectSummary} learningObject
+ * @param {Requester} requester
+ */
+export function authorizeWriteAccess({
+  learningObject,
+  requester,
+}: {
+  learningObject: LearningObjectSummary;
+  requester: Requester;
+}) {
+  const isUnreleased = LearningObjectState.UNRELEASED.includes(
+    learningObject.status as LearningObjectStatus,
+  );
+  const authorAccess =
+    requesterIsAuthor({
+      authorUsername: learningObject.author.username,
+      requester,
+    }) && isUnreleased;
+  const isReleased = learningObject.status === LearningObjectStatus.RELEASED;
+  const adminEditorAccess =
+    requesterIsAdminOrEditor(requester) && !isUnreleased && !isReleased;
+  authorizeRequest([authorAccess, adminEditorAccess]);
 }
