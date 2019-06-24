@@ -226,7 +226,7 @@ export class ElasticSearchLearningObjectDatastore
     const queryFilters = sanitizeObject({
       object: {
         length,
-        level,
+        levels: level,
         collection,
         status,
         'outcomes.mappings.id': standardOutcomeIDs,
@@ -544,7 +544,7 @@ export class ElasticSearchLearningObjectDatastore
     const termsQueries: TermsQuery[] = [];
     Object.keys(filters).forEach(objectKey => {
       const termBody: { [property: string]: string[] } = {};
-      termBody[`${objectKey}`] = filters[objectKey];
+      termBody[`${objectKey}.keyword`] = filters[objectKey];
       termsQueries.push({ terms: termBody });
     });
     return termsQueries;
