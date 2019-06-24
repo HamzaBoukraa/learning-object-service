@@ -1,6 +1,6 @@
 import { ReleaseEmailGateway } from './release-email-gateway';
 import { LambdaGatewayStub } from './lambda-gateway-stub';
-import { ServiceError, ServiceErrorReason } from '../../shared/errors';
+import { ServiceError, ServiceErrorReason } from '../../../shared/errors';
 import { LambdaGateway } from './lambda-gateway';
 
 export class LambdaGatewayFactory {
