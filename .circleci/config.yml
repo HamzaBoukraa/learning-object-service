@@ -39,9 +39,9 @@ jobs:
       - run:
           name: Create Sentry Release Object
           command: |
-            sentry-cli releases -p ${SENTRY_PROJECT_NAME} new ${CIRCLE_TAG}
-            sentry-cli releases -p ${SENTRY_PROJECT_NAME} set-commits --auto ${CIRCLE_TAG}
-            sentry-cli releases -p ${SENTRY_PROJECT_NAME} finalize ${CIRCLE_TAG}
+            sentry-cli releases -p ${SENTRY_PROJECT_NAME} new ${CIRCLE_SHA1}
+            sentry-cli releases -p ${SENTRY_PROJECT_NAME} set-commits --auto ${CIRCLE_SHA1}
+            sentry-cli releases -p ${SENTRY_PROJECT_NAME} finalize ${CIRCLE_SHA1}
 
   elasticsearch-smoke-test:
     <<: *defaults
