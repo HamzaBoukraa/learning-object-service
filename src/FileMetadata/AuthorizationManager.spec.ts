@@ -8,16 +8,16 @@ import {
 import { AccessGroup } from '../shared/types';
 
 describe('FileMetadata: AuthorizationManager', () => {
-  let requester: Requester = {
-    name: '',
-    username: 'authorUsername',
-    accessGroups: [],
-    emailVerified: true,
-    email: '',
-    organization: '',
-  };
-
   describe('requesterIsAuthor', () => {
+    const requester = {
+      name: '',
+      username: 'authorUsername',
+      // @ts-ignore
+      accessGroups: [],
+      emailVerified: true,
+      email: '',
+      organization: '',
+    };
     it('should return true when the username of the requester matches', () => {
       expect(
         auth.requesterIsAuthor({
@@ -35,18 +35,25 @@ describe('FileMetadata: AuthorizationManager', () => {
       ).toBe(false);
     });
     it('should return false when the requester is undefined', () => {
-      // @ts-ignore
-      requester = undefined;
       expect(
         auth.requesterIsAuthor({
           authorUsername: 'not requester',
-          requester,
+          requester: undefined,
         }),
       ).toBe(false);
     });
   });
 
   describe('requesterIsAdmin', () => {
+    const requester = {
+      name: '',
+      username: 'authorUsername',
+      // @ts-ignore
+      accessGroups: [],
+      emailVerified: true,
+      email: '',
+      organization: '',
+    };
     it('should return true when accessGroups contain only the admin privilege', () => {
       requester.accessGroups = ['admin'];
       expect(auth.requesterIsAdmin(requester)).toBe(true);
@@ -85,18 +92,23 @@ describe('FileMetadata: AuthorizationManager', () => {
       expect(auth.requesterIsAdmin(requester)).toBe(false);
     });
     it('should return false when requester is undefined', () => {
-      // @ts-ignore
-      requester = undefined;
-      expect(auth.requesterIsAdmin(requester)).toBe(false);
+      expect(auth.requesterIsAdmin(undefined)).toBe(false);
     });
     it('should return false when accessGroups is undefined', () => {
-      // @ts-ignore
-      requester.accessGroups = undefined;
-      expect(auth.requesterIsAdmin(requester)).toBe(false);
+      expect(auth.requesterIsAdmin(undefined)).toBe(false);
     });
   });
 
   describe('requesterIsAdminOrEditor', () => {
+    const requester = {
+      name: '',
+      username: 'authorUsername',
+      // @ts-ignore
+      accessGroups: [],
+      emailVerified: true,
+      email: '',
+      organization: '',
+    };
     it('should return true when accessGroups contain only the admin privilege', () => {
       requester.accessGroups = ['admin'];
       expect(auth.requesterIsAdminOrEditor(requester)).toBe(true);
@@ -131,18 +143,23 @@ describe('FileMetadata: AuthorizationManager', () => {
       expect(auth.requesterIsAdminOrEditor(requester)).toBe(false);
     });
     it('should return false when requester is undefined', () => {
-      // @ts-ignore
-      requester = undefined;
-      expect(auth.requesterIsAdminOrEditor(requester)).toBe(false);
+      expect(auth.requesterIsAdminOrEditor(undefined)).toBe(false);
     });
     it('should return false when accessGroups is undefined', () => {
-      // @ts-ignore
-      requester.accessGroups = undefined;
-      expect(auth.requesterIsAdminOrEditor(requester)).toBe(false);
+      expect(auth.requesterIsAdminOrEditor(undefined)).toBe(false);
     });
   });
 
   describe('hasReadAccessByCollection', () => {
+    const requester = {
+      name: '',
+      username: 'authorUsername',
+      // @ts-ignore
+      accessGroups: [],
+      emailVerified: true,
+      email: '',
+      organization: '',
+    };
     it('should return true when accessGroups contain only the admin privilege', () => {
       requester.accessGroups = ['admin'];
       expect(
@@ -191,17 +208,19 @@ describe('FileMetadata: AuthorizationManager', () => {
       ).toBe(false);
     });
     it('should return false when requester is undefined', () => {
-      // @ts-ignore
-      requester = undefined;
       expect(
-        auth.hasReadAccessByCollection({ requester, collection: 'collection' }),
+        auth.hasReadAccessByCollection({
+          requester: undefined,
+          collection: 'collection',
+        }),
       ).toBe(false);
     });
     it('should return false when accessGroups is undefined', () => {
-      // @ts-ignore
-      requester.accessGroups = undefined;
       expect(
-        auth.hasReadAccessByCollection({ requester, collection: 'collection' }),
+        auth.hasReadAccessByCollection({
+          requester: { ...requester, accessGroups: undefined },
+          collection: 'collection',
+        }),
       ).toBe(false);
     });
   });
@@ -239,91 +258,389 @@ describe('FileMetadata: AuthorizationManager', () => {
       revision: 0,
       status: LearningObjectStatus.RELEASED,
     };
+    const requester = {
+      name: '',
+      username: 'authorUsername',
+      // @ts-ignore
+      accessGroups: [],
+      emailVerified: true,
+      email: '',
+      organization: '',
+    };
 
-    describe('when the requester is a visitor', () => {
-      requester.accessGroups = [];
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.RELEASED
-      }`,      () => {
-        summary.status = LearningObjectStatus.RELEASED;
+    describe('when the Learning Object is released', () => {
+      summary.status = LearningObjectStatus.RELEASED;
+      describe('and the requester is a visitor', () => {
         it('should allow read access and not throw an error', () => {
           expect(
             auth.authorizeReadAccess({
               learningObject: summary,
-              requester: requester,
+              requester,
             }),
           ).toBeUndefined();
         });
       });
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.PROOFING
-      }`,      () => {
-        summary.status = LearningObjectStatus.PROOFING;
+      describe('and the requester is the author', () => {
+        requester.username = summary.author.username;
+        it('should allow read access and not throw an error', () => {
+          expect(
+            auth.authorizeReadAccess({
+              learningObject: summary,
+              requester,
+            }),
+          ).toBeUndefined();
+        });
+      });
+      describe('and the requester is a curator within the Learning Object collection', () => {
+        requester.accessGroups = [
+          `${AccessGroup.CURATOR}@${summary.collection}`,
+        ];
+        it('should allow read access and not throw an error', () => {
+          expect(
+            auth.authorizeReadAccess({
+              learningObject: summary,
+              requester,
+            }),
+          ).toBeUndefined();
+        });
+      });
+      describe('and the requester is a reviewer within the Learning Object collection', () => {
+        requester.accessGroups = [
+          `${AccessGroup.REVIEWER}@${summary.collection}`,
+        ];
+        it('should allow read access and not throw an error', () => {
+          expect(
+            auth.authorizeReadAccess({
+              learningObject: summary,
+              requester,
+            }),
+          ).toBeUndefined();
+        });
+      });
+      describe('and the requester is an editor', () => {
+        requester.accessGroups = [AccessGroup.EDITOR];
+        it('should allow read access and not throw an error', () => {
+          expect(
+            auth.authorizeReadAccess({
+              learningObject: summary,
+              requester,
+            }),
+          ).toBeUndefined();
+        });
+      });
+      describe('and the requester is an admin', () => {
+        requester.accessGroups = [AccessGroup.ADMIN];
+        it('should allow read access and not throw an error', () => {
+          expect(
+            auth.authorizeReadAccess({
+              learningObject: summary,
+              requester,
+            }),
+          ).toBeUndefined();
+        });
+      });
+    });
+
+    describe('when the Learning Object is in proofing', () => {
+      summary.status = LearningObjectStatus.PROOFING;
+      describe('and the requester is a visitor', () => {
         it('should not allow read access and throw an error', () => {
           try {
             auth.authorizeReadAccess({
               learningObject: summary,
-              requester: requester,
+              requester,
             });
           } catch (e) {
             expect(e).toBeInstanceOf(ResourceError);
           }
         });
       });
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.REVIEW
-      }`,      () => {
-        summary.status = LearningObjectStatus.REVIEW;
+      describe('and the requester is the author', () => {
+        requester.username = summary.author.username;
+        it('should allow read access and not throw an error', () => {
+          expect(
+            auth.authorizeReadAccess({
+              learningObject: summary,
+              requester,
+            }),
+          ).toBeUndefined();
+        });
+      });
+      describe('and the requester is a curator within the Learning Object collection', () => {
+        requester.accessGroups = [
+          `${AccessGroup.CURATOR}@${summary.collection}`,
+        ];
+        it('should allow read access and not throw an error', () => {
+          expect(
+            auth.authorizeReadAccess({
+              learningObject: summary,
+              requester,
+            }),
+          ).toBeUndefined();
+        });
+      });
+      describe('and the requester is a reviewer within the Learning Object collection', () => {
+        requester.accessGroups = [
+          `${AccessGroup.REVIEWER}@${summary.collection}`,
+        ];
+        it('should allow read access and not throw an error', () => {
+          expect(
+            auth.authorizeReadAccess({
+              learningObject: summary,
+              requester,
+            }),
+          ).toBeUndefined();
+        });
+      });
+      describe('and the requester is an editor', () => {
+        requester.accessGroups = [AccessGroup.EDITOR];
+        it('should allow read access and not throw an error', () => {
+          expect(
+            auth.authorizeReadAccess({
+              learningObject: summary,
+              requester,
+            }),
+          ).toBeUndefined();
+        });
+      });
+      describe('and the requester is an admin', () => {
+        requester.accessGroups = [AccessGroup.ADMIN];
+        it('should allow read access and not throw an error', () => {
+          expect(
+            auth.authorizeReadAccess({
+              learningObject: summary,
+              requester,
+            }),
+          ).toBeUndefined();
+        });
+      });
+    });
+
+    describe('when the Learning Object is in review', () => {
+      summary.status = LearningObjectStatus.REVIEW;
+      describe('and the requester is a visitor', () => {
         it('should not allow read access and throw an error', () => {
           try {
             auth.authorizeReadAccess({
               learningObject: summary,
-              requester: requester,
+              requester,
             });
           } catch (e) {
             expect(e).toBeInstanceOf(ResourceError);
           }
         });
       });
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.WAITING
-      }`,      () => {
-        summary.status = LearningObjectStatus.WAITING;
+      describe('and the requester is the author', () => {
+        requester.username = summary.author.username;
+        it('should allow read access and not throw an error', () => {
+          expect(
+            auth.authorizeReadAccess({
+              learningObject: summary,
+              requester,
+            }),
+          ).toBeUndefined();
+        });
+      });
+      describe('and the requester is a curator within the Learning Object collection', () => {
+        requester.accessGroups = [
+          `${AccessGroup.CURATOR}@${summary.collection}`,
+        ];
+        it('should allow read access and not throw an error', () => {
+          expect(
+            auth.authorizeReadAccess({
+              learningObject: summary,
+              requester,
+            }),
+          ).toBeUndefined();
+        });
+      });
+      describe('and the requester is a reviewer within the Learning Object collection', () => {
+        requester.accessGroups = [
+          `${AccessGroup.REVIEWER}@${summary.collection}`,
+        ];
+        it('should allow read access and not throw an error', () => {
+          expect(
+            auth.authorizeReadAccess({
+              learningObject: summary,
+              requester,
+            }),
+          ).toBeUndefined();
+        });
+      });
+      describe('and the requester is an editor', () => {
+        requester.accessGroups = [AccessGroup.EDITOR];
+        it('should allow read access and not throw an error', () => {
+          expect(
+            auth.authorizeReadAccess({
+              learningObject: summary,
+              requester,
+            }),
+          ).toBeUndefined();
+        });
+      });
+      describe('and the requester is an admin', () => {
+        requester.accessGroups = [AccessGroup.ADMIN];
+        it('should allow read access and not throw an error', () => {
+          expect(
+            auth.authorizeReadAccess({
+              learningObject: summary,
+              requester,
+            }),
+          ).toBeUndefined();
+        });
+      });
+    });
+
+    describe('when the Learning Object is waiting', () => {
+      summary.status = LearningObjectStatus.WAITING;
+      describe('and the requester is a visitor', () => {
         it('should not allow read access and throw an error', () => {
           try {
             auth.authorizeReadAccess({
               learningObject: summary,
-              requester: requester,
+              requester,
             });
           } catch (e) {
             expect(e).toBeInstanceOf(ResourceError);
           }
         });
       });
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.UNRELEASED
-      }`,      () => {
-        summary.status = LearningObjectStatus.UNRELEASED;
+      describe('and the requester is the author', () => {
+        requester.username = summary.author.username;
+        it('should allow read access and not throw an error', () => {
+          expect(
+            auth.authorizeReadAccess({
+              learningObject: summary,
+              requester,
+            }),
+          ).toBeUndefined();
+        });
+      });
+      describe('and the requester is a curator within the Learning Object collection', () => {
+        requester.accessGroups = [
+          `${AccessGroup.CURATOR}@${summary.collection}`,
+        ];
+        it('should allow read access and not throw an error', () => {
+          expect(
+            auth.authorizeReadAccess({
+              learningObject: summary,
+              requester,
+            }),
+          ).toBeUndefined();
+        });
+      });
+      describe('and the requester is a reviewer within the Learning Object collection', () => {
+        requester.accessGroups = [
+          `${AccessGroup.REVIEWER}@${summary.collection}`,
+        ];
+        it('should allow read access and not throw an error', () => {
+          expect(
+            auth.authorizeReadAccess({
+              learningObject: summary,
+              requester,
+            }),
+          ).toBeUndefined();
+        });
+      });
+      describe('and the requester is an editor', () => {
+        requester.accessGroups = [AccessGroup.EDITOR];
+        it('should allow read access and not throw an error', () => {
+          expect(
+            auth.authorizeReadAccess({
+              learningObject: summary,
+              requester,
+            }),
+          ).toBeUndefined();
+        });
+      });
+      describe('and the requester is an admin', () => {
+        requester.accessGroups = [AccessGroup.ADMIN];
+        it('should allow read access and not throw an error', () => {
+          expect(
+            auth.authorizeReadAccess({
+              learningObject: summary,
+              requester,
+            }),
+          ).toBeUndefined();
+        });
+      });
+    });
+
+    describe('when the Learning Object is unreleased', () => {
+      summary.status = LearningObjectStatus.UNRELEASED;
+      describe('and the requester is a visitor', () => {
         it('should not allow read access and throw an error', () => {
           try {
             auth.authorizeReadAccess({
               learningObject: summary,
-              requester: requester,
+              requester,
             });
           } catch (e) {
             expect(e).toBeInstanceOf(ResourceError);
           }
         });
       });
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.REJECTED
-      }`,      () => {
-        summary.status = LearningObjectStatus.UNRELEASED;
+      describe('and the requester is the author', () => {
+        requester.username = summary.author.username;
+        it('should allow read access and not throw an error', () => {
+          expect(
+            auth.authorizeReadAccess({
+              learningObject: summary,
+              requester,
+            }),
+          ).toBeUndefined();
+        });
+      });
+      describe('and the requester is a curator within the Learning Object collection', () => {
+        requester.accessGroups = [
+          `${AccessGroup.CURATOR}@${summary.collection}`,
+        ];
         it('should not allow read access and throw an error', () => {
           try {
             auth.authorizeReadAccess({
               learningObject: summary,
-              requester: requester,
+              requester,
+            });
+          } catch (e) {
+            expect(e).toBeInstanceOf(ResourceError);
+          }
+        });
+      });
+      describe('and the requester is a reviewer within the Learning Object collection', () => {
+        requester.accessGroups = [
+          `${AccessGroup.REVIEWER}@${summary.collection}`,
+        ];
+        it('should not allow read access and throw an error', () => {
+          try {
+            auth.authorizeReadAccess({
+              learningObject: summary,
+              requester,
+            });
+          } catch (e) {
+            expect(e).toBeInstanceOf(ResourceError);
+          }
+        });
+      });
+      describe('and the requester is an editor', () => {
+        requester.accessGroups = [AccessGroup.EDITOR];
+        it('should not allow read access and throw an error', () => {
+          try {
+            auth.authorizeReadAccess({
+              learningObject: summary,
+              requester,
+            });
+          } catch (e) {
+            expect(e).toBeInstanceOf(ResourceError);
+          }
+        });
+      });
+      describe('and the requester is an admin', () => {
+        requester.accessGroups = [AccessGroup.ADMIN];
+        it('should not allow read access and throw an error', () => {
+          try {
+            auth.authorizeReadAccess({
+              learningObject: summary,
+              requester,
             });
           } catch (e) {
             expect(e).toBeInstanceOf(ResourceError);
@@ -331,422 +648,82 @@ describe('FileMetadata: AuthorizationManager', () => {
         });
       });
     });
-    describe('when the requester is the author', () => {
-      requester.username = summary.author.username;
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.RELEASED
-      }`,      () => {
-        summary.status = LearningObjectStatus.RELEASED;
-        it('should allow read access and not throw an error', () => {
-          expect(
-            auth.authorizeReadAccess({
-              learningObject: summary,
-              requester: requester,
-            }),
-          ).toBeUndefined();
-        });
-      });
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.PROOFING
-      }`,      () => {
-        summary.status = LearningObjectStatus.PROOFING;
-        it('should allow read access and not throw an error', () => {
-          expect(
-            auth.authorizeReadAccess({
-              learningObject: summary,
-              requester: requester,
-            }),
-          ).toBeUndefined();
-        });
-      });
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.REVIEW
-      }`,      () => {
-        summary.status = LearningObjectStatus.REVIEW;
-        it('should allow read access and not throw an error', () => {
-          expect(
-            auth.authorizeReadAccess({
-              learningObject: summary,
-              requester: requester,
-            }),
-          ).toBeUndefined();
-        });
-      });
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.WAITING
-      }`,      () => {
-        summary.status = LearningObjectStatus.WAITING;
-        it('should allow read access and not throw an error', () => {
-          expect(
-            auth.authorizeReadAccess({
-              learningObject: summary,
-              requester: requester,
-            }),
-          ).toBeUndefined();
-        });
-      });
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.UNRELEASED
-      }`,      () => {
-        summary.status = LearningObjectStatus.UNRELEASED;
-        it('should allow read access and not throw an error', () => {
-          expect(
-            auth.authorizeReadAccess({
-              learningObject: summary,
-              requester: requester,
-            }),
-          ).toBeUndefined();
-        });
-      });
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.REJECTED
-      }`,      () => {
-        summary.status = LearningObjectStatus.REJECTED;
-        it('should allow read access and not throw an error', () => {
-          expect(
-            auth.authorizeReadAccess({
-              learningObject: summary,
-              requester: requester,
-            }),
-          ).toBeUndefined();
-        });
-      });
-    });
-    describe('when the requester is a curator of the Learning Object\'s collection', () => {
-      requester.accessGroups = [`${AccessGroup.CURATOR}@${summary.collection}`];
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.RELEASED
-      }`,      () => {
-        summary.status = LearningObjectStatus.RELEASED;
-        it('should allow read access and not throw an error', () => {
-          expect(
-            auth.authorizeReadAccess({
-              learningObject: summary,
-              requester: requester,
-            }),
-          ).toBeUndefined();
-        });
-      });
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.PROOFING
-      }`,      () => {
-        summary.status = LearningObjectStatus.PROOFING;
-        it('should allow read access and not throw an error', () => {
-          expect(
-            auth.authorizeReadAccess({
-              learningObject: summary,
-              requester: requester,
-            }),
-          ).toBeUndefined();
-        });
-      });
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.REVIEW
-      }`,      () => {
-        summary.status = LearningObjectStatus.REVIEW;
-        it('should allow read access and not throw an error', () => {
-          expect(
-            auth.authorizeReadAccess({
-              learningObject: summary,
-              requester: requester,
-            }),
-          ).toBeUndefined();
-        });
-      });
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.WAITING
-      }`,      () => {
-        summary.status = LearningObjectStatus.WAITING;
-        it('should allow read access and not throw an error', () => {
-          expect(
-            auth.authorizeReadAccess({
-              learningObject: summary,
-              requester: requester,
-            }),
-          ).toBeUndefined();
-        });
-      });
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.UNRELEASED
-      }`,      () => {
-        summary.status = LearningObjectStatus.UNRELEASED;
+
+    describe('when the Learning Object is rejected', () => {
+      summary.status = LearningObjectStatus.REJECTED;
+      describe('and the requester is a visitor', () => {
         it('should not allow read access and throw an error', () => {
           try {
             auth.authorizeReadAccess({
               learningObject: summary,
-              requester: requester,
+              requester,
             });
           } catch (e) {
             expect(e).toBeInstanceOf(ResourceError);
           }
         });
       });
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.REJECTED
-      }`,      () => {
-        summary.status = LearningObjectStatus.REJECTED;
+      describe('and the requester is the author', () => {
+        requester.username = summary.author.username;
+        it('should allow read access and not throw an error', () => {
+          expect(
+            auth.authorizeReadAccess({
+              learningObject: summary,
+              requester,
+            }),
+          ).toBeUndefined();
+        });
+      });
+      describe('and the requester is a curator within the Learning Object collection', () => {
+        requester.accessGroups = [
+          `${AccessGroup.CURATOR}@${summary.collection}`,
+        ];
         it('should not allow read access and throw an error', () => {
           try {
             auth.authorizeReadAccess({
               learningObject: summary,
-              requester: requester,
+              requester,
             });
           } catch (e) {
             expect(e).toBeInstanceOf(ResourceError);
           }
         });
       });
-    });
-    describe('when the requester is a reviewer of the Learning Object\'s collection', () => {
-      requester.accessGroups = [
-        `${AccessGroup.REVIEWER}@${summary.collection}`,
-      ];
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.RELEASED
-      }`,      () => {
-        summary.status = LearningObjectStatus.RELEASED;
-        it('should allow read access and not throw an error', () => {
-          expect(
-            auth.authorizeReadAccess({
-              learningObject: summary,
-              requester: requester,
-            }),
-          ).toBeUndefined();
-        });
-      });
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.PROOFING
-      }`,      () => {
-        summary.status = LearningObjectStatus.PROOFING;
-        it('should allow read access and not throw an error', () => {
-          expect(
-            auth.authorizeReadAccess({
-              learningObject: summary,
-              requester: requester,
-            }),
-          ).toBeUndefined();
-        });
-      });
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.REVIEW
-      }`,      () => {
-        summary.status = LearningObjectStatus.REVIEW;
-        it('should allow read access and not throw an error', () => {
-          expect(
-            auth.authorizeReadAccess({
-              learningObject: summary,
-              requester: requester,
-            }),
-          ).toBeUndefined();
-        });
-      });
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.WAITING
-      }`,      () => {
-        summary.status = LearningObjectStatus.WAITING;
-        it('should allow read access and not throw an error', () => {
-          expect(
-            auth.authorizeReadAccess({
-              learningObject: summary,
-              requester: requester,
-            }),
-          ).toBeUndefined();
-        });
-      });
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.UNRELEASED
-      }`,      () => {
-        summary.status = LearningObjectStatus.UNRELEASED;
+      describe('and the requester is a reviewer within the Learning Object collection', () => {
+        requester.accessGroups = [
+          `${AccessGroup.REVIEWER}@${summary.collection}`,
+        ];
         it('should not allow read access and throw an error', () => {
           try {
             auth.authorizeReadAccess({
               learningObject: summary,
-              requester: requester,
+              requester,
             });
           } catch (e) {
             expect(e).toBeInstanceOf(ResourceError);
           }
         });
       });
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.REJECTED
-      }`,      () => {
-        summary.status = LearningObjectStatus.REJECTED;
+      describe('and the requester is an editor', () => {
+        requester.accessGroups = [AccessGroup.EDITOR];
         it('should not allow read access and throw an error', () => {
           try {
             auth.authorizeReadAccess({
               learningObject: summary,
-              requester: requester,
+              requester,
             });
           } catch (e) {
             expect(e).toBeInstanceOf(ResourceError);
           }
         });
       });
-    });
-    describe('when the requester is an editor', () => {
-      requester.accessGroups = [AccessGroup.EDITOR];
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.RELEASED
-      }`,      () => {
-        summary.status = LearningObjectStatus.RELEASED;
-        it('should allow read access and not throw an error', () => {
-          expect(
-            auth.authorizeReadAccess({
-              learningObject: summary,
-              requester: requester,
-            }),
-          ).toBeUndefined();
-        });
-      });
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.PROOFING
-      }`,      () => {
-        summary.status = LearningObjectStatus.PROOFING;
-        it('should allow read access and not throw an error', () => {
-          expect(
-            auth.authorizeReadAccess({
-              learningObject: summary,
-              requester: requester,
-            }),
-          ).toBeUndefined();
-        });
-      });
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.REVIEW
-      }`,      () => {
-        summary.status = LearningObjectStatus.REVIEW;
-        it('should allow read access and not throw an error', () => {
-          expect(
-            auth.authorizeReadAccess({
-              learningObject: summary,
-              requester: requester,
-            }),
-          ).toBeUndefined();
-        });
-      });
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.WAITING
-      }`,      () => {
-        summary.status = LearningObjectStatus.WAITING;
-        it('should allow read access and not throw an error', () => {
-          expect(
-            auth.authorizeReadAccess({
-              learningObject: summary,
-              requester: requester,
-            }),
-          ).toBeUndefined();
-        });
-      });
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.UNRELEASED
-      }`,      () => {
-        summary.status = LearningObjectStatus.UNRELEASED;
+      describe('and the requester is an admin', () => {
+        requester.accessGroups = [AccessGroup.ADMIN];
         it('should not allow read access and throw an error', () => {
           try {
             auth.authorizeReadAccess({
               learningObject: summary,
-              requester: requester,
-            });
-          } catch (e) {
-            expect(e).toBeInstanceOf(ResourceError);
-          }
-        });
-      });
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.REJECTED
-      }`,      () => {
-        summary.status = LearningObjectStatus.REJECTED;
-        it('should not allow read access and throw an error', () => {
-          try {
-            auth.authorizeReadAccess({
-              learningObject: summary,
-              requester: requester,
-            });
-          } catch (e) {
-            expect(e).toBeInstanceOf(ResourceError);
-          }
-        });
-      });
-    });
-    describe('when the requester is an admin', () => {
-      requester.accessGroups = [AccessGroup.ADMIN];
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.RELEASED
-      }`,      () => {
-        summary.status = LearningObjectStatus.RELEASED;
-        it('should allow read access and not throw an error', () => {
-          expect(
-            auth.authorizeReadAccess({
-              learningObject: summary,
-              requester: requester,
-            }),
-          ).toBeUndefined();
-        });
-      });
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.PROOFING
-      }`,      () => {
-        summary.status = LearningObjectStatus.PROOFING;
-        it('should allow read access and not throw an error', () => {
-          expect(
-            auth.authorizeReadAccess({
-              learningObject: summary,
-              requester: requester,
-            }),
-          ).toBeUndefined();
-        });
-      });
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.REVIEW
-      }`,      () => {
-        summary.status = LearningObjectStatus.REVIEW;
-        it('should allow read access and not throw an error', () => {
-          expect(
-            auth.authorizeReadAccess({
-              learningObject: summary,
-              requester: requester,
-            }),
-          ).toBeUndefined();
-        });
-      });
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.WAITING
-      }`,      () => {
-        summary.status = LearningObjectStatus.WAITING;
-        it('should allow read access and not throw an error', () => {
-          expect(
-            auth.authorizeReadAccess({
-              learningObject: summary,
-              requester: requester,
-            }),
-          ).toBeUndefined();
-        });
-      });
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.UNRELEASED
-      }`,      () => {
-        summary.status = LearningObjectStatus.UNRELEASED;
-        it('should not allow read access and throw an error', () => {
-          try {
-            auth.authorizeReadAccess({
-              learningObject: summary,
-              requester: requester,
-            });
-          } catch (e) {
-            expect(e).toBeInstanceOf(ResourceError);
-          }
-        });
-      });
-      describe(`and the Learning Object is ${
-        LearningObjectStatus.REJECTED
-      }`,      () => {
-        summary.status = LearningObjectStatus.REJECTED;
-        it('should not allow read access and throw an error', () => {
-          try {
-            auth.authorizeReadAccess({
-              learningObject: summary,
-              requester: requester,
+              requester,
             });
           } catch (e) {
             expect(e).toBeInstanceOf(ResourceError);
