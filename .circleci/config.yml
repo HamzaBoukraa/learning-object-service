@@ -32,8 +32,7 @@ jobs:
     steps:
       - run:
           name: Notify Sentry
-          command: |
-            curl -X POST https://sentry.io/api/organizations/cyber4all/releases -H "Authorization: Bearer ${SENTRY_RELEASE_TOKEN}" -d '{ "projects": ["learning-object-service"], "ref": "${CIRCLE_SHA1}", "version": "${CIRCLE_TAG}" }'
+          command: "${CREATE_SENTRY_RELEASE}"
 
   elasticsearch-smoke-test:
     <<: *defaults
