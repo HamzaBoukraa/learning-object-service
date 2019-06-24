@@ -26,6 +26,20 @@ jobs:
           paths: 
               - ./package.json
               - ./deploy.sh
+    
+  create-sentry-release:
+    <<: *defaults
+    steps:
+      - run:
+          name: Notify Sentry
+          command: curl -X POST https://sentry.io/api/organizations/cyber4all/releases/  -H "Authorization: Bearer ${SENTRY_TOKEN}" -d
+          {
+            "projects": [
+              "learning-object-service"
+            ], 
+            "ref": "${CIRCLE_SHA1}", 
+            "version": "${CIRCLE_TAG}"
+          }
 
   deploy-production:
     <<: *defaults
