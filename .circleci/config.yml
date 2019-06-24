@@ -35,7 +35,7 @@ jobs:
       - checkout
       - run:
           name: Install Sentry CLI
-          command: curl -sL <https://sentry.io/get-cli/> | bash
+          command: curl -sL https://sentry.io/get-cli/ | bash
       - run:
           name: Create Sentry Release Object
           command: |
