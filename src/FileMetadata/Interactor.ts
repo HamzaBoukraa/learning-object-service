@@ -201,7 +201,6 @@ function handleFileMetadataInsert(
   return async insert => {
     const existingFile = await Drivers.datastore().findFileMetadata({
       learningObjectId: learningObject.id,
-      learningObjectRevision: learningObject.revision,
       fullPath: insert.fullPath,
     });
     if (existingFile) {
@@ -265,7 +264,6 @@ function generateFileMetaInsert(
     fullPath: file.fullPath || file.name,
     lastUpdatedDate: Date.now().toString(),
     learningObjectId: learningObject.id,
-    learningObjectRevision: learningObject.revision,
     mimeType: file.mimeType,
     name: file.name,
     packageable: isPackageable(file.size),
@@ -429,10 +427,7 @@ export async function deleteAllFileMeta({
 
     authorizeWriteAccess({ learningObject, requester });
 
-    await Drivers.datastore().deleteAllFileMeta({
-      learningObjectId,
-      learningObjectRevision: learningObject.revision,
-    });
+    await Drivers.datastore().deleteAllFileMeta(learningObjectId);
   } catch (e) {
     handleError(e);
   }
