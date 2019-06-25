@@ -148,6 +148,23 @@ export async function abortMultipartUpload(params: {
 }
 
 /**
+ * Instructs file manager to upload a single file
+ *
+ * @export
+ * @param {{ FileManager }} fileManager
+ * @param {{ FileUpload }} file
+ * @returns {string}
+ */
+export async function uploadFile(params: {
+  fileManager: FileManager,
+  file: FileUpload,
+}): Promise<void> {
+  await params.fileManager.upload({
+    file: params.file,
+  });
+}
+
+/**
  * Gets file type
  *
  * @export
