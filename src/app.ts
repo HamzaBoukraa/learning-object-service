@@ -14,6 +14,7 @@ import { MongoConnector } from './shared/Mongo/MongoConnector';
 import { LearningObjectAdapter } from './LearningObjects/LearningObjectAdapter';
 import { LearningObjectSearch } from './LearningObjectSearch';
 import { HierarchyAdapter } from './LearningObjects/Hierarchy/HierarchyAdapter';
+import { FileManagerAdapter } from './FileManager/FileManagerAdapter';
 
 // ----------------------------------------------------------------------------------
 // Initializations
@@ -82,6 +83,7 @@ function initModules() {
   HierarchyAdapter.open(dataStore);
   LearningObjectAdapter.open(dataStore, fileManager);
   LearningObjectSearch.initialize();
+  FileManagerAdapter.open(fileManager);
 }
 
 /**
