@@ -61,10 +61,6 @@ export interface FileMetadataInsert extends FileMetadata {
    */
   learningObjectId: string;
   /**
-   * Revision number of the Learning Object the file belongs to
-   */
-  learningObjectRevision: number;
-  /**
    * Flag indicating whether or not the file can be included in the Learning Object bundle
    */
   packageable: boolean;
