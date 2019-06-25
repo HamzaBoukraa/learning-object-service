@@ -1,4 +1,8 @@
-import { LearningObjectSummary, Requester } from '../typings';
+import {
+  LearningObjectSummary,
+  Requester,
+  LearningObjectFile,
+} from '../typings';
 
 export abstract class LearningObjectGateway {
   /**
@@ -14,30 +18,29 @@ export abstract class LearningObjectGateway {
     id: string;
   }): Promise<LearningObjectSummary>;
   /**
-   * Retrieves the Learning Object copy that is furthest along in the review pipeline
+   * Retrieves released Learning Object file metadata by id
+   *
+   * @param {Requester} requester [Object containing information about the requester]
+   * @param {string} id [Id of the Learning Object]
+   * @param {string} fileId [Id of the file]
+   * @memberof LearningObjectGateway
+   * @returns {Promise<LearningObjectFile>}
+   */
+  abstract getReleasedFile(params: {
+    requester: Requester;
+    id: string;
+    fileId: string;
+  }): Promise<LearningObjectFile>;
+  /**
+   * Retrieves all released Learning Object file metadata
    *
    * @param {Requester} requester [Object containing information about the requester]
    * @param {string} id [Id of the Learning Object]
    * @memberof LearningObjectGateway
-   * @returns {Promise<LearningObjectSummary>}
+   * @returns {Promise<LearningObjectFile[]>}
    */
-  abstract getActiveLearningObjectSummary(params: {
+  abstract getReleasedFiles(params: {
     requester: Requester;
     id: string;
-  }): Promise<LearningObjectSummary>;
-  /**
-   * Retrieves Learning Object summary by id and revision number
-   *
-   * @param {DataStore} dataStore [Driver for datastore]
-   * @param {UserToken} requester [Object containing information about the requester]
-   * @param {string} id [Id of the Learning Object]
-   * @param {number} revision [Revision number of the Learning Object]
-   * @memberof LearningObjectGateway
-   * @returns {Promise<LearningObjectSummary>}
-   */
-  abstract getLearningObjectRevisionSummary(params: {
-    requester: Requester;
-    id: string;
-    revision: number;
-  }): Promise<LearningObjectSummary>;
+  }): Promise<LearningObjectFile[]>;
 }
