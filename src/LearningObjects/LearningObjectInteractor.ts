@@ -47,6 +47,73 @@ const LearningObjectState = {
 };
 
 /**
+ * Retrieves released file metadata by id
+ *
+ * @export
+ * @param {DataStore} dataStore [Driver for datastore]
+ * @param {UserToken} requester [Object containing information about the requester]
+ * @param {string} id [Id of the Learning Object]
+ * @param {string} fileId [Id of the file]
+ * @returns {Promise<LearningObject.Material.File>}
+ */
+export async function getReleasedFile({
+  dataStore,
+  requester,
+  id,
+  fileId,
+}: {
+  dataStore: DataStore;
+  requester: UserToken;
+  id: string;
+  fileId: string;
+}): Promise<LearningObject.Material.File> {
+  try {
+    const file = await dataStore.fetchReleasedFile({ id, fileId });
+    if (!file) {
+      throw new ResourceError(
+        `Requested file ${fileId} for Learning Object ${id} cannot be found.`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+    return file;
+  } catch (e) {
+    handleError(e);
+  }
+}
+
+/**
+ * Retrieves all released file metadata for a Learning Object
+ *
+ * @export
+ * @param {DataStore} dataStore [Driver for datastore]
+ * @param {UserToken} requester [Object containing information about the requester]
+ * @param {string} id [Id of the Learning Object]
+ * @returns {Promise<LearningObject.Material.File[]>}
+ */
+export async function getReleasedFiles({
+  dataStore,
+  requester,
+  id,
+}: {
+  dataStore: DataStore;
+  requester: UserToken;
+  id: string;
+}): Promise<LearningObject.Material.File[]> {
+  try {
+    const files = await dataStore.fetchReleasedFiles(id);
+    if (!files) {
+      throw new ResourceError(
+        `No files found for Learning Object ${id}.`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+    return files;
+  } catch (e) {
+    handleError(e);
+  }
+}
+
+/**
  * Retrieves a summary of the working copy Learning Object
  *
  * The working copy can only be returned if
@@ -554,8 +621,15 @@ export async function updateLearningObject(params: {
       });
       // Infer if this Learning Object is being released
       if (cleanUpdates.status === LearningObject.Status.RELEASED) {
-        const releasableObject = await generateReleasableLearningObject(dataStore, id);
-        await PublishingService.releaseLearningObject({ userToken, dataStore, releasableObject });
+        const releasableObject = await generateReleasableLearningObject(
+          dataStore,
+          id,
+        );
+        await PublishingService.releaseLearningObject({
+          userToken,
+          dataStore,
+          releasableObject,
+        });
       }
     } else {
       return Promise.reject(
@@ -574,18 +648,21 @@ export async function updateLearningObject(params: {
  * FIXME: Once the return type of `fetchLearningObject` is updated to the `Datastore's` schema type,
  * this function should be updated to not fetch children ids as they should be returned with the document
  */
-async function generateReleasableLearningObject(dataStore: DataStore, id: string) {
+async function generateReleasableLearningObject(
+  dataStore: DataStore,
+  id: string,
+) {
   const [object, childIds] = await Promise.all([
-      dataStore.fetchLearningObject({id, full: true }),
-      dataStore.findChildObjectIds({parentId: id}),
+    dataStore.fetchLearningObject({ id, full: true }),
+    dataStore.findChildObjectIds({ parentId: id }),
   ]);
   let children: LearningObject[] = [];
   if (Array.isArray(childIds)) {
-      children = childIds.map(childId => new LearningObject({id: childId}));
+    children = childIds.map(childId => new LearningObject({ id: childId }));
   }
   const releasableObject = new LearningObject({
-      ...object.toPlainObject(),
-      children,
+    ...object.toPlainObject(),
+    children,
   });
   return releasableObject;
 }
@@ -672,7 +749,7 @@ export async function deleteLearningObject(params: {
         reportError(
           new Error(
             `Problem deleting files for ${
-            params.learningObjectName
+              params.learningObjectName
             }: ${path}. ${e}`,
           ),
         );
@@ -807,7 +884,7 @@ export async function removeFile(params: {
     if (file) {
       const path = `${params.username}/${params.objectId}/${
         file.fullPath ? file.fullPath : file.name
-        }`;
+      }`;
       await params.dataStore.removeFromFiles({
         objectId: params.objectId,
         fileId: params.fileId,

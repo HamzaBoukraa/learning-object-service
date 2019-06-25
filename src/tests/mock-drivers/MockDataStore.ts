@@ -41,6 +41,16 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
     return;
   }
 
+  fetchReleasedFile(params: {
+    id: string;
+    fileId: string;
+  }): Promise<LearningObject.Material.File> {
+    return Promise.resolve(this.stubs.learningObject.materials.files[0]);
+  }
+  fetchReleasedFiles(id: string): Promise<LearningObject.Material.File[]> {
+    return Promise.resolve(this.stubs.learningObject.materials.files);
+  }
+
   fetchLearningObjectRevisionSummary(params: {
     id: string;
     revision: number;
@@ -103,20 +113,18 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
     return Promise.resolve(this.stubs.learningObject.collection);
   }
   checkLearningObjectExistence(params: {
-    learningObjectId: string,
-    userId: string,
+    learningObjectId: string;
+    userId: string;
   }): Promise<any> {
     return Promise.resolve(this.stubs.learningObject);
   }
 
-  deleteChangelog(params: {
-    learningObjectId: string,
-  }): Promise<void> {
+  deleteChangelog(params: { learningObjectId: string }): Promise<void> {
     return Promise.resolve();
   }
 
   fetchAllChangelogs(params: {
-    learningObjectId: string,
+    learningObjectId: string;
   }): Promise<ChangeLogDocument[]> {
     return Promise.resolve([this.stubs.changelog]);
   }
@@ -247,9 +255,12 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
       case this.stubs.learningObject.id:
         return Promise.resolve(this.stubs.learningObject);
       case 'no_description_id':
-        return Promise.resolve({...this.stubs.learningObject, description: ''});
+        return Promise.resolve({
+          ...this.stubs.learningObject,
+          description: '',
+        });
       case 'no_name_id':
-        return Promise.resolve({...this.stubs.learningObject, name: ''});
+        return Promise.resolve({ ...this.stubs.learningObject, name: '' });
       default:
         return Promise.resolve(this.stubs.learningObject);
     }
@@ -265,20 +276,20 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
     return Promise.resolve([this.stubs.learningObject]);
   }
   createChangelog(params: {
-    learningObjectId: string,
+    learningObjectId: string;
     author: {
-      userId: string,
-      name: string,
-      role: string,
-      profileImage: string,
-    },
-    changelogText: string,
+      userId: string;
+      name: string;
+      role: string;
+      profileImage: string;
+    };
+    changelogText: string;
   }): Promise<void> {
     return Promise.resolve();
   }
 
   fetchRecentChangelog(params: {
-    learningObjectId: string,
+    learningObjectId: string;
   }): Promise<ChangeLogDocument> {
     return Promise.resolve(this.stubs.changelog);
   }
@@ -315,7 +326,7 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
 
   fetchCollectionMeta(name: string): Promise<any> {
     const collectionName = this.stubs.collection.name;
-    return Promise.resolve({name: collectionName, abstracts: ['']});
+    return Promise.resolve({ name: collectionName, abstracts: [''] });
   }
 
   fetchCollectionObjects(name: string): Promise<any[]> {
@@ -328,7 +339,10 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
     return Promise.resolve();
   }
 
-  fetchSubmission(collection: string, learningObjectId: string): Promise<Submission> {
+  fetchSubmission(
+    collection: string,
+    learningObjectId: string,
+  ): Promise<Submission> {
     return Promise.resolve(this.stubs.submission);
   }
 
@@ -336,9 +350,12 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
     return Promise.resolve();
   }
   fetchRecentSubmission(learningObjectId: string): Promise<Submission> {
-   return Promise.resolve(this.stubs.submission);
+    return Promise.resolve(this.stubs.submission);
   }
-  hasSubmission(learningObjectId: string, collection: string): Promise<boolean> {
+  hasSubmission(
+    learningObjectId: string,
+    collection: string,
+  ): Promise<boolean> {
     return Promise.resolve(true);
   }
   unsubmitLearningObject(id: string): Promise<void> {
@@ -403,7 +420,7 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
     return Promise.resolve(this.stubs.learningObjectFile);
   }
 
-  findParentObjectId(params: { childId: string; }): Promise<string> {
+  findParentObjectId(params: { childId: string }): Promise<string> {
     return Promise.resolve(this.stubs.learningObject.id);
   }
 }
