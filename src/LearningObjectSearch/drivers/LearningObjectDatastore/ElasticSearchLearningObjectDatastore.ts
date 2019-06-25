@@ -366,7 +366,7 @@ export class ElasticSearchLearningObjectDatastore
   private formatFromValue(value: number): number {
     let formattedPage = 0;
     if (value != null) {
-      formattedPage = value < 0 ? 0 : value;
+      formattedPage = value < 0 ? 0 : value - 1;
     }
     return formattedPage;
   }
@@ -462,11 +462,21 @@ export class ElasticSearchLearningObjectDatastore
     const queryFilters = this.getQueryFilters(
       filters as LearningObjectSearchQuery,
     );
-    const { limit, page, sortType, orderBy } = filters;
+    const {
+      limit = filters.limit || QUERY_DEFAULTS.SIZE,
+      page,
+      sortType,
+      orderBy,
+    } = filters;
+
     const sortedGroupByField = orderBy ? `${orderBy}.keyword` : 'id.keyword';
-    const sortOrder: 'desc' | 'asc' = sortType === -1 ? 'desc' : 'asc';
+    let sortOrder: 'desc' | 'asc' = sortType === 1 ? 'asc' : 'desc';
 
     const orderByKey = orderBy ? '_term' : 'score';
+    if (orderByKey === 'score') {
+      sortOrder = 'desc';
+    }
+
     const sortedOrder = {};
     sortedOrder[orderByKey] = sortOrder;
 
@@ -523,8 +533,8 @@ export class ElasticSearchLearningObjectDatastore
               },
               objects_bucket_sort: {
                 bucket_sort: {
-                  size: limit || QUERY_DEFAULTS.SIZE,
-                  from: this.formatFromValue(page),
+                  size: limit,
+                  from: this.formatFromValue(page) * limit,
                 },
               },
               score: {
@@ -534,6 +544,11 @@ export class ElasticSearchLearningObjectDatastore
                   },
                 },
               },
+            },
+          },
+          total: {
+            cardinality: {
+              field: 'id.keyword',
             },
           },
         },
@@ -615,7 +630,7 @@ export class ElasticSearchLearningObjectDatastore
     results: SearchResponse<Partial<LearningObject>>,
   ): LearningObjectSearchResult {
     const resultBucket = results.aggregations.accessible.buckets[0];
-    const total = resultBucket.doc_count;
+    const total = resultBucket.total.value;
     const aggregationResults = resultBucket.sorted.buckets.map(
       (bucket: { results: { buckets: any[] } }) => bucket.results.buckets[0],
     );
