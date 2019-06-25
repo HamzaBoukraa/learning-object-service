@@ -43,6 +43,23 @@ jobs:
             sentry-cli releases -p ${SENTRY_PROJECT_NAME} set-commits --auto ${CIRCLE_TAG}
             sentry-cli releases -p ${SENTRY_PROJECT_NAME} finalize ${CIRCLE_TAG}
 
+  elasticsearch-smoke-test:
+    <<: *defaults
+    docker:
+      - image: circleci/node:8
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Clone Elasticsearch Smoke Test Repository
+          command: >-
+            cd .. && git clone https://${github_username}:${github_password}@github.com/nvisal1/Elasticsearch-Smoke-Test-Environment.git
+      - run:
+          name: Run Environment
+          command: |
+            cd ../Elasticsearch-Smoke-Test-Environment
+            docker-compose up --abort-on-container-exit --exit-code-from test-runner
+
   deploy-production:
     <<: *defaults
     steps:
@@ -81,7 +98,7 @@ workflows:
           filters:
             branches:
               only: /master/
-      - create-sentry-release:
+      - elasticsearch-smoke-test:
           requires:
             - build
           filters:
@@ -89,7 +106,13 @@ workflows:
               only: /master/
       - deploy-production:
           requires:
-            - build
+            - elasticsearch-smoke-test
+          filters:
+            branches:
+              only: /master/
+      - create-sentry-release:
+          requires:
+            - deploy-production
           filters:
             branches:
               only: /master/

@@ -220,16 +220,16 @@ export class ElasticSearchLearningObjectDatastore
       level,
       collection,
       status,
-      standardOutcomeIDs,
+      standardOutcomes,
       guidelines,
     } = params;
     const queryFilters = sanitizeObject({
       object: {
         length,
-        level,
+        levels: level,
         collection,
         status,
-        'outcomes.mappings.id': standardOutcomeIDs,
+        'outcomes.mappings.id': standardOutcomes,
         'outcomes.mappings.source': guidelines,
       },
     });
@@ -366,7 +366,7 @@ export class ElasticSearchLearningObjectDatastore
   private formatFromValue(value: number): number {
     let formattedPage = 0;
     if (value != null) {
-      formattedPage = value < 0 ? 0 : value;
+      formattedPage = value < 0 ? 0 : value - 1;
     }
     return formattedPage;
   }
@@ -462,12 +462,25 @@ export class ElasticSearchLearningObjectDatastore
     const queryFilters = this.getQueryFilters(
       filters as LearningObjectSearchQuery,
     );
-    const { limit, page, sortType, orderBy } = filters;
-    let sorter: SortOperation = { score: { order: 'desc' } };
-    if (orderBy) {
-      sorter = this.getSorter({ orderBy, sortType });
+    const {
+      limit = filters.limit || QUERY_DEFAULTS.SIZE,
+      page,
+      sortType,
+      orderBy,
+    } = filters;
+
+    const sortedGroupByField = orderBy ? `${orderBy}.keyword` : 'id.keyword';
+    let sortOrder: 'desc' | 'asc' = sortType === 1 ? 'asc' : 'desc';
+
+    const orderByKey = orderBy ? '_term' : 'score';
+    if (orderByKey === 'score') {
+      sortOrder = 'desc';
     }
-    let aggFilters: any = {
+
+    const sortedOrder = {};
+    sortedOrder[orderByKey] = sortOrder;
+
+    const aggFilters: any = {
       bool: {
         should: [
           {
@@ -493,20 +506,35 @@ export class ElasticSearchLearningObjectDatastore
           filters: [aggFilters],
         },
         aggs: {
-          results: {
+          sorted: {
             terms: {
-              field: 'id.keyword',
+              field: sortedGroupByField,
               size: AGGREGATION_DEFAULTS.TERMS_MAX_SIZE,
+              order: sortedOrder,
             },
             aggs: {
-              objects: {
-                top_hits: {
-                  sort: [
-                    {
-                      revision: { order: 'asc' },
+              results: {
+                terms: {
+                  field: 'id.keyword',
+                  size: AGGREGATION_DEFAULTS.TERMS_MAX_SIZE,
+                },
+                aggs: {
+                  objects: {
+                    top_hits: {
+                      sort: [
+                        {
+                          revision: { order: 'asc' },
+                        },
+                      ],
+                      size: 1,
                     },
-                  ],
-                  size: 1,
+                  },
+                },
+              },
+              objects_bucket_sort: {
+                bucket_sort: {
+                  size: limit,
+                  from: this.formatFromValue(page) * limit,
                 },
               },
               score: {
@@ -516,13 +544,11 @@ export class ElasticSearchLearningObjectDatastore
                   },
                 },
               },
-              objects_bucket_sort: {
-                bucket_sort: {
-                  sort: [sorter],
-                  size: limit || QUERY_DEFAULTS.SIZE,
-                  from: this.formatFromValue(page),
-                },
-              },
+            },
+          },
+          total: {
+            cardinality: {
+              field: 'id.keyword',
             },
           },
         },
@@ -544,7 +570,7 @@ export class ElasticSearchLearningObjectDatastore
     const termsQueries: TermsQuery[] = [];
     Object.keys(filters).forEach(objectKey => {
       const termBody: { [property: string]: string[] } = {};
-      termBody[`${objectKey}`] = filters[objectKey];
+      termBody[`${objectKey}.keyword`] = filters[objectKey];
       termsQueries.push({ terms: termBody });
     });
     return termsQueries;
@@ -604,10 +630,11 @@ export class ElasticSearchLearningObjectDatastore
     results: SearchResponse<Partial<LearningObject>>,
   ): LearningObjectSearchResult {
     const resultBucket = results.aggregations.accessible.buckets[0];
-    const total = resultBucket.doc_count;
-    const aggregationResults = resultBucket.results;
-    const buckets = aggregationResults.buckets;
-    const objects: LearningObjectSummary[] = buckets.map(
+    const total = resultBucket.total.value;
+    const aggregationResults = resultBucket.sorted.buckets.map(
+      (bucket: { results: { buckets: any[] } }) => bucket.results.buckets[0],
+    );
+    const objects: LearningObjectSummary[] = aggregationResults.map(
       (bucket: {
         objects: { hits: { hits: [{ _source: Partial<LearningObject> }] } };
       }) => mapLearningObjectToSummary(bucket.objects.hits.hits[0]._source),
