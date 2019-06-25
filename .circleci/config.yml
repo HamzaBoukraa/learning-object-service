@@ -39,9 +39,10 @@ jobs:
       - run:
           name: Create Sentry Release Object
           command: |
-            sentry-cli releases -p ${SENTRY_PROJECT_NAME} new ${CIRCLE_TAG}
-            sentry-cli releases -p ${SENTRY_PROJECT_NAME} set-commits --auto ${CIRCLE_TAG}
-            sentry-cli releases -p ${SENTRY_PROJECT_NAME} finalize ${CIRCLE_TAG}
+            export SEMVER=$(cat ./package.json | grep version | head -1 | awk -F= "{ print $2 }" | sed 's/[version:,\",]//g' | tr -d '[[:space:]]')
+            sentry-cli releases -p ${SENTRY_PROJECT_NAME} new ${SEMVER}
+            sentry-cli releases -p ${SENTRY_PROJECT_NAME} set-commits --auto ${SEMVER}
+            sentry-cli releases -p ${SENTRY_PROJECT_NAME} finalize ${SEMVER}
 
   elasticsearch-smoke-test:
     <<: *defaults
