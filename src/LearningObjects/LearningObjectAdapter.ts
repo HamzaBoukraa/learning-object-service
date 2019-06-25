@@ -8,6 +8,8 @@ import {
   getLearningObjectRevisionSummary,
   getWorkingLearningObjectSummary,
   getActiveLearningObjectSummary,
+  getReleasedFile,
+  getReleasedFiles,
 } from './LearningObjectInteractor';
 import { UserToken, LearningObjectSummary } from '../shared/types';
 
@@ -32,6 +34,52 @@ export class LearningObjectAdapter {
       return this._instance;
     }
     throw new Error('LearningObjectAdapter has not been created yet.');
+  }
+  /**
+   * Retrieves released file metadata by id
+   *
+   * @export
+   * @param {UserToken} requester [Object containing information about the requester]
+   * @param {string} id [Id of the Learning Object]
+   * @param {string} fileId [Id of the file]
+   * @returns {Promise<LearningObject.Material.File>}
+   */
+  async getReleasedFile({
+    requester,
+    id,
+    fileId,
+  }: {
+    requester: UserToken;
+    id: string;
+    fileId: string;
+  }): Promise<LearningObject.Material.File> {
+    return getReleasedFile({
+      dataStore: this.dataStore,
+      requester,
+      id,
+      fileId,
+    });
+  }
+  /**
+   * Retrieves all released file metadata for a Learning Object
+   *
+   * @export
+   * @param {UserToken} requester [Object containing information about the requester]
+   * @param {string} id [Id of the Learning Object]
+   * @returns {Promise<LearningObject.Material.File>}
+   */
+  async getReleasedFiles({
+    requester,
+    id,
+  }: {
+    requester: UserToken;
+    id: string;
+  }): Promise<LearningObject.Material.File[]> {
+    return getReleasedFiles({
+      dataStore: this.dataStore,
+      requester,
+      id,
+    });
   }
   /**
    * Retrieves a summary of the working copy Learning Object

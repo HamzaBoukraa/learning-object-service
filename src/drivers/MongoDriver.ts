@@ -100,6 +100,55 @@ export class MongoDriver implements DataStore {
     this.learningObjectStore = new LearningObjectDataStore(this.db);
     this.changelogStore = new ChangelogDataStore(this.db);
   }
+  /**
+   * @inheritdoc
+   *
+   * @param {string} id [Id of the Learning Object]
+   * @param {string} fileId [Id of the file]
+   * @returns {Promise<LearningObject.Material.File>}
+   * @memberof MongoDriver
+   */
+  async fetchReleasedFile({
+    id,
+    fileId,
+  }: {
+    id: string;
+    fileId: string;
+  }): Promise<LearningObject.Material.File> {
+    const doc = await this.db
+      .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
+      .findOne(
+        { _id: id },
+        {
+          projection: {
+            _id: 0,
+            'materials.files': { $elemMatch: { id: fileId } },
+          },
+        },
+      );
+    if (doc) {
+      return doc.materials.files[0];
+    }
+    return null;
+  }
+  /**
+   * @inheritdoc
+   *
+   * @param {string} id [Id of the Learning Object]
+   * @returns {Promise<LearningObject.Material.File[]>}
+   * @memberof MongoDriver
+   */
+  async fetchReleasedFiles(
+    id: string,
+  ): Promise<LearningObject.Material.File[]> {
+    const doc = await this.db
+      .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
+      .findOne({ _id: id }, { projection: { _id: 0, 'materials.files': 1 } });
+    if (doc) {
+      return doc.materials.files;
+    }
+    return null;
+  }
 
   /**
    * @inheritdoc
