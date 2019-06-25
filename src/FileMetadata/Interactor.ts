@@ -8,6 +8,7 @@ import {
   FileMetadataDocument,
   LearningObjectSummary,
   FileMetadataInsert,
+  FileMetadataFilter,
 } from './typings';
 import { handleError } from '../interactors/LearningObjectInteractor';
 import { ResourceError, ResourceErrorReason } from '../shared/errors';
@@ -29,6 +30,12 @@ namespace Gateways {
 /**
  * Retrieves file metadata by id
  *
+ * Allows file metadata to be filtered by released and unreleased
+ *
+ * If not filter specified attempts to retrieve released and unreleased file metadata; If not authorized to read unreleased only released is returned
+ * If released is specified will only return released
+ * If unreleased is specified will only return unreleased if authorized. If not authorized, an Invalid Access ResourceError is thrown
+ *
  * @export
  * @param {Requester} requester [Information about the requester]
  * @param {string} learningObjectId [Id of the LearningObject the file meta belongs to]
@@ -40,11 +47,16 @@ export async function getFileMeta({
   requester,
   learningObjectId,
   id,
+  filter,
 }: {
   requester: Requester;
   learningObjectId: string;
   id: string;
-}): Promise<LearningObjectFile> {
+  filter?: FileMetadataFilter;
+}): Promise<{
+  released?: LearningObjectFile;
+  unreleased?: LearningObjectFile;
+}> {
   try {
     validateRequestParams({
       operation: 'Get file metadata',
@@ -62,17 +74,33 @@ export async function getFileMeta({
       ],
     });
 
-    const learningObjectRevision = await Drivers.datastore().fetchRevisionId(
-      id,
-    );
-    const learningObject: LearningObjectSummary = await Gateways.learningObjectGateway().getLearningObjectRevisionSummary(
-      { requester, id: learningObjectId, revision: learningObjectRevision },
+    let releasedFile$: Promise<LearningObjectFile>;
+    if (!filter || filter === 'released') {
+      releasedFile$ = Gateways.learningObjectGateway().getReleasedFile({
+        requester,
+        id: learningObjectId,
+        fileId: id,
+      });
+      if (filter === 'released') return { released: await releasedFile$ };
+    }
+    const learningObject: LearningObjectSummary = await Gateways.learningObjectGateway().getWorkingLearningObjectSummary(
+      { requester, id: learningObjectId },
     );
 
-    authorizeReadAccess({ learningObject, requester });
+    try {
+      authorizeReadAccess({ learningObject, requester });
+    } catch (e) {
+      if (filter === 'unreleased') throw e;
+      return { released: await releasedFile$ };
+    }
 
-    const file = await Drivers.datastore().fetchFileMeta(id);
-    return transformFileMetaToLearningObjectFile(file);
+    const workingFile$ = Drivers.datastore()
+      .fetchFileMeta(id)
+      .then(transformFileMetaToLearningObjectFile);
+
+    if (filter === 'unreleased') return { unreleased: await workingFile$ };
+
+    return { released: await releasedFile$, unreleased: await workingFile$ };
   } catch (e) {
     handleError(e);
   }
@@ -80,6 +108,12 @@ export async function getFileMeta({
 
 /**
  * Retrieves all file metadata that belongs to a Learning Object
+ *
+ * Allows file metadata to be filtered by released and unreleased
+ *
+ * If not filter specified attempts to retrieve released and unreleased file metadata; If not authorized to read unreleased only released is returned
+ * If released is specified will only return released
+ * If unreleased is specified will only return unreleased if authorized. If not authorized, an Invalid Access ResourceError is thrown
  *
  * @export
  * @param {Requester} requester [Information about the requester]
@@ -90,11 +124,11 @@ export async function getFileMeta({
 export async function getAllFileMeta({
   requester,
   learningObjectId,
-  learningObjectRevision,
+  filter,
 }: {
   requester: Requester;
   learningObjectId: string;
-  learningObjectRevision?: number;
+  filter?: FileMetadataFilter;
 }): Promise<LearningObjectFile[]> {
   try {
     validateRequestParams({
@@ -107,25 +141,34 @@ export async function getAllFileMeta({
         },
       ],
     });
-    let learningObject: LearningObjectSummary;
+    let releasedFiles$: Promise<LearningObjectFile[]>;
+    if (!filter || filter === 'released') {
+      releasedFiles$ = Gateways.learningObjectGateway().getReleasedFiles({
+        requester,
+        id: learningObjectId,
+      });
+      if (filter === 'released') return releasedFiles$;
+    }
+    const learningObject: LearningObjectSummary = await Gateways.learningObjectGateway().getWorkingLearningObjectSummary(
+      { requester, id: learningObjectId },
+    );
 
-    if (learningObjectRevision != null) {
-      learningObject = await Gateways.learningObjectGateway().getLearningObjectRevisionSummary(
-        { requester, id: learningObjectId, revision: learningObjectRevision },
-      );
-    } else {
-      learningObject = await Gateways.learningObjectGateway().getActiveLearningObjectSummary(
-        { requester, id: learningObjectId },
-      );
+    try {
+      authorizeReadAccess({ learningObject, requester });
+    } catch (e) {
+      if (filter === 'unreleased') throw e;
+      return releasedFiles$;
     }
 
-    authorizeReadAccess({ learningObject, requester });
+    const workingFiles$ = Drivers.datastore()
+      .fetchAllFileMeta(learningObjectId)
+      .then(files => files.map(transformFileMetaToLearningObjectFile));
 
-    const files = await Drivers.datastore().fetchAllFileMeta({
-      learningObjectId,
-      learningObjectRevision: learningObject.revision,
-    });
-    return files.map(transformFileMetaToLearningObjectFile);
+    if (filter === 'unreleased') return workingFiles$;
+
+    return Promise.all([releasedFiles$, workingFiles$]).then(
+      ([releasedFiles, workingFiles]) => [...releasedFiles, ...workingFiles],
+    );
   } catch (e) {
     handleError(e);
   }
