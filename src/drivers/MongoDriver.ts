@@ -2306,7 +2306,6 @@ export class MongoDriver implements DataStore {
   private async documentLearningObject(
     object: LearningObject,
   ): Promise<LearningObjectDocument> {
-    try {
       const authorID = await this.findUser(object.author.username);
       let contributorIds: string[] = [];
 
