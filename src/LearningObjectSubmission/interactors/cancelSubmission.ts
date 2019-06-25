@@ -30,7 +30,6 @@ export async function cancelSubmission(params: {
   }
 
   const submission = await params.dataStore.fetchRecentSubmission(params.learningObjectId);
-
   if (submission) {
     if (submission.cancelDate) {
       throw new ResourceError('This submission has already been canceled', ResourceErrorReason.BAD_REQUEST);
