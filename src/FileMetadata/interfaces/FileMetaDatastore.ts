@@ -14,7 +14,6 @@ export abstract class FileMetaDatastore {
    *
    * @abstract
    * @param {string} learningObjectId [The id of the Learning Object the file metadata belongs to]
-   * @param {number} learningObjectRevision [The revision number of the Learning Object the file metadata belongs to]
    * @param {string} fullPath [The location the file was uploaded to within the Learning Object’s file system hierarchy]
    *
    * @returns {Promise<FileMetadataDocument>}
@@ -22,18 +21,8 @@ export abstract class FileMetaDatastore {
    */
   abstract findFileMetadata(params: {
     learningObjectId: string;
-    learningObjectRevision: number;
     fullPath: string;
   }): Promise<FileMetadataDocument>;
-
-  /**
-   * Fetches the Learning Object revision id a file belongs to
-   *
-   * @abstract
-   * @param {string} id [Id of the FileMetadataDocument]
-   * @returns {Promise<number>}
-   */
-  abstract fetchRevisionId(id: string): Promise<number>;
 
   /**
    * Fetches FileMetadataDocument by id
@@ -45,17 +34,15 @@ export abstract class FileMetaDatastore {
   abstract fetchFileMeta(id: string): Promise<FileMetadataDocument>;
 
   /**
-   * Fetches all FileMetadataDocuments that match the specified `learningObjectId` and `learningObjectRevision`
+   * Fetches all FileMetadataDocuments that match the specified `learningObjectId`
    *
    * @abstract
    * @param {string} learningObjectId [Id of the Learning Object]
-   * @param {number} learningObjectRevision [Revision number of the Learning Object]
    * @returns {Promise<FileMetadataDocument[]>}
    */
-  abstract fetchAllFileMeta(params: {
-    learningObjectId: string;
-    learningObjectRevision: number;
-  }): Promise<FileMetadataDocument[]>;
+  abstract fetchAllFileMeta(
+    learningObjectId: string,
+  ): Promise<FileMetadataDocument[]>;
 
   /**
    * Inserts new FileMetadataDocument
@@ -91,15 +78,11 @@ export abstract class FileMetaDatastore {
   abstract deleteFileMeta(id: string): Promise<void>;
 
   /**
-   * Deletes all FileMetadataDocuments that match the specified `learningObjectId` and `learningObjectRevision`
+   * Deletes all FileMetadataDocuments that match the specified `learningObjectId`
    *
    * @abstract
    * @param {string} learningObjectId [Id of the Learning Object]
-   * @param {number} learningObjectRevision [Revision number of the Learning Object]
    * @returns {Promise<void>}
    */
-  abstract deleteAllFileMeta(params: {
-    learningObjectId: string;
-    learningObjectRevision: number;
-  }): Promise<void>;
+  abstract deleteAllFileMeta(learningObjectId: string): Promise<void>;
 }
