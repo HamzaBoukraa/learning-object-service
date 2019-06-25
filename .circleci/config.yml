@@ -39,9 +39,9 @@ jobs:
       - run:
           name: Create Sentry Release Object
           command: |
-            sentry-cli releases -p ${SENTRY_PROJECT_NAME} new ${CIRCLE_SHA1}
-            sentry-cli releases -p ${SENTRY_PROJECT_NAME} set-commits --auto ${CIRCLE_SHA1}
-            sentry-cli releases -p ${SENTRY_PROJECT_NAME} finalize ${CIRCLE_SHA1}
+            sentry-cli releases -p ${SENTRY_PROJECT_NAME} new ${CIRCLE_TAG}
+            sentry-cli releases -p ${SENTRY_PROJECT_NAME} set-commits --auto ${CIRCLE_TAG}
+            sentry-cli releases -p ${SENTRY_PROJECT_NAME} finalize ${CIRCLE_TAG}
 
   deploy-production:
     <<: *defaults
@@ -71,14 +71,19 @@ jobs:
 
 workflows:
   version: 2
-  build-test-and-create-sentry-release:
+  build-test:
     jobs:
       - build
-      - create-sentry-release
 
-  build-test-and-deploy-production:
+  build-test-create-sentry-release-and-deploy-production:
     jobs:
       - build:
+          filters:
+            branches:
+              only: /master/
+      - create-sentry-release:
+          requires:
+            - build
           filters:
             branches:
               only: /master/
