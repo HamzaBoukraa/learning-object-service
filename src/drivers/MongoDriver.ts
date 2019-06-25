@@ -44,6 +44,10 @@ import { LearningObject, LearningOutcome, User } from '../shared/entity';
 import { Submission } from '../LearningObjectSubmission/types/Submission';
 import { MongoConnector } from '../shared/Mongo/MongoConnector';
 import { mapLearningObjectToSummary } from '../shared/functions';
+import {
+  ReleasedLearningObjectDocument,
+  OutcomeDocument,
+} from '../shared/types/learning-object-document';
 
 export enum COLLECTIONS {
   USERS = 'users',
@@ -176,7 +180,7 @@ export class MongoDriver implements DataStore {
    * @memberof MongoDriver
    */
   async addToReleased(object: LearningObject): Promise<void> {
-    const doc = await this.documentLearningObject(object);
+    const doc = await this.documentReleasedLearningObject(object);
     await this.db
       .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
       .replaceOne({ _id: object.id }, doc, { upsert: true });
@@ -2280,11 +2284,66 @@ export class MongoDriver implements DataStore {
       };
 
       return doc;
-    } catch (e) {
-      return Promise.reject(
-        `Problem creating document for Learning Object. Error:${e}`,
+  }
+
+  /**
+   * Converts Released Learning Object to Document
+   *
+   * @private
+   * @param {LearningObject} object
+   * @param {boolean} [isNew]
+   * @param {string} [id]
+   * @returns {Promise<LearningObjectDocument>}
+   * @memberof MongoDriver
+   */
+  private async documentReleasedLearningObject(
+    object: LearningObject,
+  ): Promise<LearningObjectDocument> {
+    let contributorIds: string[] = [];
+
+    if (object.contributors && object.contributors.length) {
+      contributorIds = await Promise.all(
+        object.contributors.map(user => this.findUser(user.username)),
       );
     }
+
+    const doc: ReleasedLearningObjectDocument = {
+      _id: object.id,
+      authorID: object.author.id,
+      name: object.name,
+      date: object.date,
+      length: object.length,
+      levels: object.levels,
+      description: object.description,
+      materials: object.materials,
+      contributors: contributorIds,
+      collection: object.collection,
+      outcomes: object.outcomes.map(this.documentOutcome),
+      status: object.status,
+      children: object.children.map(obj => obj.id),
+      revision: object.revision,
+    };
+
+    return doc;
+  }
+
+  /**
+   * Converts Learning Outcome into OutcomeDocument
+   *
+   * @private
+   * @param {LearningOutcome} outcome [Learning Outcome to convert to OutcomeDocument]
+   * @returns {OutcomeDocument}
+   * @memberof MongoDriver
+   */
+  private documentOutcome(outcome: LearningOutcome): OutcomeDocument {
+    return {
+      id: outcome.id,
+      outcome: outcome.outcome,
+      bloom: outcome.bloom,
+      verb: outcome.verb,
+      text: outcome.text,
+      mappings: outcome.mappings.map(guideline => guideline.id),
+    };
   }
 
   /**
