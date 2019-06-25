@@ -92,7 +92,6 @@ workflows:
   build-test:
     jobs:
       - build
-      - create-sentry-release
 
   build-test-create-sentry-release-and-deploy-production:
     jobs:
