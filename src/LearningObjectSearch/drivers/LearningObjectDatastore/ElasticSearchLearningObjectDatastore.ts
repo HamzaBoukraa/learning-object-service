@@ -366,7 +366,7 @@ export class ElasticSearchLearningObjectDatastore
   private formatFromValue(value: number): number {
     let formattedPage = 0;
     if (value != null) {
-      formattedPage = value < 0 ? 0 : value;
+      formattedPage = value < 0 ? 0 : value - 1;
     }
     return formattedPage;
   }
@@ -489,6 +489,7 @@ export class ElasticSearchLearningObjectDatastore
       });
       aggFilters.bool.should.push(restrictionFilter);
     }
+
 
     query.aggs = {
       accessible: {
