@@ -30,7 +30,8 @@ async function searchObjects(req: Request, res: Response, next: NextFunction) {
   try {
     const requester: Requester = req.user;
     if (allowTraffic(requester)) {
-      const query: LearningObjectQuery = req.query;
+      const page = req.query.currPage != null ? req.query.currPage : req.query.page;
+      const query: LearningObjectQuery = {...req.query, page};
       const results = await Interactor.searchObjects({ requester, query });
       res.send(results);
     } else {
