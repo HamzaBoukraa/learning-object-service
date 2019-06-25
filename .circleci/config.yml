@@ -26,6 +26,23 @@ jobs:
           paths: 
               - ./package.json
               - ./deploy.sh
+    
+  create-sentry-release:
+    <<: *defaults
+    docker:
+      - image: circleci/node:8
+    steps:
+      - checkout
+      - run:
+          name: Install Sentry CLI
+          command: curl -sL https://sentry.io/get-cli/ | bash
+      - run:
+          name: Create Sentry Release Object
+          command: |
+            export SEMVER=$(cat ./package.json | grep version | head -1 | awk -F= "{ print $2 }" | sed 's/[version:,\",]//g' | tr -d '[[:space:]]')
+            sentry-cli releases -p ${SENTRY_PROJECT_NAME} new ${SEMVER}
+            sentry-cli releases -p ${SENTRY_PROJECT_NAME} set-commits --auto ${SEMVER}
+            sentry-cli releases -p ${SENTRY_PROJECT_NAME} finalize ${SEMVER}
 
   elasticsearch-smoke-test:
     <<: *defaults
@@ -69,14 +86,14 @@ jobs:
             export DOCKER_IMAGE="${DOCKER_USER_ORG}/learning-object-service:${SEMVER}"
             chmod +x ./deploy.sh
             sh ./deploy.sh
-            
+
 workflows:
   version: 2
-  build-and-test:
+  build-test:
     jobs:
       - build
 
-  build-test-and-deploy-production:
+  build-test-create-sentry-release-and-deploy-production:
     jobs:
       - build:
           filters:
@@ -91,6 +108,12 @@ workflows:
       - deploy-production:
           requires:
             - elasticsearch-smoke-test
+          filters:
+            branches:
+              only: /master/
+      - create-sentry-release:
+          requires:
+            - deploy-production
           filters:
             branches:
               only: /master/
