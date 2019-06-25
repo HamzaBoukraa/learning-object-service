@@ -9,8 +9,7 @@ npm-debug.log
 .idea
 test_environment/globalConfig.json
 .vscode/*
-/elasticsearch_testing/node_modules
-/elasticsearch_testing/coverage
+
 # Include Launch Config for Debugging
 !/.vscode/launch.json
 
