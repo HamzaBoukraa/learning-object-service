@@ -220,16 +220,16 @@ export class ElasticSearchLearningObjectDatastore
       level,
       collection,
       status,
-      standardOutcomeIDs,
+      standardOutcomes,
       guidelines,
     } = params;
     const queryFilters = sanitizeObject({
       object: {
         length,
-        level,
+        levels: level,
         collection,
         status,
-        'outcomes.mappings.id': standardOutcomeIDs,
+        'outcomes.mappings.id': standardOutcomes,
         'outcomes.mappings.source': guidelines,
       },
     });
@@ -463,11 +463,14 @@ export class ElasticSearchLearningObjectDatastore
       filters as LearningObjectSearchQuery,
     );
     const { limit, page, sortType, orderBy } = filters;
-    let sorter: SortOperation = { score: { order: 'desc' } };
-    if (orderBy) {
-      sorter = this.getSorter({ orderBy, sortType });
-    }
-    let aggFilters: any = {
+    const sortedGroupByField = orderBy ? `${orderBy}.keyword` : 'id.keyword';
+    const sortOrder: 'desc' | 'asc' = sortType === -1 ? 'desc' : 'asc';
+
+    const orderByKey = orderBy ? '_term' : 'score';
+    const sortedOrder = {};
+    sortedOrder[orderByKey] = sortOrder;
+
+    const aggFilters: any = {
       bool: {
         should: [
           {
@@ -493,20 +496,35 @@ export class ElasticSearchLearningObjectDatastore
           filters: [aggFilters],
         },
         aggs: {
-          results: {
+          sorted: {
             terms: {
-              field: 'id.keyword',
+              field: sortedGroupByField,
               size: AGGREGATION_DEFAULTS.TERMS_MAX_SIZE,
+              order: sortedOrder,
             },
             aggs: {
-              objects: {
-                top_hits: {
-                  sort: [
-                    {
-                      revision: { order: 'asc' },
+              results: {
+                terms: {
+                  field: 'id.keyword',
+                  size: AGGREGATION_DEFAULTS.TERMS_MAX_SIZE,
+                },
+                aggs: {
+                  objects: {
+                    top_hits: {
+                      sort: [
+                        {
+                          revision: { order: 'asc' },
+                        },
+                      ],
+                      size: 1,
                     },
-                  ],
-                  size: 1,
+                  },
+                },
+              },
+              objects_bucket_sort: {
+                bucket_sort: {
+                  size: limit || QUERY_DEFAULTS.SIZE,
+                  from: this.formatFromValue(page),
                 },
               },
               score: {
@@ -514,13 +532,6 @@ export class ElasticSearchLearningObjectDatastore
                   script: {
                     source: '_score',
                   },
-                },
-              },
-              objects_bucket_sort: {
-                bucket_sort: {
-                  sort: [sorter],
-                  size: limit || QUERY_DEFAULTS.SIZE,
-                  from: this.formatFromValue(page),
                 },
               },
             },
@@ -544,7 +555,7 @@ export class ElasticSearchLearningObjectDatastore
     const termsQueries: TermsQuery[] = [];
     Object.keys(filters).forEach(objectKey => {
       const termBody: { [property: string]: string[] } = {};
-      termBody[`${objectKey}`] = filters[objectKey];
+      termBody[`${objectKey}.keyword`] = filters[objectKey];
       termsQueries.push({ terms: termBody });
     });
     return termsQueries;
@@ -605,9 +616,10 @@ export class ElasticSearchLearningObjectDatastore
   ): LearningObjectSearchResult {
     const resultBucket = results.aggregations.accessible.buckets[0];
     const total = resultBucket.doc_count;
-    const aggregationResults = resultBucket.results;
-    const buckets = aggregationResults.buckets;
-    const objects: LearningObjectSummary[] = buckets.map(
+    const aggregationResults = resultBucket.sorted.buckets.map(
+      (bucket: { results: { buckets: any[] } }) => bucket.results.buckets[0],
+    );
+    const objects: LearningObjectSummary[] = aggregationResults.map(
       (bucket: {
         objects: { hits: { hits: [{ _source: Partial<LearningObject> }] } };
       }) => mapLearningObjectToSummary(bucket.objects.hits.hits[0]._source),
