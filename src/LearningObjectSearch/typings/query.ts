@@ -14,7 +14,7 @@ export interface ReleasedLearningObjectSearchQuery extends Filters {
   author?: string;
   length?: string[];
   level?: string[];
-  standardOutcomes?: string[];
+  standardOutcomeIDs?: string[];
   text?: string;
   collection?: string[];
   guidelines?: string[];
