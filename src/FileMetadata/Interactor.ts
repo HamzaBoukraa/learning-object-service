@@ -166,12 +166,34 @@ export async function getAllFileMeta({
 
     if (filter === 'unreleased') return workingFiles$;
 
-    return Promise.all([releasedFiles$, workingFiles$]).then(
-      ([releasedFiles, workingFiles]) => [...releasedFiles, ...workingFiles],
-    );
+    return Promise.all([
+      releasedFiles$.catch(handleReleasedFilesNotFound),
+      workingFiles$,
+    ]).then(([releasedFiles, workingFiles]) => [
+      ...releasedFiles,
+      ...workingFiles,
+    ]);
   } catch (e) {
     handleError(e);
   }
+}
+
+/**
+ * Handles NotFound ResourceError when requesting released files by returning an empty array
+ *
+ * This is in place to avoid service failures in the case where a Learning Object has not yet been released,
+ * so it will not have any released files.
+ *
+ * This should only be used in the case where released files are not explicitly requested.
+ *
+ * @param {Error} e
+ * @returns {(any[] | never)}
+ */
+function handleReleasedFilesNotFound(e: Error): any[] | never {
+  if (e instanceof ResourceError && e.name === ResourceErrorReason.NOT_FOUND) {
+    return [];
+  }
+  throw e;
 }
 
 /**
