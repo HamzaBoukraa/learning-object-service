@@ -53,10 +53,7 @@ export async function getFileMeta({
   learningObjectId: string;
   id: string;
   filter?: FileMetadataFilter;
-}): Promise<{
-  released?: LearningObjectFile;
-  unreleased?: LearningObjectFile;
-}> {
+}): Promise<LearningObjectFile> {
   try {
     validateRequestParams({
       operation: 'Get file metadata',
@@ -74,33 +71,23 @@ export async function getFileMeta({
       ],
     });
 
-    let releasedFile$: Promise<LearningObjectFile>;
-    if (!filter || filter === 'released') {
-      releasedFile$ = Gateways.learningObjectGateway().getReleasedFile({
-        requester,
-        id: learningObjectId,
-        fileId: id,
-      });
-      if (filter === 'released') return { released: await releasedFile$ };
-    }
+    if (filter === 'unreleased') {
     const learningObject: LearningObjectSummary = await Gateways.learningObjectGateway().getWorkingLearningObjectSummary(
       { requester, id: learningObjectId },
     );
 
-    try {
       authorizeReadAccess({ learningObject, requester });
-    } catch (e) {
-      if (filter === 'unreleased') throw e;
-      return { released: await releasedFile$ };
-    }
 
-    const workingFile$ = Drivers.datastore()
+      return Drivers.datastore()
       .fetchFileMeta(id)
       .then(transformFileMetaToLearningObjectFile);
+    }
 
-    if (filter === 'unreleased') return { unreleased: await workingFile$ };
-
-    return { released: await releasedFile$, unreleased: await workingFile$ };
+    return Gateways.learningObjectGateway().getReleasedFile({
+      requester,
+      id: learningObjectId,
+      fileId: id,
+    });
   } catch (e) {
     handleError(e);
   }
