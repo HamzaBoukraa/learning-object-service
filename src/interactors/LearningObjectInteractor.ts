@@ -792,20 +792,20 @@ export class LearningObjectInteractor {
         username,
       });
 
-      const requesterIsAuthor = this.hasReadAccess({
+      const isAuthor = this.hasReadAccess({
         userToken: userToken as UserToken,
         resourceVal: username,
         authFunction: isAuthorByUsername,
       }) as boolean;
       const isPrivileged =
         userToken && requesterIsPrivileged(<UserToken>userToken);
-      const requesterIsService = hasServiceLevelAccess(
+      const isService = hasServiceLevelAccess(
         userToken as ServiceToken,
       );
       const authorizationCases = [
-        requesterIsAuthor,
+        isAuthor,
         isPrivileged,
-        requesterIsService,
+        isService,
       ];
 
       let learningObjectID = await this.getReleasedLearningObjectIdByAuthorAndName(
