@@ -5,6 +5,7 @@ import {
 import { FileMetaDatastore, LearningObjectGateway } from './interfaces';
 import { ExpressHttpAdapter } from './adapters';
 import { MongoFileMetaDatastore, ModuleLearningObjectGateway } from './drivers';
+import { deleteAllFileMeta } from './Interactor';
 
 /**
  * Module responsible for handling the management of file metadata
@@ -20,4 +21,6 @@ import { MongoFileMetaDatastore, ModuleLearningObjectGateway } from './drivers';
     { provide: LearningObjectGateway, useClass: ModuleLearningObjectGateway },
   ],
 })
-export class FileMetadata extends ExpressServiceModule {}
+export class FileMetadata extends ExpressServiceModule {
+  static deleteAllFileMetadata = deleteAllFileMeta;
+}
