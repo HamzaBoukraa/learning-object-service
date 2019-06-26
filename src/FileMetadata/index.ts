@@ -4,7 +4,7 @@ import {
 } from 'node-service-module';
 import { FileMetaDatastore, LearningObjectGateway } from './interfaces';
 import { MongoFileMetaDatastore, ModuleLearningObjectGateway } from './drivers';
-import { deleteAllFileMeta } from './Interactor';
+import { deleteAllFileMeta, getFileMeta, getAllFileMeta } from './Interactor';
 
 /**
  * Module responsible for handling the management of file metadata
@@ -21,5 +21,7 @@ import { deleteAllFileMeta } from './Interactor';
   ],
 })
 export class FileMetadata extends ExpressServiceModule {
+  static geFileMetadata = getFileMeta;
+  static getAllFileMetadata = getAllFileMeta;
   static deleteAllFileMetadata = deleteAllFileMeta;
 }
