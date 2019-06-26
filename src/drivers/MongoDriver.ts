@@ -2450,11 +2450,6 @@ export class MongoDriver implements DataStore {
     if (full) {
       // Logic for loading 'full' learning objects
       materials = <LearningObject.Material>record.materials;
-
-      // load outcomes
-      // outcomes = await this.getAllLearningOutcomes({
-      //   source: record._id,
-      // });
     }
     const learningObject = new LearningObject({
       id: record._id,
