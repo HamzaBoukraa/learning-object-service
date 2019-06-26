@@ -256,7 +256,10 @@ function handleFileMetadataInsert(
         id: existingFile.id,
         updates: insert,
       });
-      return transformFileMetaToLearningObjectFile(existingFile);
+      return transformFileMetaToLearningObjectFile({
+        ...existingFile,
+        ...insert,
+      });
     }
     return Drivers.datastore()
       .insertFileMeta(insert)
