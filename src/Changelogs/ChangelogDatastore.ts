@@ -72,11 +72,12 @@ export class ChangelogDataStore {
    */
   async fetchAllChangelogs(params: {
     learningObjectId: string,
+    date: string,
   }): Promise<ChangeLogDocument[]> {
     const changelogs = await this.db
       .collection(COLLECTIONS.CHANGLOG)
       .aggregate([
-        { $match: { learningObjectId: params.learningObjectId } },
+        { $match: { learningObjectId: params.learningObjectId, date: { $lte: params.date } } },
         { $unwind: '$logs' },
         { $sort: { 'logs.date': -1 } },
         { $group: { _id: '$learningObjectId', logs: { $push: '$logs' } } },
