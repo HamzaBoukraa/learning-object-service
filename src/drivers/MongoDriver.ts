@@ -2452,9 +2452,9 @@ export class MongoDriver implements DataStore {
       materials = <LearningObject.Material>record.materials;
 
       // load outcomes
-      outcomes = await this.getAllLearningOutcomes({
-        source: record._id,
-      });
+      // outcomes = await this.getAllLearningOutcomes({
+      //   source: record._id,
+      // });
     }
     const learningObject = new LearningObject({
       id: record._id,
@@ -2468,7 +2468,7 @@ export class MongoDriver implements DataStore {
       description: record.description,
       materials,
       contributors,
-      outcomes,
+      outcomes: record['outcomes'],
       hasRevision: record.hasRevision,
       children,
       revision: record.revision,
