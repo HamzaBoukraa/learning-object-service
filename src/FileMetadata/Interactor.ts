@@ -528,7 +528,7 @@ function validateRequestParams({
   values.forEach(val => {
     if (!val.validator(val.value)) {
       hasErrors = true;
-      errMsg += ` ${val} is not a valid value for ${val.propertyName}.`;
+      errMsg += ` ${val.value} is not a valid value for ${val.propertyName}.`;
     }
   });
   if (hasErrors) {
