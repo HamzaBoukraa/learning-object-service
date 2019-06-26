@@ -20,7 +20,6 @@ import {
   requesterIsAdminOrEditor,
   hasReadAccessByCollection,
   hasLearningObjectWriteAccess,
-  authorizeReadAccess,
 } from '../shared/AuthorizationManager';
 import { FileMeta } from './typings';
 import * as PublishingService from './Publishing';
