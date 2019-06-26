@@ -303,11 +303,12 @@ function generateFileMetaInsert(
   learningObject: LearningObjectSummary,
 ): FileMetadataInsert {
   file.size = toNumber(file.size);
+  const extension = file.name.split('.').pop();
   return {
     createdDate: Date.now().toString(),
     description: file.description || '',
     ETag: file.ETag,
-    extension: file.name.split('.').pop(),
+    extension: `${extension ? '.' + extension : ''}`,
     fullPath: file.fullPath || file.name,
     lastUpdatedDate: Date.now().toString(),
     learningObjectId: learningObject.id,
