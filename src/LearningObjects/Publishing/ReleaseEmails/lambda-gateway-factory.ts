@@ -20,7 +20,7 @@ export class LambdaGatewayFactory {
             case 'development':
                 return new LambdaGatewayStub();
             case 'production':
-                return new LambdaGatewayStub();
+                return new LambdaGateway();
             default:
                 throw new ServiceError(ServiceErrorReason.INTERNAL);
         }
