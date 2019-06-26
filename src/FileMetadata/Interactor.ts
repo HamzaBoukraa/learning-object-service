@@ -499,6 +499,13 @@ function transformFileMetaToLearningObjectFile(
   };
 }
 
+/**
+ * Validates parameters using passed validators. If validator returns false, errors are generated.
+ *
+ * @param {string} operation [The operation being performed. Used to generate error message.]
+ * @param {{ value: any; validator: any; propertyName: string }} values [The values to validate]
+ * @returns {(void | never)}
+ */
 function validateRequestParams({
   operation,
   values,
