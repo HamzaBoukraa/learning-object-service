@@ -43,4 +43,14 @@ export abstract class LearningObjectGateway {
     requester: Requester;
     id: string;
   }): Promise<LearningObjectFile[]>;
+
+  /**
+   * Sends request to update Learning Object's last modified date
+   *
+   * @abstract
+   * @param {string} id [Id of the Learning Object to update]
+   * @returns {Promise<void>}
+   * @memberof LearningObjectGateway
+   */
+  abstract updateObjectLastModifiedDate(id: string): Promise<void>;
 }
