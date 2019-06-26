@@ -745,6 +745,10 @@ export async function deleteLearningObject(params: {
       });
 
       await params.library.cleanObjectsFromLibraries([object.id]);
+      FileMetadata.deleteAllFileMetadata({
+        requester: params.user,
+        learningObjectId: object.id,
+      }).catch(reportError);
       await params.dataStore.deleteLearningObject(object.id);
       const path = `${params.user.username}/${object.id}/`;
       params.fileManager.deleteAll({ path }).catch(e => {
