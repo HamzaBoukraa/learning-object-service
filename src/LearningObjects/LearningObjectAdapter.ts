@@ -10,6 +10,7 @@ import {
   getActiveLearningObjectSummary,
   getReleasedFile,
   getReleasedFiles,
+  updateObjectLastModifiedDate,
 } from './LearningObjectInteractor';
 import { UserToken, LearningObjectSummary } from '../shared/types';
 
@@ -34,6 +35,15 @@ export class LearningObjectAdapter {
       return this._instance;
     }
     throw new Error('LearningObjectAdapter has not been created yet.');
+  }
+
+  /**
+   * Performs update operation on Learning Object's date
+   *
+   * @param {string} id [Id of the Learning Object being updated]
+   */
+  async updateObjectLastModifiedDate(id: string): Promise<void> {
+    return updateObjectLastModifiedDate({ dataStore: this.dataStore, id });
   }
   /**
    * Retrieves released file metadata by id

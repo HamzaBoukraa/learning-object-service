@@ -50,4 +50,17 @@ export class ModuleLearningObjectGateway extends LearningObjectGateway {
   }): Promise<LearningObjectFile[]> {
     return this.adapter.getReleasedFiles(params);
   }
+
+  /**
+   * @inheritdoc
+   *
+   * Proxies `updateObjectLastModifiedDate` request to LearningObjectAdapter
+   *
+   * @param {string} id
+   * @returns {Promise<void>}
+   * @memberof ModuleLearningObjectGateway
+   */
+  updateObjectLastModifiedDate(id: string): Promise<void> {
+    return this.adapter.updateObjectLastModifiedDate(id);
+  }
 }

@@ -220,9 +220,13 @@ export async function addFileMeta({
       learningObject,
     );
 
-    return await Promise.all(
+    const insertedFiles = await Promise.all(
       inserts.map(handleFileMetadataInsert(learningObject)),
     );
+    Gateways.learningObjectGateway().updateObjectLastModifiedDate(
+      learningObjectId,
+    );
+    return insertedFiles;
   } catch (e) {
     handleError(e);
   }
@@ -380,6 +384,9 @@ export async function updateFileMeta({
     );
     authorizeWriteAccess({ learningObject, requester });
     await Drivers.datastore().updateFileMeta({ id, updates: cleanUpdates });
+    Gateways.learningObjectGateway().updateObjectLastModifiedDate(
+      learningObjectId,
+    );
   } catch (e) {
     handleError(e);
   }
@@ -429,13 +436,16 @@ export async function deleteFileMeta({
     authorizeWriteAccess({ learningObject, requester });
 
     await Drivers.datastore().deleteFileMeta(id);
+    Gateways.learningObjectGateway().updateObjectLastModifiedDate(
+      learningObjectId,
+    );
   } catch (e) {
     handleError(e);
   }
 }
 
 /**
- * Deletes all file metadata documents for a revision of a Learning Object
+ * Deletes all file metadata documents for a Learning Object
  *
  * Only authors, admins, and editors can delete file metadata document
  *
