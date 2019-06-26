@@ -22,7 +22,7 @@ import {
   hasLearningObjectWriteAccess,
   authorizeReadAccess,
 } from '../shared/AuthorizationManager';
-import { FileMeta, MaterialsFilter } from './typings';
+import { FileMeta } from './typings';
 import * as PublishingService from './Publishing';
 import { mapLearningObjectToSummary } from '../shared/functions';
 
