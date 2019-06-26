@@ -1488,7 +1488,7 @@ export class MongoDriver implements DataStore {
     full?: boolean;
   }): Promise<LearningObject> {
     const object = await this.db
-      .collection<LearningObjectDocument>(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
+      .collection<ReleasedLearningObjectDocument>(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
       .aggregate([
         {
           // match learning object by params.id
@@ -1543,7 +1543,7 @@ export class MongoDriver implements DataStore {
       delete object[0]['orderedFiles'];
       const author = await this.fetchUser(object[0].authorID);
       if (author) {
-        return this.generateLearningObject(author, object[0], params.full);
+        return this.generateReleasedLearningObject(author, object[0], params.full);
       }
       throw new ResourceError('Learning Object Author not found', ResourceErrorReason.NOT_FOUND);
     }
@@ -2421,6 +2421,8 @@ export class MongoDriver implements DataStore {
   /**
    * Generates Learning Object from Document
    *
+   * If are learning object is released
+   *
    * @private
    * @param {User} author
    * @param {LearningObjectDocument} record
@@ -2434,24 +2436,26 @@ export class MongoDriver implements DataStore {
     full?: boolean,
   ): Promise<LearningObject> {
     // Logic for loading any learning object
+    let learningObject: LearningObject;
     let materials: LearningObject.Material;
     let contributors: User[] = [];
     let outcomes: LearningOutcome[] = [];
     let children: LearningObject[] = [];
-
     // Load Contributors
     if (record.contributors && record.contributors.length) {
       contributors = await Promise.all(
         record.contributors.map(userId => this.fetchUser(userId)),
       );
     }
-
     // If full object requested, load up non-summary properties
     if (full) {
       // Logic for loading 'full' learning objects
       materials = <LearningObject.Material>record.materials;
-    }
-    const learningObject = new LearningObject({
+      outcomes = await this.getAllLearningOutcomes({
+          source: record._id,
+        });
+      }
+    learningObject = new LearningObject({
       id: record._id,
       author,
       name: record.name,
@@ -2463,13 +2467,63 @@ export class MongoDriver implements DataStore {
       description: record.description,
       materials,
       contributors,
-      outcomes: record['outcomes'],
+      outcomes,
       hasRevision: record.hasRevision,
       children,
       revision: record.revision,
     });
-
     return learningObject;
+  }
+
+  /**
+   * Generates released Learning Object from Document
+   *
+   * @private
+   * @param {User} author
+   * @param {LearningObjectDocument} record
+   * @param {boolean} [full]
+   * @returns {Promise<LearningObject>}
+   * @memberof MongoDriver
+   */
+  private async generateReleasedLearningObject(
+    author: User,
+    record: ReleasedLearningObjectDocument,
+    full?: boolean,
+  ): Promise<LearningObject> {
+    // Logic for loading any learning object
+    let learningObject: LearningObject;
+    let materials: LearningObject.Material;
+    let contributors: User[] = [];
+    let children: LearningObject[] = [];
+    // Load Contributors
+    if (record.contributors && record.contributors.length) {
+      contributors = await Promise.all(
+        record.contributors.map(userId => this.fetchUser(userId)),
+      );
+    }
+    // If full object requested, load up non-summary properties
+    if (full) {
+      // Logic for loading 'full' learning objects
+      materials = <LearningObject.Material>record.materials;
+      learningObject = new LearningObject({
+        id: record._id,
+        author,
+        name: record.name,
+        date: record.date,
+        length: record.length as LearningObject.Length,
+        levels: record.levels as LearningObject.Level[],
+        collection: record.collection,
+        status: record.status as LearningObject.Status,
+        description: record.description,
+        materials,
+        contributors,
+        outcomes: record.outcomes as [],
+        hasRevision: record.hasRevision,
+        children,
+        revision: record.revision,
+      });
+      return learningObject;
+    }
   }
 }
 
