@@ -72,15 +72,15 @@ export async function getFileMeta({
     });
 
     if (filter === 'unreleased') {
-    const learningObject: LearningObjectSummary = await Gateways.learningObjectGateway().getWorkingLearningObjectSummary(
-      { requester, id: learningObjectId },
-    );
+      const learningObject: LearningObjectSummary = await Gateways.learningObjectGateway().getWorkingLearningObjectSummary(
+        { requester, id: learningObjectId },
+      );
 
       authorizeReadAccess({ learningObject, requester });
 
       return Drivers.datastore()
-      .fetchFileMeta(id)
-      .then(transformFileMetaToLearningObjectFile);
+        .fetchFileMeta(id)
+        .then(transformFileMetaToLearningObjectFile);
     }
 
     return Gateways.learningObjectGateway().getReleasedFile({
