@@ -3,7 +3,6 @@ import {
   expressServiceModule,
 } from 'node-service-module';
 import { FileMetaDatastore, LearningObjectGateway } from './interfaces';
-import { ExpressHttpAdapter } from './adapters';
 import { MongoFileMetaDatastore, ModuleLearningObjectGateway } from './drivers';
 import { deleteAllFileMeta } from './Interactor';
 
@@ -15,7 +14,7 @@ import { deleteAllFileMeta } from './Interactor';
  * @extends {ExpressServiceModule}
  */
 @expressServiceModule({
-  expressRouter: ExpressHttpAdapter.buildRouter(),
+  expressRouter: null,
   providers: [
     { provide: FileMetaDatastore, useClass: MongoFileMetaDatastore },
     { provide: LearningObjectGateway, useClass: ModuleLearningObjectGateway },
