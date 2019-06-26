@@ -20,7 +20,10 @@ export class LambdaGatewayFactory {
             case 'development':
                 return new LambdaGatewayStub();
             case 'production':
-                return new LambdaGateway();
+                if (process.env.RELEASE_NOTIFICATION_TOGGLE === 'true') {
+                    return new LambdaGateway();
+                }
+                return new LambdaGatewayStub();
             default:
                 throw new ServiceError(ServiceErrorReason.INTERNAL);
         }
