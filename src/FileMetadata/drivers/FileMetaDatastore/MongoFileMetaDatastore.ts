@@ -22,7 +22,7 @@ export class MongoFileMetaDatastore implements FileMetaDatastore {
    *
    * @memberof MongoFileMetaDatastore
    */
-  findFileMetadata({
+  async findFileMetadata({
     learningObjectId,
     learningObjectRevision,
     fullPath,
@@ -31,9 +31,13 @@ export class MongoFileMetaDatastore implements FileMetaDatastore {
     learningObjectRevision: number;
     fullPath: string;
   }): Promise<FileMetadataDocument> {
-    return this.db
+    const doc = await this.db
       .collection(FILE_META_COLLECTION)
       .findOne({ learningObjectId, learningObjectRevision, fullPath });
+    if (doc) {
+      return this.mapMongoIdToId(doc);
+    }
+    return null;
   }
 
   /**
@@ -41,10 +45,30 @@ export class MongoFileMetaDatastore implements FileMetaDatastore {
    *
    * @memberof MongoFileMetaDatastore
    */
-  fetchFileMeta(id: string): Promise<FileMetadataDocument> {
-    return this.db
-      .collection<FileMetadataDocument>(FILE_META_COLLECTION)
+  async fetchFileMeta(id: string): Promise<FileMetadataDocument> {
+    const doc = await this.db
+      .collection<FileMetadataDocument & { _id: ObjectId }>(
+        FILE_META_COLLECTION,
+      )
       .findOne({ _id: new ObjectId(id) });
+    if (doc) {
+      return this.mapMongoIdToId(doc);
+    }
+    return null;
+  }
+
+  /**
+   * Maps Documents `_id` ObjectId to `id` string
+   *
+   * @private
+   * @param {(any & { _id: ObjectId })} doc
+   * @returns
+   * @memberof MongoFileMetaDatastore
+   */
+  private mapMongoIdToId(doc: any & { _id: ObjectId }) {
+    doc.id = doc._id.toHexString();
+    delete doc._id;
+    return doc;
   }
 
   /**
@@ -54,9 +78,12 @@ export class MongoFileMetaDatastore implements FileMetaDatastore {
    */
   fetchAllFileMeta(learningObjectId: string): Promise<FileMetadataDocument[]> {
     return this.db
-      .collection<FileMetadataDocument>(FILE_META_COLLECTION)
+      .collection<FileMetadataDocument & { _id: ObjectId }>(
+        FILE_META_COLLECTION,
+      )
       .find({ learningObjectId })
-      .toArray();
+      .toArray()
+      .then(docs => docs.map(this.mapMongoIdToId));
   }
 
   /**
