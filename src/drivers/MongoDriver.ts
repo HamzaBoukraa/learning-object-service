@@ -2485,7 +2485,7 @@ export class MongoDriver implements DataStore {
    */
   private async generateReleasedLearningObject(
     author: User,
-    record: ReleasedLearningObjectDocument,
+    record: LearningObjectDocument,
     full?: boolean,
   ): Promise<LearningObject> {
     // Logic for loading any learning object
@@ -2522,7 +2522,7 @@ export class MongoDriver implements DataStore {
       description: record.description,
       materials,
       contributors,
-      outcomes: record.outcomes,
+      outcomes: record['outcomes'],
       hasRevision: record.hasRevision,
       children,
       revision: record.revision,
