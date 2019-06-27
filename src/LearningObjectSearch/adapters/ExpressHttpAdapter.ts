@@ -3,7 +3,7 @@ import * as Interactor from '../Interactor';
 import { Requester } from '../typings';
 import { mapErrorToResponseData } from '../../shared/errors';
 import { LearningObjectQuery } from '../../shared/interfaces/DataStore';
-import { requesterIsAdmin } from '../../LearningObjects/AuthorizationManager';
+import { requesterIsAdmin } from '../../shared/AuthorizationManager';
 
 const ALLOW_ELASTICSEARCH_TEST_TRAFFIC =
   process.env.ALLOW_ELASTICSEARCH_TEST_TRAFFIC === 'true';

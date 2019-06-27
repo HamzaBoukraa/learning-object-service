@@ -11,7 +11,6 @@ import {
   LearningObjectSummary,
 } from '../shared/types';
 import { ResourceError, ResourceErrorReason } from '../shared/errors';
-import { hasLearningObjectWriteAccess } from '../shared/AuthorizationManager';
 import { reportError } from '../shared/SentryConnector';
 import { LearningObject } from '../shared/entity';
 import { handleError } from '../interactors/LearningObjectInteractor';
@@ -20,12 +19,13 @@ import {
   requesterIsAuthor,
   requesterIsAdminOrEditor,
   hasReadAccessByCollection,
-} from './AuthorizationManager';
-import { FileMeta, MaterialsFilter, LearningObjectFilter } from './typings';
+  hasLearningObjectWriteAccess,
+  authorizeReadAccess,
+} from '../shared/AuthorizationManager';
+import { FileMeta, LearningObjectFilter, MaterialsFilter } from './typings';
 import * as PublishingService from './Publishing';
 import { mapLearningObjectToSummary } from '../shared/functions';
 import { FileMetadata } from '../FileMetadata';
-import { authorizeReadAccess } from '../FileMetadata/AuthorizationManager';
 
 const LearningObjectState = {
   UNRELEASED: [

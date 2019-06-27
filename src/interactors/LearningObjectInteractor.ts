@@ -23,9 +23,11 @@ import {
   getAccessGroupCollections,
   hasMultipleLearningObjectWriteAccesses,
   hasLearningObjectWriteAccess,
-  isAdminOrEditor,
-  isPrivilegedUser,
+  requesterIsAdminOrEditor,
+  requesterIsPrivileged,
   hasServiceLevelAccess,
+  hasReadAccessByCollection,
+  requesterIsAuthor,
 } from '../shared/AuthorizationManager';
 import {
   ResourceError,
@@ -183,9 +185,9 @@ export class LearningObjectInteractor {
     let collections;
 
     // if user is admin/editor/curator/review, also send waiting/review/proofing objects for collections they're privileged in
-    if (userToken && isAdminOrEditor(userToken.accessGroups)) {
+    if (userToken && requesterIsAdminOrEditor(userToken)) {
       status = status.concat(LearningObjectState.IN_REVIEW);
-    } else if (userToken && isPrivilegedUser(userToken.accessGroups)) {
+    } else if (userToken && requesterIsPrivileged(userToken)) {
       status = status.concat(LearningObjectState.IN_REVIEW);
       collections = getAccessGroupCollections(userToken);
     }
@@ -533,15 +535,15 @@ export class LearningObjectInteractor {
       objectInfo.status as LearningObject.Status,
     );
 
-    const requesterIsAuthor = this.hasReadAccess({
+    const isAuthor = this.hasReadAccess({
       userToken: userToken as UserToken,
       resourceVal: objectInfo.author,
       authFunction: isAuthorByUsername,
     }) as boolean;
 
-    const requesterIsService = hasServiceLevelAccess(userToken as ServiceToken);
+    const isService = hasServiceLevelAccess(userToken as ServiceToken);
 
-    if (authorOnlyAccess && !requesterIsService && !requesterIsAuthor) {
+    if (authorOnlyAccess && !isService && !isAuthor) {
       throw new ResourceError(
         'Invalid Access',
         ResourceErrorReason.INVALID_ACCESS,
@@ -550,17 +552,12 @@ export class LearningObjectInteractor {
     const authorOrPrivilegedAccess = !LearningObjectState.RELEASED.includes(
       objectInfo.status as LearningObject.Status,
     );
-    const requesterIsPrivileged = this.hasReadAccess({
+    const isPrivileged = this.hasReadAccess({
       userToken: userToken as UserToken,
       resourceVal: objectInfo.collection,
-      authFunction: hasReadAccessByCollection,
+      authFunction: checkCollectionReadAccess,
     }) as boolean;
-    if (
-      authorOrPrivilegedAccess &&
-      !requesterIsService &&
-      !requesterIsAuthor &&
-      !requesterIsPrivileged
-    ) {
+    if (authorOrPrivilegedAccess && !isService && !isAuthor && !isPrivileged) {
       throw new ResourceError(
         'Invalid Access',
         ResourceErrorReason.INVALID_ACCESS,
@@ -796,20 +793,20 @@ export class LearningObjectInteractor {
         username,
       });
 
-      const requesterIsAuthor = this.hasReadAccess({
+      const isAuthor = this.hasReadAccess({
         userToken: userToken as UserToken,
         resourceVal: username,
         authFunction: isAuthorByUsername,
       }) as boolean;
-      const requesterIsPrivileged =
-        userToken && isPrivilegedUser((<UserToken>userToken).accessGroups);
-      const requesterIsService = hasServiceLevelAccess(
+      const isPrivileged =
+        userToken && requesterIsPrivileged(<UserToken>userToken);
+      const isService = hasServiceLevelAccess(
         userToken as ServiceToken,
       );
       const authorizationCases = [
-        requesterIsAuthor,
-        requesterIsPrivileged,
-        requesterIsService,
+        isAuthor,
+        isPrivileged,
+        isService,
       ];
 
       let learningObjectID = await this.getReleasedLearningObjectIdByAuthorAndName(
@@ -1042,9 +1039,9 @@ export class LearningObjectInteractor {
       } = this.formatSearchQuery(query);
       let response: { total: number; objects: LearningObject[] };
 
-      if (userToken && isPrivilegedUser(userToken.accessGroups)) {
+      if (userToken && requesterIsPrivileged(userToken)) {
         let conditions: QueryCondition[];
-        if (!isAdminOrEditor(userToken.accessGroups)) {
+        if (!requesterIsAdminOrEditor(userToken)) {
           const privilegedCollections = getAccessGroupCollections(userToken);
           const collectionAccessMap = getCollectionAccessMap(
             collection,
@@ -1557,11 +1554,9 @@ function getCollectionAccessMap(
  * @param {UserToken} userToken
  * @returns
  */
-const checkAuthByUsername = (username: string, userToken: UserToken) => {
-  return (
-    isAdminOrEditor(userToken.accessGroups) || userToken.username === username
-  );
-};
+const checkAuthByUsername = (username: string, userToken: UserToken) =>
+  requesterIsAdminOrEditor(userToken) ||
+  requesterIsAuthor({ authorUsername: username, requester: userToken });
 
 /**
  * Checks if requester is author byu the username provided
@@ -1584,16 +1579,14 @@ const isAuthorByUsername = (
  * @param {UserToken} userToken
  * @returns
  */
-export const hasReadAccessByCollection = (
+export const checkCollectionReadAccess = (
   collectionName: string,
   userToken: UserToken,
-) => {
-  if (!userToken || !isPrivilegedUser(userToken.accessGroups)) return false;
-  return (
-    isAdminOrEditor(userToken.accessGroups) ||
-    getAccessGroupCollections(userToken).includes(collectionName)
-  );
-};
+) =>
+  hasReadAccessByCollection({
+    requester: userToken,
+    collection: collectionName,
+  });
 
 /**
  * This handler allows execution to proceed if a ResourceError occurs because of a resource not being found.
