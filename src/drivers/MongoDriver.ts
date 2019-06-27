@@ -1488,7 +1488,7 @@ export class MongoDriver implements DataStore {
     full?: boolean;
   }): Promise<LearningObject> {
     const object = await this.db
-      .collection<LearningObjectDocument>(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
+      .collection<ReleasedLearningObjectDocument>(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
       .aggregate([
         {
           // match learning object by params.id
@@ -2478,14 +2478,14 @@ export class MongoDriver implements DataStore {
    *
    * @private
    * @param {User} author
-   * @param {LearningObjectDocument} record
+   * @param {ReleasedLearningObjectDocument} record
    * @param {boolean} [full]
    * @returns {Promise<LearningObject>}
    * @memberof MongoDriver
    */
   private async generateReleasedLearningObject(
     author: User,
-    record: LearningObjectDocument,
+    record: ReleasedLearningObjectDocument,
     full?: boolean,
   ): Promise<LearningObject> {
     // Logic for loading any learning object
@@ -2522,7 +2522,7 @@ export class MongoDriver implements DataStore {
       description: record.description,
       materials,
       contributors,
-      outcomes: record['outcomes'],
+      outcomes: record.outcomes,
       hasRevision: record.hasRevision,
       children,
       revision: record.revision,
