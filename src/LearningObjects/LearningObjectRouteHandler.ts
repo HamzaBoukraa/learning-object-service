@@ -102,15 +102,19 @@ export function initializePrivate({
   };
   const getMaterials = async (req: Request, res: Response) => {
     try {
-      const id = req.params.id;
+      const requester: UserToken = req.user;
+      const id: string = req.params.id;
+      const filter: MaterialsFilter = req.query.status;
       const materials = await LearningObjectInteractor.getMaterials({
         dataStore,
         id,
+        requester,
+        filter,
       });
       res.status(200).send(materials);
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
-      res.status(code).json({message});
+      res.status(code).json({ message });
     }
   };
   const updateLearningObject = async (req: Request, res: Response) => {
@@ -235,6 +239,7 @@ export function initializePrivate({
   router.route('/learning-objects').post(addLearningObject);
   router.patch('/learning-objects/:id', updateLearningObject);
   router.delete('/learning-objects/:learningObjectName', deleteLearningObject);
+  router.get('/users/:username/learning-objects/:id/materials', getMaterials);
   router.get('/learning-objects/:id/materials/all', getMaterials);
   router.get(
     '/learning-objects/:id/children/summary',
