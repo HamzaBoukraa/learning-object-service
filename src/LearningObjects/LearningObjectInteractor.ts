@@ -745,7 +745,7 @@ export async function deleteLearningObject(params: {
       });
 
       await params.library.cleanObjectsFromLibraries([object.id]);
-      FileMetadata.deleteAllFileMetadata({
+      await FileMetadata.deleteAllFileMetadata({
         requester: params.user,
         learningObjectId: object.id,
       }).catch(reportError);
