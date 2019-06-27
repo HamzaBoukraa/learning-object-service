@@ -1488,7 +1488,7 @@ export class MongoDriver implements DataStore {
     full?: boolean;
   }): Promise<LearningObject> {
     const object = await this.db
-      .collection<ReleasedLearningObjectDocument>(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
+      .collection<LearningObjectDocument>(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
       .aggregate([
         {
           // match learning object by params.id
@@ -2421,8 +2421,6 @@ export class MongoDriver implements DataStore {
   /**
    * Generates Learning Object from Document
    *
-   * If are learning object is released
-   *
    * @private
    * @param {User} author
    * @param {LearningObjectDocument} record
@@ -2487,7 +2485,7 @@ export class MongoDriver implements DataStore {
    */
   private async generateReleasedLearningObject(
     author: User,
-    record: ReleasedLearningObjectDocument,
+    record: LearningObjectDocument,
     full?: boolean,
   ): Promise<LearningObject> {
     // Logic for loading any learning object
@@ -2505,27 +2503,28 @@ export class MongoDriver implements DataStore {
     if (full) {
       // Logic for loading 'full' learning objects
       materials = <LearningObject.Material>record.materials;
-      learningObject = new LearningObject({
-        id: record._id,
-        author,
-        name: record.name,
-        date: record.date,
-        length: record.length as LearningObject.Length,
-        levels: record.levels as LearningObject.Level[],
-        collection: record.collection,
-        status: record.status as LearningObject.Status,
-        description: record.description,
-        materials,
-        contributors,
-        outcomes: record.outcomes as [],
-        hasRevision: record.hasRevision,
-        children,
-        revision: record.revision,
-      });
-      return learningObject;
     }
+    learningObject = new LearningObject({
+      id: record._id,
+      author,
+      name: record.name,
+      date: record.date,
+      length: record.length as LearningObject.Length,
+      levels: record.levels as LearningObject.Level[],
+      collection: record.collection,
+      status: record.status as LearningObject.Status,
+      description: record.description,
+      materials,
+      contributors,
+      outcomes: record['outcomes'],
+      hasRevision: record.hasRevision,
+      children,
+      revision: record.revision,
+    });
+    return learningObject;
   }
 }
+
 
 export function isEmail(value: string): boolean {
   const emailPattern = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
