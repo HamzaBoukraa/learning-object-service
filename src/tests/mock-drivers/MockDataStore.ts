@@ -41,6 +41,10 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
     return;
   }
 
+  fetchReleasedMaterials(id: string): Promise<LearningObject.Material> {
+    return Promise.resolve(this.stubs.learningObject.materials);
+  }
+
   fetchReleasedFile(params: {
     id: string;
     fileId: string;
