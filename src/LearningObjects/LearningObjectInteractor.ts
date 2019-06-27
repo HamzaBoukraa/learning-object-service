@@ -670,18 +670,67 @@ async function generateReleasableLearningObject(
 }
 
 /**
- * Fetches a learning object by ID
+ * Fetches a learning object by id
+ * If no filter is defined the released object is returned by default unless no released object exists
+ * If no released object exists and no filter is specified, the unreleased object is loaded if the reuqester has access
+ *
+ * If neither object is found, NotFound ResourceError is thrown
  *
  * @export
  * @param {DataStore} dataStore
  * @param {string} id the learning object's id
  * @returns {Promise<LearningObject>}
  */
-export async function getLearningObjectById(
-  dataStore: DataStore,
-  id: string,
-): Promise<LearningObject> {
-  return await dataStore.fetchLearningObject({ id, full: true });
+export async function getLearningObjectById({
+  dataStore,
+  id,
+  requester,
+  filter,
+}: {
+  dataStore: DataStore;
+  id: string;
+  requester: UserToken;
+  filter?: LearningObjectFilter;
+}): Promise<LearningObject> {
+  try {
+    let learningObject: LearningObject;
+    const learningObjectNotFound = new ResourceError(
+      `No Learning Object ${id} exists.`,
+      ResourceErrorReason.NOT_FOUND,
+    );
+    if (!filter || filter === 'released') {
+      learningObject = await dataStore.fetchReleasedLearningObject({
+        id,
+        full: true,
+      });
+    }
+    if ((!learningObject && filter !== 'released') || filter === 'unreleased') {
+      let files: LearningObject.Material.File[] = [];
+      const learningObjectSummary = await dataStore.fetchLearningObject({
+        id,
+        full: false,
+      });
+      if (!learningObjectSummary) {
+        throw learningObjectNotFound;
+      }
+      authorizeReadAccess({ requester, learningObject: learningObjectSummary });
+      [learningObject, files] = await Promise.all([
+        dataStore.fetchLearningObject({ id, full: true }),
+        FileMetadata.getAllFileMetadata({
+          requester,
+          learningObjectId: id,
+          filter: 'unreleased',
+        }),
+      ]);
+      learningObject.materials.files = files;
+    }
+    if (!learningObject) {
+      throw learningObjectNotFound;
+    }
+    return learningObject;
+  } catch (e) {
+    handleError(e);
+  }
 }
 
 /**
