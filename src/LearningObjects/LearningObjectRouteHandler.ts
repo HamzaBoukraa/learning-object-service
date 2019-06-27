@@ -8,8 +8,8 @@ import {
 import { UserToken } from '../shared/types';
 import * as LearningObjectInteractor from './LearningObjectInteractor';
 import { LearningObject } from '../shared/entity';
-import { FileMeta } from './typings';
 import { updateFileDescription, removeFile } from './LearningObjectInteractor';
+import { FileMeta, MaterialsFilter, LearningObjectFilter } from './typings';
 
 /**
  * Initializes an express router with endpoints for public Retrieving
@@ -29,19 +29,24 @@ export function initializePublic({
    */
   const getLearningObjectById = async (req: Request, res: Response) => {
     try {
+      const requester: UserToken = req.user;
+      const filter: LearningObjectFilter = req.query.status;
       const id = req.params.learningObjectId;
       const learningObject = await LearningObjectInteractor.getLearningObjectById(
-        dataStore,
-        id,
+        { dataStore, id, requester, filter },
       );
       res.status(200).send(learningObject.toPlainObject());
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
-      res.status(code).json({message});
+      res.status(code).json({ message });
     }
   };
 
   router.get('/learning-objects/:learningObjectId', getLearningObjectById);
+  router.get(
+    '/users/:username/learning-objects/:learningObjectId',
+    getLearningObjectById,
+  );
 
   return router;
 }
