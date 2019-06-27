@@ -33,7 +33,7 @@ export async function releaseLearningObject({ userToken, dataStore, releasableOb
 
 /**
  * createPublishingArtifacts handles the creation and storage of content created as a result
- * of releasing a Learning Object. This includes a bundle of all files associated with the 
+ * of releasing a Learning Object. This includes a bundle of all files associated with the
  * Learning Object for faster download.
  *
  * @param releasableObject the Learning Object to create artifacts for
