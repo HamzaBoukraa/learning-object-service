@@ -100,6 +100,23 @@ export class MongoDriver implements DataStore {
     this.learningObjectStore = new LearningObjectDataStore(this.db);
     this.changelogStore = new ChangelogDataStore(this.db);
   }
+
+  /**
+   * @inheritdoc
+   *
+   * @param {string} id [Id of the Learning Object to fetch materials of]
+   * @returns {Promise<LearningObject.Material>}
+   * @memberof MongoDriver
+   */
+  async fetchReleasedMaterials(id: string): Promise<LearningObject.Material> {
+    const doc = await this.db
+      .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
+      .findOne({ _id: id }, { projection: { _id: 0, materials: 1 } });
+    if (doc) {
+      return doc.materials;
+    }
+    return null;
+  }
   /**
    * @inheritdoc
    *
@@ -115,19 +132,34 @@ export class MongoDriver implements DataStore {
     id: string;
     fileId: string;
   }): Promise<LearningObject.Material.File> {
-    const doc = await this.db
+    const results = await this.db
       .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
-      .findOne(
-        { _id: id },
+      .aggregate([
         {
-          projection: {
-            _id: 0,
-            'materials.files': { $elemMatch: { id: fileId } },
+          $match: {
+            _id: id,
           },
         },
-      );
-    if (doc) {
-      return doc.materials.files[0];
+        {
+          $unwind: {
+            path: '$materials.files',
+          },
+        },
+        {
+          $match: {
+            'materials.files.id': fileId,
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            file: '$materials.files',
+          },
+        },
+      ])
+      .toArray();
+    if (results && results[0]) {
+      return results[0].file;
     }
     return null;
   }
