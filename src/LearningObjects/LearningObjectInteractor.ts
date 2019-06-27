@@ -21,10 +21,11 @@ import {
   requesterIsAdminOrEditor,
   hasReadAccessByCollection,
 } from './AuthorizationManager';
-import { FileMeta } from './typings';
+import { FileMeta, MaterialsFilter, LearningObjectFilter } from './typings';
 import * as PublishingService from './Publishing';
 import { mapLearningObjectToSummary } from '../shared/functions';
 import { FileMetadata } from '../FileMetadata';
+import { authorizeReadAccess } from '../FileMetadata/AuthorizationManager';
 
 const LearningObjectState = {
   UNRELEASED: [
@@ -938,16 +939,54 @@ async function deleteFile(
  * }} params
  * @returns
  */
-export async function getMaterials(params: {
+export async function getMaterials({
+  dataStore,
+  id,
+  requester,
+  filter,
+}: {
   dataStore: DataStore;
   id: string;
+  requester: UserToken;
+  filter?: MaterialsFilter;
 }) {
   try {
-    return await params.dataStore.getLearningObjectMaterials({ id: params.id });
+    let materials: LearningObject.Material;
+    let workingFiles: LearningObject.Material.File[];
+    if (filter === 'unreleased') {
+      const learningObject = await dataStore.fetchLearningObject({
+        id,
+        full: false,
+      });
+      authorizeReadAccess({ learningObject, requester });
+      const materials$ = dataStore.getLearningObjectMaterials({ id });
+      const workingFiles$ = FileMetadata.getAllFileMetadata({
+        requester,
+        learningObjectId: id,
+        filter: 'unreleased',
+      });
+      [materials, workingFiles] = await Promise.all([
+        materials$,
+        workingFiles$,
+      ]);
+    } else {
+      materials = await dataStore.fetchReleasedMaterials(id);
+    }
+
+    if (!materials) {
+      throw new ResourceError(
+        `No materials exists for Learning Object ${id}.`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+
+    if (workingFiles) {
+      materials.files = workingFiles;
+    }
+
+    return materials;
   } catch (e) {
-    return Promise.reject(
-      `Problem fetching materials for object: ${params.id}. Error: ${e}`,
-    );
+    handleError(e);
   }
 }
 
