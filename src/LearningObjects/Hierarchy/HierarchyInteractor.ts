@@ -23,10 +23,7 @@ export async function fetchParents(params: {
   let hasFullAccess = false;
   let collectionsWithAccess: string[] = [];
   let requestedByAuthor = false;
-  const [_, author] = await Promise.all([
-    dataStore.fetchLearningObjectCollection(learningObjectID),
-    dataStore.fetchLearningObjectAuthorUsername(learningObjectID),
-  ]);
+  const author = await dataStore.fetchLearningObjectAuthorUsername(learningObjectID);
 
   if (userToken) {
     hasFullAccess = hasFullReviewStageAccess(userToken.accessGroups);
