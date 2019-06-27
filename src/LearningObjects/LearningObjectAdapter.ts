@@ -13,6 +13,7 @@ import {
   updateObjectLastModifiedDate,
 } from './LearningObjectInteractor';
 import { UserToken, LearningObjectSummary } from '../shared/types';
+import { LearningObjectFilter } from './typings';
 
 /**
  * FIXME: THe duplication of JSDoc comments here is not ideal, as it means a change
@@ -165,8 +166,15 @@ export class LearningObjectAdapter {
    * @param {string} id the learning object's id
    * @returns {Promise<LearningObject>}
    */
-  async getLearningObjectById(id: string): Promise<LearningObject> {
-    return getLearningObjectById(this.dataStore, id);
+  async getLearningObjectById(params: {
+    id: string;
+    requester: UserToken;
+    filter?: LearningObjectFilter;
+  }): Promise<LearningObject> {
+    return getLearningObjectById({
+      dataStore: this.dataStore,
+      ...params,
+    });
   }
 
   /**
