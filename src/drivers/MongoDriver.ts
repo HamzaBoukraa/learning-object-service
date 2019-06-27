@@ -749,6 +749,16 @@ export class MongoDriver implements DataStore {
     });
   }
 
+  async fetchChangelogsByDate(params: {
+    learningObjectId: string;
+    date: string;
+  }): Promise<ChangeLogDocument[]> {
+    return await this.changelogStore.fetchChangelogsByDate({
+      learningObjectId: params.learningObjectId,
+      date: params.date,
+    });
+  }
+
   /**
    * Updates or inserts LearningObjectFile into learning object's files array
    *

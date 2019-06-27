@@ -72,15 +72,40 @@ export class ChangelogDataStore {
    */
   async fetchAllChangelogs(params: {
     learningObjectId: string,
+  }): Promise<ChangeLogDocument[]> {
+    const changelogs = await this.db
+      .collection(COLLECTIONS.CHANGLOG)
+      .aggregate([
+        { $match: { learningObjectId: params.learningObjectId } },
+        { $unwind: '$logs' },
+        { $sort: { 'logs.date': -1 } },
+        { $group: { _id: '$learningObjectId', logs: { $push: '$logs' } } },
+      ])
+      .toArray();
+    return changelogs;
+  }
+
+  async fetchChangelogsByDate(params: {
+    learningObjectId: string,
     date: string,
   }): Promise<ChangeLogDocument[]> {
     const changelogs = await this.db
       .collection(COLLECTIONS.CHANGLOG)
       .aggregate([
-        { $match: { learningObjectId: params.learningObjectId, date: { $lte: params.date } } },
+        { $match: { learningObjectId: params.learningObjectId } },
         { $unwind: '$logs' },
         { $sort: { 'logs.date': -1 } },
         { $group: { _id: '$learningObjectId', logs: { $push: '$logs' } } },
+        { $project:
+          { logs: {
+              $filter: {
+                input: '$logs',
+                as: 'log',
+                cond: { $eq: [ '$$log.date', params.date ] },
+              },
+            },
+          },
+        },
       ])
       .toArray();
     return changelogs;
