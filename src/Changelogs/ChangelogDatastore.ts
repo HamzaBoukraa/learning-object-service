@@ -101,7 +101,7 @@ export class ChangelogDataStore {
               $filter: {
                 input: '$logs',
                 as: 'log',
-                cond: { $eq: [ '$$log.date', params.date ] },
+                cond: { $lte: [ '$$log.date', params.date ] },
               },
             },
           },
