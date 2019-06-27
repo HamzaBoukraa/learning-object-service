@@ -1,13 +1,32 @@
 import 'dotenv/config';
-import { UserToken, ServiceToken } from './types';
+import {
+  UserToken,
+  ServiceToken,
+  AccessGroup,
+  LearningObjectSummary,
+} from './types';
 import { DataStore } from './interfaces/DataStore';
+import { ResourceError, ResourceErrorReason } from './errors';
+import { LearningObject } from './entity';
 
-enum UserRole {
-  ADMIN = 'admin',
-  EDITOR = 'editor',
-  CURATOR = 'curator',
-  REVIEWER = 'reviewer',
-}
+const LearningObjectState = {
+  UNRELEASED: [
+    LearningObject.Status.REJECTED,
+    LearningObject.Status.UNRELEASED,
+  ],
+  IN_REVIEW: [
+    LearningObject.Status.WAITING,
+    LearningObject.Status.REVIEW,
+    LearningObject.Status.PROOFING,
+  ],
+};
+
+const PRIVILEGED_GROUPS = [
+  AccessGroup.ADMIN,
+  AccessGroup.EDITOR,
+  AccessGroup.CURATOR,
+  AccessGroup.REVIEWER,
+];
 
 /**
  * Checks if a user has the authority to modify a Learning Object.
@@ -66,7 +85,7 @@ function hasPrivilegedWriteAccess(
   objectId: string,
 ) {
   if (user && user.accessGroups) {
-    if (isAdminOrEditor(user.accessGroups)) {
+    if (requesterIsAdminOrEditor(user)) {
       return true;
     } else {
       return checkCollectionWriteAccess({ user, dataStore, objectId });
@@ -109,10 +128,10 @@ async function checkCollectionWriteAccess(params: {
   }
   return (
     params.user.accessGroups.indexOf(
-      `${UserRole.REVIEWER}@${object.collection}`,
+      `${AccessGroup.REVIEWER}@${object.collection}`,
     ) > -1 ||
     params.user.accessGroups.indexOf(
-      `${UserRole.CURATOR}@${object.collection}`,
+      `${AccessGroup.CURATOR}@${object.collection}`,
     ) > -1
   );
 }
@@ -138,42 +157,6 @@ async function userIsOwner(params: {
     fields: { authorID: 1 },
   });
   return userId === object.authorID;
-}
-
-/**
- * Checks if accessGroups contains admin or editor
- *
- * @param {string[]} accessGroups
- * @returns {boolean}
- */
-export function isAdminOrEditor(accessGroups: string[]): boolean {
-  return (
-    accessGroups &&
-    (accessGroups.includes(UserRole.ADMIN) ||
-      accessGroups.includes(UserRole.EDITOR))
-  );
-}
-
-/**
- * Checks if accessGroups contains a privileged user role
- *
- * @param {string[]} accessGroups
- * @returns {boolean}
- */
-export function isPrivilegedUser(accessGroups: string[]): boolean {
-  if (accessGroups) {
-    if (isAdminOrEditor(accessGroups)) {
-      return true;
-    }
-    for (const group of accessGroups) {
-      const access = group.split('@');
-      const role = access[0] ? access[0].toLowerCase() : null;
-      if (role === UserRole.CURATOR || role === UserRole.REVIEWER) {
-        return true;
-      }
-    }
-  }
-  return false;
 }
 
 /**
@@ -217,4 +200,210 @@ export function hasServiceLevelAccess(serviceToken: ServiceToken): boolean {
  */
 function isValidServiceKey(key: string): boolean {
   return key === process.env.SERVICE_KEY;
+}
+
+/**
+ * Checks if the requester is verified by checking the `emailVerified` property on `requester`
+ *
+ * @export
+ * @param {UserToken} requester [Token data of the requester]
+ * @returns {boolean}
+ */
+export function requesterIsVerified(requester: UserToken): boolean {
+  return requester != null && requester.emailVerified;
+}
+
+/**
+ * Checks if the requester is the author by comparing `authorUsername` against requester's username
+ *
+ * @export
+ * @param {string} authorUsername [Username of the author]
+ * @param {UserToken} requester [Token data of the requester]
+ * @returns {boolean}
+ */
+export function requesterIsAuthor({
+  authorUsername,
+  requester,
+}: {
+  authorUsername: string;
+  requester: UserToken;
+}): boolean {
+  return requester != null && requester.username === authorUsername;
+}
+
+/**
+ * Checks if requester is a privileged user by checking `accessGroups` contains a value within `PRIVILEGED_GROUPS`.
+ *
+ * @export
+ * @param {UserToken} requester [Token data of the requester]
+ * @returns {boolean}
+ */
+export function requesterIsPrivileged(requester: UserToken): boolean {
+  if (requester && Array.isArray(requester.accessGroups)) {
+    for (const group of requester.accessGroups) {
+      const role = group.split('@')[0];
+      if (PRIVILEGED_GROUPS.includes(role as AccessGroup)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * Checks if requester is an Admin by checking if their `accessGroups` contain the admin privilege
+ *
+ * @export
+ * @param {UserToken} requester [Token data of the requester]
+ * @returns {boolean}
+ */
+export function requesterIsAdmin(requester: UserToken): boolean {
+  return (
+    requester != null &&
+    Array.isArray(requester.accessGroups) &&
+    requester.accessGroups.includes(AccessGroup.ADMIN)
+  );
+}
+
+/**
+ * Checks if requester is an Editor by checking if their `accessGroups` contain the editor privilege
+ *
+ * @export
+ * @param {UserToken} requester [Token data of the requester]
+ * @returns {boolean}
+ */
+export function requesterIsEditor(requester: UserToken): boolean {
+  return (
+    requester != null &&
+    Array.isArray(requester.accessGroups) &&
+    requester.accessGroups.includes(AccessGroup.EDITOR)
+  );
+}
+
+/**
+ * Checks if requester is an Admin or Editor by checking if their `accessGroups` contain the admin or editor privileges
+ *
+ * @export
+ * @param {UserToken} requester [Token data of the requester]
+ * @returns {boolean}
+ */
+export function requesterIsAdminOrEditor(requester: UserToken): boolean {
+  return requesterIsAdmin(requester) || requesterIsEditor(requester);
+}
+
+/**
+ * Checks if requester has read access by checking if their `accessGroups` contain the admin, editor, curator@collection, reviewer@collection privileges
+ *
+ * @export
+ * @param {UserToken} requester [Token data of the requester]
+ * @param {string} collection [Collection value the requester's `accessGroups` must contain]
+ * @returns {boolean}
+ */
+export function hasReadAccessByCollection({
+  requester,
+  collection,
+}: {
+  requester: UserToken;
+  collection: string;
+}): boolean {
+  if (requesterIsAdminOrEditor(requester)) {
+    return true;
+  }
+  if (requester && Array.isArray(requester.accessGroups)) {
+    return (
+      requester.accessGroups.includes(`${AccessGroup.CURATOR}@${collection}`) ||
+      requester.accessGroups.includes(`${AccessGroup.REVIEWER}@${collection}`)
+    );
+  }
+  return false;
+}
+
+/**
+ * Checks if request should be authorized by checking if `authorizationCases` contains `true`.
+ *
+ * @export
+ * @param {boolean[]} authorizationCases [List of boolean values from the result of an authorization check]
+ */
+export function authorizeRequest(
+  authorizationCases: boolean[],
+  message?: string,
+) {
+  if (!authorizationCases.includes(true)) {
+    throw new ResourceError(
+      message || 'Invalid access',
+      ResourceErrorReason.INVALID_ACCESS,
+    );
+  }
+}
+
+/**
+ * Authorizes read access to Learning Object data
+ *
+ * If the Learning Object is released, all requesters are authorized to read Learning Object data
+ * If the Learning Object is in review, the author, reviewers/curators@<Learning Object Collection>, and admins/editors can read Learning Object data
+ * If the Learning Object is unreleased or rejected only the author can read Learning Object data
+ *
+ * @param {LearningObjectSummary} learningObject [Information about the Learning Object to authorize request]
+ * @param {UserToken} requester [Information about the requester]
+ */
+export function authorizeReadAccess({
+  learningObject,
+  requester,
+}: {
+  learningObject: LearningObjectSummary;
+  requester: UserToken;
+}) {
+  const releasedAccess =
+    learningObject.status === LearningObject.Status.RELEASED;
+  const authorAccess = requesterIsAuthor({
+    authorUsername: learningObject.author.username,
+    requester,
+  });
+  const isUnreleased = LearningObjectState.UNRELEASED.includes(
+    learningObject.status as LearningObject.Status,
+  );
+  const reviewerCuratorAccess =
+    hasReadAccessByCollection({
+      requester,
+      collection: learningObject.collection,
+    }) && !isUnreleased;
+  const adminEditorAccess =
+    requesterIsAdminOrEditor(requester) && !isUnreleased;
+
+  authorizeRequest([
+    releasedAccess,
+    authorAccess,
+    reviewerCuratorAccess,
+    adminEditorAccess,
+  ]);
+}
+
+/**
+ * Authorizes write access to Learning Object
+ *
+ * If the Learning Object is unreleased, only the author has write access to the Learning Object
+ * If the Learning Object is in review, only admins/editors have write access to the Learning Object
+ *
+ * @param {LearningObjectSummary} learningObject [Information about the Learning Object to authorize request]
+ * @param {UserToken} requester [Information about the requester]
+ */
+export function authorizeWriteAccess({
+  learningObject,
+  requester,
+}: {
+  learningObject: LearningObjectSummary;
+  requester: UserToken;
+}) {
+  const isUnreleased = LearningObjectState.UNRELEASED.includes(
+    learningObject.status as LearningObject.Status,
+  );
+  const authorAccess =
+    requesterIsAuthor({
+      authorUsername: learningObject.author.username,
+      requester,
+    }) && isUnreleased;
+  const isReleased = learningObject.status === LearningObject.Status.RELEASED;
+  const adminEditorAccess =
+    requesterIsAdminOrEditor(requester) && !isUnreleased && !isReleased;
+  authorizeRequest([authorAccess, adminEditorAccess]);
 }

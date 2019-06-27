@@ -11,7 +11,6 @@ import {
   LearningObjectSummary,
 } from '../shared/types';
 import { ResourceError, ResourceErrorReason } from '../shared/errors';
-import { hasLearningObjectWriteAccess } from '../shared/AuthorizationManager';
 import { reportError } from '../shared/SentryConnector';
 import { LearningObject } from '../shared/entity';
 import { handleError } from '../interactors/LearningObjectInteractor';
@@ -20,7 +19,8 @@ import {
   requesterIsAuthor,
   requesterIsAdminOrEditor,
   hasReadAccessByCollection,
-} from './AuthorizationManager';
+  hasLearningObjectWriteAccess,
+} from '../shared/AuthorizationManager';
 import { FileMeta } from './typings';
 import * as PublishingService from './Publishing';
 import { mapLearningObjectToSummary } from '../shared/functions';
