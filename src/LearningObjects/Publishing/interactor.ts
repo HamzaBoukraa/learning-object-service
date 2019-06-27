@@ -4,6 +4,8 @@ import { isAdminOrEditor } from '../../shared/AuthorizationManager';
 import { UserToken } from '../../shared/types';
 import { ReleaseEmailGateway } from './ReleaseEmails/release-email-gateway';
 import { HierarchyAdapter } from '../Hierarchy/HierarchyAdapter';
+import { bundleLearningObject } from './Bundler/Interactor';
+import { FileManagerAdapter } from '../../FileManager/FileManagerAdapter';
 
 export interface PublishingDataStore {
     addToReleased(releasableObject: LearningObject): Promise<void>;
@@ -24,8 +26,33 @@ export async function releaseLearningObject({ userToken, dataStore, releasableOb
     if (!isAdminOrEditor(userToken.accessGroups)) {
         throw new ResourceError(`${userToken.username} does not have access to release this Learning Object`, ResourceErrorReason.INVALID_ACCESS);
     }
+    await createPublishingArtifacts(releasableObject, userToken);
     await dataStore.addToReleased(releasableObject);
     await sendEmail(releasableObject, userToken, releaseEmailGateway);
+}
+
+/**
+ * createPublishingArtifacts handles the creation and storage of content created as a result
+ * of releasing a Learning Object. This includes a bundle of all files associated with the 
+ * Learning Object for faster download.
+ *
+ * @param releasableObject the Learning Object to create artifacts for
+ * @param userToken the user who has requested to publish a Learning Object
+ */
+async function createPublishingArtifacts(releasableObject: LearningObject, userToken: UserToken) {
+    const storagePrefix = `${releasableObject.author.username}/${releasableObject.id}`;
+    const bundle = await bundleLearningObject({
+        learningObject: releasableObject,
+        writeStream: null,
+        requesterUsername: userToken.username,
+    });
+    await FileManagerAdapter.getInstance().uploadFile({
+        file: {
+            // TODO: Should this be moved to the File Manager?
+            path: `${storagePrefix}/bundle.zip`,
+            data: bundle,
+        },
+    });
 }
 
 /**
