@@ -1460,17 +1460,25 @@ export class MongoDriver implements DataStore {
     id: string;
     full?: boolean;
   }): Promise<LearningObject> {
-    const object = await this.db
-      .collection<LearningObjectDocument>(COLLECTIONS.LEARNING_OBJECTS)
+    const results = await this.db
+      .collection<LearningObjectDocument & { orderedFiles: any[] }>(
+        COLLECTIONS.LEARNING_OBJECTS,
+      )
       .aggregate([
         {
           // match learning object by params.id
           $match: { _id: params.id },
         },
-        { $unwind: { path: '$materials.files', preserveNullAndEmptyArrays: true } },
+        {
+          $unwind: {
+            path: '$materials.files',
+            preserveNullAndEmptyArrays: true,
+          },
+        },
         { $sort: { 'materials.files.date': -1 } },
-        { $addFields: { orderedFiles: ''} },
-        { $group: {
+        { $addFields: { orderedFiles: '' } },
+        {
+          $group: {
           _id: '$_id',
           orderedFiles: {
             $push: '$materials.files',
@@ -1487,18 +1495,18 @@ export class MongoDriver implements DataStore {
           collection: { $first: '$collection' },
           status: { $first: '$status' },
           description: { $first: '$description' },
-        } },
-      ]).toArray();
-    if (object[0]) {
-      object[0].materials.files = object[0]['orderedFiles'];
-      delete object[0]['orderedFiles'];
-      const author = await this.fetchUser(object[0].authorID);
-      if (author) {
-        return this.generateLearningObject(author, object[0], params.full);
-      }
-      throw new ResourceError('Learning Object Author not found', ResourceErrorReason.NOT_FOUND);
+          },
+        },
+      ])
+      .toArray();
+    if (results && results[0]) {
+      const object = results[0];
+      object.materials.files = object.orderedFiles;
+      delete object.orderedFiles;
+      const author = await this.fetchUser(object.authorID);
+      return this.generateLearningObject(author, object, params.full);
     }
-    throw new ResourceError('Learning Object not found', ResourceErrorReason.NOT_FOUND);
+    return null;
   }
 
   /**
@@ -1519,17 +1527,23 @@ export class MongoDriver implements DataStore {
     id: string;
     full?: boolean;
   }): Promise<LearningObject> {
-    const object = await this.db
-      .collection<LearningObjectDocument>(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
+    const results = await this.db
+      .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
       .aggregate([
         {
           // match learning object by params.id
           $match: { _id: params.id },
         },
-        { $unwind: { path: '$materials.files', preserveNullAndEmptyArrays: true } },
+        {
+          $unwind: {
+            path: '$materials.files',
+            preserveNullAndEmptyArrays: true,
+          },
+        },
         { $sort: { 'materials.files.date': -1 } },
-        { $addFields: { orderedFiles: ''} },
-        { $group: {
+        { $addFields: { orderedFiles: '' } },
+        {
+          $group: {
           _id: '$_id',
           orderedFiles: {
             $push: '$materials.files',
@@ -1546,7 +1560,8 @@ export class MongoDriver implements DataStore {
           collection: { $first: '$collection' },
           status: { $first: '$status' },
           description: { $first: '$description' },
-        } },
+          },
+        },
         // perform a lookup and store the working copy of the object under the "Copy" array.
         {
           $lookup: {
@@ -1570,16 +1585,14 @@ export class MongoDriver implements DataStore {
         { $project: { copy: 0 } },
       ])
       .toArray();
-    if (object[0]) {
-      object[0].materials.files = object[0]['orderedFiles'];
-      delete object[0]['orderedFiles'];
-      const author = await this.fetchUser(object[0].authorID);
-      if (author) {
-        return this.generateLearningObject(author, object[0], params.full);
-      }
-      throw new ResourceError('Learning Object Author not found', ResourceErrorReason.NOT_FOUND);
+    if (results && results[0]) {
+      const object = results[0];
+      object.materials.files = object.orderedFiles;
+      delete object.orderedFiles;
+      const author = await this.fetchUser(object.authorID);
+      return this.generateLearningObject(author, object, params.full);
     }
-    throw new ResourceError('Learning Object not found', ResourceErrorReason.NOT_FOUND);
+    return null;
   }
 
   /**
