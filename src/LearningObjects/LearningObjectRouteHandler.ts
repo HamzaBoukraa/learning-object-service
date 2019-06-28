@@ -18,9 +18,11 @@ import { FileMeta, MaterialsFilter, LearningObjectFilter } from './typings';
 export function initializePublic({
   router,
   dataStore,
+  library,
 }: {
   router: Router;
   dataStore: DataStore;
+  library: LibraryCommunicator;
 }) {
   /**
    * Retrieve a learning object by a specified ID

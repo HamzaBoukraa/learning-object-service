@@ -152,6 +152,7 @@ export class ExpressRouteDriver {
     LearningObjectRouteHandler.initializePublic({
       router,
       dataStore: this.dataStore,
+      library: this.library,
     });
 
     initializeSingleFileDownloadRouter({

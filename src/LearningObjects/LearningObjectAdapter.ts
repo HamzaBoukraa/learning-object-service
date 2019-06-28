@@ -1,6 +1,9 @@
 import { DataStore } from '../shared/interfaces/DataStore';
 import { LearningObject } from '../shared/entity';
-import { FileManager } from '../shared/interfaces/interfaces';
+import {
+  FileManager,
+  LibraryCommunicator,
+} from '../shared/interfaces/interfaces';
 import {
   updateReadme,
   getLearningObjectById,
@@ -24,11 +27,17 @@ export class LearningObjectAdapter {
   private constructor(
     private dataStore: DataStore,
     private fileManager: FileManager,
+    private library: LibraryCommunicator,
   ) {}
-  static open(dataStore: DataStore, fileManager: FileManager) {
+  static open(
+    dataStore: DataStore,
+    fileManager: FileManager,
+    library: LibraryCommunicator,
+  ) {
     LearningObjectAdapter._instance = new LearningObjectAdapter(
       dataStore,
       fileManager,
+      library,
     );
   }
   static getInstance(): LearningObjectAdapter {
@@ -173,6 +182,7 @@ export class LearningObjectAdapter {
   }): Promise<LearningObject> {
     return getLearningObjectById({
       dataStore: this.dataStore,
+      library: this.library,
       ...params,
     });
   }
