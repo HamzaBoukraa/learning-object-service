@@ -40,7 +40,7 @@ import {
   ServiceErrorReason,
 } from '../shared/errors';
 import { reportError } from '../shared/SentryConnector';
-import { LearningObject, LearningOutcome, User } from '../shared/entity';
+import { LearningObject, LearningOutcome, User, StandardOutcome } from '../shared/entity';
 import { Submission } from '../LearningObjectSubmission/types/Submission';
 import { MongoConnector } from '../shared/Mongo/MongoConnector';
 import { mapLearningObjectToSummary } from '../shared/functions';
@@ -2485,7 +2485,7 @@ export class MongoDriver implements DataStore {
    */
   private async generateReleasedLearningObject(
     author: User,
-    record: LearningObjectDocument,
+    record: ReleasedLearningObjectDocument,
     full?: boolean,
   ): Promise<LearningObject> {
     // Logic for loading any learning object
@@ -2493,6 +2493,7 @@ export class MongoDriver implements DataStore {
     let materials: LearningObject.Material;
     let contributors: User[] = [];
     let children: LearningObject[] = [];
+    let outcomes: LearningOutcome[] = [];
     // Load Contributors
     if (record.contributors && record.contributors.length) {
       contributors = await Promise.all(
@@ -2503,11 +2504,11 @@ export class MongoDriver implements DataStore {
     if (full) {
       // Logic for loading 'full' learning objects
       materials = <LearningObject.Material>record.materials;
-      for (let i = 0; i < record['outcomes'].length; i++) {
+      for (let i = 0; i < record.outcomes.length; i++) {
         const mappings = await this.learningOutcomeStore.getAllStandardOutcomes({
-          ids: record['outcomes'][i].mappings,
+          ids: record.outcomes[i].mappings,
         });
-        record['outcome'][i].mappings = mappings;
+        outcomes.push(new LearningOutcome({...record.outcomes[i], mappings: mappings, id: record.outcomes[i]['_id']}));
       }
     }
     learningObject = new LearningObject({
@@ -2522,7 +2523,7 @@ export class MongoDriver implements DataStore {
       description: record.description,
       materials,
       contributors,
-      outcomes: record['outcomes'],
+      outcomes: outcomes,
       hasRevision: record.hasRevision,
       children,
       revision: record.revision,
