@@ -683,17 +683,20 @@ async function generateReleasableLearningObject(
  */
 export async function getLearningObjectById({
   dataStore,
+  library,
   id,
   requester,
   filter,
 }: {
   dataStore: DataStore;
+  library: LibraryCommunicator;
   id: string;
   requester: UserToken;
   filter?: LearningObjectFilter;
 }): Promise<LearningObject> {
   try {
     let learningObject: LearningObject;
+    let loadingReleased = true;
     const learningObjectNotFound = new ResourceError(
       `No Learning Object ${id} exists.`,
       ResourceErrorReason.NOT_FOUND,
@@ -723,14 +726,85 @@ export async function getLearningObjectById({
         }),
       ]);
       learningObject.materials.files = files;
+      loadingReleased = false;
     }
     if (!learningObject) {
       throw learningObjectNotFound;
     }
+    let children: LearningObject[] = [];
+    if (loadingReleased) {
+      children = await dataStore.loadReleasedChildObjects({
+        id: learningObject.id,
+        full: false,
+      });
+    } else {
+      const childrenStatus = requesterIsAuthor({
+        requester,
+        authorUsername: learningObject.author.username,
+      })
+        ? LearningObjectState.ALL
+        : LearningObjectState.IN_REVIEW;
+
+      children = await loadChildObjectSummaries({
+        parentId: learningObject.id,
+        dataStore,
+        childrenStatus,
+        requester,
+      });
+    }
+
+    learningObject.children = children;
+
+    learningObject.metrics = await loadMetrics({
+      library,
+      id: learningObject.id,
+    }).catch(e => {
+      reportError(e);
+      return { saves: 0, downloads: 0 };
+    });
     return learningObject;
   } catch (e) {
     handleError(e);
   }
+}
+
+/**
+ * Loads unreleased child object summaries
+ *
+ * @param {DataStore} dataStore [The datastore to fetch children from]
+ * @param {string} parentId [The id of the parent Learning Object]
+ * @param {LearningObject.Status[]} status [The statuses the children should match]
+ * @param {UserToken} requester [Information about the requester used to authorize the request]
+ *
+ * @returns
+ */
+async function loadChildObjectSummaries({
+  dataStore,
+  parentId,
+  childrenStatus,
+  requester,
+}: {
+  dataStore: DataStore;
+  parentId: string;
+  childrenStatus: LearningObject.Status[];
+  requester: UserToken;
+}) {
+  let children = await dataStore.loadChildObjects({
+    id: parentId,
+    full: false,
+    status: childrenStatus,
+  });
+  children = await Promise.all(
+    children.map(async child => {
+      child.materials.files = await FileMetadata.getAllFileMetadata({
+        requester,
+        learningObjectId: parentId,
+        filter: 'unreleased',
+      });
+      return child;
+    }),
+  );
+  return children;
 }
 
 /**
@@ -1106,4 +1180,21 @@ async function checkNameExists(params: {
       ResourceErrorReason.BAD_REQUEST,
     );
   }
+}
+
+/**
+ * Fetches Metrics for Learning Object
+ *
+ * @param library the gateway to library data
+ * @param {string} id [Id of the Learning Object to load metrics for]
+ * @returns {Promise<LearningObject.Metrics>}
+ */
+function loadMetrics({
+  library,
+  id,
+}: {
+  library: LibraryCommunicator;
+  id: string;
+}): Promise<LearningObject.Metrics> {
+  return library.getMetrics(id);
 }
