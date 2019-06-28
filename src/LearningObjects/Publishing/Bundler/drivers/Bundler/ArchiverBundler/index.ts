@@ -13,22 +13,18 @@ export class ArchiverBundler implements Bundler {
   /**
    * Bundles data into an archive and pipes archive into the write stream
    *
-   * @param  {Writable} writeStream [The write stream the data will be piped into]
    * @param  {BundleData[]} bundleData [The data to be piped into the archive]
    * @param  {BundleExtension} extension [The extension to use for the archive]
    * @memberof ArchiverBundler
    */
   bundleData({
-    writeStream,
     bundleData,
     extension,
   }: {
-    writeStream: Writable;
     bundleData: BundleData[];
     extension: BundleExtension;
   }) {
-    const archive = this.createArchive({ writeStream, extension });
-    this.attachListeners({ archive, writeStream });
+    const archive = this.createArchive({ extension });
     this.appendData({ archive, bundleData });
     archive.finalize();
     return archive;
@@ -43,32 +39,12 @@ export class ArchiverBundler implements Bundler {
    * @memberof ArchiverBundler
    */
   private createArchive({
-    writeStream,
     extension = BundleExtension.Zip,
   }: {
-    writeStream: Writable;
     extension: BundleExtension;
   }) {
     const archive = create(extension, { zlib: { level: 9 } });
     return archive;
-  }
-
-  /**
-   * Attaches event listeners to archiver
-   *
-   * @private
-   * @param {Archiver} archive [The current archive to listen for events on]
-   * @param {Writable} writeStream [The write stream the listeners will act upon]
-   * @memberof ArchiverBundler
-   */
-  private attachListeners({
-    archive,
-    writeStream,
-  }: {
-    archive: Archiver;
-    writeStream: Writable;
-  }): void {
-    archive.on('error', (e: Error) => writeStream.destroy(e));
   }
 
   /**

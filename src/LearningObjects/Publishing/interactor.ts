@@ -5,7 +5,7 @@ import { UserToken } from '../../shared/types';
 import { ReleaseEmailGateway } from './ReleaseEmails/release-email-gateway';
 import { HierarchyAdapter } from '../Hierarchy/HierarchyAdapter';
 import { bundleLearningObject } from './Bundler/Interactor';
-import { FileManagerAdapter } from '../../FileManager/FileManagerAdapter';
+import { FileManagerAdapter } from '../../FileManager';
 
 export interface PublishingDataStore {
     addToReleased(releasableObject: LearningObject): Promise<void>;
@@ -43,7 +43,6 @@ async function createPublishingArtifacts(releasableObject: LearningObject, userT
     const storagePrefix = `${releasableObject.author.username}/${releasableObject.id}`;
     const bundle = await bundleLearningObject({
         learningObject: releasableObject,
-        writeStream: null,
         requesterUsername: userToken.username,
     });
     await FileManagerAdapter.getInstance().uploadFile({

@@ -43,17 +43,14 @@ const CC_LICENSE = {
 export async function bundleLearningObject({
   learningObject,
   requesterUsername,
-  writeStream,
 }: {
   learningObject: LearningObject;
   requesterUsername: string;
-  writeStream: Writable;
 }) {
   const extension = BundleExtension.Zip;
 
   const objectData = await openFileStreams({ learningObject });
   return Drivers.bundler().bundleData({
-    writeStream,
     bundleData: objectData,
     extension,
   });
