@@ -15,7 +15,7 @@ import { ResourceError, ResourceErrorReason } from '../shared/errors';
 import {
   authorizeWriteAccess,
   authorizeReadAccess,
-} from './AuthorizationManager';
+} from '../shared/AuthorizationManager';
 import { sanitizeObject, toNumber } from '../shared/functions';
 
 namespace Drivers {
