@@ -129,6 +129,13 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
     return Promise.resolve([this.stubs.changelog]);
   }
 
+  fetchChangelogsBeforeDate(params: {
+    learningObjectId: string;
+    date: string;
+  }): Promise<ChangeLogDocument[]> {
+    return Promise.resolve([this.stubs.changelog]);
+  }
+
   searchAllObjects(
     params: LearningObjectQuery,
   ): Promise<{
