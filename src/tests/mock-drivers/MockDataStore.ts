@@ -101,7 +101,6 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
   loadReleasedChildObjects(params: {
     id: string;
     full?: boolean;
-    status: string[];
   }): Promise<LearningObject[]> {
     return Promise.resolve([this.stubs.learningObjectChild as any]);
   }

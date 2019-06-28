@@ -145,7 +145,6 @@ export interface DataStore
   loadReleasedChildObjects(params: {
     id: string;
     full?: boolean;
-    status: string[];
   }): Promise<LearningObject[]>;
   checkLearningObjectExistence(params: {
     learningObjectId: string,

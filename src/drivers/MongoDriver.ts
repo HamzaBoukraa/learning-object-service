@@ -734,7 +734,6 @@ export class MongoDriver implements DataStore {
    * @param {{
    *     id: string;
    *     full?: boolean;
-   *     status: string[];
    *   }} params
    * @returns {Promise<LearningObject[]>}
    * @memberof MongoDriver
@@ -742,11 +741,11 @@ export class MongoDriver implements DataStore {
   async loadReleasedChildObjects(params: {
     id: string;
     full?: boolean;
-    status: string[];
   }): Promise<LearningObject[]> {
     return this.loadChildObjects({
       ...params,
       collection: COLLECTIONS.RELEASED_LEARNING_OBJECTS,
+      status: [LearningObject.Status.RELEASED],
     });
   }
 
@@ -1479,22 +1478,22 @@ export class MongoDriver implements DataStore {
         { $addFields: { orderedFiles: '' } },
         {
           $group: {
-          _id: '$_id',
-          orderedFiles: {
-            $push: '$materials.files',
-          },
-          authorID: { $first: '$authorID' },
-          name: { $first: '$name' },
-          date: { $first: '$date' },
-          length: { $first: '$length' },
-          levels: { $first: '$levels' },
-          goals: { $first: '$goals' },
-          outcomes: { $first: '$outcomes' },
-          materials: { $first: '$materials' },
-          contributors: { $first: '$contributors' },
-          collection: { $first: '$collection' },
-          status: { $first: '$status' },
-          description: { $first: '$description' },
+            _id: '$_id',
+            orderedFiles: {
+              $push: '$materials.files',
+            },
+            authorID: { $first: '$authorID' },
+            name: { $first: '$name' },
+            date: { $first: '$date' },
+            length: { $first: '$length' },
+            levels: { $first: '$levels' },
+            goals: { $first: '$goals' },
+            outcomes: { $first: '$outcomes' },
+            materials: { $first: '$materials' },
+            contributors: { $first: '$contributors' },
+            collection: { $first: '$collection' },
+            status: { $first: '$status' },
+            description: { $first: '$description' },
           },
         },
       ])
@@ -1544,22 +1543,22 @@ export class MongoDriver implements DataStore {
         { $addFields: { orderedFiles: '' } },
         {
           $group: {
-          _id: '$_id',
-          orderedFiles: {
-            $push: '$materials.files',
-          },
-          authorID: { $first: '$authorID' },
-          name: { $first: '$name' },
-          date: { $first: '$date' },
-          length: { $first: '$length' },
-          levels: { $first: '$levels' },
-          goals: { $first: '$goals' },
-          outcomes: { $first: '$outcomes' },
-          materials: { $first: '$materials' },
-          contributors: { $first: '$contributors' },
-          collection: { $first: '$collection' },
-          status: { $first: '$status' },
-          description: { $first: '$description' },
+            _id: '$_id',
+            orderedFiles: {
+              $push: '$materials.files',
+            },
+            authorID: { $first: '$authorID' },
+            name: { $first: '$name' },
+            date: { $first: '$date' },
+            length: { $first: '$length' },
+            levels: { $first: '$levels' },
+            goals: { $first: '$goals' },
+            outcomes: { $first: '$outcomes' },
+            materials: { $first: '$materials' },
+            contributors: { $first: '$contributors' },
+            collection: { $first: '$collection' },
+            status: { $first: '$status' },
+            description: { $first: '$description' },
           },
         },
         // perform a lookup and store the working copy of the object under the "Copy" array.
@@ -2120,17 +2119,17 @@ export class MongoDriver implements DataStore {
         guidelineSources,
       });
     } else if (guidelineIds) {
-    const docs = await this.db
-      .collection(COLLECTIONS.LEARNING_OUTCOMES)
-      .find<LearningOutcomeDocument>(
-        {
+      const docs = await this.db
+        .collection(COLLECTIONS.LEARNING_OUTCOMES)
+        .find<LearningOutcomeDocument>(
+          {
             mappings: { $all: guidelineIds },
-        },
-        { projection: { _id: 1 } },
-      )
-      .toArray();
-    return docs.map(doc => doc._id);
-  }
+          },
+          { projection: { _id: 1 } },
+        )
+        .toArray();
+      return docs.map(doc => doc._id);
+    }
     return null;
   }
 
@@ -2291,7 +2290,10 @@ export class MongoDriver implements DataStore {
     try {
       const meta: any = await this.db
         .collection(COLLECTIONS.LO_COLLECTIONS)
-        .findOne({ $or: [ { name: abvName }, {abvName} ] }, <any>{ name: 1, abstracts: 1 });
+        .findOne({ $or: [{ name: abvName }, { abvName }] }, <any>{
+          name: 1,
+          abstracts: 1,
+        });
       if (!meta) {
         throw new ResourceError(
           'Collection Not Found',
@@ -2319,14 +2321,14 @@ export class MongoDriver implements DataStore {
   }
 
   async createChangelog(params: {
-    learningObjectId: string,
+    learningObjectId: string;
     author: {
-      userId: string,
-      name: string,
-      role: string,
-      profileImage: string,
-    },
-    changelogText: string,
+      userId: string;
+      name: string;
+      role: string;
+      profileImage: string;
+    };
+    changelogText: string;
   }): Promise<void> {
     return this.changelogStore.createChangelog({
       learningObjectId: params.learningObjectId,
@@ -2351,32 +2353,32 @@ export class MongoDriver implements DataStore {
   private async documentLearningObject(
     object: LearningObject,
   ): Promise<LearningObjectDocument> {
-      const authorID = await this.findUser(object.author.username);
-      let contributorIds: string[] = [];
+    const authorID = await this.findUser(object.author.username);
+    let contributorIds: string[] = [];
 
-      if (object.contributors && object.contributors.length) {
-        contributorIds = await Promise.all(
-          object.contributors.map(user => this.findUser(user.username)),
-        );
-      }
+    if (object.contributors && object.contributors.length) {
+      contributorIds = await Promise.all(
+        object.contributors.map(user => this.findUser(user.username)),
+      );
+    }
 
-      const doc: LearningObjectDocument = {
-        _id: object.id || new ObjectID().toHexString(),
-        authorID: authorID,
-        name: object.name,
-        date: object.date,
-        length: object.length,
-        levels: object.levels,
-        description: object.description,
-        materials: object.materials,
-        contributors: contributorIds,
-        collection: object.collection,
-        status: object.status,
-        children: object.children.map(obj => obj.id),
-        revision: object.revision,
-      };
+    const doc: LearningObjectDocument = {
+      _id: object.id || new ObjectID().toHexString(),
+      authorID: authorID,
+      name: object.name,
+      date: object.date,
+      length: object.length,
+      levels: object.levels,
+      description: object.description,
+      materials: object.materials,
+      contributors: contributorIds,
+      collection: object.collection,
+      status: object.status,
+      children: object.children.map(obj => obj.id),
+      revision: object.revision,
+    };
 
-      return doc;
+    return doc;
   }
 
   /**
