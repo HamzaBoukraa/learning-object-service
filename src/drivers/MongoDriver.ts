@@ -70,7 +70,7 @@ export class MongoDriver implements DataStore {
   private mongoClient: MongoClient;
   private db: Db;
 
-  private constructor() {}
+  private constructor() { }
 
   static async build(dburi: string) {
     const driver = new MongoDriver();
@@ -314,6 +314,46 @@ export class MongoDriver implements DataStore {
     );
     const total = results.total[0] ? results.total[0].total : 0;
     return { total, objects };
+  }
+
+  async searchReleasedUserObjects(
+    params: {
+      query: LearningObjectQuery;
+      username: string;
+    },
+  ): Promise<LearningObjectSummary[]> {
+    const { query, username } = params;
+
+    const objectIds = await this.getUserObjects(username);
+    const resultSet = await this.
+      db.collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
+      .find<LearningObjectDocument>({ _id: { $in: objectIds } }).toArray();
+
+    const learningObjects: LearningObjectSummary[] = await Promise.all(resultSet.map(async learningObject => {
+      return await this.generateLearningObjectSummary(learningObject);
+    }));
+
+    return learningObjects;
+
+    throw new Error('Method not implemented');
+  }
+
+  async searchWorkingUserObjects(
+    params: {
+      query: LearningObjectQuery;
+      username: string;
+    },
+  ): Promise<LearningObjectSummary[]> {
+
+    throw new Error('Method not implemented');
+  }
+
+  async searchAllUserObjects(params: {
+    query: LearningObjectQuery;
+    username: string;
+  }): Promise<LearningObjectSummary[]> {
+
+    throw new Error('Method not implemented');
   }
 
   /**
@@ -1035,9 +1075,9 @@ export class MongoDriver implements DataStore {
           return res.result.nModified > 0
             ? Promise.resolve()
             : Promise.reject({
-                message: `${childId} is not a child of Object ${parentId}`,
-                status: 404,
-              });
+              message: `${childId} is not a child of Object ${parentId}`,
+              status: 404,
+            });
         });
     } catch (error) {
       if (error.message && error.status) {
@@ -1437,25 +1477,27 @@ export class MongoDriver implements DataStore {
         },
         { $unwind: { path: '$materials.files', preserveNullAndEmptyArrays: true } },
         { $sort: { 'materials.files.date': -1 } },
-        { $addFields: { orderedFiles: ''} },
-        { $group: {
-          _id: '$_id',
-          orderedFiles: {
-            $push: '$materials.files',
-          },
-          authorID: { $first: '$authorID' },
-          name: { $first: '$name' },
-          date: { $first: '$date' },
-          length: { $first: '$length' },
-          levels: { $first: '$levels' },
-          goals: { $first: '$goals' },
-          outcomes: { $first: '$outcomes' },
-          materials: { $first: '$materials' },
-          contributors: { $first: '$contributors' },
-          collection: { $first: '$collection' },
-          status: { $first: '$status' },
-          description: { $first: '$description' },
-        } },
+        { $addFields: { orderedFiles: '' } },
+        {
+          $group: {
+            _id: '$_id',
+            orderedFiles: {
+              $push: '$materials.files',
+            },
+            authorID: { $first: '$authorID' },
+            name: { $first: '$name' },
+            date: { $first: '$date' },
+            length: { $first: '$length' },
+            levels: { $first: '$levels' },
+            goals: { $first: '$goals' },
+            outcomes: { $first: '$outcomes' },
+            materials: { $first: '$materials' },
+            contributors: { $first: '$contributors' },
+            collection: { $first: '$collection' },
+            status: { $first: '$status' },
+            description: { $first: '$description' },
+          }
+        },
       ]).toArray();
     if (object[0]) {
       object[0].materials.files = object[0]['orderedFiles'];
@@ -1496,25 +1538,27 @@ export class MongoDriver implements DataStore {
         },
         { $unwind: { path: '$materials.files', preserveNullAndEmptyArrays: true } },
         { $sort: { 'materials.files.date': -1 } },
-        { $addFields: { orderedFiles: ''} },
-        { $group: {
-          _id: '$_id',
-          orderedFiles: {
-            $push: '$materials.files',
-          },
-          authorID: { $first: '$authorID' },
-          name: { $first: '$name' },
-          date: { $first: '$date' },
-          length: { $first: '$length' },
-          levels: { $first: '$levels' },
-          goals: { $first: '$goals' },
-          outcomes: { $first: '$outcomes' },
-          materials: { $first: '$materials' },
-          contributors: { $first: '$contributors' },
-          collection: { $first: '$collection' },
-          status: { $first: '$status' },
-          description: { $first: '$description' },
-        } },
+        { $addFields: { orderedFiles: '' } },
+        {
+          $group: {
+            _id: '$_id',
+            orderedFiles: {
+              $push: '$materials.files',
+            },
+            authorID: { $first: '$authorID' },
+            name: { $first: '$name' },
+            date: { $first: '$date' },
+            length: { $first: '$length' },
+            levels: { $first: '$levels' },
+            goals: { $first: '$goals' },
+            outcomes: { $first: '$outcomes' },
+            materials: { $first: '$materials' },
+            contributors: { $first: '$contributors' },
+            collection: { $first: '$collection' },
+            status: { $first: '$status' },
+            description: { $first: '$description' },
+          }
+        },
         // perform a lookup and store the working copy of the object under the "Copy" array.
         {
           $lookup: {
@@ -2075,17 +2119,17 @@ export class MongoDriver implements DataStore {
         guidelineSources,
       });
     } else if (guidelineIds) {
-    const docs = await this.db
-      .collection(COLLECTIONS.LEARNING_OUTCOMES)
-      .find<LearningOutcomeDocument>(
-        {
+      const docs = await this.db
+        .collection(COLLECTIONS.LEARNING_OUTCOMES)
+        .find<LearningOutcomeDocument>(
+          {
             mappings: { $all: guidelineIds },
-        },
-        { projection: { _id: 1 } },
-      )
-      .toArray();
-    return docs.map(doc => doc._id);
-  }
+          },
+          { projection: { _id: 1 } },
+        )
+        .toArray();
+      return docs.map(doc => doc._id);
+    }
     return null;
   }
 
@@ -2177,15 +2221,15 @@ export class MongoDriver implements DataStore {
     }
     return author || text
       ? await this.db
-          .collection(COLLECTIONS.USERS)
-          .find<{ _id: string; username: string }>(query)
-          .project({
-            _id: 1,
-            username: 1,
-            score: { $meta: 'textScore' },
-          })
-          .sort({ score: { $meta: 'textScore' } })
-          .toArray()
+        .collection(COLLECTIONS.USERS)
+        .find<{ _id: string; username: string }>(query)
+        .project({
+          _id: 1,
+          username: 1,
+          score: { $meta: 'textScore' },
+        })
+        .sort({ score: { $meta: 'textScore' } })
+        .toArray()
       : null;
   }
   /**
@@ -2246,7 +2290,7 @@ export class MongoDriver implements DataStore {
     try {
       const meta: any = await this.db
         .collection(COLLECTIONS.LO_COLLECTIONS)
-        .findOne({ $or: [ { name: abvName }, {abvName} ] }, <any>{ name: 1, abstracts: 1 });
+        .findOne({ $or: [{ name: abvName }, { abvName }] }, <any>{ name: 1, abstracts: 1 });
       if (!meta) {
         throw new ResourceError(
           'Collection Not Found',
@@ -2306,32 +2350,32 @@ export class MongoDriver implements DataStore {
   private async documentLearningObject(
     object: LearningObject,
   ): Promise<LearningObjectDocument> {
-      const authorID = await this.findUser(object.author.username);
-      let contributorIds: string[] = [];
+    const authorID = await this.findUser(object.author.username);
+    let contributorIds: string[] = [];
 
-      if (object.contributors && object.contributors.length) {
-        contributorIds = await Promise.all(
-          object.contributors.map(user => this.findUser(user.username)),
-        );
-      }
+    if (object.contributors && object.contributors.length) {
+      contributorIds = await Promise.all(
+        object.contributors.map(user => this.findUser(user.username)),
+      );
+    }
 
-      const doc: LearningObjectDocument = {
-        _id: object.id || new ObjectID().toHexString(),
-        authorID: authorID,
-        name: object.name,
-        date: object.date,
-        length: object.length,
-        levels: object.levels,
-        description: object.description,
-        materials: object.materials,
-        contributors: contributorIds,
-        collection: object.collection,
-        status: object.status,
-        children: object.children.map(obj => obj.id),
-        revision: object.revision,
-      };
+    const doc: LearningObjectDocument = {
+      _id: object.id || new ObjectID().toHexString(),
+      authorID: authorID,
+      name: object.name,
+      date: object.date,
+      length: object.length,
+      levels: object.levels,
+      description: object.description,
+      materials: object.materials,
+      contributors: contributorIds,
+      collection: object.collection,
+      status: object.status,
+      children: object.children.map(obj => obj.id),
+      revision: object.revision,
+    };
 
-      return doc;
+    return doc;
   }
 
   /**
@@ -2404,12 +2448,27 @@ export class MongoDriver implements DataStore {
    */
   private async generateLearningObjectSummary(
     record: LearningObjectDocument,
+    status?: string[],
   ): Promise<LearningObjectSummary> {
     const author$ = this.fetchUser(record.authorID);
     const contributors$ = Promise.all(
       record.contributors.map(id => this.fetchUser(id)),
     );
     const [author, contributors] = await Promise.all([author$, contributors$]);
+    if (record.children) {
+      status = status? status: [LearningObject.Status.RELEASED];
+      const children = await this.loadChildObjects({ id: record._id, status});
+
+      return mapLearningObjectToSummary({
+        ...(record as any),
+        author,
+        children,
+        contributors,
+        id: record._id,
+      });
+
+    }
+
     return mapLearningObjectToSummary({
       ...(record as any),
       author,

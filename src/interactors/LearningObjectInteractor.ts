@@ -18,7 +18,7 @@ import {
   updateObjectLastModifiedDate,
   updateParentsDate,
 } from '../LearningObjects/LearningObjectInteractor';
-import { UserToken, ServiceToken } from '../shared/types';
+import { UserToken, ServiceToken, LearningObjectSummary } from '../shared/types';
 import {
   getAccessGroupCollections,
   hasMultipleLearningObjectWriteAccesses,
@@ -35,6 +35,7 @@ import {
 } from '../shared/errors';
 import { LearningObject } from '../shared/entity';
 import { accessGroups } from '../shared/types/user-token';
+import { response } from 'express';
 
 // file size is in bytes
 const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
@@ -95,7 +96,7 @@ export class LearningObjectInteractor {
     } = params;
     try {
       let summary: LearningObject[] = [];
-// tslint:disable-next-line: no-shadowed-variable
+      // tslint:disable-next-line: no-shadowed-variable
       const { dataStore, library, username, loadChildren, query } = params;
 
       const formattedQuery = this.formatSearchQuery(query);
@@ -157,6 +158,122 @@ export class LearningObjectInteractor {
     } catch (e) {
       handleError(e);
     }
+  }
+
+  public static async searchUsersObjects(params: {
+    dataStore: DataStore;
+    username: string;
+    userToken: UserToken;
+    library: LibraryCommunicator;
+    released?: boolean;
+    query?: LearningObjectQuery;
+  }): Promise<LearningObjectSummary[]> {
+
+    try {
+      const { username, dataStore, library, query, userToken, released } = params;
+      let {
+        name,
+        author,
+        text,
+        orderBy,
+        sortType,
+        collection,
+        status,
+      } = this.formatSearchQuery(query);
+
+      let response: LearningObjectSummary[];
+      // if (userToken) {
+      //   const isAuthor = this.hasReadAccess({
+      //     userToken,
+      //     resourceVal: params.username,
+      //     authFunction: checkAuthByUsername,
+      //   });
+      //   if (!isAuthor) {
+      //     if (isPrivilegedUser(userToken.accessGroups)) {
+      //       switch (released) {
+      //         case true: status = [...LearningObjectState.RELEASED]; break;
+      //         case false: status = [...LearningObjectState.IN_REVIEW] ; break;
+      //         default:  status = this.getAuthAdminEditorStatuses(status); break;
+      //       }
+      //       if (!isAdminOrEditor(userToken.accessGroups)) {
+      //         const privilegedCollections = getAccessGroupCollections(userToken);
+      //         const collectionAccessMap = getCollectionAccessMap(
+      //                     collection,
+      //                     privilegedCollections,
+      //                     status);
+      //       }
+      //     } else {
+      //       if (released !== undefined) {
+      //         throw new ResourceError(
+      //           'Invalid Access',
+      //           ResourceErrorReason.INVALID_ACCESS,
+      //         );
+      //       }
+      //     }
+      //   } else {
+      //     switch (released) {
+      //       case true: status = [...LearningObjectState.RELEASED ]; break;
+      //       case false: status = [...LearningObjectState.UNRELEASED,
+      //                     ...LearningObjectState.IN_REVIEW];
+      //                   break;
+      //       default: status = [...LearningObjectState.ALL]; break;
+      //     }
+      //   }
+      // } else {
+      //   status = LearningObjectState.RELEASED;
+      // }
+
+      await dataStore.findUser(username);
+
+      if (userToken && !released) {
+
+
+        const isAuthor = this.hasReadAccess({
+          userToken,
+          resourceVal: params.username,
+          authFunction: checkAuthByUsername,
+        });
+        if (!isAuthor) {
+          if (isPrivilegedUser(userToken.accessGroups)) {
+
+            if (!isAdminOrEditor(userToken.accessGroups)) {
+              const privilegedCollections = getAccessGroupCollections(userToken);
+              const collectionAccessMap = getCollectionAccessMap(
+                collection,
+                privilegedCollections,
+                status,
+              );
+
+            } else {
+              status = this.getAuthAdminEditorStatuses(status);
+            }
+
+           // response = await dataStore.searchAllUserObjects();
+          } else {
+            throw new ResourceError(
+              'Invalid Access',
+              ResourceErrorReason.INVALID_ACCESS,
+            );
+          }
+        } else {
+          status = [...LearningObjectState.ALL];
+
+        }
+      } else {
+        response = await dataStore.searchReleasedUserObjects(
+          {query,
+          username},
+        );
+      }
+
+      return response;
+
+    } catch (err) {
+      console.log(err);
+    }
+
+
+    throw new Error('Method not yet implemented');
   }
 
   /**
