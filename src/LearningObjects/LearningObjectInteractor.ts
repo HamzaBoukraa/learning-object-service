@@ -24,6 +24,7 @@ import {
 import { FileMeta } from './typings';
 import * as PublishingService from './Publishing';
 import { mapLearningObjectToSummary } from '../shared/functions';
+import { FileMetadata } from '../FileMetadata';
 
 const LearningObjectState = {
   UNRELEASED: [
@@ -742,6 +743,7 @@ export async function deleteLearningObject(params: {
         query: { name: params.learningObjectName },
         fields: {},
       });
+
       await params.library.cleanObjectsFromLibraries([object.id]);
       await params.dataStore.deleteLearningObject(object.id);
       const path = `${params.user.username}/${object.id}/`;
