@@ -1544,6 +1544,7 @@ export class MongoDriver implements DataStore {
     orderBy?: string;
     sortType?: 1 | -1;
     collections?: string[];
+    text?: string;
   }): Promise<LearningObject[]> {
     try {
       const query: any = {
@@ -1561,7 +1562,12 @@ export class MongoDriver implements DataStore {
       } else {
         query.status = { $in: params.status };
       }
-
+      if (params.text) {
+        if (!query.$or) {
+          query.$or = [];
+        }
+        query.$or = query.$or.concat([{ description: { $regex: params.text, $options: 'i' } }, { name: { $regex: params.text, $options: 'i'} }]);
+      }
       let objectCursor = await this.db
         .collection(COLLECTIONS.LEARNING_OBJECTS)
         .find<LearningObjectDocument>(query);
