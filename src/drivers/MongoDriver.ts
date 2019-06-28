@@ -1670,7 +1670,7 @@ export class MongoDriver implements DataStore {
         if (!query.$or) {
           query.$or = [];
         }
-        query.$or = query.$or.concat([{ description: { $regex: params.text, $options: 'i' } }, { name: { $regex: params.text, $options: 'i'} }]);
+        query.$or.push({ description: { $regex: params.text, $options: 'i' } }, { name: { $regex: params.text, $options: 'i'} });
       }
       let objectCursor = await this.db
         .collection(COLLECTIONS.LEARNING_OBJECTS)
