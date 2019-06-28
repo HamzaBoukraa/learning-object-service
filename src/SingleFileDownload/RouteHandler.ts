@@ -1,10 +1,11 @@
 import { downloadSingleFile } from './SingleFileDownloadInteractor';
 import { Router, Response, Request } from 'express';
-import { fileNotFound } from '../assets/filenotfound';
-import { LEARNING_OBJECT_ROUTES } from '../routes';
-import { reportError } from '../drivers/SentryConnector';
-import { DataStore } from '../interfaces/DataStore';
-import { FileManager } from '../interfaces/FileManager';
+import { fileNotFound } from './assets/filenotfound';
+import { LEARNING_OBJECT_ROUTES } from '../shared/routes';
+import { reportError } from '../shared/SentryConnector';
+import { DataStore } from '../shared/interfaces/DataStore';
+import { FileManager } from '../shared/interfaces/FileManager';
+import { mapErrorToResponseData } from '../shared/errors';
 
 // TODO: Define DataStore just for this Feature Module
 export function initializeSingleFileDownloadRouter({
@@ -39,9 +40,8 @@ export function initializeSingleFileDownloadRouter({
       if (e.message === 'File not found') {
         fileNotFoundResponse(e.object, req, res);
       } else {
-        console.error(e);
-        reportError(e);
-        res.status(500).send('Internal Server Error');
+        const { code, message } = mapErrorToResponseData(e);
+        res.status(code).json({message});
       }
     }
   }

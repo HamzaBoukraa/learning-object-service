@@ -1,4 +1,4 @@
-//This learning object is in the objects collection and the released collection
+// This learning object is in the objects collection and the released collection
 const IDS = require('./sharedIds');
 
 const SEED_OBJECTS = {
@@ -304,7 +304,7 @@ C5_COLLECTION_MOCK : {
 },
 CHANGELOG_MOCK : {
     _id: "5c3e2cab7da238008fcd771c",
-    learningObjectId: "default_id",
+    learningObjectId: IDS.PARENT.released_1,
     logs:[
         {
             userId:"1234",
@@ -341,6 +341,41 @@ LEARNING_OUTCOME_MOCK : {
     assessments:[],
     strategies:[],
     mappings:["5a674e2d04aa5f2a5ce97b0e"]
+},
+STANDARD_OUTCOME : {
+    _id: '5a674e2d04aa5f2a5ce97d7f',
+    author: 'NICE Workforce Framework KSAs',
+    date: '2017',
+    outcome: 'Knowledge of concepts, terminology, and operations of a wide range of ...',
+    source: 'NCWF KSAs',
+    name: 'K0108',
+},
+MULTIPART_UPLOAD_STATUS: {
+    _id: 'id',
+    uploadId: 'upload id',
+    partsUploaded: 2,
+    totalParts: 2,
+    fileSize: 134,
+    path: 'path',
+    bytesUploaded: 132,
+    completedParts: [],
+    createdAt: 'time',
+},
+LEARNING_OBJECT_FILE: {
+    id: '123456789',
+    name: 'test',
+    fileType: 'text',
+    extension: 'txt',
+    url: 'url',
+    date: 'date',
+    fullPath: 'path',
+    size: 132,
+    description: 'test',
+    packageable: true,
+},
+METRICS: {
+    saves: 23,
+    downloads: 4,
 }}
 
 module.exports = SEED_OBJECTS;

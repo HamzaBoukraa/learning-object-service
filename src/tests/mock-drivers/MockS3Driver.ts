@@ -1,6 +1,5 @@
-import { FileManager } from '../../interfaces/interfaces';
-import { FileUpload, CompletedPartList } from '../../interfaces/FileManager';
-import { MOCK_OBJECTS } from '../mocks';
+import { FileManager } from '../../shared/interfaces/interfaces';
+import { FileUpload, CompletedPartList } from '../../shared/interfaces/FileManager';
 import { CompletedPart } from 'aws-sdk/clients/s3';
 import { Readable } from 'stream';
 
@@ -30,7 +29,7 @@ export class MockS3Driver implements FileManager {
     return Promise.resolve();
   }
   upload(params: { file: FileUpload }): Promise<string> {
-    return Promise.resolve(MOCK_OBJECTS.S3_LOCATION);
+    return Promise.resolve('http://s3.amazonaws.com/doc/2006-03-01/');
   }
 
   delete(params: { path: string }): Promise<void> {

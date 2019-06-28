@@ -3,9 +3,9 @@ import * as bodyParser from 'body-parser';
 import { MongoDriver } from '../drivers/MongoDriver';
 import * as supertest from 'supertest';
 import * as LearningOutcomeRouteHandler from './LearningOutcomeRouteHandler';
-import { LearningOutcome } from '../entity';
+import { LearningOutcome } from '../shared/entity';
 import { LearningOutcomeDatastore } from './LearningOutcomeInteractor';
-import {MOCK_OBJECTS, SEED_DB_IDS} from '../tests/mocks';
+import { Stubs } from '../tests/stubs';
 
 const app = express();
 const router = express.Router();
@@ -15,6 +15,7 @@ app.use(router);
 let dataStore: LearningOutcomeDatastore;
 let driver: MongoDriver;
 const request = supertest(app);
+const stubs = new Stubs();
 
 describe('LearningOutcomeRouteHandler', () => {
   beforeAll(async () => {
@@ -35,14 +36,14 @@ describe('LearningOutcomeRouteHandler', () => {
         });
     });
 
-    it('should return a status of 500 and an error message', done => {
+    it('should return a status of 400 and an error message', done => {
       request
         .post('/learning-objects/someObjectId/learning-outcomes')
         .send({ outcome: { bloom: 'bad bloom', verb: 'badverb' } })
-        .expect('Content-Type', /text/)
-        .expect(500)
+        .expect('Content-Type', /json/)
+        .expect(400)
         .then(res => {
-          expect(res.text).toMatch('Problem');
+          expect(res.text).toMatch('Bad Request');
           done();
         });
     });
@@ -52,7 +53,7 @@ describe('LearningOutcomeRouteHandler', () => {
     it('should return a response body that can be converted to a valid Learning Outcome', done => {
       request
         .get(
-          `/learning-objects/someObjectId/learning-outcomes/${SEED_DB_IDS.OUTCOME.EXPLAIN}`,
+          `/learning-objects/someObjectId/learning-outcomes/${stubs.learningOutcome.id}`,
         )
         .expect('Content-Type', /json/)
         .expect(200)
@@ -69,7 +70,7 @@ describe('LearningOutcomeRouteHandler', () => {
     it('should return a status of 200 and a Learning Outcome', done => {
       request
         .patch(
-          `/learning-objects/someObjectId/learning-outcomes/${SEED_DB_IDS.OUTCOME.EXPLAIN}`,
+          `/learning-objects/someObjectId/learning-outcomes/${stubs.learningOutcome.id}`,
         )
         .send({ outcome: { bloom: 'remember and understand', verb: 'remember' } })
         .expect('Content-Type', /json/)
@@ -82,34 +83,31 @@ describe('LearningOutcomeRouteHandler', () => {
         });
     });
 
-    it('should return a status of 500 and an error message', done => {
+    it('should return a status of 404 and an error message', done => {
       request
         .patch(
           '/learning-objects/someObjectId/learning-outcomes/5af72b914803270dfc9aeae4',
         )
         .send({ outcome: { bloom: 'bad bloom', verb: 'badverb' } })
-        .expect('Content-Type', /text/)
-        .expect(500)
+        .expect('Content-Type', /json/)
+        .expect(404)
         .then(res => {
-          expect(res.text).toMatch('Problem');
+          expect(res.text).toMatch('Not Found');
           done();
         });
     });
   });
 
   describe('DELETE /learning-objects/:id/learning-outcomes/:outcomeId', () => {
-    it('should return a status of 200', done => {
+    it('should return a status of 204', done => {
       request
         .delete('/learning-objects/:id/learning-outcomes/:outcomeId')
-        .expect(200)
+        .expect(204)
         .then(res => {
           done();
         });
     });
   });
-  afterAll(() => {
-    driver.disconnect();
-    console.log('Disconnected from Database');
-  });
+  afterAll(() => driver.disconnect());
 });
 

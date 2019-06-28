@@ -36,14 +36,8 @@ export async function fetchCollection(
  */
 export async function fetchCollectionMeta(
   dataStore: CollectionDataStore,
-  name: string,
+  abvName: string,
 ): Promise<any> {
-  try {
-    return await dataStore.fetchCollectionMeta(name);
-  } catch (e) {
-    return Promise.reject(
-      `Problem fetching collection metadata. Error: ${e}`,
-    );
-  }
+    return await dataStore.fetchCollectionMeta(abvName);
 }
 

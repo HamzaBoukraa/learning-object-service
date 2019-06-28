@@ -2,7 +2,7 @@ import * as Learningobjectstatsroute from './LearningObjectStatsRouteHandler';
 import * as supertest from 'supertest';
 import * as express from 'express';
 import * as bodyParser from 'body-parser';
-import { MongoDriver } from '../drivers/drivers';
+import { MongoDriver } from '../drivers/MongoDriver';
 
 let router = express.Router();
 const app = express();
@@ -29,7 +29,5 @@ describe('LearningObjectStatsRouteHandler', () => {
             });
         });
     });
-    afterAll(() => {
-        dataStore.disconnect();
-    });
+    afterAll(() => dataStore.disconnect());
 });

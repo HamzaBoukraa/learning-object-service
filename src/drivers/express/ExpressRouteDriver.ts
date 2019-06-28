@@ -2,11 +2,11 @@ import {
   DataStore,
   FileManager,
   LibraryCommunicator,
-} from '../../interfaces/interfaces';
+} from '../../shared/interfaces/interfaces';
 import { Router } from 'express';
 import { LearningObjectInteractor } from '../../interactors/interactors';
 import * as LearningObjectStatsRouteHandler from '../../LearningObjectStats/LearningObjectStatsRouteHandler';
-import { UserToken } from '../../types';
+import { UserToken } from '../../shared/types';
 import { initializeSingleFileDownloadRouter } from '../../SingleFileDownload/RouteHandler';
 import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
 import { initializeCollectionRouter } from '../../Collections/RouteHandler';
@@ -14,8 +14,8 @@ import {
   ResourceError,
   mapErrorToResponseData,
   ServiceError,
-} from '../../errors';
-import { LearningObject } from '../../entity';
+} from '../../shared/errors';
+import { LearningObject } from '../../shared/entity';
 import { initializePublic as initializePublicHierarchyRoutes } from '../../LearningObjects/Hierarchy/HierarchyRouteHandler';
 
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
@@ -96,7 +96,6 @@ export class ExpressRouteDriver {
           });
           res.status(200).send(object.toPlainObject());
         } catch (e) {
-          console.error(e);
           const { code, message } = mapErrorToResponseData(e);
           res.status(code).json({message});
         }
@@ -122,16 +121,8 @@ export class ExpressRouteDriver {
         );
         res.status(200).send(objects.map(obj => obj.toPlainObject()));
       } catch (e) {
-        if (e instanceof ResourceError || e instanceof ServiceError) {
-          const { code, message } = mapErrorToResponseData(e);
-          res.status(code).json({ message });
-        } else {
-          if (e instanceof Error && e.message === 'User not found') {
-            res.status(404).send(`No user with username ${req.params.username}.`);
-          } else {
-            res.status(500).send('Internal Server Error');
-          }
-        }
+        const { code, message } = mapErrorToResponseData(e);
+        res.status(code).json({ message });
       }
     });
 
@@ -147,7 +138,8 @@ export class ExpressRouteDriver {
 
           res.status(200).send(objects.map(x => x.toPlainObject()));
         } catch (e) {
-          res.status(500).send(e);
+          const { code, message } = mapErrorToResponseData(e);
+          res.status(code).json({message});
         }
       },
     );

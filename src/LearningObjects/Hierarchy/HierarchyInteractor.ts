@@ -1,8 +1,7 @@
-import { DataStore, ParentLearningObjectQuery } from '../../interfaces/DataStore';
-import { UserToken } from '../../types';
-import { LearningObject } from '../../entity';
-import { toArray, hasReadAccessByCollection, LearningObjectState, handleError } from '../../interactors/LearningObjectInteractor';
-import { ResourceError, ResourceErrorReason } from '../../errors';
+import { DataStore, ParentLearningObjectQuery } from '../../shared/interfaces/DataStore';
+import { UserToken } from '../../shared/types';
+import { LearningObject } from '../../shared/entity';
+import { LearningObjectState } from '../../interactors/LearningObjectInteractor';
 
 /**
  * Fetches the parents of a Learning Object.
@@ -24,10 +23,7 @@ export async function fetchParents(params: {
   let hasFullAccess = false;
   let collectionsWithAccess: string[] = [];
   let requestedByAuthor = false;
-  const [collection, author] = await Promise.all([
-    dataStore.fetchLearningObjectCollection(learningObjectID),
-    dataStore.fetchLearningObjectAuthorUsername(learningObjectID),
-  ]);
+  const author = await dataStore.fetchLearningObjectAuthorUsername(learningObjectID);
 
   if (userToken) {
     hasFullAccess = hasFullReviewStageAccess(userToken.accessGroups);
@@ -46,6 +42,23 @@ export async function fetchParents(params: {
       full,
     });
   }
+}
+
+/**
+ * Checks if the given learning object id belongs to a parent object
+ *
+ *
+ * @returns {Promise<boolean>} false if Learning Object has one or more parents
+ */
+export async function isTopLevelLearningObject(params: {
+  dataStore: DataStore;
+  learningObjectID: string;
+}): Promise<boolean> {
+  const { dataStore, learningObjectID } = params;
+  const parentId = await dataStore.findParentObjectId({
+    childId: learningObjectID,
+  });
+  return parentId === null;
 }
 
 /**

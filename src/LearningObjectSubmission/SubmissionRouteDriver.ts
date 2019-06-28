@@ -1,9 +1,9 @@
 import { Request, Response, Router } from 'express';
-import { DataStore } from '../interfaces/DataStore';
-import { FileManager } from '../interfaces/interfaces';
-import { cancelSubmission, submitForReview, checkFirstSubmission } from './SubmissionInteractor';
-import { mapErrorToResponseData } from '../errors';
-import { UserToken } from '../types';
+import { cancelSubmission, submitForReview, checkFirstSubmission } from './interactors';
+import { mapErrorToResponseData } from '../shared/errors';
+import { UserToken } from '../shared/types';
+import { SubmissionDataStore } from './SubmissionDatastore';
+import { SubmissionPublisher } from './interactors/SubmissionPublisher';
 
 /**
  * Initializes an express router with endpoints to publish and unpublish a learning object.
@@ -18,11 +18,11 @@ import { UserToken } from '../types';
 export function initialize({
   router,
   dataStore,
-  fileManager,
+  publisher,
 }: {
   router: Router;
-  dataStore: DataStore;
-  fileManager: FileManager;
+  dataStore: SubmissionDataStore;
+  publisher: SubmissionPublisher;
 }) {
   async function submit(req: Request, res: Response) {
     try {
@@ -33,7 +33,7 @@ export function initialize({
 
       await submitForReview({
         dataStore,
-        fileManager,
+        publisher,
         user,
         learningObjectId,
         userId,
@@ -79,11 +79,13 @@ export function initialize({
       const learningObjectId = req.params.learningObjectId;
       const userId = req.params.userId;
       const emailVerified = req.user.emailVerified;
-
+      const user: UserToken = req.user;
       await cancelSubmission({
         dataStore,
+        publisher,
         learningObjectId,
         userId,
+        user,
         emailVerified,
       });
       res.sendStatus(200);

@@ -1,26 +1,29 @@
-import { LearningObjectInteractor } from '../interactors/interactors';
-import { DataStore } from '../interfaces/DataStore';
-import { FileManager, LibraryCommunicator } from '../interfaces/interfaces';
+import { DataStore } from '../shared/interfaces/DataStore';
+import {
+  FileManager,
+  LibraryCommunicator,
+} from '../shared/interfaces/interfaces';
 import { generatePDF } from './PDFKitDriver';
 import {
   LearningObjectUpdates,
   UserToken,
   VALID_LEARNING_OBJECT_UPDATES,
-} from '../types';
-import { ResourceError, ResourceErrorReason } from '../errors';
-import {
-  hasLearningObjectWriteAccess,
-  isPrivilegedUser,
-} from '../interactors/AuthorizationManager';
-import { reportError } from '../drivers/SentryConnector';
-import { LearningObject } from '../entity';
+  LearningObjectSummary,
+} from '../shared/types';
+import { ResourceError, ResourceErrorReason } from '../shared/errors';
+import { reportError } from '../shared/SentryConnector';
+import { LearningObject } from '../shared/entity';
 import { handleError } from '../interactors/LearningObjectInteractor';
 import {
   authorizeRequest,
   requesterIsAuthor,
   requesterIsAdminOrEditor,
-} from './AuthorizationManager';
+  hasReadAccessByCollection,
+  hasLearningObjectWriteAccess,
+} from '../shared/AuthorizationManager';
 import { FileMeta } from './typings';
+import * as PublishingService from './Publishing';
+import { mapLearningObjectToSummary } from '../shared/functions';
 
 const LearningObjectState = {
   UNRELEASED: [
@@ -42,6 +45,255 @@ const LearningObjectState = {
     LearningObject.Status.RELEASED,
   ],
 };
+
+/**
+ * Retrieves released file metadata by id
+ *
+ * @export
+ * @param {DataStore} dataStore [Driver for datastore]
+ * @param {UserToken} requester [Object containing information about the requester]
+ * @param {string} id [Id of the Learning Object]
+ * @param {string} fileId [Id of the file]
+ * @returns {Promise<LearningObject.Material.File>}
+ */
+export async function getReleasedFile({
+  dataStore,
+  requester,
+  id,
+  fileId,
+}: {
+  dataStore: DataStore;
+  requester: UserToken;
+  id: string;
+  fileId: string;
+}): Promise<LearningObject.Material.File> {
+  try {
+    const file = await dataStore.fetchReleasedFile({ id, fileId });
+    if (!file) {
+      throw new ResourceError(
+        `Requested file ${fileId} for Learning Object ${id} cannot be found.`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+    return file;
+  } catch (e) {
+    handleError(e);
+  }
+}
+
+/**
+ * Retrieves all released file metadata for a Learning Object
+ *
+ * @export
+ * @param {DataStore} dataStore [Driver for datastore]
+ * @param {UserToken} requester [Object containing information about the requester]
+ * @param {string} id [Id of the Learning Object]
+ * @returns {Promise<LearningObject.Material.File[]>}
+ */
+export async function getReleasedFiles({
+  dataStore,
+  requester,
+  id,
+}: {
+  dataStore: DataStore;
+  requester: UserToken;
+  id: string;
+}): Promise<LearningObject.Material.File[]> {
+  try {
+    const files = await dataStore.fetchReleasedFiles(id);
+    if (!files) {
+      throw new ResourceError(
+        `No files found for Learning Object ${id}.`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+    return files;
+  } catch (e) {
+    handleError(e);
+  }
+}
+
+/**
+ * Retrieves a summary of the working copy Learning Object
+ *
+ * The working copy can only be returned if
+ * The requester is the author
+ * The requester is a reviewer/curator@<Learning Object's collection> && the Learning Object is not unreleased
+ * The requester is an admin/editor && the Learning Object is not unreleased
+ *
+ * @export
+ * @param {DataStore} dataStore [Driver for datastore]
+ * @param {UserToken} requester [Object containing information about the requester]
+ * @param {string} id [Id of the Learning Object]
+ * @returns {Promise<LearningObjectSummary>}
+ */
+export async function getWorkingLearningObjectSummary({
+  dataStore,
+  requester,
+  id,
+}: {
+  dataStore: DataStore;
+  requester: UserToken;
+  id: string;
+}): Promise<LearningObjectSummary> {
+  try {
+    const object = await dataStore.fetchLearningObject({ id, full: false });
+    if (!object) {
+      throw new ResourceError(
+        `Learning Object ${id} does not exist.`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+    const authorAccess = requesterIsAuthor({
+      requester,
+      authorUsername: object.author.username,
+    });
+    const isUnreleased = LearningObjectState.UNRELEASED.includes(
+      object.status as LearningObject.Status,
+    );
+    const reviewerCuratorAccess =
+      !isUnreleased &&
+      hasReadAccessByCollection({
+        requester,
+        collection: object.collection,
+      });
+    const adminEditorAccess =
+      !isUnreleased && requesterIsAdminOrEditor(requester);
+    authorizeRequest([authorAccess, reviewerCuratorAccess, adminEditorAccess]);
+    return mapLearningObjectToSummary(object);
+  } catch (e) {
+    handleError(e);
+  }
+}
+
+/**
+ * Retrieves the Learning Object copy that is furthest along in the review pipeline
+ *
+ * The working copy can only be returned if
+ * The requester is the author
+ * The requester is a reviewer/curator@<Learning Object's collection> && the Learning Object is not unreleased
+ * The requester is an admin/editor && the Learning Object is not unreleased
+ *
+ * @export
+ * @param {DataStore} dataStore [Driver for datastore]
+ * @param {UserToken} requester [Object containing information about the requester]
+ * @param {string} id [Id of the Learning Object]
+ * @returns {Promise<LearningObjectSummary>}
+ */
+export async function getActiveLearningObjectSummary({
+  dataStore,
+  requester,
+  id,
+}: {
+  dataStore: DataStore;
+  requester: UserToken;
+  id: string;
+}): Promise<LearningObjectSummary> {
+  try {
+    const object =
+      (await dataStore.fetchReleasedLearningObject({
+        id,
+      })) || (await dataStore.fetchLearningObject({ id, full: false }));
+    if (!object) {
+      throw new ResourceError(
+        `Learning Object ${id} does not exist.`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+
+    const releasedAccess = object.status === LearningObject.Status.RELEASED;
+    const authorAccess = requesterIsAuthor({
+      requester,
+      authorUsername: object.author.username,
+    });
+    const isUnreleased = LearningObjectState.UNRELEASED.includes(
+      object.status as LearningObject.Status,
+    );
+    const reviewerCuratorAccess =
+      !isUnreleased &&
+      hasReadAccessByCollection({
+        requester,
+        collection: object.collection,
+      });
+    const adminEditorAccess =
+      !isUnreleased && requesterIsAdminOrEditor(requester);
+    authorizeRequest([
+      releasedAccess,
+      authorAccess,
+      reviewerCuratorAccess,
+      adminEditorAccess,
+    ]);
+    return mapLearningObjectToSummary(object);
+  } catch (e) {
+    handleError(e);
+  }
+}
+
+/**
+ * Retrieves Learning Object summary by id and revision number
+ *
+ * The working copy can only be returned if
+ * The requester is the author
+ * The requester is a reviewer/curator@<Learning Object's collection> && the Learning Object is not unreleased
+ * The requester is an admin/editor && the Learning Object is not unreleased
+ *
+ * @export
+ * @param {DataStore} dataStore [Driver for datastore]
+ * @param {UserToken} requester [Object containing information about the requester]
+ * @param {string} id [Id of the Learning Object]
+ * @param {number} revision [Revision number of the Learning Object]
+ * @returns {Promise<LearningObjectSummary>}
+ */
+export async function getLearningObjectRevisionSummary({
+  dataStore,
+  requester,
+  id,
+  revision,
+}: {
+  dataStore: DataStore;
+  requester: UserToken;
+  id: string;
+  revision: number;
+}): Promise<LearningObjectSummary> {
+  try {
+    const object = await dataStore.fetchLearningObjectRevisionSummary({
+      id,
+      revision,
+    });
+    if (!object) {
+      throw new ResourceError(
+        `Cannot find revision ${revision} of Learning Object ${id}.`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+
+    const releasedAccess = object.status === LearningObject.Status.RELEASED;
+    const authorAccess = requesterIsAuthor({
+      requester,
+      authorUsername: object.author.username,
+    });
+    const isUnreleased = LearningObjectState.UNRELEASED.includes(
+      object.status as LearningObject.Status,
+    );
+    const reviewerCuratorAccess =
+      !isUnreleased &&
+      hasReadAccessByCollection({
+        requester,
+        collection: object.collection,
+      });
+    const adminEditorAccess =
+      !isUnreleased && requesterIsAdminOrEditor(requester);
+    authorizeRequest([
+      releasedAccess,
+      authorAccess,
+      reviewerCuratorAccess,
+      adminEditorAccess,
+    ]);
+    return object;
+  } catch (e) {
+    handleError(e);
+  }
+}
 
 /**
  * Adds or updates Learning Object file metadata
@@ -311,6 +563,7 @@ export async function addLearningObject(
       ...object.toPlainObject(),
       author,
     });
+    objectInsert.revision = 0;
     const learningObjectID = await dataStore.insertLearningObject(objectInsert);
     objectInsert.id = learningObjectID;
     return objectInsert;
@@ -366,11 +619,17 @@ export async function updateLearningObject(params: {
         id,
         updates: cleanUpdates,
       });
-      if (
-        isPrivilegedUser(userToken.accessGroups) &&
-        cleanUpdates.status === LearningObject.Status.RELEASED
-      ) {
-        await releaseLearningObject({ dataStore, id });
+      // Infer if this Learning Object is being released
+      if (cleanUpdates.status === LearningObject.Status.RELEASED) {
+        const releasableObject = await generateReleasableLearningObject(
+          dataStore,
+          id,
+        );
+        await PublishingService.releaseLearningObject({
+          userToken,
+          dataStore,
+          releasableObject,
+        });
       }
     } else {
       return Promise.reject(
@@ -386,27 +645,15 @@ export async function updateLearningObject(params: {
 }
 
 /**
- * Releases a LearningObject by adding object to released collection of objects
- *
  * FIXME: Once the return type of `fetchLearningObject` is updated to the `Datastore's` schema type,
  * this function should be updated to not fetch children ids as they should be returned with the document
- *
- * @param {DataStore} datastore [Driver for the datastore]
- * @param {string} id [Id of the LearningObject to be copied]
- * @returns {Promise<void>}
  */
-async function releaseLearningObject({
-  dataStore,
-  id,
-}: {
-  dataStore: DataStore;
-  id: string;
-}): Promise<void> {
+async function generateReleasableLearningObject(
+  dataStore: DataStore,
+  id: string,
+) {
   const [object, childIds] = await Promise.all([
-    dataStore.fetchLearningObject({
-      id,
-      full: true,
-    }),
+    dataStore.fetchLearningObject({ id, full: true }),
     dataStore.findChildObjectIds({ parentId: id }),
   ]);
   let children: LearningObject[] = [];
@@ -417,7 +664,7 @@ async function releaseLearningObject({
     ...object.toPlainObject(),
     children,
   });
-  return dataStore.addToReleased(releasableObject);
+  return releasableObject;
 }
 
 /**
@@ -432,11 +679,7 @@ export async function getLearningObjectById(
   dataStore: DataStore,
   id: string,
 ): Promise<LearningObject> {
-  try {
-    return await dataStore.fetchLearningObject({ id, full: true });
-  } catch (e) {
-    return Promise.reject(`Problem fetching Learning Object. ${e}`);
-  }
+  return await dataStore.fetchLearningObject({ id, full: true });
 }
 
 /**
@@ -506,7 +749,7 @@ export async function deleteLearningObject(params: {
         reportError(
           new Error(
             `Problem deleting files for ${
-            params.learningObjectName
+              params.learningObjectName
             }: ${path}. ${e}`,
           ),
         );
@@ -641,7 +884,7 @@ export async function removeFile(params: {
     if (file) {
       const path = `${params.username}/${params.objectId}/${
         file.fullPath ? file.fullPath : file.name
-        }`;
+      }`;
       await params.dataStore.removeFromFiles({
         objectId: params.objectId,
         fileId: params.fileId,

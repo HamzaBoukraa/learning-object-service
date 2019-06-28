@@ -2,7 +2,7 @@ import 'dotenv/config';
 import * as jwt from 'express-jwt';
 import { getToken } from './functions';
 import { NextFunction, Response, Request } from 'express';
-import { reportError } from '../drivers/SentryConnector';
+import { reportError } from '../shared/SentryConnector';
 
 /**
  * Validates and decodes token from cookie or authorization headers. Then sets request.user to decoded token.
@@ -34,7 +34,7 @@ export const handleProcessTokenError = (
   __: Response,
   next: NextFunction,
 ) => {
-  if (error.name !== 'JsonWebTokenError') {
+  if (error.name !== 'UnauthorizedError' && error.name !== 'JsonWebTokenError') {
     reportError(error);
   }
   next();

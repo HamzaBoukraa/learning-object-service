@@ -26,19 +26,40 @@ jobs:
           paths: 
               - ./package.json
               - ./deploy.sh
-  integration-test:
+    
+  create-sentry-release:
     <<: *defaults
+    docker:
+      - image: circleci/node:8
     steps:
-      - attach_workspace: 
-          at: ~/learning-object-service
+      - checkout
+      - run:
+          name: Install Sentry CLI
+          command: curl -sL https://sentry.io/get-cli/ | bash
+      - run:
+          name: Create Sentry Release Object
+          command: |
+            export SEMVER=$(cat ./package.json | grep version | head -1 | awk -F= "{ print $2 }" | sed 's/[version:,\",]//g' | tr -d '[[:space:]]')
+            sentry-cli releases -p ${SENTRY_PROJECT_NAME} new ${SEMVER}
+            sentry-cli releases -p ${SENTRY_PROJECT_NAME} set-commits --auto ${SEMVER}
+            sentry-cli releases -p ${SENTRY_PROJECT_NAME} finalize ${SEMVER}
+
+  elasticsearch-smoke-test:
+    <<: *defaults
+    docker:
+      - image: circleci/node:8
+    steps:
+      - checkout
       - setup_remote_docker
       - run:
-          name: Pull Image
-          command: docker pull "${DOCKER_USER_ORG}/learning-object-service:${CIRCLE_SHA1}"
+          name: Clone Elasticsearch Smoke Test Repository
+          command: >-
+            cd .. && git clone https://${github_username}:${github_password}@github.com/nvisal1/Elasticsearch-Smoke-Test-Environment.git
       - run:
-          name: Run Integration Test
+          name: Run Environment
           command: |
-            echo docker run -it learning-object-service:$CIRCLE_SHA1 npm test
+            cd ../Elasticsearch-Smoke-Test-Environment
+            docker-compose up --abort-on-container-exit --exit-code-from test-runner
 
   deploy-production:
     <<: *defaults
@@ -65,23 +86,20 @@ jobs:
             export DOCKER_IMAGE="${DOCKER_USER_ORG}/learning-object-service:${SEMVER}"
             chmod +x ./deploy.sh
             sh ./deploy.sh
-            
+
 workflows:
   version: 2
-  build-and-test:
+  build-test:
     jobs:
       - build
-      - integration-test:
-          requires:
-            - build
 
-  build-test-and-deploy-production:
+  build-test-create-sentry-release-and-deploy-production:
     jobs:
       - build:
           filters:
             branches:
               only: /master/
-      - integration-test:
+      - elasticsearch-smoke-test:
           requires:
             - build
           filters:
@@ -89,7 +107,13 @@ workflows:
               only: /master/
       - deploy-production:
           requires:
-            - integration-test
+            - elasticsearch-smoke-test
+          filters:
+            branches:
+              only: /master/
+      - create-sentry-release:
+          requires:
+            - deploy-production
           filters:
             branches:
               only: /master/

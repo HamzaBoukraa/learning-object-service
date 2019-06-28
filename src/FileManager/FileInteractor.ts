@@ -1,11 +1,11 @@
-import { DataStore } from '../interfaces/DataStore';
+import { DataStore } from '../shared/interfaces/DataStore';
 import {
   DZFile,
   FileUpload,
   MultipartFileUploadStatus,
-} from '../interfaces/FileManager';
-import { FileManager } from '../interfaces/interfaces';
-import { LearningObject } from '../entity';
+} from '../shared/interfaces/FileManager';
+import { FileManager } from '../shared/interfaces/interfaces';
+import { LearningObject } from '../shared/entity';
 
 /**
  * Creates multipart upload and saves metadata for upload
@@ -145,6 +145,23 @@ export async function abortMultipartUpload(params: {
     console.error(e);
     throw new Error(`Could not cancel upload`);
   }
+}
+
+/**
+ * Instructs file manager to upload a single file
+ *
+ * @export
+ * @param {{ FileManager }} fileManager
+ * @param {{ FileUpload }} file
+ * @returns {string}
+ */
+export async function uploadFile(params: {
+  fileManager: FileManager,
+  file: FileUpload,
+}): Promise<void> {
+  await params.fileManager.upload({
+    file: params.file,
+  });
 }
 
 /**

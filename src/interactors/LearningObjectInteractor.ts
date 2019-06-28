@@ -1,40 +1,42 @@
 // @ts-ignore
 import * as stopword from 'stopword';
-import { reportError } from '../drivers/SentryConnector';
+import { reportError } from '../shared/SentryConnector';
 import { processMultipartUpload } from '../FileManager/FileInteractor';
-import { sanitizeObject, sanitizeText } from '../functions';
+import { sanitizeObject, sanitizeText } from '../shared/functions';
 import {
   LearningObjectQuery,
   QueryCondition,
   ParentLearningObjectQuery,
-} from '../interfaces/DataStore';
-import { DZFile, FileUpload } from '../interfaces/FileManager';
+} from '../shared/interfaces/DataStore';
+import { DZFile, FileUpload } from '../shared/interfaces/FileManager';
 import {
   DataStore,
   FileManager,
   LibraryCommunicator,
-} from '../interfaces/interfaces';
+} from '../shared/interfaces/interfaces';
 import {
   updateObjectLastModifiedDate,
   updateParentsDate,
 } from '../LearningObjects/LearningObjectInteractor';
-import { UserToken, ServiceToken } from '../types';
+import { UserToken, ServiceToken } from '../shared/types';
 import {
   getAccessGroupCollections,
   hasMultipleLearningObjectWriteAccesses,
   hasLearningObjectWriteAccess,
-  isAdminOrEditor,
-  isPrivilegedUser,
+  requesterIsAdminOrEditor,
+  requesterIsPrivileged,
   hasServiceLevelAccess,
-} from './AuthorizationManager';
+  hasReadAccessByCollection,
+  requesterIsAuthor,
+} from '../shared/AuthorizationManager';
 import {
   ResourceError,
   ResourceErrorReason,
   ServiceError,
   ServiceErrorReason,
-} from '../errors';
-import { LearningObject } from '../entity';
-import { accessGroups } from '../types/user-token';
+} from '../shared/errors';
+import { LearningObject } from '../shared/entity';
+import { accessGroups } from '../shared/types/user-token';
 
 // file size is in bytes
 const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
@@ -184,9 +186,9 @@ export class LearningObjectInteractor {
     let collections;
 
     // if user is admin/editor/curator/review, also send waiting/review/proofing objects for collections they're privileged in
-    if (userToken && isAdminOrEditor(userToken.accessGroups)) {
+    if (userToken && requesterIsAdminOrEditor(userToken)) {
       status = status.concat(LearningObjectState.IN_REVIEW);
-    } else if (userToken && isPrivilegedUser(userToken.accessGroups)) {
+    } else if (userToken && requesterIsPrivileged(userToken)) {
       status = status.concat(LearningObjectState.IN_REVIEW);
       collections = getAccessGroupCollections(userToken);
     }
@@ -534,15 +536,15 @@ export class LearningObjectInteractor {
       objectInfo.status as LearningObject.Status,
     );
 
-    const requesterIsAuthor = this.hasReadAccess({
+    const isAuthor = this.hasReadAccess({
       userToken: userToken as UserToken,
       resourceVal: objectInfo.author,
       authFunction: isAuthorByUsername,
     }) as boolean;
 
-    const requesterIsService = hasServiceLevelAccess(userToken as ServiceToken);
+    const isService = hasServiceLevelAccess(userToken as ServiceToken);
 
-    if (authorOnlyAccess && !requesterIsService && !requesterIsAuthor) {
+    if (authorOnlyAccess && !isService && !isAuthor) {
       throw new ResourceError(
         'Invalid Access',
         ResourceErrorReason.INVALID_ACCESS,
@@ -551,17 +553,12 @@ export class LearningObjectInteractor {
     const authorOrPrivilegedAccess = !LearningObjectState.RELEASED.includes(
       objectInfo.status as LearningObject.Status,
     );
-    const requesterIsPrivileged = this.hasReadAccess({
+    const isPrivileged = this.hasReadAccess({
       userToken: userToken as UserToken,
       resourceVal: objectInfo.collection,
-      authFunction: hasReadAccessByCollection,
+      authFunction: checkCollectionReadAccess,
     }) as boolean;
-    if (
-      authorOrPrivilegedAccess &&
-      !requesterIsService &&
-      !requesterIsAuthor &&
-      !requesterIsPrivileged
-    ) {
+    if (authorOrPrivilegedAccess && !isService && !isAuthor && !isPrivileged) {
       throw new ResourceError(
         'Invalid Access',
         ResourceErrorReason.INVALID_ACCESS,
@@ -797,20 +794,20 @@ export class LearningObjectInteractor {
         username,
       });
 
-      const requesterIsAuthor = this.hasReadAccess({
+      const isAuthor = this.hasReadAccess({
         userToken: userToken as UserToken,
         resourceVal: username,
         authFunction: isAuthorByUsername,
       }) as boolean;
-      const requesterIsPrivileged =
-        userToken && isPrivilegedUser((<UserToken>userToken).accessGroups);
-      const requesterIsService = hasServiceLevelAccess(
+      const isPrivileged =
+        userToken && requesterIsPrivileged(<UserToken>userToken);
+      const isService = hasServiceLevelAccess(
         userToken as ServiceToken,
       );
       const authorizationCases = [
-        requesterIsAuthor,
-        requesterIsPrivileged,
-        requesterIsService,
+        isAuthor,
+        isPrivileged,
+        isService,
       ];
 
       let learningObjectID = await this.getReleasedLearningObjectIdByAuthorAndName(
@@ -1024,6 +1021,7 @@ export class LearningObjectInteractor {
         collection,
         length,
         level,
+        guidelines,
         standardOutcomeIDs,
         text,
         orderBy,
@@ -1034,9 +1032,9 @@ export class LearningObjectInteractor {
       } = this.formatSearchQuery(query);
       let response: { total: number; objects: LearningObject[] };
 
-      if (userToken && isPrivilegedUser(userToken.accessGroups)) {
+      if (userToken && requesterIsPrivileged(userToken)) {
         let conditions: QueryCondition[];
-        if (!isAdminOrEditor(userToken.accessGroups)) {
+        if (!requesterIsAdminOrEditor(userToken)) {
           const privilegedCollections = getAccessGroupCollections(userToken);
           const collectionAccessMap = getCollectionAccessMap(
             collection,
@@ -1061,6 +1059,7 @@ export class LearningObjectInteractor {
           collection,
           length,
           level,
+          guidelines,
           standardOutcomeIDs,
           text,
           status,
@@ -1077,6 +1076,7 @@ export class LearningObjectInteractor {
           collection,
           length,
           level,
+          guidelines,
           standardOutcomeIDs,
           text,
           orderBy,
@@ -1196,6 +1196,9 @@ export class LearningObjectInteractor {
     formattedQuery.collection = toArray(formattedQuery.collection);
     formattedQuery.standardOutcomeIDs = toArray(
       formattedQuery.standardOutcomeIDs,
+    );
+    formattedQuery.guidelines = toArray(
+      formattedQuery.guidelines,
     );
     formattedQuery.page = toNumber(formattedQuery.page);
     formattedQuery.limit = toNumber(formattedQuery.limit);
@@ -1540,11 +1543,9 @@ function getCollectionAccessMap(
  * @param {UserToken} userToken
  * @returns
  */
-const checkAuthByUsername = (username: string, userToken: UserToken) => {
-  return (
-    isAdminOrEditor(userToken.accessGroups) || userToken.username === username
-  );
-};
+const checkAuthByUsername = (username: string, userToken: UserToken) =>
+  requesterIsAdminOrEditor(userToken) ||
+  requesterIsAuthor({ authorUsername: username, requester: userToken });
 
 /**
  * Checks if requester is author byu the username provided
@@ -1567,16 +1568,14 @@ const isAuthorByUsername = (
  * @param {UserToken} userToken
  * @returns
  */
-export const hasReadAccessByCollection = (
+export const checkCollectionReadAccess = (
   collectionName: string,
   userToken: UserToken,
-) => {
-  if (!userToken || !isPrivilegedUser(userToken.accessGroups)) return false;
-  return (
-    isAdminOrEditor(userToken.accessGroups) ||
-    getAccessGroupCollections(userToken).includes(collectionName)
-  );
-};
+) =>
+  hasReadAccessByCollection({
+    requester: userToken,
+    collection: collectionName,
+  });
 
 /**
  * This handler allows execution to proceed if a ResourceError occurs because of a resource not being found.

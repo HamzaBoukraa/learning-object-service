@@ -1,8 +1,9 @@
 import { MongoDriver } from './MongoDriver';
-import { LearningObject } from '../entity';
+import { Stubs } from '../tests/stubs';
 
 describe('MongoDriver', () => {
   let driver: MongoDriver;
+  let stubs = new Stubs();
 
   beforeAll(async () => {
     driver = await MongoDriver.build(global['__MONGO_URI__']);
@@ -12,7 +13,7 @@ describe('MongoDriver', () => {
     it('The function should return an object with total and objects', async () => {
       expect.assertions(1);
       const result = await driver.searchAllObjects({
-        collection: ['nccp'],
+        collection: [stubs.collection.name],
       });
       expect(result).toBeDefined();
     });
@@ -21,10 +22,9 @@ describe('MongoDriver', () => {
   describe('updateMultipleLearningObjects', () => {
     it('The function should return void', async () => {
       expect.assertions(1);
-      const learningObjectId = '5ad8f5a6824dd17351adf1e1';
       await expect(
         driver.updateMultipleLearningObjects({
-          ids: [learningObjectId],
+          ids: [stubs.learningObject.id],
           updates: { date: Date.now().toString() },
         }),
       ).resolves.toBe(undefined);
@@ -34,38 +34,20 @@ describe('MongoDriver', () => {
   describe('findParentObjectIds', () => {
     it('The function should return an array', async () => {
       expect.assertions(1);
-      const learningObjectId = 'parent_object_1';
       const parents = await driver.findParentObjectIds({
-      childId: learningObjectId,
+        childId: stubs.learningObjectChild.id,
       });
       expect(Array.isArray(parents)).toBe(true);
-    });
-  });
-
-  describe('checkLearningObjectExistence', () => {
-    it('The function should return an array', async () => {
-      expect.assertions(1);
-      const learningObjectId = 'child_object_1';
-      const userId = 'mock_author_id';
-      const result = await driver.checkLearningObjectExistence(
-        {learningObjectId,
-         userId},
-      );
-      expect(result).toBeTruthy();
     });
   });
 
   describe('getUserObjects', () => {
     it('The function should return an array of ids', async () => {
       expect.assertions(1);
-      const username = 'mock_author_id';
-      const ids = await driver.getUserObjects(username);
+      const ids = await driver.getUserObjects(stubs.user.username);
       expect(ids).toBeInstanceOf(Array);
     });
   });
 
-  afterAll(() => {
-    driver.disconnect();
-    console.log('Disconnected from Database');
-  });
+  afterAll(() => driver.disconnect());
 });

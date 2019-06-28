@@ -4,6 +4,9 @@
 
 Service that handles business logic for interacting with Learning Objects.
 
+## Debugging
+This service is configured to be compatible with VS Code's debugger. To start the service in debug mode, open the debugger tab and VS Code and use the `Start Service` configuration.
+
 The service listens for requests at `/api/<request-name>`.
 
 `*` All *entities* (`User`, `LearningObject`, `LearningOutcome`, etc.) must be serialized for network communication. Entities in a response must be unserialized.

@@ -1,8 +1,8 @@
 import { Db } from 'mongodb';
 import { COLLECTIONS } from '../drivers/MongoDriver';
-import { reportError } from '../drivers/SentryConnector';
-import { ResourceError, ResourceErrorReason, ServiceError, ServiceErrorReason } from '../errors';
-import { ChangeLogDocument } from '../types/Changelog';
+import { reportError } from '../shared/SentryConnector';
+import { ResourceError, ResourceErrorReason, ServiceError, ServiceErrorReason } from '../shared/errors';
+import { ChangeLogDocument } from '../shared/types/changelog';
 
 export class ChangelogDataStore {
   constructor(private db: Db) { }
