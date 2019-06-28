@@ -31,7 +31,6 @@ export class ModuleLearningObjectGateway extends LearningObjectGateway {
    * @memberof ModuleLearningObjectGateway
    */
   getReleasedFile(params: {
-    requester: Requester;
     id: string;
     fileId: string;
   }): Promise<LearningObjectFile> {
@@ -44,11 +43,8 @@ export class ModuleLearningObjectGateway extends LearningObjectGateway {
    *
    * @memberof ModuleLearningObjectGateway
    */
-  getReleasedFiles(params: {
-    requester: Requester;
-    id: string;
-  }): Promise<LearningObjectFile[]> {
-    return this.adapter.getReleasedFiles(params);
+  getReleasedFiles(id: string): Promise<LearningObjectFile[]> {
+    return this.adapter.getReleasedFiles(id);
   }
 
   /**

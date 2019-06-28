@@ -53,19 +53,16 @@ const LearningObjectState = {
  *
  * @export
  * @param {DataStore} dataStore [Driver for datastore]
- * @param {UserToken} requester [Object containing information about the requester]
  * @param {string} id [Id of the Learning Object]
  * @param {string} fileId [Id of the file]
  * @returns {Promise<LearningObject.Material.File>}
  */
 export async function getReleasedFile({
   dataStore,
-  requester,
   id,
   fileId,
 }: {
   dataStore: DataStore;
-  requester: UserToken;
   id: string;
   fileId: string;
 }): Promise<LearningObject.Material.File> {
@@ -88,17 +85,14 @@ export async function getReleasedFile({
  *
  * @export
  * @param {DataStore} dataStore [Driver for datastore]
- * @param {UserToken} requester [Object containing information about the requester]
  * @param {string} id [Id of the Learning Object]
  * @returns {Promise<LearningObject.Material.File[]>}
  */
 export async function getReleasedFiles({
   dataStore,
-  requester,
   id,
 }: {
   dataStore: DataStore;
-  requester: UserToken;
   id: string;
 }): Promise<LearningObject.Material.File[]> {
   try {

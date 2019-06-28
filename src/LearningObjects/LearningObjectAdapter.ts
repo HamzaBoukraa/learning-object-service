@@ -59,23 +59,19 @@ export class LearningObjectAdapter {
    * Retrieves released file metadata by id
    *
    * @export
-   * @param {UserToken} requester [Object containing information about the requester]
    * @param {string} id [Id of the Learning Object]
    * @param {string} fileId [Id of the file]
    * @returns {Promise<LearningObject.Material.File>}
    */
   async getReleasedFile({
-    requester,
     id,
     fileId,
   }: {
-    requester: UserToken;
     id: string;
     fileId: string;
   }): Promise<LearningObject.Material.File> {
     return getReleasedFile({
       dataStore: this.dataStore,
-      requester,
       id,
       fileId,
     });
@@ -84,20 +80,14 @@ export class LearningObjectAdapter {
    * Retrieves all released file metadata for a Learning Object
    *
    * @export
-   * @param {UserToken} requester [Object containing information about the requester]
    * @param {string} id [Id of the Learning Object]
    * @returns {Promise<LearningObject.Material.File>}
    */
-  async getReleasedFiles({
-    requester,
-    id,
-  }: {
-    requester: UserToken;
-    id: string;
-  }): Promise<LearningObject.Material.File[]> {
+  async getReleasedFiles(
+    id: string,
+  ): Promise<LearningObject.Material.File[]> {
     return getReleasedFiles({
       dataStore: this.dataStore,
-      requester,
       id,
     });
   }
