@@ -33,7 +33,7 @@ export interface DataStore
     },
     changelogText: string,
   }): Promise<void>;
-  fetchChangelogsByDate(params: {
+  fetchChangelogsBeforeDate(params: {
     learningObjectId: string,
     date: string,
   }): Promise<ChangeLogDocument[]>;

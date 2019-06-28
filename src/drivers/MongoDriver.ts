@@ -749,11 +749,11 @@ export class MongoDriver implements DataStore {
     });
   }
 
-  async fetchChangelogsByDate(params: {
+  async fetchChangelogsBeforeDate(params: {
     learningObjectId: string;
     date: string;
   }): Promise<ChangeLogDocument[]> {
-    return await this.changelogStore.fetchChangelogsByDate({
+    return await this.changelogStore.fetchChangelogsBeforeDate({
       learningObjectId: params.learningObjectId,
       date: params.date,
     });

@@ -85,7 +85,7 @@ export class ChangelogDataStore {
     return changelogs;
   }
 
-  async fetchChangelogsByDate(params: {
+  async fetchChangelogsBeforeDate(params: {
     learningObjectId: string,
     date: string,
   }): Promise<ChangeLogDocument[]> {
@@ -101,7 +101,7 @@ export class ChangelogDataStore {
               $filter: {
                 input: '$logs',
                 as: 'log',
-                cond: { $lte: [ '$$log.date', params.date ] },
+                cond: { $lt: [ '$$log.date', params.date ] },
               },
             },
           },

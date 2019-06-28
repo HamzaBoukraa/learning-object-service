@@ -80,11 +80,12 @@ export async function getRecentChangelog(params: {
  *
  * @returns {ChangeLogDocument[]}
  */
-export async function getAllChangelogs(params: {
+export async function getChangelogs(params: {
   dataStore: DataStore,
   learningObjectId: string,
   userId: string,
   user: UserToken,
+  date?: string,
 }): Promise<ChangeLogDocument[]> {
   await authorizeRequest({
     dataStore: params.dataStore,
@@ -92,9 +93,11 @@ export async function getAllChangelogs(params: {
     userId: params.userId,
     user: params.user,
   });
-  return await params.dataStore.fetchAllChangelogs({
-    learningObjectId: params.learningObjectId,
-  });
+  if (params.date) {
+    return await params.dataStore.fetchChangelogsBeforeDate({ learningObjectId: params.learningObjectId, date: params.date });
+  } else {
+    return await params.dataStore.fetchAllChangelogs({ learningObjectId: params.learningObjectId });
+  }
 }
 
 /**
