@@ -16,7 +16,7 @@ import {
 import {
   requesterIsPrivileged,
   requesterIsAdminOrEditor,
-} from './AuthorizationManager';
+} from '../shared/AuthorizationManager';
 import { LearningObjectDatastore } from './interfaces';
 import { ResourceError, ResourceErrorReason } from '../shared/errors';
 import { getAccessGroupCollections } from '../shared/AuthorizationManager';
