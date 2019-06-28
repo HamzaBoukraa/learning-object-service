@@ -16,6 +16,7 @@ import { ServiceToken } from './service-token';
 import {
   LearningObjectSummary,
   AuthorSummary,
+  LearningObjectChildSummary,
 } from './learning-object-summary';
 import { AccessGroup } from './access-groups';
 
@@ -26,6 +27,7 @@ export {
   VALID_LEARNING_OBJECT_UPDATES,
   UserDocument,
   LearningObjectDocument,
+  LearningObjectChildSummary,
   MaterialDocument,
   FileDocument,
   UrlDocument,
