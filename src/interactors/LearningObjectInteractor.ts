@@ -17,6 +17,7 @@ import {
 import {
   updateObjectLastModifiedDate,
   updateParentsDate,
+  getLearningObjectById,
 } from '../LearningObjects/LearningObjectInteractor';
 import { UserToken, ServiceToken } from '../shared/types';
 import {
@@ -215,33 +216,27 @@ export class LearningObjectInteractor {
    * @param learningObjectName
    * @param userToken
    */
-  public static async loadLearningObject(params: {
+  public static async loadLearningObject({
+    dataStore,
+    library,
+    username,
+    learningObjectName,
+    userToken,
+    revision,
+  }: {
     dataStore: DataStore;
     library: LibraryCommunicator;
     username: string;
     learningObjectName: string;
-    userToken?: UserToken;
+    userToken: UserToken;
     revision?: boolean;
   }): Promise<LearningObject> {
     try {
       let learningObject: LearningObject;
-
-      let childrenStatus = LearningObjectState.RELEASED;
-      let {
-        dataStore,
-        library,
-        username,
-        learningObjectName,
-        userToken,
-        revision,
-      } = params;
-
-      const fullChildren = true;
-      let loadWorkingCopies = false;
-
       if (!revision) {
         learningObject = await this.loadReleasedLearningObjectByAuthorAndName({
           dataStore,
+          library,
           authorUsername: username,
           learningObjectName,
         }).catch(error =>
@@ -253,39 +248,13 @@ export class LearningObjectInteractor {
       if (revision || !learningObject) {
         learningObject = await this.loadLearningObjectByAuthorAndName({
           dataStore,
+          library,
           authorUsername: username,
           learningObjectName,
           userToken,
         });
-        if (LearningObjectState.IN_REVIEW.includes(learningObject.status)) {
-          childrenStatus = [
-            ...LearningObjectState.IN_REVIEW,
-            ...LearningObjectState.RELEASED,
-          ];
         }
-        loadWorkingCopies = true;
-      }
 
-      const children = await this.loadChildObjects({
-        dataStore,
-        library,
-        parentId: learningObject.id,
-        full: fullChildren,
-        status: childrenStatus,
-        loadWorkingCopies,
-      });
-      children.forEach((child: LearningObject) =>
-        learningObject.addChild(child),
-      );
-
-      try {
-        learningObject.metrics = await this.loadMetrics(
-          library,
-          learningObject.id,
-        );
-      } catch (e) {
-        reportError(e);
-      }
       return learningObject;
     } catch (e) {
       handleError(e);
@@ -306,13 +275,19 @@ export class LearningObjectInteractor {
    * @returns
    * @memberof LearningObjectInteractor
    */
-  private static async loadLearningObjectByAuthorAndName(params: {
+  private static async loadLearningObjectByAuthorAndName({
+    dataStore,
+    library,
+    authorUsername,
+    learningObjectName,
+    userToken,
+  }: {
     dataStore: DataStore;
+    library: LibraryCommunicator;
     authorUsername: string;
     learningObjectName: string;
     userToken: UserToken;
   }) {
-    const { dataStore, authorUsername, learningObjectName, userToken } = params;
     const authorId = await this.findAuthorIdByUsername({
       dataStore,
       username: authorUsername,
@@ -323,11 +298,12 @@ export class LearningObjectInteractor {
       authorUsername,
       name: learningObjectName,
     });
-    return this.loadLearningObjectById({
+    return getLearningObjectById({
       dataStore,
-      learningObjectID,
-      userToken,
-      authorUsername,
+      library,
+      id: learningObjectID,
+      requester: userToken,
+      filter: 'unreleased',
     });
   }
 
@@ -345,12 +321,17 @@ export class LearningObjectInteractor {
    * @returns
    * @memberof LearningObjectInteractor
    */
-  private static async loadReleasedLearningObjectByAuthorAndName(params: {
+  private static async loadReleasedLearningObjectByAuthorAndName({
+    dataStore,
+    library,
+    authorUsername,
+    learningObjectName,
+  }: {
     dataStore: DataStore;
+    library: LibraryCommunicator;
     authorUsername: string;
     learningObjectName: string;
   }) {
-    const { dataStore, authorUsername, learningObjectName } = params;
     const authorId = await this.findAuthorIdByUsername({
       dataStore,
       username: authorUsername,
@@ -363,17 +344,13 @@ export class LearningObjectInteractor {
         name: learningObjectName,
       },
     );
-    const learningObject = await dataStore.fetchReleasedLearningObject({
+    return getLearningObjectById({
+      dataStore,
+      library,
       id: learningObjectID,
-      full: true,
+      requester: null,
+      filter: 'released',
     });
-    if (!learningObject) {
-      throw new ResourceError(
-        `A released Learning Object ${learningObjectName} by ${authorUsername} does not exist.`,
-        ResourceErrorReason.NOT_FOUND,
-      );
-    }
-    return learningObject;
   }
 
   /**
@@ -473,48 +450,6 @@ export class LearningObjectInteractor {
   }
 
   /**
-   * Fetches the working copy of an object if authorized
-   *
-   * @private
-   * @static
-   * @param {{
-   *     dataStore: DataStore;
-   *     learningObjectID: string;
-   *     userToken: UserToken;
-   *     authorUsername: string;
-   *   }} params
-   * @returns
-   * @memberof LearningObjectInteractor
-   */
-  private static async loadLearningObjectById(params: {
-    dataStore: DataStore;
-    learningObjectID: string;
-    userToken: UserToken;
-    authorUsername: string;
-  }) {
-    const { dataStore, learningObjectID, userToken, authorUsername } = params;
-    const [status, collection] = await Promise.all([
-      dataStore.fetchLearningObjectStatus(learningObjectID),
-      dataStore.fetchLearningObjectCollection(learningObjectID),
-    ]);
-    this.authorizeReadAccess({
-      userToken,
-      objectInfo: { author: authorUsername, status, collection },
-    });
-    const learningObject = await dataStore.fetchLearningObject({
-      id: learningObjectID,
-      full: true,
-    });
-    if (!learningObject) {
-      throw new ResourceError(
-        `No Learning Object with name ${name} by ${authorUsername} exists`,
-        ResourceErrorReason.NOT_FOUND,
-      );
-    }
-    return learningObject;
-  }
-
-  /**
    * Runs through authorization logic read access to a learning object data.
    * Throws an error if requester is not authorized
    *
@@ -607,7 +542,6 @@ export class LearningObjectInteractor {
       objects = await dataStore.loadReleasedChildObjects({
         id: parentId,
         full,
-        status,
       });
     }
 
