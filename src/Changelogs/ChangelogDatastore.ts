@@ -85,6 +85,12 @@ export class ChangelogDataStore {
     return changelogs;
   }
 
+  /**
+   * Get all changelogs that were created before an inputted date for a specified learning object
+   *
+   * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
+   * @param {string} date The date of that the changelog was created
+   */
   async fetchChangelogsBeforeDate(params: {
     learningObjectId: string,
     date: string,
