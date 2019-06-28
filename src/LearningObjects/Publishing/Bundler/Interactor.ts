@@ -14,13 +14,14 @@ import {
 import { reportError } from '../../../shared/SentryConnector';
 import * as https from 'https';
 import { ServiceError, ServiceErrorReason } from '../../../shared/errors';
-import { ArchiverBundler } from './drivers';
+import { BundlerModule } from './BundlerModule';
+
 
 /**
  * Encapsulates Drivers used within this interactor in a namespace
  */
 namespace Drivers {
-  export const bundler = () => new ArchiverBundler();
+  export const bundler = () => BundlerModule.resolveDependency(Bundler);
 }
 
 const CC_LICENSE = {
