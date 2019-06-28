@@ -111,3 +111,38 @@ describe('getAllChangelogs', () => {
     .resolves.toHaveLength(1);
   });
 });
+
+describe('getChangelogsBeforeDate', () => {
+  it('should return all changelogs before a specified date for a learning object (admin)', async () => {
+    return expect(getChangelogs({
+      dataStore,
+      learningObjectId: stubs.learningObject.id,
+      user: {...stubs.userToken, accessGroups: ['admin']},
+      userId: stubs.learningObject.author.id,
+      date: stubs.learningObject.date,
+    }))
+    .resolves.toHaveLength(1);
+  });
+
+  it('should return all changelogs before a specified date for a learning object (editor)', async () => {
+    return expect(getChangelogs({
+      dataStore,
+      learningObjectId: stubs.learningObject.id,
+      user: {...stubs.userToken, accessGroups: ['editor']},
+      userId: stubs.learningObject.author.id,
+      date: stubs.learningObject.date,
+    }))
+    .resolves.toHaveLength(1);
+  });
+
+  it('should return all changelogs before a specified date for a learning object (editor)', async () => {
+    return expect(getChangelogs({
+      dataStore,
+      learningObjectId: stubs.learningObject.id,
+      user: {...stubs.userToken, accessGroups: ['editor']},
+      userId: stubs.learningObject.author.id,
+      date: stubs.learningObject.date,
+    }))
+    .resolves.toHaveLength(1);
+  });
+});
