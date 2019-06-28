@@ -35,7 +35,7 @@ export function initializePublic({
       const filter: LearningObjectFilter = req.query.status;
       const id = req.params.learningObjectId;
       const learningObject = await LearningObjectInteractor.getLearningObjectById(
-        { dataStore, id, requester, filter },
+        { dataStore, library, id, requester, filter },
       );
       res.status(200).send(learningObject.toPlainObject());
     } catch (e) {
