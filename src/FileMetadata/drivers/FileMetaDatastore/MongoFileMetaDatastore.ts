@@ -22,26 +22,22 @@ export class MongoFileMetaDatastore implements FileMetaDatastore {
    *
    * @memberof MongoFileMetaDatastore
    */
-  async fileMetaExists({
+  async findFileMetadata({
     learningObjectId,
     learningObjectRevision,
     fullPath,
   }: {
     learningObjectId: string;
-    learningObjectRevision: string;
+    learningObjectRevision: number;
     fullPath: string;
-  }): Promise<boolean> {
+  }): Promise<FileMetadataDocument> {
     const doc = await this.db
       .collection(FILE_META_COLLECTION)
-      .findOne(
-        { learningObjectId, learningObjectRevision, fullPath },
-        { projection: { _id: 1 } },
-      );
+      .findOne({ learningObjectId, learningObjectRevision, fullPath });
     if (doc) {
-      return true;
+      return this.mapMongoIdToId(doc);
     }
-
-    return false;
+    return null;
   }
 
   /**
@@ -49,10 +45,30 @@ export class MongoFileMetaDatastore implements FileMetaDatastore {
    *
    * @memberof MongoFileMetaDatastore
    */
-  fetchFileMeta(id: string): Promise<FileMetadataDocument> {
-    return this.db
-      .collection<FileMetadataDocument>(FILE_META_COLLECTION)
+  async fetchFileMeta(id: string): Promise<FileMetadataDocument> {
+    const doc = await this.db
+      .collection<FileMetadataDocument & { _id: ObjectId }>(
+        FILE_META_COLLECTION,
+      )
       .findOne({ _id: new ObjectId(id) });
+    if (doc) {
+      return this.mapMongoIdToId(doc);
+    }
+    return null;
+  }
+
+  /**
+   * Maps Documents `_id` ObjectId to `id` string
+   *
+   * @private
+   * @param {(any & { _id: ObjectId })} doc
+   * @returns
+   * @memberof MongoFileMetaDatastore
+   */
+  private mapMongoIdToId(doc: any & { _id: ObjectId }) {
+    doc.id = doc._id.toHexString();
+    delete doc._id;
+    return doc;
   }
 
   /**
@@ -60,17 +76,14 @@ export class MongoFileMetaDatastore implements FileMetaDatastore {
    *
    * @memberof MongoFileMetaDatastore
    */
-  fetchAllFileMeta({
-    learningObjectId,
-    learningObjectRevision,
-  }: {
-    learningObjectId: string;
-    learningObjectRevision: number;
-  }): Promise<FileMetadataDocument[]> {
+  fetchAllFileMeta(learningObjectId: string): Promise<FileMetadataDocument[]> {
     return this.db
-      .collection<FileMetadataDocument>(FILE_META_COLLECTION)
-      .find({ learningObjectId, learningObjectRevision })
-      .toArray();
+      .collection<FileMetadataDocument & { _id: ObjectId }>(
+        FILE_META_COLLECTION,
+      )
+      .find({ learningObjectId })
+      .toArray()
+      .then(docs => docs.map(this.mapMongoIdToId));
   }
 
   /**
@@ -78,11 +91,13 @@ export class MongoFileMetaDatastore implements FileMetaDatastore {
    *
    * @memberof MongoFileMetaDatastore
    */
-  async insertFileMeta(fileMeta: FileMetadataInsert): Promise<string> {
+  async insertFileMeta(
+    fileMeta: FileMetadataInsert,
+  ): Promise<FileMetadataDocument> {
     const result = await this.db
       .collection(FILE_META_COLLECTION)
       .insertOne(fileMeta);
-    return result.insertedId.toHexString();
+    return { ...fileMeta, id: result.insertedId.toHexString() };
   }
 
   /**
@@ -118,15 +133,9 @@ export class MongoFileMetaDatastore implements FileMetaDatastore {
    *
    * @memberof MongoFileMetaDatastore
    */
-  async deleteAllFileMeta({
-    learningObjectId,
-    learningObjectRevision,
-  }: {
-    learningObjectId: string;
-    learningObjectRevision: number;
-  }): Promise<void> {
+  async deleteAllFileMeta(learningObjectId: string): Promise<void> {
     await this.db
       .collection(FILE_META_COLLECTION)
-      .deleteMany({ learningObjectId, learningObjectRevision });
+      .deleteMany({ learningObjectId });
   }
 }
