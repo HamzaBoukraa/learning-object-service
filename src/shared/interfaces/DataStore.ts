@@ -53,6 +53,27 @@ export interface DataStore
   // Learning Objects
 
   /**
+   * Fetches file for released Learning Object by id
+   *
+   * @param {string} id [Id of the Learning Object]
+   * @param {string} fileId [Id of the file]
+   * @returns {Promise<LearningObject.Material.File[]>}
+   * @memberof DataStore
+   */
+  fetchReleasedFile(params: {
+    id: string;
+    fileId: string;
+  }): Promise<LearningObject.Material.File>;
+
+  /**
+   * Fetches files for released Learning Object
+   *
+   * @param {string} id [Id of the Learning Object]
+   * @returns {Promise<LearningObject.Material.File[]>}
+   * @memberof DataStore
+   */
+  fetchReleasedFiles(id: string): Promise<LearningObject.Material.File[]>;
+  /**
    * Fetches summary of Learning Object by id and revision number
    *
    * @param {string} id [Id of the LearningObject]
