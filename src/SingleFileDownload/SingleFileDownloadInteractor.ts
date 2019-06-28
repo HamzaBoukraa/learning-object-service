@@ -1,6 +1,24 @@
 import { DataStore } from '../shared/interfaces/DataStore';
 import { FileManager } from '../shared/interfaces/FileManager';
 import { Readable } from 'stream';
+import { FileMetadata } from '../FileMetadata';
+import { UserToken, AccessGroup } from '../shared/types';
+import { ResourceError, ResourceErrorReason } from '../shared/errors';
+
+export type DownloadFilter = 'released' | 'unreleased';
+
+/**
+ * FIXME:
+ * Since no authorization can be done for downloads as of yet due to Microsoft previews needing access to files;
+ * this service token is used to fetch file metadata of Learning Objects in review on behalf of the requester.
+ *
+ * The Admin privilege is given so that existing functionality does not break, but only allows the service to retrieve file metadata for Learning Objects in review.
+ *
+ * This is a temporary patch and should be swapped for authorization logic using JWT payload/some other temporary key to validate the requester has access to the requested file.
+ */
+const serviceToken: Partial<UserToken> = {
+  accessGroups: [AccessGroup.ADMIN],
+};
 
 /**
  * Sends a file back to the caller as a readable stream.
@@ -19,12 +37,14 @@ export async function downloadSingleFile(params: {
   dataStore: DataStore;
   fileManager: FileManager;
   author: string;
+  requester?: UserToken;
+  filter?: DownloadFilter;
 }): Promise<{ filename: string; mimeType: string; stream: Readable }> {
   let learningObject, fileMetaData;
 
   learningObject = await params.dataStore.fetchLearningObject({
     id: params.learningObjectId,
-    full: true,
+    full: false,
   });
 
   if (!learningObject) {
@@ -33,11 +53,30 @@ export async function downloadSingleFile(params: {
     );
   }
 
-  // Collect requested file metadata from datastore
-  fileMetaData = await params.dataStore.findSingleFile({
-    learningObjectId: params.learningObjectId,
-    fileId: params.fileId,
-  });
+  if (!params.filter || params.filter === 'released') {
+    fileMetaData = await FileMetadata.geFileMetadata({
+      requester: serviceToken as UserToken,
+      learningObjectId: params.learningObjectId,
+      id: params.fileId,
+      filter: 'released',
+    }).catch(bypassFileNotFoundError(params.filter !== 'released'));
+  }
+
+  if (
+    (!fileMetaData && params.fileId !== 'released') ||
+    params.filter === 'unreleased'
+  ) {
+    // Collect unreleased file metadata from FileMetadata module
+
+    // To maintain existing functionality, service token is elevated to author to fetch unreleased file meta
+    serviceToken.username = learningObject.author.username;
+    fileMetaData = await FileMetadata.geFileMetadata({
+      requester: serviceToken as UserToken,
+      learningObjectId: params.learningObjectId,
+      id: params.fileId,
+      filter: 'unreleased',
+    });
+  }
 
   if (!fileMetaData) {
     return Promise.reject({
@@ -57,4 +96,27 @@ export async function downloadSingleFile(params: {
   } else {
     throw { message: 'File not found', object: { name: learningObject.name } };
   }
+}
+
+/**
+ * Bypasses NotFound Resource Error when requesting a file if `condition` is true by returning null
+ *
+ * This allows execution to continue
+ *
+ * @param {boolean} condition
+ * @returns {((e: Error) => null | never)}
+ */
+function bypassFileNotFoundError(
+  condition: boolean,
+): (e: Error) => null | never {
+  return (e: Error) => {
+    if (
+      condition &&
+      e instanceof ResourceError &&
+      e.name === ResourceErrorReason.NOT_FOUND
+    ) {
+      return null;
+    }
+    throw e;
+  };
 }
