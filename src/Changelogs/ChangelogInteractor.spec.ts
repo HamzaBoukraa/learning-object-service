@@ -4,7 +4,7 @@ import { MockDataStore } from '../tests/mock-drivers/MockDataStore';
 import {
   getRecentChangelog,
   createChangelog,
-  getAllChangelogs,
+  getChangelogs,
 } from './ChangelogInteractor';
 
 import { Stubs } from '../tests/stubs';
@@ -82,7 +82,7 @@ describe('createChangelog', () => {
 
 describe('getAllChangelogs', () => {
   it('should return all changelogs for a learning object (admin)', async () => {
-    return expect(getAllChangelogs({
+    return expect(getChangelogs({
       dataStore,
       learningObjectId: stubs.learningObject.id,
       user: {...stubs.userToken, accessGroups: ['admin']},
@@ -92,7 +92,7 @@ describe('getAllChangelogs', () => {
   });
 
   it('should return all changelogs for a learning object (editor)', async () => {
-    return expect(getAllChangelogs({
+    return expect(getChangelogs({
       dataStore,
       learningObjectId: stubs.learningObject.id,
       user: {...stubs.userToken, accessGroups: ['editor']},
@@ -102,7 +102,7 @@ describe('getAllChangelogs', () => {
   });
 
   it('should return all changelogs for a learning object (editor)', async () => {
-    return expect(getAllChangelogs({
+    return expect(getChangelogs({
       dataStore,
       learningObjectId: stubs.learningObject.id,
       user: {...stubs.userToken, accessGroups: ['editor']},
