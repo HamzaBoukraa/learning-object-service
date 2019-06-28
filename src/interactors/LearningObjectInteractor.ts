@@ -102,7 +102,8 @@ export class LearningObjectInteractor {
       const { dataStore, library, username, loadChildren, query } = params;
 
       const formattedQuery = this.formatSearchQuery(query);
-      let { status, orderBy, sortType } = formattedQuery;
+      let { status, orderBy, sortType, text } = formattedQuery;
+
 
       // This will throw an error if there is no user with that username
       await dataStore.findUser(username);
@@ -130,6 +131,7 @@ export class LearningObjectInteractor {
         orderBy,
         sortType,
         status,
+        text,
       });
 
       summary = await Promise.all(
