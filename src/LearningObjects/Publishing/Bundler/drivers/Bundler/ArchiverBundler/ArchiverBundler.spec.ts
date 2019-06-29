@@ -1,4 +1,4 @@
-import { ArchiverBundler } from '../..';
+import { ArchiverBundler } from './';
 import { BundleExtension, Writable } from '../../../typings';
 import * as fs from 'fs';
 describe('ArchiverBundler', () => {
@@ -18,7 +18,6 @@ describe('ArchiverBundler', () => {
   describe('bundleData', () => {
     it('should bundle data into write stream', () => {
       bundler.bundleData({
-        writeStream,
         bundleData: [],
         extension: BundleExtension.Zip,
       });
