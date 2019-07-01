@@ -88,7 +88,8 @@ export class LearningOutcomeMongoDatastore implements LearningOutcomeDatastore {
             .find({ _id: { $in: params.ids } })
             .toArray()
         : [];
-    return outcomes.map(doc => new StandardOutcome({ id: doc._id, ...doc }));
+    const standardOutcomes = outcomes.map(doc => new StandardOutcome({ id: doc._id, ...doc }));
+    return standardOutcomes;
   }
 
   /**

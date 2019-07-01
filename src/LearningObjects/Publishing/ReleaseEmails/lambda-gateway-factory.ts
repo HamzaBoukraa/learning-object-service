@@ -8,7 +8,7 @@ export class LambdaGatewayFactory {
     /**
      * Creates an instance of ReleaseEmailGateway
      * Determines which ReleaseEmailGateway to use by looking
-     * at NODE_ENV. This prevents developers from sening accidental
+     * at NODE_ENV. This prevents developers from sending accidental
      * emails from development and allows for ease of testing.
      */
     private constructor() {}
