@@ -46,7 +46,6 @@ export class ModuleLearningObjectGateway extends LearningObjectGateway {
   getReleasedFiles(id: string): Promise<LearningObjectFile[]> {
     return this.adapter.getReleasedFiles(id);
   }
-
   /**
    * @inheritdoc
    *

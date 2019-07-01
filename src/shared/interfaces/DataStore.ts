@@ -113,6 +113,7 @@ export interface DataStore
     status: string[];
     orderBy?: string;
     sortType?: number;
+    text?: string;
   }): Promise<LearningObject[]>;
   fetchLearningObjectStatus(id: string): Promise<string>;
   fetchLearningObjectCollection(id: string): Promise<string>;
