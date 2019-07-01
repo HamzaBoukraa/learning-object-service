@@ -165,12 +165,12 @@ export class LearningObjectInteractor {
     username: string;
     userToken: UserToken;
     library: LibraryCommunicator;
-    released?: boolean;
+    released?: string;
     query?: LearningObjectQuery;
   }): Promise<LearningObjectSummary[]> {
 
     try {
-      const { username, dataStore, library, query, userToken, released } = params;
+      const { username, dataStore, query, userToken, released } = params;
       let {
         name,
         author,
@@ -182,87 +182,61 @@ export class LearningObjectInteractor {
       } = this.formatSearchQuery(query);
 
       let response: LearningObjectSummary[];
-      // if (userToken) {
-      //   const isAuthor = this.hasReadAccess({
-      //     userToken,
-      //     resourceVal: params.username,
-      //     authFunction: checkAuthByUsername,
-      //   });
-      //   if (!isAuthor) {
-      //     if (isPrivilegedUser(userToken.accessGroups)) {
-      //       switch (released) {
-      //         case true: status = [...LearningObjectState.RELEASED]; break;
-      //         case false: status = [...LearningObjectState.IN_REVIEW] ; break;
-      //         default:  status = this.getAuthAdminEditorStatuses(status); break;
-      //       }
-      //       if (!isAdminOrEditor(userToken.accessGroups)) {
-      //         const privilegedCollections = getAccessGroupCollections(userToken);
-      //         const collectionAccessMap = getCollectionAccessMap(
-      //                     collection,
-      //                     privilegedCollections,
-      //                     status);
-      //       }
-      //     } else {
-      //       if (released !== undefined) {
-      //         throw new ResourceError(
-      //           'Invalid Access',
-      //           ResourceErrorReason.INVALID_ACCESS,
-      //         );
-      //       }
-      //     }
-      //   } else {
-      //     switch (released) {
-      //       case true: status = [...LearningObjectState.RELEASED ]; break;
-      //       case false: status = [...LearningObjectState.UNRELEASED,
-      //                     ...LearningObjectState.IN_REVIEW];
-      //                   break;
-      //       default: status = [...LearningObjectState.ALL]; break;
-      //     }
-      //   }
-      // } else {
-      //   status = LearningObjectState.RELEASED;
-      // }
 
       await dataStore.findUser(username);
 
-      if (userToken && !released) {
-
+      if (userToken) {
 
         const isAuthor = this.hasReadAccess({
           userToken,
           resourceVal: params.username,
           authFunction: checkAuthByUsername,
         });
-        if (!isAuthor) {
+        if (isAuthor) {
+          status = status ? status : this.getRequestedStatusFilter(released, true);
+          console.log(status);
+          response = await dataStore.searchAllUserObjects(
+            {status, text},
+            username);
+        } else {
           if (isPrivilegedUser(userToken.accessGroups)) {
-
+            let conditions: QueryCondition[];
             if (!isAdminOrEditor(userToken.accessGroups)) {
+              status = status ? status : this.getRequestedStatusFilter(released);
               const privilegedCollections = getAccessGroupCollections(userToken);
               const collectionAccessMap = getCollectionAccessMap(
                 collection,
                 privilegedCollections,
                 status,
               );
+              const requestedCollections = collection && collection.length > 0;
+              conditions = this.buildCollectionQueryConditions({
+                requestedCollections,
+                requestedStatuses: status,
+                collectionAccessMap,
+              });
+              collection = null;
+              status = null;
 
             } else {
-              status = this.getAuthAdminEditorStatuses(status);
+              status = status ? this.getAuthAdminEditorStatuses(status) : this.getRequestedStatusFilter(released);
             }
-
-           // response = await dataStore.searchAllUserObjects();
+            response = await dataStore.searchAllUserObjects(
+              { status, text },
+              username,
+              conditions,
+            );
           } else {
             throw new ResourceError(
               'Invalid Access',
               ResourceErrorReason.INVALID_ACCESS,
             );
           }
-        } else {
-          status = [...LearningObjectState.ALL];
-
         }
       } else {
         response = await dataStore.searchReleasedUserObjects(
-          {query,
-          username},
+            query,
+            username,
         );
       }
 
@@ -1290,6 +1264,17 @@ export class LearningObjectInteractor {
     }
 
     return status;
+  }
+
+  private static getRequestedStatusFilter(released: string, isAuthor?: boolean): string[] {
+    switch (released) {
+      case 'true': return LearningObjectState.RELEASED; break;
+      case 'false': return LearningObjectState.IN_REVIEW; break;
+      default: return isAuthor ? LearningObjectState.ALL :
+              [...LearningObjectState.RELEASED,
+                ...LearningObjectState.IN_REVIEW];
+               break;
+    }
   }
 
   /**

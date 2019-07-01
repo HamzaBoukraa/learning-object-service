@@ -107,19 +107,20 @@ export class ExpressRouteDriver {
       try {
         const query = req.query;
         const userToken: UserToken = req.user;
+        const released: string = query.released;
         const loadChildren: boolean = query.children;
         delete query.children;
-        const objects = await LearningObjectInteractor.loadUsersObjectSummaries(
+        const objects = await LearningObjectInteractor.searchUsersObjects(
           {
             query,
             userToken,
-            loadChildren,
             dataStore: this.dataStore,
             library: this.library,
             username: req.params.username,
+            released,
           },
         );
-        res.status(200).send(objects.map(obj => obj.toPlainObject()));
+        res.status(200).send(objects);
       } catch (e) {
         const { code, message } = mapErrorToResponseData(e);
         res.status(code).json({ message });

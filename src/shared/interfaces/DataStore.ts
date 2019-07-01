@@ -118,20 +118,15 @@ export interface DataStore
     total: number;
     objects: LearningObject[];
   }>;
-  searchWorkingUserObjects(
-      params: {
-      query: LearningObjectQuery,
-      username: string},
-  ): Promise<LearningObjectSummary[]>;
+
   searchReleasedUserObjects(
-    params: {
     query: LearningObjectQuery,
-    username: string},
+    username: string,
   ): Promise<LearningObjectSummary[]>;
   searchAllUserObjects(
-    params: {
     query: LearningObjectQuery,
-    username: string},
+    username: string,
+    conditions?: QueryCondition[],
   ): Promise<LearningObjectSummary[]>;
   fetchParentObjects(params: {
     query: ParentLearningObjectQuery;

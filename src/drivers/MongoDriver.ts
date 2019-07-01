@@ -317,17 +317,27 @@ export class MongoDriver implements DataStore {
   }
 
   async searchReleasedUserObjects(
-    params: {
-      query: LearningObjectQuery;
-      username: string;
-    },
+    query: LearningObjectQuery,
+    username: string
   ): Promise<LearningObjectSummary[]> {
-    const { query, username } = params;
+    const { text } = query;
 
     const objectIds = await this.getUserObjects(username);
+
+    let searchQuery: any = {
+      id: {$in: objectIds},
+    };
+    if (text) {
+      const regex = new RegExp(sanitizeRegex(text));
+      searchQuery.$or.push(
+        { $text: { $search: text } },
+        { name: { $regex: regex } },
+        { contributors: { $regex: regex } });
+    }
+   
     const resultSet = await this.
       db.collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
-      .find<LearningObjectDocument>({ _id: { $in: objectIds } }).toArray();
+      .find<LearningObjectDocument>(searchQuery).toArray();
 
     const learningObjects: LearningObjectSummary[] = await Promise.all(resultSet.map(async learningObject => {
       return await this.generateLearningObjectSummary(learningObject);
@@ -335,25 +345,54 @@ export class MongoDriver implements DataStore {
 
     return learningObjects;
 
-    throw new Error('Method not implemented');
   }
 
-  async searchWorkingUserObjects(
-    params: {
-      query: LearningObjectQuery;
-      username: string;
-    },
+  async searchAllUserObjects(
+    query: LearningObjectQuery,
+    username: string,
+    conditions?: QueryCondition[],
   ): Promise<LearningObjectSummary[]> {
+    const { name, status, text } = query;
+    const orConditions: any[] = conditions
+      ? this.buildQueryConditions(conditions)
+      : [];
+    const userId = await this.findUser(username);
+    let searchQuery: any = {
+      authorID: userId,
+    };
+    if (text) {
+      const regex = new RegExp(sanitizeRegex(text));
+      searchQuery.$or.push(
+        { $text: { $search: text } },
+        { name: { $regex: regex } },
+        { contributors: { $regex: regex } });
+    }
+    if (status) {
+      searchQuery.$or = [];
+      searchQuery.$or.push({
+        status: { $in: status },
+      });
+    }
 
-    throw new Error('Method not implemented');
-  }
+    const pipeline = this.buildAllObjectsPipeline({
+      searchQuery,
+      orConditions,
+      hasText: !!text,
+    });
+    const resultSet = await this.db
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .aggregate<
+        {
+          objects: LearningObjectDocument[];
+          total: [{ total: number }];
+        }>(pipeline)
+      .toArray();
+      console.log(resultSet)
+    const learningObjects: LearningObjectSummary[] = await Promise.all(resultSet[0].objects.map(async learningObject => {
+      return await this.generateLearningObjectSummary(learningObject);
+    }));
 
-  async searchAllUserObjects(params: {
-    query: LearningObjectQuery;
-    username: string;
-  }): Promise<LearningObjectSummary[]> {
-
-    throw new Error('Method not implemented');
+    return learningObjects;
   }
 
   /**
@@ -2456,8 +2495,8 @@ export class MongoDriver implements DataStore {
     );
     const [author, contributors] = await Promise.all([author$, contributors$]);
     if (record.children) {
-      status = status? status: [LearningObject.Status.RELEASED];
-      const children = await this.loadChildObjects({ id: record._id, status});
+      status = status ? status : [LearningObject.Status.RELEASED];
+      const children = await this.loadChildObjects({ id: record._id, status });
 
       return mapLearningObjectToSummary({
         ...(record as any),
