@@ -134,11 +134,11 @@ export function initializePrivate({
       res.status(code).json({ message });
     }
   };
-  const deleteLearningObject = async (req: Request, res: Response) => {
+  const deleteLearningObjectByName = async (req: Request, res: Response) => {
     try {
       const user: UserToken = req.user;
       const learningObjectName = req.params.learningObjectName;
-      await LearningObjectInteractor.deleteLearningObject({
+      await LearningObjectInteractor.deleteLearningObjectByName({
         dataStore,
         fileManager,
         learningObjectName,
@@ -148,7 +148,9 @@ export function initializePrivate({
       res.sendStatus(200);
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
-      res.status(code).json({message});
+      res.status(code).json({ message });
+    }
+  };
     }
   };
 
@@ -237,8 +239,10 @@ export function initializePrivate({
   router.route('/learning-objects').post(addLearningObject);
   router.post('/users/:username/learning-objects', addLearningObject);
   router.patch('/learning-objects/:id', updateLearningObject);
-  router.patch('/users/:username/learning-objects/:id', updateLearningObject);
-  router.delete('/learning-objects/:learningObjectName', deleteLearningObject);
+  router.delete(
+    '/learning-objects/:learningObjectName',
+    deleteLearningObjectByName,
+  );
   router.get('/users/:username/learning-objects/:id/materials', getMaterials);
   router.get('/learning-objects/:id/materials/all', getMaterials);
   router.get(

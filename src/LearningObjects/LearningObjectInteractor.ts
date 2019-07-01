@@ -847,7 +847,7 @@ export async function getLearningObjectChildrenById(
   return children;
 }
 
-export async function deleteLearningObject(params: {
+export async function deleteLearningObjectByName(params: {
   dataStore: DataStore;
   fileManager: FileManager;
   learningObjectName: string;
