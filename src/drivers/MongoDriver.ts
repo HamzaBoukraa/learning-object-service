@@ -40,7 +40,7 @@ import {
   ServiceErrorReason,
 } from '../shared/errors';
 import { reportError } from '../shared/SentryConnector';
-import { LearningObject, LearningOutcome, User } from '../shared/entity';
+import { LearningObject, LearningOutcome, User, StandardOutcome } from '../shared/entity';
 import { Submission } from '../LearningObjectSubmission/types/Submission';
 import { MongoConnector } from '../shared/Mongo/MongoConnector';
 import { mapLearningObjectToSummary } from '../shared/functions';
@@ -1589,7 +1589,7 @@ export class MongoDriver implements DataStore {
       object.materials.files = object.orderedFiles;
       delete object.orderedFiles;
       const author = await this.fetchUser(object.authorID);
-      return this.generateLearningObject(author, object, params.full);
+      return this.generateReleasedLearningObject(author, object, params.full);
     }
     return null;
   }
@@ -2487,29 +2487,26 @@ export class MongoDriver implements DataStore {
     full?: boolean,
   ): Promise<LearningObject> {
     // Logic for loading any learning object
+    let learningObject: LearningObject;
     let materials: LearningObject.Material;
     let contributors: User[] = [];
     let outcomes: LearningOutcome[] = [];
     let children: LearningObject[] = [];
-
     // Load Contributors
     if (record.contributors && record.contributors.length) {
       contributors = await Promise.all(
         record.contributors.map(userId => this.fetchUser(userId)),
       );
     }
-
     // If full object requested, load up non-summary properties
     if (full) {
       // Logic for loading 'full' learning objects
       materials = <LearningObject.Material>record.materials;
-
-      // load outcomes
       outcomes = await this.getAllLearningOutcomes({
-        source: record._id,
-      });
-    }
-    const learningObject = new LearningObject({
+          source: record._id,
+        });
+      }
+    learningObject = new LearningObject({
       id: record._id,
       author,
       name: record.name,
@@ -2526,10 +2523,68 @@ export class MongoDriver implements DataStore {
       children,
       revision: record.revision,
     });
+    return learningObject;
+  }
 
+  /**
+   * Generates released Learning Object from Document
+   *
+   * @private
+   * @param {User} author
+   * @param {ReleasedLearningObjectDocument} record
+   * @param {boolean} [full]
+   * @returns {Promise<LearningObject>}
+   * @memberof MongoDriver
+   */
+  private async generateReleasedLearningObject(
+    author: User,
+    record: ReleasedLearningObjectDocument,
+    full?: boolean,
+  ): Promise<LearningObject> {
+    // Logic for loading any learning object
+    let learningObject: LearningObject;
+    let materials: LearningObject.Material;
+    let contributors: User[] = [];
+    let children: LearningObject[] = [];
+    let outcomes: LearningOutcome[] = [];
+    // Load Contributors
+    if (record.contributors && record.contributors.length) {
+      contributors = await Promise.all(
+        record.contributors.map(userId => this.fetchUser(userId)),
+      );
+    }
+    // If full object requested, load up non-summary properties
+    if (full) {
+      // Logic for loading 'full' learning objects
+      materials = <LearningObject.Material>record.materials;
+      for (let i = 0; i < record.outcomes.length; i++) {
+        const mappings = await this.learningOutcomeStore.getAllStandardOutcomes({
+          ids: record.outcomes[i].mappings,
+        });
+        outcomes.push(new LearningOutcome({...record.outcomes[i], mappings: mappings, id: record.outcomes[i]['_id']}));
+      }
+    }
+    learningObject = new LearningObject({
+      id: record._id,
+      author,
+      name: record.name,
+      date: record.date,
+      length: record.length as LearningObject.Length,
+      levels: record.levels as LearningObject.Level[],
+      collection: record.collection,
+      status: record.status as LearningObject.Status,
+      description: record.description,
+      materials,
+      contributors,
+      outcomes: outcomes,
+      hasRevision: record.hasRevision,
+      children,
+      revision: record.revision,
+    });
     return learningObject;
   }
 }
+
 
 export function isEmail(value: string): boolean {
   const emailPattern = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
