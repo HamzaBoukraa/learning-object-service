@@ -561,11 +561,11 @@ export async function addLearningObject({
       [requesterIsAuthor({ authorUsername, requester })],
       'Invalid access. Learning Objects cannot be created for another user.',
     );
-  await checkNameExists({
-    dataStore,
+    await checkNameExists({
+      dataStore,
       username: authorUsername,
-    name: object.name,
-  });
+      name: object.name,
+    });
     const authorID = await dataStore.findUser(authorUsername);
     const author = await dataStore.fetchUser(authorID);
     const objectInsert = new LearningObject({
@@ -606,41 +606,41 @@ export async function updateLearningObject({
   updates: Partial<LearningObject>;
 }): Promise<void> {
   try {
-  if (updates.name) {
-    await checkNameExists({
-      id,
-      dataStore,
-      name: updates.name,
+    if (updates.name) {
+      await checkNameExists({
+        id,
+        dataStore,
+        name: updates.name,
         username: authorUsername,
-    });
-  }
+      });
+    }
     const learningObject = await dataStore.fetchLearningObject({
       id,
       full: false,
     });
     authorizeWriteAccess({ learningObject, requester });
-      const cleanUpdates = sanitizeUpdates(updates);
-      validateUpdates({
+    const cleanUpdates = sanitizeUpdates(updates);
+    validateUpdates({
+      id,
+      updates: cleanUpdates,
+    });
+    cleanUpdates.date = Date.now().toString();
+    await dataStore.editLearningObject({
+      id,
+      updates: cleanUpdates,
+    });
+    // Infer if this Learning Object is being released
+    if (cleanUpdates.status === LearningObject.Status.RELEASED) {
+      const releasableObject = await generateReleasableLearningObject(
+        dataStore,
         id,
-        updates: cleanUpdates,
-      });
-      cleanUpdates.date = Date.now().toString();
-      await dataStore.editLearningObject({
-        id,
-        updates: cleanUpdates,
-      });
-      // Infer if this Learning Object is being released
-      if (cleanUpdates.status === LearningObject.Status.RELEASED) {
-        const releasableObject = await generateReleasableLearningObject(
-          dataStore,
-          id,
-        );
-        await PublishingService.releaseLearningObject({
+      );
+      await PublishingService.releaseLearningObject({
         userToken: requester,
-          dataStore,
-          releasableObject,
-        });
-      }
+        dataStore,
+        releasableObject,
+      });
+    }
   } catch (e) {
     handleError(e);
   }
@@ -1153,30 +1153,31 @@ function validateUpdates(params: {
 }
 
 /**
- * Checks if user has a learning object with a particular name
+ * Checks if user has a Learning Object with a particular name
  *
- * @param {{
- *   dataStore: DataStore;
- *   username: string;
- *   name: string;
- * }} params
+ * @param {DataStore} dataStore [The datastore to check for existing Learning Object in]
+ * @param {string} username [The Learning Object's author's username]
+ * @param {string} name [The name of the Learning Object]
+ * @param {string} id [The id of the Learning Object. If passed, the existing Learning Object found must match this value]
+ *
  */
-async function checkNameExists(params: {
+async function checkNameExists({
+  dataStore,
+  username,
+  name,
+  id,
+}: {
   dataStore: DataStore;
   username: string;
   name: string;
   id?: string;
 }) {
-  const authorId = await params.dataStore.findUser(params.username);
-  const existing = await params.dataStore.peek<{ id: string }>({
-    query: { authorID: authorId, name: params.name },
-    fields: { id: 1 },
-  });
-  // @ts-ignore typescript doesn't think a .id property should exist on the existing object
-  if (existing && params.id !== existing.id) {
+  const authorId = await dataStore.findUser(username);
+  const existing = await dataStore.findLearningObject({ authorId, name });
+  if (existing && id !== existing) {
     throw new ResourceError(
-      `A learning object with name '${params.name}' already exists.`,
-      ResourceErrorReason.BAD_REQUEST,
+      `A Learning Object with name '${name}' already exists. Learning Objects you author must have unique names.`,
+      ResourceErrorReason.CONFLICT,
     );
   }
 }
