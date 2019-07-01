@@ -1,5 +1,5 @@
-import { FileManagerAdapter } from '../../FileManager/FileManagerAdapter';
-import { FileUpload } from '../../shared/interfaces/FileManager';
+import { FileManagerAdapter } from '../../FileManager/adapters/FileManagerAdapter';
+import { FileUpload } from '../../FileManager/interfaces/FileManager';
 import { FileManagerGateway } from '../../FileMetadata/interfaces/FileManagerGateway';
 
 export class ModuleFileManagerGateway extends FileManagerGateway {

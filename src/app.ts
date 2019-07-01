@@ -14,7 +14,7 @@ import { MongoConnector } from './shared/Mongo/MongoConnector';
 import { LearningObjectAdapter } from './LearningObjects/LearningObjectAdapter';
 import { LearningObjectSearch } from './LearningObjectSearch';
 import { HierarchyAdapter } from './LearningObjects/Hierarchy/HierarchyAdapter';
-import { FileManagerAdapter } from './FileManager/FileManagerAdapter';
+import { FileManagerAdapter } from './FileManager/adapters/FileManagerAdapter';
 import { FileMetadata } from './FileMetadata';
 
 // ----------------------------------------------------------------------------------

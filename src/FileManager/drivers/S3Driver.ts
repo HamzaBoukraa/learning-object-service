@@ -2,14 +2,10 @@ import 'dotenv/config';
 import * as AWS from 'aws-sdk';
 import { AWSError } from 'aws-sdk';
 import { Readable } from 'stream';
-import { reportError } from '../shared/SentryConnector';
-import {
-  CompletedPart,
-  CompletedPartList,
-  FileUpload,
-} from '../shared/interfaces/FileManager';
-import { FileManager } from '../shared/interfaces/interfaces';
-import { AWS_SDK_CONFIG } from './aws-sdk.config';
+import { reportError } from '../../shared/SentryConnector';
+import { FileManager } from '../../shared/interfaces/interfaces';
+import { AWS_SDK_CONFIG } from '../config/aws-sdk.config';
+import { CompletedPartList, CompletedPart } from '../typings/file-manager';
 
 AWS.config.credentials = AWS_SDK_CONFIG.credentials;
 
@@ -33,16 +29,6 @@ export class S3Driver implements FileManager {
     return this.streamFile({ path, bucket: BUCKETS.WORKING_FILES });
   }
 
-  /**
-   * Copies all objects in source folder from working files bucket to destination folder in released files bucket
-   *
-   * @param {{
-   *     srcFolder: string;
-   *     destFolder: string;
-   *   }} params
-   * @returns {Promise<void>}
-   * @memberof S3Driver
-   */
   async copyToReleased(params: {
     srcFolder: string;
     destFolder: string;
@@ -130,14 +116,7 @@ export class S3Driver implements FileManager {
     return files;
   }
 
-  /**
-   * Uploads single file
-   *
-   * @param {{ file: FileUpload }} params
-   * @returns {Promise<string>}
-   * @memberof S3Driver
-   */
-  public async upload(params: { file: FileUpload }): Promise<string> {
+  async upload(params: { file: FileUpload }): Promise<string> {
     const uploadParams = {
       Bucket: BUCKETS.WORKING_FILES,
       Key: params.file.path,
@@ -147,7 +126,7 @@ export class S3Driver implements FileManager {
     return response.Location;
   }
 
-  public async initMultipartUpload(params: { path: string }): Promise<string> {
+  async initMultipartUpload(params: { path: string }): Promise<string> {
     const createParams = {
       Bucket: BUCKETS.WORKING_FILES,
       Key: params.path,
@@ -158,7 +137,7 @@ export class S3Driver implements FileManager {
     return createdUpload.UploadId;
   }
 
-  public async uploadPart(params: {
+  async uploadPart(params: {
     path: string;
     data: any;
     partNumber: number;
@@ -179,7 +158,7 @@ export class S3Driver implements FileManager {
     };
   }
 
-  public async completeMultipartUpload(params: {
+  async completeMultipartUpload(params: {
     path: string;
     uploadId: string;
     completedPartList: CompletedPartList;
@@ -202,16 +181,6 @@ export class S3Driver implements FileManager {
     return completedUploadData.Location;
   }
 
-  /**
-   * Cancels chunk upload
-   *
-   * @param {{
-   *     path: string;
-   *     uploadId: string;
-   *   }} params
-   * @returns {Promise<void>}
-   * @memberof S3Driver
-   */
   async abortMultipartUpload(params: {
     path: string;
     uploadId: string;
@@ -282,13 +251,7 @@ export class S3Driver implements FileManager {
 
     if (listedObjects.IsTruncated) await this.deleteFolder({path: params.path});
   }
-  /**
-   * Deletes all files in storage
-   *
-   * @param {string} path
-   * @returns {Promise<void>}
-   * @memberof S3Driver
-   */
+
   async deleteAll(params: { path: string }): Promise<void> {
     const listParams = {
       Bucket: BUCKETS.WORKING_FILES,

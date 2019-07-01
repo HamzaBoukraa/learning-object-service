@@ -11,7 +11,7 @@ import {
 import {
   CompletedPart,
   MultipartFileUploadStatus,
-} from '../shared/interfaces/FileManager';
+} from '../FileManager/interfaces/FileManager';
 import * as ObjectMapper from './Mongo/ObjectMapper';
 import {
   LearningObjectUpdates,

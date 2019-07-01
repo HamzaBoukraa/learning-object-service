@@ -1,4 +1,4 @@
-import { CompletedPart, MultipartFileUploadStatus } from './FileManager';
+import { CompletedPart, MultipartFileUploadStatus } from '../../FileManager/interfaces/FileManager';
 import { LearningObjectUpdates, LearningObjectSummary } from '../types';
 import { LearningOutcomeDatastore } from '../../LearningOutcomes/LearningOutcomeInteractor';
 import { LearningObjectStatDatastore } from '../../LearningObjectStats/LearningObjectStatsInteractor';

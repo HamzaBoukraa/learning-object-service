@@ -8,7 +8,7 @@ import {
   MultipartFileUploadStatus,
   MultipartFileUploadStatusUpdates,
   CompletedPart,
-} from '../../shared/interfaces/FileManager';
+} from '../../FileManager/interfaces/FileManager';
 import {
   LearningObjectUpdates,
   LearningObjectSummary,

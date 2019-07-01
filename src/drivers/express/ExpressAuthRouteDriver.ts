@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import * as multer from 'multer';
 import { LearningObjectInteractor } from '../../interactors/interactors';
-import { DZFile, DZFileMetadata } from '../../shared/interfaces/FileManager';
+import { DZFile, DZFileMetadata } from '../../FileManager/interfaces/FileManager';
 import {
   DataStore,
   FileManager,
@@ -12,7 +12,7 @@ import {
   removeFile,
   updateFileDescription,
 } from '../../LearningObjects/LearningObjectInteractor';
-import * as FileInteractor from '../../FileManager/FileInteractor';
+import * as FileInteractor from '../../FileManager/Interactor';
 import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
 import * as LearningOutcomeRouteHandler from '../../LearningOutcomes/LearningOutcomeRouteHandler';
 import * as SubmissionRouteDriver from '../../LearningObjectSubmission';

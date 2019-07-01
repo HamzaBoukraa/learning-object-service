@@ -1,12 +1,17 @@
+import { FileManager as Module } from '.';
 import { DataStore } from '../shared/interfaces/DataStore';
 import {
   DZFile,
   FileUpload,
   MultipartFileUploadStatus,
-} from '../shared/interfaces/FileManager';
+} from './interfaces/FileManager';
 import { FileManager } from '../shared/interfaces/interfaces';
 import { LearningObject } from '../shared/entity';
 import { Readable } from 'stream';
+
+namespace Drivers {
+  export const fileManager = () => Module.resolveDependency(FileManager);
+}
 
 /**
  * Creates multipart upload and saves metadata for upload

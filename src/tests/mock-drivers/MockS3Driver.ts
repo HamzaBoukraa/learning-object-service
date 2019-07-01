@@ -1,5 +1,5 @@
 import { FileManager } from '../../shared/interfaces/interfaces';
-import { FileUpload, CompletedPartList } from '../../shared/interfaces/FileManager';
+import { FileUpload, CompletedPartList } from '../../FileManager/interfaces/FileManager';
 import { CompletedPart } from 'aws-sdk/clients/s3';
 import { Readable } from 'stream';
 

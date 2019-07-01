@@ -1,6 +1,6 @@
-import { FileManager } from '../shared/interfaces/interfaces';
-import { uploadFile } from './FileInteractor';
-import { FileUpload } from '../shared/interfaces/FileManager';
+import { FileManager } from '../../shared/interfaces/interfaces';
+import { uploadFile } from '../Interactor';
+import { FileUpload } from '../interfaces/FileManager';
 export class FileManagerAdapter {
     private static _instance: FileManagerAdapter;
     private constructor(

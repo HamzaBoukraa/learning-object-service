@@ -1,4 +1,4 @@
-import { FileUpload } from '../../shared/interfaces/FileManager';
+import { FileUpload } from '../../FileManager/interfaces/FileManager';
 
 export abstract class FileManagerGateway {
 

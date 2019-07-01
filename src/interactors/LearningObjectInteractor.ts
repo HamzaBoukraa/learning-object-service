@@ -1,14 +1,14 @@
 // @ts-ignore
 import * as stopword from 'stopword';
 import { reportError } from '../shared/SentryConnector';
-import { processMultipartUpload } from '../FileManager/FileInteractor';
+import { processMultipartUpload } from '../FileManager/Interactor';
 import { sanitizeObject, sanitizeText } from '../shared/functions';
 import {
   LearningObjectQuery,
   QueryCondition,
   ParentLearningObjectQuery,
 } from '../shared/interfaces/DataStore';
-import { DZFile, FileUpload } from '../shared/interfaces/FileManager';
+import { DZFile, FileUpload } from '../FileManager/interfaces/FileManager';
 import {
   DataStore,
   FileManager,
