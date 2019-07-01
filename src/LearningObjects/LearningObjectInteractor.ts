@@ -847,6 +847,74 @@ export async function getLearningObjectChildrenById(
   return children;
 }
 
+/**
+ * Deletes a Learning Object and all associated resources
+ *
+ * @export
+ * @param {DataStore} datastore [The datastore to delete the Learning Object from]
+ * @param {FileManager} fileManager [The file manager to delete files from]
+ * @param {LibraryCommunicator} library [The library communicator to use to remove Learning Objects on delete]
+ * @param {UserToken} requester [Information about the user making the delete request]
+ * @param {string} id [The id of the Learning Object to be deleted]
+ * @returns {Promise<void>}
+ */
+export async function deleteLearningObject({
+  dataStore,
+  library,
+  fileManager,
+  requester,
+  id,
+}: {
+  dataStore: DataStore;
+  fileManager: FileManager;
+  library: LibraryCommunicator;
+  requester: UserToken;
+  id: string;
+}): Promise<void> {
+  try {
+    const learningObject = await dataStore.fetchLearningObject({
+      id,
+      full: false,
+    });
+    if (!learningObject) {
+      throw new ResourceError(
+        `Cannot delete Learning Object ${id}. Learning Object does not exist.`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+    authorizeWriteAccess({ learningObject, requester });
+    await library.cleanObjectsFromLibraries([learningObject.id]);
+    await FileMetadata.deleteAllFileMetadata({
+      requester,
+      learningObjectId: learningObject.id,
+    }).catch(reportError);
+    await dataStore.deleteLearningObject(learningObject.id);
+    const path = `${learningObject.author.username}/${learningObject.id}/`;
+    fileManager.deleteAll({ path }).catch(e => {
+      reportError(
+        new Error(
+          `Problem deleting files for Learning Object ${
+            learningObject.id
+          }: ${path}. ${e}`,
+        ),
+      );
+    });
+    dataStore
+      .deleteChangelog({ learningObjectId: learningObject.id })
+      .catch(e => {
+        reportError(
+          new Error(
+            `Problem deleting changelogs for Learning Object${
+              learningObject.id
+            }: ${e}`,
+          ),
+        );
+      });
+  } catch (e) {
+    handleError(e);
+  }
+}
+
 export async function deleteLearningObjectByName(params: {
   dataStore: DataStore;
   fileManager: FileManager;

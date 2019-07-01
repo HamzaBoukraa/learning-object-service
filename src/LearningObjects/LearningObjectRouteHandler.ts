@@ -93,8 +93,8 @@ export function initializePrivate({
       });
       res.status(200).send(learningObject.toPlainObject());
     } catch (e) {
-        const { code, message } = mapErrorToResponseData(e);
-        res.status(code).json({ message });
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({ message });
     }
   };
   const getMaterials = async (req: Request, res: Response) => {
@@ -151,6 +151,22 @@ export function initializePrivate({
       res.status(code).json({ message });
     }
   };
+
+  const deleteLearningObject = async (req: Request, res: Response) => {
+    try {
+      const requester: UserToken = req.user;
+      const id: string = req.params.id;
+      await LearningObjectInteractor.deleteLearningObject({
+        dataStore,
+        fileManager,
+        library,
+        id,
+        requester,
+      });
+      res.sendStatus(200);
+    } catch (e) {
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({ message });
     }
   };
 
@@ -239,6 +255,10 @@ export function initializePrivate({
   router.route('/learning-objects').post(addLearningObject);
   router.post('/users/:username/learning-objects', addLearningObject);
   router.patch('/learning-objects/:id', updateLearningObject);
+  router
+    .route('/users/:username/learning-objects/:id')
+    .patch(updateLearningObject)
+    .delete(deleteLearningObject);
   router.delete(
     '/learning-objects/:learningObjectName',
     deleteLearningObjectByName,
