@@ -27,7 +27,7 @@ export async function submitForReview(params: {
   userId: string;
   collection: string;
 }): Promise<void> {
-  const object = await LearningObjectAdapter.getInstance().getLearningObjectById(params.learningObjectId);
+  const object = await LearningObjectAdapter.getInstance().getLearningObjectById({ id: params.learningObjectId, requester: params.user, filter: 'unreleased' });
   verifyIsSubmittable(params, object);
 
   await updateLearningObjectFields(params);
@@ -37,9 +37,9 @@ export async function submitForReview(params: {
     collection: params.collection,
     timestamp: Date.now().toString(),
   });
-  // The decision to fetch the Learning Object agian was made to ensure consistency, in the chance that the business
+  // The decision to fetch the Learning Object again was made to ensure consistency, in the chance that the business
   // logic used when updating a Learning Object modifies a property other than the ones we specifically request.
-  const submittableLearningObject = await LearningObjectAdapter.getInstance().getLearningObjectById(params.learningObjectId);
+  const submittableLearningObject = await LearningObjectAdapter.getInstance().getLearningObjectById({ id: params.learningObjectId, requester: params.user, filter: 'unreleased' });
   await params.publisher.publishSubmission(submittableLearningObject);
 }
 

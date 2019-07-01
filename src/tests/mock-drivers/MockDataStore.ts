@@ -41,6 +41,10 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
     return;
   }
 
+  fetchReleasedMaterials(id: string): Promise<LearningObject.Material> {
+    return Promise.resolve(this.stubs.learningObject.materials);
+  }
+
   fetchReleasedFile(params: {
     id: string;
     fileId: string;
@@ -97,7 +101,6 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
   loadReleasedChildObjects(params: {
     id: string;
     full?: boolean;
-    status: string[];
   }): Promise<LearningObject[]> {
     return Promise.resolve([this.stubs.learningObjectChild as any]);
   }

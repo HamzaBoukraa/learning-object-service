@@ -354,6 +354,11 @@ export class ExpressAuthRouteDriver {
         }
       },
     );
+    /**
+     * @deprecated
+     *
+     * TODO: Deprecate route in favor of more restful `/users/:username/learning-objects/:learningObjectId/materials/files/:fileId` route
+     */
     router
       .route('/files/:id/:fileId')
       .patch(async (req, res) => {
