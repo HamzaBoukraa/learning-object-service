@@ -5,3 +5,6 @@ export interface FileMeta {
   size: number;
   fullPath?: string;
 }
+
+export type LearningObjectFilter = 'released' | 'unreleased';
+export type MaterialsFilter = 'released' | 'unreleased';

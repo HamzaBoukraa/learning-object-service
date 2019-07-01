@@ -1,5 +1,9 @@
 import { LearningObjectGateway } from '../../interfaces';
-import { Requester, LearningObjectSummary } from '../../typings';
+import {
+  Requester,
+  LearningObjectSummary,
+  LearningObjectFile,
+} from '../../typings';
 import { LearningObjectAdapter } from '../../../LearningObjects/LearningObjectAdapter';
 
 export class ModuleLearningObjectGateway extends LearningObjectGateway {
@@ -22,29 +26,36 @@ export class ModuleLearningObjectGateway extends LearningObjectGateway {
   /**
    * @inheritdoc
    *
-   * Proxies `getActiveLearningObjectSummary` request to LearningObjectAdapter
+   * Proxies `getReleasedFile` request to LearningObjectAdapter
    *
    * @memberof ModuleLearningObjectGateway
    */
-  getActiveLearningObjectSummary(params: {
-    requester: Requester;
+  getReleasedFile(params: {
     id: string;
-  }): Promise<LearningObjectSummary> {
-    return this.adapter.getActiveLearningObjectSummary(params);
+    fileId: string;
+  }): Promise<LearningObjectFile> {
+    return this.adapter.getReleasedFile(params);
   }
-
   /**
    * @inheritdoc
    *
-   * Proxies `getLearningObjectRevisionSummary` request to LearningObjectAdapter
+   * Proxies `getReleasedFiles` request to LearningObjectAdapter
    *
    * @memberof ModuleLearningObjectGateway
    */
-  getLearningObjectRevisionSummary(params: {
-    requester: Requester;
-    id: string;
-    revision: number;
-  }): Promise<LearningObjectSummary> {
-    return this.adapter.getLearningObjectRevisionSummary(params);
+  getReleasedFiles(id: string): Promise<LearningObjectFile[]> {
+    return this.adapter.getReleasedFiles(id);
+  }
+  /**
+   * @inheritdoc
+   *
+   * Proxies `updateObjectLastModifiedDate` request to LearningObjectAdapter
+   *
+   * @param {string} id
+   * @returns {Promise<void>}
+   * @memberof ModuleLearningObjectGateway
+   */
+  updateObjectLastModifiedDate(id: string): Promise<void> {
+    return this.adapter.updateObjectLastModifiedDate(id);
   }
 }

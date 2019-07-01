@@ -1,6 +1,6 @@
 {
   "name": "learning-object-service",
-  "version": "2.27.0-1",
+  "version": "2.30.0",
   "description": "Learning Object Microservice.",
   "main": "app.ts",
   "scripts": {
@@ -28,6 +28,8 @@
     "@cyber4all/clark-taxonomy": "^4.0.2",
     "@elastic/elasticsearch": "^6.8.0",
     "@sentry/node": "^4.6.6",
+    "@types/archiver": "^3.0.0",
+    "archiver": "^3.0.0",
     "aws-sdk": "^2.211.0",
     "cookie-parser": "^1.4.3",
     "cors": "^2.8.4",

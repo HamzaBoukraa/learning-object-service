@@ -3,7 +3,7 @@ import { uploadFile } from './FileInteractor';
 import { FileUpload } from '../shared/interfaces/FileManager';
 export class FileManagerAdapter {
     private static _instance: FileManagerAdapter;
-    private constructor(
+    protected constructor(
         private fileManager: FileManager,
     ) {}
     static open(fileManager: FileManager): void {

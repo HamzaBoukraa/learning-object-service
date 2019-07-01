@@ -12,6 +12,10 @@ import { processToken, handleProcessTokenError } from '../middleware';
 import { LearningObject } from '../shared/entity';
 import { Stubs } from '../tests/stubs';
 import { HierarchyAdapter } from './Hierarchy/HierarchyAdapter';
+import { BundlerModule } from './Publishing/Bundler/BundlerModule';
+import { Bundler } from './Publishing/Bundler/Bundler';
+import { BundleData, BundleExtension, Readable } from './Publishing/Bundler/typings';
+import { FileManagerAdapter } from '../FileManager';
 
 const app = express();
 const router = express.Router();
@@ -31,15 +35,27 @@ describe('LearningObjectRouteHandler', () => {
     let token: string;
     let authorization = {};
 
+    class StubBundler implements Bundler {
+        bundleData(params: {
+            bundleData: BundleData[];
+            extension: BundleExtension;
+        }) {
+            return Promise.resolve(new Readable());
+        }
+    }
+
     beforeAll(async () => {
         dataStore = await MongoDriver.build(global['__MONGO_URI__']);
         HierarchyAdapter.open(dataStore);
         fileManager = new MockS3Driver();
+        FileManagerAdapter.open(fileManager);
         LibraryDriver = new MockLibraryDriver();
+        BundlerModule.providers = [{ provide: Bundler, useClass: StubBundler }];
+        BundlerModule.initialize();
         // FIXME: This user is both an admin and a reviewer@nccp
         token = generateToken(stubs.userToken);
         authorization = { Cookie: `presence=${token}`, 'Content-Type': 'application/json' };
-        LearningObjectRouteHandler.initializePublic({ router, dataStore });
+        LearningObjectRouteHandler.initializePublic({ router, dataStore, library: LibraryDriver });
         LearningObjectRouteHandler.initializePrivate({
             router,
             dataStore,
@@ -81,7 +97,7 @@ describe('LearningObjectRouteHandler', () => {
         });
     });
     describe(`PATCH /learning-objects/:id`, () => {
-        const userToken = generateToken({...stubs.userToken, accessGroups: null});
+        const userToken = generateToken({ ...stubs.userToken, accessGroups: null });
         it('should update the requested learning object and return a status of 200', done => {
             request
                 .patch(`/learning-objects/${stubs.learningObject.id}`)
@@ -96,7 +112,7 @@ describe('LearningObjectRouteHandler', () => {
         describe('when the payload contains status set to \'released\'', () => {
             describe('and the requester is an admin', () => {
                 it('should update the requested Learning Object and return a status of 200', done => {
-                    const adminToken = generateToken({...stubs.userToken, accessGroups: ['admin']});
+                    const adminToken = generateToken({ ...stubs.userToken, accessGroups: ['admin'] });
                     request
                         .patch(`/learning-objects/${stubs.learningObject.id}`)
                         .set('Authorization', `Bearer ${adminToken}`)
@@ -110,7 +126,7 @@ describe('LearningObjectRouteHandler', () => {
             });
             describe('and the requester is an editor', () => {
                 it('should update the requested Learning Object and return a status of 200', done => {
-                    const editorToken = generateToken({...stubs.userToken, accessGroups: ['editor']});
+                    const editorToken = generateToken({ ...stubs.userToken, accessGroups: ['editor'] });
                     request
                         .patch(`/learning-objects/${stubs.learningObject.id}`)
                         .set('Authorization', `Bearer ${editorToken}`)
@@ -148,5 +164,8 @@ describe('LearningObjectRouteHandler', () => {
                 });
         });
     });
-    afterAll(() => dataStore.disconnect());
+    afterAll(() => {
+        BundlerModule.destroy();
+        return dataStore.disconnect();
+    });
 });
