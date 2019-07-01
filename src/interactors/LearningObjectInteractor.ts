@@ -159,6 +159,20 @@ export class LearningObjectInteractor {
       handleError(e);
     }
   }
+  /**
+   * searches for a users learning objects, optionally applying a filter by status or bundled status's
+   * and performs authorization based on the requesters
+   * access privileges
+   * @async
+   *
+   * @returns {LearningObjectSummary[]} the user's learning objects found by the query
+   * @param params.dataStore
+   * @param params.library
+   * @param params.username
+   * @param params.userToken
+   * @param params.loadChildren
+   * @param params.query
+   */
 
   public static async searchUsersObjects(params: {
     dataStore: DataStore;
@@ -245,9 +259,6 @@ export class LearningObjectInteractor {
     } catch (err) {
       console.log(err);
     }
-
-
-    throw new Error('Method not yet implemented');
   }
 
   /**

@@ -315,17 +315,22 @@ export class MongoDriver implements DataStore {
     const total = results.total[0] ? results.total[0].total : 0;
     return { total, objects };
   }
-
+/**
+ * search for released user objects
+ *
+ * @param query {LearningObjectQuery}
+ * @param username {string}
+ */
   async searchReleasedUserObjects(
     query: LearningObjectQuery,
-    username: string
+    username: string,
   ): Promise<LearningObjectSummary[]> {
     const { text } = query;
 
     const objectIds = await this.getUserObjects(username);
 
     let searchQuery: any = {
-      id: {$in: objectIds},
+      id: { $in: objectIds },
     };
     if (text) {
       const regex = new RegExp(sanitizeRegex(text));
@@ -334,7 +339,7 @@ export class MongoDriver implements DataStore {
         { name: { $regex: regex } },
         { contributors: { $regex: regex } });
     }
-   
+
     const resultSet = await this.
       db.collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
       .find<LearningObjectDocument>(searchQuery).toArray();
@@ -347,6 +352,17 @@ export class MongoDriver implements DataStore {
 
   }
 
+  /**
+   * Performs aggregation to join the users objects from the released and working collection before
+   * searching and filtering
+   *
+   * @param query {LearingObjectQuery}
+   * @param username {string}
+   * @param conditions {QueryCondition}
+   *
+   * @returns {LearningObjectSummary[]}
+   * @memberof MongoDriver
+   */
   async searchAllUserObjects(
     query: LearningObjectQuery,
     username: string,
@@ -387,7 +403,6 @@ export class MongoDriver implements DataStore {
           total: [{ total: number }];
         }>(pipeline)
       .toArray();
-      console.log(resultSet)
     const learningObjects: LearningObjectSummary[] = await Promise.all(resultSet[0].objects.map(async learningObject => {
       return await this.generateLearningObjectSummary(learningObject);
     }));
