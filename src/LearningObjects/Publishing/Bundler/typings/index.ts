@@ -11,7 +11,7 @@ export { LearningObject, UserToken, Writable, Readable, ExpressResponse };
 export interface BundleData {
   prefix?: string;
   name: string;
-  data: Readable;
+  uri: string;
 }
 
 export enum BundleExtension {

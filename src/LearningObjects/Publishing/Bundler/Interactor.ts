@@ -12,7 +12,6 @@ import {
   ExpressResponse,
 } from './typings';
 import { reportError } from '../../../shared/SentryConnector';
-import * as https from 'https';
 import { ServiceError, ServiceErrorReason } from '../../../shared/errors';
 import { BundlerModule } from './BundlerModule';
 
@@ -49,7 +48,6 @@ export async function bundleLearningObject({
   requesterUsername: string;
 }) {
   const extension = BundleExtension.Zip;
-
   const objectData = await openFileStreams({ learningObject });
   return Drivers.bundler().bundleData({
     bundleData: objectData,
@@ -99,8 +97,7 @@ async function openFileStreams({
  * @returns {Promise<BundleData>}
  */
 async function bundleCCLicense(prefix: string = ''): Promise<BundleData> {
-  const data = await fetchReadableStream(CC_LICENSE.uri);
-  return { data, name: CC_LICENSE.name, prefix };
+  return { name: CC_LICENSE.name, prefix, uri: CC_LICENSE.uri };
 }
 
 /**
@@ -120,8 +117,7 @@ async function bundleReadMe({
   name: string;
   prefix?: string;
 }): Promise<BundleData> {
-  const data = await fetchReadableStream(uri);
-  return { data, name: name, prefix };
+  return { name, prefix, uri };
 }
 
 /**
@@ -140,8 +136,7 @@ async function bundleFiles({
 }): Promise<BundleData[]> {
   return Promise.all(
     files.map(async file => {
-      const data = await fetchReadableStream(file.url);
-      return { data, name: file.fullPath || file.name, prefix };
+      return { name: file.fullPath || file.name, prefix, uri: file.url };
     }),
   );
 }
@@ -198,20 +193,6 @@ function flattenDeep(array: Array<any>): any[] {
       Array.isArray(val) ? acc.concat(flattenDeep(val)) : acc.concat(val),
     [],
   );
-}
-
-/**
- * Returns Readable data stream from request at given uri
- *
- * @param {string} uri [URI of the resource requested]
- * @returns {Promise<Readable>}
- */
-function fetchReadableStream(uri: string): Promise<Readable> {
-  return new Promise((resolve, reject) => {
-    https.get(uri, (response) => {
-      resolve(response);
-    });
-  });
 }
 
 /**

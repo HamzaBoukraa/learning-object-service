@@ -1,7 +1,7 @@
 import { Bundler } from '../../../interfaces';
-import { Writable, BundleData, BundleExtension } from '../../../typings';
+import { Writable, BundleData, BundleExtension, Readable } from '../../../typings';
 import { create, Archiver } from 'archiver';
-
+import * as https from 'https';
 /**
  * Bundler implementation using the `archiver` package as the Driver
  *
@@ -55,20 +55,35 @@ export class ArchiverBundler implements Bundler {
    * @param {BundleData[]} bundleData [The list of data containing files' name, path, and read stream]
    * @memberof ArchiverBundler
    */
-  private appendData({
+  private async appendData({
     archive,
     bundleData,
   }: {
     archive: Archiver;
     bundleData: BundleData[];
-  }): void {
+  }): Promise<void> {
     if (Array.isArray(bundleData)) {
-      bundleData.forEach(fileData => {
-        archive.append(fileData.data, {
+      bundleData.forEach(async fileData => {
+        const dataStream = await this.fetchReadableStream(fileData.uri);
+        archive.append(dataStream, {
           name: fileData.name,
           prefix: fileData.prefix || '',
         });
       });
     }
+  }
+
+  /**
+   * Returns Readable data stream from request at given uri
+   *
+   * @param {string} uri [URI of the resource requested]
+   * @returns {Promise<Readable>}
+   */
+  fetchReadableStream(uri: string): Promise<Readable> {
+    return new Promise((resolve, reject) => {
+      https.get(uri, (response) => {
+        resolve(response);
+      });
+    });
   }
 }

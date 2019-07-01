@@ -15,6 +15,7 @@ import { HierarchyAdapter } from './Hierarchy/HierarchyAdapter';
 import { BundlerModule } from './Publishing/Bundler/BundlerModule';
 import { Bundler } from './Publishing/Bundler/interfaces';
 import { BundleData, BundleExtension } from './Publishing/Bundler/typings';
+import { FileManagerAdapter } from '../FileManager';
 
 const app = express();
 const router = express.Router();
@@ -47,6 +48,7 @@ describe('LearningObjectRouteHandler', () => {
         dataStore = await MongoDriver.build(global['__MONGO_URI__']);
         HierarchyAdapter.open(dataStore);
         fileManager = new MockS3Driver();
+        FileManagerAdapter.open(fileManager);
         LibraryDriver = new MockLibraryDriver();
         BundlerModule.providers = [{ provide: Bundler, useClass: StubBundler }];
         BundlerModule.initialize();
