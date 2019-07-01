@@ -6,6 +6,7 @@ import { HierarchyAdapter } from '../Hierarchy/HierarchyAdapter';
 import { bundleLearningObject } from './Bundler/Interactor';
 import { FileManagerAdapter } from '../../FileManager';
 import { requesterIsAdminOrEditor } from '../../shared/AuthorizationManager';
+import { reportError } from '../../shared/SentryConnector';
 
 export interface PublishingDataStore {
     addToReleased(releasableObject: LearningObject): Promise<void>;
@@ -13,9 +14,16 @@ export interface PublishingDataStore {
 
 /**
  * If the user is an admin or editor (the only roles that can release a Learning Object),
- * then request the data store marks the Learning Object as released. Otherwise, throw a
- * ResourceError. An email will only be sent to the Learning Object author if the
- * Learning Object being released is a top-level (parent) objct
+ * then:
+ * 1. Generate the relevant artifacts for the release
+ * 2. Add the Learning Object to the released set
+ * 3. Send out a notification to the author
+ *
+ * Notes:
+ * If the generation of publishing artifacts fails, report the error but do not abort the release - as this
+ * should be handled retrospectively.
+ * An email will only be sent to the Learning Object author if the
+ * Learning Object being released is a top-level (parent) object.
  */
 export async function releaseLearningObject({ userToken, dataStore, releasableObject, releaseEmailGateway }: {
     userToken: UserToken,
@@ -26,7 +34,11 @@ export async function releaseLearningObject({ userToken, dataStore, releasableOb
     if (!requesterIsAdminOrEditor(userToken)) {
         throw new ResourceError(`${userToken.username} does not have access to release this Learning Object`, ResourceErrorReason.INVALID_ACCESS);
     }
-    await createPublishingArtifacts(releasableObject, userToken);
+    try {
+        await createPublishingArtifacts(releasableObject, userToken);
+    } catch (e) {
+        reportError(e);
+    }
     await dataStore.addToReleased(releasableObject);
     await sendEmail(releasableObject, userToken, releaseEmailGateway);
 }
