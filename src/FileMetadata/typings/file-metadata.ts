@@ -6,6 +6,10 @@
  */
 export interface FileMetadata {
   /**
+   * User supplied information about the contents of the file
+   */
+  description?: string;
+  /**
    * Server generated hash of the file's content
    */
   ETag: string;
@@ -40,7 +44,7 @@ export interface FileMetadataInsert extends FileMetadata {
    */
   createdDate: string;
   /**
-   * User supplied information about the contents of the file
+   * @inheritdoc
    */
   description: string;
   /**
@@ -56,10 +60,6 @@ export interface FileMetadataInsert extends FileMetadata {
    * Unique identifier of the Learning Object the file belongs to
    */
   learningObjectId: string;
-  /**
-   * Revision number of the Learning Object the file belongs to
-   */
-  learningObjectRevision: number;
   /**
    * Flag indicating whether or not the file can be included in the Learning Object bundle
    */
