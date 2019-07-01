@@ -7,32 +7,49 @@ import {
 
 export abstract class FileManager {
 
-
   /**
-   * Uploads single file
+   * Uploads a single file
    *
+   * @abstract
    * @param {{ file: FileUpload }} params
    * @returns {Promise<string>}
-   * @memberof S3Driver
+   * @memberof FileManager
    */
   abstract upload(params: {
     file: FileUpload;
   }): Promise<string>;
 
+  /**
+   * Deletes a single file
+   *
+   * @abstract
+   * @param {{ path: string }} params
+   * @returns {Promise<void>}
+   * @memberof FileManager
+   */
   abstract delete(params: {
     path: string;
   }): Promise<void>;
 
+  /**
+   * Deletes all files within a given folder
+   *
+   * @abstract
+   * @param {{ path: string }} params
+   * @returns {Promise<void>}
+   * @memberof FileManager
+   */
   abstract deleteFolder(params: {
     path: string;
   }): Promise<void>;
 
-    /**
+  /**
    * Deletes all files in storage
    *
-   * @param {string} path
+   * @abstract
+   * @param {{ path: string}} params
    * @returns {Promise<void>}
-   * @memberof S3Driver
+   * @memberof FileManager
    */
   abstract deleteAll(params: {
     path: string;
@@ -68,27 +85,29 @@ export abstract class FileManager {
   /**
    * Cancels chunk upload
    *
+   * @abstract
    * @param {{
-    *     path: string;
-    *     uploadId: string;
-    *   }} params
-    * @returns {Promise<void>}
-    * @memberof S3Driver
-    */
+   *     path: string;
+   *     uploadId: string;
+   *   }} params
+   * @returns {Promise<void>}
+   * @memberof FileManager
+   */
   abstract abortMultipartUpload(params: {
     path: string;
     uploadId: string;
   }): Promise<void>;
 
-/**
-  * Copies all objects in source folder from working files bucket to destination folder in released files bucket
+ /**
+  * Copies all objects in source folder from working files bucket 
+  * to destination folder in released files bucket
   *
   * @param {{
   *     srcFolder: string;
   *     destFolder: string;
   *   }} params
   * @returns {Promise<void>}
-  * @memberof S3Driver
+  * @memberof FileManager
   */
   abstract copyToReleased(params: {
     srcFolder: string;

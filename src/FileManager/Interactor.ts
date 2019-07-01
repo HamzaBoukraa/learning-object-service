@@ -1,13 +1,11 @@
-import { FileManager as Module } from '.';
+import { FileManagerModule as Module } from '.';
 import { DataStore } from '../shared/interfaces/DataStore';
-import {
-  DZFile,
-  FileUpload,
-  MultipartFileUploadStatus,
-} from './interfaces/FileManager';
+
 import { FileManager } from '../shared/interfaces/interfaces';
 import { LearningObject } from '../shared/entity';
 import { Readable } from 'stream';
+import { MultipartFileUploadStatus, DZFile, FileUpload } from './typings/file-manager';
+import { ResourceError, ResourceErrorReason } from '../shared/errors';
 
 namespace Drivers {
   export const fileManager = () => Module.resolveDependency(FileManager);
@@ -28,29 +26,23 @@ namespace Drivers {
  */
 export async function startMultipartUpload(params: {
   dataStore: DataStore;
-  fileManager: FileManager;
   objectId: string;
   filePath: string;
   user: any;
   username?: string;
 }): Promise<string> {
-  try {
-    const path = `${params.username || params.user.username}/${
-      params.objectId
-    }/${params.filePath}`;
-    const uploadId = await params.fileManager.initMultipartUpload({ path });
-    const status: MultipartFileUploadStatus = {
-      path,
-      _id: uploadId,
-      completedParts: [],
-      createdAt: Date.now().toString(),
-    };
-    await params.dataStore.insertMultipartUploadStatus({ status });
-    return uploadId;
-  } catch (e) {
-    console.error(e);
-    throw `Could not start upload.`;
-  }
+  const path = `${params.username || params.user.username}/${
+    params.objectId
+  }/${params.filePath}`;
+  const uploadId = await Drivers.fileManager().initMultipartUpload({ path });
+  const status: MultipartFileUploadStatus = {
+    path,
+    _id: uploadId,
+    completedParts: [],
+    createdAt: Date.now().toString(),
+  };
+  await params.dataStore.insertMultipartUploadStatus({ status });
+  return uploadId;
 }
 
 /**
@@ -67,26 +59,21 @@ export async function startMultipartUpload(params: {
  */
 export async function processMultipartUpload(params: {
   dataStore: DataStore;
-  fileManager: FileManager;
   file: DZFile;
   fileUpload: FileUpload;
   uploadId: string;
-}): Promise<LearningObject.Material.File> {
-  try {
-    const partNumber = +params.file.dzchunkindex + 1;
-    const completedPart = await params.fileManager.uploadPart({
-      path: params.fileUpload.path,
-      data: params.fileUpload.data,
-      partNumber,
-      uploadId: params.uploadId,
-    });
-    await params.dataStore.updateMultipartUploadStatus({
-      completedPart,
-      id: params.uploadId,
-    });
-  } catch (e) {
-    return Promise.reject(e);
-  }
+}): Promise<void> {
+  const partNumber = +params.file.dzchunkindex + 1;
+  const completedPart = await Drivers.fileManager().uploadPart({
+    path: params.fileUpload.path,
+    data: params.fileUpload.data,
+    partNumber,
+    uploadId: params.uploadId,
+  });
+  await params.dataStore.updateMultipartUploadStatus({
+    completedPart,
+    id: params.uploadId,
+  });
 }
 
 /**
@@ -102,24 +89,18 @@ export async function processMultipartUpload(params: {
  */
 export async function finalizeMultipartUpload(params: {
   dataStore: DataStore;
-  fileManager: FileManager;
   uploadId: string;
 }): Promise<string> {
-  try {
-    const uploadStatus = await params.dataStore.fetchMultipartUploadStatus({
-      id: params.uploadId,
-    });
-    params.dataStore.deleteMultipartUploadStatus({ id: params.uploadId });
-    const url = await params.fileManager.completeMultipartUpload({
-      path: uploadStatus.path,
-      uploadId: params.uploadId,
-      completedPartList: uploadStatus.completedParts,
-    });
-    return url;
-  } catch (e) {
-    console.error(e);
-    throw `Could not complete upload`;
-  }
+  const uploadStatus = await params.dataStore.fetchMultipartUploadStatus({
+    id: params.uploadId,
+  });
+  params.dataStore.deleteMultipartUploadStatus({ id: params.uploadId });
+  const url = await Drivers.fileManager().completeMultipartUpload({
+    path: uploadStatus.path,
+    uploadId: params.uploadId,
+    completedPartList: uploadStatus.completedParts,
+  });
+  return url;
 }
 
 /**
@@ -135,22 +116,16 @@ export async function finalizeMultipartUpload(params: {
  */
 export async function abortMultipartUpload(params: {
   dataStore: DataStore;
-  fileManager: FileManager;
   uploadId: string;
 }): Promise<void> {
-  try {
-    const uploadStatus = await params.dataStore.fetchMultipartUploadStatus({
-      id: params.uploadId,
-    });
-    params.dataStore.deleteMultipartUploadStatus({ id: params.uploadId });
-    await params.fileManager.abortMultipartUpload({
-      path: uploadStatus.path,
-      uploadId: params.uploadId,
-    });
-  } catch (e) {
-    console.error(e);
-    throw new Error(`Could not cancel upload`);
-  }
+  const uploadStatus = await params.dataStore.fetchMultipartUploadStatus({
+    id: params.uploadId,
+  });
+  params.dataStore.deleteMultipartUploadStatus({ id: params.uploadId });
+  await Drivers.fileManager().abortMultipartUpload({
+    path: uploadStatus.path,
+    uploadId: params.uploadId,
+  });
 }
 
 /**
@@ -162,10 +137,9 @@ export async function abortMultipartUpload(params: {
  * @returns {string}
  */
 export async function uploadFile(params: {
-  fileManager: FileManager,
   file: FileUpload,
 }): Promise<void> {
-  await params.fileManager.upload({
+  await Drivers.fileManager().upload({
     file: params.file,
   });
 }
@@ -180,18 +154,16 @@ export async function uploadFile(params: {
  */
 export async function deleteFile(params: {
   path: string;
-  fileManager: FileManager;
 }): Promise<void> {
-  await params.fileManager.delete({
+  await Drivers.fileManager().delete({
     path: params.path,
   });
 }
 
 export async function deleteFolder(params: {
   path: string;
-  fileManager: FileManager;
 }): Promise<void> {
-  await params.fileManager.deleteFolder({
+  await Drivers.fileManager().deleteFolder({
     path: params.path,
   });
 }
@@ -211,7 +183,6 @@ export async function downloadSingleFile(params: {
   learningObjectId: string;
   fileId: string;
   dataStore: DataStore;
-  fileManager: FileManager;
   author: string;
 }): Promise<{ filename: string; mimeType: string; stream: Readable }> {
   let learningObject, fileMetaData;
@@ -222,8 +193,9 @@ export async function downloadSingleFile(params: {
   });
 
   if (!learningObject) {
-    throw new Error(
+    throw new ResourceError(
       `Learning object ${params.learningObjectId} does not exist.`,
+      ResourceErrorReason.NOT_FOUND,
     );
   }
 
@@ -245,11 +217,11 @@ export async function downloadSingleFile(params: {
   }`;
   const mimeType = fileMetaData.fileType;
   // Check if the file manager has access to the resource before opening a stream
-  if (await params.fileManager.hasAccess(path)) {
-    const stream = params.fileManager.streamWorkingCopyFile({ path });
+  if (await Drivers.fileManager().hasAccess(path)) {
+    const stream = Drivers.fileManager().streamWorkingCopyFile({ path });
     return { mimeType, stream, filename: fileMetaData.name };
   } else {
-    throw { message: 'File not found', object: { name: learningObject.name } };
+    throw Error(`File not found ${learningObject.name}`);
   }
 }
 /**

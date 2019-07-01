@@ -1,6 +1,7 @@
 import { expressServiceModule, ExpressServiceModule } from 'node-service-module';
 import { ExpressHttpAdapter } from './adapters';
 import { S3Driver } from '../drivers/drivers';
+import { FileManager } from '../shared/interfaces/interfaces';
 
 /**
  * Module responsible for handling file operations
@@ -15,6 +16,6 @@ import { S3Driver } from '../drivers/drivers';
         { provide: FileManager, useClass: S3Driver  },
     ],
 })
-export class FileManager extends ExpressServiceModule {
+export class FileManagerModule extends ExpressServiceModule {
 
 }
