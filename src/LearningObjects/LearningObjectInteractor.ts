@@ -1114,16 +1114,15 @@ export async function getMaterials({
 }
 
 /**
- * Sanitizes object containing updates to be stored by cloning valid properties and trimming strings
+ * Sanitizes object containing updates to be stored by removing invalid update properties, cloning valid properties, and trimming strings
  *
- * @param {{
- *   [index: string]: any;
- * }} object
+ * @param {Partial<LearningObject>} object [Object containing values to update existing Learning Object with]
  * @returns {LearningObjectUpdates}
  */
-function sanitizeUpdates(object: {
-  [index: string]: any;
-}): LearningObjectUpdates {
+function sanitizeUpdates(
+  object: Partial<LearningObject>,
+): LearningObjectUpdates {
+  delete object.id;
   const updates: LearningObjectUpdates = {};
   for (const key of VALID_LEARNING_OBJECT_UPDATES) {
     if (object[key]) {
