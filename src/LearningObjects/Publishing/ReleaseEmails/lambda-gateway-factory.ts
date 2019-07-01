@@ -15,8 +15,8 @@ export class LambdaGatewayFactory {
 
     static buildGateway(): ReleaseEmailGateway {
         switch (process.env.NODE_ENV) {
+            case 'test':
             case 'testing':
-                return new LambdaGatewayStub();
             case 'development':
                 return new LambdaGatewayStub();
             case 'production':
