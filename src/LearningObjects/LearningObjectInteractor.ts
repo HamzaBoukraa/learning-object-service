@@ -592,32 +592,33 @@ export async function addLearningObject({
  * @param {LearningObjectID} id - database id of the record to change
  * @param {LearningObject} object - entity with values to update to
  */
-export async function updateLearningObject(params: {
-  userToken: UserToken;
+export async function updateLearningObject({
+  dataStore,
+  requester,
+  id,
+  authorUsername,
+  updates,
+}: {
   dataStore: DataStore;
+  requester: UserToken;
   id: string;
-  updates: { [index: string]: any };
+  authorUsername: string;
+  updates: Partial<LearningObject>;
 }): Promise<void> {
-  let { userToken, dataStore, id, updates } = params;
-  if (updates.id) {
-    delete updates.id;
-  }
-
+  try {
   if (updates.name) {
     await checkNameExists({
       id,
       dataStore,
       name: updates.name,
-      username: userToken.username,
+        username: authorUsername,
     });
   }
-  try {
-    const hasAccess = await hasLearningObjectWriteAccess(
-      userToken,
-      dataStore,
+    const learningObject = await dataStore.fetchLearningObject({
       id,
-    );
-    if (hasAccess) {
+      full: false,
+    });
+    authorizeWriteAccess({ learningObject, requester });
       const cleanUpdates = sanitizeUpdates(updates);
       validateUpdates({
         id,
@@ -635,21 +636,13 @@ export async function updateLearningObject(params: {
           id,
         );
         await PublishingService.releaseLearningObject({
-          userToken,
+        userToken: requester,
           dataStore,
           releasableObject,
         });
       }
-    } else {
-      return Promise.reject(
-        new ResourceError('Invalid Access', ResourceErrorReason.INVALID_ACCESS),
-      );
-    }
   } catch (e) {
-    reportError(e);
-    return Promise.reject(
-      new Error(`Problem updating learning object ${params.id}. ${e}`),
-    );
+    handleError(e);
   }
 }
 

@@ -115,19 +115,20 @@ export function initializePrivate({
     }
   };
   const updateLearningObject = async (req: Request, res: Response) => {
-    let updates: any;
-
     try {
       const id: string = req.params.id;
-      updates = req.body.learningObject;
-      const userToken: UserToken = req.user;
+      const updates: Partial<LearningObject> =
+        req.body.updates || req.body.learningObject;
+      const requester: UserToken = req.user;
+      const authorUsername: string = req.params.username || req.user.username;
       await LearningObjectInteractor.updateLearningObject({
-        userToken,
         dataStore,
+        requester,
         id,
+        authorUsername,
         updates,
       });
-      res.sendStatus(200);
+      res.sendStatus(204);
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
       res.status(code).json({ message });
@@ -236,6 +237,7 @@ export function initializePrivate({
   router.route('/learning-objects').post(addLearningObject);
   router.post('/users/:username/learning-objects', addLearningObject);
   router.patch('/learning-objects/:id', updateLearningObject);
+  router.patch('/users/:username/learning-objects/:id', updateLearningObject);
   router.delete('/learning-objects/:learningObjectName', deleteLearningObject);
   router.get('/users/:username/learning-objects/:id/materials', getMaterials);
   router.get('/learning-objects/:id/materials/all', getMaterials);
