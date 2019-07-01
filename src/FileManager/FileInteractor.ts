@@ -166,6 +166,32 @@ export async function uploadFile(params: {
 }
 
 /**
+ * Instructs file manager to delete  a single file
+ *
+ * @export
+ * @param {{ FileManager }} fileManager
+ * @param {{ FileUpload }} file
+ * @returns {string}
+ */
+export async function deleteFile(params: {
+  path: string;
+  fileManager: FileManager;
+}): Promise<void> {
+  await params.fileManager.delete({
+    path: params.path,
+  });
+}
+
+export async function deleteFolder(params: {
+  path: string;
+  fileManager: FileManager;
+}): Promise<void> {
+  await params.fileManager.deleteFolder({
+    path: params.path,
+  });
+}
+
+/**
  * Sends a file back to the caller as a readable stream.
  *
  * @param params.learningObjectId the identifier of the Learning Object that the file belongs to
@@ -233,3 +259,4 @@ export function getMimeType(params: {
 }): string {
   return params.file.fileType;
 }
+

@@ -231,12 +231,56 @@ export class S3Driver implements FileManager {
    * @returns {Promise<void>}
    * @memberof S3Driver
    */
-  public async delete(params: { path: string }): Promise<void> {
+  async delete(params: { path: string }): Promise<void> {
     const deleteParams = {
       Bucket: BUCKETS.WORKING_FILES,
       Key: params.path,
     };
     return await this.deleteObject(deleteParams);
+  }
+
+  /**
+   * Deletes all objects within a specified folder
+   * The function stores all nested objects in an array called listedObjects
+   * If no nested objects exist, the function exits
+   * If nested objects do exists, the key of each object is mapped to an array
+   * in the deleteObjectParams object.
+   * The objects are then deleted.
+   *
+   * Finally, the function checks the IsTruncated property.
+   * This property is a flag that indicates whether or not Amazon S3 returned all of
+   * the results that satisfied the search criteria.
+   *
+   * If it is set to true, the deleteFolder function is called again.
+   *
+   * This continues until all objects in the folder are deleted.
+   *
+   * @param {string} path
+   * @returns {Promise<void>}
+   * @memberof S3Driver
+   */
+  async deleteFolder(params: { path: string}): Promise<void> {
+    if (params.path[params.path.length] !== '/') {
+      throw Error('Path to delete a folder must end with a /');
+    }
+    const listObjectsParams = {
+      Bucket: BUCKETS.WORKING_FILES,
+      Key: params.path,
+    };
+    const listedObjects = await this.s3.listObjectsV2(listObjectsParams).promise();
+    if (listedObjects.Contents.length === 0) return;
+    const deleteObjectsParams = {
+      Bucket: BUCKETS.WORKING_FILES,
+      Delete: { Objects: <any>[] },
+    };
+
+    listedObjects.Contents.forEach(({Key}) => {
+      deleteObjectsParams.Delete.Objects.push({Key});
+    });
+
+    await this.s3.deleteObjects(deleteObjectsParams).promise();
+
+    if (listedObjects.IsTruncated) await this.deleteFolder({path: params.path});
   }
   /**
    * Deletes all files in storage
@@ -245,7 +289,7 @@ export class S3Driver implements FileManager {
    * @returns {Promise<void>}
    * @memberof S3Driver
    */
-  public async deleteAll(params: { path: string }): Promise<void> {
+  async deleteAll(params: { path: string }): Promise<void> {
     const listParams = {
       Bucket: BUCKETS.WORKING_FILES,
       Prefix: params.path,

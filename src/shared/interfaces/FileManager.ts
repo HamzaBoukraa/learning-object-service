@@ -7,6 +7,7 @@ export type CompletedPartList = CompletedPartList;
 export interface FileManager {
   upload(params: { file: FileUpload }): Promise<string>;
   delete(params: { path: string }): Promise<void>;
+  deleteFolder(params: { path: string }): Promise<void>;
   deleteAll(params: { path: string }): Promise<void>;
   streamFile(params: { path: string }): Readable;
   streamWorkingCopyFile(params: { path: string }): Readable;
