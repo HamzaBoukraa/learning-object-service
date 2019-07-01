@@ -8,7 +8,7 @@ import { MockLibraryDriver } from '../../tests/mock-drivers/MockLibraryDriver';
 
 const stubs = new Stubs();
 const dataStore = new MockDataStore();
-const library = new MockLibraryDriver()
+const library = new MockLibraryDriver();
 const publisher: SubmissionPublisher = {
   withdrawlSubmission: (id: string) => { return Promise.resolve(); },
   publishSubmission: (submission: LearningObject) => null,
