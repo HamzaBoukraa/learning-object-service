@@ -4,14 +4,16 @@ import { LearningObjectAdapter } from '../../LearningObjects/LearningObjectAdapt
 import { SubmissionPublisher } from './SubmissionPublisher';
 import { LearningObject } from '../../shared/entity';
 import { Stubs } from '../../tests/stubs';
+import { MockLibraryDriver } from '../../tests/mock-drivers/MockLibraryDriver';
 
 const stubs = new Stubs();
 const dataStore = new MockDataStore();
+const library = new MockLibraryDriver()
 const publisher: SubmissionPublisher = {
   withdrawlSubmission: (id: string) => { return Promise.resolve(); },
   publishSubmission: (submission: LearningObject) => null,
 };
-LearningObjectAdapter.open(dataStore, null);
+LearningObjectAdapter.open(dataStore, null, library);
 
 describe('cancelSubmission', () => {
   it('should cancel the submission given a valid username and id', async done => {
