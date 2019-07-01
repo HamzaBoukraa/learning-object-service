@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import {
   Bundler,
-} from './interfaces';
+} from './Bundler';
 import {
   LearningObject,
   Writable,
@@ -9,7 +9,6 @@ import {
   UserToken,
   BundleData,
   BundleExtension,
-  ExpressResponse,
 } from './typings';
 import { reportError } from '../../../shared/SentryConnector';
 import { ServiceError, ServiceErrorReason } from '../../../shared/errors';

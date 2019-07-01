@@ -1,5 +1,5 @@
-import { ArchiverBundler } from './';
-import { BundleExtension, Writable } from '../../../typings';
+import { ArchiverBundler } from './ArchiverBundler';
+import { BundleExtension, Writable } from './typings';
 import * as fs from 'fs';
 describe('ArchiverBundler', () => {
   const bundler: ArchiverBundler = new ArchiverBundler();

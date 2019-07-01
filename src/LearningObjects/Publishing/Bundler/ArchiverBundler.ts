@@ -1,7 +1,8 @@
-import { Bundler } from '../../../interfaces';
-import { Writable, BundleData, BundleExtension, Readable } from '../../../typings';
+import { Bundler } from './Bundler';
+import { Writable, BundleData, BundleExtension, Readable } from './typings';
 import { create, Archiver } from 'archiver';
 import * as https from 'https';
+
 /**
  * Bundler implementation using the `archiver` package as the Driver
  *

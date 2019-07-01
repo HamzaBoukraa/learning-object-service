@@ -1,6 +1,6 @@
-import { ArchiverBundler } from './drivers/Bundler/ArchiverBundler';
+import { ArchiverBundler } from './ArchiverBundler';
 import { ServiceModule, serviceModule } from 'node-service-module';
-import { Bundler } from './interfaces';
+import { Bundler } from './Bundler';
 
 @serviceModule({
   providers: [
