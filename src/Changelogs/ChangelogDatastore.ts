@@ -107,7 +107,7 @@ export class ChangelogDataStore {
               $filter: {
                 input: '$logs',
                 as: 'log',
-                cond: { $lt: [ '$$log.date', params.date ] },
+                cond: { $lt: [ '$$log.date', parseInt(params.date, 10) ] },
               },
             },
           },
