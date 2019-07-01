@@ -86,7 +86,7 @@ export class ChangelogDataStore {
   }
 
   /**
-   * Get all changelogs that were created before an inputted date for a specified learning object
+   * Get all change logs for the specified Learning Object that were created before the given date
    *
    * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
    * @param {string} date The date of that the changelog was created
@@ -112,8 +112,7 @@ export class ChangelogDataStore {
             },
           },
         },
-      ])
-      .toArray();
+      ]).toArray();
     return changelogs;
   }
 

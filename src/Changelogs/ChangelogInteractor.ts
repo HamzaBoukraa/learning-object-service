@@ -71,7 +71,8 @@ export async function getRecentChangelog(params: {
 }
 
 /**
- * Handles whether it fetches all change logs for a specific learning object from the data store or if it fetches all changelogs that were created before an inputted date for a specified learning object.
+ * Handles whether all the change logs or if the change logs
+ * created before a given date are fetched for a specified learning object.
  *
  * @param {DataStore} dataStore An instance of DataStore
  * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to

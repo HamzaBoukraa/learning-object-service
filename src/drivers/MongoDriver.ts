@@ -835,6 +835,7 @@ export class MongoDriver implements DataStore {
 
   /**
    * Allows filtering change logs by date of a specified learning object
+   *
    * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
    * @param {string} date The date the changelog was created
    */
