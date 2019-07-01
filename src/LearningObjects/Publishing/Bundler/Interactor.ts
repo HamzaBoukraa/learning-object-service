@@ -28,16 +28,11 @@ const CC_LICENSE = {
 };
 
 /**
- * Handles Learning Object download by setting up listeners on the `writeStream`
- * Setting attachment on `writeStream` if requested,
- * Getting BundleData for `learningObject`
- * Bundling `learningObject` data using Bundler
- * Updating download status of `learningObject` for the requester
+ * bundleLearningObject creates a bundle of all materials for a Learning Object.
  *
  * @param {LearningObject} learningObject [The Learning Object to be downloaded]
  * @param {string} requesterUsername [The username of the requester]
- * @param {Writable} writeStream [The write stream the download/bundle will be written to]
- * @returns
+ * @returns a stream of the archive file that contains the bundled Learning Object
  */
 export async function bundleLearningObject({
   learningObject,
@@ -47,7 +42,7 @@ export async function bundleLearningObject({
   requesterUsername: string;
 }) {
   const extension = BundleExtension.Zip;
-  const objectData = await openFileStreams({ learningObject });
+  const objectData = buildBundleStructure({ learningObject });
   return Drivers.bundler().bundleData({
     bundleData: objectData,
     extension,
@@ -61,27 +56,27 @@ export async function bundleLearningObject({
  * @param {string} prefix [File path prefix (ie. fileName: 'World.txt', prefix: 'Hello' = filePath: 'Hello/World.txt')]
  * @returns {Promise<BundleData[]>}
  */
-async function openFileStreams({
+function buildBundleStructure({
   learningObject,
   prefix = '',
 }: {
   learningObject: LearningObject;
   prefix?: string;
-}): Promise<BundleData[]> {
+}): BundleData[] {
   try {
-    const [license, readMe, files, children] = await Promise.all([
-      bundleCCLicense(prefix),
-      bundleReadMe({
+    const [license, readMe, files, children] = [
+      addCCLicense(prefix),
+      addReadMe({
         uri: learningObject.materials.pdf.url,
         name: learningObject.materials.pdf.name,
         prefix,
       }),
-      bundleFiles({ files: learningObject.materials.files, prefix }),
-      bundleChildren({
+      addFiles({ files: learningObject.materials.files, prefix }),
+      addChildren({
         children: learningObject.children,
         prefix,
       }),
-    ]);
+    ];
     return [license, readMe, ...files, ...children];
   } catch (error) {
     reportError(error);
@@ -90,24 +85,23 @@ async function openFileStreams({
 }
 
 /**
- * Bundles the Creative Common License
+ * addCCLicense creates a BundleData object that indicates the placement of the Creative Commons License in the bundle.
  *
  * @param {string} prefix [File path prefix (ie. fileName: 'World.txt', prefix: 'Hello' = filePath: 'Hello/World.txt')]
- * @returns {Promise<BundleData>}
  */
-async function bundleCCLicense(prefix: string = ''): Promise<BundleData> {
+function addCCLicense(prefix: string = ''): BundleData {
   return { name: CC_LICENSE.name, prefix, uri: CC_LICENSE.uri };
 }
 
 /**
- * Bundles the Learning Object's ReadMe
+ * addReadMe creates a BundleData object that indicates the placement of a Learning Object's README file in the bundle.
  *
  * @param {string} uri [URI of the ReadMe file]
  * @param {string} name [Name of the ReadMe file]
  * @param {string} prefix [File path prefix (ie. fileName: 'World.txt', prefix: 'Hello' = filePath: 'Hello/World.txt')]
  * @returns {Promise<BundleData>}
  */
-async function bundleReadMe({
+function addReadMe({
   uri,
   name,
   prefix = '',
@@ -115,55 +109,52 @@ async function bundleReadMe({
   uri: string;
   name: string;
   prefix?: string;
-}): Promise<BundleData> {
+}): BundleData {
   return { name, prefix, uri };
 }
 
 /**
- * Bundles Learning Object's files
+ * addFiles iterates through a Learning Object's file metadata in order to create BundleData objects noting where to
+ * place each file inside of the bundle.
  *
  * @param {LearningObject.Material.File[]} files [List of file data from the Learning Object to get bundled];
  * @param {string}: prefix [File path prefix (ie. fileName: 'World.txt', prefix: 'Hello' = filePath: 'Hello/World.txt')]
  * @returns {Promise<BundleData[]>}
  */
-async function bundleFiles({
+function addFiles({
   files,
   prefix = '',
 }: {
   files: LearningObject.Material.File[];
   prefix?: string;
-}): Promise<BundleData[]> {
-  return Promise.all(
-    files.map(async file => {
-      return { name: file.fullPath || file.name, prefix, uri: file.url };
-    }),
-  );
+}): BundleData[] {
+  return files.map(file => {
+    return { name: file.fullPath || file.name, prefix, uri: file.url };
+  });
 }
 
 /**
- * Recursively bundles child objects
+ * addChildren triggers the process of building a bundle structure for each child of a Learning Object.
  *
  * @param {LearningObject[]} children [Array of child Learning Objects]
  * @param {string}: prefix [File path prefix (ie. fileName: 'World.txt', prefix: 'Hello' = filePath: 'Hello/World.txt')]
  * @returns {Promise<BundleData[]>}
  */
-async function bundleChildren({
+function addChildren({
   children,
   prefix = '',
 }: {
   children: LearningObject[];
   prefix: string;
-}): Promise<BundleData[]> {
-  const childrenBundleData = await Promise.all([
-    ...children.map(child => {
-      // This is to ensure that the prefix property is only utilized at the first layer of children and below
-      const path = `${prefix}/${buildDirectoryName(child)}`;
-      return openFileStreams({
-        learningObject: child,
-        prefix: path,
-      });
-    }),
-  ]);
+}): BundleData[] {
+  const childrenBundleData = children.map(child => {
+    // This is to ensure that the prefix property is only utilized at the first layer of children and below
+    const path = `${prefix}/${buildDirectoryName(child)}`;
+    return buildBundleStructure({
+      learningObject: child,
+      prefix: path,
+    });
+  });
   return flattenDeep(childrenBundleData);
 }
 
