@@ -94,7 +94,7 @@ export function initializePrivate({
       res.status(200).send(learningObject.toPlainObject());
     } catch (e) {
         const { code, message } = mapErrorToResponseData(e);
-      res.status(code).json({ message });
+        res.status(code).json({ message });
     }
   };
   const getMaterials = async (req: Request, res: Response) => {
