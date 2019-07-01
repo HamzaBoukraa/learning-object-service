@@ -17,7 +17,4 @@ const setupElasticToggle = ({ userToken, dataStore, releasableObject }: {
   releaseLearningObject({ userToken, dataStore: toggle, releasableObject, releaseEmailGateway });
 };
 
-// Initialize dependencies
-BundlerModule.initialize();
-
 export { setupElasticToggle as releaseLearningObject };

@@ -13,8 +13,8 @@ import { LearningObject } from '../shared/entity';
 import { Stubs } from '../tests/stubs';
 import { HierarchyAdapter } from './Hierarchy/HierarchyAdapter';
 import { BundlerModule } from './Publishing/Bundler/BundlerModule';
-import { Bundler } from './Publishing/Bundler/interfaces';
-import { BundleData, BundleExtension } from './Publishing/Bundler/typings';
+import { Bundler } from './Publishing/Bundler/Bundler';
+import { BundleData, BundleExtension, Readable } from './Publishing/Bundler/typings';
 import { FileManagerAdapter } from '../FileManager';
 
 const app = express();
@@ -40,7 +40,7 @@ describe('LearningObjectRouteHandler', () => {
             bundleData: BundleData[];
             extension: BundleExtension;
         }) {
-            return Promise.resolve();
+            return Promise.resolve(new Readable());
         }
     }
 
