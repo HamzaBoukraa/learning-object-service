@@ -18,15 +18,15 @@ export class ArchiverBundler implements Bundler {
    * @param  {BundleExtension} extension [The extension to use for the archive]
    * @memberof ArchiverBundler
    */
-  bundleData({
+  async bundleData({
     bundleData,
     extension,
   }: {
     bundleData: BundleData[];
     extension: BundleExtension;
-  }) {
+  }) { // TODO: Update return type
     const archive = this.createArchive({ extension });
-    this.appendData({ archive, bundleData });
+    await this.appendData({ archive, bundleData });
     archive.finalize();
     return archive;
   }
@@ -63,13 +63,14 @@ export class ArchiverBundler implements Bundler {
     archive: Archiver;
     bundleData: BundleData[];
   }): Promise<void> {
-    if (Array.isArray(bundleData)) {
-      bundleData.forEach(async fileData => {
-        const dataStream = await this.fetchReadableStream(fileData.uri);
-        archive.append(dataStream, {
-          name: fileData.name,
-          prefix: fileData.prefix || '',
-        });
+    if (!Array.isArray(bundleData)) {
+      return;
+    }
+    for (let fileData of bundleData) {
+      const dataStream = await this.fetchReadableStream(fileData.uri);
+      archive.append(dataStream, {
+        name: fileData.name,
+        prefix: fileData.prefix || '',
       });
     }
   }
