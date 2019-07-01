@@ -39,7 +39,7 @@ describe('LearningObjectRouteHandler', () => {
         // FIXME: This user is both an admin and a reviewer@nccp
         token = generateToken(stubs.userToken);
         authorization = { Cookie: `presence=${token}`, 'Content-Type': 'application/json' };
-        LearningObjectRouteHandler.initializePublic({ router, dataStore });
+        LearningObjectRouteHandler.initializePublic({ router, dataStore, library: LibraryDriver });
         LearningObjectRouteHandler.initializePrivate({
             router,
             dataStore,

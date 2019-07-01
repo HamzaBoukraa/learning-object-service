@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Request, Response } from 'express';
 import * as Interactor from '../Interactor';
 import {
   Requester,
@@ -7,7 +7,6 @@ import {
   FileMetadataUpdate,
 } from '../typings';
 import { mapErrorToResponseData } from '../../shared/errors';
-import { reportError } from '../../shared/SentryConnector';
 
 /**
  * Builds the Express Router for this module
@@ -19,11 +18,11 @@ export function buildRouter() {
   const router = Router();
   router
     .route('/users/:username/learning-objects/:loId/materials/files')
-    // .get(getAllFiles)
+    .get(getAllFiles)
     .post(addFiles);
   router
     .route('/users/:username/learning-objects/:loId/materials/files/:fileId')
-    // .get(getFile)
+    .get(getFile)
     .patch(updateFile)
     .delete(deleteFile);
   return router;
@@ -58,16 +57,21 @@ async function getAllFiles(req: Request, res: Response) {
  * @param {Request} req [The express request object]
  * @param {Response} res [The express response object]
  */
-async function addFiles(req: Request, res: Response, next: NextFunction) {
-  const requester: Requester = req.user;
-  const learningObjectId: string = req.params.loId;
-  const files: FileMetadata[] = mapToFileMeta(req.body.fileMeta);
-  Interactor.addFileMeta({
-    requester,
-    learningObjectId,
-    files,
-  }).catch(reportError);
-  next();
+async function addFiles(req: Request, res: Response) {
+  try {
+    const requester: Requester = req.user;
+    const learningObjectId: string = req.params.loId;
+    const files: FileMetadata[] = mapToFileMeta(req.body.fileMeta);
+    const fileMetadata = await Interactor.addFileMeta({
+      requester,
+      learningObjectId,
+      files,
+    });
+    res.send({ files: fileMetadata });
+  } catch (e) {
+    const { code, message } = mapErrorToResponseData(e);
+    res.status(code).json({ message });
+  }
 }
 
 /**
@@ -102,18 +106,23 @@ async function getFile(req: Request, res: Response) {
  * @param {Request} req [The express request object]
  * @param {Response} res [The express response object]
  */
-async function updateFile(req: Request, res: Response, next: NextFunction) {
-  const requester: Requester = req.user;
-  const learningObjectId: string = req.params.loId;
-  const fileId: string = req.params.fileId;
-  const updates: FileMetadataUpdate = req.body;
-  Interactor.updateFileMeta({
-    id: fileId,
-    requester,
-    learningObjectId,
-    updates,
-  }).catch(reportError);
-  next();
+async function updateFile(req: Request, res: Response) {
+  try {
+    const requester: Requester = req.user;
+    const learningObjectId: string = req.params.loId;
+    const fileId: string = req.params.fileId;
+    const updates: FileMetadataUpdate = req.body;
+    await Interactor.updateFileMeta({
+      id: fileId,
+      requester,
+      learningObjectId,
+      updates,
+    });
+    res.sendStatus(204);
+  } catch (e) {
+    const { code, message } = mapErrorToResponseData(e);
+    res.status(code).json({ message });
+  }
 }
 
 /**
@@ -122,16 +131,21 @@ async function updateFile(req: Request, res: Response, next: NextFunction) {
  * @param {Request} req [The express request object]
  * @param {Response} res [The express response object]
  */
-async function deleteFile(req: Request, res: Response, next: NextFunction) {
-  const requester: Requester = req.user;
-  const learningObjectId: string = req.params.loId;
-  const fileId: string = req.params.fileId;
-  Interactor.deleteFileMeta({
-    id: fileId,
-    requester,
-    learningObjectId,
-  }).catch(reportError);
-  next();
+async function deleteFile(req: Request, res: Response) {
+  try {
+    const requester: Requester = req.user;
+    const learningObjectId: string = req.params.loId;
+    const fileId: string = req.params.fileId;
+    await Interactor.deleteFileMeta({
+      id: fileId,
+      requester,
+      learningObjectId,
+    });
+    res.sendStatus(204);
+  } catch (e) {
+    const { code, message } = mapErrorToResponseData(e);
+    res.status(code).json({ message });
+  }
 }
 
 /**

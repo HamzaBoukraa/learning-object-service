@@ -82,7 +82,7 @@ async function startApp() {
  */
 function initModules() {
   HierarchyAdapter.open(dataStore);
-  LearningObjectAdapter.open(dataStore, fileManager);
+  LearningObjectAdapter.open(dataStore, fileManager, library);
   LearningObjectSearch.initialize();
   FileManagerAdapter.open(fileManager);
   FileMetadata.initialize();

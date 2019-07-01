@@ -8,8 +8,8 @@ import {
 import { UserToken } from '../shared/types';
 import * as LearningObjectInteractor from './LearningObjectInteractor';
 import { LearningObject } from '../shared/entity';
-import { FileMeta } from './typings';
 import { updateFileDescription, removeFile } from './LearningObjectInteractor';
+import { FileMeta, MaterialsFilter, LearningObjectFilter } from './typings';
 
 /**
  * Initializes an express router with endpoints for public Retrieving
@@ -18,9 +18,11 @@ import { updateFileDescription, removeFile } from './LearningObjectInteractor';
 export function initializePublic({
   router,
   dataStore,
+  library,
 }: {
   router: Router;
   dataStore: DataStore;
+  library: LibraryCommunicator;
 }) {
   /**
    * Retrieve a learning object by a specified ID
@@ -29,19 +31,24 @@ export function initializePublic({
    */
   const getLearningObjectById = async (req: Request, res: Response) => {
     try {
+      const requester: UserToken = req.user;
+      const filter: LearningObjectFilter = req.query.status;
       const id = req.params.learningObjectId;
       const learningObject = await LearningObjectInteractor.getLearningObjectById(
-        dataStore,
-        id,
+        { dataStore, library, id, requester, filter },
       );
       res.status(200).send(learningObject.toPlainObject());
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
-      res.status(code).json({message});
+      res.status(code).json({ message });
     }
   };
 
   router.get('/learning-objects/:learningObjectId', getLearningObjectById);
+  router.get(
+    '/users/:username/learning-objects/:learningObjectId',
+    getLearningObjectById,
+  );
 
   return router;
 }
@@ -102,15 +109,19 @@ export function initializePrivate({
   };
   const getMaterials = async (req: Request, res: Response) => {
     try {
-      const id = req.params.id;
+      const requester: UserToken = req.user;
+      const id: string = req.params.id;
+      const filter: MaterialsFilter = req.query.status;
       const materials = await LearningObjectInteractor.getMaterials({
         dataStore,
         id,
+        requester,
+        filter,
       });
       res.status(200).send(materials);
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
-      res.status(code).json({message});
+      res.status(code).json({ message });
     }
   };
   const updateLearningObject = async (req: Request, res: Response) => {
@@ -235,6 +246,7 @@ export function initializePrivate({
   router.route('/learning-objects').post(addLearningObject);
   router.patch('/learning-objects/:id', updateLearningObject);
   router.delete('/learning-objects/:learningObjectName', deleteLearningObject);
+  router.get('/users/:username/learning-objects/:id/materials', getMaterials);
   router.get('/learning-objects/:id/materials/all', getMaterials);
   router.get(
     '/learning-objects/:id/children/summary',
