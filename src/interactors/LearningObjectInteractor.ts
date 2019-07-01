@@ -37,6 +37,7 @@ import {
 } from '../shared/errors';
 import { LearningObject } from '../shared/entity';
 import { accessGroups } from '../shared/types/user-token';
+import { FileMetadata } from '../FileMetadata';
 
 // file size is in bytes
 const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
@@ -97,11 +98,12 @@ export class LearningObjectInteractor {
     } = params;
     try {
       let summary: LearningObject[] = [];
-// tslint:disable-next-line: no-shadowed-variable
+      // tslint:disable-next-line: no-shadowed-variable
       const { dataStore, library, username, loadChildren, query } = params;
 
       const formattedQuery = this.formatSearchQuery(query);
-      let { status, orderBy, sortType } = formattedQuery;
+      let { status, orderBy, sortType, text } = formattedQuery;
+
 
       // This will throw an error if there is no user with that username
       await dataStore.findUser(username);
@@ -129,6 +131,7 @@ export class LearningObjectInteractor {
         orderBy,
         sortType,
         status,
+        text,
       });
 
       summary = await Promise.all(
@@ -665,7 +668,7 @@ export class LearningObjectInteractor {
       let loFile: LearningObject.Material.File;
       const uploadPath = `${params.username}/${params.id}/${
         params.file.fullPath ? params.file.fullPath : params.file.name
-        }`;
+      }`;
       const fileUpload: FileUpload = {
         path: uploadPath,
         data: params.file.buffer,
@@ -909,6 +912,14 @@ export class LearningObjectInteractor {
       const objectIds = objectRefs.map(obj => obj.id);
       // Remove objects from library
       await library.cleanObjectsFromLibraries(objectIds);
+      await Promise.all(
+        objectRefs.map(ref =>
+          FileMetadata.deleteAllFileMetadata({
+            requester: params.user,
+            learningObjectId: ref.id,
+          }),
+        ),
+      ).catch(reportError);
       // Delete objects from datastore
       await dataStore.deleteMultipleLearningObjects(objectIds);
       // For each object id
@@ -1195,9 +1206,7 @@ export class LearningObjectInteractor {
     formattedQuery.standardOutcomeIDs = toArray(
       formattedQuery.standardOutcomeIDs,
     );
-    formattedQuery.guidelines = toArray(
-      formattedQuery.guidelines,
-    );
+    formattedQuery.guidelines = toArray(formattedQuery.guidelines);
     formattedQuery.page = toNumber(formattedQuery.page);
     formattedQuery.limit = toNumber(formattedQuery.limit);
     formattedQuery.sortType = <1 | -1>toNumber(formattedQuery.sortType);
@@ -1259,7 +1268,11 @@ export class LearningObjectInteractor {
         authorId,
         name: parentName,
       });
-      const hasAccess = await hasLearningObjectWriteAccess(userToken, dataStore, parentID);
+      const hasAccess = await hasLearningObjectWriteAccess(
+        userToken,
+        dataStore,
+        parentID,
+      );
       if (hasAccess) {
         await dataStore.setChildren(parentID, children);
         await updateObjectLastModifiedDate({
@@ -1273,8 +1286,6 @@ export class LearningObjectInteractor {
           ResourceErrorReason.INVALID_ACCESS,
         );
       }
-
-
     } catch (e) {
       handleError(e);
     }
@@ -1307,7 +1318,11 @@ export class LearningObjectInteractor {
         authorId,
         name: parentName,
       });
-      const hasAccess = await hasLearningObjectWriteAccess(userToken, dataStore, parentID);
+      const hasAccess = await hasLearningObjectWriteAccess(
+        userToken,
+        dataStore,
+        parentID,
+      );
       if (hasAccess) {
         await dataStore.deleteChild(parentID, childId);
         await updateObjectLastModifiedDate({
