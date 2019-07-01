@@ -1,11 +1,10 @@
-import { downloadSingleFile } from './SingleFileDownloadInteractor';
+import { downloadSingleFile } from './FileInteractor';
 import { Router, Response, Request } from 'express';
-import { fileNotFound } from './assets/filenotfound';
 import { LEARNING_OBJECT_ROUTES } from '../shared/routes';
-import { reportError } from '../shared/SentryConnector';
 import { DataStore } from '../shared/interfaces/DataStore';
 import { FileManager } from '../shared/interfaces/FileManager';
 import { mapErrorToResponseData } from '../shared/errors';
+import { fileNotFound } from './assets/filenotfound';
 
 // TODO: Define DataStore just for this Feature Module
 export function initializeSingleFileDownloadRouter({
