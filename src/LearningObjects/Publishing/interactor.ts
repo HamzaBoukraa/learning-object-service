@@ -1,11 +1,11 @@
 import { LearningObject } from '../../shared/entity';
 import { ResourceError, ResourceErrorReason } from '../../shared/errors';
-import { isAdminOrEditor } from '../../shared/AuthorizationManager';
 import { UserToken } from '../../shared/types';
 import { ReleaseEmailGateway } from './ReleaseEmails/release-email-gateway';
 import { HierarchyAdapter } from '../Hierarchy/HierarchyAdapter';
 import { bundleLearningObject } from './Bundler/Interactor';
 import { FileManagerAdapter } from '../../FileManager';
+import { requesterIsAdminOrEditor } from '../../shared/AuthorizationManager';
 
 export interface PublishingDataStore {
     addToReleased(releasableObject: LearningObject): Promise<void>;
@@ -23,7 +23,7 @@ export async function releaseLearningObject({ userToken, dataStore, releasableOb
     releasableObject: LearningObject;
     releaseEmailGateway: ReleaseEmailGateway,
 }): Promise<void> {
-    if (!isAdminOrEditor(userToken.accessGroups)) {
+    if (!requesterIsAdminOrEditor(userToken)) {
         throw new ResourceError(`${userToken.username} does not have access to release this Learning Object`, ResourceErrorReason.INVALID_ACCESS);
     }
     await createPublishingArtifacts(releasableObject, userToken);

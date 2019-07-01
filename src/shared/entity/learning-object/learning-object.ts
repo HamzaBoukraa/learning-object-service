@@ -292,6 +292,10 @@ export class LearningObject {
     return this._children;
   }
 
+  set children(children: LearningObject[]) {
+    this._children = children;
+  }
+
   /**
    * Adds LearningObject to this object's children
    *
