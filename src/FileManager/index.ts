@@ -2,6 +2,8 @@ import { expressServiceModule, ExpressServiceModule } from 'node-service-module'
 import { ExpressHttpAdapter } from './adapters';
 import { S3Driver } from '../drivers/drivers';
 import { FileManager } from '../shared/interfaces/interfaces';
+import { FileManagerModuleDatastore } from './interfaces/FileManagerModuledatastore';
+import { MongoFileManagerModuleDatastore } from './drivers/FileManagerModuleDatastore/MongoFileManagerModuleDatastore';
 
 /**
  * Module responsible for handling file operations
@@ -13,7 +15,8 @@ import { FileManager } from '../shared/interfaces/interfaces';
 @expressServiceModule({
     expressRouter: ExpressHttpAdapter.buildRouter(),
     providers: [
-        { provide: FileManager, useClass: S3Driver  },
+        { provide: FileManager, useClass: S3Driver },
+        { provide: FileManagerModuleDatastore, useClass: MongoFileManagerModuleDatastore },
     ],
 })
 export class FileManagerModule extends ExpressServiceModule {

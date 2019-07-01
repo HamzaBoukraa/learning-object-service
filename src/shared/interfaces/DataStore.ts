@@ -1,4 +1,3 @@
-import { CompletedPart, MultipartFileUploadStatus } from '../../FileManager/interfaces/FileManager';
 import { LearningObjectUpdates, LearningObjectSummary } from '../types';
 import { LearningOutcomeDatastore } from '../../LearningOutcomes/LearningOutcomeInteractor';
 import { LearningObjectStatDatastore } from '../../LearningObjectStats/LearningObjectStatsInteractor';
@@ -17,10 +16,6 @@ export interface DataStore
   // LearningObjects
   insertLearningObject(object: LearningObject): Promise<string>;
   addToReleased(object: LearningObject): Promise<void>;
-  // File Uploads
-  insertMultipartUploadStatus(params: {
-    status: MultipartFileUploadStatus;
-  }): Promise<void>;
 
   // Changelog
   createChangelog(params: {
@@ -145,19 +140,9 @@ export interface DataStore
     userId: string,
   }): Promise<LearningObject>;
 
-  // Materials
-  findSingleFile(params: {
-    learningObjectId: string;
-    fileId: string;
-  }): Promise<LearningObject.Material.File>;
   getLearningObjectMaterials(params: {
     id: string;
   }): Promise<LearningObject.Material>;
-
-  // File Uploads
-  fetchMultipartUploadStatus(params: {
-    id: string;
-  }): Promise<MultipartFileUploadStatus>;
 
   // Users
   findUser(username: string): Promise<string>;
@@ -196,12 +181,6 @@ export interface DataStore
     description: string;
   }): Promise<LearningObject.Material.File>;
 
-  // File Uploads
-  updateMultipartUploadStatus(params: {
-    id: string;
-    completedPart: CompletedPart;
-  }): Promise<void>;
-
   /*
    * DELETE Operations
    */
@@ -209,10 +188,6 @@ export interface DataStore
   // Learning Objects
   deleteLearningObject(id: string): Promise<void>;
   deleteMultipleLearningObjects(ids: string[]): Promise<void>;
-
-  // File Uploads
-  deleteMultipartUploadStatus(params: { id: string }): Promise<void>;
-  deleteMultipartUploadStatus(params: { id: string }): Promise<void>;
 }
 
 export { Collection as LearningObjectCollection };

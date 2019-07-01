@@ -6,9 +6,11 @@ import { LearningObject } from '../shared/entity';
 import { Readable } from 'stream';
 import { MultipartFileUploadStatus, DZFile, FileUpload } from './typings/file-manager';
 import { ResourceError, ResourceErrorReason } from '../shared/errors';
+import { FileManagerModuleDatastore } from './interfaces/FileManagerModuledatastore';
 
 namespace Drivers {
   export const fileManager = () => Module.resolveDependency(FileManager);
+  export const dataStore = () => Module.resolveDependency(FileManagerModuleDatastore);
 }
 
 /**
@@ -41,7 +43,7 @@ export async function startMultipartUpload(params: {
     completedParts: [],
     createdAt: Date.now().toString(),
   };
-  await params.dataStore.insertMultipartUploadStatus({ status });
+  await Drivers.dataStore().insertMultipartUploadStatus({ status });
   return uploadId;
 }
 
@@ -70,7 +72,7 @@ export async function processMultipartUpload(params: {
     partNumber,
     uploadId: params.uploadId,
   });
-  await params.dataStore.updateMultipartUploadStatus({
+  await Drivers.dataStore().updateMultipartUploadStatus({
     completedPart,
     id: params.uploadId,
   });
@@ -91,10 +93,10 @@ export async function finalizeMultipartUpload(params: {
   dataStore: DataStore;
   uploadId: string;
 }): Promise<string> {
-  const uploadStatus = await params.dataStore.fetchMultipartUploadStatus({
+  const uploadStatus = await Drivers.dataStore().fetchMultipartUploadStatus({
     id: params.uploadId,
   });
-  params.dataStore.deleteMultipartUploadStatus({ id: params.uploadId });
+  Drivers.dataStore().deleteMultipartUploadStatus({ id: params.uploadId });
   const url = await Drivers.fileManager().completeMultipartUpload({
     path: uploadStatus.path,
     uploadId: params.uploadId,
@@ -118,10 +120,10 @@ export async function abortMultipartUpload(params: {
   dataStore: DataStore;
   uploadId: string;
 }): Promise<void> {
-  const uploadStatus = await params.dataStore.fetchMultipartUploadStatus({
+  const uploadStatus = await Drivers.dataStore().fetchMultipartUploadStatus({
     id: params.uploadId,
   });
-  params.dataStore.deleteMultipartUploadStatus({ id: params.uploadId });
+  Drivers.dataStore().deleteMultipartUploadStatus({ id: params.uploadId });
   await Drivers.fileManager().abortMultipartUpload({
     path: uploadStatus.path,
     uploadId: params.uploadId,

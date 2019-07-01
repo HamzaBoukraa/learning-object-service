@@ -1,15 +1,11 @@
 import { FileManager } from '../../shared/interfaces/interfaces';
 import { uploadFile } from '../Interactor';
-import { FileUpload } from '../interfaces/FileManager';
+import { FileUpload } from '../typings/file-manager';
 export class FileManagerAdapter {
     private static _instance: FileManagerAdapter;
-    private constructor(
-        private fileManager: FileManager,
-    ) {}
+    private constructor() {}
     static open(fileManager: FileManager): void {
-        FileManagerAdapter._instance = new FileManagerAdapter(
-            fileManager,
-        );
+        FileManagerAdapter._instance = new FileManagerAdapter();
     }
 
     static getInstance(): FileManagerAdapter {
@@ -23,7 +19,6 @@ export class FileManagerAdapter {
      * Proxies request to FileInteractor uploadFile function
      *
      * @export
-     * @param {{ FileManager }} fileManager
      * @param {{ FileUpload }} file
      * @returns {string}
      */
@@ -31,7 +26,6 @@ export class FileManagerAdapter {
         file: FileUpload,
     }) {
         return await uploadFile({
-            fileManager: this.fileManager,
             file: params.file,
         });
     }

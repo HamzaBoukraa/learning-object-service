@@ -8,10 +8,6 @@ import {
   LearningObjectQuery,
   ParentLearningObjectQuery,
 } from '../shared/interfaces/DataStore';
-import {
-  CompletedPart,
-  MultipartFileUploadStatus,
-} from '../FileManager/interfaces/FileManager';
 import * as ObjectMapper from './Mongo/ObjectMapper';
 import {
   LearningObjectUpdates,
@@ -868,82 +864,6 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Inserts metadata for Multipart upload
-   *
-   * @param {{
-   *     status: MultipartFileUploadStatus;
-   *   }} params
-   * @returns {Promise<void>}
-   * @memberof MongoDriver
-   */
-  public async insertMultipartUploadStatus(params: {
-    status: MultipartFileUploadStatus;
-  }): Promise<void> {
-    await this.db
-      .collection<MultipartFileUploadStatus>(COLLECTIONS.MULTIPART_STATUSES)
-      .insertOne(params.status);
-  }
-
-  /**
-   * Fetches metadata for multipart upload
-   *
-   * @param {{
-   *     id: string;
-   *   }} params
-   * @returns {Promise<MultipartFileUploadStatus>}
-   * @memberof MongoDriver
-   */
-  public async fetchMultipartUploadStatus(params: {
-    id: string;
-  }): Promise<MultipartFileUploadStatus> {
-    const status = await this.db
-      .collection<MultipartFileUploadStatus>(COLLECTIONS.MULTIPART_STATUSES)
-      .findOne({ _id: params.id });
-    return status;
-  }
-
-  /**
-   * Updates metadata for multipart upload
-   *
-   * @param {{
-   *     id: string;
-   *     completedPart: CompletedPart;
-   *   }} params
-   * @returns {Promise<void>}
-   * @memberof MongoDriver
-   */
-  public async updateMultipartUploadStatus(params: {
-    id: string;
-    completedPart: CompletedPart;
-  }): Promise<void> {
-    await this.db
-      .collection<MultipartFileUploadStatus>(COLLECTIONS.MULTIPART_STATUSES)
-      .updateOne(
-        { _id: params.id },
-        {
-          $push: { completedParts: params.completedPart },
-        },
-      );
-  }
-
-  /**
-   * Deletes metadata for multipart upload
-   *
-   * @param {{
-   *     id: string;
-   *   }} params
-   * @returns {Promise<void>}
-   * @memberof MongoDriver
-   */
-  public async deleteMultipartUploadStatus(params: {
-    id: string;
-  }): Promise<void> {
-    await this.db
-      .collection<MultipartFileUploadStatus>(COLLECTIONS.MULTIPART_STATUSES)
-      .deleteOne({ _id: params.id });
-  }
-
-  /**
    * Inserts a child id into a learning object's children array if the child object
    * exists in the LearningObject collection.
    *
@@ -1772,38 +1692,6 @@ export class MongoDriver implements DataStore {
     }
   }
 
-  async findSingleFile(params: {
-    learningObjectId: string;
-    fileId: string;
-  }): Promise<LearningObject.Material.File> {
-    try {
-      const doc = await this.db
-        .collection(COLLECTIONS.LEARNING_OBJECTS)
-        .findOne(
-          {
-            _id: params.learningObjectId,
-            'materials.files': {
-              $elemMatch: { id: params.fileId },
-            },
-          },
-          {
-            projection: {
-              _id: 0,
-              'materials.files.$': 1,
-            },
-          },
-        );
-      if (doc) {
-        const materials = doc.materials;
-
-        // Object contains materials property.
-        // Files array within materials will alway contain one element
-        return materials.files[0];
-      }
-    } catch (e) {
-      return Promise.reject(e);
-    }
-  }
 
   async updateFileDescription(params: {
     learningObjectId: string;
