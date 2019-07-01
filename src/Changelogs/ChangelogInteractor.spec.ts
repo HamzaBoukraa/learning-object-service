@@ -80,80 +80,82 @@ describe('createChangelog', () => {
     });
 });
 
-describe('getAllChangelogs', () => {
-  it('should return all changelogs for a learning object (admin)', async () => {
-    return expect(getChangelogs({
-      dataStore,
-      learningObjectId: stubs.learningObject.id,
-      user: {...stubs.userToken, accessGroups: ['admin']},
-      userId: stubs.learningObject.author.id,
-    }))
-    .resolves.toHaveLength(1);
+
+
+describe('getChangelogs', () => {
+  describe('Checking the getAllChangelogs pathway', () => {
+    describe('When I am an admin', () => {
+      it('should return all changelogs for a learning object', async () => {
+        return expect(getChangelogs({
+          dataStore,
+          learningObjectId: stubs.learningObject.id,
+          user: {...stubs.userToken, accessGroups: ['admin']},
+          userId: stubs.learningObject.author.id,
+        }))
+        .resolves.toHaveLength(1);
+      });
+    });
+    describe('When I am an editor', () => {
+      it('should return all changelogs for a learning object', async () => {
+        return expect(getChangelogs({
+          dataStore,
+          learningObjectId: stubs.learningObject.id,
+          user: {...stubs.userToken, accessGroups: ['editor']},
+          userId: stubs.learningObject.author.id,
+        }))
+        .resolves.toHaveLength(1);
+      });
+    });
   });
 
-  it('should return all changelogs for a learning object (editor)', async () => {
-    return expect(getChangelogs({
-      dataStore,
-      learningObjectId: stubs.learningObject.id,
-      user: {...stubs.userToken, accessGroups: ['editor']},
-      userId: stubs.learningObject.author.id,
-    }))
-    .resolves.toHaveLength(1);
-  });
+  describe('Checking getChangelogsBeforeDate pathway', () => {
+    describe('When I am an admin', () => {
+      it('should return all changelogs before a specified date for a learning object', async () => {
+        return expect(getChangelogs({
+          dataStore,
+          learningObjectId: stubs.learningObject.id,
+          user: {...stubs.userToken, accessGroups: ['admin']},
+          userId: stubs.learningObject.author.id,
+          date: stubs.learningObject.date,
+        }))
+        .resolves.toHaveLength(1);
+      });
 
-  it('should return all changelogs for a learning object (editor)', async () => {
-    return expect(getChangelogs({
-      dataStore,
-      learningObjectId: stubs.learningObject.id,
-      user: {...stubs.userToken, accessGroups: ['editor']},
-      userId: stubs.learningObject.author.id,
-    }))
-    .resolves.toHaveLength(1);
+      it('should return all changelogs before a specified date for a learning object', async () => {
+        return expect(getChangelogs({
+          dataStore,
+          learningObjectId: stubs.learningObject.id,
+          user: {...stubs.userToken, accessGroups: ['admin']},
+          userId: stubs.learningObject.author.id,
+          date: '1',
+        }))
+        .resolves.toHaveLength(1);
+      });
+    });
+
+    describe('When I am an editor', () => {
+      it('should return all changelogs before a specified date for a learning object', async () => {
+        return expect(getChangelogs({
+          dataStore,
+          learningObjectId: stubs.learningObject.id,
+          user: {...stubs.userToken, accessGroups: ['editor']},
+          userId: stubs.learningObject.author.id,
+          date: stubs.learningObject.date,
+        }))
+        .resolves.toHaveLength(1);
+      });
+
+      it('should return all changelogs before a specified date for a learning object', async () => {
+        return expect(getChangelogs({
+          dataStore,
+          learningObjectId: stubs.learningObject.id,
+          user: {...stubs.userToken, accessGroups: ['editor']},
+          userId: stubs.learningObject.author.id,
+          date: '1',
+        }))
+        .resolves.toHaveLength(1);
+      });
+    });
   });
 });
 
-describe('getChangelogsBeforeDate', () => {
-  it('should return all changelogs before a specified date for a learning object (admin)', async () => {
-    return expect(getChangelogs({
-      dataStore,
-      learningObjectId: stubs.learningObject.id,
-      user: {...stubs.userToken, accessGroups: ['admin']},
-      userId: stubs.learningObject.author.id,
-      date: stubs.learningObject.date,
-    }))
-    .resolves.toHaveLength(1);
-  });
-
-  it('should return all changelogs before a specified date for a learning object (editor)', async () => {
-    return expect(getChangelogs({
-      dataStore,
-      learningObjectId: stubs.learningObject.id,
-      user: {...stubs.userToken, accessGroups: ['editor']},
-      userId: stubs.learningObject.author.id,
-      date: stubs.learningObject.date,
-    }))
-    .resolves.toHaveLength(1);
-  });
-
-  it('should return all changelogs before a specified date for a learning object (admin)', async () => {
-    return expect(getChangelogs({
-      dataStore,
-      learningObjectId: stubs.learningObject.id,
-      user: {...stubs.userToken, accessGroups: ['admin']},
-      userId: stubs.learningObject.author.id,
-      date: '1',
-    }))
-    .resolves.toHaveLength(1);
-  });
-
-  it('should return all changelogs before a specified date for a learning object (editor)', async () => {
-    return expect(getChangelogs({
-      dataStore,
-      learningObjectId: stubs.learningObject.id,
-      user: {...stubs.userToken, accessGroups: ['editor']},
-      userId: stubs.learningObject.author.id,
-      date: '1',
-    }))
-    .resolves.toHaveLength(1);
-  });
-});
