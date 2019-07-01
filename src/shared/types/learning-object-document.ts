@@ -18,6 +18,10 @@ export interface LearningObjectDocument {
   revision: number;
 }
 
+export interface ReleasedLearningObjectDocument extends LearningObjectDocument {
+  outcomes: OutcomeDocument[];
+}
+
 export interface ReleasedLearningObjectDocument {
   _id: string;
   authorID: string;
