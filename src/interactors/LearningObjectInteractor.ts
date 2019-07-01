@@ -912,6 +912,14 @@ export class LearningObjectInteractor {
       const objectIds = objectRefs.map(obj => obj.id);
       // Remove objects from library
       await library.cleanObjectsFromLibraries(objectIds);
+      await Promise.all(
+        objectRefs.map(ref =>
+          FileMetadata.deleteAllFileMetadata({
+            requester: params.user,
+            learningObjectId: ref.id,
+          }),
+        ),
+      ).catch(reportError);
       // Delete objects from datastore
       await dataStore.deleteMultipleLearningObjects(objectIds);
       // For each object id

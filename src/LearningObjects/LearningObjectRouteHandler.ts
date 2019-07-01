@@ -1,11 +1,15 @@
 import { Request, Response, Router } from 'express';
 import { mapErrorToResponseData, ResourceErrorReason } from '../shared/errors';
 import { DataStore } from '../shared/interfaces/DataStore';
-import { FileManager, LibraryCommunicator } from '../shared/interfaces/interfaces';
+import {
+  FileManager,
+  LibraryCommunicator,
+} from '../shared/interfaces/interfaces';
 import { UserToken } from '../shared/types';
 import * as LearningObjectInteractor from './LearningObjectInteractor';
 import { LearningObject } from '../shared/entity';
 import { FileMeta } from './typings';
+import { updateFileDescription, removeFile } from './LearningObjectInteractor';
 
 /**
  * Initializes an express router with endpoints for public Retrieving
@@ -191,6 +195,43 @@ export function initializePrivate({
     }
   };
 
+  async function updateFileMetadata(req: Request, res: Response) {
+    try {
+      const objectId = req.params.learningObjectId;
+      const fileId = req.params.fileId;
+      const description = req.body.description;
+      await updateFileDescription({
+        fileId,
+        objectId,
+        description,
+        dataStore,
+      });
+      res.sendStatus(200);
+    } catch (e) {
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({ message });
+    }
+  }
+
+  async function deleteFileMetadata(req: Request, res: Response) {
+    try {
+      const objectId = req.params.learningObjectId;
+      const fileId = req.params.fileId;
+      const username = req.user.username;
+      await removeFile({
+        dataStore,
+        fileManager,
+        objectId,
+        username,
+        fileId,
+      });
+      res.sendStatus(200);
+    } catch (e) {
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({ message });
+    }
+  }
+
   router.route('/learning-objects').post(addLearningObject);
   router.patch('/learning-objects/:id', updateLearningObject);
   router.delete('/learning-objects/:learningObjectName', deleteLearningObject);
@@ -203,4 +244,10 @@ export function initializePrivate({
     '/users/:username/learning-objects/:learningObjectId/materials/files',
     addFileMeta,
   );
+  router
+    .route(
+      '/users/:username/learning-objects/:learningObjectId/materials/files/:fileId',
+    )
+    .patch(updateFileMetadata)
+    .delete(deleteFileMetadata);
 }
