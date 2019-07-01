@@ -81,30 +81,20 @@ export function initializePrivate({
   library: LibraryCommunicator;
 }) {
   const addLearningObject = async (req: Request, res: Response) => {
-    let object: LearningObject;
-
     try {
-      object = new LearningObject(req.body.object);
-      const learningObject = await LearningObjectInteractor.addLearningObject(
+      const requester: UserToken = req.user;
+      const authorUsername: string = req.params.username || req.user.username;
+      const object: Partial<LearningObject> = req.body.object;
+      const learningObject = await LearningObjectInteractor.addLearningObject({
         dataStore,
         object,
-        req.user,
-      );
+        authorUsername,
+        requester,
+      });
       res.status(200).send(learningObject.toPlainObject());
     } catch (e) {
-      // if the error was that the object has a duplicate name, send a 409 error code
-      if (
-        object &&
-        object.name &&
-        e.message ===
-          `A learning object with name '${object.name}' already exists.`
-      ) {
-        const status = 409;
-        res.status(status).send(e);
-      } else {
         const { code, message } = mapErrorToResponseData(e);
-        res.status(code).json({message});
-      }
+      res.status(code).json({ message });
     }
   };
   const getMaterials = async (req: Request, res: Response) => {
@@ -244,6 +234,7 @@ export function initializePrivate({
   }
 
   router.route('/learning-objects').post(addLearningObject);
+  router.post('/users/:username/learning-objects', addLearningObject);
   router.patch('/learning-objects/:id', updateLearningObject);
   router.delete('/learning-objects/:learningObjectName', deleteLearningObject);
   router.get('/users/:username/learning-objects/:id/materials', getMaterials);

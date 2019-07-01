@@ -21,6 +21,7 @@ import {
   hasReadAccessByCollection,
   hasLearningObjectWriteAccess,
   authorizeReadAccess,
+  authorizeWriteAccess,
 } from '../shared/AuthorizationManager';
 import { FileMeta, LearningObjectFilter, MaterialsFilter } from './typings';
 import * as PublishingService from './Publishing';
@@ -537,26 +538,38 @@ export async function updateParentsDate(params: {
  *
  * @async
  *
- * @param {UserID} author - database id of the parent
- * @param {LearningObject} object - entity to add
+ * @param {DataStore} dataStore [The datastore to add the Learning Object to]
+ * @param {Partial<LearningObject>} object [Learning Object data to be inserted]
+ * @param {string} authorUsername [The Learning Object's author's username]
+ * @param {UserToken} requester [Information about the user making the request to add a Learning Object]
  *
- * @returns {LearningObjectID} the database id of the new record
+ * @returns {LearningObject} The full Learning Object
  */
-export async function addLearningObject(
-  dataStore: DataStore,
-  object: LearningObject,
-  user: UserToken,
-): Promise<LearningObject> {
+export async function addLearningObject({
+  dataStore,
+  object,
+  authorUsername,
+  requester,
+}: {
+  dataStore: DataStore;
+  object: Partial<LearningObject>;
+  authorUsername: string;
+  requester: UserToken;
+}): Promise<LearningObject> {
+  try {
+    await authorizeRequest(
+      [requesterIsAuthor({ authorUsername, requester })],
+      'Invalid access. Learning Objects cannot be created for another user.',
+    );
   await checkNameExists({
     dataStore,
-    username: user.username,
+      username: authorUsername,
     name: object.name,
   });
-  try {
-    const authorID = await dataStore.findUser(user.username);
+    const authorID = await dataStore.findUser(authorUsername);
     const author = await dataStore.fetchUser(authorID);
     const objectInsert = new LearningObject({
-      ...object.toPlainObject(),
+      ...object,
       author,
     });
     objectInsert.revision = 0;
@@ -564,7 +577,7 @@ export async function addLearningObject(
     objectInsert.id = learningObjectID;
     return objectInsert;
   } catch (e) {
-    return Promise.reject(`Problem creating Learning Object. Error${e}`);
+    handleError(e);
   }
 }
 
