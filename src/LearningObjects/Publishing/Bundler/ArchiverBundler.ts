@@ -24,7 +24,7 @@ export class ArchiverBundler implements Bundler {
   }: {
     bundleData: BundleData[];
     extension: BundleExtension;
-  }) { // TODO: Update return type
+  }): Promise<Readable> {
     const archive = this.createArchive({ extension });
     await this.appendData({ archive, bundleData });
     archive.finalize();

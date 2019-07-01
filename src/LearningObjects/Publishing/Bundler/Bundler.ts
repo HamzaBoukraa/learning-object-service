@@ -1,4 +1,4 @@
-import { BundleData, Writable, BundleExtension } from './typings';
+import { BundleData, Writable, BundleExtension, Readable } from './typings';
 
 export abstract class Bundler {
   /**
@@ -11,5 +11,5 @@ export abstract class Bundler {
   abstract bundleData(params: {
     bundleData: BundleData[];
     extension: BundleExtension;
-  }): void;
+  }): Promise<Readable>;
 }
