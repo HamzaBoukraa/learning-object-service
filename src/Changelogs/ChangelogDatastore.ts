@@ -99,18 +99,9 @@ export class ChangelogDataStore {
       .aggregate([
         { $match: { learningObjectId: params.learningObjectId } },
         { $unwind: '$logs' },
+        { $match: { 'logs.date': { $lt: parseInt(params.date, 10) } } },
         { $sort: { 'logs.date': -1 } },
         { $group: { _id: '$learningObjectId', logs: { $push: '$logs' } } },
-        { $project:
-          { logs: {
-              $filter: {
-                input: '$logs',
-                as: 'log',
-                cond: { $lt: [ '$$log.date', parseInt(params.date, 10) ] },
-              },
-            },
-          },
-        },
       ])
       .toArray();
   }
