@@ -54,4 +54,8 @@ export class MockS3Driver implements FileManager {
   }): Promise<string> {
     throw new Error('Method not implemented.');
   }
+
+  deleteFolder(params: { path: string; }): Promise<void> {
+    return Promise.resolve();
+  }
 }

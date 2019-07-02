@@ -48,7 +48,7 @@ describe('LearningObjectRouteHandler', () => {
         dataStore = await MongoDriver.build(global['__MONGO_URI__']);
         HierarchyAdapter.open(dataStore);
         fileManager = new MockS3Driver();
-        FileManagerAdapter.open(fileManager);
+        FileManagerAdapter.open();
         LibraryDriver = new MockLibraryDriver();
         BundlerModule.providers = [{ provide: Bundler, useClass: StubBundler }];
         BundlerModule.initialize();
