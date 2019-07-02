@@ -145,7 +145,7 @@ export function initializePrivate({
         library,
         user,
       });
-      res.sendStatus(200);
+      res.sendStatus(204);
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
       res.status(code).json({ message });
@@ -163,7 +163,7 @@ export function initializePrivate({
         id,
         requester,
       });
-      res.sendStatus(200);
+      res.sendStatus(204);
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
       res.status(code).json({ message });
