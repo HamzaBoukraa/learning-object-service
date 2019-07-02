@@ -1,10 +1,10 @@
-import { FileManager } from '../../shared/interfaces/interfaces';
 import { uploadFile } from '../Interactor';
 import { FileUpload } from '../typings/file-manager';
-export class FileManagerAdapter {
+import { FileManagerAdapter as FileManagerAdapterInterface } from '../interfaces/FileManagerAdapter';
+export class FileManagerAdapter implements FileManagerAdapterInterface {
     private static _instance: FileManagerAdapter;
     private constructor() {}
-    static open(fileManager: FileManager): void {
+    static open(): void {
         FileManagerAdapter._instance = new FileManagerAdapter();
     }
 

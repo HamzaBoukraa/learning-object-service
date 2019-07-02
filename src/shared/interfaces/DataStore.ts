@@ -187,6 +187,10 @@ export interface DataStore
     fileId: string;
     description: string;
   }): Promise<LearningObject.Material.File>;
+  findSingleFile(params: {
+    learningObjectId: string;
+    fileId: string;
+  }): Promise<LearningObject.Material.File>;
 
   /*
    * DELETE Operations

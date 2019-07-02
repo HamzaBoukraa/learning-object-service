@@ -5,7 +5,7 @@ import { Readable } from 'stream';
 import { reportError } from '../../../shared/SentryConnector';
 import { FileManager } from '../../../shared/interfaces/interfaces';
 import { AWS_SDK_CONFIG } from '../../config/aws-sdk.config';
-import { CompletedPartList, CompletedPart } from '../../typings/file-manager';
+import { CompletedPartList, CompletedPart, FileUpload } from '../../typings/file-manager';
 
 AWS.config.credentials = AWS_SDK_CONFIG.credentials;
 

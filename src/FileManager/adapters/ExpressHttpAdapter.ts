@@ -3,6 +3,8 @@ import { Router, Response, Request } from 'express';
 import { LEARNING_OBJECT_ROUTES } from '../../shared/routes';
 import { mapErrorToResponseData } from '../../shared/errors';
 import { fileNotFound } from '../assets/filenotfound';
+import { DownloadFilter } from '../typings/file-manager';
+import { UserToken } from '../../shared/types';
 
 export function buildRouter(): Router {
   const router = Router();
@@ -28,8 +30,6 @@ async function download(req: Request, res: Response) {
     const { filename, mimeType, stream } = await downloadSingleFile({
       author,
       fileId,
-      dataStore,
-      fileManager,
       learningObjectId: loId,
       requester,
       filter,

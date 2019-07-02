@@ -7,7 +7,6 @@ import { Router } from 'express';
 import { LearningObjectInteractor } from '../../interactors/interactors';
 import * as LearningObjectStatsRouteHandler from '../../LearningObjectStats/LearningObjectStatsRouteHandler';
 import { UserToken } from '../../shared/types';
-import { initializeSingleFileDownloadRouter } from '../../SingleFileDownload/RouteHandler';
 import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
 import { initializeCollectionRouter } from '../../Collections/RouteHandler';
 import {
@@ -153,12 +152,6 @@ export class ExpressRouteDriver {
       router,
       dataStore: this.dataStore,
       library: this.library,
-    });
-
-    initializeSingleFileDownloadRouter({
-      router,
-      dataStore: this.dataStore,
-      fileManager: this.fileManager,
     });
   }
 }

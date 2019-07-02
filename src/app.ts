@@ -85,7 +85,7 @@ function initModules() {
   HierarchyAdapter.open(dataStore);
   LearningObjectAdapter.open(dataStore, fileManager, library);
   LearningObjectSearch.initialize();
-  FileManagerAdapter.open(fileManager);
+  FileManagerAdapter.open();
   BundlerModule.initialize();
   FileMetadata.initialize();
 }

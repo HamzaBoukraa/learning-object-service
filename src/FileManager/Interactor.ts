@@ -86,7 +86,6 @@ export async function deleteFolder(params: {
 export async function downloadSingleFile(params: {
   learningObjectId: string;
   fileId: string;
-  dataStore: DataStore;
   author: string;
   requester?: UserToken;
   filter?: DownloadFilter;

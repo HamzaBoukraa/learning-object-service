@@ -1,9 +1,9 @@
 import * as PDFKit from 'pdfkit';
 import { LEARNING_OBJECT_ROUTES } from '../shared/routes';
 import { FileManager } from '../shared/interfaces/interfaces';
-import { FileUpload } from '../FileManager/interfaces/FileManager';
 import * as striptags from 'striptags';
 import { LearningObject, LearningOutcome } from '../shared/entity';
+import { FileUpload } from '../FileManager/typings/file-manager';
 
 type GradientVector = [number, number, number, number];
 type PDFHeaderAlignment = 'left' | 'right' | 'center' | 'justify';
