@@ -40,7 +40,7 @@ import {
   ServiceErrorReason,
 } from '../shared/errors';
 import { reportError } from '../shared/SentryConnector';
-import { LearningObject, LearningOutcome, User } from '../shared/entity';
+import { LearningObject, LearningOutcome, User, StandardOutcome } from '../shared/entity';
 import { Submission } from '../LearningObjectSubmission/types/Submission';
 import { MongoConnector } from '../shared/Mongo/MongoConnector';
 import { mapLearningObjectToSummary } from '../shared/functions';
@@ -100,6 +100,23 @@ export class MongoDriver implements DataStore {
     this.learningObjectStore = new LearningObjectDataStore(this.db);
     this.changelogStore = new ChangelogDataStore(this.db);
   }
+
+  /**
+   * @inheritdoc
+   *
+   * @param {string} id [Id of the Learning Object to fetch materials of]
+   * @returns {Promise<LearningObject.Material>}
+   * @memberof MongoDriver
+   */
+  async fetchReleasedMaterials(id: string): Promise<LearningObject.Material> {
+    const doc = await this.db
+      .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
+      .findOne({ _id: id }, { projection: { _id: 0, materials: 1 } });
+    if (doc) {
+      return doc.materials;
+    }
+    return null;
+  }
   /**
    * @inheritdoc
    *
@@ -115,19 +132,34 @@ export class MongoDriver implements DataStore {
     id: string;
     fileId: string;
   }): Promise<LearningObject.Material.File> {
-    const doc = await this.db
+    const results = await this.db
       .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
-      .findOne(
-        { _id: id },
+      .aggregate([
         {
-          projection: {
-            _id: 0,
-            'materials.files': { $elemMatch: { id: fileId } },
+          $match: {
+            _id: id,
           },
         },
-      );
-    if (doc) {
-      return doc.materials.files[0];
+        {
+          $unwind: {
+            path: '$materials.files',
+          },
+        },
+        {
+          $match: {
+            'materials.files.id': fileId,
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            file: '$materials.files',
+          },
+        },
+      ])
+      .toArray();
+    if (results && results[0]) {
+      return results[0].file;
     }
     return null;
   }
@@ -796,7 +828,6 @@ export class MongoDriver implements DataStore {
    * @param {{
    *     id: string;
    *     full?: boolean;
-   *     status: string[];
    *   }} params
    * @returns {Promise<LearningObject[]>}
    * @memberof MongoDriver
@@ -804,11 +835,11 @@ export class MongoDriver implements DataStore {
   async loadReleasedChildObjects(params: {
     id: string;
     full?: boolean;
-    status: string[];
   }): Promise<LearningObject[]> {
     return this.loadChildObjects({
       ...params,
       collection: COLLECTIONS.RELEASED_LEARNING_OBJECTS,
+      status: [LearningObject.Status.RELEASED],
     });
   }
 
@@ -1522,14 +1553,21 @@ export class MongoDriver implements DataStore {
     id: string;
     full?: boolean;
   }): Promise<LearningObject> {
-    const object = await this.db
-      .collection<LearningObjectDocument>(COLLECTIONS.LEARNING_OBJECTS)
+    const results = await this.db
+      .collection<LearningObjectDocument & { orderedFiles: any[] }>(
+        COLLECTIONS.LEARNING_OBJECTS,
+      )
       .aggregate([
         {
           // match learning object by params.id
           $match: { _id: params.id },
         },
-        { $unwind: { path: '$materials.files', preserveNullAndEmptyArrays: true } },
+        {
+          $unwind: {
+            path: '$materials.files',
+            preserveNullAndEmptyArrays: true,
+          },
+        },
         { $sort: { 'materials.files.date': -1 } },
         { $addFields: { orderedFiles: '' } },
         {
@@ -1550,19 +1588,18 @@ export class MongoDriver implements DataStore {
             collection: { $first: '$collection' },
             status: { $first: '$status' },
             description: { $first: '$description' },
-          }
+          },
         },
-      ]).toArray();
-    if (object[0]) {
-      object[0].materials.files = object[0]['orderedFiles'];
-      delete object[0]['orderedFiles'];
-      const author = await this.fetchUser(object[0].authorID);
-      if (author) {
-        return this.generateLearningObject(author, object[0], params.full);
-      }
-      throw new ResourceError('Learning Object Author not found', ResourceErrorReason.NOT_FOUND);
+      ])
+      .toArray();
+    if (results && results[0]) {
+      const object = results[0];
+      object.materials.files = object.orderedFiles;
+      delete object.orderedFiles;
+      const author = await this.fetchUser(object.authorID);
+      return this.generateLearningObject(author, object, params.full);
     }
-    throw new ResourceError('Learning Object not found', ResourceErrorReason.NOT_FOUND);
+    return null;
   }
 
   /**
@@ -1583,14 +1620,19 @@ export class MongoDriver implements DataStore {
     id: string;
     full?: boolean;
   }): Promise<LearningObject> {
-    const object = await this.db
-      .collection<LearningObjectDocument>(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
+    const results = await this.db
+      .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
       .aggregate([
         {
           // match learning object by params.id
           $match: { _id: params.id },
         },
-        { $unwind: { path: '$materials.files', preserveNullAndEmptyArrays: true } },
+        {
+          $unwind: {
+            path: '$materials.files',
+            preserveNullAndEmptyArrays: true,
+          },
+        },
         { $sort: { 'materials.files.date': -1 } },
         { $addFields: { orderedFiles: '' } },
         {
@@ -1611,7 +1653,7 @@ export class MongoDriver implements DataStore {
             collection: { $first: '$collection' },
             status: { $first: '$status' },
             description: { $first: '$description' },
-          }
+          },
         },
         // perform a lookup and store the working copy of the object under the "Copy" array.
         {
@@ -1636,16 +1678,14 @@ export class MongoDriver implements DataStore {
         { $project: { copy: 0 } },
       ])
       .toArray();
-    if (object[0]) {
-      object[0].materials.files = object[0]['orderedFiles'];
-      delete object[0]['orderedFiles'];
-      const author = await this.fetchUser(object[0].authorID);
-      if (author) {
-        return this.generateLearningObject(author, object[0], params.full);
-      }
-      throw new ResourceError('Learning Object Author not found', ResourceErrorReason.NOT_FOUND);
+    if (results && results[0]) {
+      const object = results[0];
+      object.materials.files = object.orderedFiles;
+      delete object.orderedFiles;
+      const author = await this.fetchUser(object.authorID);
+      return this.generateReleasedLearningObject(author, object, params.full);
     }
-    throw new ResourceError('Learning Object not found', ResourceErrorReason.NOT_FOUND);
+    return null;
   }
 
   /**
@@ -1746,6 +1786,7 @@ export class MongoDriver implements DataStore {
     orderBy?: string;
     sortType?: 1 | -1;
     collections?: string[];
+    text?: string;
   }): Promise<LearningObject[]> {
     try {
       const query: any = {
@@ -1763,7 +1804,12 @@ export class MongoDriver implements DataStore {
       } else {
         query.status = { $in: params.status };
       }
-
+      if (params.text) {
+        if (!query.$or) {
+          query.$or = [];
+        }
+        query.$or.push({ description: { $regex: params.text, $options: 'i' } }, { name: { $regex: params.text, $options: 'i'} });
+      }
       let objectCursor = await this.db
         .collection(COLLECTIONS.LEARNING_OBJECTS)
         .find<LearningObjectDocument>(query);
@@ -2344,7 +2390,10 @@ export class MongoDriver implements DataStore {
     try {
       const meta: any = await this.db
         .collection(COLLECTIONS.LO_COLLECTIONS)
-        .findOne({ $or: [{ name: abvName }, { abvName }] }, <any>{ name: 1, abstracts: 1 });
+        .findOne({ $or: [{ name: abvName }, { abvName }] }, <any>{
+          name: 1,
+          abstracts: 1,
+        });
       if (!meta) {
         throw new ResourceError(
           'Collection Not Found',
@@ -2372,14 +2421,14 @@ export class MongoDriver implements DataStore {
   }
 
   async createChangelog(params: {
-    learningObjectId: string,
+    learningObjectId: string;
     author: {
-      userId: string,
-      name: string,
-      role: string,
-      profileImage: string,
-    },
-    changelogText: string,
+      userId: string;
+      name: string;
+      role: string;
+      profileImage: string;
+    };
+    changelogText: string;
   }): Promise<void> {
     return this.changelogStore.createChangelog({
       learningObjectId: params.learningObjectId,
@@ -2547,29 +2596,26 @@ export class MongoDriver implements DataStore {
     full?: boolean,
   ): Promise<LearningObject> {
     // Logic for loading any learning object
+    let learningObject: LearningObject;
     let materials: LearningObject.Material;
     let contributors: User[] = [];
     let outcomes: LearningOutcome[] = [];
     let children: LearningObject[] = [];
-
     // Load Contributors
     if (record.contributors && record.contributors.length) {
       contributors = await Promise.all(
         record.contributors.map(userId => this.fetchUser(userId)),
       );
     }
-
     // If full object requested, load up non-summary properties
     if (full) {
       // Logic for loading 'full' learning objects
       materials = <LearningObject.Material>record.materials;
-
-      // load outcomes
       outcomes = await this.getAllLearningOutcomes({
-        source: record._id,
-      });
-    }
-    const learningObject = new LearningObject({
+          source: record._id,
+        });
+      }
+    learningObject = new LearningObject({
       id: record._id,
       author,
       name: record.name,
@@ -2586,10 +2632,68 @@ export class MongoDriver implements DataStore {
       children,
       revision: record.revision,
     });
+    return learningObject;
+  }
 
+  /**
+   * Generates released Learning Object from Document
+   *
+   * @private
+   * @param {User} author
+   * @param {ReleasedLearningObjectDocument} record
+   * @param {boolean} [full]
+   * @returns {Promise<LearningObject>}
+   * @memberof MongoDriver
+   */
+  private async generateReleasedLearningObject(
+    author: User,
+    record: ReleasedLearningObjectDocument,
+    full?: boolean,
+  ): Promise<LearningObject> {
+    // Logic for loading any learning object
+    let learningObject: LearningObject;
+    let materials: LearningObject.Material;
+    let contributors: User[] = [];
+    let children: LearningObject[] = [];
+    let outcomes: LearningOutcome[] = [];
+    // Load Contributors
+    if (record.contributors && record.contributors.length) {
+      contributors = await Promise.all(
+        record.contributors.map(userId => this.fetchUser(userId)),
+      );
+    }
+    // If full object requested, load up non-summary properties
+    if (full) {
+      // Logic for loading 'full' learning objects
+      materials = <LearningObject.Material>record.materials;
+      for (let i = 0; i < record.outcomes.length; i++) {
+        const mappings = await this.learningOutcomeStore.getAllStandardOutcomes({
+          ids: record.outcomes[i].mappings,
+        });
+        outcomes.push(new LearningOutcome({...record.outcomes[i], mappings: mappings, id: record.outcomes[i]['_id']}));
+      }
+    }
+    learningObject = new LearningObject({
+      id: record._id,
+      author,
+      name: record.name,
+      date: record.date,
+      length: record.length as LearningObject.Length,
+      levels: record.levels as LearningObject.Level[],
+      collection: record.collection,
+      status: record.status as LearningObject.Status,
+      description: record.description,
+      materials,
+      contributors,
+      outcomes: outcomes,
+      hasRevision: record.hasRevision,
+      children,
+      revision: record.revision,
+    });
     return learningObject;
   }
 }
+
 
 export function isEmail(value: string): boolean {
   const emailPattern = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;

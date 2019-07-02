@@ -1,8 +1,7 @@
 import { DataStore, ParentLearningObjectQuery } from '../../shared/interfaces/DataStore';
 import { UserToken } from '../../shared/types';
 import { LearningObject } from '../../shared/entity';
-import { toArray, hasReadAccessByCollection, LearningObjectState, handleError } from '../../interactors/LearningObjectInteractor';
-import { ResourceError, ResourceErrorReason } from '../../shared/errors';
+import { LearningObjectState } from '../../interactors/LearningObjectInteractor';
 
 /**
  * Fetches the parents of a Learning Object.
@@ -24,10 +23,7 @@ export async function fetchParents(params: {
   let hasFullAccess = false;
   let collectionsWithAccess: string[] = [];
   let requestedByAuthor = false;
-  const [collection, author] = await Promise.all([
-    dataStore.fetchLearningObjectCollection(learningObjectID),
-    dataStore.fetchLearningObjectAuthorUsername(learningObjectID),
-  ]);
+  const author = await dataStore.fetchLearningObjectAuthorUsername(learningObjectID);
 
   if (userToken) {
     hasFullAccess = hasFullReviewStageAccess(userToken.accessGroups);

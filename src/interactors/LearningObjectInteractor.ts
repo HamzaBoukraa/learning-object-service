@@ -17,15 +17,18 @@ import {
 import {
   updateObjectLastModifiedDate,
   updateParentsDate,
+  getLearningObjectById,
 } from '../LearningObjects/LearningObjectInteractor';
 import { UserToken, ServiceToken, LearningObjectSummary } from '../shared/types';
 import {
   getAccessGroupCollections,
   hasMultipleLearningObjectWriteAccesses,
   hasLearningObjectWriteAccess,
-  isAdminOrEditor,
-  isPrivilegedUser,
+  requesterIsAdminOrEditor,
+  requesterIsPrivileged,
   hasServiceLevelAccess,
+  hasReadAccessByCollection,
+  requesterIsAuthor,
 } from '../shared/AuthorizationManager';
 import {
   ResourceError,
@@ -35,7 +38,7 @@ import {
 } from '../shared/errors';
 import { LearningObject } from '../shared/entity';
 import { accessGroups } from '../shared/types/user-token';
-import { response } from 'express';
+import { FileMetadata } from '../FileMetadata';
 
 // file size is in bytes
 const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
@@ -100,7 +103,8 @@ export class LearningObjectInteractor {
       const { dataStore, library, username, loadChildren, query } = params;
 
       const formattedQuery = this.formatSearchQuery(query);
-      let { status, orderBy, sortType } = formattedQuery;
+      let { status, orderBy, sortType, text } = formattedQuery;
+
 
       // This will throw an error if there is no user with that username
       await dataStore.findUser(username);
@@ -128,6 +132,7 @@ export class LearningObjectInteractor {
         orderBy,
         sortType,
         status,
+        text,
       });
 
       summary = await Promise.all(
@@ -284,9 +289,9 @@ export class LearningObjectInteractor {
     let collections;
 
     // if user is admin/editor/curator/review, also send waiting/review/proofing objects for collections they're privileged in
-    if (userToken && isAdminOrEditor(userToken.accessGroups)) {
+    if (userToken && requesterIsAdminOrEditor(userToken)) {
       status = status.concat(LearningObjectState.IN_REVIEW);
-    } else if (userToken && isPrivilegedUser(userToken.accessGroups)) {
+    } else if (userToken && requesterIsPrivileged(userToken)) {
       status = status.concat(LearningObjectState.IN_REVIEW);
       collections = getAccessGroupCollections(userToken);
     }
@@ -314,33 +319,27 @@ export class LearningObjectInteractor {
    * @param learningObjectName
    * @param userToken
    */
-  public static async loadLearningObject(params: {
+  public static async loadLearningObject({
+    dataStore,
+    library,
+    username,
+    learningObjectName,
+    userToken,
+    revision,
+  }: {
     dataStore: DataStore;
     library: LibraryCommunicator;
     username: string;
     learningObjectName: string;
-    userToken?: UserToken;
+    userToken: UserToken;
     revision?: boolean;
   }): Promise<LearningObject> {
     try {
       let learningObject: LearningObject;
-
-      let childrenStatus = LearningObjectState.RELEASED;
-      let {
-        dataStore,
-        library,
-        username,
-        learningObjectName,
-        userToken,
-        revision,
-      } = params;
-
-      const fullChildren = true;
-      let loadWorkingCopies = false;
-
       if (!revision) {
         learningObject = await this.loadReleasedLearningObjectByAuthorAndName({
           dataStore,
+          library,
           authorUsername: username,
           learningObjectName,
         }).catch(error =>
@@ -352,39 +351,13 @@ export class LearningObjectInteractor {
       if (revision || !learningObject) {
         learningObject = await this.loadLearningObjectByAuthorAndName({
           dataStore,
+          library,
           authorUsername: username,
           learningObjectName,
           userToken,
         });
-        if (LearningObjectState.IN_REVIEW.includes(learningObject.status)) {
-          childrenStatus = [
-            ...LearningObjectState.IN_REVIEW,
-            ...LearningObjectState.RELEASED,
-          ];
         }
-        loadWorkingCopies = true;
-      }
 
-      const children = await this.loadChildObjects({
-        dataStore,
-        library,
-        parentId: learningObject.id,
-        full: fullChildren,
-        status: childrenStatus,
-        loadWorkingCopies,
-      });
-      children.forEach((child: LearningObject) =>
-        learningObject.addChild(child),
-      );
-
-      try {
-        learningObject.metrics = await this.loadMetrics(
-          library,
-          learningObject.id,
-        );
-      } catch (e) {
-        reportError(e);
-      }
       return learningObject;
     } catch (e) {
       handleError(e);
@@ -405,13 +378,19 @@ export class LearningObjectInteractor {
    * @returns
    * @memberof LearningObjectInteractor
    */
-  private static async loadLearningObjectByAuthorAndName(params: {
+  private static async loadLearningObjectByAuthorAndName({
+    dataStore,
+    library,
+    authorUsername,
+    learningObjectName,
+    userToken,
+  }: {
     dataStore: DataStore;
+    library: LibraryCommunicator;
     authorUsername: string;
     learningObjectName: string;
     userToken: UserToken;
   }) {
-    const { dataStore, authorUsername, learningObjectName, userToken } = params;
     const authorId = await this.findAuthorIdByUsername({
       dataStore,
       username: authorUsername,
@@ -422,11 +401,12 @@ export class LearningObjectInteractor {
       authorUsername,
       name: learningObjectName,
     });
-    return this.loadLearningObjectById({
+    return getLearningObjectById({
       dataStore,
-      learningObjectID,
-      userToken,
-      authorUsername,
+      library,
+      id: learningObjectID,
+      requester: userToken,
+      filter: 'unreleased',
     });
   }
 
@@ -444,12 +424,17 @@ export class LearningObjectInteractor {
    * @returns
    * @memberof LearningObjectInteractor
    */
-  private static async loadReleasedLearningObjectByAuthorAndName(params: {
+  private static async loadReleasedLearningObjectByAuthorAndName({
+    dataStore,
+    library,
+    authorUsername,
+    learningObjectName,
+  }: {
     dataStore: DataStore;
+    library: LibraryCommunicator;
     authorUsername: string;
     learningObjectName: string;
   }) {
-    const { dataStore, authorUsername, learningObjectName } = params;
     const authorId = await this.findAuthorIdByUsername({
       dataStore,
       username: authorUsername,
@@ -462,17 +447,13 @@ export class LearningObjectInteractor {
         name: learningObjectName,
       },
     );
-    const learningObject = await dataStore.fetchReleasedLearningObject({
+    return getLearningObjectById({
+      dataStore,
+      library,
       id: learningObjectID,
-      full: true,
+      requester: null,
+      filter: 'released',
     });
-    if (!learningObject) {
-      throw new ResourceError(
-        `A released Learning Object ${learningObjectName} by ${authorUsername} does not exist.`,
-        ResourceErrorReason.NOT_FOUND,
-      );
-    }
-    return learningObject;
   }
 
   /**
@@ -572,48 +553,6 @@ export class LearningObjectInteractor {
   }
 
   /**
-   * Fetches the working copy of an object if authorized
-   *
-   * @private
-   * @static
-   * @param {{
-   *     dataStore: DataStore;
-   *     learningObjectID: string;
-   *     userToken: UserToken;
-   *     authorUsername: string;
-   *   }} params
-   * @returns
-   * @memberof LearningObjectInteractor
-   */
-  private static async loadLearningObjectById(params: {
-    dataStore: DataStore;
-    learningObjectID: string;
-    userToken: UserToken;
-    authorUsername: string;
-  }) {
-    const { dataStore, learningObjectID, userToken, authorUsername } = params;
-    const [status, collection] = await Promise.all([
-      dataStore.fetchLearningObjectStatus(learningObjectID),
-      dataStore.fetchLearningObjectCollection(learningObjectID),
-    ]);
-    this.authorizeReadAccess({
-      userToken,
-      objectInfo: { author: authorUsername, status, collection },
-    });
-    const learningObject = await dataStore.fetchLearningObject({
-      id: learningObjectID,
-      full: true,
-    });
-    if (!learningObject) {
-      throw new ResourceError(
-        `No Learning Object with name ${name} by ${authorUsername} exists`,
-        ResourceErrorReason.NOT_FOUND,
-      );
-    }
-    return learningObject;
-  }
-
-  /**
    * Runs through authorization logic read access to a learning object data.
    * Throws an error if requester is not authorized
    *
@@ -634,15 +573,15 @@ export class LearningObjectInteractor {
       objectInfo.status as LearningObject.Status,
     );
 
-    const requesterIsAuthor = this.hasReadAccess({
+    const isAuthor = this.hasReadAccess({
       userToken: userToken as UserToken,
       resourceVal: objectInfo.author,
       authFunction: isAuthorByUsername,
     }) as boolean;
 
-    const requesterIsService = hasServiceLevelAccess(userToken as ServiceToken);
+    const isService = hasServiceLevelAccess(userToken as ServiceToken);
 
-    if (authorOnlyAccess && !requesterIsService && !requesterIsAuthor) {
+    if (authorOnlyAccess && !isService && !isAuthor) {
       throw new ResourceError(
         'Invalid Access',
         ResourceErrorReason.INVALID_ACCESS,
@@ -651,17 +590,12 @@ export class LearningObjectInteractor {
     const authorOrPrivilegedAccess = !LearningObjectState.RELEASED.includes(
       objectInfo.status as LearningObject.Status,
     );
-    const requesterIsPrivileged = this.hasReadAccess({
+    const isPrivileged = this.hasReadAccess({
       userToken: userToken as UserToken,
       resourceVal: objectInfo.collection,
-      authFunction: hasReadAccessByCollection,
+      authFunction: checkCollectionReadAccess,
     }) as boolean;
-    if (
-      authorOrPrivilegedAccess &&
-      !requesterIsService &&
-      !requesterIsAuthor &&
-      !requesterIsPrivileged
-    ) {
+    if (authorOrPrivilegedAccess && !isService && !isAuthor && !isPrivileged) {
       throw new ResourceError(
         'Invalid Access',
         ResourceErrorReason.INVALID_ACCESS,
@@ -711,7 +645,6 @@ export class LearningObjectInteractor {
       objects = await dataStore.loadReleasedChildObjects({
         id: parentId,
         full,
-        status,
       });
     }
 
@@ -770,7 +703,7 @@ export class LearningObjectInteractor {
       let loFile: LearningObject.Material.File;
       const uploadPath = `${params.username}/${params.id}/${
         params.file.fullPath ? params.file.fullPath : params.file.name
-        }`;
+      }`;
       const fileUpload: FileUpload = {
         path: uploadPath,
         data: params.file.buffer,
@@ -897,20 +830,20 @@ export class LearningObjectInteractor {
         username,
       });
 
-      const requesterIsAuthor = this.hasReadAccess({
+      const isAuthor = this.hasReadAccess({
         userToken: userToken as UserToken,
         resourceVal: username,
         authFunction: isAuthorByUsername,
       }) as boolean;
-      const requesterIsPrivileged =
-        userToken && isPrivilegedUser((<UserToken>userToken).accessGroups);
-      const requesterIsService = hasServiceLevelAccess(
+      const isPrivileged =
+        userToken && requesterIsPrivileged(<UserToken>userToken);
+      const isService = hasServiceLevelAccess(
         userToken as ServiceToken,
       );
       const authorizationCases = [
-        requesterIsAuthor,
-        requesterIsPrivileged,
-        requesterIsService,
+        isAuthor,
+        isPrivileged,
+        isService,
       ];
 
       let learningObjectID = await this.getReleasedLearningObjectIdByAuthorAndName(
@@ -1014,6 +947,14 @@ export class LearningObjectInteractor {
       const objectIds = objectRefs.map(obj => obj.id);
       // Remove objects from library
       await library.cleanObjectsFromLibraries(objectIds);
+      await Promise.all(
+        objectRefs.map(ref =>
+          FileMetadata.deleteAllFileMetadata({
+            requester: params.user,
+            learningObjectId: ref.id,
+          }),
+        ),
+      ).catch(reportError);
       // Delete objects from datastore
       await dataStore.deleteMultipleLearningObjects(objectIds);
       // For each object id
@@ -1135,9 +1076,9 @@ export class LearningObjectInteractor {
       } = this.formatSearchQuery(query);
       let response: { total: number; objects: LearningObject[] };
 
-      if (userToken && isPrivilegedUser(userToken.accessGroups)) {
+      if (userToken && requesterIsPrivileged(userToken)) {
         let conditions: QueryCondition[];
-        if (!isAdminOrEditor(userToken.accessGroups)) {
+        if (!requesterIsAdminOrEditor(userToken)) {
           const privilegedCollections = getAccessGroupCollections(userToken);
           const collectionAccessMap = getCollectionAccessMap(
             collection,
@@ -1311,9 +1252,7 @@ export class LearningObjectInteractor {
     formattedQuery.standardOutcomeIDs = toArray(
       formattedQuery.standardOutcomeIDs,
     );
-    formattedQuery.guidelines = toArray(
-      formattedQuery.guidelines,
-    );
+    formattedQuery.guidelines = toArray(formattedQuery.guidelines);
     formattedQuery.page = toNumber(formattedQuery.page);
     formattedQuery.limit = toNumber(formattedQuery.limit);
     formattedQuery.sortType = <1 | -1>toNumber(formattedQuery.sortType);
@@ -1375,7 +1314,11 @@ export class LearningObjectInteractor {
         authorId,
         name: parentName,
       });
-      const hasAccess = await hasLearningObjectWriteAccess(userToken, dataStore, parentID);
+      const hasAccess = await hasLearningObjectWriteAccess(
+        userToken,
+        dataStore,
+        parentID,
+      );
       if (hasAccess) {
         await dataStore.setChildren(parentID, children);
         await updateObjectLastModifiedDate({
@@ -1389,8 +1332,6 @@ export class LearningObjectInteractor {
           ResourceErrorReason.INVALID_ACCESS,
         );
       }
-
-
     } catch (e) {
       handleError(e);
     }
@@ -1423,7 +1364,11 @@ export class LearningObjectInteractor {
         authorId,
         name: parentName,
       });
-      const hasAccess = await hasLearningObjectWriteAccess(userToken, dataStore, parentID);
+      const hasAccess = await hasLearningObjectWriteAccess(
+        userToken,
+        dataStore,
+        parentID,
+      );
       if (hasAccess) {
         await dataStore.deleteChild(parentID, childId);
         await updateObjectLastModifiedDate({
@@ -1657,11 +1602,9 @@ function getCollectionAccessMap(
  * @param {UserToken} userToken
  * @returns
  */
-const checkAuthByUsername = (username: string, userToken: UserToken) => {
-  return (
-    isAdminOrEditor(userToken.accessGroups) || userToken.username === username
-  );
-};
+const checkAuthByUsername = (username: string, userToken: UserToken) =>
+  requesterIsAdminOrEditor(userToken) ||
+  requesterIsAuthor({ authorUsername: username, requester: userToken });
 
 /**
  * Checks if requester is author byu the username provided
@@ -1684,16 +1627,14 @@ const isAuthorByUsername = (
  * @param {UserToken} userToken
  * @returns
  */
-export const hasReadAccessByCollection = (
+export const checkCollectionReadAccess = (
   collectionName: string,
   userToken: UserToken,
-) => {
-  if (!userToken || !isPrivilegedUser(userToken.accessGroups)) return false;
-  return (
-    isAdminOrEditor(userToken.accessGroups) ||
-    getAccessGroupCollections(userToken).includes(collectionName)
-  );
-};
+) =>
+  hasReadAccessByCollection({
+    requester: userToken,
+    collection: collectionName,
+  });
 
 /**
  * This handler allows execution to proceed if a ResourceError occurs because of a resource not being found.

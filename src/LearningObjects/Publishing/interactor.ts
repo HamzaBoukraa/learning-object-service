@@ -1,9 +1,12 @@
 import { LearningObject } from '../../shared/entity';
 import { ResourceError, ResourceErrorReason } from '../../shared/errors';
-import { isAdminOrEditor } from '../../shared/AuthorizationManager';
 import { UserToken } from '../../shared/types';
 import { ReleaseEmailGateway } from './ReleaseEmails/release-email-gateway';
 import { HierarchyAdapter } from '../Hierarchy/HierarchyAdapter';
+import { bundleLearningObject } from './Bundler/Interactor';
+import { FileManagerAdapter } from '../../FileManager';
+import { requesterIsAdminOrEditor } from '../../shared/AuthorizationManager';
+import { reportError } from '../../shared/SentryConnector';
 
 export interface PublishingDataStore {
     addToReleased(releasableObject: LearningObject): Promise<void>;
@@ -11,9 +14,16 @@ export interface PublishingDataStore {
 
 /**
  * If the user is an admin or editor (the only roles that can release a Learning Object),
- * then request the data store marks the Learning Object as released. Otherwise, throw a
- * ResourceError. An email will only be sent to the Learning Object author if the
- * Learning Object being released is a top-level (parent) objct
+ * then:
+ * 1. Generate the relevant artifacts for the release
+ * 2. Add the Learning Object to the released set
+ * 3. Send out a notification to the author
+ *
+ * Notes:
+ * If the generation of publishing artifacts fails, report the error but do not abort the release - as this
+ * should be handled retrospectively.
+ * An email will only be sent to the Learning Object author if the
+ * Learning Object being released is a top-level (parent) object.
  */
 export async function releaseLearningObject({ userToken, dataStore, releasableObject, releaseEmailGateway }: {
     userToken: UserToken,
@@ -21,11 +31,39 @@ export async function releaseLearningObject({ userToken, dataStore, releasableOb
     releasableObject: LearningObject;
     releaseEmailGateway: ReleaseEmailGateway,
 }): Promise<void> {
-    if (!isAdminOrEditor(userToken.accessGroups)) {
+    if (!requesterIsAdminOrEditor(userToken)) {
         throw new ResourceError(`${userToken.username} does not have access to release this Learning Object`, ResourceErrorReason.INVALID_ACCESS);
+    }
+    try {
+        await createPublishingArtifacts(releasableObject, userToken);
+    } catch (e) {
+        reportError(e);
     }
     await dataStore.addToReleased(releasableObject);
     await sendEmail(releasableObject, userToken, releaseEmailGateway);
+}
+
+/**
+ * createPublishingArtifacts handles the creation and storage of content created as a result
+ * of releasing a Learning Object. This includes a bundle of all files associated with the
+ * Learning Object for faster download.
+ *
+ * @param releasableObject the Learning Object to create artifacts for
+ * @param userToken the user who has requested to publish a Learning Object
+ */
+async function createPublishingArtifacts(releasableObject: LearningObject, userToken: UserToken) {
+    const storagePrefix = `${releasableObject.author.username}/${releasableObject.id}`;
+    const bundle = await bundleLearningObject({
+        learningObject: releasableObject,
+        requesterUsername: userToken.username,
+    });
+    await FileManagerAdapter.getInstance().uploadFile({
+        file: {
+            // TODO: Should this be moved to the File Manager?
+            path: `${storagePrefix}/bundle.zip`,
+            data: bundle,
+        },
+    });
 }
 
 /**
