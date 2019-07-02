@@ -70,10 +70,10 @@ export class ChangelogDataStore {
    *
    * @returns {ChangeLogDocument[]} All changelogs for a learning object
    */
-  async fetchAllChangelogs(params: {
+  fetchAllChangelogs(params: {
     learningObjectId: string,
   }): Promise<ChangeLogDocument[]> {
-    return await this.db
+    return this.db
       .collection(COLLECTIONS.CHANGLOG)
       .aggregate([
         { $match: { learningObjectId: params.learningObjectId } },
@@ -90,11 +90,11 @@ export class ChangelogDataStore {
    * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
    * @param {string} date The date of that the changelog was created
    */
-  async fetchChangelogsBeforeDate(params: {
+  fetchChangelogsBeforeDate(params: {
     learningObjectId: string,
     date: string,
   }): Promise<ChangeLogDocument[]> {
-    return await this.db
+    return this.db
       .collection(COLLECTIONS.CHANGLOG)
       .aggregate([
         { $match: { learningObjectId: params.learningObjectId } },
