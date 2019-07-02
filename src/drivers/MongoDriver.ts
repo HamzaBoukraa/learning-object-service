@@ -347,12 +347,12 @@ export class MongoDriver implements DataStore {
     const total = results.total[0] ? results.total[0].total : 0;
     return { total, objects };
   }
-/**
- * search for released user objects
- *
- * @param query {LearningObjectQuery} query containing status and text for feild searching
- * @param username {string} username of an author in CLARK
- */
+  /**
+   * search for released user objects
+   *
+   * @param {LearningObjectQuery} query query containing status and text for feild searching
+   * @param {string} username username of an author in CLARK
+   */
   async searchReleasedUserObjects(
     query: LearningObjectQuery,
     username: string,
@@ -365,11 +365,7 @@ export class MongoDriver implements DataStore {
       authorID: id,
     };
     if (text) {
-      const regex = new RegExp(sanitizeRegex(text));
-      searchQuery.$or.push(
-        { $text: { $search: text } },
-        { name: { $regex: regex } },
-        { description: { $regex: regex } });
+      this.createTextSearchQuery(text, searchQuery);
     }
 
     const resultSet = await this.
@@ -384,13 +380,15 @@ export class MongoDriver implements DataStore {
 
   }
 
+
+
   /**
    * Performs aggregation to join the users objects from the released and working collection before
    * searching and filtering
    *
-   * @param query {LearingObjectQuery}
-   * @param username {string}
-   * @param conditions {QueryCondition}
+   * @param {LearningObjectQuery} query query containing status and text for feild searching
+   * @param {string} username username of an author in CLARK
+   * @param {QueryCondition} conditions Array containing a reviewer or curators requested collections.
    *
    * @returns {LearningObjectSummary[]}
    * @memberof MongoDriver
@@ -409,14 +407,9 @@ export class MongoDriver implements DataStore {
       authorID: userId,
     };
     if (text) {
-      const regex = new RegExp(sanitizeRegex(text));
-      searchQuery.$or.push(
-        { $text: { $search: text } },
-        { name: { $regex: regex } },
-        { description: { $regex: regex } });
+      this.createTextSearchQuery(text, searchQuery);
     }
     if (status) {
-      searchQuery.$or = [];
       searchQuery.$or.push({
         status: { $in: status },
       });
@@ -1808,7 +1801,7 @@ export class MongoDriver implements DataStore {
         if (!query.$or) {
           query.$or = [];
         }
-        query.$or.push({ description: { $regex: params.text, $options: 'i' } }, { name: { $regex: params.text, $options: 'i'} });
+        query.$or.push({ description: { $regex: params.text, $options: 'i' } }, { name: { $regex: params.text, $options: 'i' } });
       }
       let objectCursor = await this.db
         .collection(COLLECTIONS.LEARNING_OBJECTS)
@@ -2332,6 +2325,19 @@ export class MongoDriver implements DataStore {
         .toArray()
       : null;
   }
+
+  /**
+   *
+   * @param {string} text text query specidied by the user
+   * @param {any} searchQuery searchQuery object created in the searchAll and searchReleased functions.
+   */
+  private createTextSearchQuery(text: string, searchQuery: any) {
+    const regex = new RegExp(sanitizeRegex(text));
+    searchQuery.$or.push(
+      { $text: { $search: text } },
+      { name: { $regex: regex } },
+      { description: { $regex: regex } });
+  }
   /**
    * Fetches all Learning Object collections and displays only the name, abreviated name and logo.
    *
@@ -2612,9 +2618,9 @@ export class MongoDriver implements DataStore {
       // Logic for loading 'full' learning objects
       materials = <LearningObject.Material>record.materials;
       outcomes = await this.getAllLearningOutcomes({
-          source: record._id,
-        });
-      }
+        source: record._id,
+      });
+    }
     learningObject = new LearningObject({
       id: record._id,
       author,
@@ -2670,7 +2676,7 @@ export class MongoDriver implements DataStore {
         const mappings = await this.learningOutcomeStore.getAllStandardOutcomes({
           ids: record.outcomes[i].mappings,
         });
-        outcomes.push(new LearningOutcome({...record.outcomes[i], mappings: mappings, id: record.outcomes[i]['_id']}));
+        outcomes.push(new LearningOutcome({ ...record.outcomes[i], mappings: mappings, id: record.outcomes[i]['_id'] }));
       }
     }
     learningObject = new LearningObject({
