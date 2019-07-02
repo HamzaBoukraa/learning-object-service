@@ -56,7 +56,7 @@ export interface LearningObjectSummary {
   /**
    * Summary of Learning object child objects
    */
-  children?: LearningObjectChildSummary[];
+  children: LearningObjectChildSummary[];
   /**
    * Summary information about users who have made contributions to the Learning Object
    */

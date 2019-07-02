@@ -212,7 +212,6 @@ export class LearningObjectInteractor {
         });
         if (isAuthor) {
           status = status ? status : this.getRequestedStatusFilter(released, true);
-          console.log(status);
           response = await dataStore.searchAllUserObjects(
             {status, text},
             username);

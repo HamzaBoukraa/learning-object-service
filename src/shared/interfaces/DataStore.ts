@@ -128,10 +128,28 @@ export interface DataStore
     objects: LearningObject[];
   }>;
 
+  /**
+   * Search for the specified user's released objects.
+   *
+   * @param {LearningObjectQuery} query query containing status and text for feild searching.
+   * @param {String} username  username of an author in CLARK
+   *
+   * @returns {Promise<LearningObjectSummary[]>}
+   */
   searchReleasedUserObjects(
     query: LearningObjectQuery,
     username: string,
   ): Promise<LearningObjectSummary[]>;
+
+  /**
+   * Search for the specified user's released or working objects depending on requested status's
+   *
+   * @param  {LearningObjectQuery} query query contaring status and text for feild searching.
+   * @param username username of an author in CLARK.
+   * @param conditions Array containing a reviewer or curators' requested collections.
+   *
+   * @returns {Promise<LearningObjectSummary[]>}
+   */
   searchAllUserObjects(
     query: LearningObjectQuery,
     username: string,

@@ -350,8 +350,8 @@ export class MongoDriver implements DataStore {
 /**
  * search for released user objects
  *
- * @param query {LearningObjectQuery}
- * @param username {string}
+ * @param query {LearningObjectQuery} query containing status and text for feild searching
+ * @param username {string} username of an author in CLARK
  */
   async searchReleasedUserObjects(
     query: LearningObjectQuery,
@@ -359,25 +359,25 @@ export class MongoDriver implements DataStore {
   ): Promise<LearningObjectSummary[]> {
     const { text } = query;
 
-    const objectIds = await this.getUserObjects(username);
+    const id = await this.findUser(username);
 
-    let searchQuery: any = {
-      id: { $in: objectIds },
+    const searchQuery: any = {
+      authorID: id,
     };
     if (text) {
       const regex = new RegExp(sanitizeRegex(text));
       searchQuery.$or.push(
         { $text: { $search: text } },
         { name: { $regex: regex } },
-        { contributors: { $regex: regex } });
+        { description: { $regex: regex } });
     }
 
     const resultSet = await this.
       db.collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
       .find<LearningObjectDocument>(searchQuery).toArray();
 
-    const learningObjects: LearningObjectSummary[] = await Promise.all(resultSet.map(async learningObject => {
-      return await this.generateLearningObjectSummary(learningObject);
+    const learningObjects: LearningObjectSummary[] = await Promise.all(resultSet.map(learningObject => {
+      return this.generateLearningObjectSummary(learningObject);
     }));
 
     return learningObjects;
@@ -405,7 +405,7 @@ export class MongoDriver implements DataStore {
       ? this.buildQueryConditions(conditions)
       : [];
     const userId = await this.findUser(username);
-    let searchQuery: any = {
+    const searchQuery: any = {
       authorID: userId,
     };
     if (text) {
@@ -413,7 +413,7 @@ export class MongoDriver implements DataStore {
       searchQuery.$or.push(
         { $text: { $search: text } },
         { name: { $regex: regex } },
-        { contributors: { $regex: regex } });
+        { description: { $regex: regex } });
     }
     if (status) {
       searchQuery.$or = [];
@@ -435,8 +435,8 @@ export class MongoDriver implements DataStore {
           total: [{ total: number }];
         }>(pipeline)
       .toArray();
-    const learningObjects: LearningObjectSummary[] = await Promise.all(resultSet[0].objects.map(async learningObject => {
-      return await this.generateLearningObjectSummary(learningObject);
+    const learningObjects: LearningObjectSummary[] = await Promise.all(resultSet[0].objects.map(learningObject => {
+      return this.generateLearningObjectSummary(learningObject);
     }));
 
     return learningObjects;
@@ -2693,6 +2693,7 @@ export class MongoDriver implements DataStore {
     return learningObject;
   }
 }
+
 
 
 export function isEmail(value: string): boolean {
