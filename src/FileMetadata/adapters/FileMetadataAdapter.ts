@@ -1,4 +1,4 @@
-import { LearningObjectFile, FileMetadataFilter } from "../typings";
+import { LearningObjectFile, FileMetadataFilter } from '../typings';
 import { getFileMeta } from '../Interactor';
 import { UserToken } from '../../shared/types';
 

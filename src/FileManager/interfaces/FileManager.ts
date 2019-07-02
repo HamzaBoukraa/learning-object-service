@@ -99,7 +99,7 @@ export abstract class FileManager {
   }): Promise<void>;
 
  /**
-  * Copies all objects in source folder from working files bucket 
+  * Copies all objects in source folder from working files bucket
   * to destination folder in released files bucket
   *
   * @param {{
