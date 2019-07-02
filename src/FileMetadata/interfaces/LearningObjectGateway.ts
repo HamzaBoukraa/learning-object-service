@@ -20,29 +20,23 @@ export abstract class LearningObjectGateway {
   /**
    * Retrieves released Learning Object file metadata by id
    *
-   * @param {Requester} requester [Object containing information about the requester]
    * @param {string} id [Id of the Learning Object]
    * @param {string} fileId [Id of the file]
    * @memberof LearningObjectGateway
    * @returns {Promise<LearningObjectFile>}
    */
   abstract getReleasedFile(params: {
-    requester: Requester;
     id: string;
     fileId: string;
   }): Promise<LearningObjectFile>;
   /**
    * Retrieves all released Learning Object file metadata
    *
-   * @param {Requester} requester [Object containing information about the requester]
    * @param {string} id [Id of the Learning Object]
    * @memberof LearningObjectGateway
    * @returns {Promise<LearningObjectFile[]>}
    */
-  abstract getReleasedFiles(params: {
-    requester: Requester;
-    id: string;
-  }): Promise<LearningObjectFile[]>;
+  abstract getReleasedFiles(id: string): Promise<LearningObjectFile[]>;
 
   /**
    * Sends request to update Learning Object's last modified date

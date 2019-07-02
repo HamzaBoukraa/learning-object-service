@@ -22,3 +22,9 @@ import { MongoFileManagerModuleDatastore } from './drivers/FileManagerModuleData
 export class FileManagerModule extends ExpressServiceModule {
 
 }
+import { FileManagerAdapterStub } from './FileManagerAdapterStub';
+
+const Adapter = process.env.NODE_ENV === 'testing'
+ ? FileManagerAdapter
+ : FileManagerAdapterStub;
+export { Adapter as FileManagerAdapter };

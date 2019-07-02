@@ -1,6 +1,9 @@
 import { DataStore } from '../shared/interfaces/DataStore';
 import { LearningObject } from '../shared/entity';
-import { FileManager } from '../shared/interfaces/interfaces';
+import {
+  FileManager,
+  LibraryCommunicator,
+} from '../shared/interfaces/interfaces';
 import {
   updateReadme,
   getLearningObjectById,
@@ -13,6 +16,7 @@ import {
   updateObjectLastModifiedDate,
 } from './LearningObjectInteractor';
 import { UserToken, LearningObjectSummary } from '../shared/types';
+import { LearningObjectFilter } from './typings';
 
 /**
  * FIXME: THe duplication of JSDoc comments here is not ideal, as it means a change
@@ -23,11 +27,17 @@ export class LearningObjectAdapter {
   private constructor(
     private dataStore: DataStore,
     private fileManager: FileManager,
+    private library: LibraryCommunicator,
   ) {}
-  static open(dataStore: DataStore, fileManager: FileManager) {
+  static open(
+    dataStore: DataStore,
+    fileManager: FileManager,
+    library: LibraryCommunicator,
+  ) {
     LearningObjectAdapter._instance = new LearningObjectAdapter(
       dataStore,
       fileManager,
+      library,
     );
   }
   static getInstance(): LearningObjectAdapter {
@@ -49,23 +59,19 @@ export class LearningObjectAdapter {
    * Retrieves released file metadata by id
    *
    * @export
-   * @param {UserToken} requester [Object containing information about the requester]
    * @param {string} id [Id of the Learning Object]
    * @param {string} fileId [Id of the file]
    * @returns {Promise<LearningObject.Material.File>}
    */
   async getReleasedFile({
-    requester,
     id,
     fileId,
   }: {
-    requester: UserToken;
     id: string;
     fileId: string;
   }): Promise<LearningObject.Material.File> {
     return getReleasedFile({
       dataStore: this.dataStore,
-      requester,
       id,
       fileId,
     });
@@ -74,20 +80,14 @@ export class LearningObjectAdapter {
    * Retrieves all released file metadata for a Learning Object
    *
    * @export
-   * @param {UserToken} requester [Object containing information about the requester]
    * @param {string} id [Id of the Learning Object]
    * @returns {Promise<LearningObject.Material.File>}
    */
-  async getReleasedFiles({
-    requester,
-    id,
-  }: {
-    requester: UserToken;
-    id: string;
-  }): Promise<LearningObject.Material.File[]> {
+  async getReleasedFiles(
+    id: string,
+  ): Promise<LearningObject.Material.File[]> {
     return getReleasedFiles({
       dataStore: this.dataStore,
-      requester,
       id,
     });
   }
@@ -165,8 +165,16 @@ export class LearningObjectAdapter {
    * @param {string} id the learning object's id
    * @returns {Promise<LearningObject>}
    */
-  async getLearningObjectById(id: string): Promise<LearningObject> {
-    return getLearningObjectById(this.dataStore, id);
+  async getLearningObjectById(params: {
+    id: string;
+    requester: UserToken;
+    filter?: LearningObjectFilter;
+  }): Promise<LearningObject> {
+    return getLearningObjectById({
+      dataStore: this.dataStore,
+      library: this.library,
+      ...params,
+    });
   }
 
   /**

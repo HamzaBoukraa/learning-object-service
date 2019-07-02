@@ -7,6 +7,7 @@ import { Readable } from 'stream';
 import { MultipartFileUploadStatus, DZFile, FileUpload } from './typings/file-manager';
 import { ResourceError, ResourceErrorReason } from '../shared/errors';
 import { FileManagerModuleDatastore } from './interfaces/FileManagerModuledatastore';
+import { AccessGroup, UserToken } from '../shared/types';
 
 namespace Drivers {
   export const fileManager = () => Module.resolveDependency(FileManager);
@@ -14,121 +15,17 @@ namespace Drivers {
 }
 
 /**
- * Creates multipart upload and saves metadata for upload
+ * FIXME:
+ * Since no authorization can be done for downloads as of yet due to Microsoft previews needing access to files;
+ * this service token is used to fetch file metadata of Learning Objects in review on behalf of the requester.
  *
- * @export
- * @param {{
- *   dataStore: DataStore;
- *   fileManager: FileManager;
- *   objectId: string;
- *   filePath: string;
- *   user: any;
- * }} params
- * @returns {Promise<string>}
- */
-export async function startMultipartUpload(params: {
-  dataStore: DataStore;
-  objectId: string;
-  filePath: string;
-  user: any;
-  username?: string;
-}): Promise<string> {
-  const path = `${params.username || params.user.username}/${
-    params.objectId
-  }/${params.filePath}`;
-  const uploadId = await Drivers.fileManager().initMultipartUpload({ path });
-  const status: MultipartFileUploadStatus = {
-    path,
-    _id: uploadId,
-    completedParts: [],
-    createdAt: Date.now().toString(),
-  };
-  await Drivers.dataStore().insertMultipartUploadStatus({ status });
-  return uploadId;
-}
-
-/**
- * Processes Multipart Uploads
+ * The Admin privilege is given so that existing functionality does not break, but only allows the service to retrieve file metadata for Learning Objects in review.
  *
- * @private
- * @static
- * @param {{
- *     dataStore: DataStore;
- *     fileManager: FileManager;
- *     file: DZFile;
- *     fileUpload: FileUpload;
- *   }} params
+ * This is a temporary patch and should be swapped for authorization logic using JWT payload/some other temporary key to validate the requester has access to the requested file.
  */
-export async function processMultipartUpload(params: {
-  dataStore: DataStore;
-  file: DZFile;
-  fileUpload: FileUpload;
-  uploadId: string;
-}): Promise<void> {
-  const partNumber = +params.file.dzchunkindex + 1;
-  const completedPart = await Drivers.fileManager().uploadPart({
-    path: params.fileUpload.path,
-    data: params.fileUpload.data,
-    partNumber,
-    uploadId: params.uploadId,
-  });
-  await Drivers.dataStore().updateMultipartUploadStatus({
-    completedPart,
-    id: params.uploadId,
-  });
-}
-
-/**
- * Finalizes multipart upload and returns file url;
- *
- * @export
- * @param {{
- *   dataStore: DataStore;
- *   fileManager: FileManager;
- *   fileId: string;
- * }} params
- * @returns {Promise<string>}
- */
-export async function finalizeMultipartUpload(params: {
-  dataStore: DataStore;
-  uploadId: string;
-}): Promise<string> {
-  const uploadStatus = await Drivers.dataStore().fetchMultipartUploadStatus({
-    id: params.uploadId,
-  });
-  Drivers.dataStore().deleteMultipartUploadStatus({ id: params.uploadId });
-  const url = await Drivers.fileManager().completeMultipartUpload({
-    path: uploadStatus.path,
-    uploadId: params.uploadId,
-    completedPartList: uploadStatus.completedParts,
-  });
-  return url;
-}
-
-/**
- * Aborts multipart upload
- *
- * @export
- * @param {{
- *   dataStore: DataStore;
- *   fileManager: FileManager;
- *   uploadId: string;
- * }} params
- * @returns {Promise<void>}
- */
-export async function abortMultipartUpload(params: {
-  dataStore: DataStore;
-  uploadId: string;
-}): Promise<void> {
-  const uploadStatus = await Drivers.dataStore().fetchMultipartUploadStatus({
-    id: params.uploadId,
-  });
-  Drivers.dataStore().deleteMultipartUploadStatus({ id: params.uploadId });
-  await Drivers.fileManager().abortMultipartUpload({
-    path: uploadStatus.path,
-    uploadId: params.uploadId,
-  });
-}
+const serviceToken: Partial<UserToken> = {
+  accessGroups: [AccessGroup.ADMIN],
+};
 
 /**
  * Instructs file manager to upload a single file
@@ -185,27 +82,48 @@ export async function downloadSingleFile(params: {
   learningObjectId: string;
   fileId: string;
   dataStore: DataStore;
+  fileManager: FileManager;
   author: string;
+  requester?: UserToken;
+  filter?: DownloadFilter;
 }): Promise<{ filename: string; mimeType: string; stream: Readable }> {
   let learningObject, fileMetaData;
 
   learningObject = await params.dataStore.fetchLearningObject({
     id: params.learningObjectId,
-    full: true,
+    full: false,
   });
 
   if (!learningObject) {
-    throw new ResourceError(
+    throw new Error(
       `Learning object ${params.learningObjectId} does not exist.`,
-      ResourceErrorReason.NOT_FOUND,
     );
   }
 
-  // Collect requested file metadata from datastore
-  fileMetaData = await params.dataStore.findSingleFile({
-    learningObjectId: params.learningObjectId,
-    fileId: params.fileId,
-  });
+  if (!params.filter || params.filter === 'released') {
+    fileMetaData = await FileMetadata.geFileMetadata({
+      requester: serviceToken as UserToken,
+      learningObjectId: params.learningObjectId,
+      id: params.fileId,
+      filter: 'released',
+    }).catch(bypassFileNotFoundError(params.filter !== 'released'));
+  }
+
+  if (
+    (!fileMetaData && params.fileId !== 'released') ||
+    params.filter === 'unreleased'
+  ) {
+    // Collect unreleased file metadata from FileMetadata module
+
+    // To maintain existing functionality, service token is elevated to author to fetch unreleased file meta
+    serviceToken.username = learningObject.author.username;
+    fileMetaData = await FileMetadata.geFileMetadata({
+      requester: serviceToken as UserToken,
+      learningObjectId: params.learningObjectId,
+      id: params.fileId,
+      filter: 'unreleased',
+    });
+  }
 
   if (!fileMetaData) {
     return Promise.reject({
@@ -219,23 +137,35 @@ export async function downloadSingleFile(params: {
   }`;
   const mimeType = fileMetaData.fileType;
   // Check if the file manager has access to the resource before opening a stream
-  if (await Drivers.fileManager().hasAccess(path)) {
-    const stream = Drivers.fileManager().streamWorkingCopyFile({ path });
+  if (await params.fileManager.hasAccess(path)) {
+    const stream = params.fileManager.streamWorkingCopyFile({ path });
     return { mimeType, stream, filename: fileMetaData.name };
   } else {
-    throw Error(`File not found ${learningObject.name}`);
+    throw { message: 'File not found', object: { name: learningObject.name } };
   }
 }
+
 /**
- * Gets file type
+ * Bypasses NotFound Resource Error when requesting a file if `condition` is true by returning null
  *
- * @export
- * @param {{ file: LearningObject.Material.File }} params
- * @returns {string}
+ * This allows execution to continue
+ *
+ * @param {boolean} condition
+ * @returns {((e: Error) => null | never)}
  */
-export function getMimeType(params: {
-  file: LearningObject.Material.File;
-}): string {
-  return params.file.fileType;
+function bypassFileNotFoundError(
+  condition: boolean,
+): (e: Error) => null | never {
+  return (e: Error) => {
+    if (
+      condition &&
+      e instanceof ResourceError &&
+      e.name === ResourceErrorReason.NOT_FOUND
+    ) {
+      return null;
+    }
+    throw e;
+  };
 }
+
 

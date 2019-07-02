@@ -15,6 +15,7 @@ import { LearningObjectAdapter } from './LearningObjects/LearningObjectAdapter';
 import { LearningObjectSearch } from './LearningObjectSearch';
 import { HierarchyAdapter } from './LearningObjects/Hierarchy/HierarchyAdapter';
 import { FileManagerAdapter } from './FileManager/adapters/FileManagerAdapter';
+import { BundlerModule } from './LearningObjects/Publishing/Bundler/BundlerModule';
 import { FileMetadata } from './FileMetadata';
 
 // ----------------------------------------------------------------------------------
@@ -82,9 +83,10 @@ async function startApp() {
  */
 function initModules() {
   HierarchyAdapter.open(dataStore);
-  LearningObjectAdapter.open(dataStore, fileManager);
+  LearningObjectAdapter.open(dataStore, fileManager, library);
   LearningObjectSearch.initialize();
   FileManagerAdapter.open(fileManager);
+  BundlerModule.initialize();
   FileMetadata.initialize();
 }
 

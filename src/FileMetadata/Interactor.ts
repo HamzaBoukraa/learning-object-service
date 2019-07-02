@@ -84,7 +84,6 @@ export async function getFileMeta({
     }
 
     return Gateways.learningObjectGateway().getReleasedFile({
-      requester,
       id: learningObjectId,
       fileId: id,
     });
@@ -130,10 +129,9 @@ export async function getAllFileMeta({
     });
     let releasedFiles$: Promise<LearningObjectFile[]>;
     if (!filter || filter === 'released') {
-      releasedFiles$ = Gateways.learningObjectGateway().getReleasedFiles({
-        requester,
-        id: learningObjectId,
-      });
+      releasedFiles$ = Gateways.learningObjectGateway().getReleasedFiles(
+        learningObjectId,
+      );
       if (filter === 'released') return releasedFiles$;
     }
     const learningObject: LearningObjectSummary = await Gateways.learningObjectGateway().getWorkingLearningObjectSummary(

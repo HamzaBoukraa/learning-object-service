@@ -6,6 +6,7 @@ export type CompletedPartList = CompletedPartList;
 
 export interface FileUpload {
     path: string;
+    // FIXME: This should define the specific types it can take
     data: any;
   }
 

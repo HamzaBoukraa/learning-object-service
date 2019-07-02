@@ -23,16 +23,26 @@ export async function cancelSubmission(params: {
   emailVerified: boolean;
 }): Promise<void> {
   const LearningObjectGateway = LearningObjectAdapter.getInstance();
-  const object = await LearningObjectGateway.getLearningObjectById(params.learningObjectId);
+  const object = await LearningObjectGateway.getLearningObjectById(
+    { id: params.learningObjectId, requester: params.user, filter: 'unreleased' },
+  );
 
   if (params.userId !== object.author.id) {
-    throw new ResourceError('Only the author may cancel a submission.', ResourceErrorReason.FORBIDDEN);
+    throw new ResourceError(
+      'Only the author may cancel a submission.',
+      ResourceErrorReason.FORBIDDEN,
+    );
   }
 
-  const submission = await params.dataStore.fetchRecentSubmission(params.learningObjectId);
+  const submission = await params.dataStore.fetchRecentSubmission(
+    params.learningObjectId,
+  );
   if (submission) {
     if (submission.cancelDate) {
-      throw new ResourceError('This submission has already been canceled', ResourceErrorReason.BAD_REQUEST);
+      throw new ResourceError(
+        'This submission has already been canceled',
+        ResourceErrorReason.BAD_REQUEST,
+      );
     }
 
     await params.dataStore.recordCancellation(params.learningObjectId);

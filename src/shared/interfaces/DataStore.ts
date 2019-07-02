@@ -65,6 +65,14 @@ export interface DataStore
    */
   fetchReleasedFiles(id: string): Promise<LearningObject.Material.File[]>;
   /**
+   * Fetches materials for released Learning Object
+   *
+   * @param {string} id [Id of the Learning Object]
+   * @returns {Promise<LearningObject.Material>}
+   * @memberof DataStore
+   */
+  fetchReleasedMaterials(id: string): Promise<LearningObject.Material>;
+  /**
    * Fetches summary of Learning Object by id and revision number
    *
    * @param {string} id [Id of the LearningObject]
@@ -133,7 +141,6 @@ export interface DataStore
   loadReleasedChildObjects(params: {
     id: string;
     full?: boolean;
-    status: string[];
   }): Promise<LearningObject[]>;
   checkLearningObjectExistence(params: {
     learningObjectId: string,
