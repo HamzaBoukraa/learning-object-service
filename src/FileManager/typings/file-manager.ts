@@ -50,3 +50,5 @@ export interface DZFile extends DZFileMetadata {
     buffer: Buffer;
     size: number;
 }
+
+export type DownloadFilter = 'released' | 'unreleased';

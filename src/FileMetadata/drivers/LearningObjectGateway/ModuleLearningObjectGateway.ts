@@ -5,6 +5,8 @@ import {
   LearningObjectFile,
 } from '../../typings';
 import { LearningObjectAdapter } from '../../../LearningObjects/LearningObjectAdapter';
+import { UserToken } from '../../../shared/types';
+import { LearningObject } from '../../../shared/entity';
 
 export class ModuleLearningObjectGateway extends LearningObjectGateway {
   private adapter: LearningObjectAdapter = LearningObjectAdapter.getInstance();

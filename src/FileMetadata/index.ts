@@ -22,7 +22,7 @@ import { ExpressHttpAdapter } from './adapters';
   ],
 })
 export class FileMetadata extends ExpressServiceModule {
-  static geFileMetadata = getFileMeta;
+  static getFileMetadata = getFileMeta;
   static getAllFileMetadata = getAllFileMeta;
   static deleteAllFileMetadata = deleteAllFileMeta;
 }

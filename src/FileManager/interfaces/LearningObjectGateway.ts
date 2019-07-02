@@ -1,4 +1,5 @@
 import { LearningObject } from '../../shared/entity';
+import { UserToken } from '../../shared/types';
 
 export abstract class LearningObjectGateway {
 
@@ -11,8 +12,8 @@ export abstract class LearningObjectGateway {
    * @memberof LearningObjectGateway
    * @returns {Promise<LearningObject>}
    */
-    abstract fetchLearningObject(params: {
-        id: string,
-        full: boolean,
+    abstract getLearningObjectById(params: {
+        id: string;
+        requester: UserToken;
     }): Promise<LearningObject>;
 }

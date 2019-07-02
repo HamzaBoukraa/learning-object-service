@@ -2,8 +2,10 @@ import { expressServiceModule, ExpressServiceModule } from 'node-service-module'
 import { ExpressHttpAdapter } from './adapters';
 import { S3Driver } from '../drivers/drivers';
 import { FileManager } from '../shared/interfaces/interfaces';
-import { FileManagerModuleDatastore } from './interfaces/FileManagerModuledatastore';
-import { MongoFileManagerModuleDatastore } from './drivers/FileManagerModuleDatastore/MongoFileManagerModuleDatastore';
+import { FileManagerAdapterStub } from './adapters/FileManagerAdapterStub';
+import { LearningObjectGateway } from './interfaces/LearningObjectGateway';
+import { ModuleLearningObjectGateway } from './drivers/LearningObjectGateway/ModuleLearningObjectGateway';
+import { FileManagerAdapter } from './adapters/FileManagerAdapter';
 
 /**
  * Module responsible for handling file operations
@@ -16,13 +18,12 @@ import { MongoFileManagerModuleDatastore } from './drivers/FileManagerModuleData
     expressRouter: ExpressHttpAdapter.buildRouter(),
     providers: [
         { provide: FileManager, useClass: S3Driver },
-        { provide: FileManagerModuleDatastore, useClass: MongoFileManagerModuleDatastore },
+        { provide: LearningObjectGateway, useClass: ModuleLearningObjectGateway },
     ],
 })
 export class FileManagerModule extends ExpressServiceModule {
 
 }
-import { FileManagerAdapterStub } from './FileManagerAdapterStub';
 
 const Adapter = process.env.NODE_ENV === 'testing'
  ? FileManagerAdapter

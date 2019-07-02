@@ -2,16 +2,16 @@ import { FileManagerModule as Module } from '.';
 import { DataStore } from '../shared/interfaces/DataStore';
 
 import { FileManager } from '../shared/interfaces/interfaces';
-import { LearningObject } from '../shared/entity';
 import { Readable } from 'stream';
-import { MultipartFileUploadStatus, DZFile, FileUpload } from './typings/file-manager';
+import { FileUpload, DownloadFilter } from './typings/file-manager';
 import { ResourceError, ResourceErrorReason } from '../shared/errors';
-import { FileManagerModuleDatastore } from './interfaces/FileManagerModuledatastore';
 import { AccessGroup, UserToken } from '../shared/types';
+import { FileMetadata } from '../FileMetadata';
+import { LearningObjectGateway } from './interfaces/LearningObjectGateway';
 
 namespace Drivers {
   export const fileManager = () => Module.resolveDependency(FileManager);
-  export const dataStore = () => Module.resolveDependency(FileManagerModuleDatastore);
+  export const learningObjectGateway = () => Module.resolveDependency(LearningObjectGateway);
 }
 
 /**
@@ -31,9 +31,8 @@ const serviceToken: Partial<UserToken> = {
  * Instructs file manager to upload a single file
  *
  * @export
- * @param {{ FileManager }} fileManager
- * @param {{ FileUpload }} file
- * @returns {string}
+ * @param {{ file: FileUpload }} params
+ * @returns {Promise<void>}
  */
 export async function uploadFile(params: {
   file: FileUpload,
@@ -44,12 +43,11 @@ export async function uploadFile(params: {
 }
 
 /**
- * Instructs file manager to delete  a single file
+ * Instructs file manager to delete a single file
  *
  * @export
- * @param {{ FileManager }} fileManager
- * @param {{ FileUpload }} file
- * @returns {string}
+ * @param {{ path: string }} params
+ * @returns {Promise<void>}
  */
 export async function deleteFile(params: {
   path: string;
@@ -59,6 +57,13 @@ export async function deleteFile(params: {
   });
 }
 
+/**
+ * Instructs file manager to delete all contents within a folder
+ *
+ * @export
+ * @param {{ path: string }} params
+ * @returns {Promise<void>}
+ */
 export async function deleteFolder(params: {
   path: string;
 }): Promise<void> {
@@ -82,16 +87,15 @@ export async function downloadSingleFile(params: {
   learningObjectId: string;
   fileId: string;
   dataStore: DataStore;
-  fileManager: FileManager;
   author: string;
   requester?: UserToken;
   filter?: DownloadFilter;
 }): Promise<{ filename: string; mimeType: string; stream: Readable }> {
   let learningObject, fileMetaData;
 
-  learningObject = await params.dataStore.fetchLearningObject({
+  learningObject = await Drivers.learningObjectGateway().getLearningObjectById({
     id: params.learningObjectId,
-    full: false,
+    requester: params.requester,
   });
 
   if (!learningObject) {
@@ -101,7 +105,7 @@ export async function downloadSingleFile(params: {
   }
 
   if (!params.filter || params.filter === 'released') {
-    fileMetaData = await FileMetadata.geFileMetadata({
+    fileMetaData = await FileMetadata.getFileMetadata({
       requester: serviceToken as UserToken,
       learningObjectId: params.learningObjectId,
       id: params.fileId,
@@ -117,7 +121,7 @@ export async function downloadSingleFile(params: {
 
     // To maintain existing functionality, service token is elevated to author to fetch unreleased file meta
     serviceToken.username = learningObject.author.username;
-    fileMetaData = await FileMetadata.geFileMetadata({
+    fileMetaData = await FileMetadata.getFileMetadata({
       requester: serviceToken as UserToken,
       learningObjectId: params.learningObjectId,
       id: params.fileId,
@@ -137,8 +141,8 @@ export async function downloadSingleFile(params: {
   }`;
   const mimeType = fileMetaData.fileType;
   // Check if the file manager has access to the resource before opening a stream
-  if (await params.fileManager.hasAccess(path)) {
-    const stream = params.fileManager.streamWorkingCopyFile({ path });
+  if (await Drivers.fileManager().hasAccess(path)) {
+    const stream = Drivers.fileManager().streamWorkingCopyFile({ path });
     return { mimeType, stream, filename: fileMetaData.name };
   } else {
     throw { message: 'File not found', object: { name: learningObject.name } };
