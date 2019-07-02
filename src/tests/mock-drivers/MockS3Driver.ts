@@ -1,7 +1,7 @@
 import { FileManager } from '../../shared/interfaces/interfaces';
-import { FileUpload, CompletedPartList } from '../../FileManager/interfaces/FileManager';
 import { CompletedPart } from 'aws-sdk/clients/s3';
 import { Readable } from 'stream';
+import { FileUpload, CompletedPartList } from '../../FileManager/typings/file-manager';
 
 export class MockS3Driver implements FileManager {
   streamWorkingCopyFile(params: { path: string }): Readable {
