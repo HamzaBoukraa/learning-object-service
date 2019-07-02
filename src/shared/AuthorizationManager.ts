@@ -403,7 +403,38 @@ export function authorizeWriteAccess({
       requester,
     }) && isUnreleased;
   const isReleased = learningObject.status === LearningObject.Status.RELEASED;
-  const adminEditorAccess =
-    requesterIsAdminOrEditor(requester) && !isUnreleased && !isReleased;
-  authorizeRequest([authorAccess, adminEditorAccess]);
+/**
+ * Gets the reason for writes request access being invalid
+ *
+ * @param {boolean} isAuthor [Whether or not the requester is the author]
+ * @param {boolean} isAdminOrEditor [Whether or not the requester is an admin or editor]
+ * @param {boolean} isReleased [Whether or not the Learning Object is released]
+ * @param {boolean} authorAccess [Whether or not the requester has author level write access]
+ * @param {boolean} adminEditorAccess [Whether or not the requester has admin/editor level write access]
+ * @returns
+ */
+function getInvalidWriteAccessReason({
+  isAuthor,
+  isAdminOrEditor,
+  isReleased,
+  authorAccess,
+  adminEditorAccess,
+}: {
+  isAuthor: boolean;
+  isAdminOrEditor: boolean;
+  isReleased: boolean;
+  authorAccess: boolean;
+  adminEditorAccess: boolean;
+}) {
+  let reason = '';
+  if (!isAuthor && !isAdminOrEditor) {
+    reason = ` Cannot modify another user\'s Learning Objects.`;
+  } else if (isReleased) {
+    reason = ' Released Learning Objects cannot be modified.';
+  } else if (isAuthor && !authorAccess) {
+    reason = ' Cannot modify Learning Objects that are in review.';
+  } else if (isAdminOrEditor && !adminEditorAccess) {
+    reason = ' Only authors can modify unsubmitted Learning Objects.';
+  }
+  return reason;
 }
