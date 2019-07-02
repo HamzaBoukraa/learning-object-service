@@ -260,7 +260,7 @@ export class Stubs {
                     username: contributor._username,
                     name: contributor._name,
                     organization: contributor._organization,
-                }
+                };
             }),
             children: learningObject.children ? learningObject.children.map(child => {
                 return {

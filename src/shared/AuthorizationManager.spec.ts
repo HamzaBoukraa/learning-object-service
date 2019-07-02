@@ -853,7 +853,7 @@ describe('AuthorizationManager', () => {
       },
       collection: 'special-collection',
       contributors: [],
-      children:[],
+      children: [],
       date: Date.now().toString(),
       description: '',
       length: 'nanomodule',
