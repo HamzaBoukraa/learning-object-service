@@ -115,7 +115,6 @@ export class ExpressRouteDriver {
             query,
             userToken,
             dataStore: this.dataStore,
-            library: this.library,
             username: req.params.username,
             released,
           },

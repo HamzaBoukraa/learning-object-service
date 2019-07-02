@@ -183,7 +183,6 @@ export class LearningObjectInteractor {
     dataStore: DataStore;
     username: string;
     userToken: UserToken;
-    library: LibraryCommunicator;
     released?: string;
     query?: LearningObjectQuery;
   }): Promise<LearningObjectSummary[]> {
@@ -218,9 +217,9 @@ export class LearningObjectInteractor {
             {status, text},
             username);
         } else {
-          if (isPrivilegedUser(userToken.accessGroups)) {
+          if (requesterIsPrivileged(userToken)) {
             let conditions: QueryCondition[];
-            if (!isAdminOrEditor(userToken.accessGroups)) {
+            if (!requesterIsAdminOrEditor(userToken)) {
               status = status ? status : this.getRequestedStatusFilter(released);
               const privilegedCollections = getAccessGroupCollections(userToken);
               const collectionAccessMap = getCollectionAccessMap(

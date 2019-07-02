@@ -3,6 +3,7 @@ import {
   ReleasedLearningObjectQuery,
   LearningObjectQuery,
   ParentLearningObjectQuery,
+  QueryCondition,
 } from '../../shared/interfaces/DataStore';
 import {
   MultipartFileUploadStatus,
@@ -144,6 +145,21 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
     });
   }
 
+  searchAllUserObjects(
+    query: LearningObjectQuery,
+    username: string,
+    conditions?: QueryCondition[]):
+    Promise<LearningObjectSummary[]> {
+      return Promise.resolve([this.stubs.learningObjectSummary] as any);
+    }
+
+  searchReleasedUserObjects(
+    query: LearningObjectQuery,
+    username: string,
+    conditions?: QueryCondition[]):
+    Promise<LearningObjectSummary[]> {
+      return Promise.resolve([this.stubs.learningObjectSummary] as any);
+    }
   updateMultipleLearningObjects(params: {
     ids: string[];
     updates: LearningObjectUpdates;
