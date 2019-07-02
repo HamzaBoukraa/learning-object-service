@@ -28,6 +28,10 @@ export interface DataStore
     },
     changelogText: string,
   }): Promise<void>;
+  fetchChangelogsBeforeDate(params: {
+    learningObjectId: string,
+    date: string,
+  }): Promise<ChangeLogDocument[]>;
   fetchAllChangelogs(params: {
     learningObjectId: string,
   }): Promise<ChangeLogDocument[]>;
