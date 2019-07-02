@@ -618,7 +618,13 @@ export async function updateLearningObject({
       id,
       full: false,
     });
-    authorizeWriteAccess({ learningObject, requester });
+    authorizeWriteAccess({
+      learningObject,
+      requester,
+      message: `Invalid access. Cannot update Learning Object ${
+        learningObject.id
+      }.`,
+    });
     const cleanUpdates = sanitizeUpdates(updates);
     validateUpdates({
       id,
