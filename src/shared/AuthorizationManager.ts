@@ -349,9 +349,11 @@ export function authorizeRequest(
 export function authorizeReadAccess({
   learningObject,
   requester,
+  message,
 }: {
   learningObject: LearningObjectSummary;
   requester: UserToken;
+  message?: string;
 }) {
   const releasedAccess =
     learningObject.status === LearningObject.Status.RELEASED;
@@ -370,12 +372,10 @@ export function authorizeReadAccess({
   const adminEditorAccess =
     requesterIsAdminOrEditor(requester) && !isUnreleased;
 
-  authorizeRequest([
-    releasedAccess,
-    authorAccess,
-    reviewerCuratorAccess,
-    adminEditorAccess,
-  ]);
+  authorizeRequest(
+    [releasedAccess, authorAccess, reviewerCuratorAccess, adminEditorAccess],
+    message,
+  );
 }
 
 /**
@@ -390,19 +390,37 @@ export function authorizeReadAccess({
 export function authorizeWriteAccess({
   learningObject,
   requester,
+  message,
 }: {
   learningObject: LearningObjectSummary;
   requester: UserToken;
+  message?: string;
 }) {
-  const isUnreleased = LearningObjectState.UNRELEASED.includes(
+  const isUnreleased =
+    LearningObjectState.UNRELEASED.includes(
     learningObject.status as LearningObject.Status,
-  );
-  const authorAccess =
-    requesterIsAuthor({
+    ) || learningObject.status === LearningObject.Status.WAITING;
+  const isAuthor = requesterIsAuthor({
       authorUsername: learningObject.author.username,
       requester,
-    }) && isUnreleased;
+  });
+  const authorAccess = isAuthor && isUnreleased;
   const isReleased = learningObject.status === LearningObject.Status.RELEASED;
+  const isAdminOrEditor = requesterIsAdminOrEditor(requester);
+  const adminEditorAccess = isAdminOrEditor && !isUnreleased && !isReleased;
+  let reason = getInvalidWriteAccessReason({
+    isAuthor,
+    isAdminOrEditor,
+    isReleased,
+    authorAccess,
+    adminEditorAccess,
+  });
+  authorizeRequest(
+    [authorAccess, adminEditorAccess],
+    message ? message + reason : null,
+  );
+}
+
 /**
  * Gets the reason for writes request access being invalid
  *
