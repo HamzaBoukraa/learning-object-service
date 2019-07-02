@@ -73,7 +73,7 @@ export class ChangelogDataStore {
   async fetchAllChangelogs(params: {
     learningObjectId: string,
   }): Promise<ChangeLogDocument[]> {
-    const changelogs = await this.db
+    return await this.db
       .collection(COLLECTIONS.CHANGLOG)
       .aggregate([
         { $match: { learningObjectId: params.learningObjectId } },
@@ -82,7 +82,6 @@ export class ChangelogDataStore {
         { $group: { _id: '$learningObjectId', logs: { $push: '$logs' } } },
       ])
       .toArray();
-    return changelogs;
   }
 
   /**
@@ -95,7 +94,7 @@ export class ChangelogDataStore {
     learningObjectId: string,
     date: string,
   }): Promise<ChangeLogDocument[]> {
-    const changelogs = await this.db
+    return await this.db
       .collection(COLLECTIONS.CHANGLOG)
       .aggregate([
         { $match: { learningObjectId: params.learningObjectId } },
@@ -112,8 +111,8 @@ export class ChangelogDataStore {
             },
           },
         },
-      ]).toArray();
-    return changelogs;
+      ])
+      .toArray();
   }
 
   /**
