@@ -71,20 +71,23 @@ export async function getRecentChangelog(params: {
 }
 
 /**
- * Fetches all change logs for a specific learning object from the data store .
+ * Handles whether all the change logs or if the change logs
+ * created before a given date are fetched for a specified learning object.
  *
  * @param {DataStore} dataStore An instance of DataStore
  * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
  * @param {string} userId The id of learning object author
  * @param {UserToken} user information about the requester
+ * @param {string} date The date the changelog was created
  *
  * @returns {ChangeLogDocument[]}
  */
-export async function getAllChangelogs(params: {
+export async function getChangelogs(params: {
   dataStore: DataStore,
   learningObjectId: string,
   userId: string,
   user: UserToken,
+  date?: string,
 }): Promise<ChangeLogDocument[]> {
   await authorizeRequest({
     dataStore: params.dataStore,
@@ -92,9 +95,11 @@ export async function getAllChangelogs(params: {
     userId: params.userId,
     user: params.user,
   });
-  return await params.dataStore.fetchAllChangelogs({
-    learningObjectId: params.learningObjectId,
-  });
+  if (params.date) {
+    return await params.dataStore.fetchChangelogsBeforeDate({ learningObjectId: params.learningObjectId, date: params.date });
+  } else {
+    return await params.dataStore.fetchAllChangelogs({ learningObjectId: params.learningObjectId });
+  }
 }
 
 /**
