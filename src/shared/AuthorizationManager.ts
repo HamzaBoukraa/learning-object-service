@@ -398,11 +398,11 @@ export function authorizeWriteAccess({
 }) {
   const isUnreleased =
     LearningObjectState.UNRELEASED.includes(
-    learningObject.status as LearningObject.Status,
+      learningObject.status as LearningObject.Status,
     ) || learningObject.status === LearningObject.Status.WAITING;
   const isAuthor = requesterIsAuthor({
-      authorUsername: learningObject.author.username,
-      requester,
+    authorUsername: learningObject.author.username,
+    requester,
   });
   const authorAccess = isAuthor && isUnreleased;
   const isReleased = learningObject.status === LearningObject.Status.RELEASED;
