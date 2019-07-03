@@ -349,39 +349,33 @@ export class MongoDriver implements DataStore {
     return { total, objects };
   }
   /**
-   * search for released user objects
+   * @inheritdoc
    *
-   * @param {LearningObjectQuery} query query containing status and text for feild searching
+   * @param {LearningObjectQuery} query query containing  for field searching
    * @param {string} username username of an author in CLARK
    */
   async searchReleasedUserObjects(
-    query: LearningObjectQuery,
+    query: ReleasedUserLearningObjectSearchQuery,
     username: string,
   ): Promise<LearningObjectSummary[]> {
     const { text } = query;
-
-    const id = await this.findUser(username);
-
+    const authorID = await this.findUser(username);
     const searchQuery: any = {
-      authorID: id,
+      authorID,
     };
     if (text) {
-      this.createTextSearchQuery(query, searchQuery);
+      searchQuery.$text = { $search: text };
     }
-    console.log(searchQuery);
-    const resultSet = await this.
-      db.collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
-      .find<LearningObjectDocument>(searchQuery).toArray();
-
-    const learningObjects: LearningObjectSummary[] = await Promise.all(resultSet.map(learningObject => {
+    const resultSet = await this.db
+      .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
+      .find<LearningObjectDocument>(searchQuery)
+      .toArray();
+    return Promise.all(
+      resultSet.map(learningObject => {
       return this.generateLearningObjectSummary(learningObject);
-    }));
-
-    return learningObjects;
-
+      }),
+    );
   }
-
-
 
   /**
    * Performs aggregation to join the users objects from the released and working collection before
