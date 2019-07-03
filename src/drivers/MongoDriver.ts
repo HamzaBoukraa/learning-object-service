@@ -372,7 +372,7 @@ export class MongoDriver implements DataStore {
       .toArray();
     return Promise.all(
       resultSet.map(learningObject => {
-      return this.generateLearningObjectSummary(learningObject);
+        return this.generateLearningObjectSummary(learningObject);
       }),
     );
   }
@@ -428,13 +428,13 @@ export class MongoDriver implements DataStore {
     const resultSet = await this.db
       .collection(COLLECTIONS.LEARNING_OBJECTS)
       .aggregate<{
-          objects: LearningObjectDocument[];
-          total: [{ total: number }];
-        }>(pipeline)
+        objects: LearningObjectDocument[];
+        total: [{ total: number }];
+      }>(pipeline)
       .toArray();
     const learningObjects: LearningObjectSummary[] = await Promise.all(
       resultSet[0].objects.map(learningObject => {
-      return this.generateLearningObjectSummary(learningObject);
+        return this.generateLearningObjectSummary(learningObject);
       }),
     );
 
@@ -1160,9 +1160,9 @@ export class MongoDriver implements DataStore {
           return res.result.nModified > 0
             ? Promise.resolve()
             : Promise.reject({
-              message: `${childId} is not a child of Object ${parentId}`,
-              status: 404,
-            });
+                message: `${childId} is not a child of Object ${parentId}`,
+                status: 404,
+              });
         });
     } catch (error) {
       if (error.message && error.status) {
@@ -1834,7 +1834,10 @@ export class MongoDriver implements DataStore {
         if (!query.$or) {
           query.$or = [];
         }
-        query.$or.push({ description: { $regex: params.text, $options: 'i' } }, { name: { $regex: params.text, $options: 'i' } });
+        query.$or.push(
+          { description: { $regex: params.text, $options: 'i' } },
+          { name: { $regex: params.text, $options: 'i' } },
+        );
       }
       let objectCursor = await this.db
         .collection(COLLECTIONS.LEARNING_OBJECTS)
@@ -2347,15 +2350,15 @@ export class MongoDriver implements DataStore {
     }
     return author || text
       ? await this.db
-        .collection(COLLECTIONS.USERS)
-        .find<{ _id: string; username: string }>(query)
-        .project({
-          _id: 1,
-          username: 1,
-          score: { $meta: 'textScore' },
-        })
-        .sort({ score: { $meta: 'textScore' } })
-        .toArray()
+          .collection(COLLECTIONS.USERS)
+          .find<{ _id: string; username: string }>(query)
+          .project({
+            _id: 1,
+            username: 1,
+            score: { $meta: 'textScore' },
+          })
+          .sort({ score: { $meta: 'textScore' } })
+          .toArray()
       : null;
   }
 
@@ -2596,7 +2599,6 @@ export class MongoDriver implements DataStore {
         contributors,
         id: record._id,
       });
-
     }
 
     return mapLearningObjectToSummary({
@@ -2716,10 +2718,18 @@ export class MongoDriver implements DataStore {
       // Logic for loading 'full' learning objects
       materials = <LearningObject.Material>record.materials;
       for (let i = 0; i < record.outcomes.length; i++) {
-        const mappings = await this.learningOutcomeStore.getAllStandardOutcomes({
-          ids: record.outcomes[i].mappings,
-        });
-        outcomes.push(new LearningOutcome({ ...record.outcomes[i], mappings: mappings, id: record.outcomes[i]['_id'] }));
+        const mappings = await this.learningOutcomeStore.getAllStandardOutcomes(
+          {
+            ids: record.outcomes[i].mappings,
+          },
+        );
+        outcomes.push(
+          new LearningOutcome({
+            ...record.outcomes[i],
+            mappings: mappings,
+            id: record.outcomes[i]['_id'],
+          }),
+        );
       }
     }
     learningObject = new LearningObject({
@@ -2742,8 +2752,6 @@ export class MongoDriver implements DataStore {
     return learningObject;
   }
 }
-
-
 
 export function isEmail(value: string): boolean {
   const emailPattern = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
