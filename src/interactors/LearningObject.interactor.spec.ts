@@ -4,19 +4,18 @@ import { LibraryCommunicator } from '../shared/interfaces/interfaces';
 import { MockDataStore } from '../tests/mock-drivers/MockDataStore';
 import { MockLibraryDriver } from '../tests/mock-drivers/MockLibraryDriver';
 import { Stubs } from '../tests/stubs';
-import { any } from 'bluebird';
 
 const dataStore: DataStore = new MockDataStore();
 const library: LibraryCommunicator = new MockLibraryDriver();
 const stubs = new Stubs();
 
-describe('loadUsersObjectSummaries', () => {
+describe('searchUsersObjects', () => {
   it('should load learning object summary', done => {
     // FIXME: Why does this function take a usertoken and a username?
     return LearningObjectInteractor.searchUsersObjects({
       dataStore,
-      userToken: stubs.userToken,
-      username: stubs.userToken.username,
+      requester: stubs.userToken,
+      authorUsername: stubs.userToken.username,
     })
       .then(val => {
         expect(val[0]).toMatchObject({

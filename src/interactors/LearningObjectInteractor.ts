@@ -2,11 +2,10 @@
 import * as stopword from 'stopword';
 import { reportError } from '../shared/SentryConnector';
 import { processMultipartUpload } from '../FileManager/FileInteractor';
-import { sanitizeObject, sanitizeText } from '../shared/functions';
+import { sanitizeObject, sanitizeText, toBoolean } from '../shared/functions';
 import {
   LearningObjectQuery,
   QueryCondition,
-  ParentLearningObjectQuery,
 } from '../shared/interfaces/DataStore';
 import { DZFile, FileUpload } from '../shared/interfaces/FileManager';
 import {
@@ -19,7 +18,14 @@ import {
   updateParentsDate,
   getLearningObjectById,
 } from '../LearningObjects/LearningObjectInteractor';
-import { UserToken, ServiceToken, LearningObjectSummary } from '../shared/types';
+import {
+  UserToken,
+  ServiceToken,
+  LearningObjectSummary,
+  CollectionAccessMap,
+  UserLearningObjectQuery,
+  UserLearningObjectSearchQuery,
+} from '../shared/types';
 import {
   getAccessGroupCollections,
   hasMultipleLearningObjectWriteAccesses,
@@ -29,6 +35,7 @@ import {
   hasServiceLevelAccess,
   hasReadAccessByCollection,
   requesterIsAuthor,
+  enforceNonAuthorStatusRestrictions,
 } from '../shared/AuthorizationManager';
 import {
   ResourceError,
@@ -37,7 +44,6 @@ import {
   ServiceErrorReason,
 } from '../shared/errors';
 import { LearningObject } from '../shared/entity';
-import { accessGroups } from '../shared/types/user-token';
 import { FileMetadata } from '../FileMetadata';
 
 // file size is in bytes
@@ -64,205 +70,108 @@ export const LearningObjectState = {
   ],
 };
 
-interface CollectionAccessMap {
-  [index: string]: string[];
-}
-
 export class LearningObjectInteractor {
   /**
-   * Loads Learning Object summaries for a user, optionally applying a query for filtering and sorting.
-   * @async
+   * Performs a search on the specified user's Learning Objects.
    *
-   * @returns {LearningObject[]} the user's learning objects found by the query
-   * @param params.dataStore
-   * @param params.library
-   * @param params.username
-   * @param params.userToken
-   * @param params.loadChildren
-   * @param params.query
-   */
-  public static async loadUsersObjectSummaries(params: {
-    dataStore: DataStore;
-    library: LibraryCommunicator;
-    username: string;
-    userToken: UserToken;
-    loadChildren?: boolean;
-    query?: LearningObjectQuery;
-  }): Promise<LearningObject[]> {
-    const {
-      dataStore,
-      library,
-      username,
-      userToken,
-      loadChildren,
-      query,
-    } = params;
-    try {
-      let summary: LearningObject[] = [];
-      // tslint:disable-next-line: no-shadowed-variable
-      const { dataStore, library, username, loadChildren, query } = params;
-
-      const formattedQuery = this.formatSearchQuery(query);
-      let { status, orderBy, sortType, text } = formattedQuery;
-
-
-      // This will throw an error if there is no user with that username
-      await dataStore.findUser(username);
-
-      if (
-        !this.hasReadAccess({
-          userToken,
-          resourceVal: params.username,
-          authFunction: checkAuthByUsername,
-        })
-      ) {
-        throw new ResourceError(
-          'Invalid Access',
-          ResourceErrorReason.INVALID_ACCESS,
-        );
-      }
-      if (!status) {
-        status = LearningObjectState.ALL;
-      }
-
-      const objectIDs = await dataStore.getUserObjects(username);
-      summary = await dataStore.fetchMultipleObjects({
-        ids: objectIDs,
-        full: false,
-        orderBy,
-        sortType,
-        status,
-        text,
-      });
-
-      summary = await Promise.all(
-        summary.map(async object => {
-          // Load object metrics
-          try {
-            object.metrics = await this.loadMetrics(library, object.id);
-          } catch (e) {
-            reportError(e);
-          }
-
-          if (loadChildren) {
-            const children = await this.loadChildObjects({
-              dataStore,
-              library,
-              parentId: object.id,
-              full: false,
-              status: LearningObjectState.ALL,
-              loadWorkingCopies: true,
-            });
-            children.forEach((child: LearningObject) => object.addChild(child));
-          }
-
-          return object;
-        }),
-      );
-      return summary;
-    } catch (e) {
-      handleError(e);
-    }
-  }
-  /**
-   * searches for a users learning objects, optionally applying a filter by status or bundled status's
-   * and performs authorization based on the requesters
-   * access privileges
+   * *** NOTES ***
+   * If the specified user cannot be found, a NotFound ResourceError is thrown.
+   * Only the author and privileged users are allowed to view Learning Object drafts.
+   * "Drafts" are defined as 'not released' Learning Objects that have never been released or have a `revision` id of `0`, so
+   * if the `draftsOnly` filter is specified, the `status` filter must not have a value of `released`.
+   * Only authors can see drafts that are not submitted for review; `unreleased` || `rejected`.
+   * Admins and editors can see all Learning Objects submitted for review.
+   * Reviewers and curators can only see Learning Objects submitted for review to their collection.
+   *
+   *
    * @async
    *
    * @returns {LearningObjectSummary[]} the user's learning objects found by the query
    * @param params.dataStore
-   * @param params.library
-   * @param params.username
-   * @param params.userToken
-   * @param params.loadChildren
+   * @param params.authorUsername
+   * @param params.requester
    * @param params.query
    */
 
-  public static async searchUsersObjects(params: {
+  public static async searchUsersObjects({
+    dataStore,
+    authorUsername,
+    requester,
+    query,
+  }: {
     dataStore: DataStore;
-    username: string;
-    userToken: UserToken;
-    released?: string;
-    query?: LearningObjectQuery;
+    authorUsername: string;
+    requester: UserToken;
+    query?: UserLearningObjectQuery;
   }): Promise<LearningObjectSummary[]> {
+    let { text, draftsOnly, status } = this.formatUserLearningObjectQuery(
+      query,
+    );
+    if (!(await dataStore.findUserId(authorUsername))) {
+      throw new ResourceError(
+        `Cannot load Learning Objects for user ${authorUsername}. User ${authorUsername} does not exist.`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+    const isAuthor = requesterIsAuthor({ requester, authorUsername });
+    const isPrivileged = requesterIsPrivileged(requester);
+    const searchQuery: UserLearningObjectSearchQuery = {
+      text,
+      status,
+    };
 
-    try {
-      const { username, dataStore, query, userToken, released } = params;
-      let {
-        name,
-        author,
-        text,
-        orderBy,
-        sortType,
-        collection,
-        status,
-      } = this.formatSearchQuery(query);
-
-      let response: LearningObjectSummary[];
-
-      await dataStore.findUser(username);
-
-      if (userToken) {
-        if (requesterIsAuthor(
-          {authorUsername: username,
-            requester: userToken})
-            ) {
-          status = status ? status : this.getRequestedStatusFilter(released, true);
-          response = await dataStore.searchAllUserObjects(
-            {status, text},
-            username);
-        } else {
-          if (requesterIsPrivileged(userToken)) {
-            let conditions: QueryCondition[];
-            if (!requesterIsAdminOrEditor(userToken)) {
-              status = status ? status : this.getRequestedStatusFilter(released);
-              const privilegedCollections = getAccessGroupCollections(userToken);
-              const collectionAccessMap = getCollectionAccessMap(
-                collection,
-                privilegedCollections,
-                status,
-              );
-              const requestedCollections = collection && collection.length > 0;
-              conditions = this.buildCollectionQueryConditions({
-                requestedCollections,
-                requestedStatuses: status,
-                collectionAccessMap,
-              });
-              collection = null;
-              status = null;
-
-            } else {
-              status = status ? this.getAuthAdminEditorStatuses(status) : this.getRequestedStatusFilter(released);
-            }
-            response = await dataStore.searchAllUserObjects(
-              { status, text },
-              username,
-              conditions,
-            );
-          } else {
-            throw new ResourceError(
-              'Invalid Access',
-              ResourceErrorReason.INVALID_ACCESS,
-            );
-          }
-        }
-      } else {
-        response = await dataStore.searchReleasedUserObjects(
-            query,
-            username,
+    if (draftsOnly) {
+      if (!isAuthor && !isPrivileged) {
+        throw new ResourceError(
+          `Invalid access. You are not authorized to view ${authorUsername}'s drafts.`,
+          ResourceErrorReason.INVALID_ACCESS,
         );
       }
 
-      return response;
-
-    } catch (err) {
-      console.log(err);
+      if (
+        searchQuery.status &&
+        searchQuery.status.includes(LearningObject.Status.RELEASED)
+      ) {
+        throw new ResourceError(
+          'Illegal query arguments. Cannot specify both draftsOnly and released status filters.',
+          ResourceErrorReason.BAD_REQUEST,
+        );
+      }
+      searchQuery.revision = 0;
     }
+
+    if (!isAuthor && !isPrivileged) {
+      return dataStore.searchReleasedUserObjects(searchQuery, authorUsername);
+    }
+
+    let collectionAccessMap: CollectionAccessMap;
+
+    if (!isAuthor) {
+      enforceNonAuthorStatusRestrictions(searchQuery.status);
+      if (!requesterIsAdminOrEditor(requester)) {
+        const privilegedCollections = getAccessGroupCollections(requester);
+        collectionAccessMap = getCollectionAccessMap(
+          [],
+          privilegedCollections,
+          searchQuery.status,
+        );
+        searchQuery.status =
+          searchQuery.status &&
+          searchQuery.status.includes(LearningObject.Status.RELEASED)
+            ? LearningObjectState.RELEASED
+            : null;
+      }
+    }
+
+    return dataStore.searchAllUserObjects(
+      searchQuery,
+      authorUsername,
+      collectionAccessMap,
+    );
   }
 
   /**
-   * Retrieve the objects on a user's profile based on the requester's access groups and priveleges
+   * Retrieve the objects on a user's profile based on the requester's access groups and privileges
    *
    * @static
    * @param {{
@@ -351,7 +260,7 @@ export class LearningObjectInteractor {
           learningObjectName,
           userToken,
         });
-        }
+      }
 
       return learningObject;
     } catch (e) {
@@ -832,14 +741,8 @@ export class LearningObjectInteractor {
       }) as boolean;
       const isPrivileged =
         userToken && requesterIsPrivileged(<UserToken>userToken);
-      const isService = hasServiceLevelAccess(
-        userToken as ServiceToken,
-      );
-      const authorizationCases = [
-        isAuthor,
-        isPrivileged,
-        isService,
-      ];
+      const isService = hasServiceLevelAccess(userToken as ServiceToken);
+      const authorizationCases = [isAuthor, isPrivileged, isService];
 
       let learningObjectID = await this.getReleasedLearningObjectIdByAuthorAndName(
         {
@@ -1213,17 +1116,6 @@ export class LearningObjectInteractor {
     return status;
   }
 
-  private static getRequestedStatusFilter(released: string, isAuthor?: boolean): string[] {
-    switch (released) {
-      case 'true': return LearningObjectState.RELEASED; break;
-      case 'false': return LearningObjectState.IN_REVIEW; break;
-      default: return isAuthor ? LearningObjectState.ALL :
-              [...LearningObjectState.RELEASED,
-                ...LearningObjectState.IN_REVIEW];
-               break;
-    }
-  }
-
   /**
    * Formats search query to verify params are the appropriate types
    *
@@ -1266,6 +1158,25 @@ export class LearningObjectInteractor {
       }
     }
 
+    return sanitizeObject({ object: formattedQuery }, false);
+  }
+
+  /**
+   * Formats search query to verify params are the appropriate types
+   *
+   * @private
+   * @static
+   * @param {UserLearningObjectQuery} query
+   * @returns {UserLearningObjectQuery}
+   * @memberof LearningObjectInteractor
+   */
+  private static formatUserLearningObjectQuery(
+    query: UserLearningObjectQuery,
+  ): UserLearningObjectQuery {
+    const formattedQuery = { ...query };
+    formattedQuery.text = sanitizeText(formattedQuery.text) || null;
+    formattedQuery.status = toArray(formattedQuery.status);
+    formattedQuery.draftsOnly = toBoolean(formattedQuery.draftsOnly);
     return sanitizeObject({ object: formattedQuery }, false);
   }
 
