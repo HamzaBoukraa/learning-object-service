@@ -1403,6 +1403,8 @@ export class MongoDriver implements DataStore {
    *
    * @param {string} id the user's login id
    *
+   * @deprecated This function is no longer supported, please use `findUserId` instead.
+   *
    * @returns {UserID}
    */
   async findUser(username: string): Promise<string> {
@@ -1428,6 +1430,30 @@ export class MongoDriver implements DataStore {
       reportError(e);
       return Promise.reject(new ServiceError(ServiceErrorReason.INTERNAL));
     }
+  }
+
+  /**
+   * @inheritdoc
+   * @async
+   *
+   * @param {string} username the user's username or email
+   *
+   * @returns {UserID}
+   */
+  async findUserId(username: string): Promise<string> {
+    const query = {};
+    if (isEmail(username)) {
+      query['email'] = username;
+    } else {
+      query['username'] = username;
+    }
+    const userRecord = await this.db
+      .collection(COLLECTIONS.USERS)
+      .findOne<UserDocument>(query, { projection: { _id: 1 } });
+    if (userRecord) {
+      return `${userRecord._id}`;
+    }
+    return null;
   }
 
   /**
