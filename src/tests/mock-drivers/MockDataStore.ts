@@ -13,6 +13,8 @@ import {
 import {
   LearningObjectUpdates,
   LearningObjectSummary,
+  ReleasedUserLearningObjectSearchQuery,
+  CollectionAccessMap,
 } from '../../shared/types';
 import { ChangeLogDocument } from '../../shared/types/changelog';
 import {
@@ -32,6 +34,23 @@ import { Stubs } from '../stubs';
 import { mapLearningObjectToSummary } from '../../shared/functions';
 
 export class MockDataStore implements DataStore, SubmissionDataStore {
+  searchReleasedUserObjects(
+    query: ReleasedUserLearningObjectSearchQuery,
+    username: string,
+  ): Promise<LearningObjectSummary[]> {
+    return Promise.resolve(
+      [this.stubs.learningObject].map(mapLearningObjectToSummary),
+    );
+  }
+  searchAllUserObjects(
+    query: LearningObjectQuery,
+    username: string,
+    collectionRestrictions?: CollectionAccessMap,
+  ): Promise<LearningObjectSummary[]> {
+    return Promise.resolve(
+      [this.stubs.learningObject].map(mapLearningObjectToSummary),
+    );
+  }
   stubs = new Stubs();
 
   connect(file: string): Promise<void> {
@@ -40,6 +59,10 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
 
   disconnect(): void {
     return;
+  }
+
+  findUserId(username: string): Promise<string> {
+    return Promise.resolve(this.stubs.learningObject.author.id);
   }
 
   fetchReleasedMaterials(id: string): Promise<LearningObject.Material> {
@@ -145,21 +168,6 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
     });
   }
 
-  searchAllUserObjects(
-    query: LearningObjectQuery,
-    username: string,
-    conditions?: QueryCondition[]):
-    Promise<LearningObjectSummary[]> {
-      return Promise.resolve([this.stubs.learningObjectSummary] as any);
-    }
-
-  searchReleasedUserObjects(
-    query: LearningObjectQuery,
-    username: string,
-    conditions?: QueryCondition[]):
-    Promise<LearningObjectSummary[]> {
-      return Promise.resolve([this.stubs.learningObjectSummary] as any);
-    }
   updateMultipleLearningObjects(params: {
     ids: string[];
     updates: LearningObjectUpdates;
