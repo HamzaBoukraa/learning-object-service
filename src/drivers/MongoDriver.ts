@@ -930,6 +930,22 @@ export class MongoDriver implements DataStore {
   }
 
   /**
+   * Allows filtering change logs by date of a specified learning object
+   *
+   * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
+   * @param {string} date The date the changelog was created
+   */
+  async fetchChangelogsBeforeDate(params: {
+    learningObjectId: string;
+    date: string;
+  }): Promise<ChangeLogDocument[]> {
+    return await this.changelogStore.fetchChangelogsBeforeDate({
+      learningObjectId: params.learningObjectId,
+      date: params.date,
+    });
+  }
+
+  /**
    * Updates or inserts LearningObjectFile into learning object's files array
    *
    * @param {{
