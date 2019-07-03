@@ -20,6 +20,10 @@ import {
 } from './learning-object-summary';
 import { AccessGroup } from './access-groups';
 
+export interface CollectionAccessMap {
+  [collection: string]: string[];
+}
+
 export {
   UserToken,
   ServiceToken,
