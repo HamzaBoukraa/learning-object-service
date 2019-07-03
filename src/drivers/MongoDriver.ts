@@ -480,7 +480,8 @@ export class MongoDriver implements DataStore {
 
     let matcher: any = { ...searchQuery };
     if (orConditions && orConditions.length) {
-      matcher.$and = [{ $or: orConditions }];
+      matcher.$or = matcher.$or || [];
+      matcher.$or.push(...orConditions);
     }
 
     const match = { $match: { ...matcher } };
