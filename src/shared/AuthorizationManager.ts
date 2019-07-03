@@ -407,3 +407,25 @@ export function authorizeWriteAccess({
     requesterIsAdminOrEditor(requester) && !isUnreleased && !isReleased;
   authorizeRequest([authorAccess, adminEditorAccess]);
 }
+
+/**
+ * Validates requested statuses do not contain statuses that are only accessible by an author
+ *
+ * If statues requested contain a restricted status, An invalid access error is thrown
+ *
+ * *** Restricted status filters include Working Stage statuses ***
+ *
+ * @param {string[]} status
+ */
+export function enforceNonAuthorStatusRestrictions(status: string[]) {
+  if (
+    status &&
+    (status.includes(LearningObject.Status.REJECTED) ||
+      status.includes(LearningObject.Status.UNRELEASED))
+  ) {
+    throw new ResourceError(
+      'The statuses requested are not permitted.',
+      ResourceErrorReason.INVALID_ACCESS,
+    );
+  }
+}
