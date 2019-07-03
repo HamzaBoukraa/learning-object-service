@@ -20,10 +20,12 @@ import {
   LearningOutcomeDocument,
   StandardOutcomeDocument,
   LearningObjectSummary,
+  CollectionAccessMap,
+  ReleasedUserLearningObjectSearchQuery,
+  UserLearningObjectSearchQuery,
 } from '../shared/types';
 import { LearningOutcomeMongoDatastore } from '../LearningOutcomes/LearningOutcomeMongoDatastore';
 import {
-  LearningOutcomeInput,
   LearningOutcomeInsert,
   LearningOutcomeUpdate,
 } from '../LearningOutcomes/types';
