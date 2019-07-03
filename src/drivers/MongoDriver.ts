@@ -381,7 +381,7 @@ export class MongoDriver implements DataStore {
    * Performs aggregation to join the users objects from the released and working collection before
    * searching and filtering
    *
-   * @param {LearningObjectQuery} query query containing status and text for feild searching
+   * @param {UserLearningObjectSearchQuery} query query containing status and text for field searching
    * @param {string} username username of an author in CLARK
    * @param {QueryCondition} conditions Array containing a reviewer or curators requested collections.
    *
@@ -389,46 +389,54 @@ export class MongoDriver implements DataStore {
    * @memberof MongoDriver
    */
   async searchAllUserObjects(
-    query: LearningObjectQuery,
+    query: UserLearningObjectSearchQuery,
     username: string,
-    conditions?: QueryCondition[],
+    collectionRestrictions?: CollectionAccessMap,
   ): Promise<LearningObjectSummary[]> {
-    const { name, status, text } = query;
-    const orConditions: any[] = conditions
-      ? this.buildQueryConditions(conditions)
-      : [];
-    const userId = await this.findUser(username);
+    const { revision, status, text } = query;
+    const authorID = await this.findUser(username);
+
+    let orConditions: QueryCondition[] = [];
+    if (collectionRestrictions) {
+      const conditions: QueryCondition[] = this.buildCollectionQueryConditions(
+        collectionRestrictions,
+      );
+      orConditions = this.buildQueryConditions(conditions);
+    }
+
     const searchQuery: any = {
-      authorID: userId,
+      authorID,
     };
+    if (revision != null) {
+      searchQuery.revision = revision;
+    }
     if (text) {
-      this.createTextSearchQuery(query, searchQuery);
+      searchQuery.$text = { $search: text };
     }
-
-    if (status && !text) {
-      searchQuery.$or = [{
+    if (status) {
+      searchQuery.$or = searchQuery.$or || [];
+      searchQuery.$or.push({
         status: { $in: status },
-      }];
-
+      });
     }
-
     const pipeline = this.buildAllObjectsPipeline({
       searchQuery,
       orConditions,
       hasText: !!text,
     });
-    console.log(pipeline);
+
     const resultSet = await this.db
       .collection(COLLECTIONS.LEARNING_OBJECTS)
-      .aggregate<
-        {
+      .aggregate<{
           objects: LearningObjectDocument[];
           total: [{ total: number }];
         }>(pipeline)
       .toArray();
-    const learningObjects: LearningObjectSummary[] = await Promise.all(resultSet[0].objects.map(learningObject => {
+    const learningObjects: LearningObjectSummary[] = await Promise.all(
+      resultSet[0].objects.map(learningObject => {
       return this.generateLearningObjectSummary(learningObject);
-    }));
+      }),
+    );
 
     return learningObjects;
   }
