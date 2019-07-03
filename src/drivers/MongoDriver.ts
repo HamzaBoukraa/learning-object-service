@@ -42,7 +42,7 @@ import {
   ServiceErrorReason,
 } from '../shared/errors';
 import { reportError } from '../shared/SentryConnector';
-import { LearningObject, LearningOutcome } from '../shared/entity';
+import { LearningObject, LearningOutcome, User } from '../shared/entity';
 import { MongoConnector } from '../shared/Mongo/MongoConnector';
 import { mapLearningObjectToSummary } from '../shared/functions';
 import {
@@ -372,7 +372,7 @@ export class MongoDriver implements DataStore {
       .toArray();
     return Promise.all(
       resultSet.map(learningObject => {
-        return this.generateLearningObjectSummary(learningObject);
+        return this.generateReleasedLearningObjectSummary(learningObject);
       }),
     );
   }
@@ -434,7 +434,9 @@ export class MongoDriver implements DataStore {
       .toArray();
     const learningObjects: LearningObjectSummary[] = await Promise.all(
       resultSet[0].objects.map(learningObject => {
-        return this.generateLearningObjectSummary(learningObject);
+        return learningObject.status === LearningObject.Status.RELEASED
+          ? this.generateReleasedLearningObjectSummary(learningObject)
+          : this.generateLearningObjectSummary(learningObject);
       }),
     );
 
@@ -2588,16 +2590,48 @@ export class MongoDriver implements DataStore {
       record.contributors.map(id => this.fetchUser(id)),
     );
     const [author, contributors] = await Promise.all([author$, contributors$]);
+    let children: LearningObject[] = [];
     if (record.children) {
       status = status ? status : [LearningObject.Status.RELEASED];
-      const children = await this.loadChildObjects({ id: record._id, status });
-
-      return mapLearningObjectToSummary({
-        ...(record as any),
-        author,
-        children,
-        contributors,
+      children = await this.loadChildObjects({
         id: record._id,
+        status,
+        full: false,
+      });
+    }
+
+    return mapLearningObjectToSummary({
+      ...(record as any),
+      author,
+      children,
+      contributors,
+      id: record._id,
+      hasRevision: record.hasRevision,
+    });
+  }
+
+  /**
+   * Converts LearningObjectDocument to LearningObjectSummary
+   *
+   * @private
+   * @param {LearningObjectDocument} record [Learning Object data]
+   * @returns {Promise<LearningObjectSummary>}
+   * @memberof MongoDriver
+   */
+  private async generateReleasedLearningObjectSummary(
+    record: LearningObjectDocument,
+    status?: string[],
+  ): Promise<LearningObjectSummary> {
+    const author$ = this.fetchUser(record.authorID);
+    const contributors$ = Promise.all(
+      record.contributors.map(id => this.fetchUser(id)),
+    );
+    const [author, contributors] = await Promise.all([author$, contributors$]);
+    let children: LearningObject[] = [];
+    if (record.children) {
+      children = await this.loadReleasedChildObjects({
+        id: record._id,
+        full: false,
       });
     }
 
@@ -2605,7 +2639,9 @@ export class MongoDriver implements DataStore {
       ...(record as any),
       author,
       contributors,
+      children,
       id: record._id,
+      hasRevision: record.hasRevision,
     });
   }
 
