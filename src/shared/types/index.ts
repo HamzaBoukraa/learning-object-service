@@ -19,7 +19,10 @@ import {
   LearningObjectChildSummary,
 } from './learning-object-summary';
 import { AccessGroup } from './access-groups';
-
+import {
+  ReleasedUserLearningObjectSearchQuery,
+  UserLearningObjectQuery,
+  UserLearningObjectSearchQuery } from './user-learning-object-query';
 export interface CollectionAccessMap {
   [collection: string]: string[];
 }
@@ -40,4 +43,7 @@ export {
   LearningObjectSummary,
   AuthorSummary,
   AccessGroup,
+  UserLearningObjectQuery,
+  ReleasedUserLearningObjectSearchQuery,
+  UserLearningObjectSearchQuery,
 };
