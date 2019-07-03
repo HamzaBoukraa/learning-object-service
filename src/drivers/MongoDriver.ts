@@ -2360,24 +2360,6 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   *
-   * @param {string} text text query specidied by the user
-   * @param {any} searchQuery searchQuery object created in the searchAll and searchReleased functions.
-   */
-  private createTextSearchQuery(query: LearningObjectSearchQuery, searchQuery: any) {
-    const regex = new RegExp(sanitizeRegex(query.text));
-    searchQuery.$or = [
-      { $text: { $search: query.text } },
-      { name: { $regex: regex } },
-      { description: { $regex: regex } }];
-
-    if (query.status) {
-      searchQuery.$or.push({
-        status: { $in: status },
-      });
-    }
-  }
-  /**
    * Fetches all Learning Object collections and displays only the name, abreviated name and logo.
    *
    * @returns {Promise<LearningObjectCollection[]>}
