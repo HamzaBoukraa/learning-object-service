@@ -25,6 +25,7 @@ export enum ResourceErrorReason {
   INVALID_ACCESS = 'InvalidAccess',
   NOT_FOUND = 'NotFound',
   BAD_REQUEST = 'BadRequest',
+  CONFLICT = 'Conflict',
 }
 /**
  * Defines an error involving a specific resource in the service.
@@ -45,7 +46,9 @@ export class ResourceError extends Error {
  * @param error the Error to map to HTTP information.
  * @returns information to convert an Error to a proper HTTP response.
  */
-export function mapErrorToResponseData(error: Error): { code: number, message: string } {
+export function mapErrorToResponseData(
+  error: Error,
+): { code: number; message: string } {
   if (!(error instanceof Error)) {
     reportError(error);
     return { code: 500, message: 'Internal Server Error' };
@@ -66,6 +69,9 @@ export function mapErrorToResponseData(error: Error): { code: number, message: s
       break;
     case ResourceErrorReason.NOT_FOUND:
       status.code = 404;
+      break;
+    case ResourceErrorReason.CONFLICT:
+      status.code = 409;
       break;
     case ServiceErrorReason.INTERNAL:
       status.code = 500;

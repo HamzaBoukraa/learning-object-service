@@ -45,14 +45,21 @@ export async function releaseLearningObject({ userToken, dataStore, releasableOb
 
 /**
  * createPublishingArtifacts handles the creation and storage of content created as a result
- * of releasing a Learning Object. This includes a bundle of all files associated with the
- * Learning Object for faster download.
+ * of releasing a Learning Object. This includes:
+ * 1. A JSON file with the fully denormalized Learning Object metadata
+ * 2. A bundle of all files associated with the Learning Object for faster download
  *
  * @param releasableObject the Learning Object to create artifacts for
  * @param userToken the user who has requested to publish a Learning Object
  */
 async function createPublishingArtifacts(releasableObject: LearningObject, userToken: UserToken) {
     const storagePrefix = `${releasableObject.author.username}/${releasableObject.id}`;
+    FileManagerAdapter.getInstance().uploadFile({
+        file: {
+            path: `${storagePrefix}/meta.json`,
+            data: JSON.stringify(releasableObject.toPlainObject()),
+        },
+    });
     const bundle = await bundleLearningObject({
         learningObject: releasableObject,
         requesterUsername: userToken.username,
