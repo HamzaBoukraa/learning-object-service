@@ -1,5 +1,10 @@
 import { CompletedPart, MultipartFileUploadStatus } from './FileManager';
-import { LearningObjectUpdates, LearningObjectSummary } from '../types';
+import {
+  LearningObjectUpdates,
+  LearningObjectSummary,
+  CollectionAccessMap,
+  ReleasedUserLearningObjectSearchQuery,
+} from '../types';
 import { LearningOutcomeDatastore } from '../../LearningOutcomes/LearningOutcomeInteractor';
 import { LearningObjectStatDatastore } from '../../LearningObjectStats/LearningObjectStatsInteractor';
 import { CollectionDataStore } from '../../Collections/CollectionDataStore';
@@ -131,29 +136,29 @@ export interface DataStore
   /**
    * Search for the specified user's released objects.
    *
-   * @param {LearningObjectQuery} query query containing status and text for feild searching.
+   * @param {ReleasedUserLearningObjectSearchQuery} query Object containing query parameters to apply to search
    * @param {String} username  username of an author in CLARK
    *
    * @returns {Promise<LearningObjectSummary[]>}
    */
   searchReleasedUserObjects(
-    query: LearningObjectQuery,
+    query: ReleasedUserLearningObjectSearchQuery,
     username: string,
   ): Promise<LearningObjectSummary[]>;
 
   /**
    * Search for the specified user's released or working objects depending on requested status's
    *
-   * @param  {LearningObjectQuery} query query contaring status and text for feild searching.
+   * @param  {LearningObjectQuery} query query containing status and text for field searching.
    * @param username username of an author in CLARK.
-   * @param conditions Array containing a reviewer or curators' requested collections.
+   * @param collectionRestrictions Object mapping accessible collections and statuses
    *
    * @returns {Promise<LearningObjectSummary[]>}
    */
   searchAllUserObjects(
     query: LearningObjectQuery,
     username: string,
-    conditions?: QueryCondition[],
+    collectionRestrictions?: CollectionAccessMap,
   ): Promise<LearningObjectSummary[]>;
   fetchParentObjects(params: {
     query: ParentLearningObjectQuery;
