@@ -244,7 +244,7 @@ export class Stubs {
         }
     }
     generateLearningObjectSummary(
-        learningObject: LearningObject) {
+        learningObject: LearningObject): LearningObjectSummary {
         return {
             id: learningObject.id,
             author: {
@@ -274,6 +274,7 @@ export class Stubs {
             name: learningObject.name,
             revision: learningObject.revision,
             status: learningObject.status,
+            hasRevision: false,
         };
     }
 

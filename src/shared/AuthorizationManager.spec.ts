@@ -148,7 +148,9 @@ describe('AuthorizationManager', () => {
       expect(requesterIsPrivileged(undefined)).toBe(false);
     });
     it('should return false when accessGroups are undefined', () => {
-      expect(requesterIsPrivileged({...requester, accessGroups: undefined})).toBe(false);
+      expect(
+        requesterIsPrivileged({ ...requester, accessGroups: undefined }),
+      ).toBe(false);
     });
   });
 
@@ -366,6 +368,7 @@ describe('AuthorizationManager', () => {
       name: 'My LO',
       revision: 0,
       status: LearningObject.Status.RELEASED,
+      hasRevision: false,
     };
     const requester = {
       name: '',
@@ -860,6 +863,7 @@ describe('AuthorizationManager', () => {
       name: 'My LO',
       revision: 0,
       status: LearningObject.Status.RELEASED,
+      hasRevision: false,
     };
     const requester = {
       name: '',
