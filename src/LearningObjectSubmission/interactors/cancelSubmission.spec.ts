@@ -6,10 +6,15 @@ import { LearningObject } from '../../shared/entity';
 import { Stubs } from '../../tests/stubs';
 import { MockLibraryDriver } from '../../tests/mock-drivers/MockLibraryDriver';
 import { FileMetadata } from '../../FileMetadata';
-import { FileMetaDatastore, LearningObjectGateway } from '../../FileMetadata/interfaces';
-import { MockFileMetaDatastore, MockLearningObjectGateway } from '../../FileMetadata/mocks';
+import {
+  FileMetaDatastore,
+  LearningObjectGateway,
+} from '../../FileMetadata/interfaces';
+import {
+  MockFileMetaDatastore,
+  MockLearningObjectGateway,
+} from '../../FileMetadata/mocks';
 
-const stubs = new Stubs();
 const dataStore = new MockDataStore();
 const library = new MockLibraryDriver();
 const publisher: SubmissionPublisher = {
@@ -19,7 +24,8 @@ const publisher: SubmissionPublisher = {
   publishSubmission: (submission: LearningObject) => null,
 };
 
-LearningObjectAdapter.open(dataStore, null, library);
+const learningObjectDataStore = new MockDataStore();
+LearningObjectAdapter.open(learningObjectDataStore, null, library);
 
 describe('cancelSubmission', () => {
   beforeAll(() => {
@@ -36,15 +42,17 @@ describe('cancelSubmission', () => {
     FileMetadata.destroy();
   });
   it('should cancel the submission given a valid username and id', async done => {
+    learningObjectDataStore.stubs.learningObject.status =
+      LearningObject.Status.WAITING;
     const spy = spyOn(publisher, 'withdrawlSubmission');
     await expect(
       cancelSubmission({
         dataStore,
         publisher,
-        userId: stubs.learningObject.author.id,
-        user: stubs.userToken,
+        userId: learningObjectDataStore.stubs.learningObject.author.id,
+        user: learningObjectDataStore.stubs.userToken,
         emailVerified: true,
-        learningObjectId: stubs.learningObject.id,
+        learningObjectId: learningObjectDataStore.stubs.learningObject.id,
       }),
     ).resolves.toBe(undefined);
     expect(spy).toHaveBeenCalled();
