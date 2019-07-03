@@ -1,5 +1,9 @@
 import { LearningObject, User } from '../entity';
-import { LearningObjectSummary, AuthorSummary, LearningObjectChildSummary } from '../types';
+import {
+  LearningObjectSummary,
+  AuthorSummary,
+  LearningObjectChildSummary,
+} from '../types';
 
 /**
  * Formats text properly for usage in DataStore
@@ -149,7 +153,16 @@ export function mapAuthorToSummary(author: Partial<User>): AuthorSummary {
   };
 }
 
-export function mapChildToSummary(child: Partial<LearningObject>): LearningObjectChildSummary {
+/**
+ * Converts Learning Object to LearningObjectChildSummary
+ *
+ * @export
+ * @param {Partial<LearningObject>} child [The child Learning Object to get summary for]
+ * @returns {LearningObjectChildSummary}
+ */
+export function mapChildToSummary(
+  child: Partial<LearningObject>,
+): LearningObjectChildSummary {
   return {
     id: child.id,
     name: child.name,
