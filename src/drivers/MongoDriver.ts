@@ -40,15 +40,13 @@ import {
   ServiceErrorReason,
 } from '../shared/errors';
 import { reportError } from '../shared/SentryConnector';
-import { LearningObject, LearningOutcome, User, StandardOutcome } from '../shared/entity';
-import { Submission } from '../LearningObjectSubmission/types/Submission';
+import { LearningObject, LearningOutcome } from '../shared/entity';
 import { MongoConnector } from '../shared/Mongo/MongoConnector';
 import { mapLearningObjectToSummary } from '../shared/functions';
 import {
   ReleasedLearningObjectDocument,
   OutcomeDocument,
 } from '../shared/types/learning-object-document';
-import { LearningObjectSearchQuery } from '../LearningObjectSearch/typings';
 
 export enum COLLECTIONS {
   USERS = 'users',
@@ -71,7 +69,7 @@ export class MongoDriver implements DataStore {
   private mongoClient: MongoClient;
   private db: Db;
 
-  private constructor() { }
+  private constructor() {}
 
   static async build(dburi: string) {
     const driver = new MongoDriver();
@@ -2677,6 +2675,28 @@ export class MongoDriver implements DataStore {
       revision: record.revision,
     });
     return learningObject;
+  }
+
+  /**
+   * Builds QueryConditions based on requested collections and collectionAccessMap
+   *
+   * @private
+   * @static
+   * @param {CollectionAccessMap} collectionAccessMap
+   * @returns {QueryCondition[]}
+   * @memberof LearningObjectInteractor
+   */
+  private buildCollectionQueryConditions(
+    collectionAccessMap: CollectionAccessMap,
+  ): QueryCondition[] {
+    const conditions: QueryCondition[] = [];
+
+    const mapKeys = Object.keys(collectionAccessMap);
+    for (const key of mapKeys) {
+      const status = collectionAccessMap[key];
+      conditions.push({ collection: key, status });
+    }
+    return conditions;
   }
 
   /**
