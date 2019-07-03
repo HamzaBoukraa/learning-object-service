@@ -110,14 +110,13 @@ export class ExpressRouteDriver {
         const released: string = query.released;
         const loadChildren: boolean = query.children;
         delete query.children;
-        const objects = await LearningObjectInteractor.loadUsersObjectSummaries(
+        const objects = await LearningObjectInteractor.searchUsersObjects(
           {
             query,
             userToken,
             dataStore: this.dataStore,
-            library: this.library,
             username: req.params.username,
-            loadChildren,
+            released,
           },
         );
         res.status(200).send(objects);

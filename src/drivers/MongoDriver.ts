@@ -48,6 +48,7 @@ import {
   ReleasedLearningObjectDocument,
   OutcomeDocument,
 } from '../shared/types/learning-object-document';
+import { LearningObjectSearchQuery } from '../LearningObjectSearch/typings';
 
 export enum COLLECTIONS {
   USERS = 'users',
@@ -365,9 +366,9 @@ export class MongoDriver implements DataStore {
       authorID: id,
     };
     if (text) {
-      this.createTextSearchQuery(text, searchQuery);
+      this.createTextSearchQuery(query, searchQuery);
     }
-
+    console.log(searchQuery);
     const resultSet = await this.
       db.collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
       .find<LearningObjectDocument>(searchQuery).toArray();
@@ -407,12 +408,14 @@ export class MongoDriver implements DataStore {
       authorID: userId,
     };
     if (text) {
-      this.createTextSearchQuery(text, searchQuery);
+      this.createTextSearchQuery(query, searchQuery);
     }
-    if (status) {
-      searchQuery.$or.push({
+
+    if (status && !text) {
+      searchQuery.$or = [{
         status: { $in: status },
-      });
+      }];
+
     }
 
     const pipeline = this.buildAllObjectsPipeline({
@@ -420,6 +423,7 @@ export class MongoDriver implements DataStore {
       orConditions,
       hasText: !!text,
     });
+    console.log(pipeline);
     const resultSet = await this.db
       .collection(COLLECTIONS.LEARNING_OBJECTS)
       .aggregate<
@@ -2331,12 +2335,18 @@ export class MongoDriver implements DataStore {
    * @param {string} text text query specidied by the user
    * @param {any} searchQuery searchQuery object created in the searchAll and searchReleased functions.
    */
-  private createTextSearchQuery(text: string, searchQuery: any) {
-    const regex = new RegExp(sanitizeRegex(text));
-    searchQuery.$or.push(
-      { $text: { $search: text } },
+  private createTextSearchQuery(query: LearningObjectSearchQuery, searchQuery: any) {
+    const regex = new RegExp(sanitizeRegex(query.text));
+    searchQuery.$or = [
+      { $text: { $search: query.text } },
       { name: { $regex: regex } },
-      { description: { $regex: regex } });
+      { description: { $regex: regex } }];
+
+    if (query.status) {
+      searchQuery.$or.push({
+        status: { $in: status },
+      });
+    }
   }
   /**
    * Fetches all Learning Object collections and displays only the name, abreviated name and logo.

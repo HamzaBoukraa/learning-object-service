@@ -204,13 +204,10 @@ export class LearningObjectInteractor {
       await dataStore.findUser(username);
 
       if (userToken) {
-
-        const isAuthor = this.hasReadAccess({
-          userToken,
-          resourceVal: params.username,
-          authFunction: checkAuthByUsername,
-        });
-        if (isAuthor) {
+        if (requesterIsAuthor(
+          {authorUsername: username,
+            requester: userToken})
+            ) {
           status = status ? status : this.getRequestedStatusFilter(released, true);
           response = await dataStore.searchAllUserObjects(
             {status, text},
