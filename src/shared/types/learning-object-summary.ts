@@ -79,6 +79,10 @@ export interface LearningObjectSummary {
    */
   name: string;
   /**
+   * flag determining whether or not a learning object has an active revision
+   */
+  hasRevision: boolean;
+  /**
    * The version number of the Learning Object
    */
   revision: number;
