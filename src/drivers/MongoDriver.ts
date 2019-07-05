@@ -394,7 +394,7 @@ export class MongoDriver implements DataStore {
     collectionRestrictions?: CollectionAccessMap,
   ): Promise<LearningObjectSummary[]> {
     const { revision, status, text } = query;
-    const authorID = await this.findUser(username);
+    const authorID = await this.findUserId(username);
 
     let orConditions: QueryCondition[] = [];
     if (collectionRestrictions) {
