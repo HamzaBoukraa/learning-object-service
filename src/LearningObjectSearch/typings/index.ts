@@ -15,12 +15,9 @@ import {
   LearningObjectSearchQuery,
   ReleasedLearningObjectSearchQuery,
   PrivilegedLearningObjectSearchQuery,
-} from './query';
-import {
-  LearningObjectSummary,
-  AuthorSummary,
   CollectionAccessMap,
-} from '../../shared/types';
+} from './query';
+import { LearningObjectSummary, AuthorSummary } from '../../shared/types';
 
 export {
   LearningObject,
