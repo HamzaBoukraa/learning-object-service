@@ -1,9 +1,5 @@
 import { LearningObject, User } from '../entity';
-import {
-  LearningObjectSummary,
-  AuthorSummary,
-  LearningObjectChildSummary,
-} from '../types';
+import { LearningObjectSummary, AuthorSummary } from '../types';
 
 /**
  * Formats text properly for usage in DataStore
@@ -96,22 +92,6 @@ export function toNumber(value: any): number {
 }
 
 /**
- *
- * Converts value to boolean if not yet a boolean
- * @param {*} value
- * @returns {boolean}
- */
-export function toBoolean(value: any): boolean {
-  if (value === 'true' || value === true) {
-    return true;
-  }
-  if (value === 'false' || value === false) {
-    return false;
-  }
-  return false;
-}
-
-/**
  * Converts LearningObject type into LearningObjectSummary
  *
  * @private
@@ -126,12 +106,10 @@ export function mapLearningObjectToSummary(
     author: mapAuthorToSummary(object.author),
     collection: object.collection,
     contributors: object.contributors.map(mapAuthorToSummary),
-    children: object.children.map(mapChildToSummary),
     date: object.date,
     description: object.description,
     length: object.length,
     name: object.name,
-    hasRevision: object.hasRevision || false,
     revision: object.revision,
     status: object.status,
   };
@@ -150,21 +128,5 @@ export function mapAuthorToSummary(author: Partial<User>): AuthorSummary {
     username: author.username,
     name: author.name,
     organization: author.organization,
-  };
-}
-
-/**
- * Converts Learning Object to LearningObjectChildSummary
- *
- * @export
- * @param {Partial<LearningObject>} child [The child Learning Object to get summary for]
- * @returns {LearningObjectChildSummary}
- */
-export function mapChildToSummary(
-  child: Partial<LearningObject>,
-): LearningObjectChildSummary {
-  return {
-    id: child.id,
-    name: child.name,
   };
 }
