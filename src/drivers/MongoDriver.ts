@@ -359,7 +359,7 @@ export class MongoDriver implements DataStore {
     username: string,
   ): Promise<LearningObjectSummary[]> {
     const { text } = query;
-    const authorID = await this.findUser(username);
+    const authorID = await this.findUserId(username);
     const searchQuery: {[index: string]: any} = {
       authorID,
     };
