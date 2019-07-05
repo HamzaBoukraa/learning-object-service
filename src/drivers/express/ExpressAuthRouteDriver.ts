@@ -11,7 +11,6 @@ import {
   removeFile,
   updateFileDescription,
 } from '../../LearningObjects/LearningObjectInteractor';
-import * as FileInteractor from '../../FileManager/Interactor';
 import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
 import * as LearningOutcomeRouteHandler from '../../LearningOutcomes/LearningOutcomeRouteHandler';
 import * as SubmissionRouteDriver from '../../LearningObjectSubmission';
