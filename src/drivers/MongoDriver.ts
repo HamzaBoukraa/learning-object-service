@@ -404,7 +404,7 @@ export class MongoDriver implements DataStore {
       orConditions = this.buildQueryConditions(conditions);
     }
 
-    const searchQuery: any = {
+    const searchQuery: {[index: string]: any} = {
       authorID,
     };
     if (revision != null) {
