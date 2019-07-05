@@ -207,11 +207,11 @@ export interface DataStore
   /**
    *
    * lookup a user by their username or email
-   * @param {string} username
+   * @param {string} userIdentifier
    * @returns {Promise<string>}
    * @memberof DataStore
    */
-  findUserId(username: string): Promise<string>;
+  findUserId(userIdentifier: string): Promise<string>;
   findUser(username: string): Promise<string>;
   fetchUser(id: string): Promise<User>;
   peek<T>(params: {
