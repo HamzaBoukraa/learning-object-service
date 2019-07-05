@@ -26,7 +26,7 @@
   "homepage": "https://github.com/Cyber4All/learning-object-service#readme",
   "dependencies": {
     "@cyber4all/clark-taxonomy": "^4.0.2",
-    "@elastic/elasticsearch": "^6.8.0",
+    "@elastic/elasticsearch": "^7.2.0",
     "@sentry/node": "^4.6.6",
     "@types/archiver": "^3.0.0",
     "archiver": "^3.0.0",
