@@ -19,6 +19,32 @@ describe('MongoDriver', () => {
     });
   });
 
+  describe('searchAllUsersObjects', () => {
+    it('should return an array of working or released learning object summaries', async () => {
+      expect.assertions(1);
+      const query = {
+        status: ['waiting', 'proofing'],
+      };
+      const username = stubs.user._username;
+      const resultSet = await driver.searchAllUserObjects(query, username);
+
+      expect(resultSet[0]).toBeDefined();
+    });
+  });
+
+  describe('searchReleasedUserObjects', () => {
+    it('should return an array of released learning object summaries', async () => {
+      expect.assertions(1);
+      const query = {
+        text: '',
+      };
+      const username = stubs.user.username;
+      const resultSet = await driver.searchReleasedUserObjects(query, username);
+
+      expect(resultSet).toBeDefined();
+    });
+  });
+
   describe('updateMultipleLearningObjects', () => {
     it('The function should return void', async () => {
       expect.assertions(1);

@@ -20,10 +20,12 @@ import {
   LearningOutcomeDocument,
   StandardOutcomeDocument,
   LearningObjectSummary,
+  CollectionAccessMap,
+  ReleasedUserLearningObjectSearchQuery,
+  UserLearningObjectSearchQuery,
 } from '../shared/types';
 import { LearningOutcomeMongoDatastore } from '../LearningOutcomes/LearningOutcomeMongoDatastore';
 import {
-  LearningOutcomeInput,
   LearningOutcomeInsert,
   LearningOutcomeUpdate,
 } from '../LearningOutcomes/types';
@@ -40,8 +42,7 @@ import {
   ServiceErrorReason,
 } from '../shared/errors';
 import { reportError } from '../shared/SentryConnector';
-import { LearningObject, LearningOutcome, User, StandardOutcome } from '../shared/entity';
-import { Submission } from '../LearningObjectSubmission/types/Submission';
+import { LearningObject, LearningOutcome, User } from '../shared/entity';
 import { MongoConnector } from '../shared/Mongo/MongoConnector';
 import { mapLearningObjectToSummary } from '../shared/functions';
 import {
@@ -347,6 +348,102 @@ export class MongoDriver implements DataStore {
     const total = results.total[0] ? results.total[0].total : 0;
     return { total, objects };
   }
+  /**
+   * @inheritdoc
+   *
+   * @param {LearningObjectQuery} query query containing  for field searching
+   * @param {string} username username of an author in CLARK
+   */
+  async searchReleasedUserObjects(
+    query: ReleasedUserLearningObjectSearchQuery,
+    username: string,
+  ): Promise<LearningObjectSummary[]> {
+    const { text } = query;
+    const authorID = await this.findUserId(username);
+    const searchQuery: {[index: string]: any} = {
+      authorID,
+    };
+    if (text) {
+      searchQuery.$text = { $search: text };
+    }
+    const resultSet = await this.db
+      .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
+      .find<LearningObjectDocument>(searchQuery)
+      .toArray();
+    return Promise.all(
+      resultSet.map(learningObject => {
+        return this.generateReleasedLearningObjectSummary(learningObject);
+      }),
+    );
+  }
+
+  /**
+   * Performs aggregation to join the users objects from the released and working collection before
+   * searching and filtering based on collectionRescticions, text or explicitly defined statuses. If collectionRestrictions are
+   * Defined, orConditions with statuses are built and the actual status filter will not be used or applied. This only occurs for reviewers
+   * and curators. Text searches are are not affected by collection restructions or the 'orConditions'.
+   *
+   * @param {UserLearningObjectSearchQuery} query query containing status and text for field searching
+   * @param {string} username username of an author in CLARK
+   * @param {QueryCondition} conditions Array containing a reviewer or curators requested collections.
+   *
+   * @returns {LearningObjectSummary[]}
+   * @memberof MongoDriver
+   */
+  async searchAllUserObjects(
+    query: UserLearningObjectSearchQuery,
+    username: string,
+    collectionRestrictions?: CollectionAccessMap,
+  ): Promise<LearningObjectSummary[]> {
+    const { revision, status, text } = query;
+    const authorID = await this.findUserId(username);
+
+    let orConditions: QueryCondition[] = [];
+    if (collectionRestrictions) {
+      const conditions: QueryCondition[] = this.buildCollectionQueryConditions(
+        collectionRestrictions,
+      );
+      orConditions = this.buildQueryConditions(conditions);
+    }
+
+    const searchQuery: {[index: string]: any} = {
+      authorID,
+    };
+    if (revision != null) {
+      searchQuery.revision = revision;
+    }
+    if (text) {
+      searchQuery.$text = { $search: text };
+    }
+    if (status) {
+      searchQuery.$or = searchQuery.$or || [];
+      searchQuery.$or.push({
+        status: { $in: status },
+      });
+    }
+    const pipeline = this.buildAllObjectsPipeline({
+      searchQuery,
+      orConditions,
+      hasText: !!text,
+    });
+
+    const resultSet = await this.db
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .aggregate<{
+        objects: LearningObjectDocument[];
+        total: [{ total: number }];
+      }>(pipeline)
+      .toArray();
+    const learningObjects: LearningObjectSummary[] = await Promise.all(
+      resultSet[0].objects.map(learningObject => {
+        return learningObject.status === LearningObject.Status.RELEASED
+          ? this.generateReleasedLearningObjectSummary(learningObject)
+          : this.generateLearningObjectSummary(learningObject);
+      }),
+    );
+
+    return learningObjects;
+  }
 
   /**
    * Constructs aggregation pipeline for searching all objects with pagination and sorting By matching learning obejcts based on
@@ -387,7 +484,8 @@ export class MongoDriver implements DataStore {
 
     let matcher: any = { ...searchQuery };
     if (orConditions && orConditions.length) {
-      matcher.$and = [{ $or: orConditions }];
+      matcher.$or = matcher.$or || [];
+      matcher.$or.push(...orConditions);
     }
 
     const match = { $match: { ...matcher } };
@@ -1328,6 +1426,8 @@ export class MongoDriver implements DataStore {
    *
    * @param {string} id the user's login id
    *
+   * @deprecated This function is no longer supported, please use `findUserId` instead.
+   *
    * @returns {UserID}
    */
   async findUser(username: string): Promise<string> {
@@ -1353,6 +1453,30 @@ export class MongoDriver implements DataStore {
       reportError(e);
       return Promise.reject(new ServiceError(ServiceErrorReason.INTERNAL));
     }
+  }
+
+  /**
+   * @inheritdoc
+   * @async
+   *
+   * @param {string} userIdentifier the user's username or email
+   *
+   * @returns {UserID}
+   */
+  async findUserId(userIdentifier: string): Promise<string> {
+    const query = {};
+    if (isEmail(userIdentifier)) {
+      query['email'] = userIdentifier;
+    } else {
+      query['username'] = userIdentifier;
+    }
+    const userRecord = await this.db
+      .collection(COLLECTIONS.USERS)
+      .findOne<UserDocument>(query, { projection: { _id: 1 } });
+    if (userRecord) {
+      return `${userRecord._id}`;
+    }
+    return null;
   }
 
   /**
@@ -1730,7 +1854,10 @@ export class MongoDriver implements DataStore {
         if (!query.$or) {
           query.$or = [];
         }
-        query.$or.push({ description: { $regex: params.text, $options: 'i' } }, { name: { $regex: params.text, $options: 'i'} });
+        query.$or.push(
+          { description: { $regex: params.text, $options: 'i' } },
+          { name: { $regex: params.text, $options: 'i' } },
+        );
       }
       let objectCursor = await this.db
         .collection(COLLECTIONS.LEARNING_OBJECTS)
@@ -2254,6 +2381,7 @@ export class MongoDriver implements DataStore {
           .toArray()
       : null;
   }
+
   /**
    * Fetches all Learning Object collections and displays only the name, abreviated name and logo.
    *
@@ -2473,17 +2601,65 @@ export class MongoDriver implements DataStore {
    */
   private async generateLearningObjectSummary(
     record: LearningObjectDocument,
+    status?: string[],
   ): Promise<LearningObjectSummary> {
     const author$ = this.fetchUser(record.authorID);
     const contributors$ = Promise.all(
       record.contributors.map(id => this.fetchUser(id)),
     );
     const [author, contributors] = await Promise.all([author$, contributors$]);
+    let children: LearningObject[] = [];
+    if (record.children) {
+      status = status ? status : [LearningObject.Status.RELEASED];
+      children = await this.loadChildObjects({
+        id: record._id,
+        status,
+        full: false,
+      });
+    }
+
+    return mapLearningObjectToSummary({
+      ...(record as any),
+      author,
+      children,
+      contributors,
+      id: record._id,
+      hasRevision: record.hasRevision,
+    });
+  }
+
+  /**
+   * Converts LearningObjectDocument to LearningObjectSummary
+   *
+   * @private
+   * @param {LearningObjectDocument} record [Learning Object data]
+   * @returns {Promise<LearningObjectSummary>}
+   * @memberof MongoDriver
+   */
+  private async generateReleasedLearningObjectSummary(
+    record: LearningObjectDocument,
+    status?: string[],
+  ): Promise<LearningObjectSummary> {
+    const author$ = this.fetchUser(record.authorID);
+    const contributors$ = Promise.all(
+      record.contributors.map(id => this.fetchUser(id)),
+    );
+    const [author, contributors] = await Promise.all([author$, contributors$]);
+    let children: LearningObject[] = [];
+    if (record.children) {
+      children = await this.loadReleasedChildObjects({
+        id: record._id,
+        full: false,
+      });
+    }
+
     return mapLearningObjectToSummary({
       ...(record as any),
       author,
       contributors,
+      children,
       id: record._id,
+      hasRevision: record.hasRevision,
     });
   }
 
@@ -2519,9 +2695,9 @@ export class MongoDriver implements DataStore {
       // Logic for loading 'full' learning objects
       materials = <LearningObject.Material>record.materials;
       outcomes = await this.getAllLearningOutcomes({
-          source: record._id,
-        });
-      }
+        source: record._id,
+      });
+    }
     learningObject = new LearningObject({
       id: record._id,
       author,
@@ -2540,6 +2716,28 @@ export class MongoDriver implements DataStore {
       revision: record.revision,
     });
     return learningObject;
+  }
+
+  /**
+   * Builds QueryConditions based on requested collections and collectionAccessMap
+   *
+   * @private
+   * @static
+   * @param {CollectionAccessMap} collectionAccessMap
+   * @returns {QueryCondition[]}
+   * @memberof LearningObjectInteractor
+   */
+  private buildCollectionQueryConditions(
+    collectionAccessMap: CollectionAccessMap,
+  ): QueryCondition[] {
+    const conditions: QueryCondition[] = [];
+
+    const mapKeys = Object.keys(collectionAccessMap);
+    for (const key of mapKeys) {
+      const status = collectionAccessMap[key];
+      conditions.push({ collection: key, status });
+    }
+    return conditions;
   }
 
   /**
@@ -2574,10 +2772,18 @@ export class MongoDriver implements DataStore {
       // Logic for loading 'full' learning objects
       materials = <LearningObject.Material>record.materials;
       for (let i = 0; i < record.outcomes.length; i++) {
-        const mappings = await this.learningOutcomeStore.getAllStandardOutcomes({
-          ids: record.outcomes[i].mappings,
-        });
-        outcomes.push(new LearningOutcome({...record.outcomes[i], mappings: mappings, id: record.outcomes[i]['_id']}));
+        const mappings = await this.learningOutcomeStore.getAllStandardOutcomes(
+          {
+            ids: record.outcomes[i].mappings,
+          },
+        );
+        outcomes.push(
+          new LearningOutcome({
+            ...record.outcomes[i],
+            mappings: mappings,
+            id: record.outcomes[i]['_id'],
+          }),
+        );
       }
     }
     learningObject = new LearningObject({
@@ -2600,7 +2806,6 @@ export class MongoDriver implements DataStore {
     return learningObject;
   }
 }
-
 
 export function isEmail(value: string): boolean {
   const emailPattern = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;

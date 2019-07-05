@@ -1,5 +1,10 @@
 import { CompletedPart, MultipartFileUploadStatus } from './FileManager';
-import { LearningObjectUpdates, LearningObjectSummary } from '../types';
+import {
+  LearningObjectUpdates,
+  LearningObjectSummary,
+  CollectionAccessMap,
+  ReleasedUserLearningObjectSearchQuery,
+} from '../types';
 import { LearningOutcomeDatastore } from '../../LearningOutcomes/LearningOutcomeInteractor';
 import { LearningObjectStatDatastore } from '../../LearningObjectStats/LearningObjectStatsInteractor';
 import { CollectionDataStore } from '../../Collections/CollectionDataStore';
@@ -131,6 +136,34 @@ export interface DataStore
     total: number;
     objects: LearningObject[];
   }>;
+
+  /**
+   * Search for the specified user's released objects.
+   *
+   * @param {ReleasedUserLearningObjectSearchQuery} query Object containing query parameters to apply to search
+   * @param {String} username  username of an author in CLARK
+   *
+   * @returns {Promise<LearningObjectSummary[]>}
+   */
+  searchReleasedUserObjects(
+    query: ReleasedUserLearningObjectSearchQuery,
+    username: string,
+  ): Promise<LearningObjectSummary[]>;
+
+  /**
+   * Search for the specified user's released or working objects depending on requested status's
+   *
+   * @param  {LearningObjectQuery} query query containing status and text for field searching.
+   * @param username username of an author in CLARK.
+   * @param collectionRestrictions Object mapping accessible collections and statuses
+   *
+   * @returns {Promise<LearningObjectSummary[]>}
+   */
+  searchAllUserObjects(
+    query: LearningObjectQuery,
+    username: string,
+    collectionRestrictions?: CollectionAccessMap,
+  ): Promise<LearningObjectSummary[]>;
   fetchParentObjects(params: {
     query: ParentLearningObjectQuery;
     full?: boolean;
@@ -171,6 +204,14 @@ export interface DataStore
   }): Promise<MultipartFileUploadStatus>;
 
   // Users
+  /**
+   *
+   * lookup a user by their username or email
+   * @param {string} userIdentifier
+   * @returns {Promise<string>}
+   * @memberof DataStore
+   */
+  findUserId(userIdentifier: string): Promise<string>;
   findUser(username: string): Promise<string>;
   fetchUser(id: string): Promise<User>;
   peek<T>(params: {

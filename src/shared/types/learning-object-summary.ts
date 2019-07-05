@@ -23,6 +23,17 @@ export interface AuthorSummary {
   organization: string;
 }
 
+export interface LearningObjectChildSummary {
+  /**
+   * The name of the Learning Object
+   */
+  name: string;
+  /**
+   * Unique identifier of the Learning Object
+   */
+  id: string;
+}
+
 /**
  * An interface representation of the LearningObjectSummary type
  *
@@ -42,6 +53,10 @@ export interface LearningObjectSummary {
    * The collection the Learning Object was submitted to
    */
   collection: string;
+  /**
+   * Summary of Learning object child objects
+   */
+  children: LearningObjectChildSummary[];
   /**
    * Summary information about users who have made contributions to the Learning Object
    */
@@ -63,6 +78,10 @@ export interface LearningObjectSummary {
    * The name of the Learning Object
    */
   name: string;
+  /**
+   * flag determining whether or not a learning object has an active revision
+   */
+  hasRevision: boolean;
   /**
    * The version number of the Learning Object
    */

@@ -6,7 +6,7 @@ import {
 import { Router } from 'express';
 import { LearningObjectInteractor } from '../../interactors/interactors';
 import * as LearningObjectStatsRouteHandler from '../../LearningObjectStats/LearningObjectStatsRouteHandler';
-import { UserToken } from '../../shared/types';
+import { UserToken, UserLearningObjectQuery } from '../../shared/types';
 import { initializeSingleFileDownloadRouter } from '../../SingleFileDownload/RouteHandler';
 import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
 import { initializeCollectionRouter } from '../../Collections/RouteHandler';
@@ -58,13 +58,17 @@ export class ExpressRouteDriver {
         const page = req.query.currPage || req.query.page;
         const limit = req.query.limit;
         const standardOutcomeIDs = req.query.standardOutcomes;
-        const query = Object.assign({}, req.query, { page, limit, standardOutcomeIDs });
+        const query = Object.assign({}, req.query, {
+          page,
+          limit,
+          standardOutcomeIDs,
+        });
 
         objectResponse = await LearningObjectInteractor.searchObjects({
-            dataStore: this.dataStore,
-            library: this.library,
-            query,
-            userToken,
+          dataStore: this.dataStore,
+          library: this.library,
+          query,
+          userToken,
         });
 
         objectResponse.objects = objectResponse.objects.map(obj =>
@@ -97,7 +101,7 @@ export class ExpressRouteDriver {
           res.status(200).send(object.toPlainObject());
         } catch (e) {
           const { code, message } = mapErrorToResponseData(e);
-          res.status(code).json({message});
+          res.status(code).json({ message });
         }
       });
 
@@ -105,21 +109,16 @@ export class ExpressRouteDriver {
 
     router.get('/users/:username/learning-objects', async (req, res) => {
       try {
-        const query = req.query;
-        const userToken: UserToken = req.user;
-        const loadChildren: boolean = query.children;
-        delete query.children;
-        const objects = await LearningObjectInteractor.loadUsersObjectSummaries(
-          {
-            query,
-            userToken,
-            loadChildren,
-            dataStore: this.dataStore,
-            library: this.library,
-            username: req.params.username,
-          },
-        );
-        res.status(200).send(objects.map(obj => obj.toPlainObject()));
+        const requester: UserToken = req.user;
+        const query: UserLearningObjectQuery = req.query;
+        const authorUsername: string = req.params.username;
+        const objects = await LearningObjectInteractor.searchUsersObjects({
+          query,
+          requester,
+          authorUsername,
+          dataStore: this.dataStore,
+        });
+        res.status(200).send(objects);
       } catch (e) {
         const { code, message } = mapErrorToResponseData(e);
         res.status(code).json({ message });
@@ -139,7 +138,7 @@ export class ExpressRouteDriver {
           res.status(200).send(objects.map(x => x.toPlainObject()));
         } catch (e) {
           const { code, message } = mapErrorToResponseData(e);
-          res.status(code).json({message});
+          res.status(code).json({ message });
         }
       },
     );
