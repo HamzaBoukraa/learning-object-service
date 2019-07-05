@@ -83,9 +83,13 @@ export class ArchiverBundler implements Bundler {
    */
   fetchReadableStream(uri: string): Promise<Readable> {
     return new Promise((resolve, reject) => {
-      https.get(uri, (response) => {
-        resolve(response);
-      });
+      https
+        .get(uri, response => {
+          resolve(response);
+        })
+        .on('error', e => {
+          reject(e);
+        });
     });
   }
 }
