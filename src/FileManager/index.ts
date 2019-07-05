@@ -6,6 +6,7 @@ import { FileManagerAdapterStub } from './adapters/FileManagerAdapterStub';
 import { LearningObjectGateway } from './interfaces/LearningObjectGateway';
 import { ModuleLearningObjectGateway } from './drivers/LearningObjectGateway/ModuleLearningObjectGateway';
 import { FileManagerAdapter } from './adapters/FileManagerAdapter';
+import { uploadFile } from './Interactor';
 
 /**
  * Module responsible for handling file operations
@@ -22,7 +23,7 @@ import { FileManagerAdapter } from './adapters/FileManagerAdapter';
     ],
 })
 export class FileManagerModule extends ExpressServiceModule {
-
+    static uploadFile = uploadFile;
 }
 
 const Adapter = process.env.NODE_ENV === 'testing'
