@@ -379,7 +379,9 @@ export class MongoDriver implements DataStore {
 
   /**
    * Performs aggregation to join the users objects from the released and working collection before
-   * searching and filtering
+   * searching and filtering based on collectionRescticions, text or explicitly defined statuses. If collectionRestrictions are
+   * Defined, orConditions with statuses are built and the actual status filter will not be used or applied. This only occurs for reviewers
+   * and curators. Text searches are are not affected by collection restructions or the 'orConditions'.
    *
    * @param {UserLearningObjectSearchQuery} query query containing status and text for field searching
    * @param {string} username username of an author in CLARK
@@ -1457,16 +1459,16 @@ export class MongoDriver implements DataStore {
    * @inheritdoc
    * @async
    *
-   * @param {string} username the user's username or email
+   * @param {string} userIdentifier the user's username or email
    *
    * @returns {UserID}
    */
-  async findUserId(username: string): Promise<string> {
+  async findUserId(userIdentifier: string): Promise<string> {
     const query = {};
-    if (isEmail(username)) {
-      query['email'] = username;
+    if (isEmail(userIdentifier)) {
+      query['email'] = userIdentifier;
     } else {
-      query['username'] = username;
+      query['username'] = userIdentifier;
     }
     const userRecord = await this.db
       .collection(COLLECTIONS.USERS)
