@@ -360,7 +360,7 @@ export class MongoDriver implements DataStore {
   ): Promise<LearningObjectSummary[]> {
     const { text } = query;
     const authorID = await this.findUser(username);
-    const searchQuery: any = {
+    const searchQuery: {[index: string]: any} = {
       authorID,
     };
     if (text) {
