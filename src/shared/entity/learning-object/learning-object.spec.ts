@@ -19,7 +19,7 @@ const validMaterial: LearningObject.Material = {
   folderDescriptions: [
     { path: 'some valid path', description: 'some valid description' },
   ],
-  pdf: { name: 'some pdf name', url: 'some valid url' },
+  pdf: { name: 'some pdf name' },
 };
 const validMetrics: LearningObject.Metrics = {
   downloads: 22,
