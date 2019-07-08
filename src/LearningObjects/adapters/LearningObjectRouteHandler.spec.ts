@@ -11,9 +11,22 @@ import { LearningObject } from '../../shared/entity';
 import { HierarchyAdapter } from '../Hierarchy/HierarchyAdapter';
 import { BundlerModule } from '../Publishing/Bundler/BundlerModule';
 import { Bundler } from '../Publishing/Bundler/Bundler';
-import { BundleData, BundleExtension, Readable } from '../Publishing/Bundler/typings';
+import {
+  BundleData,
+  BundleExtension,
+  Readable,
+} from '../Publishing/Bundler/typings';
 import { MockDataStore } from '../../tests/mock-drivers/MockDataStore';
 import { LibraryCommunicator } from '../../shared/interfaces/interfaces';
+import { LearningObjectsModule } from '../LearningObjectsModule';
+import {
+  FileMetadataGateway,
+  FileManagerGateway,
+  ReadMeBuilder,
+} from '../interfaces';
+import { StubFileManagerGateway } from '../gateways/FileManagerGateway/StubFileManagerGateway';
+import { StubFileMetadataGateway } from '../gateways/FileMetadataGateway/StubFileMetadataGateway';
+import { StubReadMeBuilder } from '../drivers/ReadMeBuilder/StubReadMeBuilder';
 
 const app = express();
 const router = express.Router();
@@ -42,6 +55,12 @@ describe('LearningObjectRouteHandler', () => {
   beforeAll(async () => {
     HierarchyAdapter.open(dataStore);
     LibraryDriver = new MockLibraryDriver();
+    LearningObjectsModule.providers = [
+      { provide: FileMetadataGateway, useClass: StubFileMetadataGateway },
+      { provide: FileManagerGateway, useClass: StubFileManagerGateway },
+      { provide: ReadMeBuilder, useClass: StubReadMeBuilder },
+    ];
+    LearningObjectsModule.initialize();
     BundlerModule.providers = [{ provide: Bundler, useClass: StubBundler }];
     BundlerModule.initialize();
     // FIXME: This user is both an admin and a reviewer@nccp
@@ -60,6 +79,10 @@ describe('LearningObjectRouteHandler', () => {
       dataStore,
       library: LibraryDriver,
     });
+  });
+
+  afterAll(() => {
+    LearningObjectsModule.destroy();
   });
 
   describe('GET /learning-objects/:learningObjectId', () => {
@@ -97,7 +120,7 @@ describe('LearningObjectRouteHandler', () => {
           done();
         });
     });
-    describe('when the payload contains status set to \'released\'', () => {
+    describe("when the payload contains status set to 'released'", () => {
       describe('and the requester is an admin', () => {
         it('should update the requested Learning Object and return a status of 204', done => {
           stubs.learningObject.status = LearningObject.Status.PROOFING;
@@ -152,8 +175,9 @@ describe('LearningObjectRouteHandler', () => {
   });
   describe('DELETE /learning-objects/:learningObjectName', () => {
     it('should delete a learning object from the database and return a 200 status', done => {
+      stubs.learningObject.status = LearningObject.Status.UNRELEASED;
       request
-        .delete(`/learning-objects/Java%20stuff`)
+        .delete(`/learning-objects/${stubs.learningObject.name}`)
         .set('Authorization', `Bearer ${token}`)
         .expect(204)
         .then(() => {
