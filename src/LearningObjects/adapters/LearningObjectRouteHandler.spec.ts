@@ -120,7 +120,7 @@ describe('LearningObjectRouteHandler', () => {
           done();
         });
     });
-    describe("when the payload contains status set to 'released'", () => {
+    describe('when the payload contains status set to \'released\'', () => {
       describe('and the requester is an admin', () => {
         it('should update the requested Learning Object and return a status of 204', done => {
           stubs.learningObject.status = LearningObject.Status.PROOFING;
