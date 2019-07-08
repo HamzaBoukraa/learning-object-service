@@ -22,7 +22,7 @@ import {
   sentryErrorHandler,
 } from '../../shared/SentryConnector';
 import { LearningObjectSearch } from '../../LearningObjectSearch';
-import { FileMetadata } from '../../FileMetadata';
+import { FileMetadataModule } from '../../FileMetadata/FileMetadataModule';
 import { FileManagerModule } from '../../FileManager/FileManagerModule';
 
 export class ExpressDriver {
@@ -83,7 +83,7 @@ export class ExpressDriver {
    */
   private static attachPublicRouters() {
     this.app.use(LearningObjectSearch.expressRouter);
-    this.app.use(FileMetadata.expressRouter);
+    this.app.use(FileMetadataModule.expressRouter);
     this.app.use(
       ExpressRouteDriver.buildRouter(
         this.dataStore,

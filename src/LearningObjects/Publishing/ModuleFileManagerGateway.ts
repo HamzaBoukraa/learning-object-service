@@ -12,10 +12,10 @@ export class ModuleFileManagerGateway implements FileManagerGateway {
    * @memberof ModuleFileManagerGateway
    */
     uploadFile(params: {
+        authorUsername: string,
+        learningObjectId: string
         file: FileUpload,
     }) {
-        return FileManagerModule.uploadFile({
-            file: params.file,
-        });
+        return FileManagerModule.uploadFile(params);
     }
 }

@@ -1,13 +1,13 @@
 import { cancelSubmission } from './cancelSubmission';
 import { MockDataStore } from '../../tests/mock-drivers/MockDataStore';
-import { LearningObjectAdapter } from '../../LearningObjects/LearningObjectAdapter';
 import { SubmissionPublisher } from './SubmissionPublisher';
 import { LearningObject } from '../../shared/entity';
 import { Stubs } from '../../tests/stubs';
 import { MockLibraryDriver } from '../../tests/mock-drivers/MockLibraryDriver';
-import { FileMetadata } from '../../FileMetadata';
+import { FileMetadataModule } from '../../FileMetadata/FileMetadataModule';
 import { FileMetaDatastore, LearningObjectGateway } from '../../FileMetadata/interfaces';
 import { MockFileMetaDatastore, MockLearningObjectGateway } from '../../FileMetadata/mocks';
+import { LearningObjectAdapter } from '../../LearningObjects/adapters/LearningObjectAdapter';
 
 const stubs = new Stubs();
 const dataStore = new MockDataStore();
@@ -19,21 +19,21 @@ const publisher: SubmissionPublisher = {
   publishSubmission: (submission: LearningObject) => null,
 };
 
-LearningObjectAdapter.open(dataStore, null, library);
+LearningObjectAdapter.open(dataStore, library);
 
 describe('cancelSubmission', () => {
   beforeAll(() => {
     // FIXME: Module should not need to be initialized here, instead, the LearningObjectAdapter's interactor methods should resolve it instead of directly importing
     // Or LearningObjectAdapter should be mocked
-    FileMetadata.providers = [
+    FileMetadataModule.providers = [
       { provide: FileMetaDatastore, useClass: MockFileMetaDatastore },
       { provide: LearningObjectGateway, useClass: MockLearningObjectGateway },
     ];
-    FileMetadata.initialize();
+    FileMetadataModule.initialize();
   });
 
   afterAll(() => {
-    FileMetadata.destroy();
+    FileMetadataModule.destroy();
   });
   it('should cancel the submission given a valid username and id', async done => {
     const spy = spyOn(publisher, 'withdrawlSubmission');

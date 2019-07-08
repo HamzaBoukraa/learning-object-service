@@ -56,15 +56,15 @@ export async function releaseLearningObject({ userToken, dataStore, releasableOb
  * @param userToken the user who has requested to publish a Learning Object
  */
 async function createPublishingArtifacts(releasableObject: LearningObject, userToken: UserToken) {
-    const storagePrefix = `${releasableObject.author.username}/${releasableObject.id}`;
     const bundle = await bundleLearningObject({
         learningObject: releasableObject,
         requesterUsername: userToken.username,
     });
     await Gateways.fileManager().uploadFile({
+        authorUsername: releasableObject.author.username,
+        learningObjectId: releasableObject.id,
         file: {
-            // TODO: Should this be moved to the File Manager?
-            path: `${storagePrefix}/bundle.zip`,
+            path: 'bundle.zip',
             data: bundle,
         },
     });

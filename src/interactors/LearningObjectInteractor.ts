@@ -36,10 +36,9 @@ import {
 import { LearningObject } from '../shared/entity';
 import { accessGroups } from '../shared/types/user-token';
 import { LearningObjectsModule } from '../LearningObjects/LearningObjectsModule';
-import { FileMetadataGateway, FileManagerGateway } from '../LearningObjects/interfaces';
+import { FileMetadataGateway } from '../LearningObjects/interfaces';
 
 namespace Gateways {
-  export const fileManager = () => LearningObjectsModule.resolveDependency(FileManagerGateway);
   export const fileMetadata = () => LearningObjectsModule.resolveDependency(FileMetadataGateway);
   }
 
@@ -729,16 +728,11 @@ export class LearningObjectInteractor {
             learningObjectId: ref.id,
           }),
         ),
-      ).catch(reportError);
+      );
       // Delete objects from datastore
       await dataStore.deleteMultipleLearningObjects(objectIds);
       // For each object id
       objectRefs.forEach(async obj => {
-        // Attempt to delete files
-        const path = `${user.username}/${obj.id}/`;
-        Gateways.fileManager().deleteFolder({ path }).catch(e => {
-          reportError(e);
-        });
         // Update parents' dates
         updateParentsDate({
           dataStore,

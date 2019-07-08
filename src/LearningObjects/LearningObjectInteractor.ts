@@ -19,6 +19,7 @@ import {
   hasReadAccessByCollection,
   hasLearningObjectWriteAccess,
   authorizeReadAccess,
+  authorizeWriteAccess,
 } from '../shared/AuthorizationManager';
 import { FileMeta, LearningObjectFilter, MaterialsFilter } from './typings';
 import * as PublishingService from './Publishing';
@@ -30,8 +31,8 @@ namespace Drivers {
   export const readMeBuilder = () => LearningObjectsModule.resolveDependency(ReadMeBuilder);
 }
 namespace Gateways {
-export const fileManager = () => LearningObjectsModule.resolveDependency(FileManagerGateway);
-export const fileMetadata = () => LearningObjectsModule.resolveDependency(FileMetadataGateway);
+  export const fileManager = () => LearningObjectsModule.resolveDependency(FileManagerGateway);
+  export const fileMetadata = () => LearningObjectsModule.resolveDependency(FileMetadataGateway);
 }
 
 const LearningObjectState = {
@@ -163,6 +164,36 @@ export async function getWorkingLearningObjectSummary({
     const adminEditorAccess =
       !isUnreleased && requesterIsAdminOrEditor(requester);
     authorizeRequest([authorAccess, reviewerCuratorAccess, adminEditorAccess]);
+    return mapLearningObjectToSummary(object);
+  } catch (e) {
+    handleError(e);
+  }
+}
+
+/**
+ * Retrieves a summary of the released copy Learning Object
+ *
+ *
+ * @export
+ * @param {DataStore} dataStore [Driver for datastore]
+ * @param {string} id [Id of the Learning Object]
+ * @returns {Promise<LearningObjectSummary>}
+ */
+export async function getReleasedLearningObjectSummary({
+  dataStore,
+  id,
+}: {
+  dataStore: DataStore;
+  id: string;
+}): Promise<LearningObjectSummary> {
+  try {
+    const object = await dataStore.fetchReleasedLearningObject({ id, full: false });
+    if (!object) {
+      throw new ResourceError(
+        `Learning Object ${id} does not exist.`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
     return mapLearningObjectToSummary(object);
   } catch (e) {
     handleError(e);
@@ -374,7 +405,7 @@ function validateRequestParams({
     if (Array.isArray(mustProvide)) {
       message = `Must provide ${multipleParams ? '' : 'a'} valid value${
         multipleParams ? 's' : ''
-      } for ${mustProvide}`;
+        } for ${mustProvide}`;
     }
     throw new ResourceError(message, ResourceErrorReason.BAD_REQUEST);
   }
@@ -762,64 +793,44 @@ export async function getLearningObjectChildrenById(
   }
   return children;
 }
-
-export async function deleteLearningObject(params: {
+export async function deleteLearningObject({ dataStore, learningObjectName, library, user }: {
   dataStore: DataStore;
   learningObjectName: string;
   library: LibraryCommunicator;
   user: UserToken;
 }): Promise<void> {
   try {
-    const hasAccess = await hasLearningObjectWriteAccess(
-      params.user,
-      params.dataStore,
-      params.learningObjectName,
-    );
-    if (hasAccess) {
-      const object = await params.dataStore.peek<{
-        id: string;
-      }>({
-        query: { name: params.learningObjectName },
-        fields: {},
-      });
+    const authorId = await dataStore.findUser(user.username);
+    if (!authorId) {
+      throw new ResourceError(`Unable to delete Learning Object ${learningObjectName}. No user ${user.username} with Learning Object ${learningObjectName} found.`, ResourceErrorReason.NOT_FOUND);
+    }
+    const objectId = await dataStore.findLearningObject({ authorId, name: learningObjectName });
+    if (!objectId) {
+      throw new ResourceError(`Unable to delete Learning Object ${learningObjectName}. No Learning Object ${learningObjectName} exists.`, ResourceErrorReason.NOT_FOUND);
+    }
+    const object = await dataStore.fetchLearningObject({ id: objectId, full: false });
+    authorizeWriteAccess({ learningObject: object, requester: user });
 
-      await params.library.cleanObjectsFromLibraries([object.id]);
-      await Gateways.fileMetadata().deleteAllFileMetadata({
-        requester: params.user,
-        learningObjectId: object.id,
-      }).catch(reportError);
-      await params.dataStore.deleteLearningObject(object.id);
-      const path = `${params.user.username}/${object.id}/`;
-      Gateways.fileManager().deleteFolder({ path }).catch(e => {
+    await library.cleanObjectsFromLibraries([object.id]);
+    await Gateways.fileMetadata().deleteAllFileMetadata({
+      requester: user,
+      learningObjectId: object.id,
+    });
+    await dataStore.deleteLearningObject(object.id);
+    dataStore
+      .deleteChangelog({ learningObjectId: object.id })
+      .catch(e => {
         reportError(
           new Error(
-            `Problem deleting files for ${
-              params.learningObjectName
-            }: ${path}. ${e}`,
+            `Problem deleting changelogs for Learning Object ${
+            object.id
+            }: ${e}`,
           ),
         );
       });
-      params.dataStore
-        .deleteChangelog({ learningObjectId: object.id })
-        .catch(e => {
-          reportError(
-            new Error(
-              `Problem deleting changelogs for ${
-                params.learningObjectName
-              }: ${e}`,
-            ),
-          );
-        });
-    } else {
-      return Promise.reject(
-        new Error('User does not have authorization to perform this action'),
-      );
-    }
+
   } catch (e) {
-    reportError(e);
-    return Promise.reject(
-      new Error(`Problem deleting Learning Object. Error: ${e}`),
-    );
+    handleError(e);
   }
 }
 
@@ -853,10 +864,9 @@ export async function updateReadme(params: {
     const pdfFile = await Drivers.readMeBuilder().buildReadMe(object);
     const newPdfName: string = `0ReadMeFirst - ${sanitizeLearningObjectName(object.name)}.pdf`;
 
-    await Gateways.fileManager().uploadFile({file: {data: pdfFile, path: `${object.author.username}/${object.id}/${newPdfName}`}});
+    await Gateways.fileManager().uploadFile({ authorUsername: object.author.username, learningObjectId: object.id, file: { data: pdfFile, path: newPdfName } });
     if (oldPDF && oldPDF.name !== newPdfName) {
-      const path = `${object.author.username}/${object.id}/${oldPDF.name}`;
-      Gateways.fileManager().deleteFile({path}).catch(reportError);
+      Gateways.fileManager().deleteFile({ authorUsername: object.author.username, learningObjectId: object.id, path: oldPDF.name }).catch(reportError);
     }
 
     return await params.dataStore.editLearningObject({

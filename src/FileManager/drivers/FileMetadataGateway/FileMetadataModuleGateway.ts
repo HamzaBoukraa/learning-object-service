@@ -2,9 +2,9 @@ import { FileMetadataGateway } from '../../interfaces/FileMetadataGateway';
 import { UserToken } from '../../../shared/types';
 import { LearningObject } from '../../../shared/entity';
 import { FileMetadataFilter } from '../../../FileMetadata/typings';
-import { FileMetadata } from '../../../FileMetadata';
+import { FileMetadataModule } from '../../../FileMetadata/FileMetadataModule';
 
-export class FileMetadataModuleGateway extends FileMetadataGateway {
+export class FileMetadataModuleGateway implements FileMetadataGateway {
 
     /**
      * @inhertidoc
@@ -19,6 +19,6 @@ export class FileMetadataModuleGateway extends FileMetadataGateway {
         id: string;
         filter: FileMetadataFilter;
     }): Promise<LearningObject.Material.File> {
-        return FileMetadata.getFileMetadata(params);
+        return FileMetadataModule.getFileMetadata(params);
     }
 }

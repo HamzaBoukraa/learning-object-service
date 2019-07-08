@@ -11,138 +11,55 @@ import { FileUpload } from '../../../shared/types';
 AWS.config.credentials = AWS_SDK_CONFIG.credentials;
 
 const BUCKETS = {
-  WORKING_FILES: process.env.WORKING_FILES_BUCKET,
-  RELEASED_FILES: process.env.RELEASED_FILES_BUCKET,
+  MAIN: process.env.WORKING_FILES_BUCKET,
 };
 
 export class S3FileManager implements FileManager {
   private s3 = new AWS.S3({ region: AWS_SDK_CONFIG.region });
 
-  /**
-   * Returns stream of file from working files bucket
-   *
-   * @param {{ path: string }} params
-   * @returns {Readable}
-   * @memberof S3Driver
-   */
-  streamWorkingCopyFile(params: { path: string }): Readable {
-    const { path } = params;
-    return this.streamFile({ path, bucket: BUCKETS.WORKING_FILES });
-  }
-
-  async copyToReleased(params: {
-    srcFolder: string;
-    destFolder: string;
-  }): Promise<void> {
-    const { srcFolder, destFolder } = params;
-    const files = await this.listFiles({
-      bucket: BUCKETS.WORKING_FILES,
-      path: srcFolder,
-    });
-    await Promise.all(
-      files.map(file => {
-        const uploadPath = file.Key.replace(srcFolder, destFolder);
-        return this.copyObjectToBucket({
-          srcBucket: BUCKETS.WORKING_FILES,
-          srcPath: file.Key,
-          destBucket: BUCKETS.RELEASED_FILES,
-          destPath: uploadPath,
-        });
-      }),
-    );
-  }
 
   /**
-   * Copies an object from one bucket to another
+   * @inheritdoc
    *
-   * @private
-   * @param {{
-   *     destBucket: string;
-   *     srcBucket: string;
-   *     srcPath: string;
-   *     destPath: string;
-   *   }} params
+   * Uploads file to storage location
+   *
    * @returns {Promise<void>}
-   * @memberof S3Driver
+   * @memberof S3FileManager
    */
-  private async copyObjectToBucket(params: {
-    destBucket: string;
-    srcBucket: string;
-    srcPath: string;
-    destPath: string;
-  }): Promise<void> {
-    const { destBucket, srcBucket, srcPath, destPath } = params;
-    const copyParams = {
-      Bucket: destBucket,
-      CopySource: encodeURIComponent(`${srcBucket}/${srcPath}`),
-      Key: destPath,
-    };
-    await this.s3.copyObject(copyParams).promise();
-  }
-
-  /**
-   * Returns a list of files at specified path in bucket
-   *
-   * @private
-   * @param {{
-   *     bucket: string;
-   *     path: string;
-   *     files?: AWS.S3.Object[];
-   *   }} params
-   * @returns {Promise<AWS.S3.Object[]>}
-   * @memberof S3Driver
-   */
-  private async listFiles(params: {
-    bucket: string;
-    path: string;
-    files?: AWS.S3.Object[];
-  }): Promise<AWS.S3.Object[]> {
-    let { bucket, path, files } = params;
-    if (!files) {
-      files = [];
-    }
-    const listParams = {
-      Bucket: bucket,
-      Prefix: path,
-    };
-    const objects = await this.s3.listObjectsV2(listParams).promise();
-    if (objects.IsTruncated) {
-      return this.listFiles({
-        path,
-        bucket,
-        files: objects.Contents,
-      });
-    }
-    files = [...files, ...objects.Contents];
-    return files;
-  }
-
-  async upload(params: { file: FileUpload }): Promise<string> {
+  async upload({ authorUsername, learningObjectId, file }: { authorUsername: string, learningObjectId: string, file: FileUpload }): Promise<void> {
+    const Key: string = `${authorUsername}/${learningObjectId}/${file.path}`;
     const uploadParams = {
-      Bucket: BUCKETS.WORKING_FILES,
-      Key: params.file.path,
-      Body: params.file.data,
+      Key,
+      Bucket: BUCKETS.MAIN,
+      Body: file.data,
     };
-    const response = await this.s3.upload(uploadParams).promise();
-    return response.Location;
+    await this.s3.upload(uploadParams).promise();
   }
 
   /**
+   * @inheritdoc
+   *
    * Deletes Specified file from storage
    *
-   * @param {string} path
    * @returns {Promise<void>}
-   * @memberof S3Driver
+   * @memberof S3FileManager
    */
-  async delete(params: { path: string }): Promise<void> {
+  async delete({ authorUsername, learningObjectId, path }: {
+    authorUsername: string;
+    learningObjectId: string; path: string
+  }): Promise<void> {
+    const Key: string = `${authorUsername}/${learningObjectId}/${path}`;
     const deleteParams = {
-      Bucket: BUCKETS.WORKING_FILES,
-      Key: params.path,
+      Key,
+      Bucket: BUCKETS.MAIN,
     };
     return await this.deleteObject(deleteParams);
   }
 
   /**
+   *
+   * @inheritdoc
+   *
    * Deletes all objects within a specified folder
    * The function stores all nested objects in an array called listedObjects
    * If no nested objects exist, the function exits
@@ -158,60 +75,45 @@ export class S3FileManager implements FileManager {
    *
    * This continues until all objects in the folder are deleted.
    *
-   * @param {string} path
    * @returns {Promise<void>}
-   * @memberof S3Driver
+   * @memberof S3FileManager
    */
-  async deleteFolder(params: { path: string}): Promise<void> {
-    if (params.path[params.path.length] !== '/') {
+  async deleteFolder({ authorUsername, learningObjectId, path }: { authorUsername: string; learningObjectId: string; path: string }): Promise<void> {
+    if (path[path.length] !== '/') {
       throw Error('Path to delete a folder must end with a /');
     }
+    const storagePath: string = `${authorUsername}/${learningObjectId}/${path}`.replace(/\/\//ig, '/');
     const listObjectsParams = {
-      Bucket: BUCKETS.WORKING_FILES,
-      Key: params.path,
+      Key: storagePath,
+      Bucket: BUCKETS.MAIN,
     };
     const listedObjects = await this.s3.listObjectsV2(listObjectsParams).promise();
     if (listedObjects.Contents.length === 0) return;
     const deleteObjectsParams = {
-      Bucket: BUCKETS.WORKING_FILES,
+      Bucket: BUCKETS.MAIN,
       Delete: { Objects: <any>[] },
     };
 
-    listedObjects.Contents.forEach(({Key}) => {
-      deleteObjectsParams.Delete.Objects.push({Key});
+    listedObjects.Contents.forEach(({ Key }) => {
+      deleteObjectsParams.Delete.Objects.push({ Key });
     });
 
     await this.s3.deleteObjects(deleteObjectsParams).promise();
 
-    if (listedObjects.IsTruncated) await this.deleteFolder({path: params.path});
+    if (listedObjects.IsTruncated) await this.deleteFolder({ authorUsername, learningObjectId, path });
   }
 
-  async deleteAll(params: { path: string }): Promise<void> {
-    const listParams = {
-      Bucket: BUCKETS.WORKING_FILES,
-      Prefix: params.path,
-    };
-
-    const listedObjects = await this.s3.listObjectsV2(listParams).promise();
-    if (listedObjects.Contents && listedObjects.Contents.length) {
-      const deleteParams = {
-        Bucket: BUCKETS.WORKING_FILES,
-        Delete: {
-          Objects: listedObjects.Contents.map(({ Key }) => ({ Key })),
-        },
-      };
-      await this.s3.deleteObjects(deleteParams).promise();
-      if (listedObjects.IsTruncated) {
-        return await this.deleteAll(params);
-      }
-    }
-  }
-
-  streamFile(params: { path: string; bucket?: string }): Readable {
-    const { path, bucket } = params;
+  /**
+   * @inheritdoc
+   *
+   * @returns {Readable}
+   * @memberof S3FileManager
+   */
+  streamFile({ authorUsername, learningObjectId, path }: { authorUsername: string; learningObjectId: string; path: string }): Readable {
+    const Key: string = `${authorUsername}/${learningObjectId}/${path}`;
     const fetchParams = {
-      Bucket: bucket || BUCKETS.RELEASED_FILES,
-      Key: path,
+      Key,
+      Bucket: BUCKETS.MAIN,
     };
     const stream = this.s3
       .getObject(fetchParams)
@@ -229,25 +131,27 @@ export class S3FileManager implements FileManager {
    * Deletes Object From S3
    *
    * @private
-   * @param {any} params
    * @returns {Promise<void>}
-   * @memberof S3Driver
+   * @memberof S3FileManager
    */
   private async deleteObject(params: any): Promise<void> {
     await this.s3.deleteObject(params).promise();
   }
 
   /**
+   * @inheritdoc
+   *
    * Sends a HEAD request to fetch metadata for a given file.
    * Resolves true if the request completes, and false if the request
    * stream encounters an error at any point.
    *
    * @param path the file path in S3
    */
-  async hasAccess(path: string): Promise<boolean> {
+  async hasAccess({ authorUsername, learningObjectId, path }: { authorUsername: string; learningObjectId: string; path: string }): Promise<boolean> {
+    const Key: string = `${authorUsername}/${learningObjectId}/${path}`;
     const fetchParams = {
-      Bucket: BUCKETS.WORKING_FILES,
-      Key: path,
+      Key,
+      Bucket: BUCKETS.MAIN,
     };
     return new Promise<boolean>(resolve => {
       this.s3

@@ -20,7 +20,7 @@ export function buildRouter(): Router {
 
 async function download(req: Request, res: Response) {
   try {
-    const requester: Requester = req.query;
+    const requester: Requester = req.user;
     const open = req.query.open;
     const author: string = req.params.username;
     const loId: string = req.params.loId;

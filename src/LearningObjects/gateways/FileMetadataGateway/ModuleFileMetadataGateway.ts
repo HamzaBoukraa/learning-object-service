@@ -1,7 +1,7 @@
 import { LearningObject } from '../../../shared/entity';
 import { UserToken } from '../../../shared/types';
 import { FileMetadataFilter } from '../../../FileMetadata/typings';
-import { FileMetadata } from '../../../FileMetadata';
+import { FileMetadataModule } from '../../../FileMetadata/FileMetadataModule';
 import { FileMetadataGateway } from '../../interfaces';
 
 export class ModuleFileMetadataGateway implements FileMetadataGateway {
@@ -16,7 +16,7 @@ export class ModuleFileMetadataGateway implements FileMetadataGateway {
      * @memberof ModuleFileMetadataGateway
      */
     getAllFileMetadata(params: { requester: UserToken; learningObjectId: string; filter: FileMetadataFilter; }): Promise<LearningObject.Material.File[]> {
-        return FileMetadata.getAllFileMetadata(params);
+        return FileMetadataModule.getAllFileMetadata(params);
     }
     /**
      * @inheritdoc
@@ -28,6 +28,6 @@ export class ModuleFileMetadataGateway implements FileMetadataGateway {
      * @memberof ModuleFileMetadataGateway
      */
     deleteAllFileMetadata(params: { requester: UserToken; learningObjectId: string; }): Promise<void> {
-        return FileMetadata.deleteAllFileMetadata(params);
+        return FileMetadataModule.deleteAllFileMetadata(params);
     }
 }

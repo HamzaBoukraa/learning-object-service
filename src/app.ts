@@ -14,7 +14,7 @@ import { LearningObjectAdapter } from './LearningObjects/adapters/LearningObject
 import { LearningObjectSearch } from './LearningObjectSearch';
 import { HierarchyAdapter } from './LearningObjects/Hierarchy/HierarchyAdapter';
 import { BundlerModule } from './LearningObjects/Publishing/Bundler/BundlerModule';
-import { FileMetadata } from './FileMetadata';
+import { FileMetadataModule } from './FileMetadata/FileMetadataModule';
 import { FileManagerModule } from './FileManager/FileManagerModule';
 import { LearningObjectsModule } from './LearningObjects/LearningObjectsModule';
 
@@ -87,7 +87,7 @@ function initModules() {
   LearningObjectSearch.initialize();
   FileManagerModule.initialize();
   BundlerModule.initialize();
-  FileMetadata.initialize();
+  FileMetadataModule.initialize();
 }
 
 /**

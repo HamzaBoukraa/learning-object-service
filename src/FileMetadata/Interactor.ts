@@ -1,5 +1,5 @@
-import { FileMetadata as Module } from '.';
-import { FileMetaDatastore, LearningObjectGateway } from './interfaces';
+import { FileMetadataModule } from './FileMetadataModule';
+import { FileMetaDatastore, LearningObjectGateway, FileManagerGateway } from './interfaces';
 import {
   LearningObjectFile,
   Requester,
@@ -17,14 +17,17 @@ import {
   authorizeReadAccess,
 } from '../shared/AuthorizationManager';
 import { sanitizeObject, toNumber } from '../shared/functions';
+import { reportError } from '../shared/SentryConnector';
 
 namespace Drivers {
-  export const datastore = () => Module.resolveDependency(FileMetaDatastore);
+  export const datastore = () => FileMetadataModule.resolveDependency(FileMetaDatastore);
 }
 
 namespace Gateways {
   export const learningObjectGateway = () =>
-    Module.resolveDependency(LearningObjectGateway);
+    FileMetadataModule.resolveDependency(LearningObjectGateway);
+  export const fileManager = () =>
+    FileMetadataModule.resolveDependency(FileManagerGateway);
 }
 
 /**
@@ -78,9 +81,12 @@ export async function getFileMeta({
 
       authorizeReadAccess({ learningObject, requester });
 
-      return Drivers.datastore()
-        .fetchFileMeta(id)
-        .then(transformFileMetaToLearningObjectFile);
+      const file = await Drivers.datastore()
+        .fetchFileMeta(id);
+      if (!file) {
+        throw new ResourceError(`Unable to get file metadata for file ${id}. File does not exist.`, ResourceErrorReason.NOT_FOUND);
+      }
+      return transformFileMetaToLearningObjectFile(file);
     }
 
     return Gateways.learningObjectGateway().getReleasedFile({
@@ -446,7 +452,14 @@ export async function deleteFileMeta({
 
     authorizeWriteAccess({ learningObject, requester });
 
+    const fileMeta = await Drivers.datastore().fetchFileMeta(id);
+
+    if (!fileMeta) {
+      throw new ResourceError(`Unable to delete file ${id}. File does not exist.`, ResourceErrorReason.NOT_FOUND)
+    }
+
     await Drivers.datastore().deleteFileMeta(id);
+    Gateways.fileManager().deleteFile({ authorUsername: learningObject.author.username, learningObjectId: learningObject.id, path: fileMeta.fullPath }).catch(reportError);
     Gateways.learningObjectGateway().updateObjectLastModifiedDate(
       learningObjectId,
     );
@@ -492,6 +505,7 @@ export async function deleteAllFileMeta({
     authorizeWriteAccess({ learningObject, requester });
 
     await Drivers.datastore().deleteAllFileMeta(learningObjectId);
+    Gateways.fileManager().deleteFolder({ authorUsername: learningObject.author.username, learningObjectId: learningObject.id, path: '/' }).catch(reportError);
   } catch (e) {
     handleError(e);
   }

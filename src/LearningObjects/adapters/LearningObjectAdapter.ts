@@ -13,6 +13,7 @@ import {
   getReleasedFile,
   getReleasedFiles,
   updateObjectLastModifiedDate,
+  getReleasedLearningObjectSummary,
 } from '../LearningObjectInteractor';
 import { UserToken, LearningObjectSummary } from '../../shared/types';
 import { LearningObjectFilter } from '../typings';
@@ -107,6 +108,21 @@ export class LearningObjectAdapter {
       id,
     });
   }
+  /**
+   * Retrieves a summary of the working copy Learning Object
+   *
+   * @param {string} id [Id of the Learning Object]
+   * @returns {Promise<LearningObjectSummary>}
+   */
+  async getReleasedLearningObjectSummary(
+    id: string,
+  ): Promise<LearningObjectSummary> {
+    return getReleasedLearningObjectSummary({
+      dataStore: this.dataStore,
+      id,
+    });
+  }
+
   /**
    * Retrieves the Learning Object copy that is furthest along in the review pipeline
    *
