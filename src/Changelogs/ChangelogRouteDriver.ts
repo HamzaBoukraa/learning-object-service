@@ -64,11 +64,13 @@ export function initialize({
       const user = req.user;
       const userId = req.params.userId;
       const learningObjectId = req.params.learningObjectId;
-      const changelogs = await ChangelogInteractor.getAllChangelogs({
+      const date = req.query.date;
+      const changelogs = await ChangelogInteractor.getChangelogs({
         dataStore,
         learningObjectId,
         userId,
         user,
+        date,
       });
       res.status(200).json(changelogs);
     } catch (e) {
