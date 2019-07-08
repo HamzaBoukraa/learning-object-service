@@ -1,5 +1,5 @@
 import { Request, Response, Router } from 'express';
-import { mapErrorToResponseData, ResourceErrorReason } from '../../shared/errors';
+import { mapErrorToResponseData } from '../../shared/errors';
 import { DataStore } from '../../shared/interfaces/DataStore';
 import {
   LibraryCommunicator,
@@ -7,7 +7,7 @@ import {
 import { UserToken } from '../../shared/types';
 import * as LearningObjectInteractor from '../LearningObjectInteractor';
 import { LearningObject } from '../../shared/entity';
-import { FileMeta, MaterialsFilter, LearningObjectFilter } from '../typings';
+import {  MaterialsFilter, LearningObjectFilter } from '../typings';
 
 /**
  * Initializes an express router with endpoints for public Retrieving
@@ -152,7 +152,6 @@ export function initializePrivate({
       const id: string = req.params.id;
       await LearningObjectInteractor.deleteLearningObject({
         dataStore,
-        fileManager,
         library,
         id,
         requester,
