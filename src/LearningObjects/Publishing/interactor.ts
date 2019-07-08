@@ -34,11 +34,7 @@ export async function releaseLearningObject({ userToken, dataStore, releasableOb
     if (!requesterIsAdminOrEditor(userToken)) {
         throw new ResourceError(`${userToken.username} does not have access to release this Learning Object`, ResourceErrorReason.INVALID_ACCESS);
     }
-    try {
-        await createPublishingArtifacts(releasableObject, userToken);
-    } catch (e) {
-        reportError(e);
-    }
+    await createPublishingArtifacts(releasableObject, userToken).catch(reportError);
     await dataStore.addToReleased(releasableObject);
     await sendEmail(releasableObject, userToken, releaseEmailGateway);
 }
@@ -62,7 +58,6 @@ async function createPublishingArtifacts(releasableObject: LearningObject, userT
     });
     const bundle = await bundleLearningObject({
         learningObject: releasableObject,
-        requesterUsername: userToken.username,
     });
     await FileManagerAdapter.getInstance().uploadFile({
         file: {
@@ -74,7 +69,7 @@ async function createPublishingArtifacts(releasableObject: LearningObject, userT
 }
 
 /**
- * sendEmail determines if the Learning Object author should recieve an email about the release,
+ * sendEmail determines if the Learning Object author should receive an email about the release,
  * and triggers the send email action if it does. Authors should only be notified if the Learning
  * Object being released has no parent.
  * @param releasableObject the Learning Object being released
