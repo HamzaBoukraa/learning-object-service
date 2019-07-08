@@ -23,10 +23,9 @@ export async function cancelSubmission(params: {
   emailVerified: boolean;
 }): Promise<void> {
   const LearningObjectGateway = LearningObjectAdapter.getInstance();
-  const object = await LearningObjectGateway.getLearningObjectById({
+  const object = await LearningObjectGateway.getWorkingLearningObjectSummary({
     id: params.learningObjectId,
     requester: params.user,
-    filter: 'unreleased',
   });
 
   if (params.userId !== object.author.id) {
