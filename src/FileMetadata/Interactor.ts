@@ -455,7 +455,7 @@ export async function deleteFileMeta({
     const fileMeta = await Drivers.datastore().fetchFileMeta(id);
 
     if (!fileMeta) {
-      throw new ResourceError(`Unable to delete file ${id}. File does not exist.`, ResourceErrorReason.NOT_FOUND)
+      throw new ResourceError(`Unable to delete file ${id}. File does not exist.`, ResourceErrorReason.NOT_FOUND);
     }
 
     await Drivers.datastore().deleteFileMeta(id);

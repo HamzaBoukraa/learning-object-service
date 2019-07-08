@@ -7,4 +7,4 @@ export type CompletedPartList = CompletedPartList;
 
 export type DownloadFilter = 'released' | 'unreleased';
 
-export {UserToken as Requester, AccessGroup, FileUpload}
+export {UserToken as Requester, AccessGroup, FileUpload};
