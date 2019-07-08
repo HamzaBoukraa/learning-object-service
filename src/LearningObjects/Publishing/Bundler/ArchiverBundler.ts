@@ -1,5 +1,5 @@
 import { Bundler } from './Bundler';
-import { Writable, BundleData, BundleExtension, Readable } from './typings';
+import { BundleData, BundleExtension, Readable } from './typings';
 import { create, Archiver } from 'archiver';
 import * as https from 'https';
 
