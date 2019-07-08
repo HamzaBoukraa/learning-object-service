@@ -1,7 +1,5 @@
 import { DataStore } from '../shared/interfaces/DataStore';
-import {
-  LibraryCommunicator,
-} from '../shared/interfaces/interfaces';
+import { LibraryCommunicator } from '../shared/interfaces/interfaces';
 import {
   LearningObjectUpdates,
   UserToken,
@@ -23,16 +21,26 @@ import {
 } from '../shared/AuthorizationManager';
 import { FileMeta, LearningObjectFilter, MaterialsFilter } from './typings';
 import * as PublishingService from './Publishing';
-import { mapLearningObjectToSummary, sanitizeLearningObjectName } from '../shared/functions';
-import { FileMetadataGateway, FileManagerGateway, ReadMeBuilder } from './interfaces';
+import {
+  mapLearningObjectToSummary,
+  sanitizeLearningObjectName,
+} from '../shared/functions';
+import {
+  FileMetadataGateway,
+  FileManagerGateway,
+  ReadMeBuilder,
+} from './interfaces';
 import { LearningObjectsModule } from './LearningObjectsModule';
 
 namespace Drivers {
-  export const readMeBuilder = () => LearningObjectsModule.resolveDependency(ReadMeBuilder);
+  export const readMeBuilder = () =>
+    LearningObjectsModule.resolveDependency(ReadMeBuilder);
 }
 namespace Gateways {
-  export const fileManager = () => LearningObjectsModule.resolveDependency(FileManagerGateway);
-  export const fileMetadata = () => LearningObjectsModule.resolveDependency(FileMetadataGateway);
+  export const fileManager = () =>
+    LearningObjectsModule.resolveDependency(FileManagerGateway);
+  export const fileMetadata = () =>
+    LearningObjectsModule.resolveDependency(FileMetadataGateway);
 }
 
 const LearningObjectState = {
@@ -187,7 +195,10 @@ export async function getReleasedLearningObjectSummary({
   id: string;
 }): Promise<LearningObjectSummary> {
   try {
-    const object = await dataStore.fetchReleasedLearningObject({ id, full: false });
+    const object = await dataStore.fetchReleasedLearningObject({
+      id,
+      full: false,
+    });
     if (!object) {
       throw new ResourceError(
         `Learning Object ${id} does not exist.`,
@@ -405,7 +416,7 @@ function validateRequestParams({
     if (Array.isArray(mustProvide)) {
       message = `Must provide ${multipleParams ? '' : 'a'} valid value${
         multipleParams ? 's' : ''
-        } for ${mustProvide}`;
+      } for ${mustProvide}`;
     }
     throw new ResourceError(message, ResourceErrorReason.BAD_REQUEST);
   }
@@ -490,26 +501,38 @@ export async function updateParentsDate(params: {
  *
  * @async
  *
- * @param {UserID} author - database id of the parent
- * @param {LearningObject} object - entity to add
+ * @param {DataStore} dataStore [The datastore to add the Learning Object to]
+ * @param {Partial<LearningObject>} object [Learning Object data to be inserted]
+ * @param {string} authorUsername [The Learning Object's author's username]
+ * @param {UserToken} requester [Information about the user making the request to add a Learning Object]
  *
- * @returns {LearningObjectID} the database id of the new record
+ * @returns {LearningObject} The full Learning Object
  */
-export async function addLearningObject(
-  dataStore: DataStore,
-  object: LearningObject,
-  user: UserToken,
-): Promise<LearningObject> {
-  await checkNameExists({
-    dataStore,
-    username: user.username,
-    name: object.name,
-  });
+export async function addLearningObject({
+  dataStore,
+  object,
+  authorUsername,
+  requester,
+}: {
+  dataStore: DataStore;
+  object: Partial<LearningObject>;
+  authorUsername: string;
+  requester: UserToken;
+}): Promise<LearningObject> {
   try {
-    const authorID = await dataStore.findUser(user.username);
+    await authorizeRequest(
+      [requesterIsAuthor({ authorUsername, requester })],
+      'Invalid access. Learning Objects cannot be created for another user.',
+    );
+    await checkNameExists({
+      dataStore,
+      username: authorUsername,
+      name: object.name,
+    });
+    const authorID = await dataStore.findUser(authorUsername);
     const author = await dataStore.fetchUser(authorID);
     const objectInsert = new LearningObject({
-      ...object.toPlainObject(),
+      ...object,
       author,
     });
     objectInsert.revision = 0;
@@ -517,7 +540,7 @@ export async function addLearningObject(
     objectInsert.id = learningObjectID;
     return objectInsert;
   } catch (e) {
-    return Promise.reject(`Problem creating Learning Object. Error${e}`);
+    handleError(e);
   }
 }
 
@@ -532,64 +555,63 @@ export async function addLearningObject(
  * @param {LearningObjectID} id - database id of the record to change
  * @param {LearningObject} object - entity with values to update to
  */
-export async function updateLearningObject(params: {
-  userToken: UserToken;
+export async function updateLearningObject({
+  dataStore,
+  requester,
+  id,
+  authorUsername,
+  updates,
+}: {
   dataStore: DataStore;
+  requester: UserToken;
   id: string;
-  updates: { [index: string]: any };
+  authorUsername: string;
+  updates: Partial<LearningObject>;
 }): Promise<void> {
-  let { userToken, dataStore, id, updates } = params;
-  if (updates.id) {
-    delete updates.id;
-  }
-
-  if (updates.name) {
-    await checkNameExists({
-      id,
-      dataStore,
-      name: updates.name,
-      username: userToken.username,
-    });
-  }
   try {
-    const hasAccess = await hasLearningObjectWriteAccess(
-      userToken,
-      dataStore,
+    if (updates.name) {
+      await checkNameExists({
+        id,
+        dataStore,
+        name: updates.name,
+        username: authorUsername,
+      });
+    }
+    const learningObject = await dataStore.fetchLearningObject({
       id,
-    );
-    if (hasAccess) {
-      const cleanUpdates = sanitizeUpdates(updates);
-      validateUpdates({
+      full: false,
+    });
+    authorizeWriteAccess({
+      learningObject,
+      requester,
+      message: `Invalid access. Cannot update Learning Object ${
+        learningObject.id
+      }.`,
+    });
+    const cleanUpdates = sanitizeUpdates(updates);
+    validateUpdates({
+      id,
+      updates: cleanUpdates,
+    });
+    cleanUpdates.date = Date.now().toString();
+    await dataStore.editLearningObject({
+      id,
+      updates: cleanUpdates,
+    });
+    // Infer if this Learning Object is being released
+    if (cleanUpdates.status === LearningObject.Status.RELEASED) {
+      const releasableObject = await generateReleasableLearningObject(
+        dataStore,
         id,
-        updates: cleanUpdates,
-      });
-      cleanUpdates.date = Date.now().toString();
-      await dataStore.editLearningObject({
-        id,
-        updates: cleanUpdates,
-      });
-      // Infer if this Learning Object is being released
-      if (cleanUpdates.status === LearningObject.Status.RELEASED) {
-        const releasableObject = await generateReleasableLearningObject(
-          dataStore,
-          id,
-        );
-        await PublishingService.releaseLearningObject({
-          userToken,
-          dataStore,
-          releasableObject,
-        });
-      }
-    } else {
-      return Promise.reject(
-        new ResourceError('Invalid Access', ResourceErrorReason.INVALID_ACCESS),
       );
+      await PublishingService.releaseLearningObject({
+        userToken: requester,
+        dataStore,
+        releasableObject,
+      });
     }
   } catch (e) {
-    reportError(e);
-    return Promise.reject(
-      new Error(`Problem updating learning object ${params.id}. ${e}`),
-    );
+    handleError(e);
   }
 }
 
@@ -793,7 +815,77 @@ export async function getLearningObjectChildrenById(
   }
   return children;
 }
-export async function deleteLearningObject({ dataStore, learningObjectName, library, user }: {
+
+/**
+ * Deletes a Learning Object and all associated resources
+ *
+ * @export
+ * @param {DataStore} datastore [The datastore to delete the Learning Object from]
+ * @param {LibraryCommunicator} library [The library communicator to use to remove Learning Objects on delete]
+ * @param {UserToken} requester [Information about the user making the delete request]
+ * @param {string} id [The id of the Learning Object to be deleted]
+ * @returns {Promise<void>}
+ */
+export async function deleteLearningObject({
+  dataStore,
+  library,
+  requester,
+  id,
+}: {
+  dataStore: DataStore;
+  library: LibraryCommunicator;
+  requester: UserToken;
+  id: string;
+}): Promise<void> {
+  try {
+    const learningObject = await dataStore.fetchLearningObject({
+      id,
+      full: false,
+    });
+    if (!learningObject) {
+      throw new ResourceError(
+        `Cannot delete Learning Object ${id}. Learning Object does not exist.`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+    authorizeWriteAccess({ learningObject, requester });
+    await library.cleanObjectsFromLibraries([learningObject.id]);
+    await Gateways.fileMetadata().deleteAllFileMetadata({
+      requester,
+      learningObjectId: learningObject.id,
+    });
+    await dataStore.deleteLearningObject(learningObject.id);
+    dataStore
+      .deleteChangelog({ learningObjectId: learningObject.id })
+      .catch(e => {
+        reportError(
+          new Error(
+            `Problem deleting changelogs for Learning Object${
+              learningObject.id
+            }: ${e}`,
+          ),
+        );
+      });
+  } catch (e) {
+    handleError(e);
+  }
+}
+/**
+ * Deletes a Learning Object and all associated resources by name
+ *
+ * @export
+ * @param {DataStore} datastore [The datastore to delete the Learning Object from]
+ * @param {LibraryCommunicator} library [The library communicator to use to remove Learning Objects on delete]
+ * @param {UserToken} requester [Information about the user making the delete request]
+ * @param {string} id [The id of the Learning Object to be deleted]
+ * @returns {Promise<void>}
+ */
+export async function deleteLearningObjectByName({
+  dataStore,
+  learningObjectName,
+  library,
+  user,
+}: {
   dataStore: DataStore;
   learningObjectName: string;
   library: LibraryCommunicator;
@@ -802,13 +894,27 @@ export async function deleteLearningObject({ dataStore, learningObjectName, libr
   try {
     const authorId = await dataStore.findUser(user.username);
     if (!authorId) {
-      throw new ResourceError(`Unable to delete Learning Object ${learningObjectName}. No user ${user.username} with Learning Object ${learningObjectName} found.`, ResourceErrorReason.NOT_FOUND);
+      throw new ResourceError(
+        `Unable to delete Learning Object ${learningObjectName}. No user ${
+          user.username
+        } with Learning Object ${learningObjectName} found.`,
+        ResourceErrorReason.NOT_FOUND,
+      );
     }
-    const objectId = await dataStore.findLearningObject({ authorId, name: learningObjectName });
+    const objectId = await dataStore.findLearningObject({
+      authorId,
+      name: learningObjectName,
+    });
     if (!objectId) {
-      throw new ResourceError(`Unable to delete Learning Object ${learningObjectName}. No Learning Object ${learningObjectName} exists.`, ResourceErrorReason.NOT_FOUND);
+      throw new ResourceError(
+        `Unable to delete Learning Object ${learningObjectName}. No Learning Object ${learningObjectName} exists.`,
+        ResourceErrorReason.NOT_FOUND,
+      );
     }
-    const object = await dataStore.fetchLearningObject({ id: objectId, full: false });
+    const object = await dataStore.fetchLearningObject({
+      id: objectId,
+      full: false,
+    });
     authorizeWriteAccess({ learningObject: object, requester: user });
 
     await library.cleanObjectsFromLibraries([object.id]);
@@ -817,18 +923,13 @@ export async function deleteLearningObject({ dataStore, learningObjectName, libr
       learningObjectId: object.id,
     });
     await dataStore.deleteLearningObject(object.id);
-    dataStore
-      .deleteChangelog({ learningObjectId: object.id })
-      .catch(e => {
-        reportError(
-          new Error(
-            `Problem deleting changelogs for Learning Object ${
-            object.id
-            }: ${e}`,
-          ),
-        );
-      });
-
+    dataStore.deleteChangelog({ learningObjectId: object.id }).catch(e => {
+      reportError(
+        new Error(
+          `Problem deleting changelogs for Learning Object ${object.id}: ${e}`,
+        ),
+      );
+    });
   } catch (e) {
     handleError(e);
   }
@@ -857,16 +958,31 @@ export async function updateReadme(params: {
     if (!object && id) {
       object = await params.dataStore.fetchLearningObject({ id, full: true });
     } else if (!object && !id) {
-      throw new ResourceError(`No learning object or id provided.`, ResourceErrorReason.BAD_REQUEST);
+      throw new ResourceError(
+        `No learning object or id provided.`,
+        ResourceErrorReason.BAD_REQUEST,
+      );
     }
     const oldPDF: LearningObject.Material.PDF = object.materials['pdf'];
 
     const pdfFile = await Drivers.readMeBuilder().buildReadMe(object);
-    const newPdfName: string = `0ReadMeFirst - ${sanitizeLearningObjectName(object.name)}.pdf`;
+    const newPdfName: string = `0ReadMeFirst - ${sanitizeLearningObjectName(
+      object.name,
+    )}.pdf`;
 
-    await Gateways.fileManager().uploadFile({ authorUsername: object.author.username, learningObjectId: object.id, file: { data: pdfFile, path: newPdfName } });
+    await Gateways.fileManager().uploadFile({
+      authorUsername: object.author.username,
+      learningObjectId: object.id,
+      file: { data: pdfFile, path: newPdfName },
+    });
     if (oldPDF && oldPDF.name !== newPdfName) {
-      Gateways.fileManager().deleteFile({ authorUsername: object.author.username, learningObjectId: object.id, path: oldPDF.name }).catch(reportError);
+      Gateways.fileManager()
+        .deleteFile({
+          authorUsername: object.author.username,
+          learningObjectId: object.id,
+          path: oldPDF.name,
+        })
+        .catch(reportError);
     }
 
     return await params.dataStore.editLearningObject({
@@ -944,16 +1060,15 @@ export async function getMaterials({
 }
 
 /**
- * Sanitizes object containing updates to be stored by cloning valid properties and trimming strings
+ * Sanitizes object containing updates to be stored by removing invalid update properties, cloning valid properties, and trimming strings
  *
- * @param {{
- *   [index: string]: any;
- * }} object
+ * @param {Partial<LearningObject>} object [Object containing values to update existing Learning Object with]
  * @returns {LearningObjectUpdates}
  */
-function sanitizeUpdates(object: {
-  [index: string]: any;
-}): LearningObjectUpdates {
+function sanitizeUpdates(
+  object: Partial<LearningObject>,
+): LearningObjectUpdates {
+  delete object.id;
   const updates: LearningObjectUpdates = {};
   for (const key of VALID_LEARNING_OBJECT_UPDATES) {
     if (object[key]) {
@@ -984,30 +1099,31 @@ function validateUpdates(params: {
 }
 
 /**
- * Checks if user has a learning object with a particular name
+ * Checks if user has a Learning Object with a particular name
  *
- * @param {{
- *   dataStore: DataStore;
- *   username: string;
- *   name: string;
- * }} params
+ * @param {DataStore} dataStore [The datastore to check for existing Learning Object in]
+ * @param {string} username [The Learning Object's author's username]
+ * @param {string} name [The name of the Learning Object]
+ * @param {string} id [The id of the Learning Object. If passed, the existing Learning Object found must match this value]
+ *
  */
-async function checkNameExists(params: {
+async function checkNameExists({
+  dataStore,
+  username,
+  name,
+  id,
+}: {
   dataStore: DataStore;
   username: string;
   name: string;
   id?: string;
 }) {
-  const authorId = await params.dataStore.findUser(params.username);
-  const existing = await params.dataStore.peek<{ id: string }>({
-    query: { authorID: authorId, name: params.name },
-    fields: { id: 1 },
-  });
-  // @ts-ignore typescript doesn't think a .id property should exist on the existing object
-  if (existing && params.id !== existing.id) {
+  const authorId = await dataStore.findUser(username);
+  const existing = await dataStore.findLearningObject({ authorId, name });
+  if (existing && id !== existing) {
     throw new ResourceError(
-      `A learning object with name '${params.name}' already exists.`,
-      ResourceErrorReason.BAD_REQUEST,
+      `A Learning Object with name '${name}' already exists. Learning Objects you author must have unique names.`,
+      ResourceErrorReason.CONFLICT,
     );
   }
 }

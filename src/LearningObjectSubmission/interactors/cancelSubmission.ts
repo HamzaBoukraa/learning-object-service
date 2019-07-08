@@ -23,9 +23,11 @@ export async function cancelSubmission(params: {
   emailVerified: boolean;
 }): Promise<void> {
   const LearningObjectGateway = LearningObjectAdapter.getInstance();
-  const object = await LearningObjectGateway.getLearningObjectById(
-    { id: params.learningObjectId, requester: params.user, filter: 'unreleased' },
-  );
+  const object = await LearningObjectGateway.getLearningObjectById({
+    id: params.learningObjectId,
+    requester: params.user,
+    filter: 'unreleased',
+  });
 
   if (params.userId !== object.author.id) {
     throw new ResourceError(
@@ -50,11 +52,12 @@ export async function cancelSubmission(params: {
 
   await LearningObjectGateway.updateLearningObject({
     userToken: params.user,
+    authorUsername: params.user.username,
     id: params.learningObjectId,
     updates: {
-      published: false,
       status: LearningObject.Status.UNRELEASED,
     },
   });
+  // FIXME: Rename to withdrawSubmission
   await params.publisher.withdrawlSubmission(params.learningObjectId);
 }

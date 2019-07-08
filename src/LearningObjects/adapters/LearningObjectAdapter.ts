@@ -80,9 +80,7 @@ export class LearningObjectAdapter {
    * @param {string} id [Id of the Learning Object]
    * @returns {Promise<LearningObject.Material.File>}
    */
-  async getReleasedFiles(
-    id: string,
-  ): Promise<LearningObject.Material.File[]> {
+  async getReleasedFiles(id: string): Promise<LearningObject.Material.File[]> {
     return getReleasedFiles({
       dataStore: this.dataStore,
       id,
@@ -226,11 +224,13 @@ export class LearningObjectAdapter {
   async updateLearningObject(params: {
     userToken: UserToken;
     id: string;
-    updates: { [index: string]: any };
+    authorUsername: string;
+    updates: Partial<LearningObject>;
   }): Promise<void> {
     return updateLearningObject({
-      userToken: params.userToken,
+      requester: params.userToken,
       id: params.id,
+      authorUsername: params.authorUsername,
       updates: params.updates,
       dataStore: this.dataStore,
     });

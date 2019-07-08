@@ -57,8 +57,8 @@ async function updateLearningObjectFields(params: { user: UserToken; learningObj
   await LearningObjectGateway.updateLearningObject({
     id: params.learningObjectId,
     userToken: params.user,
+    authorUsername: params.user.username,
     updates: {
-      published: true,
       status: LearningObject.Status.WAITING,
       collection: params.collection,
     },
