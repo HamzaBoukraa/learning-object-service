@@ -1,12 +1,7 @@
 import { Readable } from 'stream';
-import {
-  FileUpload,
-  CompletedPart,
-  CompletedPartList,
-} from '../typings';
+import { FileUpload } from '../typings';
 
 export abstract class FileManager {
-
   /**
    * Uploads a single file to a user's Learning Object
    *
@@ -55,7 +50,6 @@ export abstract class FileManager {
     path: string;
   }): Promise<void>;
 
-
   /**
    * Returns a readable stream of a user's Learning Object's file given a file path
    *
@@ -83,5 +77,9 @@ export abstract class FileManager {
    * @returns {Promise<boolean>}
    * @memberof FileManager
    */
-  abstract hasAccess(params: { authorUsername: string; learningObjectId: string; path: string }): Promise<boolean>;
+  abstract hasAccess(params: {
+    authorUsername: string;
+    learningObjectId: string;
+    path: string;
+  }): Promise<boolean>;
 }

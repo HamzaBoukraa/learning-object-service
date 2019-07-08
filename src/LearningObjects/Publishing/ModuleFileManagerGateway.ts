@@ -3,7 +3,6 @@ import { FileManagerGateway } from './FileManagerGateway';
 import { FileUpload } from '../../shared/types';
 
 export class ModuleFileManagerGateway implements FileManagerGateway {
-
   /**
    * @inheritdoc
    *
@@ -11,11 +10,11 @@ export class ModuleFileManagerGateway implements FileManagerGateway {
    *
    * @memberof ModuleFileManagerGateway
    */
-    uploadFile(params: {
-        authorUsername: string,
-        learningObjectId: string
-        file: FileUpload,
-    }) {
-        return FileManagerModule.uploadFile(params);
-    }
+  uploadFile(params: {
+    authorUsername: string;
+    learningObjectId: string;
+    file: FileUpload;
+  }) {
+    return FileManagerModule.uploadFile(params);
+  }
 }

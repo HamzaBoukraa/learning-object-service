@@ -2,16 +2,23 @@ import { FileManagerModule } from './FileManagerModule';
 import { Readable } from 'stream';
 import { FileUpload, DownloadFilter, Requester, AccessGroup } from './typings';
 import { ResourceError, ResourceErrorReason } from '../shared/errors';
-import { FileManager, LearningObjectGateway, FileMetadataGateway } from './interfaces';
+import {
+  FileManager,
+  LearningObjectGateway,
+  FileMetadataGateway,
+} from './interfaces';
 import { LearningObjectSummary } from '../shared/types';
 
 namespace Drivers {
-  export const fileManager = () => FileManagerModule.resolveDependency(FileManager);
+  export const fileManager = () =>
+    FileManagerModule.resolveDependency(FileManager);
 }
 
 namespace Gateways {
-  export const learningObjectGateway = () => FileManagerModule.resolveDependency(LearningObjectGateway);
-  export const fileMetadataGateway = () => FileManagerModule.resolveDependency(FileMetadataGateway);
+  export const learningObjectGateway = () =>
+    FileManagerModule.resolveDependency(LearningObjectGateway);
+  export const fileMetadataGateway = () =>
+    FileManagerModule.resolveDependency(FileMetadataGateway);
 }
 
 /**
@@ -37,10 +44,14 @@ const serviceToken: Partial<Requester> = {
  *
  * @returns {Promise<void>}
  */
-export async function uploadFile({ authorUsername, learningObjectId, file }: {
-  authorUsername: string,
-  learningObjectId: string,
-  file: FileUpload,
+export async function uploadFile({
+  authorUsername,
+  learningObjectId,
+  file,
+}: {
+  authorUsername: string;
+  learningObjectId: string;
+  file: FileUpload;
 }): Promise<void> {
   await Drivers.fileManager().upload({
     authorUsername,
@@ -59,9 +70,13 @@ export async function uploadFile({ authorUsername, learningObjectId, file }: {
  *
  * @returns {Promise<void>}
  */
-export async function deleteFile({ authorUsername, learningObjectId, path }: {
-  authorUsername: string,
-  learningObjectId: string,
+export async function deleteFile({
+  authorUsername,
+  learningObjectId,
+  path,
+}: {
+  authorUsername: string;
+  learningObjectId: string;
   path: string;
 }): Promise<void> {
   await Drivers.fileManager().delete({
@@ -80,13 +95,19 @@ export async function deleteFile({ authorUsername, learningObjectId, path }: {
  * @param {string} path [The path of the folder to delete]
  * @returns {Promise<void>}
  */
-export async function deleteFolder({ authorUsername, learningObjectId, path }: {
-  authorUsername: string,
-  learningObjectId: string,
+export async function deleteFolder({
+  authorUsername,
+  learningObjectId,
+  path,
+}: {
+  authorUsername: string;
+  learningObjectId: string;
   path: string;
 }): Promise<void> {
   await Drivers.fileManager().deleteFolder({
-    authorUsername, learningObjectId, path,
+    authorUsername,
+    learningObjectId,
+    path,
   });
 }
 
@@ -101,7 +122,13 @@ export async function deleteFolder({ authorUsername, learningObjectId, path }: {
  *
  * @returns a Promise with the filename, mimeType, and readable stream of file data.
  */
-export async function downloadSingleFile({ learningObjectId, fileId, author, requester, filter }: {
+export async function downloadSingleFile({
+  learningObjectId,
+  fileId,
+  author,
+  requester,
+  filter,
+}: {
   learningObjectId: string;
   fileId: string;
   author: string;
@@ -111,7 +138,11 @@ export async function downloadSingleFile({ learningObjectId, fileId, author, req
   let learningObject, fileMetaData;
   // To maintain existing functionality, service token is elevated to author to fetch unreleased file meta
   serviceToken.username = author;
-  learningObject = await getLearningObjectSummary({ learningObjectId, requester: serviceToken as Requester, filter });
+  learningObject = await getLearningObjectSummary({
+    learningObjectId,
+    requester: serviceToken as Requester,
+    filter,
+  });
 
   if (!learningObject) {
     throw new Error(
@@ -120,18 +151,17 @@ export async function downloadSingleFile({ learningObjectId, fileId, author, req
   }
 
   if (!filter || filter === 'released') {
-    fileMetaData = await Gateways.fileMetadataGateway().getFileMetadata({
-      requester: serviceToken as Requester,
-      learningObjectId: learningObjectId,
-      id: fileId,
-      filter: 'released',
-    }).catch(bypassFileNotFoundError(filter !== 'released'));
+    fileMetaData = await Gateways.fileMetadataGateway()
+      .getFileMetadata({
+        requester: serviceToken as Requester,
+        learningObjectId: learningObjectId,
+        id: fileId,
+        filter: 'released',
+      })
+      .catch(bypassFileNotFoundError(filter !== 'released'));
   }
 
-  if (
-    (!fileMetaData && fileId !== 'released') ||
-    filter === 'unreleased'
-  ) {
+  if ((!fileMetaData && fileId !== 'released') || filter === 'unreleased') {
     // Collect unreleased file metadata from FileMetadata module
     fileMetaData = await Gateways.fileMetadataGateway().getFileMetadata({
       requester: serviceToken as Requester,
@@ -149,8 +179,18 @@ export async function downloadSingleFile({ learningObjectId, fileId, author, req
   }
   const mimeType = fileMetaData.fileType;
   // Check if the file manager has access to the resource before opening a stream
-  if (await Drivers.fileManager().hasAccess({ authorUsername: author, learningObjectId, path: fileMetaData.fullPath || fileMetaData.name })) {
-    const stream = Drivers.fileManager().streamFile({ authorUsername: author, learningObjectId, path: fileMetaData.fullPath || fileMetaData.name });
+  if (
+    await Drivers.fileManager().hasAccess({
+      authorUsername: author,
+      learningObjectId,
+      path: fileMetaData.fullPath || fileMetaData.name,
+    })
+  ) {
+    const stream = Drivers.fileManager().streamFile({
+      authorUsername: author,
+      learningObjectId,
+      path: fileMetaData.fullPath || fileMetaData.name,
+    });
     return { mimeType, stream, filename: fileMetaData.name };
   } else {
     throw { message: 'File not found', object: { name: learningObject.name } };
@@ -167,17 +207,33 @@ export async function downloadSingleFile({ learningObjectId, fileId, author, req
  * @param {*} { requester: Requester, learningObjectId: string, filter: DownloadFilter }
  * @returns {Promise<LearningObjectSummary>}
  */
-function getLearningObjectSummary({ requester, learningObjectId, filter }: { requester: Requester, learningObjectId: string, filter: DownloadFilter }): Promise<LearningObjectSummary> {
+function getLearningObjectSummary({
+  requester,
+  learningObjectId,
+  filter,
+}: {
+  requester: Requester;
+  learningObjectId: string;
+  filter: DownloadFilter;
+}): Promise<LearningObjectSummary> {
   switch (filter) {
     case 'released':
       // Get released summary
-      return Gateways.learningObjectGateway().getReleasedLearningObjectSummary(learningObjectId);
+      return Gateways.learningObjectGateway().getReleasedLearningObjectSummary(
+        learningObjectId,
+      );
     case 'unreleased':
       // Get unreleased summary
-      return Gateways.learningObjectGateway().getWorkingLearningObjectSummary({ id: learningObjectId, requester });
+      return Gateways.learningObjectGateway().getWorkingLearningObjectSummary({
+        id: learningObjectId,
+        requester,
+      });
     default:
       // Get active summary
-      return Gateways.learningObjectGateway().getActiveLearningObjectSummary({ id: learningObjectId, requester });
+      return Gateways.learningObjectGateway().getActiveLearningObjectSummary({
+        id: learningObjectId,
+        requester,
+      });
   }
 }
 
@@ -203,5 +259,3 @@ function bypassFileNotFoundError(
     throw e;
   };
 }
-
-

@@ -149,11 +149,11 @@ export function titleCase(text: string): string {
 }
 
 /**
-   * Replaces invalid file path characters in a Learning Object's name with _ characters
-   *
-   * @param {string} path
-   * @returns {string}
-   */
+ * Replaces invalid file path characters in a Learning Object's name with _ characters
+ *
+ * @param {string} path
+ * @returns {string}
+ */
 export function sanitizeLearningObjectName(path: string): string {
   return path.replace(/[\\/:"*?<>|]/gi, '_');
 }

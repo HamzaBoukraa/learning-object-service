@@ -5,7 +5,6 @@ import { sanitizeObject, sanitizeText } from '../shared/functions';
 import {
   LearningObjectQuery,
   QueryCondition,
-  ParentLearningObjectQuery,
 } from '../shared/interfaces/DataStore';
 import {
   DataStore,
@@ -34,16 +33,13 @@ import {
   ServiceErrorReason,
 } from '../shared/errors';
 import { LearningObject } from '../shared/entity';
-import { accessGroups } from '../shared/types/user-token';
 import { LearningObjectsModule } from '../LearningObjects/LearningObjectsModule';
 import { FileMetadataGateway } from '../LearningObjects/interfaces';
 
 namespace Gateways {
-  export const fileMetadata = () => LearningObjectsModule.resolveDependency(FileMetadataGateway);
-  }
-
-// file size is in bytes
-const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
+  export const fileMetadata = () =>
+    LearningObjectsModule.resolveDependency(FileMetadataGateway);
+}
 
 export const LearningObjectState = {
   UNRELEASED: [
@@ -106,7 +102,6 @@ export class LearningObjectInteractor {
 
       const formattedQuery = this.formatSearchQuery(query);
       let { status, orderBy, sortType, text } = formattedQuery;
-
 
       // This will throw an error if there is no user with that username
       await dataStore.findUser(username);
@@ -257,7 +252,7 @@ export class LearningObjectInteractor {
           learningObjectName,
           userToken,
         });
-        }
+      }
 
       return learningObject;
     } catch (e) {
@@ -614,14 +609,8 @@ export class LearningObjectInteractor {
       }) as boolean;
       const isPrivileged =
         userToken && requesterIsPrivileged(<UserToken>userToken);
-      const isService = hasServiceLevelAccess(
-        userToken as ServiceToken,
-      );
-      const authorizationCases = [
-        isAuthor,
-        isPrivileged,
-        isService,
-      ];
+      const isService = hasServiceLevelAccess(userToken as ServiceToken);
+      const authorizationCases = [isAuthor, isPrivileged, isService];
 
       let learningObjectID = await this.getReleasedLearningObjectIdByAuthorAndName(
         {
