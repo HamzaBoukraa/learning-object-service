@@ -3,8 +3,7 @@ import { Router, Response, Request } from 'express';
 import { LEARNING_OBJECT_ROUTES } from '../../shared/routes';
 import { mapErrorToResponseData } from '../../shared/errors';
 import { fileNotFound } from '../assets/filenotfound';
-import { DownloadFilter } from '../typings/file-manager';
-import { UserToken } from '../../shared/types';
+import { DownloadFilter, Requester } from '../typings';
 
 export function buildRouter(): Router {
   const router = Router();
@@ -21,7 +20,7 @@ export function buildRouter(): Router {
 
 async function download(req: Request, res: Response) {
   try {
-    const requester: UserToken = req.query;
+    const requester: Requester = req.query;
     const open = req.query.open;
     const author: string = req.params.username;
     const loId: string = req.params.loId;

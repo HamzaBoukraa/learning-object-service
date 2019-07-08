@@ -176,22 +176,6 @@ export interface DataStore
   deleteChild(parentId: string, childId: string): Promise<void>;
   addToCollection(learningObjectId: string, collection: string): Promise<void>;
 
-  // Materials
-  addToFiles(params: {
-    id: string;
-    loFile: LearningObject.Material.File;
-  }): Promise<string>;
-  removeFromFiles(params: { objectId: string; fileId: string }): Promise<void>;
-  updateFileDescription(params: {
-    learningObjectId: string;
-    fileId: string;
-    description: string;
-  }): Promise<LearningObject.Material.File>;
-  findSingleFile(params: {
-    learningObjectId: string;
-    fileId: string;
-  }): Promise<LearningObject.Material.File>;
-
   /*
    * DELETE Operations
    */

@@ -1,17 +1,16 @@
-import { FileManagerModule as Module } from '.';
-import { DataStore } from '../shared/interfaces/DataStore';
-
-import { FileManager } from '../shared/interfaces/interfaces';
+import { FileManagerModule } from './FileManagerModule';
 import { Readable } from 'stream';
-import { FileUpload, DownloadFilter } from './typings/file-manager';
+import { FileUpload, DownloadFilter, Requester, AccessGroup } from './typings';
 import { ResourceError, ResourceErrorReason } from '../shared/errors';
-import { AccessGroup, UserToken } from '../shared/types';
-import { FileMetadata } from '../FileMetadata';
-import { LearningObjectGateway } from './interfaces/LearningObjectGateway';
+import { FileManager, LearningObjectGateway, FileMetadataGateway } from './interfaces';
 
 namespace Drivers {
-  export const fileManager = () => Module.resolveDependency(FileManager);
-  export const learningObjectGateway = () => Module.resolveDependency(LearningObjectGateway);
+  export const fileManager = () => FileManagerModule.resolveDependency(FileManager);
+  export const learningObjectGateway = () => FileManagerModule.resolveDependency(LearningObjectGateway);
+}
+
+namespace Gateways {
+  export const fileMetadataGateway = () => FileManagerModule.resolveDependency(FileMetadataGateway);
 }
 
 /**
@@ -23,7 +22,7 @@ namespace Drivers {
  *
  * This is a temporary patch and should be swapped for authorization logic using JWT payload/some other temporary key to validate the requester has access to the requested file.
  */
-const serviceToken: Partial<UserToken> = {
+const serviceToken: Partial<Requester> = {
   accessGroups: [AccessGroup.ADMIN],
 };
 
@@ -83,47 +82,47 @@ export async function deleteFolder(params: {
  *
  * @returns a Promise with the filename, mimeType, and readable stream of file data.
  */
-export async function downloadSingleFile(params: {
+export async function downloadSingleFile({learningObjectId, fileId, author, requester, filter}: {
   learningObjectId: string;
   fileId: string;
   author: string;
-  requester?: UserToken;
+  requester?: Requester;
   filter?: DownloadFilter;
 }): Promise<{ filename: string; mimeType: string; stream: Readable }> {
   let learningObject, fileMetaData;
 
   learningObject = await Drivers.learningObjectGateway().getLearningObjectById({
-    id: params.learningObjectId,
-    requester: params.requester,
+    id: learningObjectId,
+    requester: requester,
   });
 
   if (!learningObject) {
     throw new Error(
-      `Learning object ${params.learningObjectId} does not exist.`,
+      `Could not download the requested file ${fileId}. Learning object ${learningObjectId} does not exist.`,
     );
   }
 
-  if (!params.filter || params.filter === 'released') {
-    fileMetaData = await FileMetadata.getFileMetadata({
-      requester: serviceToken as UserToken,
-      learningObjectId: params.learningObjectId,
-      id: params.fileId,
+  if (!filter || filter === 'released') {
+    fileMetaData = await Gateways.fileMetadataGateway().getFileMetadata({
+      requester: serviceToken as Requester,
+      learningObjectId: learningObjectId,
+      id: fileId,
       filter: 'released',
-    }).catch(bypassFileNotFoundError(params.filter !== 'released'));
+    }).catch(bypassFileNotFoundError(filter !== 'released'));
   }
 
   if (
-    (!fileMetaData && params.fileId !== 'released') ||
-    params.filter === 'unreleased'
+    (!fileMetaData && fileId !== 'released') ||
+    filter === 'unreleased'
   ) {
     // Collect unreleased file metadata from FileMetadata module
 
     // To maintain existing functionality, service token is elevated to author to fetch unreleased file meta
     serviceToken.username = learningObject.author.username;
-    fileMetaData = await FileMetadata.getFileMetadata({
-      requester: serviceToken as UserToken,
-      learningObjectId: params.learningObjectId,
-      id: params.fileId,
+    fileMetaData = await Gateways.fileMetadataGateway().getFileMetadata({
+      requester: serviceToken as Requester,
+      learningObjectId: learningObjectId,
+      id: fileId,
       filter: 'unreleased',
     });
   }
@@ -135,7 +134,7 @@ export async function downloadSingleFile(params: {
     });
   }
 
-  const path = `${params.author}/${params.learningObjectId}/${
+  const path = `${author}/${learningObjectId}/${
     fileMetaData.fullPath ? fileMetaData.fullPath : fileMetaData.name
   }`;
   const mimeType = fileMetaData.fileType;

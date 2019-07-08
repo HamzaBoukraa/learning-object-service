@@ -7,8 +7,7 @@ import {
 export abstract class FileMetadataGateway {
 
   /**
-   * Proxies request for file metadata to
-   * the FileMetadata module
+   * Retrieves file metadata for Learning Object by file id
    *
    * @abstract
    * @param {Requester} requester [Information about the requester]
@@ -17,7 +16,7 @@ export abstract class FileMetadataGateway {
    *
    * @returns {Promise<LearningObjectFile>}
    */
-    abstract getFileMeta(params: {
+    abstract getFileMetadata(params: {
         requester: Requester;
         learningObjectId: string;
         id: string;

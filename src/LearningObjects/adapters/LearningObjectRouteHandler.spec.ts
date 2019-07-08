@@ -1,21 +1,19 @@
-import { MongoDriver } from '../drivers/MongoDriver';
-import { generateToken } from '../tests/mock-token-manager';
+import { MongoDriver } from '../../drivers/MongoDriver';
+import { generateToken } from '../../tests/mock-token-manager';
 import * as LearningObjectRouteHandler from './LearningObjectRouteHandler';
 import * as express from 'express';
 import * as bodyParser from 'body-parser';
 import * as supertest from 'supertest';
-import { MockLibraryDriver } from '../tests/mock-drivers/MockLibraryDriver';
-import { MockS3Driver } from '../tests/mock-drivers/MockS3Driver';
-import { LibraryCommunicator, FileManager } from '../shared/interfaces/interfaces';
+import { MockLibraryDriver } from '../../tests/mock-drivers/MockLibraryDriver';
+import { LibraryCommunicator } from '../../shared/interfaces/interfaces';
 import * as cookieParser from 'cookie-parser';
-import { processToken, handleProcessTokenError } from '../middleware';
-import { LearningObject } from '../shared/entity';
-import { Stubs } from '../tests/stubs';
-import { HierarchyAdapter } from './Hierarchy/HierarchyAdapter';
-import { BundlerModule } from './Publishing/Bundler/BundlerModule';
-import { Bundler } from './Publishing/Bundler/Bundler';
-import { BundleData, BundleExtension, Readable } from './Publishing/Bundler/typings';
-import { FileManagerAdapter } from '../FileManager';
+import { processToken, handleProcessTokenError } from '../../middleware';
+import { LearningObject } from '../../shared/entity';
+import { Stubs } from '../../tests/stubs';
+import { HierarchyAdapter } from '../Hierarchy/HierarchyAdapter';
+import { BundlerModule } from '../Publishing/Bundler/BundlerModule';
+import { Bundler } from '../Publishing/Bundler/Bundler';
+import { BundleData, BundleExtension, Readable } from '../Publishing/Bundler/typings';
 
 const app = express();
 const router = express.Router();
@@ -30,7 +28,6 @@ const request = supertest(app);
 describe('LearningObjectRouteHandler', () => {
 
     let dataStore: MongoDriver;
-    let fileManager: FileManager;
     let LibraryDriver: LibraryCommunicator;
     let token: string;
     let authorization = {};
@@ -47,8 +44,6 @@ describe('LearningObjectRouteHandler', () => {
     beforeAll(async () => {
         dataStore = await MongoDriver.build(global['__MONGO_URI__']);
         HierarchyAdapter.open(dataStore);
-        fileManager = new MockS3Driver();
-        FileManagerAdapter.open();
         LibraryDriver = new MockLibraryDriver();
         BundlerModule.providers = [{ provide: Bundler, useClass: StubBundler }];
         BundlerModule.initialize();
@@ -59,7 +54,6 @@ describe('LearningObjectRouteHandler', () => {
         LearningObjectRouteHandler.initializePrivate({
             router,
             dataStore,
-            fileManager,
             library: LibraryDriver,
         });
     });

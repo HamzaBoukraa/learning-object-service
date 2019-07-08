@@ -1,6 +1,6 @@
 import { SubmissionDataStore } from '../SubmissionDatastore';
 import { ResourceError, ResourceErrorReason } from '../../shared/errors';
-import { LearningObjectAdapter } from '../../LearningObjects/LearningObjectAdapter';
+import { LearningObjectAdapter } from '../../LearningObjects/adapters/LearningObjectAdapter';
 import { SubmissionPublisher } from './SubmissionPublisher';
 import { LearningObject } from '../../shared/entity';
 import { UserToken } from '../../shared/types';

@@ -9,7 +9,6 @@ import {
 } from '../shared/interfaces/DataStore';
 import {
   DataStore,
-  FileManager,
   LibraryCommunicator,
 } from '../shared/interfaces/interfaces';
 import {
@@ -36,7 +35,13 @@ import {
 } from '../shared/errors';
 import { LearningObject } from '../shared/entity';
 import { accessGroups } from '../shared/types/user-token';
-import { FileMetadata } from '../FileMetadata';
+import { LearningObjectsModule } from '../LearningObjects/LearningObjectsModule';
+import { FileMetadataGateway, FileManagerGateway } from '../LearningObjects/interfaces';
+
+namespace Gateways {
+  export const fileManager = () => LearningObjectsModule.resolveDependency(FileManagerGateway);
+  export const fileMetadata = () => LearningObjectsModule.resolveDependency(FileMetadataGateway);
+  }
 
 // file size is in bytes
 const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
@@ -576,37 +581,6 @@ export class LearningObjectInteractor {
   }
 
   /**
-   * Inserts metadata for file as LearningObject.Material.File
-   *
-   * @private
-   * @static
-   * @param {{
-   *     dataStore: DataStore,
-   *     id: string,
-   *     loFile: LearningObject.Material.File,
-   *   }} params
-   * @returns {Promise<void>}
-   */
-  private static async updateMaterials(params: {
-    dataStore: DataStore;
-    id: string;
-    loFile: LearningObject.Material.File;
-  }): Promise<void> {
-    try {
-      await params.dataStore.addToFiles({
-        id: params.id,
-        loFile: params.loFile,
-      });
-      await updateObjectLastModifiedDate({
-        dataStore: params.dataStore,
-        id: params.id,
-      });
-    } catch (e) {
-      handleError(e);
-    }
-  }
-
-  /**
    * Returns a Learning Object's Id by author's username and Learning Object's name
    * Will attempt to find released and unreleased object's id if authorized
    *
@@ -700,21 +674,18 @@ export class LearningObjectInteractor {
    * @returns {Promise<void>}
    * @memberof LearningObjectInteractor
    */
-  public static async deleteMultipleLearningObjects(params: {
+  public static async deleteMultipleLearningObjects({
+    dataStore,
+    library,
+    learningObjectNames,
+    user,
+  }: {
     dataStore: DataStore;
-    fileManager: FileManager;
     library: LibraryCommunicator;
     learningObjectNames: string[];
     user: UserToken;
   }): Promise<void> {
     try {
-      const {
-        dataStore,
-        fileManager,
-        library,
-        learningObjectNames,
-        user,
-      } = params;
       const hasAccess = await hasMultipleLearningObjectWriteAccesses(
         user,
         dataStore,
@@ -753,8 +724,8 @@ export class LearningObjectInteractor {
       await library.cleanObjectsFromLibraries(objectIds);
       await Promise.all(
         objectRefs.map(ref =>
-          FileMetadata.deleteAllFileMetadata({
-            requester: params.user,
+          Gateways.fileMetadata().deleteAllFileMetadata({
+            requester: user,
             learningObjectId: ref.id,
           }),
         ),
@@ -765,7 +736,7 @@ export class LearningObjectInteractor {
       objectRefs.forEach(async obj => {
         // Attempt to delete files
         const path = `${user.username}/${obj.id}/`;
-        fileManager.deleteAll({ path }).catch(e => {
+        Gateways.fileManager().deleteFolder({ path }).catch(e => {
           reportError(e);
         });
         // Update parents' dates

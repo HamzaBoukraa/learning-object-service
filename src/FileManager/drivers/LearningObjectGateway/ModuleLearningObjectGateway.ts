@@ -1,7 +1,7 @@
 import { LearningObject } from '../../../shared/entity';
 import { UserToken } from '../../../shared/types';
 import { LearningObjectGateway } from '../../interfaces/LearningObjectGateway';
-import { LearningObjectAdapter } from '../../../LearningObjects/LearningObjectAdapter';
+import { LearningObjectAdapter } from '../../../LearningObjects/adapters/LearningObjectAdapter';
 
 
 export class ModuleLearningObjectGateway extends LearningObjectGateway {

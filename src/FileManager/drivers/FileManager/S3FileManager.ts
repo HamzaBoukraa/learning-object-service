@@ -1,11 +1,12 @@
-import 'dotenv/config';
 import * as AWS from 'aws-sdk';
 import { AWSError } from 'aws-sdk';
 import { Readable } from 'stream';
 import { reportError } from '../../../shared/SentryConnector';
-import { FileManager } from '../../../shared/interfaces/interfaces';
 import { AWS_SDK_CONFIG } from '../../config/aws-sdk.config';
-import { CompletedPartList, CompletedPart, FileUpload } from '../../typings/file-manager';
+
+import { FileManager } from '../../interfaces/FileManager';
+import { CompletedPart, CompletedPartList } from '../../typings';
+import { FileUpload } from '../../../shared/types';
 
 AWS.config.credentials = AWS_SDK_CONFIG.credentials;
 
@@ -14,7 +15,7 @@ const BUCKETS = {
   RELEASED_FILES: process.env.RELEASED_FILES_BUCKET,
 };
 
-export class S3Driver implements FileManager {
+export class S3FileManager implements FileManager {
   private s3 = new AWS.S3({ region: AWS_SDK_CONFIG.region });
 
   /**
@@ -124,73 +125,6 @@ export class S3Driver implements FileManager {
     };
     const response = await this.s3.upload(uploadParams).promise();
     return response.Location;
-  }
-
-  async initMultipartUpload(params: { path: string }): Promise<string> {
-    const createParams = {
-      Bucket: BUCKETS.WORKING_FILES,
-      Key: params.path,
-    };
-    const createdUpload = await this.s3
-      .createMultipartUpload(createParams)
-      .promise();
-    return createdUpload.UploadId;
-  }
-
-  async uploadPart(params: {
-    path: string;
-    data: any;
-    partNumber: number;
-    uploadId: string;
-  }): Promise<CompletedPart> {
-    const partUploadParams = {
-      Bucket: BUCKETS.WORKING_FILES,
-      Key: params.path,
-      Body: params.data,
-      PartNumber: params.partNumber,
-      UploadId: params.uploadId,
-    };
-    // Upload chunk
-    const uploadData = await this.s3.uploadPart(partUploadParams).promise();
-    return {
-      ETag: uploadData.ETag,
-      PartNumber: params.partNumber,
-    };
-  }
-
-  async completeMultipartUpload(params: {
-    path: string;
-    uploadId: string;
-    completedPartList: CompletedPartList;
-  }): Promise<string> {
-    params.completedPartList.sort(
-      (partA, partB) => partA.PartNumber - partB.PartNumber,
-    );
-    const completedParams = {
-      Bucket: BUCKETS.WORKING_FILES,
-      Key: params.path,
-      UploadId: params.uploadId,
-      MultipartUpload: {
-        Parts: params.completedPartList,
-      },
-    };
-    // Finalize upload
-    const completedUploadData = await this.s3
-      .completeMultipartUpload(completedParams)
-      .promise();
-    return completedUploadData.Location;
-  }
-
-  async abortMultipartUpload(params: {
-    path: string;
-    uploadId: string;
-  }): Promise<void> {
-    const abortUploadParams = {
-      Bucket: BUCKETS.WORKING_FILES,
-      Key: params.path,
-      UploadId: params.uploadId,
-    };
-    await this.s3.abortMultipartUpload(abortUploadParams).promise();
   }
 
   /**

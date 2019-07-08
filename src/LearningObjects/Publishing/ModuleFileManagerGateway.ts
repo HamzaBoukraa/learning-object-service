@@ -1,9 +1,8 @@
-import { FileManagerAdapter } from '../../FileManager/adapters/FileManagerAdapter';
-import { FileUpload } from '../../FileManager/interfaces/FileManager';
-import { FileManagerGateway } from '../../FileMetadata/interfaces/FileManagerGateway';
+import { FileManagerModule } from '../../FileManager/FileManagerModule';
+import { FileManagerGateway } from './FileManagerGateway';
+import { FileUpload } from '../../shared/types';
 
-export class ModuleFileManagerGateway extends FileManagerGateway {
-    private adapter: FileManagerAdapter = FileManagerAdapter.getInstance();
+export class ModuleFileManagerGateway implements FileManagerGateway {
 
   /**
    * @inheritdoc
@@ -15,7 +14,7 @@ export class ModuleFileManagerGateway extends FileManagerGateway {
     uploadFile(params: {
         file: FileUpload,
     }) {
-        return this.adapter.uploadFile({
+        return FileManagerModule.uploadFile({
             file: params.file,
         });
     }

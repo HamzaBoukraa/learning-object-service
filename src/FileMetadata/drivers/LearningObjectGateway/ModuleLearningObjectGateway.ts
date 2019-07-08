@@ -4,7 +4,7 @@ import {
   LearningObjectSummary,
   LearningObjectFile,
 } from '../../typings';
-import { LearningObjectAdapter } from '../../../LearningObjects/LearningObjectAdapter';
+import { LearningObjectAdapter } from '../../../LearningObjects/adapters/LearningObjectAdapter';
 import { UserToken } from '../../../shared/types';
 import { LearningObject } from '../../../shared/entity';
 

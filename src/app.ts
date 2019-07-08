@@ -3,20 +3,20 @@ import * as http from 'http';
 import * as express from 'express';
 import { reportError } from './shared/SentryConnector';
 
-import { MongoDriver, S3Driver, ExpressDriver } from './drivers/drivers';
+import { MongoDriver, ExpressDriver } from './drivers/drivers';
 import {
-  FileManager,
   LibraryCommunicator,
   DataStore,
 } from './shared/interfaces/interfaces';
 import { LibraryDriver } from './drivers/LibraryDriver';
 import { MongoConnector } from './shared/Mongo/MongoConnector';
-import { LearningObjectAdapter } from './LearningObjects/LearningObjectAdapter';
+import { LearningObjectAdapter } from './LearningObjects/adapters/LearningObjectAdapter';
 import { LearningObjectSearch } from './LearningObjectSearch';
 import { HierarchyAdapter } from './LearningObjects/Hierarchy/HierarchyAdapter';
-import { FileManagerAdapter } from './FileManager/adapters/FileManagerAdapter';
 import { BundlerModule } from './LearningObjects/Publishing/Bundler/BundlerModule';
 import { FileMetadata } from './FileMetadata';
+import { FileManagerModule } from './FileManager/FileManagerModule';
+import { LearningObjectsModule } from './LearningObjects/LearningObjectsModule';
 
 // ----------------------------------------------------------------------------------
 // Initializations
@@ -48,7 +48,6 @@ switch (process.env.NODE_ENV) {
   default:
     break;
 }
-const fileManager: FileManager = new S3Driver();
 const library: LibraryCommunicator = new LibraryDriver();
 let dataStore: DataStore;
 
@@ -71,7 +70,7 @@ async function startApp() {
     await MongoConnector.open(dburi);
     dataStore = await MongoDriver.build(dburi);
     initModules();
-    const app = ExpressDriver.build(dataStore, fileManager, library);
+    const app = ExpressDriver.build(dataStore, library);
     startHttpServer(app);
   } catch (e) {
     reportError(e);
@@ -83,9 +82,10 @@ async function startApp() {
  */
 function initModules() {
   HierarchyAdapter.open(dataStore);
-  LearningObjectAdapter.open(dataStore, fileManager, library);
+  LearningObjectAdapter.open(dataStore, library);
+  LearningObjectsModule.initialize();
   LearningObjectSearch.initialize();
-  FileManagerAdapter.open();
+  FileManagerModule.initialize();
   BundlerModule.initialize();
   FileMetadata.initialize();
 }

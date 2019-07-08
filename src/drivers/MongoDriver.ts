@@ -26,7 +26,7 @@ import {
 import { LearningObjectStatStore } from '../LearningObjectStats/LearningObjectStatStore';
 import { LearningObjectStats } from '../LearningObjectStats/LearningObjectStatsInteractor';
 import { lengths } from '@cyber4all/clark-taxonomy';
-import { LearningObjectDataStore } from '../LearningObjects/LearningObjectDatastore';
+import { LearningObjectDataStore } from '../LearningObjects/drivers/LearningObjectDatastore';
 import { ChangeLogDocument } from '../shared/types/changelog';
 import { ChangelogDataStore } from '../Changelogs/ChangelogDatastore';
 import {
@@ -827,71 +827,6 @@ export class MongoDriver implements DataStore {
     return await this.changelogStore.fetchAllChangelogs({
       learningObjectId: params.learningObjectId,
     });
-  }
-
-  /**
-   * Updates or inserts LearningObjectFile into learning object's files array
-   *
-   * @param {{
-   *     id: string;
-   *     loFile: LearningObjectFile;
-   *   }} params
-   * @returns {Promise<void>}
-   * @memberof MongoDriver
-   */
-  public async addToFiles(params: {
-    id: string;
-    loFile: LearningObject.Material.File;
-  }): Promise<string> {
-    try {
-      const existingDoc = await this.db
-        .collection(COLLECTIONS.LEARNING_OBJECTS)
-        .findOneAndUpdate(
-          { _id: params.id, 'materials.files.url': params.loFile.url },
-          {
-            $set: {
-              'materials.files.$[element].date': params.loFile.date,
-              'materials.files.$[element].size': params.loFile.size,
-              'materials.files.$[element].packageable':
-                params.loFile.packageable,
-            },
-          },
-          {
-            arrayFilters: [{ 'element.url': params.loFile.url }],
-            projection: { _id: 0, 'materials.files.$': 1 },
-          },
-        );
-      if (!existingDoc.value) {
-        params.loFile.id = new ObjectID().toHexString();
-        await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).updateOne(
-          {
-            _id: params.id,
-          },
-          { $push: { 'materials.files': params.loFile } },
-        );
-      } else {
-        const materials = existingDoc.value.materials;
-        const file = materials.files[0];
-        params.loFile.id = file.id;
-      }
-      return params.loFile.id;
-    } catch (e) {
-      return Promise.reject(e);
-    }
-  }
-
-  public async removeFromFiles(params: {
-    objectId: string;
-    fileId: string;
-  }): Promise<void> {
-    await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).updateOne(
-      { _id: params.objectId },
-      {
-        $pull: {
-          'materials.files': { id: params.fileId },
-        },
-      },
-    );
   }
 
   /**
@@ -1736,32 +1671,6 @@ export class MongoDriver implements DataStore {
     }
   }
 
-
-  async updateFileDescription(params: {
-    learningObjectId: string;
-    fileId: string;
-    description: string;
-  }): Promise<LearningObject.Material.File> {
-    try {
-      await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).findOneAndUpdate(
-        { _id: params.learningObjectId, 'materials.files.id': params.fileId },
-        {
-          $set: {
-            'materials.files.$[element].description': params.description,
-          },
-        },
-        // @ts-ignore: arrayFilters is in fact a property defined by documentation. Property does not exist in type definition.
-        { arrayFilters: [{ 'element.id': params.fileId }] },
-      );
-      return this.findSingleFile({
-        learningObjectId: params.learningObjectId,
-        fileId: params.fileId,
-      });
-    } catch (e) {
-      return Promise.reject(e);
-    }
-  }
-
   /**
    * Builds query object for Learning Object search
    *
@@ -1803,39 +1712,6 @@ export class MongoDriver implements DataStore {
       });
     }
     return query;
-  }
-
-  async findSingleFile(params: {
-    learningObjectId: string;
-    fileId: string;
-  }): Promise<LearningObject.Material.File> {
-    try {
-      const doc = await this.db
-        .collection(COLLECTIONS.LEARNING_OBJECTS)
-        .findOne(
-          {
-            _id: params.learningObjectId,
-            'materials.files': {
-              $elemMatch: { id: params.fileId },
-            },
-          },
-          {
-            projection: {
-              _id: 0,
-              'materials.files.$': 1,
-            },
-          },
-        );
-      if (doc) {
-        const materials = doc.materials;
-
-        // Object contains materials property.
-        // Files array within materials will alway contain one element
-        return materials.files[0];
-      }
-    } catch (e) {
-      return Promise.reject(e);
-    }
   }
 
   /**

@@ -3,7 +3,7 @@ import {
   FileUpload,
   CompletedPart,
   CompletedPartList,
-} from '../typings/file-manager';
+} from '../typings';
 
 export abstract class FileManager {
 
@@ -55,13 +55,39 @@ export abstract class FileManager {
     path: string;
   }): Promise<void>;
 
+  /**
+   * Returns a readable stream given a file path
+   *
+   * @abstract
+   * @param {path string} params
+   * @returns {Readabale}
+   * @memberof FileManager
+   */
   abstract streamFile(params: {
     path: string;
   }): Readable;
 
+  /**
+   * Returns a readable stream for a file of
+   * a working copy Learning Object
+   *
+   * @abstract
+   * @param {path string} params
+   * @returns {Readabale}
+   * @memberof FileManager
+   */
   abstract streamWorkingCopyFile(params: {
     path: string;
   }): Readable;
 
+  /**
+   * Determines if the requester is authorized
+   * to manipulate the file at the given path
+   *
+   * @abstract
+   * @param {path string} params
+   * @returns {Promise<boolean>}
+   * @memberof FileManager
+   */
   abstract hasAccess(path: string): Promise<boolean>;
 }

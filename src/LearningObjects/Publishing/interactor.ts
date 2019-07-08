@@ -4,9 +4,13 @@ import { UserToken } from '../../shared/types';
 import { ReleaseEmailGateway } from './ReleaseEmails/release-email-gateway';
 import { HierarchyAdapter } from '../Hierarchy/HierarchyAdapter';
 import { bundleLearningObject } from './Bundler/Interactor';
-import { FileManagerAdapter } from '../../FileManager';
 import { requesterIsAdminOrEditor } from '../../shared/AuthorizationManager';
 import { reportError } from '../../shared/SentryConnector';
+import { ModuleFileManagerGateway } from './ModuleFileManagerGateway';
+
+namespace Gateways {
+    export const fileManager = () => new ModuleFileManagerGateway();
+}
 
 export interface PublishingDataStore {
     addToReleased(releasableObject: LearningObject): Promise<void>;
@@ -57,7 +61,7 @@ async function createPublishingArtifacts(releasableObject: LearningObject, userT
         learningObject: releasableObject,
         requesterUsername: userToken.username,
     });
-    await FileManagerAdapter.getInstance().uploadFile({
+    await Gateways.fileManager().uploadFile({
         file: {
             // TODO: Should this be moved to the File Manager?
             path: `${storagePrefix}/bundle.zip`,

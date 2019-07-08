@@ -1,9 +1,8 @@
-import { DataStore } from '../shared/interfaces/DataStore';
-import { LearningObject } from '../shared/entity';
+import { DataStore } from '../../shared/interfaces/DataStore';
+import { LearningObject } from '../../shared/entity';
 import {
-  FileManager,
   LibraryCommunicator,
-} from '../shared/interfaces/interfaces';
+} from '../../shared/interfaces/interfaces';
 import {
   updateReadme,
   getLearningObjectById,
@@ -14,9 +13,9 @@ import {
   getReleasedFile,
   getReleasedFiles,
   updateObjectLastModifiedDate,
-} from './LearningObjectInteractor';
-import { UserToken, LearningObjectSummary } from '../shared/types';
-import { LearningObjectFilter } from './typings';
+} from '../LearningObjectInteractor';
+import { UserToken, LearningObjectSummary } from '../../shared/types';
+import { LearningObjectFilter } from '../typings';
 
 /**
  * FIXME: THe duplication of JSDoc comments here is not ideal, as it means a change
@@ -26,17 +25,14 @@ export class LearningObjectAdapter {
   private static _instance: LearningObjectAdapter;
   private constructor(
     private dataStore: DataStore,
-    private fileManager: FileManager,
     private library: LibraryCommunicator,
   ) {}
   static open(
     dataStore: DataStore,
-    fileManager: FileManager,
     library: LibraryCommunicator,
   ) {
     LearningObjectAdapter._instance = new LearningObjectAdapter(
       dataStore,
-      fileManager,
       library,
     );
   }
@@ -183,7 +179,6 @@ export class LearningObjectAdapter {
    * @static
    * @param {{
    *     dataStore: DataStore;
-   *     fileManager: FileManager;
    *     object?: LearningObject;
    *     id?: string;
    *   }} params
@@ -196,7 +191,6 @@ export class LearningObjectAdapter {
   }): Promise<void> {
     return updateReadme({
       dataStore: this.dataStore,
-      fileManager: this.fileManager,
       object: params.object,
       id: params.id,
     });

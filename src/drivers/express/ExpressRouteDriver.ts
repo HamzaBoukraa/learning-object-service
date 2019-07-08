@@ -1,13 +1,12 @@
 import {
   DataStore,
-  FileManager,
   LibraryCommunicator,
 } from '../../shared/interfaces/interfaces';
 import { Router } from 'express';
 import { LearningObjectInteractor } from '../../interactors/interactors';
 import * as LearningObjectStatsRouteHandler from '../../LearningObjectStats/LearningObjectStatsRouteHandler';
 import { UserToken } from '../../shared/types';
-import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
+import * as LearningObjectRouteHandler from '../../LearningObjects/adapters/LearningObjectRouteHandler';
 import { initializeCollectionRouter } from '../../Collections/RouteHandler';
 import {
   ResourceError,
@@ -25,15 +24,13 @@ export class ExpressRouteDriver {
   constructor(
     private dataStore: DataStore,
     private library: LibraryCommunicator,
-    private fileManager: FileManager,
   ) {}
 
   public static buildRouter(
     dataStore: DataStore,
     library: LibraryCommunicator,
-    fileManager: FileManager,
   ): Router {
-    const e = new ExpressRouteDriver(dataStore, library, fileManager);
+    const e = new ExpressRouteDriver(dataStore, library);
     const router: Router = Router();
     e.setRoutes(router);
     return router;
