@@ -1,10 +1,6 @@
 import 'dotenv/config';
 import { Bundler } from './Bundler';
-import {
-  LearningObject,
-  BundleData,
-  BundleExtension,
-} from './typings';
+import { LearningObject, BundleData, BundleExtension } from './typings';
 import { BundlerModule } from './BundlerModule';
 import { CCLicenseRetriever } from './CCLicenseRetriever';
 import { FileGateway } from './FileGateway';
@@ -64,10 +60,17 @@ async function buildBundleStructure({
     const [license, readMe, files, children] = await Promise.all([
       addCCLicense(prefix),
       addReadMe({
+        authorUsername: learningObject.author.username,
+        learningObjectId: learningObject.id,
         name: learningObject.materials.pdf.name,
         prefix,
       }),
-      addFiles({ files: learningObject.materials.files, prefix }),
+      addFiles({
+        authorUsername: learningObject.author.username,
+        learningObjectId: learningObject.id,
+        files: learningObject.materials.files,
+        prefix,
+      }),
       addChildren({
         children: learningObject.children,
         prefix,
@@ -95,38 +98,66 @@ async function addCCLicense(prefix: string = ''): Promise<BundleData> {
 /**
  * addReadMe creates a BundleData object that indicates the placement of a Learning Object's README file in the bundle.
  *
+ *  @param {string} authorUsername [The username of the Learning Object's author]
+ * @param {string} learningObjectId [The id of the Learning Object]
  * @param {string} name [Name of the ReadMe file]
  * @param {string} prefix [File path prefix (ie. fileName: 'World.txt', prefix: 'Hello' = filePath: 'Hello/World.txt')]
  * @returns {Promise<BundleData>}
  */
 async function addReadMe({
+  authorUsername,
+  learningObjectId,
   name,
   prefix = '',
 }: {
+  authorUsername: string;
+  learningObjectId: string;
   name: string;
   prefix?: string;
 }): Promise<BundleData> {
-  return { name, prefix, data: null };
+  return {
+    name,
+    prefix,
+    data: await Gateways.fileGateway().getFileStream({
+      authorUsername,
+      learningObjectId,
+      path: name,
+    }),
+  };
 }
 
 /**
  * addFiles iterates through a Learning Object's file metadata in order to create BundleData objects noting where to
  * place each file inside of the bundle.
  *
+ * @param {string} authorUsername [The username of the Learning Object's author]
+ * @param {string} learningObjectId [The id of the Learning Object]
  * @param {LearningObject.Material.File[]} files [List of file data from the Learning Object to get bundled];
  * @param {string}: prefix [File path prefix (ie. fileName: 'World.txt', prefix: 'Hello' = filePath: 'Hello/World.txt')]
  * @returns {Promise<BundleData[]>}
  */
 function addFiles({
+  authorUsername,
+  learningObjectId,
   files,
   prefix = '',
 }: {
+  authorUsername: string;
+  learningObjectId: string;
   files: LearningObject.Material.File[];
   prefix?: string;
 }): Promise<BundleData[]> {
   return Promise.all(
-    files.map(file => {
-      return { name: file.fullPath || file.name, prefix, data: null };
+    files.map(async file => {
+      return {
+        name: file.fullPath || file.name,
+        prefix,
+        data: await Gateways.fileGateway().getFileStream({
+          authorUsername,
+          learningObjectId,
+          path: file.fullPath || file.name,
+        }),
+      };
     }),
   );
 }
