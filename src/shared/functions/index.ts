@@ -132,7 +132,7 @@ export function mapAuthorToSummary(author: Partial<User>): AuthorSummary {
 }
 
 /**
- * Title cases string
+ * Capitalizes the first letter of each word in the provided string.
  *
  * @export
  * @param {string} text
