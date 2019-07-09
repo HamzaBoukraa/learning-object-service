@@ -186,21 +186,6 @@ function flattenDeep(array: Array<any>): any[] {
 }
 
 /**
- * Sanitizes file name by replacing invalid characters and restricting length
- *
- * @param {string} name
- * @returns {string}
- */
-function sanitizeFileName(name: string): string {
-  const MAX_CHAR = 250;
-  let clean = sanitizeInvalidChars(name);
-  if (clean.length > MAX_CHAR) {
-    clean = clean.slice(0, MAX_CHAR);
-  }
-  return clean;
-}
-
-/**
  * Replaces invalid file path characters with _ characters
  *
  * @param {string} path
