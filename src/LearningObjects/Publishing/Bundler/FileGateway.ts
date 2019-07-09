@@ -2,7 +2,7 @@ import { Readable } from 'stream';
 
 export abstract class FileGateway {
   /**
-   * Retrieves a Readable stream if a user's Learning Object's file
+   * Retrieves a Readable stream of a user's Learning Object's file
    *
    * @abstract
    * @param {string} authorUsername [The username of the Learning Object's author]
