@@ -229,7 +229,6 @@ export const expectedCuratorC5Response = {
             "hasRevision": false,
             "collection": "secinj",
             "contributors": [],
-            "children": [],
             "date": "1538513714059",
             "description": "<p>A prototype is an early sample, model, or release of a product built to test a concept or process or to act as a thing to be replicated or learned from. In this module, students will learn basic approaches to prototyping by building prototypes for a new Hue Bridge that supports users in making secure decisions. Students must work as a group to build a prototype of the device interface, the software interface, and the software functionality</p>\n",
             "length": "module",
