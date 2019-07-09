@@ -114,6 +114,14 @@ export async function deleteFolder({
 /**
  * Sends a file back to the caller as a readable stream.
  *
+ * The function fetches the Learning object summary.
+ * An error is thrown if the summary is not returned.
+ * After the Learning Object summary is  returned, the filter is
+ * used to retrieve the appropriate file metadata.
+ * Finally, the function calls the FileManager and ensures that it
+ * has access to the requested resource. If it does, then the file stream is opened.
+ * An error is thrown otherwise.
+ *
  * @param params.learningObjectId the identifier of the Learning Object that the file belongs to
  * @param params.fileId the identifier of the file to be downloaded
  * @param params.dataStore the gateway for data operations
