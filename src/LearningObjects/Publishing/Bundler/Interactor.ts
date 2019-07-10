@@ -67,7 +67,6 @@ function buildBundleStructure({
     const [license, readMe, files, children] = [
       addCCLicense(prefix),
       addReadMe({
-        uri: learningObject.materials.pdf.url,
         name: learningObject.materials.pdf.name,
         prefix,
       }),
@@ -96,21 +95,18 @@ function addCCLicense(prefix: string = ''): BundleData {
 /**
  * addReadMe creates a BundleData object that indicates the placement of a Learning Object's README file in the bundle.
  *
- * @param {string} uri [URI of the ReadMe file]
  * @param {string} name [Name of the ReadMe file]
  * @param {string} prefix [File path prefix (ie. fileName: 'World.txt', prefix: 'Hello' = filePath: 'Hello/World.txt')]
  * @returns {Promise<BundleData>}
  */
 function addReadMe({
-  uri,
   name,
   prefix = '',
 }: {
-  uri: string;
   name: string;
   prefix?: string;
 }): BundleData {
-  return { name, prefix, uri };
+  return { name, prefix, uri: null };
 }
 
 /**

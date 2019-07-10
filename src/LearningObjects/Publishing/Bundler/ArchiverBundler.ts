@@ -1,5 +1,5 @@
 import { Bundler } from './Bundler';
-import { Writable, BundleData, BundleExtension, Readable } from './typings';
+import { BundleData, BundleExtension, Readable } from './typings';
 import { create, Archiver } from 'archiver';
 import * as https from 'https';
 
@@ -83,7 +83,7 @@ export class ArchiverBundler implements Bundler {
    */
   fetchReadableStream(uri: string): Promise<Readable> {
     return new Promise((resolve, reject) => {
-      https.get(uri, (response) => {
+      https.get(uri, response => {
         resolve(response);
       });
     });

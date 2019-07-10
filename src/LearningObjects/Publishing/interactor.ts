@@ -4,12 +4,23 @@ import { UserToken } from '../../shared/types';
 import { ReleaseEmailGateway } from './ReleaseEmails/release-email-gateway';
 import { HierarchyAdapter } from '../Hierarchy/HierarchyAdapter';
 import { bundleLearningObject } from './Bundler/Interactor';
-import { FileManagerAdapter } from '../../FileManager';
 import { requesterIsAdminOrEditor } from '../../shared/AuthorizationManager';
 import { reportError } from '../../shared/SentryConnector';
+import { LearningObjectsModule } from '../LearningObjectsModule';
+import { FileManagerGateway } from './FileManagerGateway';
+import { FileManagerGateway as FileManagerInjectionKey } from '../interfaces/FileManagerGateway';
+
+// FIXME: The Publishing Module was setup as a sub-module of LearningObjectsModule,
+// should it be able to resolve dependencies from the parent LearningObjectsModule or should it declare its own dependencies?
+namespace Gateways {
+  export const fileManager = () =>
+    LearningObjectsModule.resolveDependency(
+      FileManagerInjectionKey,
+    ) as FileManagerGateway;
+}
 
 export interface PublishingDataStore {
-    addToReleased(releasableObject: LearningObject): Promise<void>;
+  addToReleased(releasableObject: LearningObject): Promise<void>;
 }
 
 /**
@@ -25,22 +36,32 @@ export interface PublishingDataStore {
  * An email will only be sent to the Learning Object author if the
  * Learning Object being released is a top-level (parent) object.
  */
-export async function releaseLearningObject({ userToken, dataStore, releasableObject, releaseEmailGateway }: {
-    userToken: UserToken,
-    dataStore: PublishingDataStore;
-    releasableObject: LearningObject;
-    releaseEmailGateway: ReleaseEmailGateway,
+export async function releaseLearningObject({
+  userToken,
+  dataStore,
+  releasableObject,
+  releaseEmailGateway,
+}: {
+  userToken: UserToken;
+  dataStore: PublishingDataStore;
+  releasableObject: LearningObject;
+  releaseEmailGateway: ReleaseEmailGateway;
 }): Promise<void> {
-    if (!requesterIsAdminOrEditor(userToken)) {
-        throw new ResourceError(`${userToken.username} does not have access to release this Learning Object`, ResourceErrorReason.INVALID_ACCESS);
-    }
-    try {
-        await createPublishingArtifacts(releasableObject, userToken);
-    } catch (e) {
-        reportError(e);
-    }
-    await dataStore.addToReleased(releasableObject);
-    await sendEmail(releasableObject, userToken, releaseEmailGateway);
+  if (!requesterIsAdminOrEditor(userToken)) {
+    throw new ResourceError(
+      `${
+        userToken.username
+      } does not have access to release this Learning Object`,
+      ResourceErrorReason.INVALID_ACCESS,
+    );
+  }
+  try {
+    await createPublishingArtifacts(releasableObject, userToken);
+  } catch (e) {
+    reportError(e);
+  }
+  await dataStore.addToReleased(releasableObject);
+  await sendEmail(releasableObject, userToken, releaseEmailGateway);
 }
 
 /**
@@ -52,25 +73,30 @@ export async function releaseLearningObject({ userToken, dataStore, releasableOb
  * @param releasableObject the Learning Object to create artifacts for
  * @param userToken the user who has requested to publish a Learning Object
  */
-async function createPublishingArtifacts(releasableObject: LearningObject, userToken: UserToken) {
-    const storagePrefix = `${releasableObject.author.username}/${releasableObject.id}`;
-    FileManagerAdapter.getInstance().uploadFile({
-        file: {
-            path: `${storagePrefix}/meta.json`,
-            data: JSON.stringify(releasableObject.toPlainObject()),
-        },
-    });
-    const bundle = await bundleLearningObject({
-        learningObject: releasableObject,
-        requesterUsername: userToken.username,
-    });
-    await FileManagerAdapter.getInstance().uploadFile({
-        file: {
-            // TODO: Should this be moved to the File Manager?
-            path: `${storagePrefix}/bundle.zip`,
-            data: bundle,
-        },
-    });
+async function createPublishingArtifacts(
+  releasableObject: LearningObject,
+  userToken: UserToken,
+) {
+  Gateways.fileManager().uploadFile({
+    authorUsername: releasableObject.author.username,
+    learningObjectId: releasableObject.id,
+    file: {
+      path: 'meta.json',
+      data: JSON.stringify(releasableObject.toPlainObject()),
+    },
+  });
+  const bundle = await bundleLearningObject({
+    learningObject: releasableObject,
+    requesterUsername: userToken.username,
+  });
+  await Gateways.fileManager().uploadFile({
+    authorUsername: releasableObject.author.username,
+    learningObjectId: releasableObject.id,
+    file: {
+      path: 'bundle.zip',
+      data: bundle,
+    },
+  });
 }
 
 /**
@@ -81,18 +107,24 @@ async function createPublishingArtifacts(releasableObject: LearningObject, userT
  * @param userToken the user who triggered the release
  * @param releaseEmailGateway the Gateway that makes the API calls to send release emails
  */
-async function sendEmail(releasableObject: LearningObject, userToken: UserToken, releaseEmailGateway: ReleaseEmailGateway) {
-    const isTopLevelObject = await HierarchyAdapter.getInstance().isTopLevelLearningObject({
-        learningObjectID: releasableObject.id,
-        userToken,
+async function sendEmail(
+  releasableObject: LearningObject,
+  userToken: UserToken,
+  releaseEmailGateway: ReleaseEmailGateway,
+) {
+  const isTopLevelObject = await HierarchyAdapter.getInstance().isTopLevelLearningObject(
+    {
+      learningObjectID: releasableObject.id,
+      userToken,
+    },
+  );
+  if (isTopLevelObject) {
+    releaseEmailGateway.invokeReleaseNotification({
+      learningObjectName: releasableObject.name,
+      authorName: releasableObject.author.name,
+      collection: releasableObject.collection,
+      authorEmail: releasableObject.author.email,
+      username: releasableObject.author.username,
     });
-    if (isTopLevelObject) {
-        releaseEmailGateway.invokeReleaseNotification({
-            learningObjectName: releasableObject.name,
-            authorName: releasableObject.author.name,
-            collection: releasableObject.collection,
-            authorEmail: releasableObject.author.email,
-            username: releasableObject.author.username,
-        });
-    }
+  }
 }

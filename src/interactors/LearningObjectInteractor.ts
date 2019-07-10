@@ -1,17 +1,13 @@
 // @ts-ignore
 import * as stopword from 'stopword';
 import { reportError } from '../shared/SentryConnector';
-import { processMultipartUpload } from '../FileManager/FileInteractor';
 import { sanitizeObject, sanitizeText } from '../shared/functions';
 import {
   LearningObjectQuery,
   QueryCondition,
-  ParentLearningObjectQuery,
 } from '../shared/interfaces/DataStore';
-import { DZFile, FileUpload } from '../shared/interfaces/FileManager';
 import {
   DataStore,
-  FileManager,
   LibraryCommunicator,
 } from '../shared/interfaces/interfaces';
 import {
@@ -37,11 +33,13 @@ import {
   ServiceErrorReason,
 } from '../shared/errors';
 import { LearningObject } from '../shared/entity';
-import { accessGroups } from '../shared/types/user-token';
-import { FileMetadata } from '../FileMetadata';
+import { LearningObjectsModule } from '../LearningObjects/LearningObjectsModule';
+import { FileMetadataGateway } from '../LearningObjects/interfaces';
 
-// file size is in bytes
-const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
+namespace Gateways {
+  export const fileMetadata = () =>
+    LearningObjectsModule.resolveDependency(FileMetadataGateway);
+}
 
 export const LearningObjectState = {
   UNRELEASED: [
@@ -104,7 +102,6 @@ export class LearningObjectInteractor {
 
       const formattedQuery = this.formatSearchQuery(query);
       let { status, orderBy, sortType, text } = formattedQuery;
-
 
       // This will throw an error if there is no user with that username
       await dataStore.findUser(username);
@@ -255,7 +252,7 @@ export class LearningObjectInteractor {
           learningObjectName,
           userToken,
         });
-        }
+      }
 
       return learningObject;
     } catch (e) {
@@ -578,130 +575,6 @@ export class LearningObjectInteractor {
   }
 
   /**
-   * Uploads a file and adds its metadata to the LearningObject's materials.
-   *
-   * @static
-   * @param {{
-   *     dataStore: DataStore,
-   *     fileManager: FileManager,
-   *     id: string,
-   *     username: string,
-   *     file: DZFile
-   *   }} params
-   * @returns {Promise<LearningObject.Material.File>}
-   */
-  public static async uploadFile(params: {
-    dataStore: DataStore;
-    fileManager: FileManager;
-    id: string;
-    username: string;
-    file: DZFile;
-    uploadId: string;
-  }): Promise<LearningObject.Material.File> {
-    try {
-      let loFile: LearningObject.Material.File;
-      const uploadPath = `${params.username}/${params.id}/${
-        params.file.fullPath ? params.file.fullPath : params.file.name
-      }`;
-      const fileUpload: FileUpload = {
-        path: uploadPath,
-        data: params.file.buffer,
-      };
-      const hasChunks = +params.file.dztotalchunkcount;
-      if (hasChunks) {
-        // Process Multipart
-        await processMultipartUpload({
-          dataStore: params.dataStore,
-          fileManager: params.fileManager,
-          file: params.file,
-          uploadId: params.uploadId,
-          fileUpload,
-        });
-      } else {
-        // Regular upload
-        const url = await params.fileManager.upload({ file: fileUpload });
-        loFile = this.generateLearningObjectFile(params.file, url);
-      }
-      // If LearningObject.Material.File was generated, update LearningObject's materials
-      if (loFile) {
-        // FIXME should be implemented in clark entity
-        // @ts-ignore
-        loFile.size = params.file.size;
-        await this.updateMaterials({
-          loFile,
-          dataStore: params.dataStore,
-          id: params.id,
-        });
-      }
-      return loFile;
-    } catch (e) {
-      handleError(e);
-    }
-  }
-
-  /**
-   * Adds File metadata to Learning Object materials
-   *
-   * @static
-   * @param {DataStore} params.dataStore
-   * @param {string} params.id the Learning Object identifier.
-   * @param params.fileMeta the file metadata.
-   * @param {string} params.url the URL for accessing the file.
-   * @returns {Promise<void>}
-   */
-  public static async addFileMeta(params: {
-    dataStore: DataStore;
-    id: string;
-    fileMeta: any;
-    url: string;
-  }): Promise<void> {
-    try {
-      let loFile: LearningObject.Material.File = this.generateLearningObjectFile(
-        params.fileMeta,
-        params.url,
-      );
-      await this.updateMaterials({
-        loFile,
-        dataStore: params.dataStore,
-        id: params.id,
-      });
-    } catch (e) {
-      handleError(e);
-    }
-  }
-
-  /**
-   * Inserts metadata for file as LearningObject.Material.File
-   *
-   * @private
-   * @static
-   * @param {{
-   *     dataStore: DataStore,
-   *     id: string,
-   *     loFile: LearningObject.Material.File,
-   *   }} params
-   * @returns {Promise<void>}
-   */
-  private static async updateMaterials(params: {
-    dataStore: DataStore;
-    id: string;
-    loFile: LearningObject.Material.File;
-  }): Promise<void> {
-    try {
-      await params.dataStore.addToFiles({
-        id: params.id,
-        loFile: params.loFile,
-      });
-      await updateObjectLastModifiedDate({
-        dataStore: params.dataStore,
-        id: params.id,
-      });
-    } catch (e) {
-      handleError(e);
-    }
-  }
-
-  /**
    * Returns a Learning Object's Id by author's username and Learning Object's name
    * Will attempt to find released and unreleased object's id if authorized
    *
@@ -736,14 +609,8 @@ export class LearningObjectInteractor {
       }) as boolean;
       const isPrivileged =
         userToken && requesterIsPrivileged(<UserToken>userToken);
-      const isService = hasServiceLevelAccess(
-        userToken as ServiceToken,
-      );
-      const authorizationCases = [
-        isAuthor,
-        isPrivileged,
-        isService,
-      ];
+      const isService = hasServiceLevelAccess(userToken as ServiceToken);
+      const authorizationCases = [isAuthor, isPrivileged, isService];
 
       let learningObjectID = await this.getReleasedLearningObjectIdByAuthorAndName(
         {
@@ -795,21 +662,18 @@ export class LearningObjectInteractor {
    * @returns {Promise<void>}
    * @memberof LearningObjectInteractor
    */
-  public static async deleteMultipleLearningObjects(params: {
+  public static async deleteMultipleLearningObjects({
+    dataStore,
+    library,
+    learningObjectNames,
+    user,
+  }: {
     dataStore: DataStore;
-    fileManager: FileManager;
     library: LibraryCommunicator;
     learningObjectNames: string[];
     user: UserToken;
   }): Promise<void> {
     try {
-      const {
-        dataStore,
-        fileManager,
-        library,
-        learningObjectNames,
-        user,
-      } = params;
       const hasAccess = await hasMultipleLearningObjectWriteAccesses(
         user,
         dataStore,
@@ -848,21 +712,16 @@ export class LearningObjectInteractor {
       await library.cleanObjectsFromLibraries(objectIds);
       await Promise.all(
         objectRefs.map(ref =>
-          FileMetadata.deleteAllFileMetadata({
-            requester: params.user,
+          Gateways.fileMetadata().deleteAllFileMetadata({
+            requester: user,
             learningObjectId: ref.id,
           }),
         ),
-      ).catch(reportError);
+      );
       // Delete objects from datastore
       await dataStore.deleteMultipleLearningObjects(objectIds);
       // For each object id
       objectRefs.forEach(async obj => {
-        // Attempt to delete files
-        const path = `${user.username}/${obj.id}/`;
-        fileManager.deleteAll({ path }).catch(e => {
-          reportError(e);
-        });
         // Update parents' dates
         updateParentsDate({
           dataStore,
@@ -1330,51 +1189,6 @@ export class LearningObjectInteractor {
       .join(' ')
       .trim();
     return text;
-  }
-
-  /**
-   * Generates new LearningObject.Material.File Object
-   *
-   * @private
-   * @param {DZFile} file
-   * @param {string} url
-   * @returns
-   */
-  private static generateLearningObjectFile(
-    file: DZFile,
-    url: string,
-  ): LearningObject.Material.File {
-    const extMatch = file.name.match(/(\.[^.]*$|$)/);
-    const extension = extMatch ? extMatch[0] : '';
-    const date = Date.now().toString();
-
-    const learningObjectFile: Partial<LearningObject.Material.File> = {
-      url,
-      date,
-      name: file.name,
-      fileType: file.mimetype,
-      extension: extension,
-      fullPath: file.fullPath,
-      size: file.dztotalfilesize ? file.dztotalfilesize : file.size,
-      packageable: this.isPackageable(file),
-    };
-
-    // Sanitize object. Remove undefined or null values
-    const keys = Object.keys(learningObjectFile);
-    for (const key of keys) {
-      const prop = learningObjectFile[key];
-      if (!prop && prop !== 0) {
-        delete learningObjectFile[key];
-      }
-    }
-
-    return learningObjectFile as LearningObject.Material.File;
-  }
-
-  private static isPackageable(file: DZFile) {
-    // if dztotalfilesize doesn't exist it must not be a chunk upload.
-    // this means by default it must be a packageable file size
-    return !(file.dztotalfilesize > MAX_PACKAGEABLE_FILE_SIZE);
   }
 }
 

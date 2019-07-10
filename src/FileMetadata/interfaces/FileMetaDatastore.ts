@@ -84,5 +84,5 @@ export abstract class FileMetaDatastore {
    * @param {string} learningObjectId [Id of the Learning Object]
    * @returns {Promise<void>}
    */
-  abstract deleteAllFileMeta(learningObjectId: string): Promise<void>;
+  abstract deleteAllFileMetadata(learningObjectId: string): Promise<void>;
 }

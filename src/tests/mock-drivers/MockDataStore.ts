@@ -5,11 +5,6 @@ import {
   ParentLearningObjectQuery,
 } from '../../shared/interfaces/DataStore';
 import {
-  MultipartFileUploadStatus,
-  MultipartFileUploadStatusUpdates,
-  CompletedPart,
-} from '../../shared/interfaces/FileManager';
-import {
   LearningObjectUpdates,
   LearningObjectSummary,
 } from '../../shared/types';
@@ -393,30 +388,6 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
     loFile: LearningObject.Material.File;
   }): Promise<string> {
     return Promise.resolve('');
-  }
-
-  insertMultipartUploadStatus(params: {
-    status: MultipartFileUploadStatus;
-  }): Promise<void> {
-    return Promise.resolve();
-  }
-
-  fetchMultipartUploadStatus(params: {
-    id: string;
-  }): Promise<MultipartFileUploadStatus> {
-    return Promise.resolve(this.stubs.uploadStatus);
-  }
-
-  updateMultipartUploadStatus(params: {
-    id: string;
-    updates: MultipartFileUploadStatusUpdates;
-    completedPart: CompletedPart;
-  }): Promise<void> {
-    return Promise.resolve();
-  }
-
-  deleteMultipartUploadStatus(params: { id: string }): Promise<void> {
-    return Promise.resolve();
   }
 
   addToCollection(learningObjectId: string, collection: string): Promise<void> {
