@@ -1,6 +1,7 @@
 import { Readable } from 'stream';
+import { FileManagerModule } from '../../../FileManager/FileManagerModule';
 
-export abstract class FileGateway {
+export abstract class FileGateway implements Partial<FileManagerModule> {
   /**
    * Retrieves a Readable stream of a user's Learning Object's file
    *

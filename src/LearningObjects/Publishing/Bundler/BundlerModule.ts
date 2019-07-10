@@ -4,13 +4,13 @@ import { Bundler } from './Bundler';
 import { LicenseRetriever } from './LicenseRetriever';
 import { HttpLicenseRetriever } from './HttpLicenseRetriever';
 import { FileGateway } from './FileGateway';
-import { ModuleFileGateway } from './ModuleFileGateway';
+import { FileManagerModule } from '../../../FileManager/FileManagerModule';
 
 @serviceModule({
   providers: [
     { provide: Bundler, useClass: ArchiverBundler },
     { provide: LicenseRetriever, useClass: HttpLicenseRetriever },
-    { provide: FileGateway, useClass: ModuleFileGateway },
+    { provide: FileGateway, useClass: FileManagerModule },
   ],
 })
 export class BundlerModule extends ServiceModule {}
