@@ -70,6 +70,14 @@ async function createPublishingArtifacts(
   releasableObject: LearningObject,
   userToken: UserToken,
 ) {
+  Gateways.fileManager().uploadFile({
+    authorUsername: releasableObject.author.username,
+    learningObjectId: releasableObject.id,
+    file: {
+      path: 'meta.json',
+      data: JSON.stringify(releasableObject.toPlainObject()),
+    },
+  });
   const bundle = await bundleLearningObject({
     learningObject: releasableObject,
     requesterUsername: userToken.username,
