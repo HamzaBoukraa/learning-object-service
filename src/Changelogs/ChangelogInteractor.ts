@@ -71,15 +71,33 @@ export async function getRecentChangelog(params: {
 }
 
 /**
- * Handles whether all the change logs or if the change logs
- * created before a given date are fetched for a specified learning object.
+ * Returns change logs for a given Learning Objecg
+ *
+ * This function considers four cases
+ * 1. If Learning Object is released and does not have a
+ * revision, then fetch all change logs
+ * 2. If Learning Object has never been
+ * released (no revision), then check user role.
+ *  If requester is privileged, then fetch all change logs
+ * 3. If released Learning Object has a revision,
+ * but the requester is looking at the released copy,
+ * fetch all change logs before last updated date on the released copy
+ * 4. If released Learning Object has revision,
+ * and the user is looking at the revision copy, check role,
+ * if the requester is privileged, fetch all change logs.
  *
  * @param {DataStore} dataStore An instance of DataStore
  * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
  * @param {string} userId The id of learning object author
  * @param {UserToken} user information about the requester
- * @param {string} date The date the changelog was created
- *
+ * @param {optional parameter - boolean} recent if true, return only the most recent
+ * change log document that is relevant to the above cases. If this parameter is used,
+ * the return type of this function will change to ChangeLogDocument instead of
+ * ChangeLogDocument[]
+ * @param {optional parameter - boolean} minusRevision if true, the function will
+ * return all change logs that are relevant to the released copy of the specified Learning
+ * Object. This excludes all change logs that were created after the date property on the
+ * Release copy.
  * @returns {ChangeLogDocument[]}
  */
 export async function getChangelogs(params: {
@@ -87,9 +105,9 @@ export async function getChangelogs(params: {
   learningObjectId: string,
   userId: string,
   user: UserToken,
-  date?: string,
+  recent: boolean,
   minusRevision?: boolean,
-}): Promise<ChangeLogDocument[]> {
+}): Promise<ChangeLogDocument[] | ChangeLogDocument> {
   const learningObject = await validateReadRequest({
     dataStore: params.dataStore,
     learningObjectId: params.learningObjectId,
@@ -102,9 +120,15 @@ export async function getChangelogs(params: {
     // released. Return all change logs for this Learning Object
     // for all logged in users.
     if (learningObject.status === LearningObject.Status.RELEASED) {
-      return await params.dataStore.fetchAllChangelogs({
-        learningObjectId: params.learningObjectId,
-      });
+      if (params.recent) {
+        return await params.dataStore.fetchRecentChangelog({
+          learningObjectId: params.learningObjectId,
+        });
+      } else {
+        return await params.dataStore.fetchAllChangelogs({
+          learningObjectId: params.learningObjectId,
+        });
+      }
     // The Learning Object does not have any revisions and is
     // not released. Return all change logs for this Learning Object
     // for admins, editors, and Learning Object author.
@@ -114,17 +138,33 @@ export async function getChangelogs(params: {
         dataStore: params.dataStore,
         learningObjectId: params.learningObjectId,
       });
-      return await params.dataStore.fetchAllChangelogs({
-        learningObjectId: params.learningObjectId,
-      });
+      if (params.recent) {
+        return await params.dataStore.fetchRecentChangelog({
+          learningObjectId: params.learningObjectId,
+        });
+      } else {
+        return await params.dataStore.fetchAllChangelogs({
+          learningObjectId: params.learningObjectId,
+        });
+      }
     }
   // The Learning Object does have revisions
   } else {
     // The Learning Object does have revisions and the requester asked
     // for all change logs that are relevant to the released copy.
     if (params.minusRevision) {
-      // LearningObjectGateway.getReleasedLearningObjectSummary()
-      // return await params.dataStore.fetchChangelogsBeforeDate({ learningObjectId: params.learningObjectId, date: params.date });
+       // LearningObjectGateway.getReleasedLearningObjectSummary()
+      if (params.recent) {
+      // return await params.dataStore.fetchRecentChangelogBeforeDate({
+      //  learningObjectId: params.learningObjectId,
+      //  date: params.date,
+      // });
+      } else {
+      // return await params.dataStore.fetchChangelogsBeforeDate({
+      //  learningObjectId: params.learningObjectId,
+      //  date: params.date,
+      // });
+      }
     // The Learning Object does have revisions and the requester asked
     // for all change logs for the Learning Object
     // (including those relevant to revisions)
@@ -134,16 +174,16 @@ export async function getChangelogs(params: {
         dataStore: params.dataStore,
         learningObjectId: params.learningObjectId,
       });
-      return await params.dataStore.fetchAllChangelogs({
-        learningObjectId: params.learningObjectId,
-      });
+      if (params.recent) {
+        return await params.dataStore.fetchRecentChangelog({
+          learningObjectId: params.learningObjectId,
+        });
+      } else {
+        return await params.dataStore.fetchAllChangelogs({
+          learningObjectId: params.learningObjectId,
+        });
+      }
     }
-  }
-
-  if (params.date) {
-    return await params.dataStore.fetchChangelogsBeforeDate({ learningObjectId: params.learningObjectId, date: params.date });
-  } else {
-    return await params.dataStore.fetchAllChangelogs({ learningObjectId: params.learningObjectId });
   }
 }
 
