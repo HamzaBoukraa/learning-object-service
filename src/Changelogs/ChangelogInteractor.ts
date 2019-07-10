@@ -106,8 +106,8 @@ export async function getChangelogs(params: {
 /**
  * - Determines if the request to read change logs is valid
  * This request validation is performed by checking that the given
- * - Ensure that the user making the reuqest has access to modify changelogs.
- * Only the Learning Object author, editors, and admins have write access to 
+ * - Ensure that the user making the reuqest has write access to change logs.
+ * Only the Learning Object author, editors, and admins have write access to
  * change logs.
  *
  * @param {DataStore} dataStore An instance of DataStore
@@ -149,7 +149,7 @@ async function authorizeWriteRequest(params: {
  * - Determines if the request to read change logs is valid
  * This request validation is performed by checking that the given
  * authorId and learningObjectId pair exist.
- * - Ensure that the user making the request has access to modify changelogs
+ * - Ensure that the user making the request has read access tp change logs
  * If the Learning Object is released, all users have access to read change logs.
  * If the Learning Object is not released, only the Learning Object author, editors,
  * and admins have access to read change logs.
