@@ -15,7 +15,6 @@ import {
   requesterIsAuthor,
   requesterIsAdminOrEditor,
   hasReadAccessByCollection,
-  hasLearningObjectWriteAccess,
   authorizeReadAccess,
   authorizeWriteAccess,
 } from '../shared/AuthorizationManager';
@@ -632,7 +631,7 @@ async function generateReleasableLearningObject({
   const [object, childIds, files] = await Promise.all([
     dataStore.fetchLearningObject({ id, full: true }),
     dataStore.findChildObjectIds({ parentId: id }),
-    FileMetadata.getAllFileMetadata({
+    Gateways.fileMetadata().getAllFileMetadata({
       requester,
       learningObjectId: id,
       filter: 'unreleased',
