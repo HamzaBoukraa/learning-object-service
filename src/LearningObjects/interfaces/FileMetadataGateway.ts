@@ -1,9 +1,10 @@
 import { UserToken } from '../../shared/types';
 import { FileMetadataFilter } from '../../FileMetadata/typings';
 import { LearningObject } from '../../shared/entity';
+import { FileMetadataOperations } from '../../FileMetadata/FileMetadataModule';
 
-export abstract class FileMetadataGateway {
-
+export abstract class FileMetadataGateway
+  implements Partial<FileMetadataOperations> {
   /**
    * Retrieves all file metadata for a Learning Object
    *
@@ -13,11 +14,11 @@ export abstract class FileMetadataGateway {
    *
    * @returns {Promise<LearningObject.Material.File>}
    */
-    abstract getAllFileMetadata(params: {
-        requester: UserToken;
-        learningObjectId: string;
-        filter: FileMetadataFilter
-    }): Promise<LearningObject.Material.File[]>;
+  abstract getAllFileMetadata(params: {
+    requester: UserToken;
+    learningObjectId: string;
+    filter: FileMetadataFilter;
+  }): Promise<LearningObject.Material.File[]>;
 
   /**
    * Deletes all file metadata for a Learning Object
@@ -31,5 +32,5 @@ export abstract class FileMetadataGateway {
   abstract deleteAllFileMetadata(params: {
     requester: UserToken;
     learningObjectId: string;
-}): Promise<void>;
+  }): Promise<void>;
 }

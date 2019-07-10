@@ -6,10 +6,17 @@ import { HierarchyAdapter } from '../Hierarchy/HierarchyAdapter';
 import { bundleLearningObject } from './Bundler/Interactor';
 import { requesterIsAdminOrEditor } from '../../shared/AuthorizationManager';
 import { reportError } from '../../shared/SentryConnector';
-import { ModuleFileManagerGateway } from './ModuleFileManagerGateway';
+import { LearningObjectsModule } from '../LearningObjectsModule';
+import { FileManagerGateway } from './FileManagerGateway';
+import { FileManagerGateway as FileManagerInjectionKey } from '../interfaces/FileManagerGateway';
 
+// FIXME: The Publishing Module was setup as a sub-module of LearningObjectsModule,
+// should it be able to resolve dependencies from the parent LearningObjectsModule or should it declare its own dependencies?
 namespace Gateways {
-  export const fileManager = () => new ModuleFileManagerGateway();
+  export const fileManager = () =>
+    LearningObjectsModule.resolveDependency(
+      FileManagerInjectionKey,
+    ) as FileManagerGateway;
 }
 
 export interface PublishingDataStore {

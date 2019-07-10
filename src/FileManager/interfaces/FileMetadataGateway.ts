@@ -3,8 +3,10 @@ import {
   FileMetadataFilter,
   LearningObjectFile,
 } from '../../FileMetadata/typings';
+import { FileMetadataOperations } from '../../FileMetadata/FileMetadataModule';
 
-export abstract class FileMetadataGateway {
+export abstract class FileMetadataGateway
+  implements Partial<FileMetadataOperations> {
   /**
    * Retrieves file metadata for Learning Object by file id
    *

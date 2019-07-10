@@ -46,7 +46,7 @@ namespace Gateways {
  *
  * @returns {Promise<LearningObjectFile>}
  */
-export async function getFileMeta({
+export async function getFileMetadata({
   requester,
   learningObjectId,
   id,
@@ -113,7 +113,7 @@ export async function getFileMeta({
  * @param {number} learningObjectRevision [The revision number of the Learning Object]
  * @returns {Promise<LearningObjectFile[]>}
  */
-export async function getAllFileMeta({
+export async function getAllFileMetadata({
   requester,
   learningObjectId,
   filter,
@@ -479,7 +479,7 @@ export async function deleteFileMeta({
  *
  * @returns {Promise<void>}
  */
-export async function deleteAllFileMeta({
+export async function deleteAllFileMetadata({
   requester,
   learningObjectId,
 }: {
@@ -504,7 +504,7 @@ export async function deleteAllFileMeta({
 
     authorizeWriteAccess({ learningObject, requester });
 
-    await Drivers.datastore().deleteAllFileMeta(learningObjectId);
+    await Drivers.datastore().deleteAllFileMetadata(learningObjectId);
     Gateways.fileManager().deleteFolder({ authorUsername: learningObject.author.username, learningObjectId: learningObject.id, path: '/' }).catch(reportError);
   } catch (e) {
     handleError(e);

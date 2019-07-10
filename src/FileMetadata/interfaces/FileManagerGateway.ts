@@ -1,4 +1,7 @@
-export abstract class FileManagerGateway {
+import { FileManagerOperations } from '../../FileManager/FileManagerModule';
+
+export abstract class FileManagerGateway
+  implements Partial<FileManagerOperations> {
   /**
    * Deletes the file at the specified path from a user's Learning Object
    *
