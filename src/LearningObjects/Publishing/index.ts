@@ -3,7 +3,6 @@ import { LearningObject } from '../../shared/entity';
 import { ElasticMongoReleaseRequestDuplicator } from './ElasticMongoReleaseRequestDuplicator';
 import { UserToken } from '../../shared/types';
 import { LambdaGatewayFactory } from './ReleaseEmails/lambda-gateway-factory';
-import { BundlerModule } from './Bundler/BundlerModule';
 
 // FIXME: Replace with direct export of ElasticSearchPublishingGateway#releaseLearningObject
 // once we do away with the released-objects collection in Mongo

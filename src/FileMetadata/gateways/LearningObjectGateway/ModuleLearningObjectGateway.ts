@@ -4,7 +4,7 @@ import {
   LearningObjectSummary,
   LearningObjectFile,
 } from '../../typings';
-import { LearningObjectAdapter } from '../../../LearningObjects/LearningObjectAdapter';
+import { LearningObjectAdapter } from '../../../LearningObjects/adapters/LearningObjectAdapter';
 
 export class ModuleLearningObjectGateway extends LearningObjectGateway {
   private adapter: LearningObjectAdapter = LearningObjectAdapter.getInstance();

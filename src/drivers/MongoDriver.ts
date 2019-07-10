@@ -8,10 +8,6 @@ import {
   LearningObjectQuery,
   ParentLearningObjectQuery,
 } from '../shared/interfaces/DataStore';
-import {
-  CompletedPart,
-  MultipartFileUploadStatus,
-} from '../shared/interfaces/FileManager';
 import * as ObjectMapper from './Mongo/ObjectMapper';
 import {
   LearningObjectUpdates,
@@ -30,7 +26,7 @@ import {
 import { LearningObjectStatStore } from '../LearningObjectStats/LearningObjectStatStore';
 import { LearningObjectStats } from '../LearningObjectStats/LearningObjectStatsInteractor';
 import { lengths } from '@cyber4all/clark-taxonomy';
-import { LearningObjectDataStore } from '../LearningObjects/LearningObjectDatastore';
+import { LearningObjectDataStore } from '../LearningObjects/drivers/LearningObjectDatastore';
 import { ChangeLogDocument } from '../shared/types/changelog';
 import { ChangelogDataStore } from '../Changelogs/ChangelogDatastore';
 import {
@@ -847,147 +843,6 @@ export class MongoDriver implements DataStore {
       learningObjectId: params.learningObjectId,
       date: params.date,
     });
-  }
-
-  /**
-   * Updates or inserts LearningObjectFile into learning object's files array
-   *
-   * @param {{
-   *     id: string;
-   *     loFile: LearningObjectFile;
-   *   }} params
-   * @returns {Promise<void>}
-   * @memberof MongoDriver
-   */
-  public async addToFiles(params: {
-    id: string;
-    loFile: LearningObject.Material.File;
-  }): Promise<string> {
-    try {
-      const existingDoc = await this.db
-        .collection(COLLECTIONS.LEARNING_OBJECTS)
-        .findOneAndUpdate(
-          { _id: params.id, 'materials.files.url': params.loFile.url },
-          {
-            $set: {
-              'materials.files.$[element].date': params.loFile.date,
-              'materials.files.$[element].size': params.loFile.size,
-              'materials.files.$[element].packageable':
-                params.loFile.packageable,
-            },
-          },
-          {
-            arrayFilters: [{ 'element.url': params.loFile.url }],
-            projection: { _id: 0, 'materials.files.$': 1 },
-          },
-        );
-      if (!existingDoc.value) {
-        params.loFile.id = new ObjectID().toHexString();
-        await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).updateOne(
-          {
-            _id: params.id,
-          },
-          { $push: { 'materials.files': params.loFile } },
-        );
-      } else {
-        const materials = existingDoc.value.materials;
-        const file = materials.files[0];
-        params.loFile.id = file.id;
-      }
-      return params.loFile.id;
-    } catch (e) {
-      return Promise.reject(e);
-    }
-  }
-
-  public async removeFromFiles(params: {
-    objectId: string;
-    fileId: string;
-  }): Promise<void> {
-    await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).updateOne(
-      { _id: params.objectId },
-      {
-        $pull: {
-          'materials.files': { id: params.fileId },
-        },
-      },
-    );
-  }
-
-  /**
-   * Inserts metadata for Multipart upload
-   *
-   * @param {{
-   *     status: MultipartFileUploadStatus;
-   *   }} params
-   * @returns {Promise<void>}
-   * @memberof MongoDriver
-   */
-  public async insertMultipartUploadStatus(params: {
-    status: MultipartFileUploadStatus;
-  }): Promise<void> {
-    await this.db
-      .collection<MultipartFileUploadStatus>(COLLECTIONS.MULTIPART_STATUSES)
-      .insertOne(params.status);
-  }
-
-  /**
-   * Fetches metadata for multipart upload
-   *
-   * @param {{
-   *     id: string;
-   *   }} params
-   * @returns {Promise<MultipartFileUploadStatus>}
-   * @memberof MongoDriver
-   */
-  public async fetchMultipartUploadStatus(params: {
-    id: string;
-  }): Promise<MultipartFileUploadStatus> {
-    const status = await this.db
-      .collection<MultipartFileUploadStatus>(COLLECTIONS.MULTIPART_STATUSES)
-      .findOne({ _id: params.id });
-    return status;
-  }
-
-  /**
-   * Updates metadata for multipart upload
-   *
-   * @param {{
-   *     id: string;
-   *     completedPart: CompletedPart;
-   *   }} params
-   * @returns {Promise<void>}
-   * @memberof MongoDriver
-   */
-  public async updateMultipartUploadStatus(params: {
-    id: string;
-    completedPart: CompletedPart;
-  }): Promise<void> {
-    await this.db
-      .collection<MultipartFileUploadStatus>(COLLECTIONS.MULTIPART_STATUSES)
-      .updateOne(
-        { _id: params.id },
-        {
-          $push: { completedParts: params.completedPart },
-        },
-      );
-  }
-
-  /**
-   * Deletes metadata for multipart upload
-   *
-   * @param {{
-   *     id: string;
-   *   }} params
-   * @returns {Promise<void>}
-   * @memberof MongoDriver
-   */
-  public async deleteMultipartUploadStatus(params: {
-    id: string;
-  }): Promise<void> {
-    await this.db
-      .collection<MultipartFileUploadStatus>(COLLECTIONS.MULTIPART_STATUSES)
-      .deleteOne({ _id: params.id });
   }
 
   /**
@@ -1829,64 +1684,6 @@ export class MongoDriver implements DataStore {
       };
     } catch (e) {
       return Promise.reject('Error searching objects ' + e);
-    }
-  }
-
-  async findSingleFile(params: {
-    learningObjectId: string;
-    fileId: string;
-  }): Promise<LearningObject.Material.File> {
-    try {
-      const doc = await this.db
-        .collection(COLLECTIONS.LEARNING_OBJECTS)
-        .findOne(
-          {
-            _id: params.learningObjectId,
-            'materials.files': {
-              $elemMatch: { id: params.fileId },
-            },
-          },
-          {
-            projection: {
-              _id: 0,
-              'materials.files.$': 1,
-            },
-          },
-        );
-      if (doc) {
-        const materials = doc.materials;
-
-        // Object contains materials property.
-        // Files array within materials will alway contain one element
-        return materials.files[0];
-      }
-    } catch (e) {
-      return Promise.reject(e);
-    }
-  }
-
-  async updateFileDescription(params: {
-    learningObjectId: string;
-    fileId: string;
-    description: string;
-  }): Promise<LearningObject.Material.File> {
-    try {
-      await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).findOneAndUpdate(
-        { _id: params.learningObjectId, 'materials.files.id': params.fileId },
-        {
-          $set: {
-            'materials.files.$[element].description': params.description,
-          },
-        },
-        // @ts-ignore: arrayFilters is in fact a property defined by documentation. Property does not exist in type definition.
-        { arrayFilters: [{ 'element.id': params.fileId }] },
-      );
-      return this.findSingleFile({
-        learningObjectId: params.learningObjectId,
-        fileId: params.fileId,
-      });
-    } catch (e) {
-      return Promise.reject(e);
     }
   }
 

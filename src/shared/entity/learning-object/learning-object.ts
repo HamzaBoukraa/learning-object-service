@@ -486,7 +486,7 @@ export class LearningObject {
       urls: [],
       notes: '',
       folderDescriptions: [],
-      pdf: { name: '', url: '' },
+      pdf: { name: '' },
     };
     this._children = [];
     this._contributors = [];
@@ -666,7 +666,6 @@ export namespace LearningObject {
     }
     export interface PDF {
       name: string;
-      url: string;
     }
   }
 }

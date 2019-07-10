@@ -33,10 +33,7 @@ describe('Interactor: LearningObjectInteractor', () => {
   it(`should get object's children`, async () => {
     expect.assertions(1);
     await expect(
-      getLearningObjectChildrenById(
-        dataStore,
-        stubs.learningObject.id,
-      ),
-    ). resolves.toEqual([]);
+      getLearningObjectChildrenById(dataStore, stubs.learningObject.id),
+    ).resolves.toEqual([]);
   });
 });
