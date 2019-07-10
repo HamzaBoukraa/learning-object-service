@@ -108,52 +108,30 @@ describe('getChangelogs', () => {
     });
   });
 
-  describe('When I request change logs while selecting a date', () => {
+  describe('When I request change logs while specifying recent', () => {
     describe('and I am an admin', () => {
-      it('should return all change logs before that specified date for a learning object', async () => {
+      it('should return only the most recent change log', async () => {
         return expect(getChangelogs({
           dataStore,
           learningObjectId: stubs.learningObject.id,
           user: {...stubs.userToken, accessGroups: ['admin']},
           userId: stubs.learningObject.author.id,
-          date: stubs.learningObject.date,
+          recent: true,
         }))
-        .resolves.toHaveLength(1);
-      });
-
-      it('should return all change logs before that specified date for a learning object', async () => {
-        return expect(getChangelogs({
-          dataStore,
-          learningObjectId: stubs.learningObject.id,
-          user: {...stubs.userToken, accessGroups: ['admin']},
-          userId: stubs.learningObject.author.id,
-          date: '1',
-        }))
-        .resolves.toHaveLength(1);
+        .resolves.toHaveProperty('learningObjectId', stubs.learningObject.id);
       });
     });
 
     describe('and I am an editor', () => {
-      it('should return all change logs before that specified date for a learning object', async () => {
+      it('should return only the most recent change log', async () => {
         return expect(getChangelogs({
           dataStore,
           learningObjectId: stubs.learningObject.id,
           user: {...stubs.userToken, accessGroups: ['editor']},
           userId: stubs.learningObject.author.id,
-          date: stubs.learningObject.date,
+          recent: true,
         }))
-        .resolves.toHaveLength(1);
-      });
-
-      it('should return all change logs before that specified date for a learning object', async () => {
-        return expect(getChangelogs({
-          dataStore,
-          learningObjectId: stubs.learningObject.id,
-          user: {...stubs.userToken, accessGroups: ['editor']},
-          userId: stubs.learningObject.author.id,
-          date: '1',
-        }))
-        .resolves.toHaveLength(1);
+        .resolves.toHaveProperty('learningObjectId', stubs.learningObject.id);
       });
     });
   });

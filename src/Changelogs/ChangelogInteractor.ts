@@ -99,14 +99,14 @@ export async function getRecentChangelog(params: {
  * return all change logs that are relevant to the released copy of the specified Learning
  * Object. This excludes all change logs that were created after the date property on the
  * Release copy.
- * @returns {ChangeLogDocument[]}
+ * @returns {ChangeLogDocument[] | ChangeLogDocument} This changes beased on the recent parameter
  */
 export async function getChangelogs(params: {
   dataStore: DataStore,
   learningObjectId: string,
   userId: string,
   user: UserToken,
-  recent: boolean,
+  recent?: boolean,
   minusRevision?: boolean,
 }): Promise<ChangeLogDocument[] | ChangeLogDocument> {
   const learningObject = await validateReadRequest({
@@ -225,7 +225,6 @@ async function authorizeWriteRequest(params: {
     dataStore: params.dataStore,
     learningObjectId: params.learningObjectId,
   });
-
 
   return role;
 }
