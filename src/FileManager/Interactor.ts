@@ -35,6 +35,32 @@ const serviceToken: Partial<Requester> = {
 };
 
 /**
+ * Gets readable stream for a single file from a user's Learning Object
+ *
+ * @export
+ * @param {string} authorUsername [The Learning Object's author's username]
+ * @param {string} learningObjectId [The id of the Learning Object to upload file to]
+ * @param {string} path [The path of the file to stream]
+ *
+ * @returns {Promise<void>}
+ */
+export async function getFileStream({
+  authorUsername,
+  learningObjectId,
+  path,
+}: {
+  authorUsername: string;
+  learningObjectId: string;
+  path: string;
+}): Promise<Readable> {
+  return Drivers.fileManager().streamFile({
+    authorUsername,
+    learningObjectId,
+    path,
+  });
+}
+
+/**
  * Instructs file manager to upload a single file to a user's Learning Object
  *
  * @export
