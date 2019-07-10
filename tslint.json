@@ -11,7 +11,7 @@
     "interface-name": [false],
     "jsdoc-format": true,
     "label-position": true,
-    "max-line-length": [true, 180],
+    "max-line-length": [true, 80],
     "member-ordering": [
       false,
       {
