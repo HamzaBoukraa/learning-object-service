@@ -41,6 +41,10 @@ export function initialize({
     }
   }
 
+  /**
+   * @deprecated remove when client routes are updated to use the
+   * recent query parameter for getAllChangelogs
+   */
   const getRecentChangelog = async (req: Request, res: Response) => {
     try {
       const user = req.user;

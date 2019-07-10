@@ -47,6 +47,7 @@ export async function createChangelog(params: {
 /**
  * Fetches the most recent change log from the data store.
  *
+ * @deprecated remove when client routes are updated
  * @param {DataStore} dataStore An instance of DataStore
  * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
  * @param {string} userId The id of learning object author
