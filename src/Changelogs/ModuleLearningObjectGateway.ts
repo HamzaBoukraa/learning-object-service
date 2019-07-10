@@ -1,5 +1,5 @@
-import { LearningObjectGateway } from "./LearningObjectGateway";
-import { LearningObjectAdapter } from "../LearningObjects/LearningObjectAdapter";
+import { LearningObjectGateway } from './LearningObjectGateway';
+import { LearningObjectAdapter } from '../LearningObjects/LearningObjectAdapter';
 
 export class ModuleLearningObjectGateway extends LearningObjectGateway {
   private adapter: LearningObjectAdapter = LearningObjectAdapter.getInstance();
