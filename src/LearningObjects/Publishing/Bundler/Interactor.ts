@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { Bundler } from './Bundler';
 import { LearningObject, BundleData, BundleExtension } from './typings';
 import { BundlerModule } from './BundlerModule';
-import { CCLicenseRetriever } from './CCLicenseRetriever';
+import { LicenseRetriever } from './LicenseRetriever';
 import { FileGateway } from './FileGateway';
 import { handleError } from '../../../interactors/LearningObjectInteractor';
 
@@ -11,8 +11,8 @@ import { handleError } from '../../../interactors/LearningObjectInteractor';
  */
 namespace Drivers {
   export const bundler = () => BundlerModule.resolveDependency(Bundler);
-  export const ccLicenseRetriever = () =>
-    BundlerModule.resolveDependency(CCLicenseRetriever);
+  export const licenseRetriever = () =>
+    BundlerModule.resolveDependency(LicenseRetriever);
 }
 
 namespace Gateways {
@@ -91,7 +91,7 @@ async function addCCLicense(prefix: string = ''): Promise<BundleData> {
   return {
     name: CC_LICENSE.name,
     prefix,
-    data: await Drivers.ccLicenseRetriever().getLatestLicense(),
+    data: await Drivers.licenseRetriever().getLicense(),
   };
 }
 

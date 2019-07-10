@@ -1,15 +1,15 @@
 import { ArchiverBundler } from './ArchiverBundler';
 import { ServiceModule, serviceModule } from 'node-service-module';
 import { Bundler } from './Bundler';
-import { CCLicenseRetriever } from './CCLicenseRetriever';
-import { HttpCCLicenseRetriever } from './HttpCCLicenseRetriever';
+import { LicenseRetriever } from './LicenseRetriever';
+import { HttpLicenseRetriever } from './HttpLicenseRetriever';
 import { FileGateway } from './FileGateway';
 import { ModuleFileGateway } from './ModuleFileGateway';
 
 @serviceModule({
   providers: [
     { provide: Bundler, useClass: ArchiverBundler },
-    { provide: CCLicenseRetriever, useClass: HttpCCLicenseRetriever },
+    { provide: LicenseRetriever, useClass: HttpLicenseRetriever },
     { provide: FileGateway, useClass: ModuleFileGateway },
   ],
 })
