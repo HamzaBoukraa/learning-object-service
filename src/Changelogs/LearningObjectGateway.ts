@@ -1,3 +1,6 @@
+import { LearningObjectSummary } from '../shared/types';
+import { Requester } from './typings';
+
 export abstract class LearningObjectGateway {
   /**
    * Retrieves a summary of the working copy Learning Object

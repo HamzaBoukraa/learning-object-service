@@ -53,7 +53,7 @@ export enum COLLECTIONS {
   STANDARD_OUTCOMES = 'outcomes',
   LO_COLLECTIONS = 'collections',
   MULTIPART_STATUSES = 'multipart-upload-statuses',
-  CHANGLOG = 'changelogs',
+  CHANGELOG = 'changelogs',
   SUBMISSIONS = 'submissions',
 }
 
@@ -843,6 +843,13 @@ export class MongoDriver implements DataStore {
       learningObjectId: params.learningObjectId,
       date: params.date,
     });
+  }
+
+  fetchRecentChangelogBeforeDate(params: {
+    learningObjectId: string;
+    date: string;
+  }): Promise<ChangeLogDocument> {
+    return this.changelogStore.fetchRecentChangelogBeforeDate(params);
   }
 
   /**

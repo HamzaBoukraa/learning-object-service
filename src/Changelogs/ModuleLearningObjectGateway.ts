@@ -1,5 +1,7 @@
 import { LearningObjectGateway } from './LearningObjectGateway';
-import { LearningObjectAdapter } from '../LearningObjects/LearningObjectAdapter';
+import { LearningObjectAdapter } from '../LearningObjects/adapters/LearningObjectAdapter';
+import { LearningObjectSummary } from '../shared/types';
+import { Requester } from './typings';
 
 export class ModuleLearningObjectGateway extends LearningObjectGateway {
   private adapter: LearningObjectAdapter = LearningObjectAdapter.getInstance();
@@ -15,8 +17,6 @@ export class ModuleLearningObjectGateway extends LearningObjectGateway {
     requester: Requester;
     id: string;
   }): Promise<LearningObjectSummary> {
-    return this.adapter.getReleasedLearningObjectSummary(params);
+    return this.adapter.getReleasedLearningObjectSummary(params.id);
   }
-
-
 }

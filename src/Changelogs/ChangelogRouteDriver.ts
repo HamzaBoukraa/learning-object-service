@@ -3,6 +3,7 @@ import { mapErrorToResponseData } from '../shared/errors';
 import { DataStore } from '../shared/interfaces/DataStore';
 import { UserToken } from '../shared/types';
 import * as ChangelogInteractor from './ChangelogInteractor';
+import { ModuleLearningObjectGateway } from './ModuleLearningObjectGateway';
 
 /**
  * Initializes an express router with endpoints to publish and unpublish a learning object.
@@ -65,12 +66,14 @@ export function initialize({
 
   const getAllChangelogs = async (req: Request, res: Response) => {
     try {
+      const learningObjectGateway = new ModuleLearningObjectGateway();
       const user = req.user;
       const userId = req.params.userId;
       const learningObjectId = req.params.learningObjectId;
       const recent = req.query.recent;
       const minusRevision = req.query.minusRevision;
       const changelogs = await ChangelogInteractor.getChangelogs({
+        learningObjectGateway,
         dataStore,
         learningObjectId,
         userId,
