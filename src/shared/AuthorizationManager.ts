@@ -396,15 +396,16 @@ export function authorizeWriteAccess({
   requester: UserToken;
   message?: string;
 }) {
-  const isUnreleased =
-    LearningObjectState.UNRELEASED.includes(
-      learningObject.status as LearningObject.Status,
-    ) || learningObject.status === LearningObject.Status.WAITING;
+  const isUnreleased = LearningObjectState.UNRELEASED.includes(
+    learningObject.status as LearningObject.Status,
+  );
   const isAuthor = requesterIsAuthor({
     authorUsername: learningObject.author.username,
     requester,
   });
-  const authorAccess = isAuthor && isUnreleased;
+  const authorAccess =
+    (isAuthor && isUnreleased) ||
+    (isAuthor && learningObject.status === LearningObject.Status.WAITING);
   const isReleased = learningObject.status === LearningObject.Status.RELEASED;
   const isAdminOrEditor = requesterIsAdminOrEditor(requester);
   const adminEditorAccess = isAdminOrEditor && !isUnreleased && !isReleased;

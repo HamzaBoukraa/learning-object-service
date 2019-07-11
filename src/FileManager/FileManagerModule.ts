@@ -3,7 +3,12 @@ import {
   ExpressServiceModule,
 } from 'node-service-module';
 import { ExpressHttpAdapter } from './adapters';
-import { uploadFile, deleteFile, deleteFolder } from './Interactor';
+import {
+  uploadFile,
+  deleteFile,
+  deleteFolder,
+  getFileStream,
+} from './Interactor';
 import {
   FileManager,
   LearningObjectGateway,
@@ -12,8 +17,23 @@ import {
 import { S3FileManager, ModuleLearningObjectGateway } from './drivers';
 import { FileUpload } from './typings';
 import { FileMetadataModule } from '../FileMetadata/FileMetadataModule';
+import { Readable } from 'stream';
 
 export interface FileManagerOperations {
+  /**
+   * Gets readable stream for a single file from a user's Learning Object
+   *
+   * @param {string} authorUsername [The Learning Object's author's username]
+   * @param {string} learningObjectId [The id of the Learning Object to upload file to]
+   * @param {string} path [The path of the file to stream]
+   *
+   * @returns {Promise<void>}
+   */
+  getFileStream(params: {
+    authorUsername: string;
+    learningObjectId: string;
+    path: string;
+  }): Promise<Readable>;
   /**
    * Uploads a single file to a user's Learning Object
    *
@@ -77,6 +97,7 @@ export interface FileManagerOperations {
 })
 export class FileManagerModule extends ExpressServiceModule
   implements FileManagerOperations {
+  getFileStream = getFileStream;
   uploadFile = uploadFile;
   deleteFile = deleteFile;
   deleteFolder = deleteFolder;
