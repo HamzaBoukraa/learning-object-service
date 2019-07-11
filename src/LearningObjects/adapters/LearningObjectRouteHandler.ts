@@ -1,13 +1,11 @@
 import { Request, Response, Router } from 'express';
 import { mapErrorToResponseData } from '../../shared/errors';
 import { DataStore } from '../../shared/interfaces/DataStore';
-import {
-  LibraryCommunicator,
-} from '../../shared/interfaces/interfaces';
+import { LibraryCommunicator } from '../../shared/interfaces/interfaces';
 import { UserToken } from '../../shared/types';
 import * as LearningObjectInteractor from '../LearningObjectInteractor';
 import { LearningObject } from '../../shared/entity';
-import {  MaterialsFilter, LearningObjectFilter } from '../typings';
+import { MaterialsFilter, LearningObjectFilter } from '../typings';
 
 /**
  * Initializes an express router with endpoints for public Retrieving
@@ -22,6 +20,26 @@ export function initializePublic({
   dataStore: DataStore;
   library: LibraryCommunicator;
 }) {
+  const getLearningObjectByName = async (req: Request, res: Response) => {
+    try {
+      const requester: UserToken = req.user;
+      const authorUsername: string = req.params.username;
+      const learningObjectName: string = req.params.learningObjectName;
+      const revision: boolean = req.query.revision;
+      const object = await LearningObjectInteractor.getLearningObjectByName({
+        dataStore,
+        library,
+        userToken: requester,
+        username: authorUsername,
+        learningObjectName,
+        revision,
+      });
+      res.status(200).send(object.toPlainObject());
+    } catch (e) {
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({ message });
+    }
+  };
   /**
    * Retrieve a learning object by a specified ID
    * @param {Request} req
@@ -41,7 +59,28 @@ export function initializePublic({
       res.status(code).json({ message });
     }
   };
-
+  /**
+   * @deprecated This route will be deprecated because of its non RESTful route structure
+   * Please update to using `/users/:username/learning-objects/:learningObjectName`
+   * if requesting a Learning Object by name
+   */
+  router.get(
+    '/learning-objects/:username/:learningObjectName',
+    getLearningObjectByName,
+  );
+  /**
+   * @deprecated This route will be deprecated
+   * in favor of the `/users/:username/learning-objects/:learningObjectId` route.
+   */
+  router.get(
+    '/users/:username/learning-objects/:learningObjectName',
+    getLearningObjectByName,
+  );
+  /**
+   * @deprecated This route will be deprecated because of its non RESTful route structure
+   * Please update to using `/users/:username/learning-objects/:learningObjectId`
+   * if requesting a Learning Object by id
+   */
   router.get('/learning-objects/:learningObjectId', getLearningObjectById);
   router.get(
     '/users/:username/learning-objects/:learningObjectId',
