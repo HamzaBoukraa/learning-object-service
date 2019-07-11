@@ -61,19 +61,11 @@ export function initializePublic({
   };
   /**
    * @deprecated This route will be deprecated because of its non RESTful route structure
-   * Please update to using `/users/:username/learning-objects/:learningObjectName`
+   * Please update to using `/users/:username/learning-objects/:learningObjectId` route.
    * if requesting a Learning Object by name
    */
   router.get(
     '/learning-objects/:username/:learningObjectName',
-    getLearningObjectByName,
-  );
-  /**
-   * @deprecated This route will be deprecated
-   * in favor of the `/users/:username/learning-objects/:learningObjectId` route.
-   */
-  router.get(
-    '/users/:username/learning-objects/:learningObjectName',
     getLearningObjectByName,
   );
   /**
