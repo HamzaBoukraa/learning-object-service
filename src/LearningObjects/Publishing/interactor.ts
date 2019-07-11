@@ -47,21 +47,12 @@ export async function releaseLearningObject({
   releasableObject: LearningObject;
   releaseEmailGateway: ReleaseEmailGateway;
 }): Promise<void> {
-  if (!requesterIsAdminOrEditor(userToken)) {
-    throw new ResourceError(
-      `${
-        userToken.username
-      } does not have access to release this Learning Object`,
-      ResourceErrorReason.INVALID_ACCESS,
-    );
-  }
-  try {
-    await createPublishingArtifacts(releasableObject, userToken);
-  } catch (e) {
-    reportError(e);
-  }
-  await dataStore.addToReleased(releasableObject);
-  await sendEmail(releasableObject, userToken, releaseEmailGateway);
+    if (!requesterIsAdminOrEditor(userToken)) {
+        throw new ResourceError(`${userToken.username} does not have access to release this Learning Object`, ResourceErrorReason.INVALID_ACCESS);
+    }
+    await createPublishingArtifacts(releasableObject).catch(reportError);
+    await dataStore.addToReleased(releasableObject);
+    await sendEmail(releasableObject, userToken, releaseEmailGateway);
 }
 
 /**
@@ -71,11 +62,9 @@ export async function releaseLearningObject({
  * 2. A bundle of all files associated with the Learning Object for faster download
  *
  * @param releasableObject the Learning Object to create artifacts for
- * @param userToken the user who has requested to publish a Learning Object
  */
 async function createPublishingArtifacts(
   releasableObject: LearningObject,
-  userToken: UserToken,
 ) {
   Gateways.fileManager().uploadFile({
     authorUsername: releasableObject.author.username,
@@ -87,7 +76,6 @@ async function createPublishingArtifacts(
   });
   const bundle = await bundleLearningObject({
     learningObject: releasableObject,
-    requesterUsername: userToken.username,
   });
   await Gateways.fileManager().uploadFile({
     authorUsername: releasableObject.author.username,
@@ -100,7 +88,7 @@ async function createPublishingArtifacts(
 }
 
 /**
- * sendEmail determines if the Learning Object author should recieve an email about the release,
+ * sendEmail determines if the Learning Object author should receive an email about the release,
  * and triggers the send email action if it does. Authors should only be notified if the Learning
  * Object being released has no parent.
  * @param releasableObject the Learning Object being released
