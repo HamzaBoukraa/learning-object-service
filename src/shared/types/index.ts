@@ -18,6 +18,7 @@ import {
   AuthorSummary,
 } from './learning-object-summary';
 import { AccessGroup } from './access-groups';
+import { FileUpload } from './file-upload';
 
 export {
   UserToken,
@@ -34,4 +35,5 @@ export {
   LearningObjectSummary,
   AuthorSummary,
   AccessGroup,
+  FileUpload,
 };

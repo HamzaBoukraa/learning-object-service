@@ -130,3 +130,30 @@ export function mapAuthorToSummary(author: Partial<User>): AuthorSummary {
     organization: author.organization,
   };
 }
+
+/**
+ * Capitalizes the first letter of each word in the provided string.
+ *
+ * @export
+ * @param {string} text
+ * @returns {string}
+ */
+export function titleCase(text: string): string {
+  const textArr = text.split(' ');
+  for (let i = 0; i < textArr.length; i++) {
+    let word = textArr[i];
+    word = word.charAt(0).toUpperCase() + word.slice(1, word.length + 1);
+    textArr[i] = word;
+  }
+  return textArr.join(' ');
+}
+
+/**
+ * Replaces invalid file path characters in a Learning Object's name with _ characters
+ *
+ * @param {string} path
+ * @returns {string}
+ */
+export function sanitizeLearningObjectName(path: string): string {
+  return path.replace(/[\\/:"*?<>|]/gi, '_');
+}
