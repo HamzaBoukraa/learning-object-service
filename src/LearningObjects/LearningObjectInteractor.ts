@@ -961,6 +961,12 @@ export async function getLearningObjectById({
         id: learningObject.id,
         full: false,
       });
+      children = await Promise.all(
+        children.map(async child => {
+          child.materials = await dataStore.fetchReleasedMaterials(child.id);
+          return child;
+        }),
+      );
     } else {
       const childrenStatus = requesterIsAuthor({
         requester,
@@ -1020,6 +1026,9 @@ async function loadChildObjectSummaries({
   });
   children = await Promise.all(
     children.map(async child => {
+      child.materials = await dataStore.getLearningObjectMaterials({
+        id: child.id,
+      });
       child.materials.files = await Gateways.fileMetadata().getAllFileMetadata({
         requester,
         learningObjectId: child.id,
