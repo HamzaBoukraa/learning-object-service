@@ -961,6 +961,7 @@ export async function getLearningObjectById({
         id: learningObject.id,
         full: false,
       });
+      // FIXME: Children should be mapped to LearningObjectSummary type which doesn't include materials
       children = await Promise.all(
         children.map(async child => {
           child.materials = await dataStore.fetchReleasedMaterials(child.id);
@@ -1025,6 +1026,7 @@ async function loadChildObjectSummaries({
     status: childrenStatus,
   });
   children = await Promise.all(
+    // FIXME: Children should be mapped to LearningObjectSummary type which doesn't include materials or files
     children.map(async child => {
       child.materials = await dataStore.getLearningObjectMaterials({
         id: child.id,
