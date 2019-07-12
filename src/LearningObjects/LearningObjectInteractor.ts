@@ -1022,7 +1022,7 @@ async function loadChildObjectSummaries({
     children.map(async child => {
       child.materials.files = await Gateways.fileMetadata().getAllFileMetadata({
         requester,
-        learningObjectId: parentId,
+        learningObjectId: child.id,
         filter: 'unreleased',
       });
       return child;
