@@ -10,7 +10,7 @@ export { LearningObject, UserToken, Writable, Readable };
 export interface BundleData {
   prefix?: string;
   name: string;
-  uri: string;
+  data: Readable;
 }
 
 export enum BundleExtension {

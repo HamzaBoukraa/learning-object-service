@@ -1,9 +1,5 @@
 import { LearningObject, User } from '../entity';
-import {
-  LearningObjectSummary,
-  AuthorSummary,
-  LearningObjectChildSummary,
-} from '../types';
+import { LearningObjectSummary, AuthorSummary } from '../types';
 
 /**
  * Formats text properly for usage in DataStore
@@ -96,22 +92,6 @@ export function toNumber(value: any): number {
 }
 
 /**
- *
- * Converts value to boolean if not yet a boolean
- * @param {*} value
- * @returns {boolean}
- */
-export function toBoolean(value: any): boolean {
-  if (value === 'true' || value === true) {
-    return true;
-  }
-  if (value === 'false' || value === false) {
-    return false;
-  }
-  return false;
-}
-
-/**
  * Converts LearningObject type into LearningObjectSummary
  *
  * @private
@@ -131,7 +111,6 @@ export function mapLearningObjectToSummary(
     description: object.description,
     length: object.length,
     name: object.name,
-    hasRevision: object.hasRevision || false,
     revision: object.revision,
     status: object.status,
   };
@@ -154,17 +133,28 @@ export function mapAuthorToSummary(author: Partial<User>): AuthorSummary {
 }
 
 /**
- * Converts Learning Object to LearningObjectChildSummary
+ * Capitalizes the first letter of each word in the provided string.
  *
  * @export
- * @param {Partial<LearningObject>} child [The child Learning Object to get summary for]
- * @returns {LearningObjectChildSummary}
+ * @param {string} text
+ * @returns {string}
  */
-export function mapChildToSummary(
-  child: Partial<LearningObject>,
-): LearningObjectChildSummary {
-  return {
-    id: child.id,
-    name: child.name,
-  };
+export function titleCase(text: string): string {
+  const textArr = text.split(' ');
+  for (let i = 0; i < textArr.length; i++) {
+    let word = textArr[i];
+    word = word.charAt(0).toUpperCase() + word.slice(1, word.length + 1);
+    textArr[i] = word;
+  }
+  return textArr.join(' ');
+}
+
+/**
+ * Replaces invalid file path characters in a Learning Object's name with _ characters
+ *
+ * @param {string} path
+ * @returns {string}
+ */
+export function sanitizeLearningObjectName(path: string): string {
+  return path.replace(/[\\/:"*?<>|]/gi, '_');
 }

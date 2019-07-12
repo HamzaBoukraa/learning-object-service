@@ -133,7 +133,7 @@ export class MongoFileMetaDatastore implements FileMetaDatastore {
    *
    * @memberof MongoFileMetaDatastore
    */
-  async deleteAllFileMeta(learningObjectId: string): Promise<void> {
+  async deleteAllFileMetadata(learningObjectId: string): Promise<void> {
     await this.db
       .collection(FILE_META_COLLECTION)
       .deleteMany({ learningObjectId });

@@ -1,16 +1,13 @@
 // @ts-ignore
 import * as stopword from 'stopword';
 import { reportError } from '../shared/SentryConnector';
-import { processMultipartUpload } from '../FileManager/FileInteractor';
-import { sanitizeObject, sanitizeText, toBoolean } from '../shared/functions';
+import { sanitizeObject, sanitizeText } from '../shared/functions';
 import {
   LearningObjectQuery,
   QueryCondition,
 } from '../shared/interfaces/DataStore';
-import { DZFile, FileUpload } from '../shared/interfaces/FileManager';
 import {
   DataStore,
-  FileManager,
   LibraryCommunicator,
 } from '../shared/interfaces/interfaces';
 import {
@@ -18,14 +15,7 @@ import {
   updateParentsDate,
   getLearningObjectById,
 } from '../LearningObjects/LearningObjectInteractor';
-import {
-  UserToken,
-  ServiceToken,
-  LearningObjectSummary,
-  CollectionAccessMap,
-  UserLearningObjectQuery,
-  UserLearningObjectSearchQuery,
-} from '../shared/types';
+import { UserToken, ServiceToken } from '../shared/types';
 import {
   getAccessGroupCollections,
   hasMultipleLearningObjectWriteAccesses,
@@ -35,7 +25,6 @@ import {
   hasServiceLevelAccess,
   hasReadAccessByCollection,
   requesterIsAuthor,
-  enforceNonAuthorStatusRestrictions,
 } from '../shared/AuthorizationManager';
 import {
   ResourceError,
@@ -44,10 +33,13 @@ import {
   ServiceErrorReason,
 } from '../shared/errors';
 import { LearningObject } from '../shared/entity';
-import { FileMetadata } from '../FileMetadata';
+import { LearningObjectsModule } from '../LearningObjects/LearningObjectsModule';
+import { FileMetadataGateway } from '../LearningObjects/interfaces';
 
-// file size is in bytes
-const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
+namespace Gateways {
+  export const fileMetadata = () =>
+    LearningObjectsModule.resolveDependency(FileMetadataGateway);
+}
 
 export const LearningObjectState = {
   UNRELEASED: [
@@ -70,108 +62,108 @@ export const LearningObjectState = {
   ],
 };
 
+interface CollectionAccessMap {
+  [index: string]: string[];
+}
+
 export class LearningObjectInteractor {
   /**
-   * Performs a search on the specified user's Learning Objects.
-   *
-   * *** NOTES ***
-   * If the specified user cannot be found, a NotFound ResourceError is thrown.
-   * Only the author and privileged users are allowed to view Learning Object drafts.
-   * "Drafts" are defined as 'not released' Learning Objects that have never been released or have a `revision` id of `0`, so
-   * if the `draftsOnly` filter is specified, the `status` filter must not have a value of `released`.
-   * Only authors can see drafts that are not submitted for review; `unreleased` || `rejected`.
-   * Admins and editors can see all Learning Objects submitted for review.
-   * Reviewers and curators can only see Learning Objects submitted for review to their collection.
-   *
-   *
+   * Loads Learning Object summaries for a user, optionally applying a query for filtering and sorting.
    * @async
    *
-   * @returns {LearningObjectSummary[]} the user's learning objects found by the query
+   * @returns {LearningObject[]} the user's learning objects found by the query
    * @param params.dataStore
-   * @param params.authorUsername
-   * @param params.requester
+   * @param params.library
+   * @param params.username
+   * @param params.userToken
+   * @param params.loadChildren
    * @param params.query
    */
-
-  public static async searchUsersObjects({
-    dataStore,
-    authorUsername,
-    requester,
-    query,
-  }: {
+  public static async loadUsersObjectSummaries(params: {
     dataStore: DataStore;
-    authorUsername: string;
-    requester: UserToken;
-    query?: UserLearningObjectQuery;
-  }): Promise<LearningObjectSummary[]> {
-    let { text, draftsOnly, status } = this.formatUserLearningObjectQuery(
+    library: LibraryCommunicator;
+    username: string;
+    userToken: UserToken;
+    loadChildren?: boolean;
+    query?: LearningObjectQuery;
+  }): Promise<LearningObject[]> {
+    const {
+      dataStore,
+      library,
+      username,
+      userToken,
+      loadChildren,
       query,
-    );
-    if (!(await dataStore.findUserId(authorUsername))) {
-      throw new ResourceError(
-        `Cannot load Learning Objects for user ${authorUsername}. User ${authorUsername} does not exist.`,
-        ResourceErrorReason.NOT_FOUND,
-      );
-    }
-    const isAuthor = requesterIsAuthor({ requester, authorUsername });
-    const isPrivileged = requesterIsPrivileged(requester);
-    const searchQuery: UserLearningObjectSearchQuery = {
-      text,
-      status,
-    };
+    } = params;
+    try {
+      let summary: LearningObject[] = [];
+      // tslint:disable-next-line: no-shadowed-variable
+      const { dataStore, library, username, loadChildren, query } = params;
 
-    if (draftsOnly) {
-      if (!isAuthor && !isPrivileged) {
+      const formattedQuery = this.formatSearchQuery(query);
+      let { status, orderBy, sortType, text } = formattedQuery;
+
+      // This will throw an error if there is no user with that username
+      await dataStore.findUser(username);
+
+      if (
+        !this.hasReadAccess({
+          userToken,
+          resourceVal: params.username,
+          authFunction: checkAuthByUsername,
+        })
+      ) {
         throw new ResourceError(
-          `Invalid access. You are not authorized to view ${authorUsername}'s drafts.`,
+          'Invalid Access',
           ResourceErrorReason.INVALID_ACCESS,
         );
       }
-
-      if (
-        searchQuery.status &&
-        searchQuery.status.includes(LearningObject.Status.RELEASED)
-      ) {
-        throw new ResourceError(
-          'Illegal query arguments. Cannot specify both draftsOnly and released status filters.',
-          ResourceErrorReason.BAD_REQUEST,
-        );
+      if (!status) {
+        status = LearningObjectState.ALL;
       }
-      searchQuery.revision = 0;
+
+      const objectIDs = await dataStore.getUserObjects(username);
+      summary = await dataStore.fetchMultipleObjects({
+        ids: objectIDs,
+        full: false,
+        orderBy,
+        sortType,
+        status,
+        text,
+      });
+
+      summary = await Promise.all(
+        summary.map(async object => {
+          // Load object metrics
+          try {
+            object.metrics = await this.loadMetrics(library, object.id);
+          } catch (e) {
+            reportError(e);
+          }
+
+          if (loadChildren) {
+            const children = await this.loadChildObjects({
+              dataStore,
+              library,
+              parentId: object.id,
+              full: false,
+              status: LearningObjectState.ALL,
+              loadWorkingCopies: true,
+            });
+            children.forEach((child: LearningObject) => object.addChild(child));
+          }
+
+          return object;
+        }),
+      );
+      return summary;
+    } catch (e) {
+      handleError(e);
     }
-
-    if (!isAuthor && !isPrivileged) {
-      return dataStore.searchReleasedUserObjects(searchQuery, authorUsername);
-    }
-
-    let collectionAccessMap: CollectionAccessMap;
-
-    if (!isAuthor) {
-      enforceNonAuthorStatusRestrictions(searchQuery.status);
-      if (!requesterIsAdminOrEditor(requester)) {
-        const privilegedCollections = getAccessGroupCollections(requester);
-        collectionAccessMap = getCollectionAccessMap(
-          [],
-          privilegedCollections,
-          searchQuery.status,
-        );
-        searchQuery.status =
-          searchQuery.status &&
-          searchQuery.status.includes(LearningObject.Status.RELEASED)
-            ? LearningObjectState.RELEASED
-            : null;
-      }
-    }
-
-    return dataStore.searchAllUserObjects(
-      searchQuery,
-      authorUsername,
-      collectionAccessMap,
-    );
   }
 
   /**
-   * Retrieve the objects on a user's profile based on the requester's access groups and privileges
+   * Retrieve the objects on a user's profile based on the requester's access groups and priveleges
    *
    * @static
    * @param {{
@@ -209,155 +201,6 @@ export class LearningObjectInteractor {
     });
 
     return summaries;
-  }
-
-  /**
-   * Load a learning object and all its learning outcomes.
-   * @async
-   *
-   *
-   * @returns {LearningObject}
-   * @param dataStore
-   * @param library
-   * @param username
-   * @param learningObjectName
-   * @param userToken
-   */
-  public static async loadLearningObject({
-    dataStore,
-    library,
-    username,
-    learningObjectName,
-    userToken,
-    revision,
-  }: {
-    dataStore: DataStore;
-    library: LibraryCommunicator;
-    username: string;
-    learningObjectName: string;
-    userToken: UserToken;
-    revision?: boolean;
-  }): Promise<LearningObject> {
-    try {
-      let learningObject: LearningObject;
-      if (!revision) {
-        learningObject = await this.loadReleasedLearningObjectByAuthorAndName({
-          dataStore,
-          library,
-          authorUsername: username,
-          learningObjectName,
-        }).catch(error =>
-          bypassNotFoundResourceError({
-            error,
-          }),
-        );
-      }
-      if (revision || !learningObject) {
-        learningObject = await this.loadLearningObjectByAuthorAndName({
-          dataStore,
-          library,
-          authorUsername: username,
-          learningObjectName,
-          userToken,
-        });
-      }
-
-      return learningObject;
-    } catch (e) {
-      handleError(e);
-    }
-  }
-
-  /**
-   * Loads working copy of a Learning Object by author's username and Learning Object's name
-   *
-   * @private
-   * @static
-   * @param {{
-   *     dataStore: DataStore;
-   *     authorUsername: string;
-   *     learningObjectName: string;
-   *     userToken: UserToken;
-   *   }} params
-   * @returns
-   * @memberof LearningObjectInteractor
-   */
-  private static async loadLearningObjectByAuthorAndName({
-    dataStore,
-    library,
-    authorUsername,
-    learningObjectName,
-    userToken,
-  }: {
-    dataStore: DataStore;
-    library: LibraryCommunicator;
-    authorUsername: string;
-    learningObjectName: string;
-    userToken: UserToken;
-  }) {
-    const authorId = await this.findAuthorIdByUsername({
-      dataStore,
-      username: authorUsername,
-    });
-    const learningObjectID = await this.getLearningObjectIdByAuthorAndName({
-      dataStore,
-      authorId,
-      authorUsername,
-      name: learningObjectName,
-    });
-    return getLearningObjectById({
-      dataStore,
-      library,
-      id: learningObjectID,
-      requester: userToken,
-      filter: 'unreleased',
-    });
-  }
-
-  /**
-   * Loads released Learning Object by author's id and Learning Object's name
-   *
-   * @private
-   * @static
-   * @param {{
-   *     dataStore: DataStore;
-   *     authorId: string;
-   *     authorUsername: string;
-   *     learningObjectName: string;
-   *   }} params
-   * @returns
-   * @memberof LearningObjectInteractor
-   */
-  private static async loadReleasedLearningObjectByAuthorAndName({
-    dataStore,
-    library,
-    authorUsername,
-    learningObjectName,
-  }: {
-    dataStore: DataStore;
-    library: LibraryCommunicator;
-    authorUsername: string;
-    learningObjectName: string;
-  }) {
-    const authorId = await this.findAuthorIdByUsername({
-      dataStore,
-      username: authorUsername,
-    });
-    const learningObjectID = await this.getReleasedLearningObjectIdByAuthorAndName(
-      {
-        dataStore,
-        authorId,
-        authorUsername,
-        name: learningObjectName,
-      },
-    );
-    return getLearningObjectById({
-      dataStore,
-      library,
-      id: learningObjectID,
-      requester: null,
-      filter: 'released',
-    });
   }
 
   /**
@@ -583,130 +426,6 @@ export class LearningObjectInteractor {
   }
 
   /**
-   * Uploads a file and adds its metadata to the LearningObject's materials.
-   *
-   * @static
-   * @param {{
-   *     dataStore: DataStore,
-   *     fileManager: FileManager,
-   *     id: string,
-   *     username: string,
-   *     file: DZFile
-   *   }} params
-   * @returns {Promise<LearningObject.Material.File>}
-   */
-  public static async uploadFile(params: {
-    dataStore: DataStore;
-    fileManager: FileManager;
-    id: string;
-    username: string;
-    file: DZFile;
-    uploadId: string;
-  }): Promise<LearningObject.Material.File> {
-    try {
-      let loFile: LearningObject.Material.File;
-      const uploadPath = `${params.username}/${params.id}/${
-        params.file.fullPath ? params.file.fullPath : params.file.name
-      }`;
-      const fileUpload: FileUpload = {
-        path: uploadPath,
-        data: params.file.buffer,
-      };
-      const hasChunks = +params.file.dztotalchunkcount;
-      if (hasChunks) {
-        // Process Multipart
-        await processMultipartUpload({
-          dataStore: params.dataStore,
-          fileManager: params.fileManager,
-          file: params.file,
-          uploadId: params.uploadId,
-          fileUpload,
-        });
-      } else {
-        // Regular upload
-        const url = await params.fileManager.upload({ file: fileUpload });
-        loFile = this.generateLearningObjectFile(params.file, url);
-      }
-      // If LearningObject.Material.File was generated, update LearningObject's materials
-      if (loFile) {
-        // FIXME should be implemented in clark entity
-        // @ts-ignore
-        loFile.size = params.file.size;
-        await this.updateMaterials({
-          loFile,
-          dataStore: params.dataStore,
-          id: params.id,
-        });
-      }
-      return loFile;
-    } catch (e) {
-      handleError(e);
-    }
-  }
-
-  /**
-   * Adds File metadata to Learning Object materials
-   *
-   * @static
-   * @param {DataStore} params.dataStore
-   * @param {string} params.id the Learning Object identifier.
-   * @param params.fileMeta the file metadata.
-   * @param {string} params.url the URL for accessing the file.
-   * @returns {Promise<void>}
-   */
-  public static async addFileMeta(params: {
-    dataStore: DataStore;
-    id: string;
-    fileMeta: any;
-    url: string;
-  }): Promise<void> {
-    try {
-      let loFile: LearningObject.Material.File = this.generateLearningObjectFile(
-        params.fileMeta,
-        params.url,
-      );
-      await this.updateMaterials({
-        loFile,
-        dataStore: params.dataStore,
-        id: params.id,
-      });
-    } catch (e) {
-      handleError(e);
-    }
-  }
-
-  /**
-   * Inserts metadata for file as LearningObject.Material.File
-   *
-   * @private
-   * @static
-   * @param {{
-   *     dataStore: DataStore,
-   *     id: string,
-   *     loFile: LearningObject.Material.File,
-   *   }} params
-   * @returns {Promise<void>}
-   */
-  private static async updateMaterials(params: {
-    dataStore: DataStore;
-    id: string;
-    loFile: LearningObject.Material.File;
-  }): Promise<void> {
-    try {
-      await params.dataStore.addToFiles({
-        id: params.id,
-        loFile: params.loFile,
-      });
-      await updateObjectLastModifiedDate({
-        dataStore: params.dataStore,
-        id: params.id,
-      });
-    } catch (e) {
-      handleError(e);
-    }
-  }
-
-  /**
    * Returns a Learning Object's Id by author's username and Learning Object's name
    * Will attempt to find released and unreleased object's id if authorized
    *
@@ -794,21 +513,18 @@ export class LearningObjectInteractor {
    * @returns {Promise<void>}
    * @memberof LearningObjectInteractor
    */
-  public static async deleteMultipleLearningObjects(params: {
+  public static async deleteMultipleLearningObjects({
+    dataStore,
+    library,
+    learningObjectNames,
+    user,
+  }: {
     dataStore: DataStore;
-    fileManager: FileManager;
     library: LibraryCommunicator;
     learningObjectNames: string[];
     user: UserToken;
   }): Promise<void> {
     try {
-      const {
-        dataStore,
-        fileManager,
-        library,
-        learningObjectNames,
-        user,
-      } = params;
       const hasAccess = await hasMultipleLearningObjectWriteAccesses(
         user,
         dataStore,
@@ -847,21 +563,16 @@ export class LearningObjectInteractor {
       await library.cleanObjectsFromLibraries(objectIds);
       await Promise.all(
         objectRefs.map(ref =>
-          FileMetadata.deleteAllFileMetadata({
-            requester: params.user,
+          Gateways.fileMetadata().deleteAllFileMetadata({
+            requester: user,
             learningObjectId: ref.id,
           }),
         ),
-      ).catch(reportError);
+      );
       // Delete objects from datastore
       await dataStore.deleteMultipleLearningObjects(objectIds);
       // For each object id
       objectRefs.forEach(async obj => {
-        // Attempt to delete files
-        const path = `${user.username}/${obj.id}/`;
-        fileManager.deleteAll({ path }).catch(e => {
-          reportError(e);
-        });
         // Update parents' dates
         updateParentsDate({
           dataStore,
@@ -1161,25 +872,6 @@ export class LearningObjectInteractor {
     return sanitizeObject({ object: formattedQuery }, false);
   }
 
-  /**
-   * Formats search query to verify params are the appropriate types
-   *
-   * @private
-   * @static
-   * @param {UserLearningObjectQuery} query
-   * @returns {UserLearningObjectQuery}
-   * @memberof LearningObjectInteractor
-   */
-  private static formatUserLearningObjectQuery(
-    query: UserLearningObjectQuery,
-  ): UserLearningObjectQuery {
-    const formattedQuery = { ...query };
-    formattedQuery.text = sanitizeText(formattedQuery.text) || null;
-    formattedQuery.status = toArray(formattedQuery.status);
-    formattedQuery.draftsOnly = toBoolean(formattedQuery.draftsOnly);
-    return sanitizeObject({ object: formattedQuery }, false);
-  }
-
   public static async addToCollection(
     dataStore: DataStore,
     learningObjectId: string,
@@ -1348,51 +1040,6 @@ export class LearningObjectInteractor {
       .join(' ')
       .trim();
     return text;
-  }
-
-  /**
-   * Generates new LearningObject.Material.File Object
-   *
-   * @private
-   * @param {DZFile} file
-   * @param {string} url
-   * @returns
-   */
-  private static generateLearningObjectFile(
-    file: DZFile,
-    url: string,
-  ): LearningObject.Material.File {
-    const extMatch = file.name.match(/(\.[^.]*$|$)/);
-    const extension = extMatch ? extMatch[0] : '';
-    const date = Date.now().toString();
-
-    const learningObjectFile: Partial<LearningObject.Material.File> = {
-      url,
-      date,
-      name: file.name,
-      fileType: file.mimetype,
-      extension: extension,
-      fullPath: file.fullPath,
-      size: file.dztotalfilesize ? file.dztotalfilesize : file.size,
-      packageable: this.isPackageable(file),
-    };
-
-    // Sanitize object. Remove undefined or null values
-    const keys = Object.keys(learningObjectFile);
-    for (const key of keys) {
-      const prop = learningObjectFile[key];
-      if (!prop && prop !== 0) {
-        delete learningObjectFile[key];
-      }
-    }
-
-    return learningObjectFile as LearningObject.Material.File;
-  }
-
-  private static isPackageable(file: DZFile) {
-    // if dztotalfilesize doesn't exist it must not be a chunk upload.
-    // this means by default it must be a packageable file size
-    return !(file.dztotalfilesize > MAX_PACKAGEABLE_FILE_SIZE);
   }
 }
 

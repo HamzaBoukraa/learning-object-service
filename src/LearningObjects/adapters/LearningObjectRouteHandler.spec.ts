@@ -1,28 +1,32 @@
-import { generateToken } from '../tests/mock-token-manager';
+import { MongoDriver } from '../../drivers/MongoDriver';
+import { generateToken } from '../../tests/mock-token-manager';
 import * as LearningObjectRouteHandler from './LearningObjectRouteHandler';
 import * as express from 'express';
 import * as bodyParser from 'body-parser';
 import * as supertest from 'supertest';
-import { MockLibraryDriver } from '../tests/mock-drivers/MockLibraryDriver';
-import { MockS3Driver } from '../tests/mock-drivers/MockS3Driver';
-import {
-  LibraryCommunicator,
-  FileManager,
-} from '../shared/interfaces/interfaces';
+import { MockLibraryDriver } from '../../tests/mock-drivers/MockLibraryDriver';
 import * as cookieParser from 'cookie-parser';
-import { processToken, handleProcessTokenError } from '../middleware';
-import { LearningObject } from '../shared/entity';
-import { Stubs } from '../tests/stubs';
-import { HierarchyAdapter } from './Hierarchy/HierarchyAdapter';
-import { BundlerModule } from './Publishing/Bundler/BundlerModule';
-import { Bundler } from './Publishing/Bundler/Bundler';
+import { processToken, handleProcessTokenError } from '../../middleware';
+import { LearningObject } from '../../shared/entity';
+import { HierarchyAdapter } from '../Hierarchy/HierarchyAdapter';
+import { BundlerModule } from '../Publishing/Bundler/BundlerModule';
+import { Bundler } from '../Publishing/Bundler/Bundler';
 import {
   BundleData,
   BundleExtension,
   Readable,
-} from './Publishing/Bundler/typings';
-import { FileManagerAdapter } from '../FileManager';
-import { MockDataStore } from '../tests/mock-drivers/MockDataStore';
+} from '../Publishing/Bundler/typings';
+import { MockDataStore } from '../../tests/mock-drivers/MockDataStore';
+import { LibraryCommunicator } from '../../shared/interfaces/interfaces';
+import { LearningObjectsModule } from '../LearningObjectsModule';
+import {
+  FileMetadataGateway,
+  FileManagerGateway,
+  ReadMeBuilder,
+} from '../interfaces';
+import { StubFileManagerGateway } from '../gateways/FileManagerGateway/StubFileManagerGateway';
+import { StubFileMetadataGateway } from '../gateways/FileMetadataGateway/StubFileMetadataGateway';
+import { StubReadMeBuilder } from '../drivers/ReadMeBuilder/StubReadMeBuilder';
 
 const app = express();
 const router = express.Router();
@@ -36,10 +40,8 @@ const request = supertest(app);
 describe('LearningObjectRouteHandler', () => {
   const dataStore = new MockDataStore();
   const stubs = dataStore.stubs;
-  let fileManager: FileManager;
   let LibraryDriver: LibraryCommunicator;
   let token: string;
-  let authorization = {};
 
   class StubBundler implements Bundler {
     bundleData(params: {
@@ -52,14 +54,18 @@ describe('LearningObjectRouteHandler', () => {
 
   beforeAll(async () => {
     HierarchyAdapter.open(dataStore);
-    fileManager = new MockS3Driver();
-    FileManagerAdapter.open(fileManager);
     LibraryDriver = new MockLibraryDriver();
+    LearningObjectsModule.providers = [
+      { provide: FileMetadataGateway, useClass: StubFileMetadataGateway },
+      { provide: FileManagerGateway, useClass: StubFileManagerGateway },
+      { provide: ReadMeBuilder, useClass: StubReadMeBuilder },
+    ];
+    LearningObjectsModule.initialize();
     BundlerModule.providers = [{ provide: Bundler, useClass: StubBundler }];
     BundlerModule.initialize();
     // FIXME: This user is both an admin and a reviewer@nccp
     token = generateToken(stubs.userToken);
-    authorization = {
+    const authorization = {
       Cookie: `presence=${token}`,
       'Content-Type': 'application/json',
     };
@@ -71,9 +77,12 @@ describe('LearningObjectRouteHandler', () => {
     LearningObjectRouteHandler.initializePrivate({
       router,
       dataStore,
-      fileManager,
       library: LibraryDriver,
     });
+  });
+
+  afterAll(() => {
+    LearningObjectsModule.destroy();
   });
 
   describe('GET /learning-objects/:learningObjectId', () => {
@@ -166,8 +175,9 @@ describe('LearningObjectRouteHandler', () => {
   });
   describe('DELETE /learning-objects/:learningObjectName', () => {
     it('should delete a learning object from the database and return a 200 status', done => {
+      stubs.learningObject.status = LearningObject.Status.UNRELEASED;
       request
-        .delete(`/learning-objects/Java%20stuff`)
+        .delete(`/learning-objects/${stubs.learningObject.name}`)
         .set('Authorization', `Bearer ${token}`)
         .expect(204)
         .then(() => {

@@ -9,6 +9,7 @@ export interface LearningObjectUpdates {
   contributors?: string[];
   status?: string;
   published?: boolean;
+  collection?: string;
   materials?: { [index: string]: any };
   'materials.pdf'?: LearningObject.Material.PDF;
   'materials.notes'?: string;
@@ -24,6 +25,7 @@ const LearningObjectUpdateProps: LearningObjectUpdates = {
   contributors: [],
   status: '',
   published: false,
+  collection: '',
   'materials.pdf': null,
   'materials.notes': '',
   'materials.urls': [],
