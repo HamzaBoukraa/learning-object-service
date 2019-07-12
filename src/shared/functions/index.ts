@@ -106,7 +106,6 @@ export function mapLearningObjectToSummary(
     author: mapAuthorToSummary(object.author),
     collection: object.collection,
     contributors: object.contributors.map(mapAuthorToSummary),
-    children: object.children ? object.children.map(mapChildToSummary) : [],
     date: object.date,
     description: object.description,
     length: object.length,

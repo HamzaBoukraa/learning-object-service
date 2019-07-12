@@ -45,7 +45,7 @@ export interface LearningObjectSummary {
   /**
    * Learning Objects that exist in this Learning Object's hierarchy
    */
-  children: LearningObjectSummary[];
+  children?: LearningObjectSummary[];
   /**
    * Summary information about users who have made contributions to the Learning Object
    */
