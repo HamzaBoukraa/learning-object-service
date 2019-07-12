@@ -43,6 +43,10 @@ export interface LearningObjectSummary {
    */
   collection: string;
   /**
+   * Learning Objects that exist in this Learning Object's hierarchy
+   */
+  children: LearningObjectSummary[];
+  /**
    * Summary information about users who have made contributions to the Learning Object
    */
   contributors: AuthorSummary[];
