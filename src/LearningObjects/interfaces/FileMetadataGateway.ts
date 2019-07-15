@@ -1,10 +1,8 @@
 import { UserToken } from '../../shared/types';
 import { FileMetadataFilter } from '../../FileMetadata/typings';
 import { LearningObject } from '../../shared/entity';
-import { FileMetadataOperations } from '../../FileMetadata/FileMetadataModule';
 
-export abstract class FileMetadataGateway
-  implements Partial<FileMetadataOperations> {
+export abstract class FileMetadataGateway {
   /**
    * Retrieves all file metadata for a Learning Object
    *

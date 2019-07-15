@@ -5,7 +5,6 @@ import { reportError } from '../../../shared/SentryConnector';
 import { AWS_SDK_CONFIG } from '../../config/aws-sdk.config';
 
 import { FileManager } from '../../interfaces/FileManager';
-import { CompletedPart, CompletedPartList } from '../../typings';
 import { FileUpload } from '../../../shared/types';
 
 AWS.config.credentials = AWS_SDK_CONFIG.credentials;
