@@ -1,5 +1,6 @@
 import { DataStore } from '../shared/interfaces/DataStore';
 import { MockDataStore } from '../tests/mock-drivers/MockDataStore';
+import { StubModuleLearningObjectGateway } from './testing/StubModuleLearningObjectGateway';
 
 import {
   getRecentChangelog,
@@ -10,6 +11,7 @@ import {
 import { Stubs } from '../tests/stubs';
 
 const dataStore: DataStore = new MockDataStore();
+const learningObjectGateway = new StubModuleLearningObjectGateway;
 const stubs = new Stubs();
 
 describe('getRecentChangelog', () => {
@@ -43,7 +45,6 @@ describe('getRecentChangelog', () => {
     .resolves.toHaveProperty('learningObjectId', stubs.learningObject.id);
   });
 });
-
 
 describe('createChangelog', () => {
     it('should create a new change log (admin)', async () => {
@@ -80,58 +81,235 @@ describe('createChangelog', () => {
     });
 });
 
-
-
 describe('getChangelogs', () => {
-  describe('When I request all change logs', () => {
-    describe('and I am an admin', () => {
-      it('should return all change logs for a learning object', async () => {
+  describe('When I request change logs for a Learning Object that is released and does not have any revisions', () => {
+    describe('and I ask for all change logs', () => {
+      it('should return all change logs for the specified learning object', async () => {
         return expect(getChangelogs({
+          learningObjectGateway,
           dataStore,
           learningObjectId: stubs.learningObject.id,
-          user: {...stubs.userToken, accessGroups: ['admin']},
+          user: {...stubs.userToken, accessGroups: ['']},
           userId: stubs.learningObject.author.id,
         }))
         .resolves.toHaveLength(1);
       });
     });
-    describe('and I am an editor', () => {
-      it('should return all change logs for a learning object', async () => {
+    describe('and I ask for the most recent change log', () => {
+      it('should return only the most recent change log for the specified Learning Object', async () => {
         return expect(getChangelogs({
+          learningObjectGateway,
           dataStore,
           learningObjectId: stubs.learningObject.id,
-          user: {...stubs.userToken, accessGroups: ['editor']},
+          user: {...stubs.userToken, accessGroups: ['']},
           userId: stubs.learningObject.author.id,
+          recent: true,
         }))
-        .resolves.toHaveLength(1);
+        .resolves.toHaveProperty('learningObjectId', stubs.learningObject.id);
       });
     });
   });
 
-  describe('When I request change logs while specifying recent', () => {
+  describe('When I request change logs for a Learning Object that is not released (and does not have any revisions)', () => {
     describe('and I am an admin', () => {
-      it('should return only the most recent change log', async () => {
+      describe('and I ask for all change logs', () => {
+        it('should return all change logs for the specified Learning Object', async () => {
+          return expect(getChangelogs({
+            learningObjectGateway,
+            dataStore,
+            learningObjectId: stubs.learningObject.id,
+            user: {...stubs.userToken, accessGroups: ['admin']},
+            userId: stubs.learningObject.author.id,
+          }))
+          .resolves.toHaveLength(1);
+        });
+      });
+      describe('and I ask for the most recent change log', () => {
+        it('should return only the most recent change log for the specified Learning Object', async () => {
+          return expect(getChangelogs({
+            learningObjectGateway,
+            dataStore,
+            learningObjectId: stubs.learningObject.id,
+            user: {...stubs.userToken, accessGroups: ['admin']},
+            userId: stubs.learningObject.author.id,
+            recent: true,
+          }))
+          .resolves.toHaveProperty('learningObjectId', stubs.learningObject.id);
+        });
+      });
+    });
+    describe('and I am an editor', () => {
+      describe('and I ask for all change logs', () => {
+        it('should return all change logs for the specified Learning Object', async () => {
+          return expect(getChangelogs({
+            learningObjectGateway,
+            dataStore,
+            learningObjectId: stubs.learningObject.id,
+            user: {...stubs.userToken, accessGroups: ['editor']},
+            userId: stubs.learningObject.author.id,
+          }))
+          .resolves.toHaveLength(1);
+        });
+      });
+      describe('and I ask for the most recent change log', () => {
+        it('should return only the most recent change log for the specified Learning Object', async () => {
+          return expect(getChangelogs({
+            learningObjectGateway,
+            dataStore,
+            learningObjectId: stubs.learningObject.id,
+            user: {...stubs.userToken, accessGroups: ['editor']},
+            userId: stubs.learningObject.author.id,
+            recent: true,
+          }))
+          .resolves.toHaveProperty('learningObjectId', stubs.learningObject.id);
+        });
+      });
+    });
+    describe('and I am the Learning object author', () => {
+      describe('and I ask for all change logs', () => {
+        it('should return all change logs for the specified Learning Object', async () => {
+          return expect(getChangelogs({
+            learningObjectGateway,
+            dataStore,
+            learningObjectId: stubs.learningObject.id,
+            user: {...stubs.userToken, accessGroups: [''], username: stubs.learningObject.author.username},
+            userId: stubs.learningObject.author.id,
+          }))
+          .resolves.toHaveLength(1);
+        });
+      });
+      describe('and I ask for the most recent change log', () => {
+        it('should return only the most recent change log for the specified Learning Object', async () => {
+          return expect(getChangelogs({
+            learningObjectGateway,
+            dataStore,
+            learningObjectId: stubs.learningObject.id,
+            user: {...stubs.userToken, accessGroups: [''], username: stubs.learningObject.author.username},
+            userId: stubs.learningObject.author.id,
+            recent: true,
+          }))
+          .resolves.toHaveProperty('learningObjectId', stubs.learningObject.id);
+        });
+      });
+    });
+  });
+  describe('When I request change logs for a Learning Object that has revisions, but I ask for change logs relevant to the released copy', () => {
+    describe('and I ask for all change logs', () => {
+      it('should return all change logs that are relevant to the released copy for the specified learning object', async () => {
         return expect(getChangelogs({
+          learningObjectGateway,
           dataStore,
           learningObjectId: stubs.learningObject.id,
-          user: {...stubs.userToken, accessGroups: ['admin']},
+          user: {...stubs.userToken, accessGroups: ['']},
+          userId: stubs.learningObject.author.id,
+          minusRevision: true,
+        }))
+        .resolves.toHaveLength(1);
+      });
+    });
+    describe('and I ask for the most recent change log', () => {
+      it('should return only the most recent change log that is relevant to the released copy for the specified Learning Object', async () => {
+        return expect(getChangelogs({
+          learningObjectGateway,
+          dataStore,
+          learningObjectId: stubs.learningObject.id,
+          user: {...stubs.userToken, accessGroups: ['']},
           userId: stubs.learningObject.author.id,
           recent: true,
+          minusRevision: true,
         }))
         .resolves.toHaveProperty('learningObjectId', stubs.learningObject.id);
       });
     });
-
+  });
+  describe('When I request change logs for a Learning Object that has revisions and I ask for change logs relevant to the working copy and released copy', () => {
+    describe('and I am an admin', () => {
+      describe('and I ask for all change logs', () => {
+        it('should return all change logs for the specified Learning Object', async () => {
+          return expect(getChangelogs({
+            learningObjectGateway,
+            dataStore,
+            learningObjectId: stubs.learningObject.id,
+            user: {...stubs.userToken, accessGroups: ['admin']},
+            userId: stubs.learningObject.author.id,
+          }))
+          .resolves.toHaveLength(1);
+        });
+      });
+      describe('and I ask for the most recent change log', () => {
+        it('should return only the most recent change log for the specified Learning Object', async () => {
+          return expect(getChangelogs({
+            learningObjectGateway,
+            dataStore,
+            learningObjectId: stubs.learningObject.id,
+            user: {...stubs.userToken, accessGroups: ['admin']},
+            userId: stubs.learningObject.author.id,
+            recent: true,
+          }))
+          .resolves.toHaveProperty('learningObjectId', stubs.learningObject.id);
+        });
+      });
+    });
     describe('and I am an editor', () => {
-      it('should return only the most recent change log', async () => {
-        return expect(getChangelogs({
-          dataStore,
-          learningObjectId: stubs.learningObject.id,
-          user: {...stubs.userToken, accessGroups: ['editor']},
-          userId: stubs.learningObject.author.id,
-          recent: true,
-        }))
-        .resolves.toHaveProperty('learningObjectId', stubs.learningObject.id);
+      describe('and I ask for all change logs', () => {
+        it('should return all change logs for the specified Learning Object', async () => {
+          return expect(getChangelogs({
+            learningObjectGateway,
+            dataStore,
+            learningObjectId: stubs.learningObject.id,
+            user: {...stubs.userToken, accessGroups: ['editor']},
+            userId: stubs.learningObject.author.id,
+          }))
+          .resolves.toHaveLength(1);
+        });
+      });
+      describe('and I ask for the most recent change log', () => {
+        it('should return only the most recent change log for the specified Learning Object', async () => {
+          return expect(getChangelogs({
+            learningObjectGateway,
+            dataStore,
+            learningObjectId: stubs.learningObject.id,
+            user: {...stubs.userToken, accessGroups: ['editor']},
+            userId: stubs.learningObject.author.id,
+            recent: true,
+          }))
+          .resolves.toHaveProperty('learningObjectId', stubs.learningObject.id);
+        });
+      });
+    });
+    describe('and I am the Learning Object author', () => {
+      describe('and I ask for all change logs', () => {
+        it('should return all change logs for the specified Learning Object', async () => {
+          return expect(getChangelogs({
+            learningObjectGateway,
+            dataStore,
+            learningObjectId: stubs.learningObject.id,
+            user: {
+              ...stubs.userToken,
+              accessGroups: [''],
+              username: stubs.learningObject.author.username,
+            },
+            userId: stubs.learningObject.author.id,
+          }))
+          .resolves.toHaveLength(1);
+        });
+      });
+      describe('and I ask for the most recent change log', () => {
+        it('should return only the most recent change log for the specified Learning Object', async () => {
+          return expect(getChangelogs({
+            learningObjectGateway,
+            dataStore,
+            learningObjectId: stubs.learningObject.id,
+            user: {
+              ...stubs.userToken,
+              accessGroups: [''],
+              username: stubs.learningObject.author.username,
+            },
+            userId: stubs.learningObject.author.id,
+            recent: true,
+          }))
+          .resolves.toHaveProperty('learningObjectId', stubs.learningObject.id);
+        });
       });
     });
   });

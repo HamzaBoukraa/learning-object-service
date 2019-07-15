@@ -28,7 +28,7 @@ import { LearningObjectStats } from '../LearningObjectStats/LearningObjectStatsI
 import { lengths } from '@cyber4all/clark-taxonomy';
 import { LearningObjectDataStore } from '../LearningObjects/drivers/LearningObjectDatastore';
 import { ChangeLogDocument } from '../shared/types/changelog';
-import { ChangelogDataStore } from '../Changelogs/ChangelogDatastore';
+import { ModuleChangelogDataStore } from '../Changelogs/ModuleChangelogDatastore';
 import {
   ResourceError,
   ResourceErrorReason,
@@ -36,8 +36,7 @@ import {
   ServiceErrorReason,
 } from '../shared/errors';
 import { reportError } from '../shared/SentryConnector';
-import { LearningObject, LearningOutcome, User, StandardOutcome } from '../shared/entity';
-import { Submission } from '../LearningObjectSubmission/types/Submission';
+import { LearningObject, LearningOutcome, User } from '../shared/entity';
 import { MongoConnector } from '../shared/Mongo/MongoConnector';
 import { mapLearningObjectToSummary } from '../shared/functions';
 import {
@@ -61,7 +60,7 @@ export class MongoDriver implements DataStore {
   learningOutcomeStore: LearningOutcomeMongoDatastore;
   statStore: LearningObjectStatStore;
   learningObjectStore: LearningObjectDataStore;
-  changelogStore: ChangelogDataStore;
+  changelogStore: ModuleChangelogDataStore;
 
   private mongoClient: MongoClient;
   private db: Db;
@@ -94,7 +93,7 @@ export class MongoDriver implements DataStore {
     this.learningOutcomeStore = new LearningOutcomeMongoDatastore(this.db);
     this.statStore = new LearningObjectStatStore(this.db);
     this.learningObjectStore = new LearningObjectDataStore(this.db);
-    this.changelogStore = new ChangelogDataStore(this.db);
+    this.changelogStore = new ModuleChangelogDataStore(this.db);
   }
 
   /**

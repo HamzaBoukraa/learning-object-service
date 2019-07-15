@@ -14,6 +14,13 @@ export async function hasChangelogAccess(params: {
     dataStore: DataStore,
     learningObjectId: string,
 }) {
+
+    if (params.user.accessGroups && params.user.accessGroups.includes(ROLE.ADMIN)) {
+        return ROLE.ADMIN;
+    } else if (params.user.accessGroups && params.user.accessGroups.includes(ROLE.EDITOR)) {
+        return ROLE.EDITOR;
+    }
+
     const userId = await params.dataStore.findUser(params.user.username);
     const isOwnedByAuthor = await params.dataStore.checkLearningObjectExistence({
         userId,
@@ -24,11 +31,6 @@ export async function hasChangelogAccess(params: {
         return ROLE.AUTHOR;
     }
 
-    if (params.user.accessGroups && params.user.accessGroups.includes(ROLE.ADMIN)) {
-        return ROLE.ADMIN;
-    } else if (params.user.accessGroups && params.user.accessGroups.includes(ROLE.EDITOR)) {
-        return ROLE.EDITOR;
-    }
 
     throw new ResourceError(
         'Invalid access',

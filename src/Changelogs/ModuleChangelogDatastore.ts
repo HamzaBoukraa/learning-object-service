@@ -3,8 +3,9 @@ import { COLLECTIONS } from '../drivers/MongoDriver';
 import { reportError } from '../shared/SentryConnector';
 import { ResourceError, ResourceErrorReason, ServiceError, ServiceErrorReason } from '../shared/errors';
 import { ChangeLogDocument } from '../shared/types/changelog';
+import { ChangelogDataStore } from './interfaces/ChangelogDataStore';
 
-export class ChangelogDataStore {
+export class ModuleChangelogDataStore implements ChangelogDataStore {
   constructor(private db: Db) { }
 
   /**
@@ -16,7 +17,7 @@ export class ChangelogDataStore {
    *
    * @returns {void}
    */
-  public async createChangelog(params: {
+  async createChangelog(params: {
     learningObjectId: string,
     author: {
       userId: string,
