@@ -1,4 +1,4 @@
-import { BundleData, Writable, BundleExtension, Readable } from './typings';
+import { BundleData, Writable, BundleExtension, Readable } from '../typings';
 
 export abstract class Bundler {
   /**

@@ -1,5 +1,5 @@
 import { Readable } from 'stream';
-import { FileManagerModule } from '../../../FileManager/FileManagerModule';
+import { FileManagerModule } from '../../../../FileManager/FileManagerModule';
 
 export abstract class FileGateway implements Partial<FileManagerModule> {
   /**

@@ -1,4 +1,3 @@
-import { MongoDriver } from '../../drivers/MongoDriver';
 import { generateToken } from '../../tests/mock-token-manager';
 import * as LearningObjectRouteHandler from './LearningObjectRouteHandler';
 import * as express from 'express';
@@ -10,7 +9,7 @@ import { processToken, handleProcessTokenError } from '../../middleware';
 import { LearningObject } from '../../shared/entity';
 import { HierarchyAdapter } from '../Hierarchy/HierarchyAdapter';
 import { BundlerModule } from '../Publishing/Bundler/BundlerModule';
-import { Bundler } from '../Publishing/Bundler/Bundler';
+import { Bundler } from '../Publishing/Bundler/interfaces';
 import {
   BundleData,
   BundleExtension,
