@@ -91,6 +91,7 @@ export async function getRecentChangelog(params: {
  * and the user is looking at the revision copy, check role,
  * if the requester is privileged, fetch all change logs.
  *
+ * @param {LearningObjectGateway} learningObjectGateway an instance of LearningObjectGateway
  * @param {DataStore} dataStore An instance of DataStore
  * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
  * @param {string} userId The id of learning object author
@@ -268,7 +269,6 @@ async function authorizeWriteRequest(params: {
  * @param {DataStore} dataStore An instance of DataStore
  * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
  * @param {string} userId The id of learning object author
- * @param {UserToken} user information about the requester
  *
  * @returns {ChangeLogDocument[]}
  */

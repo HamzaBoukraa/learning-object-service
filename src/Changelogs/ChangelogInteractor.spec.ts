@@ -11,7 +11,7 @@ import {
 import { Stubs } from '../tests/stubs';
 
 const dataStore: DataStore = new MockDataStore();
-const learningObjectGateway = new StubModuleLearningObjectGateway;
+const learningObjectGateway = new StubModuleLearningObjectGateway();
 const stubs = new Stubs();
 
 describe('getRecentChangelog', () => {
