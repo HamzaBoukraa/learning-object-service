@@ -64,6 +64,250 @@ const LearningObjectState = {
 };
 
 /**
+ * Load a full learning object by name
+ * @async
+ *
+ *
+ * @param dataStore [The datastore to fetch the Learning Object from]
+ * @param library [The library communicator used to fetch metrics about the Learning Object]
+ * @param username [The username of the Learning Object's author]
+ * @param learningObjectName [The name of the Learning Object]
+ * @param userToken [Information about the requester of the Learning Object]
+ *
+ * @returns {LearningObject}
+ */
+export async function getLearningObjectByName({
+  dataStore,
+  library,
+  username,
+  learningObjectName,
+  userToken,
+  revision,
+}: {
+  dataStore: DataStore;
+  library: LibraryCommunicator;
+  username: string;
+  learningObjectName: string;
+  userToken: UserToken;
+  revision?: boolean;
+}): Promise<LearningObject> {
+  try {
+    let learningObject: LearningObject;
+    if (!revision) {
+      learningObject = await loadReleasedLearningObjectByAuthorAndName({
+        dataStore,
+        library,
+        authorUsername: username,
+        learningObjectName,
+      }).catch(error =>
+        bypassNotFoundResourceError({
+          error,
+        }),
+      );
+    }
+    if (revision || !learningObject) {
+      learningObject = await loadLearningObjectByNameByAuthorAndName({
+        dataStore,
+        library,
+        authorUsername: username,
+        learningObjectName,
+        userToken,
+      });
+    }
+
+    return learningObject;
+  } catch (e) {
+    handleError(e);
+  }
+}
+
+/**
+ * Loads working copy of a Learning Object by author's username and Learning Object's name
+ *
+ * @private
+ * @static
+ * @param {{
+ *     dataStore: DataStore;
+ *     authorUsername: string;
+ *     learningObjectName: string;
+ *     userToken: UserToken;
+ *   }} params
+ * @returns
+ * @memberof LearningObjectInteractor
+ */
+async function loadLearningObjectByNameByAuthorAndName({
+  dataStore,
+  library,
+  authorUsername,
+  learningObjectName,
+  userToken,
+}: {
+  dataStore: DataStore;
+  library: LibraryCommunicator;
+  authorUsername: string;
+  learningObjectName: string;
+  userToken: UserToken;
+}) {
+  const authorId = await findAuthorIdByUsername({
+    dataStore,
+    username: authorUsername,
+  });
+  const learningObjectID = await getLearningObjectIdByAuthorAndName({
+    dataStore,
+    authorId,
+    authorUsername,
+    name: learningObjectName,
+  });
+  return getLearningObjectById({
+    dataStore,
+    library,
+    id: learningObjectID,
+    requester: userToken,
+    filter: 'unreleased',
+  });
+}
+
+/**
+ * Finds author's id by username.
+ * If id is not found a ResourceError is thrown
+ *
+ * @private
+ * @param {{
+ *     dataStore: DataStore;
+ *     username: string;
+ *   }} params
+ * @returns {Promise<string>}
+ * @memberof LearningObjectInteractor
+ */
+async function findAuthorIdByUsername(params: {
+  dataStore: DataStore;
+  username: string;
+}): Promise<string> {
+  const { dataStore, username } = params;
+  const authorId = await dataStore.findUser(username);
+  if (!authorId) {
+    throw new ResourceError(
+      `No user with username ${username} exists`,
+      ResourceErrorReason.NOT_FOUND,
+    );
+  }
+
+  return authorId;
+}
+
+/**
+ * Finds Learning Object's id by name and authorID.
+ * If id is not found a ResourceError is thrown
+ *
+ * @private
+ * @param {{
+ *     dataStore: DataStore;
+ *     name: string; [Learning Object's name]
+ *     authorId: string [Learning Object's author's id]
+ *     authorUsername: string [Learning Object's author's username]
+ *   }} params
+ * @returns {Promise<string>}
+ * @memberof LearningObjectInteractor
+ */
+async function getLearningObjectIdByAuthorAndName(params: {
+  dataStore: DataStore;
+  name: string;
+  authorId: string;
+  authorUsername: string;
+}): Promise<string> {
+  const { dataStore, name, authorId, authorUsername } = params;
+  const learningObjectId = await dataStore.findLearningObject({
+    authorId,
+    name,
+  });
+  if (!learningObjectId) {
+    throw new ResourceError(
+      `No Learning Object with name ${name} by ${authorUsername} exists`,
+      ResourceErrorReason.NOT_FOUND,
+    );
+  }
+  return learningObjectId;
+}
+
+/**
+ * Loads released Learning Object by author's id and Learning Object's name
+ *
+ * @private
+ * @static
+ * @param {{
+ *     dataStore: DataStore;
+ *     authorId: string;
+ *     authorUsername: string;
+ *     learningObjectName: string;
+ *   }} params
+ * @returns
+ * @memberof LearningObjectInteractor
+ */
+async function loadReleasedLearningObjectByAuthorAndName({
+  dataStore,
+  library,
+  authorUsername,
+  learningObjectName,
+}: {
+  dataStore: DataStore;
+  library: LibraryCommunicator;
+  authorUsername: string;
+  learningObjectName: string;
+}) {
+  const authorId = await findAuthorIdByUsername({
+    dataStore,
+    username: authorUsername,
+  });
+  const learningObjectID = await getReleasedLearningObjectIdByAuthorAndName({
+    dataStore,
+    authorId,
+    authorUsername,
+    name: learningObjectName,
+  });
+  return getLearningObjectById({
+    dataStore,
+    library,
+    id: learningObjectID,
+    requester: null,
+    filter: 'released',
+  });
+}
+
+/**
+ * Finds released Learning Object's id by name and authorID.
+ * If id is not found a ResourceError is thrown
+ *
+ * @private
+ * @param {{
+ *     dataStore: DataStore;
+ *     name: string; [Learning Object's name]
+ *     authorId: string [Learning Object's author's id]
+ *     authorUsername: string [Learning Object's author's username]
+ *   }} params
+ * @returns {Promise<string>}
+ * @memberof LearningObjectInteractor
+ */
+async function getReleasedLearningObjectIdByAuthorAndName(params: {
+  dataStore: DataStore;
+  name: string;
+  authorId: string;
+  authorUsername: string;
+}): Promise<string> {
+  const { dataStore, name, authorId, authorUsername } = params;
+  const learningObjectId = await dataStore.findReleasedLearningObject({
+    authorId,
+    name,
+  });
+  if (!learningObjectId) {
+    throw new ResourceError(
+      `No released Learning Object with name ${name} by ${authorUsername} exists`,
+      ResourceErrorReason.NOT_FOUND,
+    );
+  }
+  return learningObjectId;
+}
+
+/**
  * Retrieves released file metadata by id
  *
  * @export
@@ -717,6 +961,13 @@ export async function getLearningObjectById({
         id: learningObject.id,
         full: false,
       });
+      // FIXME: Children should be mapped to LearningObjectSummary type which doesn't include materials
+      children = await Promise.all(
+        children.map(async child => {
+          child.materials = await dataStore.fetchReleasedMaterials(child.id);
+          return child;
+        }),
+      );
     } else {
       const childrenStatus = requesterIsAuthor({
         requester,
@@ -775,10 +1026,14 @@ async function loadChildObjectSummaries({
     status: childrenStatus,
   });
   children = await Promise.all(
+    // FIXME: Children should be mapped to LearningObjectSummary type which doesn't include materials or files
     children.map(async child => {
+      child.materials = await dataStore.getLearningObjectMaterials({
+        id: child.id,
+      });
       child.materials.files = await Gateways.fileMetadata().getAllFileMetadata({
         requester,
-        learningObjectId: parentId,
+        learningObjectId: child.id,
         filter: 'unreleased',
       });
       return child;
@@ -1159,4 +1414,25 @@ function loadMetrics({
   id: string;
 }): Promise<LearningObject.Metrics> {
   return library.getMetrics(id);
+}
+
+/**
+ * This handler allows execution to proceed if a ResourceError occurs because of a resource not being found.
+ *
+ * @param {Error} error
+ * @returns {null} [Returns null so that the value resolves to null indicating resource was not loaded]
+ */
+function bypassNotFoundResourceError({
+  error,
+}: {
+  error: Error;
+}): null | never {
+  if (
+    !(error instanceof ResourceError) ||
+    (error instanceof ResourceError &&
+      error.name !== ResourceErrorReason.NOT_FOUND)
+  ) {
+    throw error;
+  }
+  return null;
 }

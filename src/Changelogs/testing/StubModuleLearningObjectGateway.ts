@@ -5,7 +5,7 @@ import { Stubs } from '../../tests/stubs';
 import { LearningObject } from '../../shared/entity';
 import { STUB_CHANGELOG_IDS } from './ChangelogStubs';
 
-export class StubModuleLearningObjectGateway extends LearningObjectGateway {
+export class StubModuleLearningObjectGateway implements LearningObjectGateway {
     stubs = new Stubs();
 
     async getReleasedLearningObjectSummary(params: {

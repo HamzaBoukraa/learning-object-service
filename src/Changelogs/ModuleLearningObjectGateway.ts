@@ -3,7 +3,7 @@ import { LearningObjectAdapter } from '../LearningObjects/adapters/LearningObjec
 import { LearningObjectSummary } from '../shared/types';
 import { Requester } from './typings';
 
-export class ModuleLearningObjectGateway extends LearningObjectGateway {
+export class ModuleLearningObjectGateway implements LearningObjectGateway {
   private adapter: LearningObjectAdapter = LearningObjectAdapter.getInstance();
 
   /**
