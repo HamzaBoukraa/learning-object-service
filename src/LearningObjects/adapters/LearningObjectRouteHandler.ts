@@ -20,6 +20,17 @@ export function initializePublic({
   dataStore: DataStore;
   library: LibraryCommunicator;
 }) {
+  const searchUserLearningObjects = async (req: Request, res: Response) => {
+    try {
+      const requester: UserToken = req.user;
+      const authorUsername: string = req.params.username;
+      const learningObjects = null;
+      res.status(200).send(learningObjects);
+    } catch (e) {
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({ message });
+    }
+  };
   const getLearningObjectByName = async (req: Request, res: Response) => {
     try {
       const requester: UserToken = req.user;
@@ -59,6 +70,11 @@ export function initializePublic({
       res.status(code).json({ message });
     }
   };
+
+  router.get(
+    '/learning-objects/:username/learning-objects',
+    searchUserLearningObjects,
+  );
   /**
    * @deprecated This route will be deprecated because of its non RESTful route structure
    * Please update to using `/users/:username/learning-objects/:learningObjectId` route.

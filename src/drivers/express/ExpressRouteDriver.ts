@@ -8,9 +8,7 @@ import * as LearningObjectStatsRouteHandler from '../../LearningObjectStats/Lear
 import { UserToken } from '../../shared/types';
 import * as LearningObjectRouteHandler from '../../LearningObjects/adapters/LearningObjectRouteHandler';
 import { initializeCollectionRouter } from '../../Collections/RouteHandler';
-import {
-  mapErrorToResponseData,
-} from '../../shared/errors';
+import { mapErrorToResponseData } from '../../shared/errors';
 import { LearningObject } from '../../shared/entity';
 import { initializePublic as initializePublicHierarchyRoutes } from '../../LearningObjects/Hierarchy/HierarchyRouteHandler';
 
@@ -52,13 +50,17 @@ export class ExpressRouteDriver {
         const page = req.query.currPage || req.query.page;
         const limit = req.query.limit;
         const standardOutcomeIDs = req.query.standardOutcomes;
-        const query = Object.assign({}, req.query, { page, limit, standardOutcomeIDs });
+        const query = Object.assign({}, req.query, {
+          page,
+          limit,
+          standardOutcomeIDs,
+        });
 
         objectResponse = await LearningObjectInteractor.searchObjects({
-            dataStore: this.dataStore,
-            library: this.library,
-            query,
-            userToken,
+          dataStore: this.dataStore,
+          library: this.library,
+          query,
+          userToken,
         });
 
         objectResponse.objects = objectResponse.objects.map(obj =>
@@ -74,44 +76,13 @@ export class ExpressRouteDriver {
 
     initializeCollectionRouter({ router, dataStore: this.dataStore });
 
-    router.get('/users/:username/learning-objects', async (req, res) => {
-      try {
-        const query = req.query;
-        const userToken: UserToken = req.user;
-        const loadChildren: boolean = query.children;
-        delete query.children;
-        const objects = await LearningObjectInteractor.loadUsersObjectSummaries(
-          {
-            query,
-            userToken,
-            loadChildren,
-            dataStore: this.dataStore,
-            library: this.library,
-            username: req.params.username,
-          },
-        );
-        res.status(200).send(objects.map(obj => obj.toPlainObject()));
-      } catch (e) {
-        const { code, message } = mapErrorToResponseData(e);
-        res.status(code).json({ message });
-      }
-    });
-
+    /**
+     * @deprecated
+     */
     router.get(
       '/users/:username/learning-objects/profile',
       async (req, res) => {
-        try {
-          const objects = await LearningObjectInteractor.loadProfile({
-            dataStore: this.dataStore,
-            username: req.params.username,
-            userToken: req.user,
-          });
-
-          res.status(200).send(objects.map(x => x.toPlainObject()));
-        } catch (e) {
-          const { code, message } = mapErrorToResponseData(e);
-          res.status(code).json({message});
-        }
+        res.redirect(301, req.originalUrl.replace('/profile', ''));
       },
     );
 
