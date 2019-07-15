@@ -83,11 +83,10 @@ describe('fetchObjectsByIDs', () => {
       dataStore,
       library,
       ids: [stubs.learningObject.id],
-    })
-      .then(val => {
-        expect(val).toBeInstanceOf(Array);
-        done();
-      });
+    }).then(val => {
+      expect(val).toBeInstanceOf(Array);
+      done();
+    });
   });
 
   it('should return learning object - given empty array!', done => {
@@ -95,11 +94,10 @@ describe('fetchObjectsByIDs', () => {
       dataStore,
       library,
       ids: [],
-    })
-      .then(val => {
-        expect(val).toBeInstanceOf(Array);
-        done();
-      });
+    }).then(val => {
+      expect(val).toBeInstanceOf(Array);
+      done();
+    });
   });
 });
 
@@ -110,10 +108,9 @@ describe('getLearningObjectId', () => {
       username: stubs.learningObject.author.username,
       learningObjectName: stubs.learningObject.name,
       userToken: stubs.userToken,
-    })
-      .then(val => {
-        expect(val).toEqual(stubs.learningObject.id);
-        done();
-      });
+    }).then(val => {
+      expect(val).toEqual(stubs.learningObject.id);
+      done();
+    });
   });
 });

@@ -24,6 +24,37 @@ export function initializePublic({
   dataStore: DataStore;
   library: LibraryCommunicator;
 }) {
+  const searchUserLearningObjects = async (req: Request, res: Response) => {
+    try {
+      const requester: UserToken = req.user;
+      const authorUsername: string = req.params.username;
+      const learningObjects = null;
+      res.status(200).send(learningObjects);
+    } catch (e) {
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({ message });
+    }
+  };
+  const getLearningObjectByName = async (req: Request, res: Response) => {
+    try {
+      const requester: UserToken = req.user;
+      const authorUsername: string = req.params.username;
+      const learningObjectName: string = req.params.learningObjectName;
+      const revision: boolean = req.query.revision;
+      const object = await LearningObjectInteractor.getLearningObjectByName({
+        dataStore,
+        library,
+        userToken: requester,
+        username: authorUsername,
+        learningObjectName,
+        revision,
+      });
+      res.status(200).send(object.toPlainObject());
+    } catch (e) {
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({ message });
+    }
+  };
   /**
    * Retrieve a learning object by a specified ID
    * @param {Request} req
@@ -44,6 +75,24 @@ export function initializePublic({
     }
   };
 
+  router.get(
+    '/learning-objects/:username/learning-objects',
+    searchUserLearningObjects,
+  );
+  /**
+   * @deprecated This route will be deprecated because of its non RESTful route structure
+   * Please update to using `/users/:username/learning-objects/:learningObjectId` route.
+   * if requesting a Learning Object by name
+   */
+  router.get(
+    '/learning-objects/:username/:learningObjectName',
+    getLearningObjectByName,
+  );
+  /**
+   * @deprecated This route will be deprecated because of its non RESTful route structure
+   * Please update to using `/users/:username/learning-objects/:learningObjectId`
+   * if requesting a Learning Object by id
+   */
   router.get('/learning-objects/:learningObjectId', getLearningObjectById);
   router.get(
     '/users/:username/learning-objects/:learningObjectId',

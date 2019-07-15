@@ -6,15 +6,10 @@ import {
 import { Router } from 'express';
 import { LearningObjectInteractor } from '../../interactors/interactors';
 import * as LearningObjectStatsRouteHandler from '../../LearningObjectStats/LearningObjectStatsRouteHandler';
-import { UserToken, UserLearningObjectQuery } from '../../shared/types';
 import { initializeSingleFileDownloadRouter } from '../../SingleFileDownload/RouteHandler';
 import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
 import { initializeCollectionRouter } from '../../Collections/RouteHandler';
-import {
-  ResourceError,
-  mapErrorToResponseData,
-  ServiceError,
-} from '../../shared/errors';
+import { mapErrorToResponseData } from '../../shared/errors';
 import { LearningObject } from '../../shared/entity';
 import { initializePublic as initializePublicHierarchyRoutes } from '../../LearningObjects/Hierarchy/HierarchyRouteHandler';
 
@@ -107,39 +102,13 @@ export class ExpressRouteDriver {
 
     initializeCollectionRouter({ router, dataStore: this.dataStore });
 
-    router.get('/users/:username/learning-objects', async (req, res) => {
-      try {
-        const requester: UserToken = req.user;
-        const query: UserLearningObjectQuery = req.query;
-        const authorUsername: string = req.params.username;
-        const objects = await LearningObjectInteractor.searchUsersObjects({
-          query,
-          requester,
-          authorUsername,
-          dataStore: this.dataStore,
-        });
-        res.status(200).send(objects);
-      } catch (e) {
-        const { code, message } = mapErrorToResponseData(e);
-        res.status(code).json({ message });
-      }
-    });
-
+    /**
+     * @deprecated
+     */
     router.get(
       '/users/:username/learning-objects/profile',
       async (req, res) => {
-        try {
-          const objects = await LearningObjectInteractor.loadProfile({
-            dataStore: this.dataStore,
-            username: req.params.username,
-            userToken: req.user,
-          });
-
-          res.status(200).send(objects.map(x => x.toPlainObject()));
-        } catch (e) {
-          const { code, message } = mapErrorToResponseData(e);
-          res.status(code).json({ message });
-        }
+        res.redirect(301, req.originalUrl.replace('/profile', ''));
       },
     );
 

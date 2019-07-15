@@ -16,7 +16,6 @@ import {
 import {
   updateObjectLastModifiedDate,
   updateParentsDate,
-  getLearningObjectById,
 } from '../LearningObjects/LearningObjectInteractor';
 import {
   UserToken,
