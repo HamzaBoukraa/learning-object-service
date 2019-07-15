@@ -15,7 +15,6 @@ import {
   requesterIsAuthor,
   requesterIsAdminOrEditor,
   hasReadAccessByCollection,
-  hasLearningObjectWriteAccess,
   authorizeReadAccess,
   authorizeWriteAccess,
 } from '../shared/AuthorizationManager';
@@ -600,10 +599,11 @@ export async function updateLearningObject({
     });
     // Infer if this Learning Object is being released
     if (cleanUpdates.status === LearningObject.Status.RELEASED) {
-      const releasableObject = await generateReleasableLearningObject(
+      const releasableObject = await generateReleasableLearningObject({
         dataStore,
         id,
-      );
+        requester,
+      });
       await PublishingService.releaseLearningObject({
         userToken: requester,
         dataStore,
@@ -619,13 +619,23 @@ export async function updateLearningObject({
  * FIXME: Once the return type of `fetchLearningObject` is updated to the `Datastore's` schema type,
  * this function should be updated to not fetch children ids as they should be returned with the document
  */
-async function generateReleasableLearningObject(
-  dataStore: DataStore,
-  id: string,
-) {
-  const [object, childIds] = await Promise.all([
+async function generateReleasableLearningObject({
+  dataStore,
+  id,
+  requester,
+}: {
+  dataStore: DataStore;
+  id: string;
+  requester: UserToken;
+}) {
+  const [object, childIds, files] = await Promise.all([
     dataStore.fetchLearningObject({ id, full: true }),
     dataStore.findChildObjectIds({ parentId: id }),
+    Gateways.fileMetadata().getAllFileMetadata({
+      requester,
+      learningObjectId: id,
+      filter: 'unreleased',
+    }),
   ]);
   let children: LearningObject[] = [];
   if (Array.isArray(childIds)) {
@@ -635,6 +645,7 @@ async function generateReleasableLearningObject(
     ...object.toPlainObject(),
     children,
   });
+  releasableObject.materials.files = files;
   return releasableObject;
 }
 
