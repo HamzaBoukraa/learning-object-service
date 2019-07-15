@@ -1,4 +1,4 @@
-import { LicenseRetriever } from './LicenseRetriever';
+import { LicenseRetriever } from '../../interfaces';
 import { Readable } from 'stream';
 import * as https from 'https';
 

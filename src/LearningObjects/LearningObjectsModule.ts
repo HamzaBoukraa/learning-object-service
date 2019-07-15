@@ -5,12 +5,14 @@ import {
   FileManagerGateway,
 } from './interfaces';
 import { PDFKitReadMeBuilder } from './drivers';
-import { FileMetadataModule } from '../FileMetadata/FileMetadataModule';
-import { FileManagerModule } from '../FileManager/FileManagerModule';
+import {
+  ModuleFileMetadataGateway,
+  ModuleFileManagerGateway,
+} from './gateways';
 @serviceModule({
   providers: [
-    { provide: FileMetadataGateway, useClass: FileMetadataModule },
-    { provide: FileManagerGateway, useClass: FileManagerModule },
+    { provide: FileMetadataGateway, useClass: ModuleFileMetadataGateway },
+    { provide: FileManagerGateway, useClass: ModuleFileManagerGateway },
     { provide: ReadMeBuilder, useClass: PDFKitReadMeBuilder },
   ],
 })

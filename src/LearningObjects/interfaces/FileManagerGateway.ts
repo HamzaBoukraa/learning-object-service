@@ -1,8 +1,6 @@
 import { FileUpload } from '../../shared/types';
-import { FileManagerOperations } from '../../FileManager/FileManagerModule';
 
-export abstract class FileManagerGateway
-  implements Partial<FileManagerOperations> {
+export abstract class FileManagerGateway {
   /**
    * Uploads a file to a user's Learning Object
    *
