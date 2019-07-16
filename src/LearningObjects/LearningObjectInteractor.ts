@@ -1398,6 +1398,36 @@ export async function createLearningObjectRevision(params: {
   });
 }
 
+/**
+ * getLearningObjectRevision is responsible for
+ * returning the revision of a Learning Object.
+ * The function starts by checking that the provided
+ * request structure is valid. This is done by retrieving
+ * the working copy of the Learning Object with the given
+ * userId and LEarningObjectId pair. This working copy
+ * Learning Object is used to check if the requester has author
+ * access. If not, the function will check to see if the requester
+ * has admin or editor access.
+ *
+ * If no errors are thrown, the function will check if a revision
+ * exists for the given Learning Object. If yes, then the function
+ * will proceed to return the requested Learning Object.
+ *
+ * The return type of this function will change depending on
+ * the summary param. If summary is true, the function will
+ * return a LearningObjectSummary type of the revision.
+ * If summary is falsy, the function will return a full
+ * Learning Object.
+ *
+ * @param {
+ *  userId string
+ *  learningObjectId string
+ *  dataStore DataStore
+ *  requester UserToken
+ *  library LibraryCommunicator
+ *  summary? boolean
+ * }
+ */
 export async function getLearningObjectRevision(params: {
   userId: string,
   learningObjectId: string,
