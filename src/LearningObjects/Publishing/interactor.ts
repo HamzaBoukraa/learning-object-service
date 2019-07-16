@@ -18,10 +18,6 @@ namespace Gateways {
     LearningObjectsModule.resolveDependency(
       FileManagerInjectionKey,
     ) as FileManagerGateway;
-  export const learningObjectSubmission = () =>
-    LearningObjectsModule.resolveDependency(
-      LearningObjectSubmissionGateway,
-    ) as LearningObjectSubmissionGateway;
 }
 
 export interface PublishingDataStore {
@@ -47,19 +43,21 @@ export async function releaseLearningObject({
   dataStore,
   releasableObject,
   releaseEmailGateway,
+  learningObjectSubmissionGateway,
 }: {
   authorUsername: string;
   userToken: UserToken;
   dataStore: PublishingDataStore;
   releasableObject: LearningObject;
   releaseEmailGateway: ReleaseEmailGateway;
+  learningObjectSubmissionGateway: LearningObjectSubmissionGateway;
 }): Promise<void> {
     if (!requesterIsAdminOrEditor(userToken)) {
         throw new ResourceError(`${userToken.username} does not have access to release this Learning Object`, ResourceErrorReason.INVALID_ACCESS);
     }
     await createPublishingArtifacts(releasableObject).catch(reportError);
     await dataStore.addToReleased(releasableObject);
-    await Gateways.learningObjectSubmission().deleteSubmission({
+    await learningObjectSubmissionGateway.deleteSubmission({
       learningObjectId: releasableObject.id,
       authorUsername,
       user: userToken,
