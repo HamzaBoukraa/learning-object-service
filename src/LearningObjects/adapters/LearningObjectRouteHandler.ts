@@ -212,6 +212,7 @@ export function initializePrivate({
     try {
       const params = { ...req.params, dataStore, user: req.user };
       await LearningObjectInteractor.createLearningObjectRevision(params);
+      res.sendStatus(204);
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
       res.status(code).json({ message });
