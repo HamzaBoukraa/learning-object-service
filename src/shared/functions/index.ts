@@ -15,7 +15,7 @@ export function sanitizeText(text: string, lowerCase = true): string {
     if (lowerCase) {
       clean = clean.toLowerCase();
     }
-    clean.trim();
+    clean = clean.trim();
   }
 
   return clean;
