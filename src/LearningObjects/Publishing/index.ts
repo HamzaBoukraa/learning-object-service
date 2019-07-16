@@ -6,14 +6,15 @@ import { LambdaGatewayFactory } from './ReleaseEmails/lambda-gateway-factory';
 
 // FIXME: Replace with direct export of ElasticSearchPublishingGateway#releaseLearningObject
 // once we do away with the released-objects collection in Mongo
-const setupElasticToggle = ({ userToken, dataStore, releasableObject }: {
+const setupElasticToggle = ({ userToken, dataStore, releasableObject , authorUsername }: {
   userToken: UserToken,
+  authorUsername: string,
   dataStore: PublishingDataStore;
   releasableObject: LearningObject;
 }) => {
   const toggle = new ElasticMongoReleaseRequestDuplicator(dataStore);
   const releaseEmailGateway = LambdaGatewayFactory.buildGateway();
-  releaseLearningObject({ userToken, dataStore: toggle, releasableObject, releaseEmailGateway });
+  releaseLearningObject({ authorUsername, userToken, dataStore: toggle, releasableObject, releaseEmailGateway });
 };
 
 export { setupElasticToggle as releaseLearningObject };

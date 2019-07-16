@@ -9,6 +9,7 @@ import { reportError } from '../../shared/SentryConnector';
 import { LearningObjectsModule } from '../LearningObjectsModule';
 import { FileManagerGateway } from './FileManagerGateway';
 import { FileManagerGateway as FileManagerInjectionKey } from '../interfaces/FileManagerGateway';
+import { LearningObjectSubmissionGateway } from './LearningObjectSubmissionGateway';
 
 // FIXME: The Publishing Module was setup as a sub-module of LearningObjectsModule,
 // should it be able to resolve dependencies from the parent LearningObjectsModule or should it declare its own dependencies?
@@ -17,6 +18,10 @@ namespace Gateways {
     LearningObjectsModule.resolveDependency(
       FileManagerInjectionKey,
     ) as FileManagerGateway;
+  export const learningObjectSubmission = () =>
+    LearningObjectsModule.resolveDependency(
+      LearningObjectSubmissionGateway,
+    ) as LearningObjectSubmissionGateway;
 }
 
 export interface PublishingDataStore {
@@ -37,11 +42,13 @@ export interface PublishingDataStore {
  * Learning Object being released is a top-level (parent) object.
  */
 export async function releaseLearningObject({
+  authorUsername,
   userToken,
   dataStore,
   releasableObject,
   releaseEmailGateway,
 }: {
+  authorUsername: string;
   userToken: UserToken;
   dataStore: PublishingDataStore;
   releasableObject: LearningObject;
@@ -52,6 +59,11 @@ export async function releaseLearningObject({
     }
     await createPublishingArtifacts(releasableObject).catch(reportError);
     await dataStore.addToReleased(releasableObject);
+    await Gateways.learningObjectSubmission().deleteSubmission({
+      learningObjectId: releasableObject.id,
+      authorUsername,
+      user: userToken,
+    });
     await sendEmail(releasableObject, userToken, releaseEmailGateway);
 }
 

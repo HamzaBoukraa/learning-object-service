@@ -35,6 +35,13 @@ export async function cancelSubmission(params: {
     );
   }
 
+  if (object.status !== LearningObject.Status.WAITING) {
+    throw new ResourceError(
+      `Learning Object with id ${params.learningObjectId} is not in Waiting`,
+      ResourceErrorReason.CONFLICT,
+    );
+  }
+
   const submission = await params.dataStore.fetchRecentSubmission(
     params.learningObjectId,
   );
@@ -57,6 +64,5 @@ export async function cancelSubmission(params: {
       status: LearningObject.Status.UNRELEASED,
     },
   });
-  // FIXME: Rename to withdrawSubmission
-  await params.publisher.withdrawSubmission(params.learningObjectId);
+  await params.publisher.deleteSubmission(params.learningObjectId);
 }

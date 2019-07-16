@@ -9,7 +9,8 @@ export interface SubmissionPublisher {
   /**
    * withdrawSubmission removes a submitted Learning Object from access by
    * reviewers, curators, editors, or admins.
+   *
    * @param learningObjectID the ID of the Learning Object being withdrawn
    */
-  withdrawSubmission(learningObjectID: string): Promise<void>;
+  deleteSubmission(learningObjectID: string): Promise<void>;
 }
