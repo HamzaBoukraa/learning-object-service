@@ -5,6 +5,9 @@ import {
   UserToken,
   VALID_LEARNING_OBJECT_UPDATES,
   LearningObjectSummary,
+  UserLearningObjectQuery,
+  UserLearningObjectSearchQuery,
+  CollectionAccessMap,
 } from '../shared/types';
 import { ResourceError, ResourceErrorReason } from '../shared/errors';
 import { reportError } from '../shared/SentryConnector';
@@ -17,6 +20,8 @@ import {
   hasReadAccessByCollection,
   authorizeReadAccess,
   authorizeWriteAccess,
+  requesterIsPrivileged,
+  getAccessGroupCollections,
 } from '../shared/AuthorizationManager';
 import { FileMeta, LearningObjectFilter, MaterialsFilter } from './typings';
 import * as PublishingService from './Publishing';
@@ -62,6 +67,81 @@ const LearningObjectState = {
     LearningObject.Status.RELEASED,
   ],
 };
+
+export async function searchUsersObjects({
+  dataStore,
+  authorUsername,
+  requester,
+  query,
+}: {
+  dataStore: DataStore;
+  authorUsername: string;
+  requester: UserToken;
+  query?: UserLearningObjectQuery;
+}): Promise<LearningObjectSummary[]> {
+  let { text, draftsOnly, status } = this.formatUserLearningObjectQuery(query);
+  if (!(await dataStore.findUserId(authorUsername))) {
+    throw new ResourceError(
+      `Cannot load Learning Objects for user ${authorUsername}. User ${authorUsername} does not exist.`,
+      ResourceErrorReason.NOT_FOUND,
+    );
+  }
+  const isAuthor = requesterIsAuthor({ requester, authorUsername });
+  const isPrivileged = requesterIsPrivileged(requester);
+  const searchQuery: UserLearningObjectSearchQuery = {
+    text,
+    status,
+  };
+
+  if (draftsOnly) {
+    if (!isAuthor && !isPrivileged) {
+      throw new ResourceError(
+        `Invalid access. You are not authorized to view ${authorUsername}'s drafts.`,
+        ResourceErrorReason.INVALID_ACCESS,
+      );
+    }
+
+    if (
+      searchQuery.status &&
+      searchQuery.status.includes(LearningObject.Status.RELEASED)
+    ) {
+      throw new ResourceError(
+        'Illegal query arguments. Cannot specify both draftsOnly and released status filters.',
+        ResourceErrorReason.BAD_REQUEST,
+      );
+    }
+    searchQuery.revision = 0;
+  }
+
+  if (!isAuthor && !isPrivileged) {
+    return dataStore.searchReleasedUserObjects(searchQuery, authorUsername);
+  }
+
+  let collectionAccessMap: CollectionAccessMap;
+
+  if (!isAuthor) {
+    enforceNonAuthorStatusRestrictions(searchQuery.status);
+    if (!requesterIsAdminOrEditor(requester)) {
+      const privilegedCollections = getAccessGroupCollections(requester);
+      collectionAccessMap = getCollectionAccessMap(
+        [],
+        privilegedCollections,
+        searchQuery.status,
+      );
+      searchQuery.status =
+        searchQuery.status &&
+        searchQuery.status.includes(LearningObject.Status.RELEASED)
+          ? LearningObjectState.RELEASED
+          : null;
+    }
+  }
+
+  return dataStore.searchAllUserObjects(
+    searchQuery,
+    authorUsername,
+    collectionAccessMap,
+  );
+}
 
 /**
  * Load a full learning object by name
