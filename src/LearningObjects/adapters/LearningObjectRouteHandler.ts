@@ -218,6 +218,15 @@ export function initializePrivate({
     }
   };
 
+  const getRevision = async (req: Request, req: Response) => {
+    try {
+
+    } catch (e) {
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({ message });
+    }
+  };
+
   router.route('/learning-objects').post(addLearningObject);
   router.post('/users/:username/learning-objects', addLearningObject);
   router.patch('/learning-objects/:id', updateLearningObject);
@@ -236,4 +245,5 @@ export function initializePrivate({
     getLearningObjectChildren,
   );
   router.post('/users/:userId/learning-objects/:learningObjectId/revisions', createRevision);
+  router.get('/users/:userId/learning-objects/:id/revisions/:id', getRevision);
 }
