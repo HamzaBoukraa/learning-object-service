@@ -92,6 +92,22 @@ export function toNumber(value: any): number {
 }
 
 /**
+ *
+ * Converts value to boolean if not yet a boolean
+ * @param {*} value
+ * @returns {boolean}
+ */
+export function toBoolean(value: any): boolean {
+  if (value === 'true' || value === true) {
+    return true;
+  }
+  if (value === 'false' || value === false) {
+    return false;
+  }
+  return false;
+}
+
+/**
  * Converts LearningObject type into LearningObjectSummary
  *
  * @private
