@@ -176,7 +176,7 @@ export class ExpressAuthRouteDriver {
           const userToken = req.user;
           const username: string = req.params.username;
           const learningObjectName: string = req.params.learningObjectName;
-          const id = LearningObjectInteractor.getLearningObjectId({
+          const id = await LearningObjectInteractor.getLearningObjectId({
             dataStore: this.dataStore,
             username,
             learningObjectName,
