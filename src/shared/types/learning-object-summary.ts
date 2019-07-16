@@ -22,6 +22,18 @@ export interface AuthorSummary {
    */
   organization: string;
 }
+export interface LearningObjectChildSummary {
+  /**
+   * The name of the Learning Object
+   */
+
+  name: string;
+  /**
+   * Unique identifier of the Learning Object
+   */
+
+  id: string;
+}
 
 /**
  * An interface representation of the LearningObjectSummary type
@@ -45,7 +57,7 @@ export interface LearningObjectSummary {
   /**
    * Summary of Learning Objects that exist in this Learning Object's hierarchy
    */
-  children: LearningObjectSummary[];
+  children: LearningObjectChildSummary[];
   /**
    * Summary information about users who have made contributions to the Learning Object
    */
