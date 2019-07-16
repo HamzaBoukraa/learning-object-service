@@ -1518,6 +1518,7 @@ async function validateRequest(params: {
       ResourceErrorReason.NOT_FOUND,
     );
   }
+  return learningObject;
 }
 
 /**
