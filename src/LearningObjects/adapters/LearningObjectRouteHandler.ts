@@ -228,6 +228,7 @@ export function initializePrivate({
         summary: req.query.summary,
       };
       const learningObjectRevision = await LearningObjectInteractor.getLearningObjectRevision(params);
+      res.status(200).json(learningObjectRevision);
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
       res.status(code).json({ message });
