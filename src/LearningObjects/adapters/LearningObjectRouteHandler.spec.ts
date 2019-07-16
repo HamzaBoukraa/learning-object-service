@@ -26,6 +26,8 @@ import {
 import { StubFileManagerGateway } from '../gateways/FileManagerGateway/StubFileManagerGateway';
 import { StubFileMetadataGateway } from '../gateways/FileMetadataGateway/StubFileMetadataGateway';
 import { StubReadMeBuilder } from '../drivers/ReadMeBuilder/StubReadMeBuilder';
+import { LearningObjectSubmissionAdapter } from '../../LearningObjectSubmission/adapters/LearningObjectSubmissionAdapter';
+import { StubSubmissionPublisher } from '../../LearningObjectSubmission/StubSubmissionPublisher';
 
 const app = express();
 const router = express.Router();
@@ -38,6 +40,7 @@ const request = supertest(app);
 
 describe('LearningObjectRouteHandler', () => {
   const dataStore = new MockDataStore();
+  LearningObjectSubmissionAdapter.open(new StubSubmissionPublisher());
   const stubs = dataStore.stubs;
   let LibraryDriver: LibraryCommunicator;
   let token: string;
