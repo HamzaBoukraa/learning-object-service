@@ -1398,6 +1398,52 @@ export async function createLearningObjectRevision(params: {
   });
 }
 
+export async function getLearningObjectRevision(params: {
+  userId: string,
+  learningObjectId: string,
+  dataStore: DataStore,
+  requester: UserToken,
+  library: LibraryCommunicator,
+  summary?: boolean,
+}): Promise<LearningObject | LearningObjectSummary> {
+  const learningObject = await validateRequest({
+    userId: params.userId,
+    learningObjectId: params.learningObjectId,
+    dataStore: params.dataStore,
+  });
+
+  if (
+    learningObject.author.username === params.requester.username ||
+    requesterIsAdminOrEditor(params.requester)
+  ) {
+    if (learningObject.revision === 0) {
+      throw new ResourceError(
+        `Learning Object with id ${params.learningObjectId} does not have a revision`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+
+    if (params.summary) {
+      return getLearningObjectRevisionSummary({
+        dataStore: params.dataStore,
+        requester: params.requester,
+        id: params.learningObjectId,
+        revision: learningObject.revision,
+      });
+    }
+    return getLearningObjectById({
+      dataStore: params.dataStore,
+      library: params.library,
+      id: params.learningObjectId,
+      requester: params.requester,
+    });
+  }
+  throw new ResourceError(
+    `User with id ${params.userId} does not have access to the revision of Learning Object with id ${params.learningObjectId}`,
+    ResourceErrorReason.FORBIDDEN,
+  );
+}
+
 /**
  * Sanitizes object containing updates to be stored by removing invalid update properties, cloning valid properties, and trimming strings
  *
@@ -1423,13 +1469,14 @@ function sanitizeUpdates(
  * with the given userId and Learning Object Id.
  * If it does not find a Learning Object that matches
  * the given criteria, it throws a Resource Error.
+ * Otherwise, it returns a working copy Learning Object.
  * @param params
  */
 async function validateRequest(params: {
   userId: string,
   learningObjectId: string,
   dataStore: DataStore,
-}): Promise<void> {
+}): Promise<LearningObject> {
   const learningObject = await params.dataStore.checkLearningObjectExistence({
     userId: params.userId,
     learningObjectId: params.learningObjectId,

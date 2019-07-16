@@ -218,9 +218,16 @@ export function initializePrivate({
     }
   };
 
-  const getRevision = async (req: Request, req: Response) => {
+  const getRevision = async (req: Request, res: Response) => {
     try {
-
+      const params = {
+        ...req.params,
+        dataStore,
+        library,
+        user: req.user,
+        summary: req.query.summary,
+      };
+      const learningObjectRevision = await LearningObjectInteractor.getLearningObjectRevision(params);
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
       res.status(code).json({ message });
