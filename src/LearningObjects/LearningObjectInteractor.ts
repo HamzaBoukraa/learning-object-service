@@ -68,6 +68,27 @@ const LearningObjectState = {
   ],
 };
 
+/**
+ * Performs a search on the specified user's Learning Objects.
+ *
+ * *** NOTES ***
+ * If the specified user cannot be found, a NotFound ResourceError is thrown.
+ * Only the author and privileged users are allowed to view Learning Object drafts.
+ * "Drafts" are defined as 'not released' Learning Objects that have never been released or have a `revision` id of `0`, so
+ * if the `draftsOnly` filter is specified, the `status` filter must not have a value of `released`.
+ * Only authors can see drafts that are not submitted for review; `unreleased` || `rejected`.
+ * Admins and editors can see all Learning Objects submitted for review.
+ * Reviewers and curators can only see Learning Objects submitted for review to their collection.
+ *
+ *
+ * @async
+ *
+ * @returns {LearningObjectSummary[]} the user's learning objects found by the query
+ * @param params.dataStore
+ * @param params.authorUsername
+ * @param params.requester
+ * @param params.query
+ */
 export async function searchUsersObjects({
   dataStore,
   authorUsername,
