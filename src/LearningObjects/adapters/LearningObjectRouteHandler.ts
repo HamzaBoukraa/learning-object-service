@@ -2,7 +2,7 @@ import { Request, Response, Router } from 'express';
 import { mapErrorToResponseData } from '../../shared/errors';
 import { DataStore } from '../../shared/interfaces/DataStore';
 import { LibraryCommunicator } from '../../shared/interfaces/interfaces';
-import { UserToken } from '../../shared/types';
+import { UserToken, UserLearningObjectQuery } from '../../shared/types';
 import * as LearningObjectInteractor from '../LearningObjectInteractor';
 import { LearningObject } from '../../shared/entity';
 import { MaterialsFilter, LearningObjectFilter } from '../typings';
@@ -24,7 +24,13 @@ export function initializePublic({
     try {
       const requester: UserToken = req.user;
       const authorUsername: string = req.params.username;
-      const learningObjects: any = null;
+      const query: UserLearningObjectQuery = req.query;
+      const learningObjects = await LearningObjectInteractor.searchUsersObjects({
+        dataStore,
+        authorUsername,
+        requester,
+        query,
+      });
       res.status(200).send(learningObjects);
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
@@ -70,11 +76,15 @@ export function initializePublic({
       res.status(code).json({ message });
     }
   };
-
+  /**
+   * @deprecated This route will be deprecated because of its non-RESTFul route structure
+   * Please update to using `/users/:username/learning-objects` route.
+   */
   router.get(
     '/learning-objects/:username/learning-objects',
     searchUserLearningObjects,
   );
+  router.get('/users/:username/learning-objects', searchUserLearningObjects);
   /**
    * @deprecated This route will be deprecated because of its non RESTful route structure
    * Please update to using `/users/:username/learning-objects/:learningObjectId` route.
