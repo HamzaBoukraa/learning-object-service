@@ -1,9 +1,9 @@
-import 'dotenv/config';
 import {
   UserToken,
   ServiceToken,
   AccessGroup,
   LearningObjectSummary,
+  CollectionAccessMap,
 } from './types';
 import { DataStore } from './interfaces/DataStore';
 import { ResourceError, ResourceErrorReason } from './errors';
@@ -396,16 +396,15 @@ export function authorizeWriteAccess({
   requester: UserToken;
   message?: string;
 }) {
-  const isUnreleased = LearningObjectState.UNRELEASED.includes(
-    learningObject.status as LearningObject.Status,
-  );
+  const isUnreleased =
+    LearningObjectState.UNRELEASED.includes(
+      learningObject.status as LearningObject.Status,
+    ) || learningObject.status === LearningObject.Status.WAITING;
   const isAuthor = requesterIsAuthor({
     authorUsername: learningObject.author.username,
     requester,
   });
-  const authorAccess =
-    (isAuthor && isUnreleased) ||
-    (isAuthor && learningObject.status === LearningObject.Status.WAITING);
+  const authorAccess = isAuthor && isUnreleased;
   const isReleased = learningObject.status === LearningObject.Status.RELEASED;
   const isAdminOrEditor = requesterIsAdminOrEditor(requester);
   const adminEditorAccess = isAdminOrEditor && !isUnreleased && !isReleased;
@@ -456,4 +455,55 @@ function getInvalidWriteAccessReason({
     reason = ' Only authors can modify unsubmitted Learning Objects.';
   }
   return reason;
+}
+
+/**
+ * Validates requested statuses do not contain statuses that are only accessible by an author
+ *
+ * If statues requested contain a restricted status, An invalid access error is thrown
+ *
+ * *** Restricted status filters include Working Stage statuses ***
+ *
+ * @param {string[]} status
+ */
+export function enforceNonAuthorStatusRestrictions(status: string[]) {
+  if (
+    status &&
+    (status.includes(LearningObject.Status.REJECTED) ||
+      status.includes(LearningObject.Status.UNRELEASED))
+  ) {
+    throw new ResourceError(
+      'The statuses requested are not permitted.',
+      ResourceErrorReason.INVALID_ACCESS,
+    );
+  }
+}
+
+/**
+ * Returns Map of collections to statuses representing read access privilege over associated collection
+ *
+ * @param {string[]} requestedCollections [List of collections the user has specified]
+ * @param {string[]} privilegedCollections [List of collections the user has privileged access on]
+ * @param {string[]} requestedStatuses [List of requested statuses]
+ * @returns CollectionAccessMap
+ */
+export function getCollectionAccessMap(
+  requestedCollections: string[],
+  privilegedCollections: string[],
+  requestedStatuses: string[],
+): CollectionAccessMap {
+  const accessMap = {};
+  if (requestedCollections && requestedCollections.length) {
+    for (const filter of requestedCollections) {
+      if (privilegedCollections.includes(filter)) {
+        accessMap[filter] = requestedStatuses;
+      }
+    }
+  } else {
+    for (const collection of privilegedCollections) {
+      accessMap[collection] = requestedStatuses;
+    }
+  }
+
+  return accessMap;
 }
