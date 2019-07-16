@@ -2,13 +2,12 @@ import { Router } from 'express';
 import { LearningObjectInteractor } from '../../interactors/interactors';
 import {
   DataStore,
-  FileManager,
   LibraryCommunicator,
 } from '../../shared/interfaces/interfaces';
 import {
   updateReadme,
 } from '../../LearningObjects/LearningObjectInteractor';
-import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
+import * as LearningObjectRouteHandler from '../../LearningObjects/adapters/LearningObjectRouteHandler';
 import * as LearningOutcomeRouteHandler from '../../LearningOutcomes/LearningOutcomeRouteHandler';
 import * as SubmissionRouteDriver from '../../LearningObjectSubmission';
 import * as ChangelogRouteHandler from '../../Changelogs/ChangelogRouteDriver';
@@ -21,16 +20,14 @@ export class ExpressAuthRouteDriver {
 
   constructor(
     private dataStore: DataStore,
-    private fileManager: FileManager,
     private library: LibraryCommunicator,
   ) {}
 
   public static buildRouter(
     dataStore: DataStore,
-    fileManager: FileManager,
     library: LibraryCommunicator,
   ): Router {
-    const e = new ExpressAuthRouteDriver(dataStore, fileManager, library);
+    const e = new ExpressAuthRouteDriver(dataStore, library);
     const router: Router = Router();
     e.setRoutes(router);
     return router;
@@ -76,7 +73,6 @@ export class ExpressAuthRouteDriver {
     LearningObjectRouteHandler.initializePrivate({
       router,
       dataStore: this.dataStore,
-      fileManager: this.fileManager,
       library: this.library,
     });
 
@@ -109,14 +105,12 @@ export class ExpressAuthRouteDriver {
         }
       },
     );
-
     router.patch('/learning-objects/:id/pdf', async (req, res) => {
       try {
         const id = req.params.id;
         await updateReadme({
           id,
           dataStore: this.dataStore,
-          fileManager: this.fileManager,
         });
         res.sendStatus(200);
       } catch (e) {
@@ -168,7 +162,6 @@ export class ExpressAuthRouteDriver {
           const learningObjectNames = req.params.learningObjectNames.split(',');
           await LearningObjectInteractor.deleteMultipleLearningObjects({
             dataStore: this.dataStore,
-            fileManager: this.fileManager,
             library: this.library,
             user: req.user,
             learningObjectNames,

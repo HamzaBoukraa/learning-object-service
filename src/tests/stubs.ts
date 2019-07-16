@@ -6,7 +6,7 @@ import {
     LearningOutcome,
     StandardOutcome,
 } from '../shared/entity';
-import { UserToken, LearningObjectSummary } from '../shared/types';
+import { UserToken } from '../shared/types';
 import { ChangeLogDocument } from '../shared/types/changelog';
 
 // tslint:disable-next-line:no-require-imports
@@ -38,10 +38,9 @@ export class Stubs {
     private _learningObjectFile: LearningObject.Material.File;
     private _uploadStatus: any;
     private _metrics: { saves: number, downloads: number };
-    private _LearningObjectSummary: LearningObjectSummary;
 
     constructor() {
-        this._user = new User({ ...SEED_DATA.AUTHOR_MOCK, id: SEED_DATA.AUTHOR_MOCK._id });
+        this._user = new User({...SEED_DATA.AUTHOR_MOCK, id: SEED_DATA.AUTHOR_MOCK._id});
         this._learningObjectChild = new LearningObject(
             this.generateLearningObject(
                 this.user,
@@ -59,13 +58,13 @@ export class Stubs {
         this._collection = SEED_DATA.C5_COLLECTION_MOCK;
         this._changelog = SEED_DATA.CHANGELOG_MOCK;
         this._outcome = SEED_DATA.OUTCOME_MOCK;
-        this._standardOutcome = new StandardOutcome({ ...SEED_DATA.STANDARD_OUTCOME, id: SEED_DATA.STANDARD_OUTCOME._id });
-        this._learningOutcome = new LearningOutcome({ ...SEED_DATA.LEARNING_OUTCOME_MOCK, id: SEED_DATA.LEARNING_OUTCOME_MOCK._id });
+        this._standardOutcome = new StandardOutcome({...SEED_DATA.STANDARD_OUTCOME, id: SEED_DATA.STANDARD_OUTCOME._id});
+        this._learningOutcome = new LearningOutcome({...SEED_DATA.LEARNING_OUTCOME_MOCK, id: SEED_DATA.LEARNING_OUTCOME_MOCK._id});
         this._userToken = {
             username: this.user.username,
             name: this.user.name,
             email: this.user.email,
-            organization: this.user.organization,
+            organization:  this.user.organization,
             emailVerified: this.user.emailVerified,
             accessGroups: [],
         };
@@ -77,7 +76,6 @@ export class Stubs {
         this._learningObjectFile = SEED_DATA.LEARNING_OBJECT_FILE;
         this._uploadStatus = SEED_DATA.MULTIPART_UPLOAD_STATUS;
         this._metrics = SEED_DATA.METRICS;
-        this._LearningObjectSummary = this.generateLearningObjectSummary(this._learningObject);
     }
 
     get learningObject(): LearningObject {
@@ -86,14 +84,6 @@ export class Stubs {
 
     set learningObject(learningObject: LearningObject) {
         this._learningObject = learningObject;
-    }
-
-    get learningObjectSummary(): LearningObjectSummary {
-        return this._LearningObjectSummary;
-    }
-
-    set learningObjectSummary(learningObject: LearningObjectSummary) {
-        this.learningObjectSummary = learningObject;
     }
 
     get learningObjectChild(): LearningObject {
@@ -188,95 +178,61 @@ export class Stubs {
         return this._metrics;
     }
 
-    set metrics(metrics: { saves: number, downloads: number }) {
+    set metrics(metrics: { saves: number, downloads: number}) {
         this._metrics = metrics;
     }
-    /**
-     * Generates Learning Object from untyped js module object
-     *
-     * @private
-     * @param {User} author
-     * @param {any} record
-     * @returns {LearningObject}
-     * @memberof Stub
-     */
-    private generateLearningObject(
-        author: User,
-        record: any,
-        hasChild: boolean,
-    ): LearningObject {
-        try {
-            let materials: LearningObject.Material;
-            let contributors: User[] = [];
-            let outcomes: LearningOutcome[] = [];
-            let children: LearningObject[];
+  /**
+   * Generates Learning Object from untyped js module object
+   *
+   * @private
+   * @param {User} author
+   * @param {any} record
+   * @returns {LearningObject}
+   * @memberof Stub
+   */
+  private generateLearningObject(
+    author: User,
+    record: any,
+    hasChild: boolean,
+  ): LearningObject {
+    try {
+        let materials: LearningObject.Material;
+        let contributors: User[] = [];
+        let outcomes: LearningOutcome[] = [];
+        let children: LearningObject[];
 
-            if (hasChild) {
-                children = [this.learningObjectChild];
-            } else {
-                children = [];
-            }
-
-            record.contributors = [this.user];
-            materials = <LearningObject.Material>record.materials;
-            outcomes = [this.learningOutcome];
-
-            const learningObject = new LearningObject({
-                id: record._id,
-                author,
-                name: record.name,
-                date: record.date,
-                length: record.length as LearningObject.Length,
-                levels: record.levels as LearningObject.Level[],
-                collection: record.collection,
-                status: record.status as LearningObject.Status,
-                description: record.description,
-                materials,
-                contributors,
-                outcomes,
-                hasRevision: record.hasRevision,
-                children,
-            });
-
-            return learningObject;
-        } catch (error) {
-            throw error;
+        if (hasChild) {
+            children = [this.learningObjectChild];
+        } else {
+            children = [];
         }
+
+        record.contributors = [this.user];
+        materials = <LearningObject.Material>record.materials;
+        outcomes = [this.learningOutcome];
+
+        const learningObject = new LearningObject({
+          id: record._id,
+          author,
+          name: record.name,
+          date: record.date,
+          length: record.length as LearningObject.Length,
+          levels: record.levels as LearningObject.Level[],
+          collection: record.collection,
+          status: record.status as LearningObject.Status,
+          description: record.description,
+          materials,
+          contributors,
+          outcomes,
+          hasRevision: record.hasRevision,
+          children,
+        });
+
+        return learningObject;
+    } catch (error) {
+        throw error;
     }
-    generateLearningObjectSummary(
-        learningObject: LearningObject): LearningObjectSummary {
-        return {
-            id: learningObject.id,
-            author: {
-                id: learningObject.author.id,
-                username: learningObject.author._username,
-                name: learningObject.author._name,
-                organization: learningObject.author._organization,
-            },
-            collection: learningObject.collection,
-            contributors: learningObject.contributors.map(contributor => {
-                return {
-                    id: contributor.id,
-                    username: contributor._username,
-                    name: contributor._name,
-                    organization: contributor._organization,
-                };
-            }),
-            children: learningObject.children ? learningObject.children.map(child => {
-                return {
-                    id: child.id,
-                    name: child.name,
-                };
-            }) : [],
-            date: learningObject.date,
-            description: learningObject.description,
-            length: learningObject.length,
-            name: learningObject.name,
-            revision: learningObject.revision,
-            status: learningObject.status,
-            hasRevision: false,
-        };
-    }
+  }
 
 }
 

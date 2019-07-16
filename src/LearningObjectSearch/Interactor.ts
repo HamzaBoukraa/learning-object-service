@@ -16,9 +16,9 @@ import {
 import {
   requesterIsPrivileged,
   requesterIsAdminOrEditor,
-  enforceNonAuthorStatusRestrictions,
 } from '../shared/AuthorizationManager';
 import { LearningObjectDatastore } from './interfaces';
+import { ResourceError, ResourceErrorReason } from '../shared/errors';
 import { getAccessGroupCollections } from '../shared/AuthorizationManager';
 
 namespace Drivers {
@@ -101,7 +101,9 @@ function formatSearchQuery(
   formattedQuery.length = toArray(formattedQuery.length);
   formattedQuery.level = toArray(formattedQuery.level);
   formattedQuery.collection = toArray(formattedQuery.collection);
-  formattedQuery.standardOutcomes = toArray(formattedQuery.standardOutcomes);
+  formattedQuery.standardOutcomes = toArray(
+    formattedQuery.standardOutcomes,
+  );
   formattedQuery.guidelines = toArray(formattedQuery.guidelines);
   formattedQuery.page = toNumber(formattedQuery.page);
   formattedQuery.limit = toNumber(formattedQuery.limit);
@@ -155,10 +157,32 @@ function getCollectionAccessMap(
  * @returns {string[]}
  */
 function getAuthorizedStatuses(status?: string[]): string[] {
-  enforceNonAuthorStatusRestrictions(status);
+  enforceStatusRestrictions(status);
   if (!status || (status && !status.length)) {
     return [...LearningObjectState.IN_REVIEW, ...LearningObjectState.RELEASED];
   }
 
   return status;
+}
+
+/**
+ * Validates requested statuses do not contain restricted statuses
+ *
+ * If statues requested contain a restricted status, An invalid access error is thrown
+ *
+ * *** Restricted status filters include Working Stage statuses ***
+ *
+ * @param {string[]} status
+ */
+function enforceStatusRestrictions(status: string[]) {
+  if (
+    status &&
+    (status.includes(LearningObject.Status.REJECTED) ||
+      status.includes(LearningObject.Status.UNRELEASED))
+  ) {
+    throw new ResourceError(
+      'The statuses requested are not permitted.',
+      ResourceErrorReason.INVALID_ACCESS,
+    );
+  }
 }

@@ -1,28 +1,20 @@
 // @ts-ignore
 import * as stopword from 'stopword';
 import { reportError } from '../shared/SentryConnector';
-import { sanitizeObject, sanitizeText, toBoolean } from '../shared/functions';
+import { sanitizeObject, sanitizeText } from '../shared/functions';
 import {
   LearningObjectQuery,
   QueryCondition,
 } from '../shared/interfaces/DataStore';
 import {
   DataStore,
-  FileManager,
   LibraryCommunicator,
 } from '../shared/interfaces/interfaces';
 import {
   updateObjectLastModifiedDate,
   updateParentsDate,
 } from '../LearningObjects/LearningObjectInteractor';
-import {
-  UserToken,
-  ServiceToken,
-  LearningObjectSummary,
-  CollectionAccessMap,
-  UserLearningObjectQuery,
-  UserLearningObjectSearchQuery,
-} from '../shared/types';
+import { UserToken, ServiceToken } from '../shared/types';
 import {
   getAccessGroupCollections,
   hasMultipleLearningObjectWriteAccesses,
@@ -32,7 +24,6 @@ import {
   hasServiceLevelAccess,
   hasReadAccessByCollection,
   requesterIsAuthor,
-  enforceNonAuthorStatusRestrictions,
 } from '../shared/AuthorizationManager';
 import {
   ResourceError,
@@ -41,10 +32,13 @@ import {
   ServiceErrorReason,
 } from '../shared/errors';
 import { LearningObject } from '../shared/entity';
-import { FileMetadata } from '../FileMetadata';
+import { LearningObjectsModule } from '../LearningObjects/LearningObjectsModule';
+import { FileMetadataGateway } from '../LearningObjects/interfaces';
 
-// file size is in bytes
-const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
+namespace Gateways {
+  export const fileMetadata = () =>
+    LearningObjectsModule.resolveDependency(FileMetadataGateway);
+}
 
 export const LearningObjectState = {
   UNRELEASED: [
@@ -67,104 +61,104 @@ export const LearningObjectState = {
   ],
 };
 
+interface CollectionAccessMap {
+  [index: string]: string[];
+}
+
 export class LearningObjectInteractor {
   /**
-   * Performs a search on the specified user's Learning Objects.
-   *
-   * *** NOTES ***
-   * If the specified user cannot be found, a NotFound ResourceError is thrown.
-   * Only the author and privileged users are allowed to view Learning Object drafts.
-   * "Drafts" are defined as 'not released' Learning Objects that have never been released or have a `revision` id of `0`, so
-   * if the `draftsOnly` filter is specified, the `status` filter must not have a value of `released`.
-   * Only authors can see drafts that are not submitted for review; `unreleased` || `rejected`.
-   * Admins and editors can see all Learning Objects submitted for review.
-   * Reviewers and curators can only see Learning Objects submitted for review to their collection.
-   *
-   *
+   * Loads Learning Object summaries for a user, optionally applying a query for filtering and sorting.
    * @async
    *
-   * @returns {LearningObjectSummary[]} the user's learning objects found by the query
+   * @returns {LearningObject[]} the user's learning objects found by the query
    * @param params.dataStore
-   * @param params.authorUsername
-   * @param params.requester
+   * @param params.library
+   * @param params.username
+   * @param params.userToken
+   * @param params.loadChildren
    * @param params.query
    */
-
-  public static async searchUsersObjects({
-    dataStore,
-    authorUsername,
-    requester,
-    query,
-  }: {
+  public static async loadUsersObjectSummaries(params: {
     dataStore: DataStore;
-    authorUsername: string;
-    requester: UserToken;
-    query?: UserLearningObjectQuery;
-  }): Promise<LearningObjectSummary[]> {
-    let { text, draftsOnly, status } = this.formatUserLearningObjectQuery(
+    library: LibraryCommunicator;
+    username: string;
+    userToken: UserToken;
+    loadChildren?: boolean;
+    query?: LearningObjectQuery;
+  }): Promise<LearningObject[]> {
+    const {
+      dataStore,
+      library,
+      username,
+      userToken,
+      loadChildren,
       query,
-    );
-    if (!(await dataStore.findUserId(authorUsername))) {
-      throw new ResourceError(
-        `Cannot load Learning Objects for user ${authorUsername}. User ${authorUsername} does not exist.`,
-        ResourceErrorReason.NOT_FOUND,
-      );
-    }
-    const isAuthor = requesterIsAuthor({ requester, authorUsername });
-    const isPrivileged = requesterIsPrivileged(requester);
-    const searchQuery: UserLearningObjectSearchQuery = {
-      text,
-      status,
-    };
+    } = params;
+    try {
+      let summary: LearningObject[] = [];
+      // tslint:disable-next-line: no-shadowed-variable
+      const { dataStore, library, username, loadChildren, query } = params;
 
-    if (draftsOnly) {
-      if (!isAuthor && !isPrivileged) {
+      const formattedQuery = this.formatSearchQuery(query);
+      let { status, orderBy, sortType, text } = formattedQuery;
+
+      // This will throw an error if there is no user with that username
+      await dataStore.findUser(username);
+
+      if (
+        !this.hasReadAccess({
+          userToken,
+          resourceVal: params.username,
+          authFunction: checkAuthByUsername,
+        })
+      ) {
         throw new ResourceError(
-          `Invalid access. You are not authorized to view ${authorUsername}'s drafts.`,
+          'Invalid Access',
           ResourceErrorReason.INVALID_ACCESS,
         );
       }
-
-      if (
-        searchQuery.status &&
-        searchQuery.status.includes(LearningObject.Status.RELEASED)
-      ) {
-        throw new ResourceError(
-          'Illegal query arguments. Cannot specify both draftsOnly and released status filters.',
-          ResourceErrorReason.BAD_REQUEST,
-        );
+      if (!status) {
+        status = LearningObjectState.ALL;
       }
-      searchQuery.revision = 0;
+
+      const objectIDs = await dataStore.getUserObjects(username);
+      summary = await dataStore.fetchMultipleObjects({
+        ids: objectIDs,
+        full: false,
+        orderBy,
+        sortType,
+        status,
+        text,
+      });
+
+      summary = await Promise.all(
+        summary.map(async object => {
+          // Load object metrics
+          try {
+            object.metrics = await this.loadMetrics(library, object.id);
+          } catch (e) {
+            reportError(e);
+          }
+
+          if (loadChildren) {
+            const children = await this.loadChildObjects({
+              dataStore,
+              library,
+              parentId: object.id,
+              full: false,
+              status: LearningObjectState.ALL,
+              loadWorkingCopies: true,
+            });
+            children.forEach((child: LearningObject) => object.addChild(child));
+          }
+
+          return object;
+        }),
+      );
+      return summary;
+    } catch (e) {
+      handleError(e);
     }
-
-    if (!isAuthor && !isPrivileged) {
-      return dataStore.searchReleasedUserObjects(searchQuery, authorUsername);
-    }
-
-    let collectionAccessMap: CollectionAccessMap;
-
-    if (!isAuthor) {
-      enforceNonAuthorStatusRestrictions(searchQuery.status);
-      if (!requesterIsAdminOrEditor(requester)) {
-        const privilegedCollections = getAccessGroupCollections(requester);
-        collectionAccessMap = getCollectionAccessMap(
-          [],
-          privilegedCollections,
-          searchQuery.status,
-        );
-        searchQuery.status =
-          searchQuery.status &&
-          searchQuery.status.includes(LearningObject.Status.RELEASED)
-            ? LearningObjectState.RELEASED
-            : null;
-      }
-    }
-
-    return dataStore.searchAllUserObjects(
-      searchQuery,
-      authorUsername,
-      collectionAccessMap,
-    );
   }
 
   /**
@@ -477,21 +471,18 @@ export class LearningObjectInteractor {
    * @returns {Promise<void>}
    * @memberof LearningObjectInteractor
    */
-  public static async deleteMultipleLearningObjects(params: {
+  public static async deleteMultipleLearningObjects({
+    dataStore,
+    library,
+    learningObjectNames,
+    user,
+  }: {
     dataStore: DataStore;
-    fileManager: FileManager;
     library: LibraryCommunicator;
     learningObjectNames: string[];
     user: UserToken;
   }): Promise<void> {
     try {
-      const {
-        dataStore,
-        fileManager,
-        library,
-        learningObjectNames,
-        user,
-      } = params;
       const hasAccess = await hasMultipleLearningObjectWriteAccesses(
         user,
         dataStore,
@@ -530,21 +521,16 @@ export class LearningObjectInteractor {
       await library.cleanObjectsFromLibraries(objectIds);
       await Promise.all(
         objectRefs.map(ref =>
-          FileMetadata.deleteAllFileMetadata({
-            requester: params.user,
+          Gateways.fileMetadata().deleteAllFileMetadata({
+            requester: user,
             learningObjectId: ref.id,
           }),
         ),
-      ).catch(reportError);
+      );
       // Delete objects from datastore
       await dataStore.deleteMultipleLearningObjects(objectIds);
       // For each object id
       objectRefs.forEach(async obj => {
-        // Attempt to delete files
-        const path = `${user.username}/${obj.id}/`;
-        fileManager.deleteAll({ path }).catch(e => {
-          reportError(e);
-        });
         // Update parents' dates
         updateParentsDate({
           dataStore,
@@ -841,25 +827,6 @@ export class LearningObjectInteractor {
       }
     }
 
-    return sanitizeObject({ object: formattedQuery }, false);
-  }
-
-  /**
-   * Formats search query to verify params are the appropriate types
-   *
-   * @private
-   * @static
-   * @param {UserLearningObjectQuery} query
-   * @returns {UserLearningObjectQuery}
-   * @memberof LearningObjectInteractor
-   */
-  private static formatUserLearningObjectQuery(
-    query: UserLearningObjectQuery,
-  ): UserLearningObjectQuery {
-    const formattedQuery = { ...query };
-    formattedQuery.text = sanitizeText(formattedQuery.text) || null;
-    formattedQuery.status = toArray(formattedQuery.status);
-    formattedQuery.draftsOnly = toBoolean(formattedQuery.draftsOnly);
     return sanitizeObject({ object: formattedQuery }, false);
   }
 

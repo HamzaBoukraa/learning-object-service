@@ -16,16 +16,9 @@ import { ServiceToken } from './service-token';
 import {
   LearningObjectSummary,
   AuthorSummary,
-  LearningObjectChildSummary,
 } from './learning-object-summary';
 import { AccessGroup } from './access-groups';
-import {
-  ReleasedUserLearningObjectSearchQuery,
-  UserLearningObjectQuery,
-  UserLearningObjectSearchQuery } from './user-learning-object-query';
-export interface CollectionAccessMap {
-  [collection: string]: string[];
-}
+import { FileUpload } from './file-upload';
 
 export {
   UserToken,
@@ -34,7 +27,6 @@ export {
   VALID_LEARNING_OBJECT_UPDATES,
   UserDocument,
   LearningObjectDocument,
-  LearningObjectChildSummary,
   MaterialDocument,
   FileDocument,
   UrlDocument,
@@ -43,7 +35,5 @@ export {
   LearningObjectSummary,
   AuthorSummary,
   AccessGroup,
-  UserLearningObjectQuery,
-  ReleasedUserLearningObjectSearchQuery,
-  UserLearningObjectSearchQuery,
+  FileUpload,
 };

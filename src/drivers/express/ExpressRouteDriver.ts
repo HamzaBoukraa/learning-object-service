@@ -1,15 +1,15 @@
 import {
   DataStore,
-  FileManager,
   LibraryCommunicator,
 } from '../../shared/interfaces/interfaces';
 import { Router } from 'express';
 import { LearningObjectInteractor } from '../../interactors/interactors';
 import * as LearningObjectStatsRouteHandler from '../../LearningObjectStats/LearningObjectStatsRouteHandler';
-import { initializeSingleFileDownloadRouter } from '../../SingleFileDownload/RouteHandler';
-import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
+import * as LearningObjectRouteHandler from '../../LearningObjects/adapters/LearningObjectRouteHandler';
 import { initializeCollectionRouter } from '../../Collections/RouteHandler';
-import { mapErrorToResponseData } from '../../shared/errors';
+import {
+  mapErrorToResponseData,
+} from '../../shared/errors';
 import { LearningObject } from '../../shared/entity';
 import { initializePublic as initializePublicHierarchyRoutes } from '../../LearningObjects/Hierarchy/HierarchyRouteHandler';
 
@@ -21,15 +21,13 @@ export class ExpressRouteDriver {
   constructor(
     private dataStore: DataStore,
     private library: LibraryCommunicator,
-    private fileManager: FileManager,
   ) {}
 
   public static buildRouter(
     dataStore: DataStore,
     library: LibraryCommunicator,
-    fileManager: FileManager,
   ): Router {
-    const e = new ExpressRouteDriver(dataStore, library, fileManager);
+    const e = new ExpressRouteDriver(dataStore, library);
     const router: Router = Router();
     e.setRoutes(router);
     return router;
@@ -53,17 +51,13 @@ export class ExpressRouteDriver {
         const page = req.query.currPage || req.query.page;
         const limit = req.query.limit;
         const standardOutcomeIDs = req.query.standardOutcomes;
-        const query = Object.assign({}, req.query, {
-          page,
-          limit,
-          standardOutcomeIDs,
-        });
+        const query = Object.assign({}, req.query, { page, limit, standardOutcomeIDs });
 
         objectResponse = await LearningObjectInteractor.searchObjects({
-          dataStore: this.dataStore,
-          library: this.library,
-          query,
-          userToken,
+            dataStore: this.dataStore,
+            library: this.library,
+            query,
+            userToken,
         });
 
         objectResponse.objects = objectResponse.objects.map(obj =>
@@ -98,12 +92,6 @@ export class ExpressRouteDriver {
       router,
       dataStore: this.dataStore,
       library: this.library,
-    });
-
-    initializeSingleFileDownloadRouter({
-      router,
-      dataStore: this.dataStore,
-      fileManager: this.fileManager,
     });
   }
 }

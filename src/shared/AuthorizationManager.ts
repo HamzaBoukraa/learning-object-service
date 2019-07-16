@@ -396,15 +396,16 @@ export function authorizeWriteAccess({
   requester: UserToken;
   message?: string;
 }) {
-  const isUnreleased =
-    LearningObjectState.UNRELEASED.includes(
-      learningObject.status as LearningObject.Status,
-    ) || learningObject.status === LearningObject.Status.WAITING;
+  const isUnreleased = LearningObjectState.UNRELEASED.includes(
+    learningObject.status as LearningObject.Status,
+  );
   const isAuthor = requesterIsAuthor({
     authorUsername: learningObject.author.username,
     requester,
   });
-  const authorAccess = isAuthor && isUnreleased;
+  const authorAccess =
+    (isAuthor && isUnreleased) ||
+    (isAuthor && learningObject.status === LearningObject.Status.WAITING);
   const isReleased = learningObject.status === LearningObject.Status.RELEASED;
   const isAdminOrEditor = requesterIsAdminOrEditor(requester);
   const adminEditorAccess = isAdminOrEditor && !isUnreleased && !isReleased;
@@ -455,26 +456,4 @@ function getInvalidWriteAccessReason({
     reason = ' Only authors can modify unsubmitted Learning Objects.';
   }
   return reason;
-}
-
-/**
- * Validates requested statuses do not contain statuses that are only accessible by an author
- *
- * If statues requested contain a restricted status, An invalid access error is thrown
- *
- * *** Restricted status filters include Working Stage statuses ***
- *
- * @param {string[]} status
- */
-export function enforceNonAuthorStatusRestrictions(status: string[]) {
-  if (
-    status &&
-    (status.includes(LearningObject.Status.REJECTED) ||
-      status.includes(LearningObject.Status.UNRELEASED))
-  ) {
-    throw new ResourceError(
-      'The statuses requested are not permitted.',
-      ResourceErrorReason.INVALID_ACCESS,
-    );
-  }
 }

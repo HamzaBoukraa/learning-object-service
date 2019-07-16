@@ -9,40 +9,17 @@ const dataStore: DataStore = new MockDataStore();
 const library: LibraryCommunicator = new MockLibraryDriver();
 const stubs = new Stubs();
 
-describe('searchUsersObjects', () => {
+describe('loadUsersObjectSummaries', () => {
   it('should load learning object summary', done => {
     // FIXME: Why does this function take a usertoken and a username?
-    return LearningObjectInteractor.searchUsersObjects({
+    return LearningObjectInteractor.loadUsersObjectSummaries({
       dataStore,
-      requester: stubs.userToken,
-      authorUsername: stubs.userToken.username,
+      library,
+      userToken: stubs.userToken,
+      username: stubs.userToken.username,
     })
       .then(val => {
-        expect(val[0]).toMatchObject({
-          id: expect.any(String),
-          author: {
-            id: expect.any(String),
-            username: expect.any(String),
-            name: expect.any(String),
-            organization: expect.any(String),
-          },
-          collection: expect.any(String),
-          contributors: expect.arrayContaining(
-            []),
-          children: expect.arrayContaining(
-            [{
-              name: expect.any(String),
-              id: expect.any(String),
-            }]),
-          date: expect.any(String),
-          description: expect.any(String),
-          length: expect.any(String),
-          name: expect.any(String),
-          revision: expect.any(Number),
-          status: expect.any(String),
-
-        });
-
+        expect(val).toBeInstanceOf(Array);
         done();
       })
       .catch(error => {

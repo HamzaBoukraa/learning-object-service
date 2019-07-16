@@ -1,10 +1,4 @@
-import { CompletedPart, MultipartFileUploadStatus } from './FileManager';
-import {
-  LearningObjectUpdates,
-  LearningObjectSummary,
-  CollectionAccessMap,
-  ReleasedUserLearningObjectSearchQuery,
-} from '../types';
+import { LearningObjectUpdates, LearningObjectSummary } from '../types';
 import { LearningOutcomeDatastore } from '../../LearningOutcomes/LearningOutcomeInteractor';
 import { LearningObjectStatDatastore } from '../../LearningObjectStats/LearningObjectStatsInteractor';
 import { CollectionDataStore } from '../../Collections/CollectionDataStore';
@@ -22,10 +16,6 @@ export interface DataStore
   // LearningObjects
   insertLearningObject(object: LearningObject): Promise<string>;
   addToReleased(object: LearningObject): Promise<void>;
-  // File Uploads
-  insertMultipartUploadStatus(params: {
-    status: MultipartFileUploadStatus;
-  }): Promise<void>;
 
   // Changelog
   createChangelog(params: {
@@ -136,34 +126,6 @@ export interface DataStore
     total: number;
     objects: LearningObject[];
   }>;
-
-  /**
-   * Search for the specified user's released objects.
-   *
-   * @param {ReleasedUserLearningObjectSearchQuery} query Object containing query parameters to apply to search
-   * @param {String} username  username of an author in CLARK
-   *
-   * @returns {Promise<LearningObjectSummary[]>}
-   */
-  searchReleasedUserObjects(
-    query: ReleasedUserLearningObjectSearchQuery,
-    username: string,
-  ): Promise<LearningObjectSummary[]>;
-
-  /**
-   * Search for the specified user's released or working objects depending on requested status's
-   *
-   * @param  {LearningObjectQuery} query query containing status and text for field searching.
-   * @param username username of an author in CLARK.
-   * @param collectionRestrictions Object mapping accessible collections and statuses
-   *
-   * @returns {Promise<LearningObjectSummary[]>}
-   */
-  searchAllUserObjects(
-    query: LearningObjectQuery,
-    username: string,
-    collectionRestrictions?: CollectionAccessMap,
-  ): Promise<LearningObjectSummary[]>;
   fetchParentObjects(params: {
     query: ParentLearningObjectQuery;
     full?: boolean;
@@ -189,29 +151,11 @@ export interface DataStore
     userId: string,
   }): Promise<LearningObject>;
 
-  // Materials
-  findSingleFile(params: {
-    learningObjectId: string;
-    fileId: string;
-  }): Promise<LearningObject.Material.File>;
   getLearningObjectMaterials(params: {
     id: string;
   }): Promise<LearningObject.Material>;
 
-  // File Uploads
-  fetchMultipartUploadStatus(params: {
-    id: string;
-  }): Promise<MultipartFileUploadStatus>;
-
   // Users
-  /**
-   *
-   * lookup a user by their username or email
-   * @param {string} username
-   * @returns {Promise<string>}
-   * @memberof DataStore
-   */
-  findUserId(username: string): Promise<string>;
   findUser(username: string): Promise<string>;
   fetchUser(id: string): Promise<User>;
   peek<T>(params: {
@@ -236,24 +180,6 @@ export interface DataStore
   deleteChild(parentId: string, childId: string): Promise<void>;
   addToCollection(learningObjectId: string, collection: string): Promise<void>;
 
-  // Materials
-  addToFiles(params: {
-    id: string;
-    loFile: LearningObject.Material.File;
-  }): Promise<string>;
-  removeFromFiles(params: { objectId: string; fileId: string }): Promise<void>;
-  updateFileDescription(params: {
-    learningObjectId: string;
-    fileId: string;
-    description: string;
-  }): Promise<LearningObject.Material.File>;
-
-  // File Uploads
-  updateMultipartUploadStatus(params: {
-    id: string;
-    completedPart: CompletedPart;
-  }): Promise<void>;
-
   /*
    * DELETE Operations
    */
@@ -261,10 +187,6 @@ export interface DataStore
   // Learning Objects
   deleteLearningObject(id: string): Promise<void>;
   deleteMultipleLearningObjects(ids: string[]): Promise<void>;
-
-  // File Uploads
-  deleteMultipartUploadStatus(params: { id: string }): Promise<void>;
-  deleteMultipartUploadStatus(params: { id: string }): Promise<void>;
 }
 
 export { Collection as LearningObjectCollection };
