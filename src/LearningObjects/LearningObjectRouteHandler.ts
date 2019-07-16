@@ -1,11 +1,11 @@
 import { Request, Response, Router } from 'express';
-import { mapErrorToResponseData } from '../../shared/errors';
-import { DataStore } from '../../shared/interfaces/DataStore';
-import { LibraryCommunicator } from '../../shared/interfaces/interfaces';
-import { UserToken } from '../../shared/types';
-import * as LearningObjectInteractor from '../LearningObjectInteractor';
-import { LearningObject } from '../../shared/entity';
-import { MaterialsFilter, LearningObjectFilter } from '../typings';
+import { mapErrorToResponseData } from '../shared/errors';
+import { DataStore } from '../shared/interfaces/DataStore';
+import { LibraryCommunicator } from '../shared/interfaces/interfaces';
+import { UserToken } from '../shared/types';
+import * as LearningObjectInteractor from './LearningObjectInteractor';
+import { LearningObject } from '../shared/entity';
+import { MaterialsFilter, LearningObjectFilter } from './typings';
 
 /**
  * Initializes an express router with endpoints for public Retrieving
@@ -108,7 +108,6 @@ export function initializePublic({
  *   library: LibraryCommunicator;
  * }} {
  *   dataStore,
- *   fileManager,
  *   library,
  * }
  * @returns
