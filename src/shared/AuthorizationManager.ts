@@ -4,22 +4,12 @@ import {
   AccessGroup,
   LearningObjectSummary,
   CollectionAccessMap,
+  LearningObjectState,
 } from './types';
 import { DataStore } from './interfaces/DataStore';
 import { ResourceError, ResourceErrorReason } from './errors';
 import { LearningObject } from './entity';
 
-const LearningObjectState = {
-  UNRELEASED: [
-    LearningObject.Status.REJECTED,
-    LearningObject.Status.UNRELEASED,
-  ],
-  IN_REVIEW: [
-    LearningObject.Status.WAITING,
-    LearningObject.Status.REVIEW,
-    LearningObject.Status.PROOFING,
-  ],
-};
 
 const PRIVILEGED_GROUPS = [
   AccessGroup.ADMIN,
