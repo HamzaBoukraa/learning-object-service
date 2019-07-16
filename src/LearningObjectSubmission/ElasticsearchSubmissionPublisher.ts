@@ -53,7 +53,7 @@ export class ElasticsearchSubmissionPublisher implements SubmissionPublisher {
    * the action on their end.
    * @inheritdoc
    */
-  async withdrawlSubmission(learningObjectID: string) {
+  async withdrawSubmission(learningObjectID: string) {
     try {
       const response = await this.client.deleteByQuery({
         index: INDEX_NAME,

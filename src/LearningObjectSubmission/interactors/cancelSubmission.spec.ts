@@ -9,7 +9,7 @@ import { LearningObjectAdapter } from '../../LearningObjects/adapters/LearningOb
 const dataStore = new MockDataStore();
 const library = new MockLibraryDriver();
 const publisher: SubmissionPublisher = {
-  withdrawlSubmission: (id: string) => {
+  withdrawSubmission: (id: string) => {
     return Promise.resolve();
   },
   publishSubmission: (submission: LearningObject) => null,
@@ -22,7 +22,7 @@ describe('cancelSubmission', () => {
   it('should cancel the submission given a valid username and id', async done => {
     learningObjectDataStore.stubs.learningObject.status =
       LearningObject.Status.WAITING;
-    const spy = spyOn(publisher, 'withdrawlSubmission');
+    const spy = spyOn(publisher, 'withdrawSubmission');
     await expect(
       cancelSubmission({
         dataStore,

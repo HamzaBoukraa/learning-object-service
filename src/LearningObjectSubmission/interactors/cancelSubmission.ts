@@ -58,5 +58,5 @@ export async function cancelSubmission(params: {
     },
   });
   // FIXME: Rename to withdrawSubmission
-  await params.publisher.withdrawlSubmission(params.learningObjectId);
+  await params.publisher.withdrawSubmission(params.learningObjectId);
 }
