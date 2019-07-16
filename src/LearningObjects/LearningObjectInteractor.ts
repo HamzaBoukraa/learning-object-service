@@ -1330,25 +1330,72 @@ export async function getMaterials({
   }
 }
 
+/**
+ * createLearningObjectRevision is responsible
+ * for orchestrating the creation of a Learning
+ * Object revision. The function starts by validating
+ * the request structure. This is done by calling the
+ * validateRequest function, which ensures that
+ * the given userId and learningObjectId pair produce
+ * a Learning Object. After the request is validated,
+ * the function retrieves the Released Copy of the
+ * Learning Object. If the Released Copy of the
+ * Learning Object is not found, the function throws a
+ * Resource Error. The Released Copy is used to validate
+ * that the reqeuster is the Learning Object author. It is
+ * also ussed to increment the revision property of the
+ * Working Copy. The function ends by updating the Working
+ * Copy to have a revision that is one greater than the Released Copy
+ * revision and a status of unreleased.
+ *
+ * @param {
+ *  userId string
+ *  learningObjectId string
+ *  dataStore DataStore
+ *  requester UserToken
+ * }
+ */
 export async function createLearningObjectRevision(params: {
   userId: string,
   learningObjectId: string,
   dataStore: DataStore,
   requester: UserToken,
 }): Promise<void> {
-  const learningObject = await validateRequest({
+  await validateRequest({
     userId: params.userId,
     learningObjectId: params.learningObjectId,
     dataStore: params.dataStore,
   });
 
-  if (learningObject.author.username !== params.requester.username) {
+  const releasedCopy = await getReleasedLearningObjectSummary({
+    dataStore: params.dataStore,
+    id: params.learningObjectId,
+  });
+
+  if (!releasedCopy) {
+    throw new ResourceError(
+      `Learning Object with id ${params.learningObjectId} is not released`,
+      ResourceErrorReason.CONFLICT,
+    );
+  }
+
+  if (releasedCopy.author.username !== params.requester.username) {
     throw new ResourceError(
       `Requester ${params.requester.username} does not own Learning Object with id ${params.learningObjectId}`,
       ResourceErrorReason.INVALID_ACCESS,
-    )
+    );
   }
-  
+
+  await updateLearningObject({
+    dataStore: params.dataStore,
+    requester: params.requester,
+    id: params.learningObjectId,
+    authorUsername: releasedCopy.author.username,
+    updates: {
+      revision: releasedCopy.revision++,
+      status: LearningObject.Status.UNRELEASED,
+    },
+  });
 }
 
 /**
@@ -1376,15 +1423,13 @@ function sanitizeUpdates(
  * with the given userId and Learning Object Id.
  * If it does not find a Learning Object that matches
  * the given criteria, it throws a Resource Error.
- * Otherwise, the function returns the working
- * copy of the located Learning Object.
  * @param params
  */
 async function validateRequest(params: {
   userId: string,
   learningObjectId: string,
   dataStore: DataStore,
-}): Promise<LearningObject> {
+}): Promise<void> {
   const learningObject = await params.dataStore.checkLearningObjectExistence({
     userId: params.userId,
     learningObjectId: params.learningObjectId,
@@ -1396,7 +1441,6 @@ async function validateRequest(params: {
       ResourceErrorReason.NOT_FOUND,
     );
   }
-  return learningObject;
 }
 
 /**
