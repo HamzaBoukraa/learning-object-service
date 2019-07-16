@@ -4,20 +4,15 @@ import {
   DataStore,
   LibraryCommunicator,
 } from '../../shared/interfaces/interfaces';
-import {
-  updateReadme,
-} from '../../LearningObjects/LearningObjectInteractor';
+import { updateReadme } from '../../LearningObjects/LearningObjectInteractor';
 import * as LearningObjectRouteHandler from '../../LearningObjects/adapters/LearningObjectRouteHandler';
 import * as LearningOutcomeRouteHandler from '../../LearningOutcomes/LearningOutcomeRouteHandler';
 import * as SubmissionRouteDriver from '../../LearningObjectSubmission';
 import * as ChangelogRouteHandler from '../../Changelogs/ChangelogRouteDriver';
 import { reportError } from '../../shared/SentryConnector';
 import { UserToken } from '../../shared/types';
-import {
-  mapErrorToResponseData,
-} from '../../shared/errors';
+import { mapErrorToResponseData } from '../../shared/errors';
 export class ExpressAuthRouteDriver {
-
   constructor(
     private dataStore: DataStore,
     private library: LibraryCommunicator,
@@ -167,6 +162,27 @@ export class ExpressAuthRouteDriver {
             learningObjectNames,
           });
           res.sendStatus(200);
+        } catch (e) {
+          const { code, message } = mapErrorToResponseData(e);
+          res.status(code).json({ message });
+        }
+      },
+    );
+    // FIXME: Why is this here??
+    router.get(
+      '/learning-objects/:username/:learningObjectName/id',
+      async (req, res) => {
+        try {
+          const userToken = req.user;
+          const username: string = req.params.username;
+          const learningObjectName: string = req.params.learningObjectName;
+          const id = LearningObjectInteractor.getLearningObjectId({
+            dataStore: this.dataStore,
+            username,
+            learningObjectName,
+            userToken,
+          });
+          res.status(200).send(id);
         } catch (e) {
           const { code, message } = mapErrorToResponseData(e);
           res.status(code).json({ message });
