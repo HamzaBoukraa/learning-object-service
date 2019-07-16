@@ -1330,6 +1330,27 @@ export async function getMaterials({
   }
 }
 
+export async function createLearningObjectRevision(params: {
+  userId: string,
+  learningObjectId: string,
+  dataStore: DataStore,
+  requester: UserToken,
+}): Promise<void> {
+  const learningObject = await validateRequest({
+    userId: params.userId,
+    learningObjectId: params.learningObjectId,
+    dataStore: params.dataStore,
+  });
+
+  if (learningObject.author.username !== params.requester.username) {
+    throw new ResourceError(
+      `Requester ${params.requester.username} does not own Learning Object with id ${params.learningObjectId}`,
+      ResourceErrorReason.INVALID_ACCESS,
+    )
+  }
+  
+}
+
 /**
  * Sanitizes object containing updates to be stored by removing invalid update properties, cloning valid properties, and trimming strings
  *
@@ -1348,6 +1369,34 @@ function sanitizeUpdates(
     }
   }
   return updates;
+}
+
+/**
+ * validateRequest tries to find a Learning Object
+ * with the given userId and Learning Object Id.
+ * If it does not find a Learning Object that matches
+ * the given criteria, it throws a Resource Error.
+ * Otherwise, the function returns the working
+ * copy of the located Learning Object.
+ * @param params
+ */
+async function validateRequest(params: {
+  userId: string,
+  learningObjectId: string,
+  dataStore: DataStore,
+}): Promise<LearningObject> {
+  const learningObject = await params.dataStore.checkLearningObjectExistence({
+    userId: params.userId,
+    learningObjectId: params.learningObjectId,
+  });
+
+  if (!learningObject) {
+    throw new ResourceError(
+      `User ${params.userId} does not own a Learning Object with id ${params.learningObjectId}`,
+      ResourceErrorReason.NOT_FOUND,
+    );
+  }
+  return learningObject;
 }
 
 /**

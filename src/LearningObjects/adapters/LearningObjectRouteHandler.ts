@@ -208,6 +208,16 @@ export function initializePrivate({
     }
   };
 
+  const createRevision = async (req: Request, res: Response) => {
+    try {
+      const params = { ...req.params, dataStore, user: req.user };
+      await LearningObjectInteractor.createLearningObjectRevision(params);
+    } catch (e) {
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({ message });
+    }
+  };
+
   router.route('/learning-objects').post(addLearningObject);
   router.post('/users/:username/learning-objects', addLearningObject);
   router.patch('/learning-objects/:id', updateLearningObject);
@@ -225,4 +235,5 @@ export function initializePrivate({
     '/learning-objects/:id/children/summary',
     getLearningObjectChildren,
   );
+  router.post('/users/:userId/learning-objects/:learningObjectId/revisions', createRevision);
 }
