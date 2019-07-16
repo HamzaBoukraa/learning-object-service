@@ -1,7 +1,5 @@
 import { Router } from 'express';
-import * as multer from 'multer';
 import { LearningObjectInteractor } from '../../interactors/interactors';
-import { DZFile, DZFileMetadata } from '../../shared/interfaces/FileManager';
 import {
   DataStore,
   FileManager,
@@ -9,25 +7,23 @@ import {
 } from '../../shared/interfaces/interfaces';
 import {
   updateReadme,
-  removeFile,
-  updateFileDescription,
 } from '../../LearningObjects/LearningObjectInteractor';
-import * as FileInteractor from '../../FileManager/FileInteractor';
 import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
 import * as LearningOutcomeRouteHandler from '../../LearningOutcomes/LearningOutcomeRouteHandler';
 import * as SubmissionRouteDriver from '../../LearningObjectSubmission';
 import * as ChangelogRouteHandler from '../../Changelogs/ChangelogRouteDriver';
 import { reportError } from '../../shared/SentryConnector';
 import { UserToken } from '../../shared/types';
-import { ResourceErrorReason, mapErrorToResponseData } from '../../shared/errors';
+import {
+  mapErrorToResponseData,
+} from '../../shared/errors';
 export class ExpressAuthRouteDriver {
-  private upload = multer({ storage: multer.memoryStorage() });
 
   constructor(
     private dataStore: DataStore,
     private fileManager: FileManager,
     private library: LibraryCommunicator,
-  ) { }
+  ) {}
 
   public static buildRouter(
     dataStore: DataStore,
@@ -62,7 +58,7 @@ export class ExpressAuthRouteDriver {
         try {
           throw new Error(
             `${
-            req.user.username
+              req.user.username
             } was retrieved from the token. Should be lowercase`,
           );
         } catch (e) {
@@ -109,293 +105,11 @@ export class ExpressAuthRouteDriver {
           res.sendStatus(200);
         } catch (e) {
           const { code, message } = mapErrorToResponseData(e);
-          res.status(code).json({message});
-        }
-      },
-    );
-    router.get(
-      '/learning-objects/:username/:learningObjectName/id',
-      async (req, res) => {
-        try {
-          const userToken = req.user;
-          const username = req.params.username;
-          const learningObjectName = req.params.learningObjectName;
-          const id = await LearningObjectInteractor.getLearningObjectId({
-            dataStore: this.dataStore,
-            username,
-            learningObjectName,
-            userToken,
-          });
-          res.status(200).send(id);
-        } catch (e) {
-          const { code, message } = mapErrorToResponseData(e);
           res.status(code).json({ message });
         }
       },
     );
 
-    // FILE MANAGEMENT
-
-    /**
-     * @deprecated TODO: Deprecate route
-     * This route should be deprecated once the clients using this route have updated to the new route:
-     * `/users/:username/learning-objects/:learningObjectId/files/:fileId/multipart`
-     * The new route provides more information about the resource being requested and more closely adheres to a RESTful structure
-     *
-     */
-    router
-      .route('/learning-objects/:id/files/:fileId/multipart')
-      .post(async (req, res) => {
-        try {
-          const user = req.user;
-          const objectId: string = req.params.id;
-          const filePath = req.body.filePath;
-          const uploadId = await FileInteractor.startMultipartUpload({
-            objectId,
-            filePath,
-            user,
-            dataStore: this.dataStore,
-            fileManager: this.fileManager,
-          });
-          res.status(200).send({ uploadId });
-        } catch (e) {
-          const { code, message } = mapErrorToResponseData(e);
-          res.status(code).json({message});
-        }
-      })
-      .patch(async (req, res) => {
-        try {
-          const id = req.params.id;
-          const uploadId: string = req.body.uploadId;
-          const fileMeta = req.body.fileMeta;
-          const url = await FileInteractor.finalizeMultipartUpload({
-            uploadId,
-            dataStore: this.dataStore,
-            fileManager: this.fileManager,
-          });
-          await LearningObjectInteractor.addFileMeta({
-            id,
-            fileMeta,
-            url,
-            dataStore: this.dataStore,
-          });
-          res.sendStatus(200);
-        } catch (e) {
-          const { code, message } = mapErrorToResponseData(e);
-          res.status(code).json({message});
-        }
-      })
-      .delete(async (req, res) => {
-        try {
-          const uploadId: string = req.body.uploadId;
-          await FileInteractor.abortMultipartUpload({
-            dataStore: this.dataStore,
-            fileManager: this.fileManager,
-            uploadId,
-          });
-          res.sendStatus(200);
-        } catch (e) {
-          const { code, message } = mapErrorToResponseData(e);
-          res.status(code).json({message});
-        }
-      });
-
-    router
-      .route(
-        '/users/:username/learning-objects/:learningObjectId/files/:fileId/multipart',
-      )
-      .post(async (req, res) => {
-        try {
-          const user = req.user;
-          const username = req.params.username;
-          const objectId: string = req.params.learningObjectId;
-          const filePath = req.body.filePath;
-          const uploadId = await FileInteractor.startMultipartUpload({
-            objectId,
-            filePath,
-            user,
-            dataStore: this.dataStore,
-            fileManager: this.fileManager,
-            username,
-          });
-          res.status(200).send({ uploadId });
-        } catch (e) {
-          const { code, message } = mapErrorToResponseData(e);
-          res.status(code).json({message});
-        }
-      })
-      .patch(async (req, res) => {
-        try {
-          const id = req.params.learningObjectId;
-          const uploadId: string = req.body.uploadId;
-          const fileMeta = req.body.fileMeta;
-          const url = await FileInteractor.finalizeMultipartUpload({
-            uploadId,
-            dataStore: this.dataStore,
-            fileManager: this.fileManager,
-          });
-          await LearningObjectInteractor.addFileMeta({
-            id,
-            fileMeta,
-            url,
-            dataStore: this.dataStore,
-          });
-          res.sendStatus(200);
-        } catch (e) {
-          const { code, message } = mapErrorToResponseData(e);
-          res.status(code).json({message});
-        }
-      })
-      .delete(async (req, res) => {
-        try {
-          const uploadId: string = req.body.uploadId;
-          await FileInteractor.abortMultipartUpload({
-            dataStore: this.dataStore,
-            fileManager: this.fileManager,
-            uploadId,
-          });
-          res.sendStatus(200);
-        } catch (e) {
-          const { code, message } = mapErrorToResponseData(e);
-          res.status(code).json({message});
-        }
-      });
-    /**
-     * @deprecated TODO: Deprecate route
-     * This route should be deprecated once the clients using this route have updated to the new route:
-     * `/users/:username/learning-objects/:id/files`
-     * The new route provides more information about the resource being requested and more closely adheres to a RESTful structure
-     *
-     */
-    router.post(
-      '/learning-objects/:id/files',
-      this.upload.any(),
-      async (req, res) => {
-        try {
-          const file: Express.Multer.File = req.files[0];
-          const id = req.params.id;
-          const dzMetadata: DZFileMetadata = req.body;
-          const upload: DZFile = {
-            ...dzMetadata,
-            name: file.originalname,
-            encoding: file.encoding,
-            buffer: file.buffer,
-            mimetype: file.mimetype,
-            size: dzMetadata.dztotalfilesize || dzMetadata.size,
-          };
-          const uploadId = req.body.uploadId;
-          const user = req.user;
-
-          if (this.hasAccess(user, 'emailVerified', true)) {
-            const loFile = await LearningObjectInteractor.uploadFile({
-              id,
-              username: user.username,
-              dataStore: this.dataStore,
-              fileManager: this.fileManager,
-              file: upload,
-              uploadId,
-            });
-
-            res.status(200).send(loFile);
-          } else {
-            res
-              .status(403)
-              .send(
-                'Invalid Access. User must be verified to upload materials.',
-              );
-          }
-        } catch (e) {
-          const { code, message } = mapErrorToResponseData(e);
-          res.status(code).json({message});
-        }
-      },
-    );
-
-    router.post(
-      '/users/:username/learning-objects/:id/files',
-      this.upload.any(),
-      async (req, res) => {
-        try {
-          const file: Express.Multer.File = req.files[0];
-          const id = req.params.id;
-          const dzMetadata: DZFileMetadata = req.body;
-          const upload: DZFile = {
-            ...dzMetadata,
-            name: file.originalname,
-            encoding: file.encoding,
-            buffer: file.buffer,
-            mimetype: file.mimetype,
-            size: dzMetadata.dztotalfilesize || dzMetadata.size,
-          };
-          const uploadId = req.body.uploadId;
-          const user = req.user;
-          const username = req.params.username;
-          if (this.hasAccess(user, 'emailVerified', true)) {
-            const loFile = await LearningObjectInteractor.uploadFile({
-              id,
-              username,
-              dataStore: this.dataStore,
-              fileManager: this.fileManager,
-              file: upload,
-              uploadId,
-            });
-
-            res.status(200).send(loFile);
-          } else {
-            res
-              .status(403)
-              .send(
-                'Invalid Access. User must be verified to upload materials.',
-              );
-          }
-        } catch (e) {
-          const { code, message } = mapErrorToResponseData(e);
-          res.status(code).json({message});
-        }
-      },
-    );
-    /**
-     * @deprecated
-     *
-     * TODO: Deprecate route in favor of more restful `/users/:username/learning-objects/:learningObjectId/materials/files/:fileId` route
-     */
-    router
-      .route('/files/:id/:fileId')
-      .patch(async (req, res) => {
-        try {
-          const objectId = req.params.id;
-          const fileId = req.params.fileId;
-          const description = req.body.description;
-          await updateFileDescription({
-            fileId,
-            objectId,
-            description,
-            dataStore: this.dataStore,
-          });
-          res.sendStatus(200);
-        } catch (e) {
-          const { code, message } = mapErrorToResponseData(e);
-          res.status(code).json({message});
-        }
-      })
-      .delete(async (req, res) => {
-        try {
-          const objectId = req.params.id;
-          const fileId = req.params.fileId;
-          const username = req.user.username;
-          await removeFile({
-            dataStore: this.dataStore,
-            fileManager: this.fileManager,
-            objectId,
-            username,
-            fileId,
-          });
-          res.sendStatus(200);
-        } catch (e) {
-          const { code, message } = mapErrorToResponseData(e);
-          res.status(code).json({message});
-        }
-      });
     router.patch('/learning-objects/:id/pdf', async (req, res) => {
       try {
         const id = req.params.id;
@@ -407,7 +121,7 @@ export class ExpressAuthRouteDriver {
         res.sendStatus(200);
       } catch (e) {
         const { code, message } = mapErrorToResponseData(e);
-        res.status(code).json({message});
+        res.status(code).json({ message });
       }
     });
     router
@@ -425,10 +139,9 @@ export class ExpressAuthRouteDriver {
             userToken: user,
           });
           res.sendStatus(200);
-
         } catch (e) {
           const { code, message } = mapErrorToResponseData(e);
-          res.status(code).json({message});
+          res.status(code).json({ message });
         }
       })
       .delete(async (req, res) => {
@@ -445,7 +158,7 @@ export class ExpressAuthRouteDriver {
           res.sendStatus(200);
         } catch (e) {
           const { code, message } = mapErrorToResponseData(e);
-          res.status(code).json({message});
+          res.status(code).json({ message });
         }
       });
     router.delete(
@@ -463,7 +176,7 @@ export class ExpressAuthRouteDriver {
           res.sendStatus(200);
         } catch (e) {
           const { code, message } = mapErrorToResponseData(e);
-          res.status(code).json({message});
+          res.status(code).json({ message });
         }
       },
     );
@@ -480,7 +193,7 @@ export class ExpressAuthRouteDriver {
         res.status(200).send(objects.map(obj => obj.toPlainObject()));
       } catch (e) {
         const { code, message } = mapErrorToResponseData(e);
-        res.status(code).json({message});
+        res.status(code).json({ message });
       }
     });
 
@@ -497,12 +210,8 @@ export class ExpressAuthRouteDriver {
         res.status(200).send(objects.map(obj => obj.toPlainObject()));
       } catch (e) {
         const { code, message } = mapErrorToResponseData(e);
-        res.status(code).json({message});
+        res.status(code).json({ message });
       }
     });
-  }
-
-  private hasAccess(token: any, propName: string, value: any): boolean {
-    return token[propName] === value;
   }
 }

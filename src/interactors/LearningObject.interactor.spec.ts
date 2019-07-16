@@ -51,32 +51,6 @@ describe('searchUsersObjects', () => {
   });
 });
 
-describe('loadProfile', () => {
-  it('should return an array of learning object summaries', done => {
-    return LearningObjectInteractor.loadProfile({
-      dataStore,
-      userToken: stubs.userToken,
-      username: stubs.userToken.username,
-    })
-      .then(val => {
-        expect(val).toBeInstanceOf(Array);
-        done();
-      });
-  });
-
-  it('should return an array of learning object summaries', done => {
-    return LearningObjectInteractor.loadProfile({
-      dataStore,
-      userToken: undefined,
-      username: stubs.userToken.username,
-    })
-      .then(val => {
-        expect(val).toBeInstanceOf(Array);
-        done();
-      });
-  });
-});
-
 describe('fetchObjectsByIDs', () => {
   it('should load full learning object', done => {
     return LearningObjectInteractor.fetchObjectsByIDs({

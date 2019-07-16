@@ -77,29 +77,6 @@ export class ExpressRouteDriver {
     });
     initializePublicHierarchyRoutes({ router, dataStore: this.dataStore });
 
-    router
-      .route('/learning-objects/:username/:learningObjectName')
-      .get(async (req, res) => {
-        try {
-          const username = req.params.username;
-          const learningObjectName = req.params.learningObjectName;
-          const userToken = req.user;
-          const revision = req.query.revision;
-          const object = await LearningObjectInteractor.loadLearningObject({
-            dataStore: this.dataStore,
-            library: this.library,
-            username,
-            learningObjectName,
-            userToken,
-            revision,
-          });
-          res.status(200).send(object.toPlainObject());
-        } catch (e) {
-          const { code, message } = mapErrorToResponseData(e);
-          res.status(code).json({ message });
-        }
-      });
-
     initializeCollectionRouter({ router, dataStore: this.dataStore });
 
     /**
