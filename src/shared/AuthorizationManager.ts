@@ -497,3 +497,23 @@ export function getCollectionAccessMap(
 
   return accessMap;
 }
+
+/**
+ * Checks status filters do not contain restricted statuses and returns a list of accessible statuses
+ *
+ * If status filters are not defined or are empty; All accessible status filters are returned;
+ * If they are defined and do not contain restricted statuses the requested statuses are returned;
+ *
+ * *** Accessible status filters include Review Stage and Released statuses ***
+ *
+ * @param {string[]} [status]
+ * @returns {string[]}
+ */
+export function getAuthorizedStatuses(status?: string[]): string[] {
+  enforceNonAuthorStatusRestrictions(status);
+  if (!status || (status && !status.length)) {
+    return [...LearningObjectState.IN_REVIEW, ...LearningObjectState.RELEASED];
+  }
+
+  return status;
+}
