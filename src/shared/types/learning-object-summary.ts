@@ -60,6 +60,10 @@ export interface LearningObjectSummary {
    */
   description: string;
   /**
+   * Flag indicating whether or not a Learning Object has a working copy with dissimilar properties
+   */
+  hasRevision: boolean;
+  /**
    * How long the content of the Learning Object
    */
   length: string;

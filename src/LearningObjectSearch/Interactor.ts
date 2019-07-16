@@ -3,10 +3,9 @@ import {
   LearningObjectSearchResult,
   Requester,
   LearningObjectSearchQuery,
-  LearningObject,
   CollectionAccessMap,
+  LearningObjectState,
 } from './typings';
-import { handleError } from '../interactors/LearningObjectInteractor';
 import {
   sanitizeText,
   toArray,
@@ -16,24 +15,16 @@ import {
 import {
   requesterIsPrivileged,
   requesterIsAdminOrEditor,
+  enforceNonAuthorStatusRestrictions,
 } from '../shared/AuthorizationManager';
 import { LearningObjectDatastore } from './interfaces';
-import { ResourceError, ResourceErrorReason } from '../shared/errors';
 import { getAccessGroupCollections } from '../shared/AuthorizationManager';
+import { handleError } from '../shared/errors';
 
 namespace Drivers {
   export const datastore = () =>
     Module.resolveDependency(LearningObjectDatastore);
 }
-
-const LearningObjectState = {
-  IN_REVIEW: [
-    LearningObject.Status.WAITING,
-    LearningObject.Status.REVIEW,
-    LearningObject.Status.PROOFING,
-  ],
-  RELEASED: [LearningObject.Status.RELEASED],
-};
 
 /**
  * Searches for Learning Objects based on provided query parameters and access level
@@ -101,9 +92,7 @@ function formatSearchQuery(
   formattedQuery.length = toArray(formattedQuery.length);
   formattedQuery.level = toArray(formattedQuery.level);
   formattedQuery.collection = toArray(formattedQuery.collection);
-  formattedQuery.standardOutcomes = toArray(
-    formattedQuery.standardOutcomes,
-  );
+  formattedQuery.standardOutcomes = toArray(formattedQuery.standardOutcomes);
   formattedQuery.guidelines = toArray(formattedQuery.guidelines);
   formattedQuery.page = toNumber(formattedQuery.page);
   formattedQuery.limit = toNumber(formattedQuery.limit);
@@ -157,32 +146,10 @@ function getCollectionAccessMap(
  * @returns {string[]}
  */
 function getAuthorizedStatuses(status?: string[]): string[] {
-  enforceStatusRestrictions(status);
+  enforceNonAuthorStatusRestrictions(status);
   if (!status || (status && !status.length)) {
     return [...LearningObjectState.IN_REVIEW, ...LearningObjectState.RELEASED];
   }
 
   return status;
-}
-
-/**
- * Validates requested statuses do not contain restricted statuses
- *
- * If statues requested contain a restricted status, An invalid access error is thrown
- *
- * *** Restricted status filters include Working Stage statuses ***
- *
- * @param {string[]} status
- */
-function enforceStatusRestrictions(status: string[]) {
-  if (
-    status &&
-    (status.includes(LearningObject.Status.REJECTED) ||
-      status.includes(LearningObject.Status.UNRELEASED))
-  ) {
-    throw new ResourceError(
-      'The statuses requested are not permitted.',
-      ResourceErrorReason.INVALID_ACCESS,
-    );
-  }
 }

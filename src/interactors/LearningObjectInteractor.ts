@@ -14,7 +14,12 @@ import {
   updateObjectLastModifiedDate,
   updateParentsDate,
 } from '../LearningObjects/LearningObjectInteractor';
-import { UserToken, ServiceToken } from '../shared/types';
+import {
+  UserToken,
+  ServiceToken,
+  LearningObjectState,
+  CollectionAccessMap,
+} from '../shared/types';
 import {
   getAccessGroupCollections,
   hasMultipleLearningObjectWriteAccesses,
@@ -23,13 +28,11 @@ import {
   requesterIsPrivileged,
   hasServiceLevelAccess,
   hasReadAccessByCollection,
-  requesterIsAuthor,
 } from '../shared/AuthorizationManager';
 import {
   ResourceError,
   ResourceErrorReason,
-  ServiceError,
-  ServiceErrorReason,
+  handleError,
 } from '../shared/errors';
 import { LearningObject } from '../shared/entity';
 import { LearningObjectsModule } from '../LearningObjects/LearningObjectsModule';
@@ -38,31 +41,6 @@ import { FileMetadataGateway } from '../LearningObjects/interfaces';
 namespace Gateways {
   export const fileMetadata = () =>
     LearningObjectsModule.resolveDependency(FileMetadataGateway);
-}
-
-export const LearningObjectState = {
-  UNRELEASED: [
-    LearningObject.Status.REJECTED,
-    LearningObject.Status.UNRELEASED,
-  ],
-  IN_REVIEW: [
-    LearningObject.Status.WAITING,
-    LearningObject.Status.REVIEW,
-    LearningObject.Status.PROOFING,
-  ],
-  RELEASED: [LearningObject.Status.RELEASED],
-  ALL: [
-    LearningObject.Status.REJECTED,
-    LearningObject.Status.UNRELEASED,
-    LearningObject.Status.WAITING,
-    LearningObject.Status.REVIEW,
-    LearningObject.Status.PROOFING,
-    LearningObject.Status.RELEASED,
-  ],
-};
-
-interface CollectionAccessMap {
-  [index: string]: string[];
 }
 
 export class LearningObjectInteractor {
@@ -355,11 +333,7 @@ export class LearningObjectInteractor {
       }
       return learningObjectID;
     } catch (e) {
-      if (e instanceof ResourceError || e instanceof ServiceError) {
-        return Promise.reject(e);
-      }
-      reportError(e);
-      throw new ServiceError(ServiceErrorReason.INTERNAL);
+      handleError(e);
     }
   }
   /**
@@ -1082,17 +1056,3 @@ const bypassNotFoundResourceError = ({
   }
   return null;
 };
-
-/**
- * Handles errors by throwing error if handled, otherwise the error is reported and a ServiceError is thrown
- *
- * @param {Error} error
- * @returns {never}
- */
-export function handleError(error: Error): never {
-  if (error instanceof ResourceError || error instanceof ServiceError) {
-    throw error;
-  }
-  reportError(error);
-  throw new ServiceError(ServiceErrorReason.INTERNAL);
-}

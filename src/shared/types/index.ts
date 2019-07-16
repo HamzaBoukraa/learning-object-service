@@ -18,7 +18,16 @@ import {
   AuthorSummary,
 } from './learning-object-summary';
 import { AccessGroup } from './access-groups';
+import {
+  ReleasedUserLearningObjectSearchQuery,
+  UserLearningObjectQuery,
+  UserLearningObjectSearchQuery,
+} from './user-learning-object-query';
+import { LearningObjectState } from './learning-object-state';
 import { FileUpload } from './file-upload';
+export interface CollectionAccessMap {
+  [collection: string]: string[];
+}
 
 export {
   UserToken,
@@ -35,5 +44,9 @@ export {
   LearningObjectSummary,
   AuthorSummary,
   AccessGroup,
+  UserLearningObjectQuery,
+  ReleasedUserLearningObjectSearchQuery,
+  UserLearningObjectSearchQuery,
+  LearningObjectState,
   FileUpload,
 };
