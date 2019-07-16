@@ -26,8 +26,8 @@ import {
   authorizeWriteAccess,
   requesterIsPrivileged,
   getAccessGroupCollections,
-  enforceNonAuthorStatusRestrictions,
   getCollectionAccessMap,
+  getAuthorizedStatuses,
 } from '../shared/AuthorizationManager';
 import { FileMeta, LearningObjectFilter, MaterialsFilter } from './typings';
 import * as PublishingService from './Publishing';
@@ -112,15 +112,24 @@ export async function searchUsersObjects({
         );
       }
 
-      if (
-        searchQuery.status &&
-        searchQuery.status.includes(LearningObject.Status.RELEASED)
-      ) {
+      if (!searchQuery.status) {
+        if (isAuthor) {
+          searchQuery.status = [
+            ...LearningObjectState.UNRELEASED,
+            ...LearningObjectState.IN_REVIEW,
+          ];
+        } else {
+          searchQuery.status = [...LearningObjectState.IN_REVIEW];
+        }
+      }
+
+      if (searchQuery.status.includes(LearningObject.Status.RELEASED)) {
         throw new ResourceError(
           'Illegal query arguments. Cannot specify both draftsOnly and released status filters.',
           ResourceErrorReason.BAD_REQUEST,
         );
       }
+
       searchQuery.revision = 0;
     }
 
@@ -134,7 +143,7 @@ export async function searchUsersObjects({
     let collectionAccessMap: CollectionAccessMap;
 
     if (!isAuthor) {
-      enforceNonAuthorStatusRestrictions(searchQuery.status);
+      searchQuery.status = getAuthorizedStatuses(searchQuery.status);
       if (!requesterIsAdminOrEditor(requester)) {
         const privilegedCollections = getAccessGroupCollections(requester);
         collectionAccessMap = getCollectionAccessMap(
@@ -142,11 +151,11 @@ export async function searchUsersObjects({
           privilegedCollections,
           searchQuery.status,
         );
-        searchQuery.status =
-          searchQuery.status &&
-          searchQuery.status.includes(LearningObject.Status.RELEASED)
-            ? LearningObjectState.RELEASED
-            : null;
+        searchQuery.status = searchQuery.status.includes(
+          LearningObject.Status.RELEASED,
+        )
+          ? LearningObjectState.RELEASED
+          : null;
       }
     }
 
