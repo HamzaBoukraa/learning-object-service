@@ -1381,7 +1381,7 @@ export async function createLearningObjectRevision(params: {
 
   if (releasedCopy.author.username !== params.requester.username) {
     throw new ResourceError(
-      `Requester ${params.requester.username} does not own Learning Object with id ${params.learningObjectId}`,
+      `Cannot create a revision. Requester ${params.requester.username} must be the author of Learning Object with id ${params.learningObjectId}`,
       ResourceErrorReason.INVALID_ACCESS,
     );
   }
