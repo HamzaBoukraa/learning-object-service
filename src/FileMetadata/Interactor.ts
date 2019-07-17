@@ -10,8 +10,7 @@ import {
   FileMetadataInsert,
   FileMetadataFilter,
 } from './typings';
-import { handleError } from '../interactors/LearningObjectInteractor';
-import { ResourceError, ResourceErrorReason } from '../shared/errors';
+import { ResourceError, ResourceErrorReason, handleError } from '../shared/errors';
 import {
   authorizeWriteAccess,
   authorizeReadAccess,
@@ -295,7 +294,7 @@ function generateFileMetadataInserts(
   learningObject: LearningObjectSummary,
 ) {
   const inserts: FileMetadataInsert[] = [];
-  files.forEach(async file => {
+  for (const file of files) {
     const cleanFile = sanitizeObject({ object: file }, false);
     validateFileMeta(cleanFile);
     const newInsert: FileMetadataInsert = generateFileMetaInsert(
@@ -303,7 +302,7 @@ function generateFileMetadataInserts(
       learningObject,
     );
     inserts.push(newInsert);
-  });
+  }
   return inserts;
 }
 
