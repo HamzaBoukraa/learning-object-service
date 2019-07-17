@@ -10,8 +10,7 @@ import {
   FileMetadataInsert,
   FileMetadataFilter,
 } from './typings';
-import { handleError } from '../interactors/LearningObjectInteractor';
-import { ResourceError, ResourceErrorReason } from '../shared/errors';
+import { ResourceError, ResourceErrorReason, handleError } from '../shared/errors';
 import {
   authorizeWriteAccess,
   authorizeReadAccess,

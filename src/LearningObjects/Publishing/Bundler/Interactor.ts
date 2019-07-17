@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { LearningObject, BundleData, BundleExtension } from './typings';
 import { BundlerModule } from './BundlerModule';
 import { Bundler, LicenseRetriever, FileGateway } from './interfaces';
-import { handleError } from '../../../interactors/LearningObjectInteractor';
+import { handleError } from '../../../shared/errors';
 
 /**
  * Encapsulates Drivers used within this interactor in a namespace
