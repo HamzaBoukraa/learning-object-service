@@ -9,62 +9,16 @@ const dataStore: DataStore = new MockDataStore();
 const library: LibraryCommunicator = new MockLibraryDriver();
 const stubs = new Stubs();
 
-describe('loadUsersObjectSummaries', () => {
-  it('should load learning object summary', done => {
-    // FIXME: Why does this function take a usertoken and a username?
-    return LearningObjectInteractor.loadUsersObjectSummaries({
-      dataStore,
-      library,
-      userToken: stubs.userToken,
-      username: stubs.userToken.username,
-    })
-      .then(val => {
-        expect(val).toBeInstanceOf(Array);
-        done();
-      })
-      .catch(error => {
-        throw new Error('Failed to load summary.');
-      });
-  });
-});
-
-describe('loadProfile', () => {
-  it('should return an array of learning object summaries', done => {
-    return LearningObjectInteractor.loadProfile({
-      dataStore,
-      userToken: stubs.userToken,
-      username: stubs.userToken.username,
-    })
-      .then(val => {
-        expect(val).toBeInstanceOf(Array);
-        done();
-      });
-  });
-
-  it('should return an array of learning object summaries', done => {
-    return LearningObjectInteractor.loadProfile({
-      dataStore,
-      userToken: undefined,
-      username: stubs.userToken.username,
-    })
-      .then(val => {
-        expect(val).toBeInstanceOf(Array);
-        done();
-      });
-  });
-});
-
 describe('fetchObjectsByIDs', () => {
   it('should load full learning object', done => {
     return LearningObjectInteractor.fetchObjectsByIDs({
       dataStore,
       library,
       ids: [stubs.learningObject.id],
-    })
-      .then(val => {
-        expect(val).toBeInstanceOf(Array);
-        done();
-      });
+    }).then(val => {
+      expect(val).toBeInstanceOf(Array);
+      done();
+    });
   });
 
   it('should return learning object - given empty array!', done => {
@@ -72,11 +26,10 @@ describe('fetchObjectsByIDs', () => {
       dataStore,
       library,
       ids: [],
-    })
-      .then(val => {
-        expect(val).toBeInstanceOf(Array);
-        done();
-      });
+    }).then(val => {
+      expect(val).toBeInstanceOf(Array);
+      done();
+    });
   });
 });
 
@@ -87,10 +40,9 @@ describe('getLearningObjectId', () => {
       username: stubs.learningObject.author.username,
       learningObjectName: stubs.learningObject.name,
       userToken: stubs.userToken,
-    })
-      .then(val => {
-        expect(val).toEqual(stubs.learningObject.id);
-        done();
-      });
+    }).then(val => {
+      expect(val).toEqual(stubs.learningObject.id);
+      done();
+    });
   });
 });
