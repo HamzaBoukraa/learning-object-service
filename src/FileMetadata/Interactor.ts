@@ -294,7 +294,7 @@ function generateFileMetadataInserts(
   learningObject: LearningObjectSummary,
 ) {
   const inserts: FileMetadataInsert[] = [];
-  files.forEach(async file => {
+  for (const file of files) {
     const cleanFile = sanitizeObject({ object: file }, false);
     validateFileMeta(cleanFile);
     const newInsert: FileMetadataInsert = generateFileMetaInsert(
@@ -302,7 +302,7 @@ function generateFileMetadataInserts(
       learningObject,
     );
     inserts.push(newInsert);
-  });
+  }
   return inserts;
 }
 
