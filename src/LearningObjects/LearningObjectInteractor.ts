@@ -1374,7 +1374,7 @@ export async function createLearningObjectRevision(params: {
 
   if (!releasedCopy) {
     throw new ResourceError(
-      `Learning Object with id ${params.learningObjectId} is not released`,
+      `Cannot create a revision of Learning Object: ${params.learningObjectId} since it is not released.`,
       ResourceErrorReason.CONFLICT,
     );
   }
