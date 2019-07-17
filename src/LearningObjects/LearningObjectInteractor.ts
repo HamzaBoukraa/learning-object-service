@@ -983,8 +983,12 @@ export async function updateLearningObject({
 }
 
 /**
- * FIXME: Once the return type of `fetchLearningObject` is updated to the `Datastore's` schema type,
- * this function should be updated to not fetch children ids as they should be returned with the document
+ * Generates a full releasable Learning Object including full metadata for all materials and children
+ *
+ * @param {DataStore} dataStore [The datastore to use to fetch the Learning Object data]
+ * @param {string} id [The id of the Learning Object to get releasable copy of]
+ * @param {UserToken} requester [The requester of the releasable Learning Object]
+ * @returns {Promise<LearningObject>}
  */
 async function generateReleasableLearningObject({
   dataStore,
@@ -994,20 +998,19 @@ async function generateReleasableLearningObject({
   dataStore: DataStore;
   id: string;
   requester: UserToken;
-}) {
-  const [object, childIds, files] = await Promise.all([
+}): Promise<LearningObject> {
+  const [object, children, files] = await Promise.all([
     dataStore.fetchLearningObject({ id, full: true }),
-    dataStore.findChildObjectIds({ parentId: id }),
+    loadReleasedChildObjects({
+      dataStore,
+      parentId: id,
+    }),
     Gateways.fileMetadata().getAllFileMetadata({
       requester,
       learningObjectId: id,
       filter: 'unreleased',
     }),
   ]);
-  let children: LearningObject[] = [];
-  if (Array.isArray(childIds)) {
-    children = childIds.map(childId => new LearningObject({ id: childId }));
-  }
   const releasableObject = new LearningObject({
     ...object.toPlainObject(),
     children,
@@ -1120,6 +1123,37 @@ export async function getLearningObjectById({
   } catch (e) {
     handleError(e);
   }
+}
+
+/**
+ * Recursively loads all levels of full released child Learning Objects
+ *
+ * @param {DataStore} dataStore [The datastore to fetch children from]
+ * @param {string} parentId [The id of the parent Learning Object]
+ *
+ * @returns
+ */
+async function loadReleasedChildObjects({
+  dataStore,
+  parentId,
+}: {
+  dataStore: DataStore;
+  parentId: string;
+}): Promise<LearningObject[]> {
+  let children = await dataStore.loadReleasedChildObjects({
+    id: parentId,
+    full: true,
+  });
+  children = await Promise.all(
+    children.map(async child => {
+      child.children = await loadReleasedChildObjects({
+        dataStore,
+        parentId: child.id,
+      });
+      return child;
+    }),
+  );
+  return children;
 }
 
 /**
