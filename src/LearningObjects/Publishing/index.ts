@@ -6,6 +6,7 @@ import { LambdaGatewayFactory } from './ReleaseEmails/lambda-gateway-factory';
 import { ModuleLearningObjectSubmissionGateway } from './ModuleLearningObjectSubmissionGateway';
 import { LearningObjectSubmissionGateway } from './LearningObjectSubmissionGateway';
 import { StubLearningObjectSubmissionGateway } from './StubLearningObjectSubmissionGateway';
+import { LearningObjectSubmissionGatewayFactory } from './LearningObjectSubmissionGatewayFactory';
 
 // FIXME: Replace with direct export of ElasticSearchPublishingGateway#releaseLearningObject
 // once we do away with the released-objects collection in Mongo
@@ -22,11 +23,7 @@ const setupElasticToggle = ({
 }) => {
   const toggle = new ElasticMongoReleaseRequestDuplicator(dataStore);
   const releaseEmailGateway = LambdaGatewayFactory.buildGateway();
-  const learningObjectSubmissionGateway: LearningObjectSubmissionGateway =
-    process.env.NODE_ENV === 'test' ||
-    process.env.NODE_ENV === 'testing' ?
-      new StubLearningObjectSubmissionGateway() :
-      new ModuleLearningObjectSubmissionGateway();
+  const learningObjectSubmissionGateway: LearningObjectSubmissionGateway = LearningObjectSubmissionGatewayFactory.buildGateway();
   releaseLearningObject({
     authorUsername,
     userToken,
