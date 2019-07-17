@@ -120,6 +120,9 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
     id: string;
     full?: boolean;
   }): Promise<LearningObject[]> {
+    if (params.id !== this.stubs.learningObjectChild.id) {
+      return Promise.resolve([this.stubs.learningObjectChild]);
+    }
     return Promise.resolve([]);
   }
 
