@@ -18,6 +18,8 @@ import {
 import { sanitizeObject, toNumber } from '../shared/functions';
 import { reportError } from '../shared/SentryConnector';
 
+const DEFAULT_MIME_TYPE = 'application/octet-stream';
+
 namespace Drivers {
   export const datastore = () => FileMetadataModule.resolveDependency(FileMetaDatastore);
 }
@@ -227,7 +229,7 @@ export async function addFileMeta({
 
     authorizeWriteAccess({ learningObject, requester });
 
-    const inserts: FileMetadataInsert[] = generateFileMetadataInserts(
+    const inserts: FileMetadataInsert[] = await generateFileMetadataInserts(
       files,
       learningObject,
     );
@@ -287,17 +289,17 @@ function handleFileMetadataInsert(
  *
  * @param {FileMetadata[]} files [The array of file metadata to generate inserts for]
  * @param {LearningObjectSummary} learningObject [Information about the Learning Object the files belong to]
- * @returns
+ * @returns Promise<FileMetadataInsert[]>
  */
-function generateFileMetadataInserts(
+async function generateFileMetadataInserts(
   files: FileMetadata[],
   learningObject: LearningObjectSummary,
-) {
+): Promise<FileMetadataInsert[]> {
   const inserts: FileMetadataInsert[] = [];
   for (const file of files) {
     const cleanFile = sanitizeObject({ object: file }, false);
     validateFileMeta(cleanFile);
-    const newInsert: FileMetadataInsert = generateFileMetaInsert(
+    const newInsert: FileMetadataInsert = await generateFileMetaInsert(
       cleanFile,
       learningObject,
     );
@@ -311,12 +313,12 @@ function generateFileMetadataInserts(
  *
  * @param {FileMetadata} file [The file metadata to generate insert for]
  * @param {LearningObjectSummary} learningObject [Information about the Learning Object the files belong to]
- * @returns {FileMetadataInsert}
+ * @returns {Promise<FileMetadataInsert>}
  */
-function generateFileMetaInsert(
+async function generateFileMetaInsert(
   file: FileMetadata,
   learningObject: LearningObjectSummary,
-): FileMetadataInsert {
+): Promise<FileMetadataInsert> {
   file.size = toNumber(file.size);
   const extension = file.name.split('.').pop();
   return {
@@ -327,7 +329,10 @@ function generateFileMetaInsert(
     fullPath: file.fullPath || file.name,
     lastUpdatedDate: Date.now().toString(),
     learningObjectId: learningObject.id,
-    mimeType: file.mimeType,
+    mimeType:
+      file.mimeType ||
+      (await Drivers.datastore().fetchMimeType(extension)) ||
+      DEFAULT_MIME_TYPE,
     name: file.name,
     packageable: isPackageable(file.size),
     size: file.size,
@@ -590,10 +595,6 @@ function validateFileMeta(file: FileMetadata) {
   const invalidInput = new ResourceError('', ResourceErrorReason.BAD_REQUEST);
   if (!Validators.stringHasContent(file.ETag)) {
     invalidInput.message = 'File metadata must contain a valid ETag.';
-    throw invalidInput;
-  }
-  if (!Validators.stringHasContent(file.mimeType)) {
-    invalidInput.message = 'File metadata must contain a valid mimeType.';
     throw invalidInput;
   }
   if (!Validators.stringHasContent(file.name)) {
