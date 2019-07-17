@@ -1,5 +1,5 @@
-import { Bundler } from './Bundler';
-import {  BundleData, BundleExtension, Readable } from './typings';
+import { Bundler } from '../../interfaces';
+import { BundleData, BundleExtension, Readable } from '../../typings';
 import { create, Archiver } from 'archiver';
 
 /**

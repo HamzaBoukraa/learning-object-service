@@ -1,9 +1,7 @@
 import 'dotenv/config';
-import { Bundler } from './Bundler';
 import { LearningObject, BundleData, BundleExtension } from './typings';
 import { BundlerModule } from './BundlerModule';
-import { LicenseRetriever } from './LicenseRetriever';
-import { FileGateway } from './FileGateway';
+import { Bundler, LicenseRetriever, FileGateway } from './interfaces';
 import { handleError } from '../../../interactors/LearningObjectInteractor';
 
 /**
