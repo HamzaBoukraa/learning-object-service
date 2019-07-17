@@ -1,4 +1,9 @@
-import { LearningObjectUpdates, LearningObjectSummary } from '../types';
+import {
+  LearningObjectUpdates,
+  LearningObjectSummary,
+  CollectionAccessMap,
+  ReleasedUserLearningObjectSearchQuery,
+} from '../types';
 import { LearningOutcomeDatastore } from '../../LearningOutcomes/LearningOutcomeInteractor';
 import { LearningObjectStatDatastore } from '../../LearningObjectStats/LearningObjectStatsInteractor';
 import { CollectionDataStore } from '../../Collections/CollectionDataStore';
@@ -19,28 +24,26 @@ export interface DataStore
 
   // Changelog
   createChangelog(params: {
-    learningObjectId: string,
+    learningObjectId: string;
     author: {
-      userId: string,
-      name: string,
-      role: string,
-      profileImage: string,
-    },
-    changelogText: string,
+      userId: string;
+      name: string;
+      role: string;
+      profileImage: string;
+    };
+    changelogText: string;
   }): Promise<void>;
   fetchChangelogsBeforeDate(params: {
-    learningObjectId: string,
-    date: string,
+    learningObjectId: string;
+    date: string;
   }): Promise<ChangeLogDocument[]>;
   fetchAllChangelogs(params: {
-    learningObjectId: string,
+    learningObjectId: string;
   }): Promise<ChangeLogDocument[]>;
   fetchRecentChangelog(params: {
-    learningObjectId: string,
+    learningObjectId: string;
   }): Promise<ChangeLogDocument>;
-  deleteChangelog(params: {
-    learningObjectId: string,
-  }): Promise<void>;
+  deleteChangelog(params: { learningObjectId: string }): Promise<void>;
   /*
    * READ Operations
    */
@@ -126,6 +129,35 @@ export interface DataStore
     total: number;
     objects: LearningObject[];
   }>;
+
+  /**
+   * Search for the specified user's released objects.
+   *
+   * @param {ReleasedUserLearningObjectSearchQuery} query Object containing query parameters to apply to search
+   * @param {String} username  username of an author in CLARK
+   *
+   * @returns {Promise<LearningObjectSummary[]>}
+   */
+  searchReleasedUserObjects(
+    query: ReleasedUserLearningObjectSearchQuery,
+    username: string,
+  ): Promise<LearningObjectSummary[]>;
+
+  /**
+   * Search for the specified user's released or working objects depending on requested status's
+   *
+   * @param  {LearningObjectQuery} query query containing status and text for field searching.
+   * @param username username of an author in CLARK.
+   * @param collectionRestrictions Object mapping accessible collections and statuses
+   *
+   * @returns {Promise<LearningObjectSummary[]>}
+   */
+  searchAllUserObjects(
+    query: LearningObjectQuery,
+    username: string,
+    collectionRestrictions?: CollectionAccessMap,
+  ): Promise<LearningObjectSummary[]>;
+
   fetchParentObjects(params: {
     query: ParentLearningObjectQuery;
     full?: boolean;
@@ -147,8 +179,8 @@ export interface DataStore
     full?: boolean;
   }): Promise<LearningObject[]>;
   checkLearningObjectExistence(params: {
-    learningObjectId: string,
-    userId: string,
+    learningObjectId: string;
+    userId: string;
   }): Promise<LearningObject>;
 
   getLearningObjectMaterials(params: {
@@ -156,6 +188,14 @@ export interface DataStore
   }): Promise<LearningObject.Material>;
 
   // Users
+  /**
+   *
+   * lookup a user by their username or email
+   * @param {string} username
+   * @returns {Promise<string>}
+   * @memberof DataStore
+   */
+  findUserId(username: string): Promise<string>;
   findUser(username: string): Promise<string>;
   fetchUser(id: string): Promise<User>;
   peek<T>(params: {

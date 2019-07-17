@@ -1,7 +1,6 @@
 import { DataStore, ParentLearningObjectQuery } from '../../shared/interfaces/DataStore';
-import { UserToken } from '../../shared/types';
+import { UserToken, LearningObjectState } from '../../shared/types';
 import { LearningObject } from '../../shared/entity';
-import { LearningObjectState } from '../../interactors/LearningObjectInteractor';
 
 /**
  * Fetches the parents of a Learning Object.
