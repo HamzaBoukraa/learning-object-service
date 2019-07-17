@@ -6,6 +6,15 @@ import {
 
 export abstract class FileMetaDatastore {
   /**
+   * Fetches mime type of file given the file's extension
+   *
+   * @abstract
+   * @param {string} extension [The extension of the file. Characters after the last dot in a file's name]
+   * @returns {Promise<string>}
+   * @memberof FileMetaDatastore
+   */
+  abstract fetchMimeType(extension: string): Promise<string>;
+  /**
    * Finds FileMetadataDocument by the file's `fullPath` for a given Learning Object revision
    *
    * *** NOTE ***
