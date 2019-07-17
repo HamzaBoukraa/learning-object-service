@@ -10,33 +10,11 @@ import { MongoConnector } from '../../../shared/Mongo/MongoConnector';
 const FILES_DB = process.env.FILE_DB_NAME;
 
 const FILE_META_COLLECTION = 'files';
-const MIME_TYPE_COLLECTION = 'mime-types';
 
 export class MongoFileMetaDatastore implements FileMetaDatastore {
   private db: Db;
   constructor() {
     this.db = MongoConnector.client().db(FILES_DB);
-  }
-
-  /**
-   * @inheritdoc
-   *
-   * Searches for a mimeType using regex pattern of given extension
-   *
-   * @returns {Promise<string>}
-   * @memberof MongoFileMetaDatastore
-   */
-  async fetchMimeType(extension: string): Promise<string> {
-    const type = await this.db
-      .collection(MIME_TYPE_COLLECTION)
-      .findOne<{ mimeType: string }>(
-        { extension: new RegExp(extension, 'i') },
-        { projection: { _id: 0, mimeType: 1 } },
-      );
-    if (type) {
-      return type.mimeType;
-    }
-    return null;
   }
 
   /**

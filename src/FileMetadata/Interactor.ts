@@ -17,6 +17,7 @@ import {
 } from '../shared/AuthorizationManager';
 import { sanitizeObject, toNumber } from '../shared/functions';
 import { reportError } from '../shared/SentryConnector';
+import * as mime from 'mime-types';
 
 const DEFAULT_MIME_TYPE = 'application/octet-stream';
 
@@ -229,7 +230,7 @@ export async function addFileMeta({
 
     authorizeWriteAccess({ learningObject, requester });
 
-    const inserts: FileMetadataInsert[] = await generateFileMetadataInserts(
+    const inserts: FileMetadataInsert[] = generateFileMetadataInserts(
       files,
       learningObject,
     );
@@ -289,17 +290,17 @@ function handleFileMetadataInsert(
  *
  * @param {FileMetadata[]} files [The array of file metadata to generate inserts for]
  * @param {LearningObjectSummary} learningObject [Information about the Learning Object the files belong to]
- * @returns Promise<FileMetadataInsert[]>
+ * @returns {FileMetadataInsert[]}
  */
-async function generateFileMetadataInserts(
+function generateFileMetadataInserts(
   files: FileMetadata[],
   learningObject: LearningObjectSummary,
-): Promise<FileMetadataInsert[]> {
+): FileMetadataInsert[] {
   const inserts: FileMetadataInsert[] = [];
   for (const file of files) {
     const cleanFile = sanitizeObject({ object: file }, false);
     validateFileMeta(cleanFile);
-    const newInsert: FileMetadataInsert = await generateFileMetaInsert(
+    const newInsert: FileMetadataInsert = generateFileMetaInsert(
       cleanFile,
       learningObject,
     );
@@ -313,12 +314,12 @@ async function generateFileMetadataInserts(
  *
  * @param {FileMetadata} file [The file metadata to generate insert for]
  * @param {LearningObjectSummary} learningObject [Information about the Learning Object the files belong to]
- * @returns {Promise<FileMetadataInsert>}
+ * @returns {FileMetadataInsert}
  */
-async function generateFileMetaInsert(
+function generateFileMetaInsert(
   file: FileMetadata,
   learningObject: LearningObjectSummary,
-): Promise<FileMetadataInsert> {
+): FileMetadataInsert {
   file.size = toNumber(file.size);
   const extension = file.name.split('.').pop();
   return {
@@ -329,10 +330,7 @@ async function generateFileMetaInsert(
     fullPath: file.fullPath || file.name,
     lastUpdatedDate: Date.now().toString(),
     learningObjectId: learningObject.id,
-    mimeType:
-      file.mimeType ||
-      (await Drivers.datastore().fetchMimeType(extension)) ||
-      DEFAULT_MIME_TYPE,
+    mimeType: file.mimeType || mime.lookup(extension) || DEFAULT_MIME_TYPE,
     name: file.name,
     packageable: isPackageable(file.size),
     size: file.size,
