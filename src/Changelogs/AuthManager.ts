@@ -17,7 +17,7 @@ const ROLE = {
  * system.
  *
  * Note: It may seem less efficient to check for author access
- * before admin and editor access. This is done of purpose because
+ * before admin and editor access. This is done on purpose because
  * an author of a Learning Object can be an admin or editor. If
  * an admin or editor creates a Learning Object and leaves a change log
  * on it, the role should be stored as author and not admin or editor.
