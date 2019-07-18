@@ -8,6 +8,22 @@ export class ModuleFileMetadataGateway implements FileMetadataGateway {
   /**
    * @inheritdoc
    *
+   * Proxies FileMetadataModule's `getFilePreviewUrl`
+   *
+   * @returns {string}
+   * @memberof ModuleFileMetadataGateway
+   */
+  getFilePreviewUrl(params: {
+    authorUsername: string;
+    learningObjectId: string;
+    unreleased: boolean;
+    file: LearningObject.Material.File;
+  }): string {
+    return FileMetadataModule.getFilePreviewUrl(params);
+  }
+  /**
+   * @inheritdoc
+   *
    *
    * Proxies FileMetadataModule's `getAllFileMetadata`
    *
