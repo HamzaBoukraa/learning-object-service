@@ -1,4 +1,4 @@
-import { Cursor, Db, MongoClient, ObjectID } from 'mongodb';
+import { Cursor, Db, MongoClient, ObjectID, UpdateWriteOpResult } from 'mongodb';
 import { DataStore } from '../shared/interfaces/interfaces';
 import {
   Filters,
@@ -778,6 +778,45 @@ export class MongoDriver implements DataStore {
       return docs.map(doc => doc._id);
     }
     return [];
+  }
+
+  /**
+   * createRevision creates a revision for a released Learning Object.
+   *
+   * This function performs two queries. The first query updates the working
+   * copy of the Learning Object to have provided revision number and a status
+   * of unreleased. The second query sets the hasRevision flag on the released
+   * copy of the Learning Object to true.
+   *
+   * @param learningObjectId [id of the Learning Object that is being released]
+   * @param revision [revision number for the working copy of the Learning Object]
+   */
+  createRevision({
+    learningObjectId,
+    revision,
+  }: {
+    learningObjectId: string,
+    revision: number,
+  }): Promise<[UpdateWriteOpResult, UpdateWriteOpResult]>  {
+    return Promise.all([
+      this.db
+        .collection(COLLECTIONS.LEARNING_OBJECTS)
+        .updateOne(
+          { _id: learningObjectId },
+          {
+            revision,
+            status: LearningObject.Status.UNRELEASED,
+          },
+      ),
+      this.db
+        .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
+        .updateOne(
+          { _id: learningObjectId },
+          {
+            hasRevision: true,
+          },
+        ),
+    ]);
   }
 
   /**

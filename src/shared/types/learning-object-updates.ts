@@ -11,7 +11,6 @@ export interface LearningObjectUpdates {
   published?: boolean;
   collection?: string;
   materials?: { [index: string]: any };
-  revision?: number;
   'materials.pdf'?: LearningObject.Material.PDF;
   'materials.notes'?: string;
   'materials.urls'?: LearningObject.Material.Url[];
@@ -27,7 +26,6 @@ const LearningObjectUpdateProps: LearningObjectUpdates = {
   status: '',
   published: false,
   collection: '',
-  revision: 0,
   'materials.pdf': null,
   'materials.notes': '',
   'materials.urls': [],

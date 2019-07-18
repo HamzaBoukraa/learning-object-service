@@ -950,7 +950,6 @@ export async function updateLearningObject({
     authorizeWriteAccess({
       learningObject,
       requester,
-      updates,
       message: `Invalid access. Cannot update Learning Object ${
         learningObject.id
       }.`,
@@ -1503,7 +1502,12 @@ export async function createLearningObjectRevision(params: {
     );
   }
 
-  if (releasedCopy.author.username !== params.requester.username) {
+  if (
+    !requesterIsAuthor({
+      authorUsername: releasedCopy.author.username,
+      requester: params.requester,
+    })
+  ) {
     throw new ResourceError(
       `Cannot create a revision. Requester ${params.requester.username} must be the author of Learning Object with id ${params.learningObjectId}`,
       ResourceErrorReason.INVALID_ACCESS,
@@ -1512,15 +1516,9 @@ export async function createLearningObjectRevision(params: {
 
   releasedCopy.revision++;
 
-  await updateLearningObject({
-    dataStore: params.dataStore,
-    requester: params.requester,
-    id: params.learningObjectId,
-    authorUsername: releasedCopy.author.username,
-    updates: {
-      revision: releasedCopy.revision,
-      status: LearningObject.Status.UNRELEASED,
-    },
+  await params.dataStore.createRevision({
+    learningObjectId: params.learningObjectId,
+    revision: releasedCopy.revision,
   });
 }
 
