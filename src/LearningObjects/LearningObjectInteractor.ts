@@ -1465,8 +1465,8 @@ export async function getMaterials({
  * Learning Object. If the Released Copy of the
  * Learning Object is not found, the function throws a
  * Resource Error. The Released Copy is used to validate
- * that the reqeuster is the Learning Object author. It is
- * also ussed to increment the revision property of the
+ * that the requester is the Learning Object author. It is
+ * also used to increment the revision property of the
  * Working Copy. The function ends by updating the Working
  * Copy to have a revision that is one greater than the Released Copy
  * revision and a status of unreleased.
