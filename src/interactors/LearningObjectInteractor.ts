@@ -497,14 +497,13 @@ export class LearningObjectInteractor {
    * @returns {Promise<{ total: number; objects: LearningObject[] }>}
    * @memberof LearningObjectInteractor
    */
-  public static async searchObjects(params: {
+  public static async searchObjects({dataStore, library, query, userToken}: {
     dataStore: DataStore;
     library: LibraryCommunicator;
     query: LearningObjectQuery;
     userToken: UserToken;
   }): Promise<{ total: number; objects: LearningObject[] }> {
     try {
-      const { dataStore, library, query, userToken } = params;
       let {
         name,
         author,
