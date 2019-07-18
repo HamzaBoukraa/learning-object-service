@@ -5,11 +5,18 @@ import {
   UserToken,
   VALID_LEARNING_OBJECT_UPDATES,
   LearningObjectSummary,
+  UserLearningObjectQuery,
+  UserLearningObjectSearchQuery,
+  CollectionAccessMap,
+  LearningObjectState,
 } from '../shared/types';
-import { ResourceError, ResourceErrorReason } from '../shared/errors';
+import {
+  ResourceError,
+  ResourceErrorReason,
+  handleError,
+} from '../shared/errors';
 import { reportError } from '../shared/SentryConnector';
 import { LearningObject } from '../shared/entity';
-import { handleError } from '../interactors/LearningObjectInteractor';
 import {
   authorizeRequest,
   requesterIsAuthor,
@@ -17,12 +24,20 @@ import {
   hasReadAccessByCollection,
   authorizeReadAccess,
   authorizeWriteAccess,
+  requesterIsPrivileged,
+  getAccessGroupCollections,
+  getCollectionAccessMap,
+  getAuthorizedStatuses,
 } from '../shared/AuthorizationManager';
 import { FileMeta, LearningObjectFilter, MaterialsFilter } from './typings';
 import * as PublishingService from './Publishing';
 import {
   mapLearningObjectToSummary,
   sanitizeLearningObjectName,
+  sanitizeText,
+  toArray,
+  sanitizeObject,
+  toBoolean,
 } from '../shared/functions';
 import {
   FileMetadataGateway,
@@ -42,26 +57,134 @@ namespace Gateways {
     LearningObjectsModule.resolveDependency(FileMetadataGateway);
 }
 
-const LearningObjectState = {
-  UNRELEASED: [
-    LearningObject.Status.REJECTED,
-    LearningObject.Status.UNRELEASED,
-  ],
-  IN_REVIEW: [
-    LearningObject.Status.WAITING,
-    LearningObject.Status.REVIEW,
-    LearningObject.Status.PROOFING,
-  ],
-  RELEASED: [LearningObject.Status.RELEASED],
-  ALL: [
-    LearningObject.Status.REJECTED,
-    LearningObject.Status.UNRELEASED,
-    LearningObject.Status.WAITING,
-    LearningObject.Status.REVIEW,
-    LearningObject.Status.PROOFING,
-    LearningObject.Status.RELEASED,
-  ],
-};
+/**
+ * Performs a search on the specified user's Learning Objects.
+ *
+ * *** NOTES ***
+ * If the specified user cannot be found, a NotFound ResourceError is thrown.
+ * Only the author and privileged users are allowed to view Learning Object drafts.
+ * "Drafts" are defined as 'not released' Learning Objects that have never been released or have a `revision` id of `0`, so
+ * if the `draftsOnly` filter is specified, the `status` filter must not have a value of `released`.
+ * Only authors can see drafts that are not submitted for review; `unreleased` || `rejected`.
+ * Admins and editors can see all Learning Objects submitted for review.
+ * Reviewers and curators can only see Learning Objects submitted for review to their collection.
+ *
+ *
+ * @async
+ *
+ * @returns {LearningObjectSummary[]} the user's learning objects found by the query
+ * @param params.dataStore
+ * @param params.authorUsername
+ * @param params.requester
+ * @param params.query
+ */
+export async function searchUsersObjects({
+  dataStore,
+  authorUsername,
+  requester,
+  query,
+}: {
+  dataStore: DataStore;
+  authorUsername: string;
+  requester: UserToken;
+  query?: UserLearningObjectQuery;
+}): Promise<LearningObjectSummary[]> {
+  try {
+    let { text, draftsOnly, status } = formatUserLearningObjectQuery(query);
+    if (!(await dataStore.findUserId(authorUsername))) {
+      throw new ResourceError(
+        `Cannot load Learning Objects for user ${authorUsername}. User ${authorUsername} does not exist.`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+    const isAuthor = requesterIsAuthor({ requester, authorUsername });
+    const isPrivileged = requesterIsPrivileged(requester);
+    const searchQuery: UserLearningObjectSearchQuery = {
+      text,
+      status,
+    };
+
+    if (draftsOnly) {
+      if (!isAuthor && !isPrivileged) {
+        throw new ResourceError(
+          `Invalid access. You are not authorized to view ${authorUsername}'s drafts.`,
+          ResourceErrorReason.INVALID_ACCESS,
+        );
+      }
+
+      if (!searchQuery.status) {
+        if (isAuthor) {
+          searchQuery.status = [
+            ...LearningObjectState.UNRELEASED,
+            ...LearningObjectState.IN_REVIEW,
+          ];
+        } else {
+          searchQuery.status = [...LearningObjectState.IN_REVIEW];
+        }
+      }
+
+      if (searchQuery.status.includes(LearningObject.Status.RELEASED)) {
+        throw new ResourceError(
+          'Illegal query arguments. Cannot specify both draftsOnly and released status filters.',
+          ResourceErrorReason.BAD_REQUEST,
+        );
+      }
+
+      searchQuery.revision = 0;
+    }
+
+    if (!isAuthor && !isPrivileged) {
+      return await dataStore.searchReleasedUserObjects(
+        searchQuery,
+        authorUsername,
+      );
+    }
+
+    let collectionAccessMap: CollectionAccessMap;
+
+    if (!isAuthor) {
+      searchQuery.status = getAuthorizedStatuses(searchQuery.status);
+      if (!requesterIsAdminOrEditor(requester)) {
+        const privilegedCollections = getAccessGroupCollections(requester);
+        collectionAccessMap = getCollectionAccessMap(
+          [],
+          privilegedCollections,
+          searchQuery.status,
+        );
+        searchQuery.status = searchQuery.status.includes(
+          LearningObject.Status.RELEASED,
+        )
+          ? LearningObjectState.RELEASED
+          : null;
+      }
+    }
+
+    return await dataStore.searchAllUserObjects(
+      searchQuery,
+      authorUsername,
+      collectionAccessMap,
+    );
+  } catch (e) {
+    handleError(e);
+  }
+}
+/**
+ * Formats search query to verify params are the appropriate types
+ *
+ * @private
+ * @static
+ * @param {UserLearningObjectQuery} query
+ * @returns {UserLearningObjectQuery}
+ */
+function formatUserLearningObjectQuery(
+  query: UserLearningObjectQuery,
+): UserLearningObjectQuery {
+  const formattedQuery = { ...query };
+  formattedQuery.text = sanitizeText(formattedQuery.text) || null;
+  formattedQuery.status = toArray(formattedQuery.status);
+  formattedQuery.draftsOnly = toBoolean(formattedQuery.draftsOnly);
+  return sanitizeObject({ object: formattedQuery }, false);
+}
 
 /**
  * Load a full learning object by name

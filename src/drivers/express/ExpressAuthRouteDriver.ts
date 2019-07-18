@@ -4,22 +4,19 @@ import {
   DataStore,
   LibraryCommunicator,
 } from '../../shared/interfaces/interfaces';
-import {
-  updateReadme,
-} from '../../LearningObjects/LearningObjectInteractor';
+import { updateReadme } from '../../LearningObjects/LearningObjectInteractor';
 import * as LearningObjectRouteHandler from '../../LearningObjects/adapters/LearningObjectRouteHandler';
 import * as LearningOutcomeRouteHandler from '../../LearningOutcomes/LearningOutcomeRouteHandler';
 import * as SubmissionRouteDriver from '../../LearningObjectSubmission';
 import * as ChangelogRouteHandler from '../../Changelogs/ChangelogRouteDriver';
 import { reportError } from '../../shared/SentryConnector';
 import { UserToken } from '../../shared/types';
-import { ResourceErrorReason, mapErrorToResponseData } from '../../shared/errors';
+import { mapErrorToResponseData } from '../../shared/errors';
 export class ExpressAuthRouteDriver {
-
   constructor(
     private dataStore: DataStore,
     private library: LibraryCommunicator,
-  ) { }
+  ) {}
 
   public static buildRouter(
     dataStore: DataStore,
@@ -53,7 +50,7 @@ export class ExpressAuthRouteDriver {
         try {
           throw new Error(
             `${
-            req.user.username
+              req.user.username
             } was retrieved from the token. Should be lowercase`,
           );
         } catch (e) {
@@ -99,26 +96,6 @@ export class ExpressAuthRouteDriver {
           res.sendStatus(200);
         } catch (e) {
           const { code, message } = mapErrorToResponseData(e);
-          res.status(code).json({message});
-        }
-      },
-    );
-    router.get(
-      '/learning-objects/:username/:learningObjectName/id',
-      async (req, res) => {
-        try {
-          const userToken = req.user;
-          const username = req.params.username;
-          const learningObjectName = req.params.learningObjectName;
-          const id = await LearningObjectInteractor.getLearningObjectId({
-            dataStore: this.dataStore,
-            username,
-            learningObjectName,
-            userToken,
-          });
-          res.status(200).send(id);
-        } catch (e) {
-          const { code, message } = mapErrorToResponseData(e);
           res.status(code).json({ message });
         }
       },
@@ -133,7 +110,7 @@ export class ExpressAuthRouteDriver {
         res.sendStatus(200);
       } catch (e) {
         const { code, message } = mapErrorToResponseData(e);
-        res.status(code).json({message});
+        res.status(code).json({ message });
       }
     });
     router
@@ -151,10 +128,9 @@ export class ExpressAuthRouteDriver {
             userToken: user,
           });
           res.sendStatus(200);
-
         } catch (e) {
           const { code, message } = mapErrorToResponseData(e);
-          res.status(code).json({message});
+          res.status(code).json({ message });
         }
       })
       .delete(async (req, res) => {
@@ -171,7 +147,7 @@ export class ExpressAuthRouteDriver {
           res.sendStatus(200);
         } catch (e) {
           const { code, message } = mapErrorToResponseData(e);
-          res.status(code).json({message});
+          res.status(code).json({ message });
         }
       });
     router.delete(
@@ -188,7 +164,28 @@ export class ExpressAuthRouteDriver {
           res.sendStatus(200);
         } catch (e) {
           const { code, message } = mapErrorToResponseData(e);
-          res.status(code).json({message});
+          res.status(code).json({ message });
+        }
+      },
+    );
+    // FIXME: Why is this here??
+    router.get(
+      '/learning-objects/:username/:learningObjectName/id',
+      async (req, res) => {
+        try {
+          const userToken = req.user;
+          const username: string = req.params.username;
+          const learningObjectName: string = req.params.learningObjectName;
+          const id = await LearningObjectInteractor.getLearningObjectId({
+            dataStore: this.dataStore,
+            username,
+            learningObjectName,
+            userToken,
+          });
+          res.status(200).send(id);
+        } catch (e) {
+          const { code, message } = mapErrorToResponseData(e);
+          res.status(code).json({ message });
         }
       },
     );
@@ -205,7 +202,7 @@ export class ExpressAuthRouteDriver {
         res.status(200).send(objects.map(obj => obj.toPlainObject()));
       } catch (e) {
         const { code, message } = mapErrorToResponseData(e);
-        res.status(code).json({message});
+        res.status(code).json({ message });
       }
     });
 
@@ -222,12 +219,8 @@ export class ExpressAuthRouteDriver {
         res.status(200).send(objects.map(obj => obj.toPlainObject()));
       } catch (e) {
         const { code, message } = mapErrorToResponseData(e);
-        res.status(code).json({message});
+        res.status(code).json({ message });
       }
     });
-  }
-
-  private hasAccess(token: any, propName: string, value: any): boolean {
-    return token[propName] === value;
   }
 }

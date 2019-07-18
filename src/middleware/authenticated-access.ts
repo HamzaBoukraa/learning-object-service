@@ -25,7 +25,7 @@ export function enforceAuthenticatedAccess(
   if (req.user) {
     next();
   } else {
-    res.status(401).send('Invalid access!');
+    res.status(401).send('Invalid access. You must have a valid token to access this resource.');
   }
 }
 
