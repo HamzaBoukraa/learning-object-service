@@ -8,9 +8,9 @@ import { ResourceError, ResourceErrorReason } from '../../shared/errors';
  * reviewers, curators, editors, or admins.
  *
  * getWorkingLearningObjectSummary checks that the Learning Object
- * exsits and that the requester has one of author, admin, or editor
+ * exists and that the requester has one of author, admin, or editor
  * privilege. The returned working copy Learning Object is
- * then used to validate that the provided request structure os valid
+ * then used to validate that the provided request structure is valid
  * by checking the author id against the given userId.
  * If no errors are thrown, then the Learning Object submission
  * is deleted.
