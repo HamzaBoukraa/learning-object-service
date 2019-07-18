@@ -30,7 +30,7 @@ import { LearningObjectStats } from '../LearningObjectStats/LearningObjectStatsI
 import { lengths } from '@cyber4all/clark-taxonomy';
 import { LearningObjectDataStore } from '../LearningObjects/drivers/LearningObjectDatastore';
 import { ChangeLogDocument } from '../shared/types/changelog';
-import { ChangelogDataStore } from '../Changelogs/ChangelogDatastore';
+import { ModuleChangelogDataStore } from '../Changelogs/ModuleChangelogDatastore';
 import {
   ResourceError,
   ResourceErrorReason,
@@ -54,7 +54,7 @@ export enum COLLECTIONS {
   STANDARD_OUTCOMES = 'outcomes',
   LO_COLLECTIONS = 'collections',
   MULTIPART_STATUSES = 'multipart-upload-statuses',
-  CHANGLOG = 'changelogs',
+  CHANGELOG = 'changelogs',
   SUBMISSIONS = 'submissions',
 }
 
@@ -62,7 +62,7 @@ export class MongoDriver implements DataStore {
   learningOutcomeStore: LearningOutcomeMongoDatastore;
   statStore: LearningObjectStatStore;
   learningObjectStore: LearningObjectDataStore;
-  changelogStore: ChangelogDataStore;
+  changelogStore: ModuleChangelogDataStore;
 
   private mongoClient: MongoClient;
   private db: Db;
@@ -95,7 +95,7 @@ export class MongoDriver implements DataStore {
     this.learningOutcomeStore = new LearningOutcomeMongoDatastore(this.db);
     this.statStore = new LearningObjectStatStore(this.db);
     this.learningObjectStore = new LearningObjectDataStore(this.db);
-    this.changelogStore = new ChangelogDataStore(this.db);
+    this.changelogStore = new ModuleChangelogDataStore(this.db);
   }
 
   /**
@@ -1036,6 +1036,13 @@ export class MongoDriver implements DataStore {
       learningObjectId: params.learningObjectId,
       date: params.date,
     });
+  }
+
+  fetchRecentChangelogBeforeDate(params: {
+    learningObjectId: string;
+    date: string;
+  }): Promise<ChangeLogDocument> {
+    return this.changelogStore.fetchRecentChangelogBeforeDate(params);
   }
 
   /**

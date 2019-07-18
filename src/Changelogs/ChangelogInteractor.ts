@@ -4,6 +4,9 @@ import { ResourceError, ResourceErrorReason } from '../shared/errors';
 import { ChangeLogDocument } from '../shared/types/changelog';
 import { hasChangelogAccess } from './AuthManager';
 import * as md5 from 'md5';
+import { LearningObject } from '../shared/entity';
+import { LearningObjectGateway } from './LearningObjectGateway';
+import { toBoolean } from '../shared/functions';
 
 /**
  * Instruct the data store to create a new log in the change logs collection
@@ -22,7 +25,7 @@ export async function createChangelog(params: {
   userId: string,
   changelogText: string,
 }): Promise<void> {
-  const role = await authorizeRequest({
+  const role = await authorizeWriteRequest({
     dataStore: params.dataStore,
     learningObjectId: params.learningObjectId,
     userId: params.userId,
@@ -46,6 +49,7 @@ export async function createChangelog(params: {
 /**
  * Fetches the most recent change log from the data store.
  *
+ * @deprecated remove when client routes are updated
  * @param {DataStore} dataStore An instance of DataStore
  * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
  * @param {string} userId The id of learning object author
@@ -59,11 +63,10 @@ export async function getRecentChangelog(params: {
   userId: string,
   user: UserToken,
 }): Promise<ChangeLogDocument> {
-  await authorizeRequest({
+  await validateReadRequest({
     dataStore: params.dataStore,
     learningObjectId: params.learningObjectId,
     userId: params.userId,
-    user: params.user,
   });
   return await params.dataStore.fetchRecentChangelog({
     learningObjectId: params.learningObjectId,
@@ -71,41 +74,158 @@ export async function getRecentChangelog(params: {
 }
 
 /**
- * Handles whether all the change logs or if the change logs
- * created before a given date are fetched for a specified learning object.
+ * Returns change logs for a given Learning Object
  *
+ * First, this function checks that the request is valid.
+ * This is done by calling the validateReadRequest function.
+ *
+ * This function considers four cases
+ * 1. If Learning Object is released and does not have a
+ * revision, then fetch all change logs
+ * 2. If Learning Object has never been
+ * released (no revision), then check user role.
+ *  If requester is privileged, then fetch all change logs
+ * 3. If released Learning Object has a revision,
+ * but the requester is looking at the released copy,
+ * fetch all change logs before last updated date on the released copy
+ * 4. If released Learning Object has revision,
+ * and the user is looking at the revision copy, check role,
+ * if the requester is privileged, fetch all change logs.
+ *
+ * @param {LearningObjectGateway} learningObjectGateway an instance of LearningObjectGateway
  * @param {DataStore} dataStore An instance of DataStore
  * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
  * @param {string} userId The id of learning object author
  * @param {UserToken} user information about the requester
- * @param {string} date The date the changelog was created
- *
- * @returns {ChangeLogDocument[]}
+ * @param {optional parameter - boolean} recent if true, return only the most recent
+ * change log document that is relevant to the above cases. If this parameter is used,
+ * the return type of this function will change to ChangeLogDocument instead of
+ * ChangeLogDocument[]
+ * @param {optional parameter - boolean} minusRevision if true, the function will
+ * return all change logs that are relevant to the released copy of the specified Learning
+ * Object. This excludes all change logs that were created after the date property on the
+ * Release copy.
+ * @returns {ChangeLogDocument[] | ChangeLogDocument} This changes beased on the recent parameter
  */
 export async function getChangelogs(params: {
+  learningObjectGateway: LearningObjectGateway;
   dataStore: DataStore,
   learningObjectId: string,
   userId: string,
   user: UserToken,
-  date?: string,
-}): Promise<ChangeLogDocument[]> {
-  await authorizeRequest({
+  recent?: boolean,
+  minusRevision?: boolean,
+}): Promise<ChangeLogDocument[] | ChangeLogDocument> {
+  const learningObject = await validateReadRequest({
     dataStore: params.dataStore,
     learningObjectId: params.learningObjectId,
     userId: params.userId,
-    user: params.user,
   });
-  if (params.date) {
-    return await params.dataStore.fetchChangelogsBeforeDate({ learningObjectId: params.learningObjectId, date: params.date });
-  } else {
-    return await params.dataStore.fetchAllChangelogs({ learningObjectId: params.learningObjectId });
+  /**
+   * The Learning Object does not have any revisions and is
+   * released. Return all change logs for this Learning Object
+   * for all logged in users.
+   */
+  if (
+    learningObject.revision === 0 &&
+    learningObject.status === LearningObject.Status.RELEASED
+  ) {
+    if (params.recent) {
+      return await params.dataStore.fetchRecentChangelog({
+        learningObjectId: params.learningObjectId,
+      });
+    } else {
+      return await params.dataStore.fetchAllChangelogs({
+        learningObjectId: params.learningObjectId,
+      });
+    }
+  }
+  /**
+   * The Learning Object does not have any revisions and is
+   * not released. Return all change logs for this Learning Object
+   * for admins, editors, and Learning Object author.
+   */
+
+  // tslint:disable-next-line:one-line
+  else if (
+    learningObject.revision === 0 &&
+    learningObject.status !== LearningObject.Status.RELEASED
+  ) {
+    await hasChangelogAccess({
+      user: params.user,
+      dataStore: params.dataStore,
+      learningObjectId: params.learningObjectId,
+    });
+    if (params.recent) {
+      return await params.dataStore.fetchRecentChangelog({
+        learningObjectId: params.learningObjectId,
+      });
+    } else {
+      return await params.dataStore.fetchAllChangelogs({
+        learningObjectId: params.learningObjectId,
+      });
+    }
+  }
+  /**
+   * The Learning Object does have revisions and the requester asked
+   * for all change logs that are relevant to the released copy.
+   */
+
+  // tslint:disable-next-line:one-line
+  else if (
+    learningObject.revision > 0 &&
+    toBoolean(params.minusRevision)
+  ) {
+    const releasedLearningObjectCopy = await params.learningObjectGateway.getReleasedLearningObjectSummary({
+      requester: params.user,
+      id: params.learningObjectId,
+    });
+    if (params.recent) {
+      return await params.dataStore.fetchRecentChangelogBeforeDate({
+        learningObjectId: params.learningObjectId,
+        date: releasedLearningObjectCopy.date,
+      });
+    } else {
+      return await params.dataStore.fetchChangelogsBeforeDate({
+        learningObjectId: params.learningObjectId,
+        date: releasedLearningObjectCopy.date,
+      });
+    }
+  }
+  /**
+   * The Learning Object does have revisions and the requester asked
+   * for all change logs for the Learning Object
+   * (including those relevant to revisions)
+   */
+
+  // tslint:disable-next-line:one-line
+  else if (
+    learningObject.revision > 0 &&
+    !toBoolean(params.minusRevision)
+  ) {
+    await hasChangelogAccess({
+      user: params.user,
+      dataStore: params.dataStore,
+      learningObjectId: params.learningObjectId,
+    });
+    if (params.recent) {
+      return await params.dataStore.fetchRecentChangelog({
+        learningObjectId: params.learningObjectId,
+      });
+    } else {
+      return await params.dataStore.fetchAllChangelogs({
+        learningObjectId: params.learningObjectId,
+      });
+    }
   }
 }
 
 /**
- * Determines if the request is valid
- * Ensure that the user making the reuqest has access to modify changelogs
- * Checks if the requested learning object exists
+ * - Determines if the request to read change logs is valid
+ * This request validation is performed by checking that the given
+ * - Ensure that the user making the reuqest has write access to change logs.
+ * Only the Learning Object author, editors, and admins have write access to
+ * change logs.
  *
  * @param {DataStore} dataStore An instance of DataStore
  * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
@@ -114,31 +234,61 @@ export async function getChangelogs(params: {
  *
  * @returns {ChangeLogDocument[]}
  */
-async function authorizeRequest(params: {
+async function authorizeWriteRequest(params: {
   dataStore: DataStore,
   learningObjectId: string,
   userId: string,
   user: UserToken,
 }): Promise<string> {
-  const role = await hasChangelogAccess({
-    user: params.user,
-    dataStore: params.dataStore,
-    learningObjectId: params.learningObjectId,
-  });
-
-  const isOwnedByAuthor = await params.dataStore.checkLearningObjectExistence({
+  const learningObject = await params.dataStore.checkLearningObjectExistence({
     learningObjectId: params.learningObjectId,
     userId: params.userId,
   });
 
-  if (!isOwnedByAuthor) {
+  if (!learningObject) {
     throw new ResourceError(
       `Learning Object ${params.learningObjectId} not found for user ${params.userId}`,
       ResourceErrorReason.NOT_FOUND,
     );
   }
 
+  const role = await hasChangelogAccess({
+    user: params.user,
+    dataStore: params.dataStore,
+    learningObjectId: params.learningObjectId,
+  });
+
   return role;
+}
+
+/**
+ * - Determines if the request to read change logs is valid
+ * This request validation is performed by checking that the given
+ * authorId and learningObjectId pair exist.
+ *
+ * @param {DataStore} dataStore An instance of DataStore
+ * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
+ * @param {string} userId The id of learning object author
+ *
+ * @returns {ChangeLogDocument[]}
+ */
+async function validateReadRequest(params: {
+  dataStore: DataStore,
+  learningObjectId: string,
+  userId: string,
+}): Promise<LearningObject> {
+  const learningObject = await params.dataStore.checkLearningObjectExistence({
+    learningObjectId: params.learningObjectId,
+    userId: params.userId,
+  });
+
+  if (!learningObject) {
+    throw new ResourceError(
+      `Learning Object ${params.learningObjectId} not found for user ${params.userId}`,
+      ResourceErrorReason.NOT_FOUND,
+    );
+  }
+  return learningObject;
 }
 
 /**

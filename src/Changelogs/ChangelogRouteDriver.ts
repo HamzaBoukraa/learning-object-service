@@ -3,6 +3,7 @@ import { mapErrorToResponseData } from '../shared/errors';
 import { DataStore } from '../shared/interfaces/DataStore';
 import { UserToken } from '../shared/types';
 import * as ChangelogInteractor from './ChangelogInteractor';
+import { ModuleLearningObjectGateway } from './ModuleLearningObjectGateway';
 
 /**
  * Initializes an express router with endpoints to publish and unpublish a learning object.
@@ -41,6 +42,10 @@ export function initialize({
     }
   }
 
+  /**
+   * @deprecated remove when client routes are updated to use the
+   * recent query parameter for getAllChangelogs
+   */
   const getRecentChangelog = async (req: Request, res: Response) => {
     try {
       const user = req.user;
@@ -61,16 +66,20 @@ export function initialize({
 
   const getAllChangelogs = async (req: Request, res: Response) => {
     try {
+      const learningObjectGateway = new ModuleLearningObjectGateway();
       const user = req.user;
       const userId = req.params.userId;
       const learningObjectId = req.params.learningObjectId;
-      const date = req.query.date;
+      const recent = req.query.recent;
+      const minusRevision = req.query.minusRevision;
       const changelogs = await ChangelogInteractor.getChangelogs({
+        learningObjectGateway,
         dataStore,
         learningObjectId,
         userId,
         user,
-        date,
+        recent,
+        minusRevision,
       });
       res.status(200).json(changelogs);
     } catch (e) {
