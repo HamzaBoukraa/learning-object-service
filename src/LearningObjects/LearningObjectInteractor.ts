@@ -999,14 +999,7 @@ export async function getLearningObjectById({
     let children: LearningObject[] = [];
     if (loadingReleased) {
       learningObject.materials.files = learningObject.materials.files.map(
-        file => {
-          file.previewUrl = Gateways.fileMetadata().getFilePreviewUrl({
-            authorUsername: learningObject.author.username,
-            learningObjectId: learningObject.id,
-            file,
-          });
-          return file;
-        },
+        appendFilePreviewUrls(learningObject),
       );
       children = await dataStore.loadReleasedChildObjects({
         id: learningObject.id,
@@ -1344,11 +1337,11 @@ export async function getMaterials({
   try {
     let materials: LearningObject.Material;
     let workingFiles: LearningObject.Material.File[];
+    const learningObject = await dataStore.fetchLearningObject({
+      id,
+      full: false,
+    });
     if (filter === 'unreleased') {
-      const learningObject = await dataStore.fetchLearningObject({
-        id,
-        full: false,
-      });
       authorizeReadAccess({ learningObject, requester });
       const materials$ = dataStore.getLearningObjectMaterials({ id });
       const workingFiles$ = Gateways.fileMetadata().getAllFileMetadata({
@@ -1373,12 +1366,44 @@ export async function getMaterials({
 
     if (workingFiles) {
       materials.files = workingFiles;
+    } else {
+      materials.files = materials.files.map(
+        appendFilePreviewUrls(learningObject),
+      );
     }
 
     return materials;
   } catch (e) {
     handleError(e);
   }
+}
+
+/**
+ * Appends file preview urls
+ *
+ * @param {LearningObject} learningObject
+ * @returns {(
+ *   value: LearningObject.Material.File,
+ *   index: number,
+ *   array: LearningObject.Material.File[],
+ * ) => LearningObject.Material.File}
+ */
+function appendFilePreviewUrls(
+  learningObject: LearningObject,
+): (
+  value: LearningObject.Material.File,
+  index: number,
+  array: LearningObject.Material.File[],
+) => LearningObject.Material.File {
+  return file => {
+    file.previewUrl = Gateways.fileMetadata().getFilePreviewUrl({
+      authorUsername: learningObject.author.username,
+      learningObjectId: learningObject.id,
+      file,
+      unreleased: learningObject.status !== LearningObject.Status.RELEASED,
+    });
+    return file;
+  };
 }
 
 /**
