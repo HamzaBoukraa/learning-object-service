@@ -7,6 +7,8 @@ import {
 import {
   LearningObjectUpdates,
   LearningObjectSummary,
+  ReleasedUserLearningObjectSearchQuery,
+  CollectionAccessMap,
 } from '../../shared/types';
 import { ChangeLogDocument } from '../../shared/types/changelog';
 import {
@@ -37,6 +39,27 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
 
   disconnect(): void {
     return;
+  }
+
+  searchReleasedUserObjects(
+    query: ReleasedUserLearningObjectSearchQuery,
+    username: string,
+  ): Promise<LearningObjectSummary[]> {
+    return Promise.resolve(
+      [this.stubs.learningObject].map(mapLearningObjectToSummary),
+    );
+  }
+  searchAllUserObjects(
+    query: LearningObjectQuery,
+    username: string,
+    collectionRestrictions?: CollectionAccessMap,
+  ): Promise<LearningObjectSummary[]> {
+    return Promise.resolve(
+      [this.stubs.learningObject].map(mapLearningObjectToSummary),
+    );
+  }
+  findUserId(username: string): Promise<string> {
+    return Promise.resolve(this.stubs.user.id);
   }
 
   fetchReleasedMaterials(id: string): Promise<LearningObject.Material> {

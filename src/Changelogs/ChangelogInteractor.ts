@@ -120,7 +120,6 @@ export async function getChangelogs(params: {
     learningObjectId: params.learningObjectId,
     userId: params.userId,
   });
-
   /**
    * The Learning Object does not have any revisions and is
    * released. Return all change logs for this Learning Object
@@ -131,10 +130,12 @@ export async function getChangelogs(params: {
     learningObject.status === LearningObject.Status.RELEASED
   ) {
     if (params.recent) {
+      console.log('I am stuck in the first conditional');
       return await params.dataStore.fetchRecentChangelog({
         learningObjectId: params.learningObjectId,
       });
     } else {
+      console.log('I am stuck in the first else');
       return await params.dataStore.fetchAllChangelogs({
         learningObjectId: params.learningObjectId,
       });
@@ -151,16 +152,19 @@ export async function getChangelogs(params: {
     learningObject.revision === 0 &&
     learningObject.status !== LearningObject.Status.RELEASED
   ) {
+    console.log('If it is here I will be confused');
     await hasChangelogAccess({
       user: params.user,
       dataStore: params.dataStore,
       learningObjectId: params.learningObjectId,
     });
     if (params.recent) {
+      console.log('So many console logs');
       return await params.dataStore.fetchRecentChangelog({
         learningObjectId: params.learningObjectId,
       });
     } else {
+      console.log('console log > debugger');
       return await params.dataStore.fetchAllChangelogs({
         learningObjectId: params.learningObjectId,
       });
@@ -176,16 +180,20 @@ export async function getChangelogs(params: {
     learningObject.revision > 0 &&
     params.minusRevision
   ) {
+    console.log('i hate this', params.minusRevision);
+    console.log('did we hit this?');
     const releasedLearningObjectCopy = await params.learningObjectGateway.getReleasedLearningObjectSummary({
       requester: params.user,
       id: params.learningObjectId,
     });
     if (params.recent) {
+      console.log('I WILL BE SO CONFUSED IF IT IS IN HERE');
       return await params.dataStore.fetchRecentChangelogBeforeDate({
         learningObjectId: params.learningObjectId,
         date: releasedLearningObjectCopy.date,
       });
     } else {
+      console.log('how about this?');
       return await params.dataStore.fetchChangelogsBeforeDate({
         learningObjectId: params.learningObjectId,
         date: releasedLearningObjectCopy.date,
@@ -213,6 +221,7 @@ export async function getChangelogs(params: {
         learningObjectId: params.learningObjectId,
       });
     } else {
+      console.log('this should appear in terminal when view revisions is toggled on!');
       return await params.dataStore.fetchAllChangelogs({
         learningObjectId: params.learningObjectId,
       });
@@ -288,7 +297,6 @@ async function validateReadRequest(params: {
       ResourceErrorReason.NOT_FOUND,
     );
   }
-
   return learningObject;
 }
 

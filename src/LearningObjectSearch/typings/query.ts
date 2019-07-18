@@ -1,4 +1,4 @@
-import { LearningObject } from '.';
+import { CollectionAccessMap } from '.';
 
 export type SortOrder = 1 | -1;
 
@@ -28,8 +28,4 @@ export interface LearningObjectSearchQuery
 export interface PrivilegedLearningObjectSearchQuery
   extends LearningObjectSearchQuery {
   collectionRestrictions?: CollectionAccessMap;
-}
-
-export interface CollectionAccessMap {
-  [collection: string]: LearningObject.Status[];
 }

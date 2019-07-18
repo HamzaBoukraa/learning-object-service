@@ -83,3 +83,17 @@ export function mapErrorToResponseData(
   }
   return status;
 }
+
+/**
+ * Handles errors by throwing error if handled, otherwise the error is reported and a ServiceError is thrown
+ *
+ * @param {Error} error
+ * @returns {never}
+ */
+export function handleError(error: Error): never {
+  if (error instanceof ResourceError || error instanceof ServiceError) {
+    throw error;
+  }
+  reportError(error);
+  throw new ServiceError(ServiceErrorReason.INTERNAL);
+}
