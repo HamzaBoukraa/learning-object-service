@@ -6,6 +6,7 @@ import { hasChangelogAccess } from './AuthManager';
 import * as md5 from 'md5';
 import { LearningObject } from '../shared/entity';
 import { LearningObjectGateway } from './LearningObjectGateway';
+import { toBoolean } from '../shared/functions';
 
 /**
  * Instruct the data store to create a new log in the change logs collection
@@ -130,12 +131,10 @@ export async function getChangelogs(params: {
     learningObject.status === LearningObject.Status.RELEASED
   ) {
     if (params.recent) {
-      console.log('I am stuck in the first conditional');
       return await params.dataStore.fetchRecentChangelog({
         learningObjectId: params.learningObjectId,
       });
     } else {
-      console.log('I am stuck in the first else');
       return await params.dataStore.fetchAllChangelogs({
         learningObjectId: params.learningObjectId,
       });
@@ -152,19 +151,16 @@ export async function getChangelogs(params: {
     learningObject.revision === 0 &&
     learningObject.status !== LearningObject.Status.RELEASED
   ) {
-    console.log('If it is here I will be confused');
     await hasChangelogAccess({
       user: params.user,
       dataStore: params.dataStore,
       learningObjectId: params.learningObjectId,
     });
     if (params.recent) {
-      console.log('So many console logs');
       return await params.dataStore.fetchRecentChangelog({
         learningObjectId: params.learningObjectId,
       });
     } else {
-      console.log('console log > debugger');
       return await params.dataStore.fetchAllChangelogs({
         learningObjectId: params.learningObjectId,
       });
@@ -178,22 +174,18 @@ export async function getChangelogs(params: {
   // tslint:disable-next-line:one-line
   else if (
     learningObject.revision > 0 &&
-    params.minusRevision
+    toBoolean(params.minusRevision)
   ) {
-    console.log('i hate this', params.minusRevision);
-    console.log('did we hit this?');
     const releasedLearningObjectCopy = await params.learningObjectGateway.getReleasedLearningObjectSummary({
       requester: params.user,
       id: params.learningObjectId,
     });
     if (params.recent) {
-      console.log('I WILL BE SO CONFUSED IF IT IS IN HERE');
       return await params.dataStore.fetchRecentChangelogBeforeDate({
         learningObjectId: params.learningObjectId,
         date: releasedLearningObjectCopy.date,
       });
     } else {
-      console.log('how about this?');
       return await params.dataStore.fetchChangelogsBeforeDate({
         learningObjectId: params.learningObjectId,
         date: releasedLearningObjectCopy.date,
@@ -209,7 +201,7 @@ export async function getChangelogs(params: {
   // tslint:disable-next-line:one-line
   else if (
     learningObject.revision > 0 &&
-    !params.minusRevision
+    !toBoolean(params.minusRevision)
   ) {
     await hasChangelogAccess({
       user: params.user,
@@ -221,7 +213,6 @@ export async function getChangelogs(params: {
         learningObjectId: params.learningObjectId,
       });
     } else {
-      console.log('this should appear in terminal when view revisions is toggled on!');
       return await params.dataStore.fetchAllChangelogs({
         learningObjectId: params.learningObjectId,
       });
