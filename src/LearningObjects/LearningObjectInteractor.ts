@@ -1001,7 +1001,7 @@ async function generateReleasableLearningObject({
 }): Promise<LearningObject> {
   const [object, children, files] = await Promise.all([
     dataStore.fetchLearningObject({ id, full: true }),
-    loadReleasedChildObjects({
+    loadWorkingParentsReleasedChildObjects({
       dataStore,
       parentId: id,
     }),
@@ -1126,10 +1126,41 @@ export async function getLearningObjectById({
 }
 
 /**
- * Recursively loads all levels of full released child Learning Objects
+ * Recursively loads all levels of full released child Learning Objects for an working parent Learning Object
  *
  * @param {DataStore} dataStore [The datastore to fetch children from]
- * @param {string} parentId [The id of the parent Learning Object]
+ * @param {string} parentId [The id of the working parent Learning Object]
+ *
+ * @returns
+ */
+async function loadWorkingParentsReleasedChildObjects({
+  dataStore,
+  parentId,
+}: {
+  dataStore: DataStore;
+  parentId: string;
+}): Promise<LearningObject[]> {
+  let children = await dataStore.loadWorkingParentsReleasedChildObjects({
+    id: parentId,
+    full: true,
+  });
+  children = await Promise.all(
+    children.map(async child => {
+      child.children = await loadWorkingParentsReleasedChildObjects({
+        dataStore,
+        parentId: child.id,
+      });
+      return child;
+    }),
+  );
+  return children;
+}
+
+/**
+ * Recursively loads all levels of full released child Learning Objects for a released parent Learning Object
+ *
+ * @param {DataStore} dataStore [The datastore to fetch children from]
+ * @param {string} parentId [The id of the released parent Learning Object]
  *
  * @returns
  */
