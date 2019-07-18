@@ -385,7 +385,6 @@ export function authorizeWriteAccess({
   learningObject: LearningObjectSummary;
   requester: UserToken;
   message?: string;
-  updates?: Partial<LearningObject>;
 }) {
   const isUnreleased =
     LearningObjectState.UNRELEASED.includes(
