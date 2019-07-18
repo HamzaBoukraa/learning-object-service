@@ -174,6 +174,19 @@ export interface DataStore
     full?: boolean;
     status: string[];
   }): Promise<LearningObject[]>;
+
+  /**
+   * Loads released child Learning Objects for a working parent Learning Object
+   *
+   * @param {string} id [The id of the working parent Learning Object]
+   * @param {boolean} full [Whether or not to load the full children Learning Objects]
+   *
+   * @returns {Promise<LearningObject[]>}
+   */
+  loadWorkingParentsReleasedChildObjects(params: {
+    id: string;
+    full?: boolean;
+  }): Promise<LearningObject[]>;
   loadReleasedChildObjects(params: {
     id: string;
     full?: boolean;
