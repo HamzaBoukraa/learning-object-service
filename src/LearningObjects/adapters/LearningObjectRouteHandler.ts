@@ -236,7 +236,7 @@ export function initializePrivate({
 
   const createRevision = async (req: Request, res: Response) => {
     try {
-      const params = { ...req.params, dataStore, user: req.user };
+      const params = { ...req.params, dataStore, requester: req.user };
       await LearningObjectInteractor.createLearningObjectRevision(params);
       res.sendStatus(204);
     } catch (e) {

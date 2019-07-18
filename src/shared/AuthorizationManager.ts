@@ -381,10 +381,12 @@ export function authorizeWriteAccess({
   learningObject,
   requester,
   message,
+  updates,
 }: {
   learningObject: LearningObjectSummary;
   requester: UserToken;
   message?: string;
+  updates?: Partial<LearningObject>;
 }) {
   const isUnreleased =
     LearningObjectState.UNRELEASED.includes(
@@ -394,7 +396,12 @@ export function authorizeWriteAccess({
     authorUsername: learningObject.author.username,
     requester,
   });
-  const authorAccess = isAuthor && isUnreleased;
+  let isRevision = false;
+  if (updates && updates.revision) {
+    learningObject.revision++;
+    isRevision = updates.revision === learningObject.revision;
+  }
+  const authorAccess = isAuthor && isUnreleased || isRevision;
   const isReleased = learningObject.status === LearningObject.Status.RELEASED;
   const isAdminOrEditor = requesterIsAdminOrEditor(requester);
   const adminEditorAccess = isAdminOrEditor && !isUnreleased && !isReleased;
@@ -402,6 +409,7 @@ export function authorizeWriteAccess({
     isAuthor,
     isAdminOrEditor,
     isReleased,
+    isRevision,
     authorAccess,
     adminEditorAccess,
   });
@@ -425,19 +433,21 @@ function getInvalidWriteAccessReason({
   isAuthor,
   isAdminOrEditor,
   isReleased,
+  isRevision,
   authorAccess,
   adminEditorAccess,
 }: {
   isAuthor: boolean;
   isAdminOrEditor: boolean;
   isReleased: boolean;
+  isRevision: boolean;
   authorAccess: boolean;
   adminEditorAccess: boolean;
 }) {
   let reason = '';
   if (!isAuthor && !isAdminOrEditor) {
     reason = ` Cannot modify another user\'s Learning Objects.`;
-  } else if (isReleased) {
+  } else if (isReleased && !isRevision) {
     reason = ' Released Learning Objects cannot be modified.';
   } else if (isAuthor && !authorAccess) {
     reason = ' Cannot modify Learning Objects that are in review.';
