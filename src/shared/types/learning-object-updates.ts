@@ -17,6 +17,10 @@ export interface LearningObjectMetadataUpdates {
   'materials.folderDescriptions'?: LearningObject.Material.FolderDescription[];
 }
 
+export interface LearningObjectUpdates extends LearningObjectMetadataUpdates {
+  revision?: number;
+}
+
 const LearningObjectUpdateProps: LearningObjectMetadataUpdates = {
   name: '',
   date: '',

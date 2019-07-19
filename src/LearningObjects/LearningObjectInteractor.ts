@@ -1507,9 +1507,14 @@ export async function createLearningObjectRevision(params: {
 
   releasedCopy.revision++;
 
-  await params.dataStore.editLearningObject({
-    learningObjectId: params.learningObjectId,
 
+
+  await params.dataStore.editLearningObject({
+    id: params.learningObjectId,
+    updates: {
+      revision: releasedCopy.revision,
+      status: LearningObject.Status.UNRELEASED,
+    },
   });
 }
 
