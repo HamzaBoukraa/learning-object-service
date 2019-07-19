@@ -893,6 +893,51 @@ export class MongoDriver implements DataStore {
     });
   }
 
+  /**
+   * @inheritdoc
+   *
+   * Performs lookup on released objects collection to fetch all metadata for all child Learning Objects that belong to a
+   * working parent Learning Object
+   *
+   * @param {string} id [The id of the working parent Learning Object]
+   * @param {boolean} full [Whether or not to load the full children Learning Objects]
+   *
+   * @returns {Promise<LearningObject[]>}
+   * @memberof MongoDriver
+   */
+  async loadWorkingParentsReleasedChildObjects({
+    id,
+    full,
+  }: {
+    id: string;
+    full?: boolean;
+  }): Promise<LearningObject[]> {
+    const docs = await this.db
+      .collection<{ objects: LearningObjectDocument[] }>(
+        COLLECTIONS.LEARNING_OBJECTS,
+      )
+      .aggregate([
+        { $match: { _id: id } },
+        {
+          // grab the released children of learning objects
+          $lookup: {
+            from: COLLECTIONS.RELEASED_LEARNING_OBJECTS,
+            localField: 'children',
+            foreignField: '_id',
+            as: 'objects',
+          },
+        },
+        // only return children.
+        { $project: { _id: 0, objects: '$objects' } },
+      ])
+      .toArray();
+    if (docs[0]) {
+      const objects = docs[0].objects;
+      return this.bulkGenerateLearningObjects(objects, full);
+    }
+    return [];
+  }
+
   async getLearningObjectMaterials(params: {
     id: string;
   }): Promise<LearningObject.Material> {
