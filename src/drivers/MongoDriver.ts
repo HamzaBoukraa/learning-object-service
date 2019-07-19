@@ -45,6 +45,7 @@ import {
   ReleasedLearningObjectDocument,
   OutcomeDocument,
 } from '../shared/types/learning-object-document';
+import { LearningObjectUpdates } from '../shared/types/learning-object-updates';
 
 export enum COLLECTIONS {
   USERS = 'users',
