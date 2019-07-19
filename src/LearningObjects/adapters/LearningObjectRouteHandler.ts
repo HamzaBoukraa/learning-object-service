@@ -251,7 +251,7 @@ export function initializePrivate({
         ...req.params,
         dataStore,
         library,
-        user: req.user,
+        requester: req.user,
         summary: req.query.summary,
       };
       const learningObjectRevision = await LearningObjectInteractor.getLearningObjectRevision(params);
@@ -280,5 +280,5 @@ export function initializePrivate({
     getLearningObjectChildren,
   );
   router.post('/users/:username/learning-objects/:learningObjectId/revisions', createRevision);
-  router.get('/users/:username/learning-objects/:id/revisions/:id', getRevision);
+  router.get('/users/:username/learning-objects/:learningObjectId/revisions/:revisionId', getRevision);
 }

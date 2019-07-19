@@ -1593,6 +1593,7 @@ export class MongoDriver implements DataStore {
             collection: { $first: '$collection' },
             status: { $first: '$status' },
             description: { $first: '$description' },
+            revision: { $first: '$revision' },
           },
         },
       ])
@@ -1658,6 +1659,7 @@ export class MongoDriver implements DataStore {
             collection: { $first: '$collection' },
             status: { $first: '$status' },
             description: { $first: '$description' },
+            revision: { $first: '$revision' },
           },
         },
         // perform a lookup and store the working copy of the object under the "Copy" array.

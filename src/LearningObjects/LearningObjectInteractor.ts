@@ -1579,8 +1579,16 @@ export async function getLearningObjectRevision(params: {
   dataStore: DataStore,
   requester: UserToken,
   library: LibraryCommunicator,
+  revisionId: string,
   summary?: boolean,
 }): Promise<LearningObject | LearningObjectSummary> {
+  if (parseInt(params.revisionId, 10) === 0) {
+    throw new ResourceError(
+      `Cannot find revision for Learning Object ${params.learningObjectId}`,
+      ResourceErrorReason.NOT_FOUND,
+    );
+  }
+
   await validateRequest({
     username: params.username,
     learningObjectId: params.learningObjectId,
@@ -1595,26 +1603,22 @@ export async function getLearningObjectRevision(params: {
     requesterIsAdminOrEditor(params.requester)
   ) {
 
-    const learningObject = await getLearningObjectById({
-      dataStore: params.dataStore,
-      library: params.library,
-      id: params.learningObjectId,
-      requester: params.requester,
-    });
+    let learningObject: LearningObject | LearningObjectSummary;
 
-    if (learningObject.revision === 0) {
-      throw new ResourceError(
-        `Learning Object with id ${params.learningObjectId} does not have a revision`,
-        ResourceErrorReason.NOT_FOUND,
-      );
-    }
-
-    if (params.summary) {
-      return getLearningObjectRevisionSummary({
+    if (toBoolean(params.summary)) {
+      learningObject = await getLearningObjectRevisionSummary({
         dataStore: params.dataStore,
         requester: params.requester,
         id: params.learningObjectId,
-        revision: learningObject.revision,
+        revision: parseInt(params.revisionId, 10),
+      });
+    } else {
+      learningObject = await getFullLearningObjectRevision({
+        dataStore: params.dataStore,
+        library: params.library,
+        id: params.learningObjectId,
+        requester: params.requester,
+        filter: 'unreleased',
       });
     }
 
