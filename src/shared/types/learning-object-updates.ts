@@ -1,6 +1,6 @@
 import { LearningObject } from '../entity';
 
-export interface LearningObjectUpdates {
+export interface LearningObjectMetadataUpdates {
   name?: string;
   date?: string;
   length?: string;
@@ -16,7 +16,8 @@ export interface LearningObjectUpdates {
   'materials.urls'?: LearningObject.Material.Url[];
   'materials.folderDescriptions'?: LearningObject.Material.FolderDescription[];
 }
-const LearningObjectUpdateProps: LearningObjectUpdates = {
+
+const LearningObjectUpdateProps: LearningObjectMetadataUpdates = {
   name: '',
   date: '',
   length: '',

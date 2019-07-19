@@ -10,7 +10,7 @@ import {
 } from '../shared/interfaces/DataStore';
 import * as ObjectMapper from './Mongo/ObjectMapper';
 import {
-  LearningObjectUpdates,
+  LearningObjectMetadataUpdates,
   LearningObjectDocument,
   UserDocument,
   LearningOutcomeDocument,
@@ -746,14 +746,14 @@ export class MongoDriver implements DataStore {
    *
    * @param {{
    *     ids: string[];
-   *     updates: LearningObjectUpdates;
+   *     updates: LearningObjectMetadataUpdates;
    *   }} params
    * @returns {Promise<void>}
    * @memberof MongoDriver
    */
   async updateMultipleLearningObjects(params: {
     ids: string[];
-    updates: LearningObjectUpdates;
+    updates: LearningObjectMetadataUpdates;
   }): Promise<void> {
     await this.db
       .collection(COLLECTIONS.LEARNING_OBJECTS)
@@ -778,36 +778,6 @@ export class MongoDriver implements DataStore {
       return docs.map(doc => doc._id);
     }
     return [];
-  }
-
-  /**
-   * createRevision creates a revision for a released Learning Object.
-   *
-   * This function performs two queries. The first query updates the working
-   * copy of the Learning Object to have provided revision number and a status
-   * of unreleased.
-   *
-   * @param learningObjectId [id of the Learning Object that is being released]
-   * @param revision [revision number for the working copy of the Learning Object]
-   */
-  createRevision({
-    learningObjectId,
-    revision,
-  }: {
-    learningObjectId: string,
-    revision: number,
-  }): Promise<UpdateWriteOpResult>  {
-    return this.db
-        .collection(COLLECTIONS.LEARNING_OBJECTS)
-        .updateOne(
-          { _id: learningObjectId },
-          {
-            $set: {
-              revision,
-              status: LearningObject.Status.UNRELEASED,
-            },
-          },
-        );
   }
 
   /**

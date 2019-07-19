@@ -1,7 +1,7 @@
 import { DataStore } from '../shared/interfaces/DataStore';
 import { LibraryCommunicator } from '../shared/interfaces/interfaces';
 import {
-  LearningObjectUpdates,
+  LearningObjectMetadataUpdates,
   UserToken,
   VALID_LEARNING_OBJECT_UPDATES,
   LearningObjectSummary,
@@ -1516,9 +1516,9 @@ export async function createLearningObjectRevision(params: {
 
   releasedCopy.revision++;
 
-  await params.dataStore.createRevision({
+  await params.dataStore.editLearningObject({
     learningObjectId: params.learningObjectId,
-    revision: releasedCopy.revision,
+ 
   });
 }
 
@@ -1526,13 +1526,13 @@ export async function createLearningObjectRevision(params: {
  * Sanitizes object containing updates to be stored by removing invalid update properties, cloning valid properties, and trimming strings
  *
  * @param {Partial<LearningObject>} object [Object containing values to update existing Learning Object with]
- * @returns {LearningObjectUpdates}
+ * @returns {LearningObjectMetadataUpdates}
  */
 function sanitizeUpdates(
   object: Partial<LearningObject>,
-): LearningObjectUpdates {
+): LearningObjectMetadataUpdates {
   delete object.id;
-  const updates: LearningObjectUpdates = {};
+  const updates: LearningObjectMetadataUpdates = {};
   for (const key of VALID_LEARNING_OBJECT_UPDATES) {
     if (object[key]) {
       const value = object[key];
@@ -1572,12 +1572,12 @@ async function validateRequest(params: {
  *
  * @param {{
  *   id: string;
- *   updates: LearningObjectUpdates;
+ *   updates: LearningObjectMetadataUpdates;
  * }} params
  */
 function validateUpdates(params: {
   id: string;
-  updates: LearningObjectUpdates;
+  updates: LearningObjectMetadataUpdates;
 }): void {
   if (params.updates.name) {
     if (params.updates.name.trim() === '') {

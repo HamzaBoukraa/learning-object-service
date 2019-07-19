@@ -41,10 +41,6 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
     return;
   }
 
-  createRevision({ learningObjectId, revision }: { learningObjectId: string; revision: number; }): Promise<any> {
-    return Promise.resolve();
-  }
-
   searchReleasedUserObjects(
     query: ReleasedUserLearningObjectSearchQuery,
     username: string,

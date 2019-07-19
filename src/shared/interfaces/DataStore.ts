@@ -136,14 +136,6 @@ export interface DataStore
     objects: LearningObject[];
   }>;
 
-  createRevision({
-    learningObjectId,
-    revision,
-  }: {
-    learningObjectId: string,
-    revision: number,
-  }): Promise<any>;
-
   /**
    * Search for the specified user's released objects.
    *
