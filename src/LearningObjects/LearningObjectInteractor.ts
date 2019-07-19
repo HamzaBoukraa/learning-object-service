@@ -1581,7 +1581,7 @@ export async function getLearningObjectRevision(params: {
   library: LibraryCommunicator,
   summary?: boolean,
 }): Promise<LearningObject | LearningObjectSummary> {
-  const learningObject = await validateRequest({
+  await validateRequest({
     username: params.username,
     learningObjectId: params.learningObjectId,
     dataStore: params.dataStore,
@@ -1594,6 +1594,14 @@ export async function getLearningObjectRevision(params: {
     }) ||
     requesterIsAdminOrEditor(params.requester)
   ) {
+
+    const learningObject = await getLearningObjectById({
+      dataStore: params.dataStore,
+      library: params.library,
+      id: params.learningObjectId,
+      requester: params.requester,
+    });
+
     if (learningObject.revision === 0) {
       throw new ResourceError(
         `Learning Object with id ${params.learningObjectId} does not have a revision`,
@@ -1609,15 +1617,11 @@ export async function getLearningObjectRevision(params: {
         revision: learningObject.revision,
       });
     }
-    return getLearningObjectById({
-      dataStore: params.dataStore,
-      library: params.library,
-      id: params.learningObjectId,
-      requester: params.requester,
-    });
+
+    return learningObject;
   }
   throw new ResourceError(
-    `User with id ${params.userId} does not have access to the revision of Learning Object with id ${params.learningObjectId}`,
+    `User with id ${params.username} does not have access to the revision of Learning Object with id ${params.learningObjectId}`,
     ResourceErrorReason.FORBIDDEN,
   );
 }
@@ -1647,7 +1651,6 @@ function sanitizeUpdates(
  * with the given userId and Learning Object Id.
  * If it does not find a Learning Object that matches
  * the given criteria, it throws a Resource Error.
- * Otherwise, it returns a working copy Learning Object.
  * @param params
  */
 async function validateRequest(params: {
@@ -1672,7 +1675,6 @@ async function validateRequest(params: {
       ResourceErrorReason.NOT_FOUND,
     );
   }
-  return learningObject;
 }
 
 /**
