@@ -41,6 +41,16 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
     return;
   }
 
+  loadWorkingParentsReleasedChildObjects(params: {
+    id: string;
+    full?: boolean;
+  }): Promise<LearningObject[]> {
+    if (params.id !== this.stubs.learningObjectChild.id) {
+      return Promise.resolve([this.stubs.learningObjectChild]);
+    }
+    return Promise.resolve([]);
+  }
+
   searchReleasedUserObjects(
     query: ReleasedUserLearningObjectSearchQuery,
     username: string,
@@ -123,7 +133,10 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
     id: string;
     full?: boolean;
   }): Promise<LearningObject[]> {
-    return Promise.resolve([this.stubs.learningObjectChild as any]);
+    if (params.id !== this.stubs.learningObjectChild.id) {
+      return Promise.resolve([this.stubs.learningObjectChild]);
+    }
+    return Promise.resolve([]);
   }
 
   addToReleased(object: LearningObject): Promise<void> {

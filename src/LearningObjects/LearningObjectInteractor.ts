@@ -707,88 +707,6 @@ export async function getLearningObjectRevisionSummary({
 }
 
 /**
- * Generates new LearningObject.Material.File Object
- *
- * @private
- * @param {FileMeta} file
- * @param {string} url
- * @returns
- */
-function generateLearningObjectFile(
-  file: FileMeta,
-): LearningObject.Material.File {
-  const extension = file.name.split('.').pop();
-  const fileType = file.fileType || '';
-  const learningObjectFile: Partial<LearningObject.Material.File> = {
-    extension,
-    fileType,
-    url: file.url,
-    date: Date.now().toString(),
-    name: file.name,
-    fullPath: file.fullPath,
-    size: +file.size,
-    packageable: isPackageable(+file.size),
-  };
-
-  // Sanitize object. Remove undefined or null values
-  const keys = Object.keys(learningObjectFile);
-  for (const key of keys) {
-    const prop = learningObjectFile[key];
-    if (!prop && prop !== 0) {
-      delete learningObjectFile[key];
-    }
-  }
-
-  return learningObjectFile as LearningObject.Material.File;
-}
-
-// 100 MB in bytes; File size is in bytes
-const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
-function isPackageable(size: number) {
-  // if dztotalfilesize doesn't exist it must not be a chunk upload.
-  // this means by default it must be a packageable file size
-  return !(size > MAX_PACKAGEABLE_FILE_SIZE);
-}
-
-/**
- * Validates all required values are provided for request
- *
- * @param {any[]} params
- * @param {string[]} [mustProvide]
- * @returns {(void | never)}
- */
-function validateRequestParams({
-  params,
-  mustProvide,
-}: {
-  params: any[];
-  mustProvide?: string[];
-}): void | never {
-  const values = [...params].map(val => {
-    if (typeof val === 'string') {
-      val = val.trim();
-    }
-    return val;
-  });
-  if (
-    values.includes(null) ||
-    values.includes('null') ||
-    values.includes(undefined) ||
-    values.includes('undefined') ||
-    values.includes('')
-  ) {
-    const multipleParams = mustProvide.length > 1;
-    let message = 'Invalid parameters provided';
-    if (Array.isArray(mustProvide)) {
-      message = `Must provide ${multipleParams ? '' : 'a'} valid value${
-        multipleParams ? 's' : ''
-      } for ${mustProvide}`;
-    }
-    throw new ResourceError(message, ResourceErrorReason.BAD_REQUEST);
-  }
-}
-
-/**
  * Performs update operation on learning object's date
  *
  * @param {{
@@ -972,6 +890,7 @@ export async function updateLearningObject({
         requester,
       });
       await PublishingService.releaseLearningObject({
+        authorUsername,
         userToken: requester,
         dataStore,
         releasableObject,
@@ -983,8 +902,12 @@ export async function updateLearningObject({
 }
 
 /**
- * FIXME: Once the return type of `fetchLearningObject` is updated to the `Datastore's` schema type,
- * this function should be updated to not fetch children ids as they should be returned with the document
+ * Generates a full releasable Learning Object including full metadata for all materials and children
+ *
+ * @param {DataStore} dataStore [The datastore to use to fetch the Learning Object data]
+ * @param {string} id [The id of the Learning Object to get releasable copy of]
+ * @param {UserToken} requester [The requester of the releasable Learning Object]
+ * @returns {Promise<LearningObject>}
  */
 async function generateReleasableLearningObject({
   dataStore,
@@ -994,20 +917,19 @@ async function generateReleasableLearningObject({
   dataStore: DataStore;
   id: string;
   requester: UserToken;
-}) {
-  const [object, childIds, files] = await Promise.all([
+}): Promise<LearningObject> {
+  const [object, children, files] = await Promise.all([
     dataStore.fetchLearningObject({ id, full: true }),
-    dataStore.findChildObjectIds({ parentId: id }),
+    loadWorkingParentsReleasedChildObjects({
+      dataStore,
+      parentId: id,
+    }),
     Gateways.fileMetadata().getAllFileMetadata({
       requester,
       learningObjectId: id,
       filter: 'unreleased',
     }),
   ]);
-  let children: LearningObject[] = [];
-  if (Array.isArray(childIds)) {
-    children = childIds.map(childId => new LearningObject({ id: childId }));
-  }
   const releasableObject = new LearningObject({
     ...object.toPlainObject(),
     children,
@@ -1080,6 +1002,9 @@ export async function getLearningObjectById({
     }
     let children: LearningObject[] = [];
     if (loadingReleased) {
+      learningObject.materials.files = learningObject.materials.files.map(
+        appendFilePreviewUrls(learningObject),
+      );
       children = await dataStore.loadReleasedChildObjects({
         id: learningObject.id,
         full: false,
@@ -1120,6 +1045,68 @@ export async function getLearningObjectById({
   } catch (e) {
     handleError(e);
   }
+}
+
+/**
+ * Recursively loads all levels of full released child Learning Objects for an working parent Learning Object
+ *
+ * @param {DataStore} dataStore [The datastore to fetch children from]
+ * @param {string} parentId [The id of the working parent Learning Object]
+ *
+ * @returns
+ */
+async function loadWorkingParentsReleasedChildObjects({
+  dataStore,
+  parentId,
+}: {
+  dataStore: DataStore;
+  parentId: string;
+}): Promise<LearningObject[]> {
+  let children = await dataStore.loadWorkingParentsReleasedChildObjects({
+    id: parentId,
+    full: true,
+  });
+  children = await Promise.all(
+    children.map(async child => {
+      child.children = await loadWorkingParentsReleasedChildObjects({
+        dataStore,
+        parentId: child.id,
+      });
+      return child;
+    }),
+  );
+  return children;
+}
+
+/**
+ * Recursively loads all levels of full released child Learning Objects for a released parent Learning Object
+ *
+ * @param {DataStore} dataStore [The datastore to fetch children from]
+ * @param {string} parentId [The id of the released parent Learning Object]
+ *
+ * @returns
+ */
+async function loadReleasedChildObjects({
+  dataStore,
+  parentId,
+}: {
+  dataStore: DataStore;
+  parentId: string;
+}): Promise<LearningObject[]> {
+  let children = await dataStore.loadReleasedChildObjects({
+    id: parentId,
+    full: true,
+  });
+  children = await Promise.all(
+    children.map(async child => {
+      child.children = await loadReleasedChildObjects({
+        dataStore,
+        parentId: child.id,
+      });
+      return child;
+    }),
+  );
+  return children;
 }
 
 /**
@@ -1416,11 +1403,11 @@ export async function getMaterials({
   try {
     let materials: LearningObject.Material;
     let workingFiles: LearningObject.Material.File[];
+    const learningObject = await dataStore.fetchLearningObject({
+      id,
+      full: false,
+    });
     if (filter === 'unreleased') {
-      const learningObject = await dataStore.fetchLearningObject({
-        id,
-        full: false,
-      });
       authorizeReadAccess({ learningObject, requester });
       const materials$ = dataStore.getLearningObjectMaterials({ id });
       const workingFiles$ = Gateways.fileMetadata().getAllFileMetadata({
@@ -1445,6 +1432,10 @@ export async function getMaterials({
 
     if (workingFiles) {
       materials.files = workingFiles;
+    } else {
+      materials.files = materials.files.map(
+        appendFilePreviewUrls(learningObject),
+      );
     }
 
     return materials;
@@ -1518,8 +1509,35 @@ export async function createLearningObjectRevision(params: {
 
   await params.dataStore.editLearningObject({
     learningObjectId: params.learningObjectId,
- 
+
   });
+}
+
+ /** Appends file preview urls
+  *
+  * @param {LearningObject} learningObject
+  * @returns {(
+  *   value: LearningObject.Material.File,
+  *   index: number,
+  *   array: LearningObject.Material.File[],
+  * ) => LearningObject.Material.File}
+  */
+function appendFilePreviewUrls(
+  learningObject: LearningObject,
+): (
+  value: LearningObject.Material.File,
+  index: number,
+  array: LearningObject.Material.File[],
+) => LearningObject.Material.File {
+  return file => {
+    file.previewUrl = Gateways.fileMetadata().getFilePreviewUrl({
+      authorUsername: learningObject.author.username,
+      learningObjectId: learningObject.id,
+      file,
+      unreleased: learningObject.status !== LearningObject.Status.RELEASED,
+    });
+    return file;
+  };
 }
 
 /**
