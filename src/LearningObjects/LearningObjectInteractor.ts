@@ -890,6 +890,7 @@ export async function updateLearningObject({
         requester,
       });
       await PublishingService.releaseLearningObject({
+        authorUsername,
         userToken: requester,
         dataStore,
         releasableObject,
