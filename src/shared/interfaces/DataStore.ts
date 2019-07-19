@@ -43,7 +43,13 @@ export interface DataStore
   fetchRecentChangelog(params: {
     learningObjectId: string;
   }): Promise<ChangeLogDocument>;
-  deleteChangelog(params: { learningObjectId: string }): Promise<void>;
+  fetchRecentChangelogBeforeDate(params: {
+    learningObjectId: string,
+    date: string,
+  }): Promise<ChangeLogDocument>;
+  deleteChangelog(params: {
+    learningObjectId: string,
+  }): Promise<void>;
   /*
    * READ Operations
    */

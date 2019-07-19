@@ -41,19 +41,17 @@ export class Stubs {
 
     constructor() {
         this._user = new User({...SEED_DATA.AUTHOR_MOCK, id: SEED_DATA.AUTHOR_MOCK._id});
-        this._learningObjectChild = new LearningObject(
+        this._learningObjectChild =
             this.generateLearningObject(
                 this.user,
                 SEED_DATA.LEARNING_OBJECT_CHILD,
                 false,
-            ),
         );
-        this._learningObject = new LearningObject(
+        this._learningObject =
             this.generateLearningObject(
                 this.user,
                 SEED_DATA.LEARNING_OBJECT_RELEASED_1,
                 true,
-            ),
         );
         this._collection = SEED_DATA.C5_COLLECTION_MOCK;
         this._changelog = SEED_DATA.CHANGELOG_MOCK;
