@@ -1,5 +1,4 @@
 import {
-  LearningObjectUpdates,
   LearningObjectSummary,
   CollectionAccessMap,
   ReleasedUserLearningObjectSearchQuery,
@@ -9,6 +8,7 @@ import { LearningObjectStatDatastore } from '../../LearningObjectStats/LearningO
 import { CollectionDataStore } from '../../Collections/CollectionDataStore';
 import { ChangeLogDocument } from '../types/changelog';
 import { LearningObject, User, Collection } from '../entity';
+import { LearningObjectUpdates } from '../types/learning-object-updates';
 
 export interface DataStore
   extends LearningOutcomeDatastore,

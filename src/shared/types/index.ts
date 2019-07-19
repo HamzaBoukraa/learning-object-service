@@ -1,6 +1,6 @@
 import { UserToken } from './user-token';
 import {
-  LearningObjectUpdates,
+  LearningObjectMetadataUpdates,
   VALID_LEARNING_OBJECT_UPDATES,
 } from './learning-object-updates';
 import {
@@ -33,7 +33,7 @@ export interface CollectionAccessMap {
 export {
   UserToken,
   ServiceToken,
-  LearningObjectUpdates,
+  LearningObjectMetadataUpdates,
   VALID_LEARNING_OBJECT_UPDATES,
   UserDocument,
   LearningObjectDocument,

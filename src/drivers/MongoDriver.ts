@@ -10,7 +10,7 @@ import {
 } from '../shared/interfaces/DataStore';
 import * as ObjectMapper from './Mongo/ObjectMapper';
 import {
-  LearningObjectUpdates,
+  LearningObjectMetadataUpdates,
   LearningObjectDocument,
   UserDocument,
   LearningOutcomeDocument,
@@ -45,6 +45,7 @@ import {
   ReleasedLearningObjectDocument,
   OutcomeDocument,
 } from '../shared/types/learning-object-document';
+import { LearningObjectUpdates } from '../shared/types/learning-object-updates';
 
 export enum COLLECTIONS {
   USERS = 'users',
@@ -746,14 +747,14 @@ export class MongoDriver implements DataStore {
    *
    * @param {{
    *     ids: string[];
-   *     updates: LearningObjectUpdates;
+   *     updates: LearningObjectMetadataUpdates;
    *   }} params
    * @returns {Promise<void>}
    * @memberof MongoDriver
    */
   async updateMultipleLearningObjects(params: {
     ids: string[];
-    updates: LearningObjectUpdates;
+    updates: LearningObjectMetadataUpdates;
   }): Promise<void> {
     await this.db
       .collection(COLLECTIONS.LEARNING_OBJECTS)
@@ -1592,6 +1593,7 @@ export class MongoDriver implements DataStore {
             collection: { $first: '$collection' },
             status: { $first: '$status' },
             description: { $first: '$description' },
+            revision: { $first: '$revision' },
           },
         },
       ])
@@ -1657,6 +1659,7 @@ export class MongoDriver implements DataStore {
             collection: { $first: '$collection' },
             status: { $first: '$status' },
             description: { $first: '$description' },
+            revision: { $first: '$revision' },
           },
         },
         // perform a lookup and store the working copy of the object under the "Copy" array.

@@ -5,7 +5,6 @@ import {
   ParentLearningObjectQuery,
 } from '../../shared/interfaces/DataStore';
 import {
-  LearningObjectUpdates,
   LearningObjectSummary,
   ReleasedUserLearningObjectSearchQuery,
   CollectionAccessMap,
@@ -28,6 +27,7 @@ import { Stubs } from '../stubs';
 import { mapLearningObjectToSummary } from '../../shared/functions';
 import { StubChangelogDatastore } from '../../Changelogs/testing/StubChangelogDatastore';
 import { STUB_CHANGELOG_IDS } from '../../Changelogs/testing/ChangelogStubs';
+import { LearningObjectUpdates } from '../../shared/types/learning-object-updates';
 
 export class MockDataStore implements DataStore, SubmissionDataStore {
   stubs = new Stubs();
@@ -170,12 +170,12 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
       case STUB_CHANGELOG_IDS.MINUS_REVISION:
         return {
           ...this.stubs.learningObject,
-          revision: 1
+          revision: 1,
         };
       case STUB_CHANGELOG_IDS.PLUS_REVISION:
         return {
           ...this.stubs.learningObject,
-          revision: 1
+          revision: 1,
         };
       default:
         return this.stubs.learningObject;
