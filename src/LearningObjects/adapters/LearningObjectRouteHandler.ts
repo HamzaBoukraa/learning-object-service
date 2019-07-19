@@ -262,5 +262,5 @@ export function initializePrivate({
     '/learning-objects/:id/children/summary',
     getLearningObjectChildren,
   );
-  router.post('/users/:userId/learning-objects/:learningObjectId/revisions', createRevision);
+  router.post('/users/:username/learning-objects/:learningObjectId/revisions', createRevision);
 }

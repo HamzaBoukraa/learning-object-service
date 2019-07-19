@@ -1470,13 +1470,13 @@ export async function getMaterials({
  * }
  */
 export async function createLearningObjectRevision(params: {
-  userId: string,
+  username: string,
   learningObjectId: string,
   dataStore: DataStore,
   requester: UserToken,
 }): Promise<void> {
   await validateRequest({
-    userId: params.userId,
+    username: params.username,
     learningObjectId: params.learningObjectId,
     dataStore: params.dataStore,
   });
@@ -1571,18 +1571,24 @@ function sanitizeUpdates(
  * @param params
  */
 async function validateRequest(params: {
-  userId: string,
+  username: string,
   learningObjectId: string,
   dataStore: DataStore,
 }): Promise<void> {
-  const learningObject = await params.dataStore.checkLearningObjectExistence({
-    userId: params.userId,
-    learningObjectId: params.learningObjectId,
+  const learningObject = await params.dataStore.fetchLearningObject({
+    id: params.learningObjectId,
   });
 
   if (!learningObject) {
     throw new ResourceError(
-      `User ${params.userId} does not own a Learning Object with id ${params.learningObjectId}`,
+      `Learning Object with id ${params.learningObjectId} does not exist`,
+      ResourceErrorReason.NOT_FOUND,
+    );
+  }
+
+  if (learningObject.author.username !== params.username) {
+    throw new ResourceError(
+      `User ${params.username} does not own a Learning Object with id ${params.learningObjectId}`,
       ResourceErrorReason.NOT_FOUND,
     );
   }
