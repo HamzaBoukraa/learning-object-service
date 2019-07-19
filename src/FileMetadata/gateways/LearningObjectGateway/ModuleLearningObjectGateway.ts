@@ -12,6 +12,17 @@ export class ModuleLearningObjectGateway extends LearningObjectGateway {
   /**
    * @inheritdoc
    *
+   * Proxies `getReleasedLearningObjectSummary` request to LearningObjectAdapter
+   *
+   * @memberof ModuleLearningObjectGateway
+   */
+  getReleasedLearningObjectSummary(id: string): Promise<LearningObjectSummary> {
+    return this.adapter.getReleasedLearningObjectSummary(id);
+  }
+
+  /**
+   * @inheritdoc
+   *
    * Proxies `getWorkingLearningObjectSummary` request to LearningObjectAdapter
    *
    * @memberof ModuleLearningObjectGateway

@@ -4,6 +4,23 @@ import { LearningObject } from '../../shared/entity';
 
 export abstract class FileMetadataGateway {
   /**
+   * Retrieves preview url for a given file
+   *
+   * @abstract
+   * @param {string} authorUsername [Username of the author of the LearningObject the file meta belongs to]
+   * @param {string} learningObjectId [Id of the LearningObject the file meta belongs to]
+   * @param {boolean} unreleased [Flag indicating whether or not to return the unreleased preview url]
+   * @param {LearningObject.Material.File} [The file to get a preview url for]
+   * @returns {string}
+   * @memberof FileMetadataGateway
+   */
+  abstract getFilePreviewUrl(params: {
+    authorUsername: string;
+    learningObjectId: string;
+    unreleased?: boolean;
+    file: LearningObject.Material.File;
+  }): string;
+  /**
    * Retrieves all file metadata for a Learning Object
    *
    * @abstract

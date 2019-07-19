@@ -707,88 +707,6 @@ export async function getLearningObjectRevisionSummary({
 }
 
 /**
- * Generates new LearningObject.Material.File Object
- *
- * @private
- * @param {FileMeta} file
- * @param {string} url
- * @returns
- */
-function generateLearningObjectFile(
-  file: FileMeta,
-): LearningObject.Material.File {
-  const extension = file.name.split('.').pop();
-  const fileType = file.fileType || '';
-  const learningObjectFile: Partial<LearningObject.Material.File> = {
-    extension,
-    fileType,
-    url: file.url,
-    date: Date.now().toString(),
-    name: file.name,
-    fullPath: file.fullPath,
-    size: +file.size,
-    packageable: isPackageable(+file.size),
-  };
-
-  // Sanitize object. Remove undefined or null values
-  const keys = Object.keys(learningObjectFile);
-  for (const key of keys) {
-    const prop = learningObjectFile[key];
-    if (!prop && prop !== 0) {
-      delete learningObjectFile[key];
-    }
-  }
-
-  return learningObjectFile as LearningObject.Material.File;
-}
-
-// 100 MB in bytes; File size is in bytes
-const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
-function isPackageable(size: number) {
-  // if dztotalfilesize doesn't exist it must not be a chunk upload.
-  // this means by default it must be a packageable file size
-  return !(size > MAX_PACKAGEABLE_FILE_SIZE);
-}
-
-/**
- * Validates all required values are provided for request
- *
- * @param {any[]} params
- * @param {string[]} [mustProvide]
- * @returns {(void | never)}
- */
-function validateRequestParams({
-  params,
-  mustProvide,
-}: {
-  params: any[];
-  mustProvide?: string[];
-}): void | never {
-  const values = [...params].map(val => {
-    if (typeof val === 'string') {
-      val = val.trim();
-    }
-    return val;
-  });
-  if (
-    values.includes(null) ||
-    values.includes('null') ||
-    values.includes(undefined) ||
-    values.includes('undefined') ||
-    values.includes('')
-  ) {
-    const multipleParams = mustProvide.length > 1;
-    let message = 'Invalid parameters provided';
-    if (Array.isArray(mustProvide)) {
-      message = `Must provide ${multipleParams ? '' : 'a'} valid value${
-        multipleParams ? 's' : ''
-      } for ${mustProvide}`;
-    }
-    throw new ResourceError(message, ResourceErrorReason.BAD_REQUEST);
-  }
-}
-
-/**
  * Performs update operation on learning object's date
  *
  * @param {{
@@ -1084,6 +1002,9 @@ export async function getLearningObjectById({
     }
     let children: LearningObject[] = [];
     if (loadingReleased) {
+      learningObject.materials.files = learningObject.materials.files.map(
+        appendFilePreviewUrls(learningObject),
+      );
       children = await dataStore.loadReleasedChildObjects({
         id: learningObject.id,
         full: false,
@@ -1482,11 +1403,11 @@ export async function getMaterials({
   try {
     let materials: LearningObject.Material;
     let workingFiles: LearningObject.Material.File[];
+    const learningObject = await dataStore.fetchLearningObject({
+      id,
+      full: false,
+    });
     if (filter === 'unreleased') {
-      const learningObject = await dataStore.fetchLearningObject({
-        id,
-        full: false,
-      });
       authorizeReadAccess({ learningObject, requester });
       const materials$ = dataStore.getLearningObjectMaterials({ id });
       const workingFiles$ = Gateways.fileMetadata().getAllFileMetadata({
@@ -1511,12 +1432,44 @@ export async function getMaterials({
 
     if (workingFiles) {
       materials.files = workingFiles;
+    } else {
+      materials.files = materials.files.map(
+        appendFilePreviewUrls(learningObject),
+      );
     }
 
     return materials;
   } catch (e) {
     handleError(e);
   }
+}
+
+/**
+ * Appends file preview urls
+ *
+ * @param {LearningObject} learningObject
+ * @returns {(
+ *   value: LearningObject.Material.File,
+ *   index: number,
+ *   array: LearningObject.Material.File[],
+ * ) => LearningObject.Material.File}
+ */
+function appendFilePreviewUrls(
+  learningObject: LearningObject,
+): (
+  value: LearningObject.Material.File,
+  index: number,
+  array: LearningObject.Material.File[],
+) => LearningObject.Material.File {
+  return file => {
+    file.previewUrl = Gateways.fileMetadata().getFilePreviewUrl({
+      authorUsername: learningObject.author.username,
+      learningObjectId: learningObject.id,
+      file,
+      unreleased: learningObject.status !== LearningObject.Status.RELEASED,
+    });
+    return file;
+  };
 }
 
 /**
