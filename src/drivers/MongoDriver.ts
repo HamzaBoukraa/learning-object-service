@@ -785,8 +785,7 @@ export class MongoDriver implements DataStore {
    *
    * This function performs two queries. The first query updates the working
    * copy of the Learning Object to have provided revision number and a status
-   * of unreleased. The second query sets the hasRevision flag on the released
-   * copy of the Learning Object to true.
+   * of unreleased.
    *
    * @param learningObjectId [id of the Learning Object that is being released]
    * @param revision [revision number for the working copy of the Learning Object]
@@ -797,26 +796,18 @@ export class MongoDriver implements DataStore {
   }: {
     learningObjectId: string,
     revision: number,
-  }): Promise<[UpdateWriteOpResult, UpdateWriteOpResult]>  {
-    return Promise.all([
-      this.db
+  }): Promise<UpdateWriteOpResult>  {
+    return this.db
         .collection(COLLECTIONS.LEARNING_OBJECTS)
         .updateOne(
           { _id: learningObjectId },
           {
-            revision,
-            status: LearningObject.Status.UNRELEASED,
+            $set: {
+              revision,
+              status: LearningObject.Status.UNRELEASED,
+            },
           },
-      ),
-      this.db
-        .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
-        .updateOne(
-          { _id: learningObjectId },
-          {
-            hasRevision: true,
-          },
-        ),
-    ]);
+        );
   }
 
   /**
