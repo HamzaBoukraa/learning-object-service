@@ -38,6 +38,9 @@ const SEARCHABLE_FIELDS = [
   'author.name',
   'author.email',
   'author.organization',
+  'contributors.name',
+  'contributors.email',
+  'contributors.organization',
   'outcomes.text',
 ];
 

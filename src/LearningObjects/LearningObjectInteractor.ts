@@ -1,15 +1,22 @@
 import { DataStore } from '../shared/interfaces/DataStore';
 import { LibraryCommunicator } from '../shared/interfaces/interfaces';
 import {
-  LearningObjectUpdates,
+  LearningObjectMetadataUpdates,
   UserToken,
   VALID_LEARNING_OBJECT_UPDATES,
   LearningObjectSummary,
+  UserLearningObjectQuery,
+  UserLearningObjectSearchQuery,
+  CollectionAccessMap,
+  LearningObjectState,
 } from '../shared/types';
-import { ResourceError, ResourceErrorReason } from '../shared/errors';
+import {
+  ResourceError,
+  ResourceErrorReason,
+  handleError,
+} from '../shared/errors';
 import { reportError } from '../shared/SentryConnector';
 import { LearningObject } from '../shared/entity';
-import { handleError } from '../interactors/LearningObjectInteractor';
 import {
   authorizeRequest,
   requesterIsAuthor,
@@ -17,12 +24,20 @@ import {
   hasReadAccessByCollection,
   authorizeReadAccess,
   authorizeWriteAccess,
+  requesterIsPrivileged,
+  getAccessGroupCollections,
+  getCollectionAccessMap,
+  getAuthorizedStatuses,
 } from '../shared/AuthorizationManager';
 import { FileMeta, LearningObjectFilter, MaterialsFilter } from './typings';
 import * as PublishingService from './Publishing';
 import {
   mapLearningObjectToSummary,
   sanitizeLearningObjectName,
+  sanitizeText,
+  toArray,
+  sanitizeObject,
+  toBoolean,
 } from '../shared/functions';
 import {
   FileMetadataGateway,
@@ -42,26 +57,134 @@ namespace Gateways {
     LearningObjectsModule.resolveDependency(FileMetadataGateway);
 }
 
-const LearningObjectState = {
-  UNRELEASED: [
-    LearningObject.Status.REJECTED,
-    LearningObject.Status.UNRELEASED,
-  ],
-  IN_REVIEW: [
-    LearningObject.Status.WAITING,
-    LearningObject.Status.REVIEW,
-    LearningObject.Status.PROOFING,
-  ],
-  RELEASED: [LearningObject.Status.RELEASED],
-  ALL: [
-    LearningObject.Status.REJECTED,
-    LearningObject.Status.UNRELEASED,
-    LearningObject.Status.WAITING,
-    LearningObject.Status.REVIEW,
-    LearningObject.Status.PROOFING,
-    LearningObject.Status.RELEASED,
-  ],
-};
+/**
+ * Performs a search on the specified user's Learning Objects.
+ *
+ * *** NOTES ***
+ * If the specified user cannot be found, a NotFound ResourceError is thrown.
+ * Only the author and privileged users are allowed to view Learning Object drafts.
+ * "Drafts" are defined as 'not released' Learning Objects that have never been released or have a `revision` id of `0`, so
+ * if the `draftsOnly` filter is specified, the `status` filter must not have a value of `released`.
+ * Only authors can see drafts that are not submitted for review; `unreleased` || `rejected`.
+ * Admins and editors can see all Learning Objects submitted for review.
+ * Reviewers and curators can only see Learning Objects submitted for review to their collection.
+ *
+ *
+ * @async
+ *
+ * @returns {LearningObjectSummary[]} the user's learning objects found by the query
+ * @param params.dataStore
+ * @param params.authorUsername
+ * @param params.requester
+ * @param params.query
+ */
+export async function searchUsersObjects({
+  dataStore,
+  authorUsername,
+  requester,
+  query,
+}: {
+  dataStore: DataStore;
+  authorUsername: string;
+  requester: UserToken;
+  query?: UserLearningObjectQuery;
+}): Promise<LearningObjectSummary[]> {
+  try {
+    let { text, draftsOnly, status } = formatUserLearningObjectQuery(query);
+    if (!(await dataStore.findUserId(authorUsername))) {
+      throw new ResourceError(
+        `Cannot load Learning Objects for user ${authorUsername}. User ${authorUsername} does not exist.`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+    const isAuthor = requesterIsAuthor({ requester, authorUsername });
+    const isPrivileged = requesterIsPrivileged(requester);
+    const searchQuery: UserLearningObjectSearchQuery = {
+      text,
+      status,
+    };
+
+    if (draftsOnly) {
+      if (!isAuthor && !isPrivileged) {
+        throw new ResourceError(
+          `Invalid access. You are not authorized to view ${authorUsername}'s drafts.`,
+          ResourceErrorReason.INVALID_ACCESS,
+        );
+      }
+
+      if (!searchQuery.status) {
+        if (isAuthor) {
+          searchQuery.status = [
+            ...LearningObjectState.UNRELEASED,
+            ...LearningObjectState.IN_REVIEW,
+          ];
+        } else {
+          searchQuery.status = [...LearningObjectState.IN_REVIEW];
+        }
+      }
+
+      if (searchQuery.status.includes(LearningObject.Status.RELEASED)) {
+        throw new ResourceError(
+          'Illegal query arguments. Cannot specify both draftsOnly and released status filters.',
+          ResourceErrorReason.BAD_REQUEST,
+        );
+      }
+
+      searchQuery.revision = 0;
+    }
+
+    if (!isAuthor && !isPrivileged) {
+      return await dataStore.searchReleasedUserObjects(
+        searchQuery,
+        authorUsername,
+      );
+    }
+
+    let collectionAccessMap: CollectionAccessMap;
+
+    if (!isAuthor) {
+      searchQuery.status = getAuthorizedStatuses(searchQuery.status);
+      if (!requesterIsAdminOrEditor(requester)) {
+        const privilegedCollections = getAccessGroupCollections(requester);
+        collectionAccessMap = getCollectionAccessMap(
+          [],
+          privilegedCollections,
+          searchQuery.status,
+        );
+        searchQuery.status = searchQuery.status.includes(
+          LearningObject.Status.RELEASED,
+        )
+          ? LearningObjectState.RELEASED
+          : null;
+      }
+    }
+
+    return await dataStore.searchAllUserObjects(
+      searchQuery,
+      authorUsername,
+      collectionAccessMap,
+    );
+  } catch (e) {
+    handleError(e);
+  }
+}
+/**
+ * Formats search query to verify params are the appropriate types
+ *
+ * @private
+ * @static
+ * @param {UserLearningObjectQuery} query
+ * @returns {UserLearningObjectQuery}
+ */
+function formatUserLearningObjectQuery(
+  query: UserLearningObjectQuery,
+): UserLearningObjectQuery {
+  const formattedQuery = { ...query };
+  formattedQuery.text = sanitizeText(formattedQuery.text) || null;
+  formattedQuery.status = toArray(formattedQuery.status);
+  formattedQuery.draftsOnly = toBoolean(formattedQuery.draftsOnly);
+  return sanitizeObject({ object: formattedQuery }, false);
+}
 
 /**
  * Load a full learning object by name
@@ -584,88 +707,6 @@ export async function getLearningObjectRevisionSummary({
 }
 
 /**
- * Generates new LearningObject.Material.File Object
- *
- * @private
- * @param {FileMeta} file
- * @param {string} url
- * @returns
- */
-function generateLearningObjectFile(
-  file: FileMeta,
-): LearningObject.Material.File {
-  const extension = file.name.split('.').pop();
-  const fileType = file.fileType || '';
-  const learningObjectFile: Partial<LearningObject.Material.File> = {
-    extension,
-    fileType,
-    url: file.url,
-    date: Date.now().toString(),
-    name: file.name,
-    fullPath: file.fullPath,
-    size: +file.size,
-    packageable: isPackageable(+file.size),
-  };
-
-  // Sanitize object. Remove undefined or null values
-  const keys = Object.keys(learningObjectFile);
-  for (const key of keys) {
-    const prop = learningObjectFile[key];
-    if (!prop && prop !== 0) {
-      delete learningObjectFile[key];
-    }
-  }
-
-  return learningObjectFile as LearningObject.Material.File;
-}
-
-// 100 MB in bytes; File size is in bytes
-const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
-function isPackageable(size: number) {
-  // if dztotalfilesize doesn't exist it must not be a chunk upload.
-  // this means by default it must be a packageable file size
-  return !(size > MAX_PACKAGEABLE_FILE_SIZE);
-}
-
-/**
- * Validates all required values are provided for request
- *
- * @param {any[]} params
- * @param {string[]} [mustProvide]
- * @returns {(void | never)}
- */
-function validateRequestParams({
-  params,
-  mustProvide,
-}: {
-  params: any[];
-  mustProvide?: string[];
-}): void | never {
-  const values = [...params].map(val => {
-    if (typeof val === 'string') {
-      val = val.trim();
-    }
-    return val;
-  });
-  if (
-    values.includes(null) ||
-    values.includes('null') ||
-    values.includes(undefined) ||
-    values.includes('undefined') ||
-    values.includes('')
-  ) {
-    const multipleParams = mustProvide.length > 1;
-    let message = 'Invalid parameters provided';
-    if (Array.isArray(mustProvide)) {
-      message = `Must provide ${multipleParams ? '' : 'a'} valid value${
-        multipleParams ? 's' : ''
-      } for ${mustProvide}`;
-    }
-    throw new ResourceError(message, ResourceErrorReason.BAD_REQUEST);
-  }
-}
-
-/**
  * Performs update operation on learning object's date
  *
  * @param {{
@@ -849,6 +890,7 @@ export async function updateLearningObject({
         requester,
       });
       await PublishingService.releaseLearningObject({
+        authorUsername,
         userToken: requester,
         dataStore,
         releasableObject,
@@ -860,8 +902,12 @@ export async function updateLearningObject({
 }
 
 /**
- * FIXME: Once the return type of `fetchLearningObject` is updated to the `Datastore's` schema type,
- * this function should be updated to not fetch children ids as they should be returned with the document
+ * Generates a full releasable Learning Object including full metadata for all materials and children
+ *
+ * @param {DataStore} dataStore [The datastore to use to fetch the Learning Object data]
+ * @param {string} id [The id of the Learning Object to get releasable copy of]
+ * @param {UserToken} requester [The requester of the releasable Learning Object]
+ * @returns {Promise<LearningObject>}
  */
 async function generateReleasableLearningObject({
   dataStore,
@@ -871,20 +917,19 @@ async function generateReleasableLearningObject({
   dataStore: DataStore;
   id: string;
   requester: UserToken;
-}) {
-  const [object, childIds, files] = await Promise.all([
+}): Promise<LearningObject> {
+  const [object, children, files] = await Promise.all([
     dataStore.fetchLearningObject({ id, full: true }),
-    dataStore.findChildObjectIds({ parentId: id }),
+    loadWorkingParentsReleasedChildObjects({
+      dataStore,
+      parentId: id,
+    }),
     Gateways.fileMetadata().getAllFileMetadata({
       requester,
       learningObjectId: id,
       filter: 'unreleased',
     }),
   ]);
-  let children: LearningObject[] = [];
-  if (Array.isArray(childIds)) {
-    children = childIds.map(childId => new LearningObject({ id: childId }));
-  }
   const releasableObject = new LearningObject({
     ...object.toPlainObject(),
     children,
@@ -957,6 +1002,9 @@ export async function getLearningObjectById({
     }
     let children: LearningObject[] = [];
     if (loadingReleased) {
+      learningObject.materials.files = learningObject.materials.files.map(
+        appendFilePreviewUrls(learningObject),
+      );
       children = await dataStore.loadReleasedChildObjects({
         id: learningObject.id,
         full: false,
@@ -997,6 +1045,68 @@ export async function getLearningObjectById({
   } catch (e) {
     handleError(e);
   }
+}
+
+/**
+ * Recursively loads all levels of full released child Learning Objects for an working parent Learning Object
+ *
+ * @param {DataStore} dataStore [The datastore to fetch children from]
+ * @param {string} parentId [The id of the working parent Learning Object]
+ *
+ * @returns
+ */
+async function loadWorkingParentsReleasedChildObjects({
+  dataStore,
+  parentId,
+}: {
+  dataStore: DataStore;
+  parentId: string;
+}): Promise<LearningObject[]> {
+  let children = await dataStore.loadWorkingParentsReleasedChildObjects({
+    id: parentId,
+    full: true,
+  });
+  children = await Promise.all(
+    children.map(async child => {
+      child.children = await loadWorkingParentsReleasedChildObjects({
+        dataStore,
+        parentId: child.id,
+      });
+      return child;
+    }),
+  );
+  return children;
+}
+
+/**
+ * Recursively loads all levels of full released child Learning Objects for a released parent Learning Object
+ *
+ * @param {DataStore} dataStore [The datastore to fetch children from]
+ * @param {string} parentId [The id of the released parent Learning Object]
+ *
+ * @returns
+ */
+async function loadReleasedChildObjects({
+  dataStore,
+  parentId,
+}: {
+  dataStore: DataStore;
+  parentId: string;
+}): Promise<LearningObject[]> {
+  let children = await dataStore.loadReleasedChildObjects({
+    id: parentId,
+    full: true,
+  });
+  children = await Promise.all(
+    children.map(async child => {
+      child.children = await loadReleasedChildObjects({
+        dataStore,
+        parentId: child.id,
+      });
+      return child;
+    }),
+  );
+  return children;
 }
 
 /**
@@ -1293,11 +1403,11 @@ export async function getMaterials({
   try {
     let materials: LearningObject.Material;
     let workingFiles: LearningObject.Material.File[];
+    const learningObject = await dataStore.fetchLearningObject({
+      id,
+      full: false,
+    });
     if (filter === 'unreleased') {
-      const learningObject = await dataStore.fetchLearningObject({
-        id,
-        full: false,
-      });
       authorizeReadAccess({ learningObject, requester });
       const materials$ = dataStore.getLearningObjectMaterials({ id });
       const workingFiles$ = Gateways.fileMetadata().getAllFileMetadata({
@@ -1322,6 +1432,10 @@ export async function getMaterials({
 
     if (workingFiles) {
       materials.files = workingFiles;
+    } else {
+      materials.files = materials.files.map(
+        appendFilePreviewUrls(learningObject),
+      );
     }
 
     return materials;
@@ -1342,8 +1456,8 @@ export async function getMaterials({
  * Learning Object. If the Released Copy of the
  * Learning Object is not found, the function throws a
  * Resource Error. The Released Copy is used to validate
- * that the reqeuster is the Learning Object author. It is
- * also ussed to increment the revision property of the
+ * that the requester is the Learning Object author. It is
+ * also used to increment the revision property of the
  * Working Copy. The function ends by updating the Working
  * Copy to have a revision that is one greater than the Released Copy
  * revision and a status of unreleased.
@@ -1356,13 +1470,13 @@ export async function getMaterials({
  * }
  */
 export async function createLearningObjectRevision(params: {
-  userId: string,
+  username: string,
   learningObjectId: string,
   dataStore: DataStore,
   requester: UserToken,
 }): Promise<void> {
   await validateRequest({
-    userId: params.userId,
+    username: params.username,
     learningObjectId: params.learningObjectId,
     dataStore: params.dataStore,
   });
@@ -1374,28 +1488,59 @@ export async function createLearningObjectRevision(params: {
 
   if (!releasedCopy) {
     throw new ResourceError(
-      `Learning Object with id ${params.learningObjectId} is not released`,
-      ResourceErrorReason.CONFLICT,
+      `Cannot create a revision of Learning Object: ${params.learningObjectId} since it is not released.`,
+      ResourceErrorReason.BAD_REQUEST,
     );
   }
 
-  if (releasedCopy.author.username !== params.requester.username) {
+  if (
+    !requesterIsAuthor({
+      authorUsername: releasedCopy.author.username,
+      requester: params.requester,
+    })
+  ) {
     throw new ResourceError(
-      `Requester ${params.requester.username} does not own Learning Object with id ${params.learningObjectId}`,
+      `Cannot create a revision. Requester ${params.requester.username} must be the author of Learning Object with id ${params.learningObjectId}`,
       ResourceErrorReason.INVALID_ACCESS,
     );
   }
 
-  await updateLearningObject({
-    dataStore: params.dataStore,
-    requester: params.requester,
+  releasedCopy.revision++;
+
+  await params.dataStore.editLearningObject({
     id: params.learningObjectId,
-    authorUsername: releasedCopy.author.username,
     updates: {
-      revision: releasedCopy.revision++,
+      revision: releasedCopy.revision,
       status: LearningObject.Status.UNRELEASED,
     },
   });
+}
+
+ /** Appends file preview urls
+  *
+  * @param {LearningObject} learningObject
+  * @returns {(
+  *   value: LearningObject.Material.File,
+  *   index: number,
+  *   array: LearningObject.Material.File[],
+  * ) => LearningObject.Material.File}
+  */
+function appendFilePreviewUrls(
+  learningObject: LearningObject,
+): (
+  value: LearningObject.Material.File,
+  index: number,
+  array: LearningObject.Material.File[],
+) => LearningObject.Material.File {
+  return file => {
+    file.previewUrl = Gateways.fileMetadata().getFilePreviewUrl({
+      authorUsername: learningObject.author.username,
+      learningObjectId: learningObject.id,
+      file,
+      unreleased: learningObject.status !== LearningObject.Status.RELEASED,
+    });
+    return file;
+  };
 }
 
 /**
@@ -1481,13 +1626,13 @@ export async function getLearningObjectRevision(params: {
  * Sanitizes object containing updates to be stored by removing invalid update properties, cloning valid properties, and trimming strings
  *
  * @param {Partial<LearningObject>} object [Object containing values to update existing Learning Object with]
- * @returns {LearningObjectUpdates}
+ * @returns {LearningObjectMetadataUpdates}
  */
 function sanitizeUpdates(
   object: Partial<LearningObject>,
-): LearningObjectUpdates {
+): LearningObjectMetadataUpdates {
   delete object.id;
-  const updates: LearningObjectUpdates = {};
+  const updates: LearningObjectMetadataUpdates = {};
   for (const key of VALID_LEARNING_OBJECT_UPDATES) {
     if (object[key]) {
       const value = object[key];
@@ -1506,18 +1651,24 @@ function sanitizeUpdates(
  * @param params
  */
 async function validateRequest(params: {
-  userId: string,
+  username: string,
   learningObjectId: string,
   dataStore: DataStore,
-}): Promise<LearningObject> {
-  const learningObject = await params.dataStore.checkLearningObjectExistence({
-    userId: params.userId,
-    learningObjectId: params.learningObjectId,
+}): Promise<void> {
+  const learningObject = await params.dataStore.fetchLearningObject({
+    id: params.learningObjectId,
   });
 
   if (!learningObject) {
     throw new ResourceError(
-      `User ${params.userId} does not own a Learning Object with id ${params.learningObjectId}`,
+      `Learning Object with id ${params.learningObjectId} does not exist`,
+      ResourceErrorReason.NOT_FOUND,
+    );
+  }
+
+  if (learningObject.author.username !== params.username) {
+    throw new ResourceError(
+      `User ${params.username} does not own a Learning Object with id ${params.learningObjectId}`,
       ResourceErrorReason.NOT_FOUND,
     );
   }
@@ -1529,12 +1680,12 @@ async function validateRequest(params: {
  *
  * @param {{
  *   id: string;
- *   updates: LearningObjectUpdates;
+ *   updates: LearningObjectMetadataUpdates;
  * }} params
  */
 function validateUpdates(params: {
   id: string;
-  updates: LearningObjectUpdates;
+  updates: LearningObjectMetadataUpdates;
 }): void {
   if (params.updates.name) {
     if (params.updates.name.trim() === '') {

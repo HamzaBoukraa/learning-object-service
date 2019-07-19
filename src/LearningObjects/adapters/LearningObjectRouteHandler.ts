@@ -2,7 +2,7 @@ import { Request, Response, Router } from 'express';
 import { mapErrorToResponseData } from '../../shared/errors';
 import { DataStore } from '../../shared/interfaces/DataStore';
 import { LibraryCommunicator } from '../../shared/interfaces/interfaces';
-import { UserToken } from '../../shared/types';
+import { UserToken, UserLearningObjectQuery } from '../../shared/types';
 import * as LearningObjectInteractor from '../LearningObjectInteractor';
 import { LearningObject } from '../../shared/entity';
 import { MaterialsFilter, LearningObjectFilter } from '../typings';
@@ -20,6 +20,23 @@ export function initializePublic({
   dataStore: DataStore;
   library: LibraryCommunicator;
 }) {
+  const searchUserLearningObjects = async (req: Request, res: Response) => {
+    try {
+      const requester: UserToken = req.user;
+      const authorUsername: string = req.params.username;
+      const query: UserLearningObjectQuery = req.query;
+      const learningObjects = await LearningObjectInteractor.searchUsersObjects({
+        dataStore,
+        authorUsername,
+        requester,
+        query,
+      });
+      res.status(200).send(learningObjects);
+    } catch (e) {
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({ message });
+    }
+  };
   const getLearningObjectByName = async (req: Request, res: Response) => {
     try {
       const requester: UserToken = req.user;
@@ -59,6 +76,15 @@ export function initializePublic({
       res.status(code).json({ message });
     }
   };
+  /**
+   * @deprecated This route will be deprecated because of its non-RESTFul route structure
+   * Please update to using `/users/:username/learning-objects` route.
+   */
+  router.get(
+    '/learning-objects/:username/learning-objects',
+    searchUserLearningObjects,
+  );
+  router.get('/users/:username/learning-objects', searchUserLearningObjects);
   /**
    * @deprecated This route will be deprecated because of its non RESTful route structure
    * Please update to using `/users/:username/learning-objects/:learningObjectId` route.
@@ -210,8 +236,9 @@ export function initializePrivate({
 
   const createRevision = async (req: Request, res: Response) => {
     try {
-      const params = { ...req.params, dataStore, user: req.user };
+      const params = { ...req.params, dataStore, requester: req.user };
       await LearningObjectInteractor.createLearningObjectRevision(params);
+      res.sendStatus(204);
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
       res.status(code).json({ message });
@@ -252,6 +279,6 @@ export function initializePrivate({
     '/learning-objects/:id/children/summary',
     getLearningObjectChildren,
   );
-  router.post('/users/:userId/learning-objects/:learningObjectId/revisions', createRevision);
+  router.post('/users/:username/learning-objects/:learningObjectId/revisions', createRevision);
   router.get('/users/:userId/learning-objects/:id/revisions/:id', getRevision);
 }

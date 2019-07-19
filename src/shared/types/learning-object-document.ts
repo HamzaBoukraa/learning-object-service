@@ -49,7 +49,6 @@ export interface FileDocument {
   id: string;
   name: string;
   fileType: string;
-  url: string;
   date: string;
 }
 export interface UrlDocument {

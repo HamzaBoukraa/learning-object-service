@@ -26,6 +26,9 @@ import {
 import { StubFileManagerGateway } from '../gateways/FileManagerGateway/StubFileManagerGateway';
 import { StubFileMetadataGateway } from '../gateways/FileMetadataGateway/StubFileMetadataGateway';
 import { StubReadMeBuilder } from '../drivers/ReadMeBuilder/StubReadMeBuilder';
+import { LearningObjectSubmissionAdapter } from '../../LearningObjectSubmission/adapters/LearningObjectSubmissionAdapter';
+import { StubSubmissionPublisher } from '../../LearningObjectSubmission/StubSubmissionPublisher';
+import { LearningObjectAdapter } from './LearningObjectAdapter';
 
 const app = express();
 const router = express.Router();
@@ -52,8 +55,10 @@ describe('LearningObjectRouteHandler', () => {
   }
 
   beforeAll(async () => {
-    HierarchyAdapter.open(dataStore);
     LibraryDriver = new MockLibraryDriver();
+    HierarchyAdapter.open(dataStore);
+    LearningObjectAdapter.open(dataStore, LibraryDriver);
+    LearningObjectSubmissionAdapter.open(new StubSubmissionPublisher());
     LearningObjectsModule.providers = [
       { provide: FileMetadataGateway, useClass: StubFileMetadataGateway },
       { provide: FileManagerGateway, useClass: StubFileManagerGateway },

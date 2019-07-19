@@ -3,8 +3,9 @@ import { COLLECTIONS } from '../drivers/MongoDriver';
 import { reportError } from '../shared/SentryConnector';
 import { ResourceError, ResourceErrorReason, ServiceError, ServiceErrorReason } from '../shared/errors';
 import { ChangeLogDocument } from '../shared/types/changelog';
+import { ChangelogDataStore } from './interfaces/ChangelogDataStore';
 
-export class ChangelogDataStore {
+export class ModuleChangelogDataStore implements ChangelogDataStore {
   constructor(private db: Db) { }
 
   /**
@@ -16,7 +17,7 @@ export class ChangelogDataStore {
    *
    * @returns {void}
    */
-  public async createChangelog(params: {
+  async createChangelog(params: {
     learningObjectId: string,
     author: {
       userId: string,
@@ -26,7 +27,7 @@ export class ChangelogDataStore {
     },
     changelogText: string,
   }): Promise<void> {
-    await this.db.collection(COLLECTIONS.CHANGLOG).updateOne(
+    await this.db.collection(COLLECTIONS.CHANGELOG).updateOne(
       { learningObjectId: params.learningObjectId },
       {
         $push: {
@@ -55,7 +56,7 @@ export class ChangelogDataStore {
     learningObjectId: string,
   }): Promise<ChangeLogDocument> {
       const changelog = await this.db
-        .collection(COLLECTIONS.CHANGLOG)
+        .collection(COLLECTIONS.CHANGELOG)
         .findOne(
           { learningObjectId: params.learningObjectId },
           { projection: { learningObjectId: 1, logs: { $slice: -1 } } },
@@ -74,7 +75,7 @@ export class ChangelogDataStore {
     learningObjectId: string,
   }): Promise<ChangeLogDocument[]> {
     return this.db
-      .collection(COLLECTIONS.CHANGLOG)
+      .collection(COLLECTIONS.CHANGELOG)
       .aggregate([
         { $match: { learningObjectId: params.learningObjectId } },
         { $unwind: '$logs' },
@@ -95,7 +96,7 @@ export class ChangelogDataStore {
     date: string,
   }): Promise<ChangeLogDocument[]> {
     return this.db
-      .collection(COLLECTIONS.CHANGLOG)
+      .collection(COLLECTIONS.CHANGELOG)
       .aggregate([
         { $match: { learningObjectId: params.learningObjectId } },
         { $unwind: '$logs' },
@@ -104,6 +105,29 @@ export class ChangelogDataStore {
         { $group: { _id: '$learningObjectId', logs: { $push: '$logs' } } },
       ])
       .toArray();
+  }
+
+  /**
+   * Get all change logs for the specified Learning Object that were created before the given date
+   *
+   * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
+   * @param {string} date The date of that the changelog was created
+   */
+  fetchRecentChangelogBeforeDate(params: {
+    learningObjectId: string,
+    date: string,
+  }): Promise<ChangeLogDocument> {
+    return this.db
+      .collection(COLLECTIONS.CHANGELOG)
+      .aggregate([
+        { $match: { learningObjectId: params.learningObjectId } },
+        { $unwind: '$logs' },
+        { $match: { 'logs.date': { $lt: parseInt(params.date, 10) } } },
+        { $sort: { 'logs.date': -1 } },
+        { $limit: 1 },
+        { $group: { _id: '$learningObjectId', logs: { $push: '$logs' } } },
+      ])
+      .toArray()[0];
   }
 
   /**
@@ -118,7 +142,7 @@ export class ChangelogDataStore {
     learningObjectId: string,
   }): Promise<void> {
     await this.db
-      .collection(COLLECTIONS.CHANGLOG)
+      .collection(COLLECTIONS.CHANGELOG)
       .remove({ learningObjectId: params.learningObjectId });
   }
 }
