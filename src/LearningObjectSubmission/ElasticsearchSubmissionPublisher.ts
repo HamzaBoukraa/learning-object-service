@@ -53,9 +53,9 @@ export class ElasticsearchSubmissionPublisher implements SubmissionPublisher {
    * the action on their end.
    * @inheritdoc
    */
-  async withdrawlSubmission(learningObjectID: string) {
+  async deleteSubmission(learningObjectID: string) {
     try {
-      const response = await this.client.deleteByQuery({
+      await this.client.deleteByQuery({
         index: INDEX_NAME,
         body: {
           query: {
@@ -65,7 +65,13 @@ export class ElasticsearchSubmissionPublisher implements SubmissionPublisher {
                   match: { id: learningObjectID },
                 },
                 {
-                  match: { status: LearningObject.Status.WAITING },
+                  bool: {
+                    should: [
+                      { term: { status: LearningObject.Status.WAITING }},
+                      { term: { status: LearningObject.Status.PROOFING }},
+                      { term: { status: LearningObject.Status.REVIEW }},
+                    ],
+                  },
                 },
               ],
             },

@@ -17,6 +17,8 @@ import { BundlerModule } from './LearningObjects/Publishing/Bundler/BundlerModul
 import { FileMetadataModule } from './FileMetadata/FileMetadataModule';
 import { FileManagerModule } from './FileManager/FileManagerModule';
 import { LearningObjectsModule } from './LearningObjects/LearningObjectsModule';
+import { LearningObjectSubmissionAdapter } from './LearningObjectSubmission/adapters/LearningObjectSubmissionAdapter';
+import { ElasticsearchSubmissionPublisher } from './LearningObjectSubmission/ElasticsearchSubmissionPublisher';
 
 // ----------------------------------------------------------------------------------
 // Initializations
@@ -50,6 +52,7 @@ switch (process.env.NODE_ENV) {
 }
 const library: LibraryCommunicator = new LibraryDriver();
 let dataStore: DataStore;
+const publisher = new ElasticsearchSubmissionPublisher();
 
 /**
  * Starts the application by
@@ -83,6 +86,7 @@ async function startApp() {
 function initModules() {
   HierarchyAdapter.open(dataStore);
   LearningObjectAdapter.open(dataStore, library);
+  LearningObjectSubmissionAdapter.open(publisher);
   LearningObjectsModule.initialize();
   LearningObjectSearch.initialize();
   FileManagerModule.initialize();
