@@ -1429,7 +1429,7 @@ export async function createLearningObjectRevision(params: {
  * }
  */
 export async function getLearningObjectRevision(params: {
-  userId: string,
+  username: string,
   learningObjectId: string,
   dataStore: DataStore,
   requester: UserToken,
@@ -1437,13 +1437,16 @@ export async function getLearningObjectRevision(params: {
   summary?: boolean,
 }): Promise<LearningObject | LearningObjectSummary> {
   const learningObject = await validateRequest({
-    userId: params.userId,
+    username: params.username,
     learningObjectId: params.learningObjectId,
     dataStore: params.dataStore,
   });
 
   if (
-    learningObject.author.username === params.requester.username ||
+    requesterIsAuthor({
+      authorUsername: params.username,
+      requester: params.requester,
+    }) ||
     requesterIsAdminOrEditor(params.requester)
   ) {
     if (learningObject.revision === 0) {
