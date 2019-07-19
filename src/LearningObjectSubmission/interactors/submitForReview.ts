@@ -87,7 +87,9 @@ function verifyIsSubmittable(params: { user: UserToken; userId: string; }, objec
   }
   try {
     // tslint:disable-next-line:no-unused-expression
-    new SubmittableLearningObject(object);
+    new SubmittableLearningObject(
+      new LearningObject({ ...object.toPlainObject(), children: [] }),
+    );
   } catch (error) {
     if (error instanceof EntityError) {
       throw new ResourceError(error.message, ResourceErrorReason.BAD_REQUEST);
