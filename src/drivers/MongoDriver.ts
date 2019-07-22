@@ -1,4 +1,4 @@
-import { Cursor, Db, MongoClient, ObjectID, UpdateWriteOpResult } from 'mongodb';
+import { Cursor, Db, MongoClient, ObjectID } from 'mongodb';
 import { DataStore } from '../shared/interfaces/interfaces';
 import {
   Filters,
