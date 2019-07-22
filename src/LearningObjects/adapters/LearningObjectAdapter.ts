@@ -147,25 +147,30 @@ export class LearningObjectAdapter {
    *
    * @param {DataStore} dataStore [Driver for datastore]
    * @param {UserToken} requester [Object containing information about the requester]
-   * @param {string} id [Id of the Learning Object]
-   * @param {number} revision [Revision number of the Learning Object]
+   * @param {string} learningObjectId [Id of the Learning Object]
+   * @param {number} revisionId [Revision number of the Learning Object]
+   * @param {string} authorUsername [Username of the requested Learning Object author]
    * @returns {Promise<LearningObjectSummary>}
    * @memberof LearningObjectAdapter
    */
   async getLearningObjectRevisionSummary({
     requester,
-    id,
-    revision,
+    learningObjectId,
+    revisionId,
+    authorUsername,
   }: {
     requester: UserToken;
-    id: string;
-    revision: number;
+    learningObjectId: string;
+    revisionId: number;
+    authorUsername: string;
   }): Promise<LearningObjectSummary> {
     return getLearningObjectRevisionSummary({
       dataStore: this.dataStore,
       requester,
-      id,
-      revision,
+      learningObjectId,
+      revisionId,
+      authorUsername,
+      summary: true,
     });
   }
   /**

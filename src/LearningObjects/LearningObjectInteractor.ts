@@ -16,7 +16,7 @@ import {
   handleError,
 } from '../shared/errors';
 import { reportError } from '../shared/SentryConnector';
-import { LearningObject } from '../shared/entity';
+import { LearningObject, User } from '../shared/entity';
 import {
   authorizeRequest,
   requesterIsAuthor,
@@ -45,6 +45,7 @@ import {
   ReadMeBuilder,
 } from './interfaces';
 import { LearningObjectsModule } from './LearningObjectsModule';
+import { UserGateway } from './interfaces/UserGateway';
 
 namespace Drivers {
   export const readMeBuilder = () =>
@@ -641,7 +642,7 @@ export async function getActiveLearningObjectSummary({
 }
 
 /**
- * Retrieves Learning Object summary by id and revision number
+ * Retrieves Learning Object revision by id and revision number
  *
  * The working copy can only be returned if
  * The requester is the author
@@ -655,42 +656,68 @@ export async function getActiveLearningObjectSummary({
  * @param {number} revision [Revision number of the Learning Object]
  * @returns {Promise<LearningObjectSummary>}
  */
-export async function getLearningObjectRevisionSummary({
+export async function getLearningObjectRevision({
   dataStore,
   requester,
-  id,
-  revision,
+  learningObjectId,
+  revisionId,
+  authorUsername,
+  summary,
+  userGateway,
 }: {
   dataStore: DataStore;
   requester: UserToken;
-  id: string;
-  revision: number;
-}): Promise<LearningObjectSummary> {
+  learningObjectId: string;
+  revisionId: number;
+  authorUsername: string;
+  userGateway: UserGateway;
+  summary?: boolean,
+}): Promise<LearningObject | LearningObjectSummary> {
   try {
-    const object = await dataStore.fetchLearningObjectRevisionSummary({
-      id,
-      revision,
-    });
-    if (!object) {
+    if (revisionId === 0) {
       throw new ResourceError(
-        `Cannot find revision ${revision} of Learning Object ${id}.`,
+        `Cannot find revision for Learning Object ${learningObjectId}`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+    await validateRequest({
+      username: authorUsername,
+      learningObjectId: learningObjectId,
+      dataStore: dataStore,
+    });
+
+    let learningObject: LearningObject | LearningObjectSummary;
+    let author: User;
+
+    if (summary) {
+      author = await userGateway.getUser(authorUsername);
+    }
+    learningObject = await dataStore.fetchLearningObjectRevision({
+      id: learningObjectId,
+      revision: revisionId,
+      author,
+      summary,
+    });
+    if (!learningObject) {
+      throw new ResourceError(
+        `Cannot find revision ${revisionId} of Learning Object ${learningObjectId}.`,
         ResourceErrorReason.NOT_FOUND,
       );
     }
 
-    const releasedAccess = object.status === LearningObject.Status.RELEASED;
+    const releasedAccess = learningObject.status === LearningObject.Status.RELEASED;
     const authorAccess = requesterIsAuthor({
       requester,
-      authorUsername: object.author.username,
+      authorUsername: learningObject.author.username,
     });
     const isUnreleased = LearningObjectState.UNRELEASED.includes(
-      object.status as LearningObject.Status,
+      learningObject.status as LearningObject.Status,
     );
     const reviewerCuratorAccess =
       !isUnreleased &&
       hasReadAccessByCollection({
         requester,
-        collection: object.collection,
+        collection: learningObject.collection,
       });
     const adminEditorAccess =
       !isUnreleased && requesterIsAdminOrEditor(requester);
@@ -700,7 +727,7 @@ export async function getLearningObjectRevisionSummary({
       reviewerCuratorAccess,
       adminEditorAccess,
     ]);
-    return object;
+    return learningObject;
   } catch (e) {
     handleError(e);
   }
@@ -1541,93 +1568,6 @@ function appendFilePreviewUrls(
     });
     return file;
   };
-}
-
-/**
- * getLearningObjectRevision is responsible for
- * returning the revision of a Learning Object.
- * The function starts by checking that the provided
- * request structure is valid. This is done by retrieving
- * the working copy of the Learning Object with the given
- * userId and LEarningObjectId pair. This working copy
- * Learning Object is used to check if the requester has author
- * access. If not, the function will check to see if the requester
- * has admin or editor access.
- *
- * If no errors are thrown, the function will check if a revision
- * exists for the given Learning Object. If yes, then the function
- * will proceed to return the requested Learning Object.
- *
- * The return type of this function will change depending on
- * the summary param. If summary is true, the function will
- * return a LearningObjectSummary type of the revision.
- * If summary is falsy, the function will return a full
- * Learning Object.
- *
- * @param {
- *  userId string
- *  learningObjectId string
- *  dataStore DataStore
- *  requester UserToken
- *  library LibraryCommunicator
- *  summary? boolean
- * }
- */
-export async function getLearningObjectRevision(params: {
-  username: string,
-  learningObjectId: string,
-  dataStore: DataStore,
-  requester: UserToken,
-  library: LibraryCommunicator,
-  revisionId: string,
-  summary?: boolean,
-}): Promise<LearningObject | LearningObjectSummary> {
-  if (parseInt(params.revisionId, 10) === 0) {
-    throw new ResourceError(
-      `Cannot find revision for Learning Object ${params.learningObjectId}`,
-      ResourceErrorReason.NOT_FOUND,
-    );
-  }
-
-  await validateRequest({
-    username: params.username,
-    learningObjectId: params.learningObjectId,
-    dataStore: params.dataStore,
-  });
-
-  if (
-    requesterIsAuthor({
-      authorUsername: params.username,
-      requester: params.requester,
-    }) ||
-    requesterIsAdminOrEditor(params.requester)
-  ) {
-
-    let learningObject: LearningObject | LearningObjectSummary;
-
-    if (toBoolean(params.summary)) {
-      learningObject = await getLearningObjectRevisionSummary({
-        dataStore: params.dataStore,
-        requester: params.requester,
-        id: params.learningObjectId,
-        revision: parseInt(params.revisionId, 10),
-      });
-    } else {
-      learningObject = await getFullLearningObjectRevision({
-        dataStore: params.dataStore,
-        library: params.library,
-        id: params.learningObjectId,
-        requester: params.requester,
-        filter: 'unreleased',
-      });
-    }
-
-    return learningObject;
-  }
-  throw new ResourceError(
-    `User with id ${params.username} does not have access to the revision of Learning Object with id ${params.learningObjectId}`,
-    ResourceErrorReason.FORBIDDEN,
-  );
 }
 
 /**

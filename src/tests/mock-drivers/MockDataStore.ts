@@ -86,10 +86,12 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
     return Promise.resolve(this.stubs.learningObject.materials.files);
   }
 
-  fetchLearningObjectRevisionSummary(params: {
+  fetchLearningObjectRevision(params: {
     id: string;
     revision: number;
-  }): Promise<LearningObjectSummary> {
+    author?: User,
+    summary?: boolean,
+  }): Promise<LearningObject | LearningObjectSummary> {
     return Promise.resolve(
       mapLearningObjectToSummary(this.stubs.learningObject),
     );

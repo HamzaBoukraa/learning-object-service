@@ -334,16 +334,20 @@ export class MongoDriver implements DataStore {
    * If revision 1 of Learning Object exampleId was released, it's latest version will be stored in the released objects collection
    * If revision 1 is still be drafted or is in review, it will only exist in the working objects collection
    *
-   * @returns {Promise<LearningObjectSummary>}
+   * @returns {Promise<LearningObject | LearningObjectSummary>}
    * @memberof MongoDriver
    */
-  async fetchLearningObjectRevisionSummary({
+  async fetchLearningObjectRevision({
     id,
     revision,
+    author,
+    summary,
   }: {
     id: string;
     revision: number;
-  }): Promise<LearningObjectSummary> {
+    author?: User;
+    summary?: boolean;
+  }): Promise<LearningObject | LearningObjectSummary> {
     const doc =
       (await this.db
         .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
@@ -352,7 +356,10 @@ export class MongoDriver implements DataStore {
         .collection(COLLECTIONS.LEARNING_OBJECTS)
         .findOne({ _id: id, revision }));
     if (doc) {
-      return this.generateLearningObjectSummary(doc);
+      if (summary) {
+        return this.generateLearningObjectSummary(doc);
+      }
+      return this.generateLearningObject(author, doc);
     }
     return null;
   }

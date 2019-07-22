@@ -93,10 +93,12 @@ export interface DataStore
    * @returns {Promise<LearningObjectSummary>}
    * @memberof DataStore
    */
-  fetchLearningObjectRevisionSummary(params: {
+  fetchLearningObjectRevision(params: {
     id: string;
     revision: number;
-  }): Promise<LearningObjectSummary>;
+    author?: User,
+    summary?: boolean,
+  }): Promise<LearningObject | LearningObjectSummary>;
   getUserObjects(username: string): Promise<string[]>;
   findLearningObject(params: {
     authorId: string;
