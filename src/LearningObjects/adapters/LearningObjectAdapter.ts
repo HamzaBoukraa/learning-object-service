@@ -157,19 +157,19 @@ export class LearningObjectAdapter {
     requester,
     learningObjectId,
     revisionId,
-    authorUsername,
+    username,
   }: {
     requester: UserToken;
     learningObjectId: string;
     revisionId: number;
-    authorUsername: string;
+    username: string;
   }): Promise<LearningObjectSummary> {
     return getLearningObjectRevision({
       dataStore: this.dataStore,
       requester,
       learningObjectId,
       revisionId,
-      authorUsername,
+      username,
       summary: true,
     });
   }

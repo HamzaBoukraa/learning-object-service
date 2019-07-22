@@ -6,6 +6,7 @@ import { UserToken, UserLearningObjectQuery } from '../../shared/types';
 import * as LearningObjectInteractor from '../LearningObjectInteractor';
 import { LearningObject } from '../../shared/entity';
 import { MaterialsFilter, LearningObjectFilter } from '../typings';
+import { toBoolean } from '../../shared/functions';
 
 /**
  * Initializes an express router with endpoints for public Retrieving
@@ -249,13 +250,19 @@ export function initializePrivate({
     try {
       const params = {
         ...req.params,
+        revisionId: parseInt(req.params.revisionId, 10),
         dataStore,
         library,
         requester: req.user,
-        summary: req.query.summary,
+        summary: toBoolean(req.query.summary),
       };
       const learningObjectRevision = await LearningObjectInteractor.getLearningObjectRevision(params);
-      res.status(200).json(learningObjectRevision);
+      if (params.summary) {
+        res.status(200).json(learningObjectRevision);
+      } else {
+        const object = learningObjectRevision as LearningObject;
+        res.status(200).json(object.toPlainObject());
+      }
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
       res.status(code).json({ message });

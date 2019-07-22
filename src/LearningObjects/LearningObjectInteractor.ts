@@ -663,14 +663,14 @@ export async function getLearningObjectRevision({
   requester,
   learningObjectId,
   revisionId,
-  authorUsername,
+  username,
   summary,
 }: {
   dataStore: DataStore;
   requester: UserToken;
   learningObjectId: string;
   revisionId: number;
-  authorUsername: string;
+  username: string;
   summary?: boolean,
 }): Promise<LearningObject | LearningObjectSummary> {
   try {
@@ -681,7 +681,7 @@ export async function getLearningObjectRevision({
       );
     }
     await validateRequest({
-      username: authorUsername,
+      username: username,
       learningObjectId: learningObjectId,
       dataStore: dataStore,
     });
@@ -689,8 +689,8 @@ export async function getLearningObjectRevision({
     let learningObject: LearningObject | LearningObjectSummary;
     let author: User;
 
-    if (summary) {
-      author = await Gateways.user().getUser(authorUsername);
+    if (!summary) {
+      author = await Gateways.user().getUser(username);
     }
     learningObject = await dataStore.fetchLearningObjectRevision({
       id: learningObjectId,
