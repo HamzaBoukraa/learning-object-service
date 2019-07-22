@@ -56,6 +56,8 @@ namespace Gateways {
     LearningObjectsModule.resolveDependency(FileManagerGateway);
   export const fileMetadata = () =>
     LearningObjectsModule.resolveDependency(FileMetadataGateway);
+  export const user = () =>
+    LearningObjectsModule.resolveDependency(UserGateway);
 }
 
 /**
@@ -663,14 +665,12 @@ export async function getLearningObjectRevision({
   revisionId,
   authorUsername,
   summary,
-  userGateway,
 }: {
   dataStore: DataStore;
   requester: UserToken;
   learningObjectId: string;
   revisionId: number;
   authorUsername: string;
-  userGateway: UserGateway;
   summary?: boolean,
 }): Promise<LearningObject | LearningObjectSummary> {
   try {
@@ -690,7 +690,7 @@ export async function getLearningObjectRevision({
     let author: User;
 
     if (summary) {
-      author = await userGateway.getUser(authorUsername);
+      author = await Gateways.user().getUser(authorUsername);
     }
     learningObject = await dataStore.fetchLearningObjectRevision({
       id: learningObjectId,

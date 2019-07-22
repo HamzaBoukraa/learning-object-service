@@ -7,7 +7,7 @@ import {
   updateReadme,
   getLearningObjectById,
   updateLearningObject,
-  getLearningObjectRevisionSummary,
+  getLearningObjectRevision,
   getWorkingLearningObjectSummary,
   getActiveLearningObjectSummary,
   getReleasedFile,
@@ -153,7 +153,7 @@ export class LearningObjectAdapter {
    * @returns {Promise<LearningObjectSummary>}
    * @memberof LearningObjectAdapter
    */
-  async getLearningObjectRevisionSummary({
+  async getLearningObjectRevision({
     requester,
     learningObjectId,
     revisionId,
@@ -164,7 +164,7 @@ export class LearningObjectAdapter {
     revisionId: number;
     authorUsername: string;
   }): Promise<LearningObjectSummary> {
-    return getLearningObjectRevisionSummary({
+    return getLearningObjectRevision({
       dataStore: this.dataStore,
       requester,
       learningObjectId,
