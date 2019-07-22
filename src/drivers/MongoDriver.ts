@@ -333,7 +333,10 @@ export class MongoDriver implements DataStore {
    * `id`='exampleId', `revision`=1
    * If revision 1 of Learning Object exampleId was released, it's latest version will be stored in the released objects collection
    * If revision 1 is still be drafted or is in review, it will only exist in the working objects collection
-   *
+   * @param {string} id [Id of the Learning Object]
+   * @param {number} revision [Revision number of the Learning Object]
+   * @param {User} author [User object of Learning Object author]
+   * @param {boolean} summary [Boolean indicating whether or not to return a LearningObject or LearningObjectSummary]
    * @returns {Promise<LearningObject | LearningObjectSummary>}
    * @memberof MongoDriver
    */

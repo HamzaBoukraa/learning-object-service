@@ -654,9 +654,11 @@ export async function getActiveLearningObjectSummary({
  * @export
  * @param {DataStore} dataStore [Driver for datastore]
  * @param {UserToken} requester [Object containing information about the requester]
- * @param {string} id [Id of the Learning Object]
- * @param {number} revision [Revision number of the Learning Object]
- * @returns {Promise<LearningObjectSummary>}
+ * @param {string} learningObjectId [Id of the Learning Object]
+ * @param {number} revisionId [Revision number of the Learning Object]
+ * @param {string} username [Username of the Learning Object author]
+ * @param {boolean} summary [Boolean indicating whether or not to return a LearningObject or LearningObjectSummary]
+ * @returns {Promise<LearningObject | LearningObjectSummary>}
  */
 export async function getLearningObjectRevision({
   dataStore,

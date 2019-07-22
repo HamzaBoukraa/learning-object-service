@@ -11,8 +11,8 @@ export class ModuleUserGateway implements UserGateway {
     };
 
   /**
-   * Removes learning object ids from all carts that reference them
-   * @param ids Array of string ids
+   * @inheritdoc
+   * @param {string} username username of the user to retrieve
    */
   async getUser(username: string): Promise<User> {
     const options = { ...this.options };
