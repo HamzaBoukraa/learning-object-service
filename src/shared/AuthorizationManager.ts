@@ -374,6 +374,9 @@ export function authorizeReadAccess({
  * If the Learning Object is unreleased, only the author has write access to the Learning Object
  * If the Learning Object is in review, only admins/editors have write access to the Learning Object
  *
+ * FIXME: This function should not allow authors to write to Learning Objects that are submitted (`waiting`, `review`, `proofing`)
+ * as of now it allows authors to write to Learning Objects that are in `waiting`
+ *
  * @param {LearningObjectSummary} learningObject [Information about the Learning Object to authorize request]
  * @param {UserToken} requester [Information about the requester]
  */
