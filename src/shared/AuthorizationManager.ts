@@ -10,7 +10,6 @@ import { DataStore } from './interfaces/DataStore';
 import { ResourceError, ResourceErrorReason } from './errors';
 import { LearningObject } from './entity';
 
-
 const PRIVILEGED_GROUPS = [
   AccessGroup.ADMIN,
   AccessGroup.EDITOR,
@@ -374,6 +373,9 @@ export function authorizeReadAccess({
  * If the Learning Object is unreleased, only the author has write access to the Learning Object
  * If the Learning Object is in review, only admins/editors have write access to the Learning Object
  *
+ * FIXME: This function should not allow authors to write to Learning Objects that are submitted (`waiting`, `review`, `proofing`)
+ * as of now it allows authors to write to Learning Objects that are in `waiting`
+ *
  * @param {LearningObjectSummary} learningObject [Information about the Learning Object to authorize request]
  * @param {UserToken} requester [Information about the requester]
  */
@@ -386,15 +388,14 @@ export function authorizeWriteAccess({
   requester: UserToken;
   message?: string;
 }) {
-  const isUnreleased =
-    LearningObjectState.UNRELEASED.includes(
-      learningObject.status as LearningObject.Status,
-    ) || learningObject.status === LearningObject.Status.WAITING;
+  const isUnreleased = LearningObjectState.UNRELEASED.includes(
+    learningObject.status as LearningObject.Status,
+  );
   const isAuthor = requesterIsAuthor({
     authorUsername: learningObject.author.username,
     requester,
   });
-  const authorAccess = isAuthor && isUnreleased;
+  const authorAccess = isAuthor && (isUnreleased || learningObject.status === LearningObject.Status.WAITING);
   const isReleased = learningObject.status === LearningObject.Status.RELEASED;
   const isAdminOrEditor = requesterIsAdminOrEditor(requester);
   const adminEditorAccess = isAdminOrEditor && !isUnreleased && !isReleased;
