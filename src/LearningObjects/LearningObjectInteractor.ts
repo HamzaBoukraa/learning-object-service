@@ -678,7 +678,7 @@ export async function getLearningObjectRevision({
   try {
     if (revisionId === 0) {
       throw new ResourceError(
-        `Cannot find revision for Learning Object ${learningObjectId}`,
+        `Cannot find revision ${revisionId} for Learning Object ${learningObjectId}`,
         ResourceErrorReason.NOT_FOUND,
       );
     }
