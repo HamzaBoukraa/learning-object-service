@@ -3,7 +3,7 @@ import * as Interactor from '../Interactor';
 import { Requester } from '../typings';
 import { mapErrorToResponseData } from '../../shared/errors';
 import { LearningObjectQuery } from '../../shared/interfaces/DataStore';
-import { requesterIsAdmin } from '../../shared/AuthorizationManager';
+import { requesterIsAdminOrEditor } from '../../shared/AuthorizationManager';
 
 const ALLOW_ELASTICSEARCH_TEST_TRAFFIC =
   process.env.ALLOW_ELASTICSEARCH_TEST_TRAFFIC === 'true';
@@ -50,5 +50,5 @@ async function searchObjects(req: Request, res: Response, next: NextFunction) {
  * @returns {boolean}
  */
 function allowTraffic(requester: Requester): boolean {
-  return ALLOW_ELASTICSEARCH_TEST_TRAFFIC || requesterIsAdmin(requester);
+  return ALLOW_ELASTICSEARCH_TEST_TRAFFIC || requesterIsAdminOrEditor(requester);
 }
