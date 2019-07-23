@@ -2,7 +2,7 @@ import { Request, Response, Router } from 'express';
 import { mapErrorToResponseData } from '../../shared/errors';
 import { DataStore } from '../../shared/interfaces/DataStore';
 import { LibraryCommunicator } from '../../shared/interfaces/interfaces';
-import { UserToken, UserLearningObjectQuery } from '../../shared/types';
+import { UserToken, UserLearningObjectQuery, LearningObjectSummary } from '../../shared/types';
 import * as LearningObjectInteractor from '../LearningObjectInteractor';
 import { LearningObject } from '../../shared/entity';
 import { MaterialsFilter, LearningObjectFilter } from '../typings';
@@ -256,13 +256,12 @@ export function initializePrivate({
         requester: req.user,
         summary: toBoolean(req.query.summary),
       };
-      const learningObjectRevision = await LearningObjectInteractor.getLearningObjectRevision(params);
-      if (params.summary) {
-        res.status(200).json(learningObjectRevision);
-      } else {
-        const object = learningObjectRevision as LearningObject;
-        res.status(200).json(object.toPlainObject());
+      let learningObjectRevision: LearningObject | LearningObjectSummary | Partial<LearningObject>;
+      learningObjectRevision = await LearningObjectInteractor.getLearningObjectRevision(params);
+      if (learningObjectRevision instanceof LearningObject) {
+        learningObjectRevision = learningObjectRevision.toPlainObject();
       }
+      res.status(200).json(learningObjectRevision);
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
       res.status(code).json({ message });
