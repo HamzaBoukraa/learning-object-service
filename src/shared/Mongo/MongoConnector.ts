@@ -1,6 +1,4 @@
-import { MongoClient, Db } from 'mongodb';
-import { reportError } from '../SentryConnector';
-import { ServiceError, ServiceErrorReason } from '../errors';
+import { MongoClient } from 'mongodb';
 
 export class MongoConnector {
   private static mongoClient: MongoClient;
@@ -11,22 +9,11 @@ export class MongoConnector {
    * @param dburi the URI of the MongoDB instance to connect to.
    */
   static async open(dburi: string): Promise<void> {
-    try {
-      if (!MongoConnector.mongoClient) {
-        const driver = new MongoConnector();
-        await driver.connect(dburi);
-      } else {
-        return Promise.reject(
-          new Error('There can be only one MongoClient'),
-        );
-      }
-    } catch (error) {
-      reportError(error);
-      return Promise.reject(
-        new ServiceError(
-          ServiceErrorReason.INTERNAL,
-        ),
-      );
+    if (!MongoConnector.mongoClient) {
+      const driver = new MongoConnector();
+      await driver.connect(dburi);
+    } else {
+      throw new Error('There can be only one MongoClient');
     }
   }
 
@@ -41,14 +28,10 @@ export class MongoConnector {
    * Connect to the database. Must be called before any other functions.
    * @param {string} dbURI the host and port on which mongodb is running
    */
-  private async connect(dbURI: string, retryAttempt?: number): Promise<void> {
-    try {
-      MongoConnector.mongoClient = await new MongoClient(dbURI, { reconnectTries: 1 }).connect();
-    } catch (e) {
-      return Promise.reject(
-        'Problem connecting to database at ' + dbURI + ':\n\t' + e,
-      );
-    }
+  private async connect(dbURI: string): Promise<void> {
+    MongoConnector.mongoClient = await new MongoClient(dbURI, {
+      useNewUrlParser: true,
+    }).connect();
   }
 
   /**
