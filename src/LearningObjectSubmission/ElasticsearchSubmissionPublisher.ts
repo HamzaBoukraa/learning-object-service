@@ -48,6 +48,41 @@ export class ElasticsearchSubmissionPublisher implements SubmissionPublisher {
 
   /**
    * @description
+   * In the case that an update does fail, an error will be reported for us to fix retrospectively.
+   * Until that is done, the searchable submissions will be out of date with the Learning Object data
+   * in storage.
+   * @inheritdoc
+   */
+  async updateSubmission(params: {
+    learningObjectId: string;
+    updates: Partial<LearningObject>;
+  }) {
+    const { learningObjectId, updates } = params;
+    let updateField = Object.keys(updates);
+    let updateValue = Object.values(updates);
+    let learningObjectUpdateRequest = {
+      query: {
+        term: {
+          value: learningObjectId,
+        },
+      },
+      script: {
+        source: `ctx._source.${updateField} = \"${updateValue}\"`,
+      },
+    };
+    try {
+      await this.client.updateByQuery({
+        index: INDEX_NAME,
+        type: '_doc',
+        body: learningObjectUpdateRequest,
+      });
+    } catch (e) {
+      reportError(e);
+    }
+  }
+
+  /**
+   * @description
    * In the case that the delete operation fails, an error will be reported for us to
    * retrospectively fix, but the author requesting the withdrawl will be able to complete
    * the action on their end.
@@ -67,9 +102,9 @@ export class ElasticsearchSubmissionPublisher implements SubmissionPublisher {
                 {
                   bool: {
                     should: [
-                      { term: { status: LearningObject.Status.WAITING }},
-                      { term: { status: LearningObject.Status.PROOFING }},
-                      { term: { status: LearningObject.Status.REVIEW }},
+                      { term: { status: LearningObject.Status.WAITING } },
+                      { term: { status: LearningObject.Status.PROOFING } },
+                      { term: { status: LearningObject.Status.REVIEW } },
                     ],
                   },
                 },

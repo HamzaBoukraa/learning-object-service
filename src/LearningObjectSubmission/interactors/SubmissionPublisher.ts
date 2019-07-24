@@ -7,6 +7,15 @@ export interface SubmissionPublisher {
    */
   publishSubmission(submission: LearningObject): Promise<void>;
   /**
+   * updateSubmission modifies a published submission to make changes searchable by
+   * reviewers, curators, editors, and admins.
+   */
+  updateSubmission(
+    params: {
+      learningObjectId: string,
+      updates: Partial<LearningObject>,
+  }): Promise<void>;
+  /**
    * deleteSubmission removes a submitted Learning Object from access by
    * reviewers, curators, editors, or admins.
    *
