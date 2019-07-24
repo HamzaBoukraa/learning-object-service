@@ -92,8 +92,13 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
     author?: User,
     summary?: boolean,
   }): Promise<LearningObject | LearningObjectSummary> {
+    if (params.summary) {
+      return Promise.resolve(
+        mapLearningObjectToSummary(this.stubs.learningObject),
+      );
+    }
     return Promise.resolve(
-      mapLearningObjectToSummary(this.stubs.learningObject),
+      this.stubs.learningObject,
     );
   }
 
