@@ -28,6 +28,7 @@ import {
   getAccessGroupCollections,
   getCollectionAccessMap,
   getAuthorizedStatuses,
+  requesterIsEditor,
 } from '../shared/AuthorizationManager';
 import { FileMeta, LearningObjectFilter, MaterialsFilter } from './typings';
 import * as PublishingService from './Publishing';
@@ -45,6 +46,7 @@ import {
   ReadMeBuilder,
 } from './interfaces';
 import { LearningObjectsModule } from './LearningObjectsModule';
+import { LearningObjectSubmissionAdapter } from '../LearningObjectSubmission/adapters/LearningObjectSubmissionAdapter';
 
 namespace Drivers {
   export const readMeBuilder = () =>
@@ -853,6 +855,7 @@ export async function updateLearningObject({
   updates: Partial<LearningObject>;
 }): Promise<void> {
   try {
+    const isEditor = requesterIsEditor(requester);
     if (updates.name) {
       await checkNameExists({
         id,
@@ -865,6 +868,7 @@ export async function updateLearningObject({
       id,
       full: false,
     });
+    const isInReview = LearningObjectState.IN_REVIEW.includes(learningObject.status);
     authorizeWriteAccess({
       learningObject,
       requester,
@@ -882,6 +886,13 @@ export async function updateLearningObject({
       id,
       updates: cleanUpdates,
     });
+
+    if (isInReview) {
+      LearningObjectSubmissionAdapter
+        .getInstance()
+        .updateLearningObjectSubmission({learningObjectId: id, updates, user: requester});
+    }
+
     // Infer if this Learning Object is being released
     if (cleanUpdates.status === LearningObject.Status.RELEASED) {
       const releasableObject = await generateReleasableLearningObject({
