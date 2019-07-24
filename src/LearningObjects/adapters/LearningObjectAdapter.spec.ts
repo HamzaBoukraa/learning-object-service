@@ -14,7 +14,9 @@ const stubs = new Stubs();
 
 describe('getLearningObjectRevision function', () => {
     beforeAll(() => {
-        LearningObjectsModule.providers = [{ provide: UserGateway, useClass: StubUserGateway }];
+        LearningObjectsModule.providers = [
+            { provide: UserGateway, useClass: StubUserGateway },
+        ];
         LearningObjectsModule.initialize();
         LearningObjectAdapter.open(dataStore, library);
     });
