@@ -641,6 +641,7 @@ function transformFileMetaToLearningObjectFile({
     size: file.size,
     description: file.description,
     packageable: file.packageable,
+    storageRevision: file.storageRevision,
   };
 }
 

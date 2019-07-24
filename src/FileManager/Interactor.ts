@@ -233,14 +233,14 @@ export async function downloadSingleFile({
     await Drivers.fileManager().hasAccess({
       authorUsername: author,
       learningObjectId,
-      learningObjectRevisionId: learningObject.revision,
+      learningObjectRevisionId: fileMetaData.storageRevision,
       path: fileMetaData.fullPath || fileMetaData.name,
     })
   ) {
     const stream = await Drivers.fileManager().streamFile({
       authorUsername: author,
       learningObjectId,
-      learningObjectRevisionId: learningObject.revision,
+      learningObjectRevisionId: fileMetaData.storageRevision,
       path: fileMetaData.fullPath || fileMetaData.name,
     });
     return { mimeType, stream, filename: fileMetaData.name };
