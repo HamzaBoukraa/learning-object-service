@@ -9,6 +9,7 @@ import { reportError } from '../../shared/SentryConnector';
 import { LearningObjectsModule } from '../LearningObjectsModule';
 import { FileManagerGateway } from './FileManagerGateway';
 import { FileManagerGateway as FileManagerInjectionKey } from '../interfaces/FileManagerGateway';
+import { LearningObjectSubmissionGateway } from './LearningObjectSubmissionGateway';
 
 // FIXME: The Publishing Module was setup as a sub-module of LearningObjectsModule,
 // should it be able to resolve dependencies from the parent LearningObjectsModule or should it declare its own dependencies?
@@ -37,21 +38,30 @@ export interface PublishingDataStore {
  * Learning Object being released is a top-level (parent) object.
  */
 export async function releaseLearningObject({
+  authorUsername,
   userToken,
   dataStore,
   releasableObject,
   releaseEmailGateway,
+  learningObjectSubmissionGateway,
 }: {
+  authorUsername: string;
   userToken: UserToken;
   dataStore: PublishingDataStore;
   releasableObject: LearningObject;
   releaseEmailGateway: ReleaseEmailGateway;
+  learningObjectSubmissionGateway: LearningObjectSubmissionGateway;
 }): Promise<void> {
     if (!requesterIsAdminOrEditor(userToken)) {
         throw new ResourceError(`${userToken.username} does not have access to release this Learning Object`, ResourceErrorReason.INVALID_ACCESS);
     }
     await createPublishingArtifacts(releasableObject).catch(reportError);
     await dataStore.addToReleased(releasableObject);
+    await learningObjectSubmissionGateway.deleteSubmission({
+      learningObjectId: releasableObject.id,
+      authorUsername,
+      user: userToken,
+    });
     await sendEmail(releasableObject, userToken, releaseEmailGateway);
 }
 

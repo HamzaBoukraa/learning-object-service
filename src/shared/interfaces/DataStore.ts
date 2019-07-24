@@ -1,5 +1,4 @@
 import {
-  LearningObjectUpdates,
   LearningObjectSummary,
   CollectionAccessMap,
   ReleasedUserLearningObjectSearchQuery,
@@ -9,6 +8,7 @@ import { LearningObjectStatDatastore } from '../../LearningObjectStats/LearningO
 import { CollectionDataStore } from '../../Collections/CollectionDataStore';
 import { ChangeLogDocument } from '../types/changelog';
 import { LearningObject, User, Collection } from '../entity';
+import { LearningObjectUpdates } from '../types/learning-object-updates';
 
 export interface DataStore
   extends LearningOutcomeDatastore,
@@ -43,7 +43,13 @@ export interface DataStore
   fetchRecentChangelog(params: {
     learningObjectId: string;
   }): Promise<ChangeLogDocument>;
-  deleteChangelog(params: { learningObjectId: string }): Promise<void>;
+  fetchRecentChangelogBeforeDate(params: {
+    learningObjectId: string,
+    date: string,
+  }): Promise<ChangeLogDocument>;
+  deleteChangelog(params: {
+    learningObjectId: string,
+  }): Promise<void>;
   /*
    * READ Operations
    */
@@ -173,6 +179,19 @@ export interface DataStore
     id: string;
     full?: boolean;
     status: string[];
+  }): Promise<LearningObject[]>;
+
+  /**
+   * Loads released child Learning Objects for a working parent Learning Object
+   *
+   * @param {string} id [The id of the working parent Learning Object]
+   * @param {boolean} full [Whether or not to load the full children Learning Objects]
+   *
+   * @returns {Promise<LearningObject[]>}
+   */
+  loadWorkingParentsReleasedChildObjects(params: {
+    id: string;
+    full?: boolean;
   }): Promise<LearningObject[]>;
   loadReleasedChildObjects(params: {
     id: string;

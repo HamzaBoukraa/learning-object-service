@@ -5,7 +5,6 @@ import {
   ParentLearningObjectQuery,
 } from '../../shared/interfaces/DataStore';
 import {
-  LearningObjectUpdates,
   LearningObjectSummary,
   ReleasedUserLearningObjectSearchQuery,
   CollectionAccessMap,
@@ -26,9 +25,13 @@ import { Submission } from '../../LearningObjectSubmission/types/Submission';
 import { SubmissionDataStore } from '../../LearningObjectSubmission/SubmissionDatastore';
 import { Stubs } from '../stubs';
 import { mapLearningObjectToSummary } from '../../shared/functions';
+import { StubChangelogDatastore } from '../../Changelogs/testing/StubChangelogDatastore';
+import { STUB_CHANGELOG_IDS } from '../../Changelogs/testing/ChangelogStubs';
+import { LearningObjectUpdates } from '../../shared/types/learning-object-updates';
 
 export class MockDataStore implements DataStore, SubmissionDataStore {
   stubs = new Stubs();
+  stubChangelogDataStore = new StubChangelogDatastore();
 
   connect(file: string): Promise<void> {
     return Promise.resolve();
@@ -36,6 +39,16 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
 
   disconnect(): void {
     return;
+  }
+
+  loadWorkingParentsReleasedChildObjects(params: {
+    id: string;
+    full?: boolean;
+  }): Promise<LearningObject[]> {
+    if (params.id !== this.stubs.learningObjectChild.id) {
+      return Promise.resolve([this.stubs.learningObjectChild]);
+    }
+    return Promise.resolve([]);
   }
 
   searchReleasedUserObjects(
@@ -120,7 +133,10 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
     id: string;
     full?: boolean;
   }): Promise<LearningObject[]> {
-    return Promise.resolve([this.stubs.learningObjectChild as any]);
+    if (params.id !== this.stubs.learningObjectChild.id) {
+      return Promise.resolve([this.stubs.learningObjectChild]);
+    }
+    return Promise.resolve([]);
   }
 
   addToReleased(object: LearningObject): Promise<void> {
@@ -133,28 +149,63 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
   fetchLearningObjectCollection(id: string): Promise<string> {
     return Promise.resolve(this.stubs.learningObject.collection);
   }
-  checkLearningObjectExistence(params: {
+
+  async checkLearningObjectExistence(params: {
     learningObjectId: string;
     userId: string;
   }): Promise<any> {
-    return Promise.resolve(this.stubs.learningObject);
+    switch (params.learningObjectId) {
+      case STUB_CHANGELOG_IDS.RELEASED_NO_REVISIONS:
+        return {
+          ...this.stubs.learningObject,
+          status: LearningObject.Status.RELEASED,
+          revision: 0,
+        };
+      case STUB_CHANGELOG_IDS.NOT_RELEASED:
+        return {
+          ...this.stubs.learningObject,
+          status: LearningObject.Status.WAITING,
+          revision: 0,
+        };
+      case STUB_CHANGELOG_IDS.MINUS_REVISION:
+        return {
+          ...this.stubs.learningObject,
+          revision: 1,
+        };
+      case STUB_CHANGELOG_IDS.PLUS_REVISION:
+        return {
+          ...this.stubs.learningObject,
+          revision: 1,
+        };
+      default:
+        return this.stubs.learningObject;
+    }
   }
 
-  deleteChangelog(params: { learningObjectId: string }): Promise<void> {
-    return Promise.resolve();
+  deleteChangelog(params: {
+    learningObjectId: string,
+  }): Promise<void> {
+    return this.stubChangelogDataStore.deleteChangelog(params);
   }
 
   fetchAllChangelogs(params: {
     learningObjectId: string;
   }): Promise<ChangeLogDocument[]> {
-    return Promise.resolve([this.stubs.changelog]);
+   return this.stubChangelogDataStore.fetchAllChangelogs(params);
   }
 
   fetchChangelogsBeforeDate(params: {
     learningObjectId: string;
     date: string;
   }): Promise<ChangeLogDocument[]> {
-    return Promise.resolve([this.stubs.changelog]);
+    return this.stubChangelogDataStore.fetchChangelogsBeforeDate(params);
+  }
+
+  fetchRecentChangelogBeforeDate(params: {
+    learningObjectId: string;
+    date: string;
+  }): Promise<ChangeLogDocument> {
+    return this.stubChangelogDataStore.fetchRecentChangelogBeforeDate(params);
   }
 
   searchAllObjects(

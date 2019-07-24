@@ -10,7 +10,7 @@ import {
 } from '../shared/interfaces/DataStore';
 import * as ObjectMapper from './Mongo/ObjectMapper';
 import {
-  LearningObjectUpdates,
+  LearningObjectMetadataUpdates,
   LearningObjectDocument,
   UserDocument,
   LearningOutcomeDocument,
@@ -30,7 +30,7 @@ import { LearningObjectStats } from '../LearningObjectStats/LearningObjectStatsI
 import { lengths } from '@cyber4all/clark-taxonomy';
 import { LearningObjectDataStore } from '../LearningObjects/drivers/LearningObjectDatastore';
 import { ChangeLogDocument } from '../shared/types/changelog';
-import { ChangelogDataStore } from '../Changelogs/ChangelogDatastore';
+import { ModuleChangelogDataStore } from '../Changelogs/ModuleChangelogDatastore';
 import {
   ResourceError,
   ResourceErrorReason,
@@ -38,17 +38,14 @@ import {
   ServiceErrorReason,
 } from '../shared/errors';
 import { reportError } from '../shared/SentryConnector';
-import {
-  LearningObject,
-  LearningOutcome,
-  User,
-} from '../shared/entity';
+import { LearningObject, LearningOutcome, User } from '../shared/entity';
 import { MongoConnector } from '../shared/Mongo/MongoConnector';
 import { mapLearningObjectToSummary } from '../shared/functions';
 import {
   ReleasedLearningObjectDocument,
   OutcomeDocument,
 } from '../shared/types/learning-object-document';
+import { LearningObjectUpdates } from '../shared/types/learning-object-updates';
 
 export enum COLLECTIONS {
   USERS = 'users',
@@ -58,7 +55,7 @@ export enum COLLECTIONS {
   STANDARD_OUTCOMES = 'outcomes',
   LO_COLLECTIONS = 'collections',
   MULTIPART_STATUSES = 'multipart-upload-statuses',
-  CHANGLOG = 'changelogs',
+  CHANGELOG = 'changelogs',
   SUBMISSIONS = 'submissions',
 }
 
@@ -66,7 +63,7 @@ export class MongoDriver implements DataStore {
   learningOutcomeStore: LearningOutcomeMongoDatastore;
   statStore: LearningObjectStatStore;
   learningObjectStore: LearningObjectDataStore;
-  changelogStore: ChangelogDataStore;
+  changelogStore: ModuleChangelogDataStore;
 
   private mongoClient: MongoClient;
   private db: Db;
@@ -99,7 +96,7 @@ export class MongoDriver implements DataStore {
     this.learningOutcomeStore = new LearningOutcomeMongoDatastore(this.db);
     this.statStore = new LearningObjectStatStore(this.db);
     this.learningObjectStore = new LearningObjectDataStore(this.db);
-    this.changelogStore = new ChangelogDataStore(this.db);
+    this.changelogStore = new ModuleChangelogDataStore(this.db);
   }
 
   /**
@@ -451,10 +448,12 @@ export class MongoDriver implements DataStore {
     // Query for users
     const authors = await this.matchUsers(author, text);
     // Query by LearningOutcomes' mappings
-    const outcomeIDs: string[] = await this.matchOutcomesByGuidelines({
-      guidelineIds: standardOutcomeIDs,
-      guidelineSources: guidelines,
-    });
+    const learningObjectIds: string[] = await this.matchLearningObjectsByGuidelines(
+      {
+        guidelineIds: standardOutcomeIDs,
+        guidelineSources: guidelines,
+      },
+    );
 
     const searchQuery = this.buildSearchQuery({
       name,
@@ -463,7 +462,7 @@ export class MongoDriver implements DataStore {
       length,
       level,
       text,
-      outcomeIDs,
+      learningObjectIds,
       status,
     });
 
@@ -748,14 +747,14 @@ export class MongoDriver implements DataStore {
    *
    * @param {{
    *     ids: string[];
-   *     updates: LearningObjectUpdates;
+   *     updates: LearningObjectMetadataUpdates;
    *   }} params
    * @returns {Promise<void>}
    * @memberof MongoDriver
    */
   async updateMultipleLearningObjects(params: {
     ids: string[];
-    updates: LearningObjectUpdates;
+    updates: LearningObjectMetadataUpdates;
   }): Promise<void> {
     await this.db
       .collection(COLLECTIONS.LEARNING_OBJECTS)
@@ -895,6 +894,51 @@ export class MongoDriver implements DataStore {
     });
   }
 
+  /**
+   * @inheritdoc
+   *
+   * Performs lookup on released objects collection to fetch all metadata for all child Learning Objects that belong to a
+   * working parent Learning Object
+   *
+   * @param {string} id [The id of the working parent Learning Object]
+   * @param {boolean} full [Whether or not to load the full children Learning Objects]
+   *
+   * @returns {Promise<LearningObject[]>}
+   * @memberof MongoDriver
+   */
+  async loadWorkingParentsReleasedChildObjects({
+    id,
+    full,
+  }: {
+    id: string;
+    full?: boolean;
+  }): Promise<LearningObject[]> {
+    const docs = await this.db
+      .collection<{ objects: LearningObjectDocument[] }>(
+        COLLECTIONS.LEARNING_OBJECTS,
+      )
+      .aggregate([
+        { $match: { _id: id } },
+        {
+          // grab the released children of learning objects
+          $lookup: {
+            from: COLLECTIONS.RELEASED_LEARNING_OBJECTS,
+            localField: 'children',
+            foreignField: '_id',
+            as: 'objects',
+          },
+        },
+        // only return children.
+        { $project: { _id: 0, objects: '$objects' } },
+      ])
+      .toArray();
+    if (docs[0]) {
+      const objects = docs[0].objects;
+      return this.bulkGenerateLearningObjects(objects, full);
+    }
+    return [];
+  }
+
   async getLearningObjectMaterials(params: {
     id: string;
   }): Promise<LearningObject.Material> {
@@ -993,6 +1037,13 @@ export class MongoDriver implements DataStore {
       learningObjectId: params.learningObjectId,
       date: params.date,
     });
+  }
+
+  fetchRecentChangelogBeforeDate(params: {
+    learningObjectId: string;
+    date: string;
+  }): Promise<ChangeLogDocument> {
+    return this.changelogStore.fetchRecentChangelogBeforeDate(params);
   }
 
   /**
@@ -1542,6 +1593,7 @@ export class MongoDriver implements DataStore {
             collection: { $first: '$collection' },
             status: { $first: '$status' },
             description: { $first: '$description' },
+            revision: { $first: '$revision' },
           },
         },
       ])
@@ -1607,6 +1659,7 @@ export class MongoDriver implements DataStore {
             collection: { $first: '$collection' },
             status: { $first: '$status' },
             description: { $first: '$description' },
+            revision: { $first: '$revision' },
           },
         },
         // perform a lookup and store the working copy of the object under the "Copy" array.
@@ -1822,20 +1875,23 @@ export class MongoDriver implements DataStore {
       const authors = await this.matchUsers(author, text);
 
       // Query by LearningOutcomes' mappings
-      const outcomeIDs: string[] = await this.matchOutcomesByGuidelines({
-        guidelineIds: standardOutcomeIDs,
-        guidelineSources: guidelines,
-      });
+      const learningObjectIds: string[] = await this.matchLearningObjectsByGuidelines(
+        {
+          guidelineIds: standardOutcomeIDs,
+          guidelineSources: guidelines,
+        },
+      );
 
       let query: any = this.buildSearchQuery({
         text,
         authors,
         length,
         level,
-        outcomeIDs,
+        learningObjectIds,
         name,
         collection,
       });
+      console.log('TCL: query', JSON.stringify(query));
 
       let objectCursor = await this.db
         .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
@@ -1875,8 +1931,7 @@ export class MongoDriver implements DataStore {
    * @param {string[]} authorIDs
    * @param {string[]} length
    * @param {string[]} level
-   * @param {string[]} guidelines
-   * @param {string[]} outcomeIDs
+   * @param {string[]} learningObjectIds
    * @param {string} name
    * @returns
    * @memberof MongoDriver
@@ -1887,8 +1942,7 @@ export class MongoDriver implements DataStore {
     status?: string[];
     length?: string[];
     level?: string[];
-    guidelines?: string[];
-    outcomeIDs?: string[];
+    learningObjectIds?: string[];
     name?: string;
     collection?: string[];
   }) {
@@ -1923,32 +1977,34 @@ export class MongoDriver implements DataStore {
    * @returns
    * @memberof MongoDriver
    */
-  private buildFieldSearchQuery(params: {
+  private buildFieldSearchQuery({
+    query,
+    name,
+    authors,
+    status,
+    length,
+    level,
+    learningObjectIds,
+    collection,
+  }: {
     query: any;
     name?: string;
     authors?: { _id: string; username: string }[];
     status?: string[];
     length?: string[];
     level?: string[];
-    guidelines?: string[];
-    outcomeIDs?: string[];
+    learningObjectIds?: string[];
     collection?: string[];
   }) {
-    const {
-      query,
-      name,
-      authors,
-      status,
-      length,
-      level,
-      guidelines,
-      outcomeIDs,
-      collection,
-    } = params;
     if (name) {
       query.$text = { $search: name };
     }
+    if (Array.isArray(learningObjectIds)) {
+      query.$or = query.$or || [];
+      query.$or.push({ _id: { $in: learningObjectIds } });
+    }
     if (authors) {
+      query.$or = query.$or || [];
       query.$or.push(
         <any>{
           authorID: { $in: authors.map(author => author._id) },
@@ -1968,9 +2024,6 @@ export class MongoDriver implements DataStore {
     if (status) {
       query.status = { $in: status };
     }
-    if (outcomeIDs) {
-      query.outcomes = { $in: outcomeIDs };
-    }
     if (collection) {
       query.collection = { $in: collection };
     }
@@ -1987,36 +2040,38 @@ export class MongoDriver implements DataStore {
    * @param {{ _id: string; username: string }[]} authors
    * @param {string[]} length
    * @param {string[]} level
-   * @param {string[]} outcomeIDs
+   * @param {string[]} learningObjectIds
    * @returns
    * @memberof MongoDriver
    */
-  private buildTextSearchQuery(params: {
+  private buildTextSearchQuery({
+    query,
+    text,
+    authors,
+    status,
+    length,
+    level,
+    learningObjectIds,
+    collection,
+  }: {
     query: any;
     text: string;
     authors?: { _id: string; username: string }[];
     status?: string[];
     length?: string[];
     level?: string[];
-    outcomeIDs?: string[];
+    learningObjectIds?: string[];
     collection?: string[];
   }) {
-    const {
-      query,
-      text,
-      authors,
-      status,
-      length,
-      level,
-      outcomeIDs,
-      collection,
-    } = params;
     const regex = new RegExp(sanitizeRegex(text));
     query.$or = [
       { $text: { $search: text } },
       { name: { $regex: regex } },
       { contributors: { $regex: regex } },
     ];
+    if (Array.isArray(learningObjectIds)) {
+      query.$or.push({ _id: { $in: learningObjectIds } });
+    }
     if (authors && authors.length) {
       query.$or.push(
         <any>{
@@ -2038,11 +2093,6 @@ export class MongoDriver implements DataStore {
     }
     if (collection) {
       query.collection = { $in: collection };
-    }
-    if (outcomeIDs) {
-      query.outcomes = outcomeIDs.length
-        ? { $in: outcomeIDs }
-        : ['DONT MATCH ME'];
     }
     return query;
   }
@@ -2097,15 +2147,16 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Gets Learning Outcome IDs that are mapped to specific Guidelines
+   * Gets Learning Objects IDs that have outcomes mapped to specific guidelines
    * *** Note  to prevent matching when params are undefined, `null` is returned instead of an empty array ***
    *
    * @private
-   * @param {string[]} guidelineIds
-   * @returns {Promise<LearningOutcomeDocument[]>}
+   * @param {string[]} guidelineIds [Ids of the guidelines]
+   * @param {string[]} guidelineSources [Source names of the guidelines]
+   * @returns {Promise<string[]>}
    * @memberof MongoDriver
    */
-  private async matchOutcomesByGuidelines({
+  private async matchLearningObjectsByGuidelines({
     guidelineIds,
     guidelineSources,
   }: {
@@ -2113,7 +2164,7 @@ export class MongoDriver implements DataStore {
     guidelineSources?: string[];
   }): Promise<string[]> {
     if (guidelineSources) {
-      return this.matchOutcomesByGuidelineSource({
+      return this.matchLearningObjectsByGuidelineSource({
         guidelineIds,
         guidelineSources,
       });
@@ -2124,16 +2175,16 @@ export class MongoDriver implements DataStore {
           {
             mappings: { $all: guidelineIds },
           },
-          { projection: { _id: 1 } },
+          { projection: { _id: 0, source: 1 } },
         )
         .toArray();
-      return docs.map(doc => doc._id);
+      return docs.map(doc => doc.source);
     }
     return null;
   }
 
   /**
-   * Retrieves ids for Learning Outcomes that match specified source or specified source and mapping ids
+   * Retrieves ids for Learning Objects that have outcomes mapped to specified source or specified source and guideline ids
    *
    * @private
    * @param {string[]} guidelineIds [List of guideline/mappings ids to be matched]
@@ -2141,7 +2192,7 @@ export class MongoDriver implements DataStore {
    * @returns {Promise<string[]>}
    * @memberof MongoDriver
    */
-  private async matchOutcomesByGuidelineSource({
+  private async matchLearningObjectsByGuidelineSource({
     guidelineIds,
     guidelineSources,
   }: {
@@ -2165,7 +2216,7 @@ export class MongoDriver implements DataStore {
     }
     const results = await this.db
       .collection(COLLECTIONS.STANDARD_OUTCOMES)
-      .aggregate<{ outcomeIds: string[] }>([
+      .aggregate<{ learningObjectIds: string[] }>([
         { $match: { source: { $in: guidelineSources } } },
         {
           $lookup: {
@@ -2174,7 +2225,7 @@ export class MongoDriver implements DataStore {
             pipeline: [
               { $unwind: '$mappings' },
               learningOutcomeMatcher,
-              { $project: { _id: 1 } },
+              { $project: { _id: 0, source: 1 } },
             ],
             as: 'outcomes',
           },
@@ -2183,13 +2234,13 @@ export class MongoDriver implements DataStore {
         {
           $group: {
             _id: 1,
-            outcomeIds: { $addToSet: '$outcomes._id' },
+            learningObjectIds: { $addToSet: '$outcomes.source' },
           },
         },
       ])
       .toArray();
     if (results[0]) {
-      return results[0].outcomeIds;
+      return results[0].learningObjectIds;
     }
     return [];
   }
