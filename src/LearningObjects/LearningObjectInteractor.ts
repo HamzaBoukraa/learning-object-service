@@ -1383,6 +1383,7 @@ export async function updateReadme(params: {
     await Gateways.fileManager().uploadFile({
       authorUsername: object.author.username,
       learningObjectId: object.id,
+      learningObjectRevisionId: object.revision,
       file: { data: pdfFile, path: newPdfName },
     });
     if (oldPDF && oldPDF.name !== newPdfName) {
@@ -1390,6 +1391,7 @@ export async function updateReadme(params: {
         .deleteFile({
           authorUsername: object.author.username,
           learningObjectId: object.id,
+          learningObjectRevisionId: object.revision,
           path: oldPDF.name,
         })
         .catch(reportError);
@@ -1499,10 +1501,10 @@ export async function getMaterials({
  * }
  */
 export async function createLearningObjectRevision(params: {
-  username: string,
-  learningObjectId: string,
-  dataStore: DataStore,
-  requester: UserToken,
+  username: string;
+  learningObjectId: string;
+  dataStore: DataStore;
+  requester: UserToken;
 }): Promise<void> {
   await validateRequest({
     username: params.username,
@@ -1517,7 +1519,9 @@ export async function createLearningObjectRevision(params: {
 
   if (!releasedCopy) {
     throw new ResourceError(
-      `Cannot create a revision of Learning Object: ${params.learningObjectId} since it is not released.`,
+      `Cannot create a revision of Learning Object: ${
+        params.learningObjectId
+      } since it is not released.`,
       ResourceErrorReason.BAD_REQUEST,
     );
   }
@@ -1529,7 +1533,11 @@ export async function createLearningObjectRevision(params: {
     })
   ) {
     throw new ResourceError(
-      `Cannot create a revision. Requester ${params.requester.username} must be the author of Learning Object with id ${params.learningObjectId}`,
+      `Cannot create a revision. Requester ${
+        params.requester.username
+      } must be the author of Learning Object with id ${
+        params.learningObjectId
+      }`,
       ResourceErrorReason.INVALID_ACCESS,
     );
   }
@@ -1545,15 +1553,15 @@ export async function createLearningObjectRevision(params: {
   });
 }
 
- /** Appends file preview urls
-  *
-  * @param {LearningObject} learningObject
-  * @returns {(
-  *   value: LearningObject.Material.File,
-  *   index: number,
-  *   array: LearningObject.Material.File[],
-  * ) => LearningObject.Material.File}
-  */
+/** Appends file preview urls
+ *
+ * @param {LearningObject} learningObject
+ * @returns {(
+ *   value: LearningObject.Material.File,
+ *   index: number,
+ *   array: LearningObject.Material.File[],
+ * ) => LearningObject.Material.File}
+ */
 function appendFilePreviewUrls(
   learningObject: LearningObject,
 ): (
@@ -1600,9 +1608,9 @@ function sanitizeUpdates(
  * @param params
  */
 async function validateRequest(params: {
-  username: string,
-  learningObjectId: string,
-  dataStore: DataStore,
+  username: string;
+  learningObjectId: string;
+  dataStore: DataStore;
 }): Promise<void> {
   const learningObject = await params.dataStore.fetchLearningObject({
     id: params.learningObjectId,
@@ -1617,7 +1625,9 @@ async function validateRequest(params: {
 
   if (learningObject.author.username !== params.username) {
     throw new ResourceError(
-      `User ${params.username} does not own a Learning Object with id ${params.learningObjectId}`,
+      `User ${params.username} does not own a Learning Object with id ${
+        params.learningObjectId
+      }`,
       ResourceErrorReason.NOT_FOUND,
     );
   }

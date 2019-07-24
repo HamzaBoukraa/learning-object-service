@@ -1,21 +1,42 @@
 import * as AWS from 'aws-sdk';
-import { AWSError } from 'aws-sdk';
+import { AWSError, S3 } from 'aws-sdk';
 import { Readable } from 'stream';
 import { reportError } from '../../../shared/SentryConnector';
-import { AWS_SDK_CONFIG } from '../../config/aws-sdk.config';
 
 import { FileManager } from '../../interfaces/FileManager';
 import { FileUpload } from '../../../shared/types';
 
-AWS.config.credentials = AWS_SDK_CONFIG.credentials;
-
-const BUCKETS = {
-  MAIN: process.env.WORKING_FILES_BUCKET,
+export const AWS_SDK_CONFIG = {
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
 };
 
-export class S3FileManager implements FileManager {
-  private s3 = new AWS.S3({ region: AWS_SDK_CONFIG.region });
+AWS.config.credentials = AWS_SDK_CONFIG.credentials;
 
+const S3_CONFIG = {
+  FILES_BUCKET: process.env.FILES_BUCKET,
+  REGION: process.env.FILES_BUCKET_REGION,
+};
+
+const COGNITO_CONFIG = {
+  CLARK_IDENTITY_POOL_ID: process.env.CLARK_COGNITO_IDENTITY_POOL_ID,
+  CLARK_ADMIN_IDENTITY_POOL_ID:
+    process.env.CLARK_ADMIN_COGNITO_IDENTITY_POOL_ID,
+  REGION: process.env.COGNITO_REGION,
+};
+
+/**
+ * This is the error that the `lookupDeveloperIdentity` API call returns when a developer identity
+ * exists in another pool and not the pool the look up is performed in.
+ * Not sure why it doesn't just return a NotFound or null, but 🤷‍. (That's AWS for you.)
+ */
+const COGNITO_IDENTITY_NOT_FOUND = 'NotAuthorizedException';
+
+export class S3FileManager implements FileManager {
+  private s3 = new AWS.S3({ region: S3_CONFIG.REGION });
+  private cognito = new AWS.CognitoIdentity({ region: COGNITO_CONFIG.REGION });
 
   /**
    * @inheritdoc
@@ -25,11 +46,26 @@ export class S3FileManager implements FileManager {
    * @returns {Promise<void>}
    * @memberof S3FileManager
    */
-  async upload({ authorUsername, learningObjectId, file }: { authorUsername: string, learningObjectId: string, file: FileUpload }): Promise<void> {
-    const Key: string = `${authorUsername}/${learningObjectId}/${file.path}`;
+  async upload({
+    authorUsername,
+    learningObjectId,
+    learningObjectRevisionId,
+    file,
+  }: {
+    authorUsername: string;
+    learningObjectId: string;
+    learningObjectRevisionId: number;
+    file: FileUpload;
+  }): Promise<void> {
+    const Key: string = await this.generateObjectPath({
+      authorUsername,
+      learningObjectId,
+      learningObjectRevisionId,
+      path: file.path,
+    });
     const uploadParams = {
       Key,
-      Bucket: BUCKETS.MAIN,
+      Bucket: S3_CONFIG.FILES_BUCKET,
       Body: file.data,
     };
     await this.s3.upload(uploadParams).promise();
@@ -43,14 +79,26 @@ export class S3FileManager implements FileManager {
    * @returns {Promise<void>}
    * @memberof S3FileManager
    */
-  async delete({ authorUsername, learningObjectId, path }: {
+  async delete({
+    authorUsername,
+    learningObjectId,
+    learningObjectRevisionId,
+    path,
+  }: {
     authorUsername: string;
-    learningObjectId: string; path: string
+    learningObjectId: string;
+    learningObjectRevisionId: number;
+    path: string;
   }): Promise<void> {
-    const Key: string = `${authorUsername}/${learningObjectId}/${path}`;
+    const Key: string = await this.generateObjectPath({
+      authorUsername,
+      learningObjectId,
+      learningObjectRevisionId,
+      path,
+    });
     const deleteParams = {
       Key,
-      Bucket: BUCKETS.MAIN,
+      Bucket: S3_CONFIG.FILES_BUCKET,
     };
     return await this.deleteObject(deleteParams);
   }
@@ -77,19 +125,37 @@ export class S3FileManager implements FileManager {
    * @returns {Promise<void>}
    * @memberof S3FileManager
    */
-  async deleteFolder({ authorUsername, learningObjectId, path }: { authorUsername: string; learningObjectId: string; path: string }): Promise<void> {
+  async deleteFolder({
+    authorUsername,
+    learningObjectId,
+    learningObjectRevisionId,
+    path,
+  }: {
+    authorUsername: string;
+    learningObjectId: string;
+    learningObjectRevisionId: number;
+    path: string;
+  }): Promise<void> {
     if (path[path.length] !== '/') {
       throw Error('Path to delete a folder must end with a /');
     }
-    const storagePath: string = `${authorUsername}/${learningObjectId}/${path}`.replace(/\/\//ig, '/');
+    const storagePath: string = (await this.generateObjectPath({
+      authorUsername,
+      learningObjectId,
+      learningObjectRevisionId,
+      path,
+    })).replace(/\/\//gi, '/');
+
     const listObjectsParams = {
       Key: storagePath,
-      Bucket: BUCKETS.MAIN,
+      Bucket: S3_CONFIG.FILES_BUCKET,
     };
-    const listedObjects = await this.s3.listObjectsV2(listObjectsParams).promise();
+    const listedObjects = await this.s3
+      .listObjectsV2(listObjectsParams)
+      .promise();
     if (listedObjects.Contents.length === 0) return;
     const deleteObjectsParams = {
-      Bucket: BUCKETS.MAIN,
+      Bucket: S3_CONFIG.FILES_BUCKET,
       Delete: { Objects: <any>[] },
     };
 
@@ -99,7 +165,13 @@ export class S3FileManager implements FileManager {
 
     await this.s3.deleteObjects(deleteObjectsParams).promise();
 
-    if (listedObjects.IsTruncated) await this.deleteFolder({ authorUsername, learningObjectId, path });
+    if (listedObjects.IsTruncated)
+      await this.deleteFolder({
+        authorUsername,
+        learningObjectId,
+        learningObjectRevisionId,
+        path,
+      });
   }
 
   /**
@@ -108,11 +180,26 @@ export class S3FileManager implements FileManager {
    * @returns {Readable}
    * @memberof S3FileManager
    */
-  streamFile({ authorUsername, learningObjectId, path }: { authorUsername: string; learningObjectId: string; path: string }): Readable {
-    const Key: string = `${authorUsername}/${learningObjectId}/${path}`;
+  async streamFile({
+    authorUsername,
+    learningObjectId,
+    learningObjectRevisionId,
+    path,
+  }: {
+    authorUsername: string;
+    learningObjectId: string;
+    learningObjectRevisionId: number;
+    path: string;
+  }): Promise<Readable> {
+    const Key: string = await this.generateObjectPath({
+      authorUsername,
+      learningObjectId,
+      learningObjectRevisionId,
+      path,
+    });
     const fetchParams = {
       Key,
-      Bucket: BUCKETS.MAIN,
+      Bucket: S3_CONFIG.FILES_BUCKET,
     };
     const stream = this.s3
       .getObject(fetchParams)
@@ -146,11 +233,26 @@ export class S3FileManager implements FileManager {
    *
    * @param path the file path in S3
    */
-  async hasAccess({ authorUsername, learningObjectId, path }: { authorUsername: string; learningObjectId: string; path: string }): Promise<boolean> {
-    const Key: string = `${authorUsername}/${learningObjectId}/${path}`;
+  async hasAccess({
+    authorUsername,
+    learningObjectId,
+    learningObjectRevisionId,
+    path,
+  }: {
+    authorUsername: string;
+    learningObjectId: string;
+    learningObjectRevisionId: number;
+    path: string;
+  }): Promise<boolean> {
+    const Key: string = await this.generateObjectPath({
+      authorUsername,
+      learningObjectId,
+      learningObjectRevisionId,
+      path,
+    });
     const fetchParams = {
       Key,
-      Bucket: BUCKETS.MAIN,
+      Bucket: S3_CONFIG.FILES_BUCKET,
     };
     return new Promise<boolean>(resolve => {
       this.s3
@@ -162,5 +264,56 @@ export class S3FileManager implements FileManager {
           reportError(e);
         });
     });
+  }
+
+  /**
+   * Constructs storage path of file by mapping value provided for author's username to a Cognito Identity Id
+   * If Cognito Identity Id is not found in the admin pool, the general user pool is searched.
+   *
+   *
+   * @private
+   * @param {string} authorUsername [The Learning Object's author's username]
+   * @param {string} learningObjectId [The id of the Learning Object to upload file to]
+   * @param {number} learningObjectRevisionId [The revision id of the Learning Object]
+   * @param {string} path [The path of the object]
+   *
+   * @returns {Promise<string>}
+   * @memberof S3FileManager
+   */
+  private async generateObjectPath({
+    authorUsername,
+    learningObjectId,
+    learningObjectRevisionId,
+    path,
+  }: {
+    authorUsername: string;
+    learningObjectId: string;
+    learningObjectRevisionId: number;
+    path: string;
+  }): Promise<string> {
+    let cognitoId: string;
+    try {
+      const adminLookupResponse = await this.cognito
+        .lookupDeveloperIdentity({
+          IdentityPoolId: COGNITO_CONFIG.CLARK_ADMIN_IDENTITY_POOL_ID,
+          DeveloperUserIdentifier: authorUsername,
+          MaxResults: 1,
+        })
+        .promise();
+      cognitoId = adminLookupResponse.IdentityId;
+    } catch (e) {
+      if (e.code !== COGNITO_IDENTITY_NOT_FOUND) {
+        throw e;
+      }
+      const lookupResponse = await this.cognito
+        .lookupDeveloperIdentity({
+          IdentityPoolId: COGNITO_CONFIG.CLARK_IDENTITY_POOL_ID,
+          DeveloperUserIdentifier: authorUsername,
+          MaxResults: 1,
+        })
+        .promise();
+      cognitoId = lookupResponse.IdentityId;
+    }
+    return `${cognitoId}/${learningObjectId}/${learningObjectRevisionId}/${path}`;
   }
 }

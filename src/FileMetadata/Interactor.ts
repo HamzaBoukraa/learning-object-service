@@ -545,6 +545,7 @@ export async function deleteFileMeta({
       .deleteFile({
         authorUsername: learningObject.author.username,
         learningObjectId: learningObject.id,
+        learningObjectRevisionId: learningObject.revision,
         path: fileMeta.fullPath,
       })
       .catch(reportError);
@@ -597,6 +598,7 @@ export async function deleteAllFileMetadata({
       .deleteFolder({
         authorUsername: learningObject.author.username,
         learningObjectId: learningObject.id,
+        learningObjectRevisionId: learningObject.revision,
         path: '/',
       })
       .catch(reportError);
