@@ -91,7 +91,7 @@ async function determineRevisionType(params: {
       releasedCopy,
     });
   } else if (requesterIsAdminOrEditor(params.requester)) {
-    createRevisionInProofing(params);
+    await createRevisionInProofing(params);
   } else {
     throw new ResourceError(
       ERROR_MESSAGES.REVISIONS.INVALID_ACCESS,
