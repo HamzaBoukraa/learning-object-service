@@ -48,9 +48,31 @@ describe('createLearningObjectRevison', () => {
           ),
         );
       });
-      /* it('should throw an error with the SUBMISSION_EXISTS message', async () => {
-
-      }); */
+      it('should throw an error with the SUBMISSION_EXISTS message', async () => {
+        jest.doMock('./getLearningObjectRevision', () => {
+          return {
+            __esModule: true,
+            getLearningObjectRevision: () =>
+              Promise.resolve({
+                ...learningObject,
+                status: LearningObject.Status.WAITING,
+              }),
+          };
+        });
+        const t = await import('./createLearningObjectRevision');
+        const createRevisionPromise = t.createLearningObjectRevision({
+          username: learningObject.author.username,
+          learningObjectId: learningObject.id,
+          dataStore,
+          requester: editor,
+        });
+        await expect(createRevisionPromise).rejects.toEqual(
+          new ResourceError(
+            ERROR_MESSAGES.REVISIONS.SUBMISSION_EXISTS,
+            ResourceErrorReason.FORBIDDEN,
+          ),
+        );
+      });
     });
 
     describe('and there is no revision', () => {
