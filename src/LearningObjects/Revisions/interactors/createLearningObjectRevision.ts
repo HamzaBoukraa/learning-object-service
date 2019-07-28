@@ -10,7 +10,7 @@ import { LearningObject } from '../../../shared/entity';
 import { validateRequest } from './tasks/validateRequest';
 import { getLearningObjectRevision } from './getLearningObjectRevision';
 
-const ERROR_MESSAGES = {
+export const ERROR_MESSAGES = {
   REVISIONS: {
     UNRELEASED_EXISTS: `The author has created a revision for this Learning Object but has not
     yet made a submission to a collection. Please contact the author to coordinate integrating
@@ -169,7 +169,6 @@ async function createRevisionInProofing({
     }
   } catch (e) {
     if (
-      e instanceof ResourceError &&
       e.name === ResourceErrorReason.NOT_FOUND
     ) {
       await saveRevision({
