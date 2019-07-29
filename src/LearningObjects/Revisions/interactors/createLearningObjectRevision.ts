@@ -125,6 +125,16 @@ async function saveRevision(params: {
   });
 }
 
+/**
+ * createRevision creates a new revision for the Author in the case that no revision currently
+ * exists. If a revision exists, an error will be thrown to indicate failure of the requested
+ * action and any steps the requester can take.
+ *
+ * @param params.releasedCopy the summary information of the released Learning Object
+ * @param params.learningObjectId the unique identifier of the Learning Object being revised
+ * @param params.dataStore the storage gateway for Learning Objects
+ * @param params.requester identifiers for the user making the request
+ */
 async function createRevision({
   releasedCopy,
   learningObjectId,
@@ -154,7 +164,6 @@ async function createRevision({
     });
   }
   throw new ResourceError(ERROR_MESSAGES.REVISIONS.EXISTS, ResourceErrorReason.CONFLICT);
-  // if there is, 409 Conflict with Location header
 }
 
 /**
