@@ -1617,10 +1617,10 @@ function validateUpdates(params: {
   id: string;
   updates: LearningObjectMetadataUpdates;
 }): void {
- const learningObjectName = params.updates.name.trim();
- const isValidName = learningObjectName.length >= 2 && learningObjectName.length < 50;
- if (learningObjectName) {
-    if (learningObjectName === ''
+ if (params.updates.name) {
+  const learningObjectName = params.updates.name.trim();
+  const isValidName = learningObjectName.length >= 2 && learningObjectName.length < 50;
+  if (learningObjectName === ''
       || !isValidName ) {
       throw new ResourceError(
       'Learning Object name cannot be empty or over 50 characters.',
