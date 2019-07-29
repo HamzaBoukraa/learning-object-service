@@ -15,9 +15,7 @@ const publisher: SubmissionPublisher = {
   publishSubmission: (submission: LearningObject) => null,
   updateSubmission: (params: {
     learningObjectId: string,
-    updates: Partial<LearningObject>}) => {
-    return Promise.resolve();
-  },
+    updates: Partial<LearningObject>}) => null,
 };
 
 const learningObjectDataStore = new MockDataStore();
