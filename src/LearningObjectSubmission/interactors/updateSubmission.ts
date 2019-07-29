@@ -19,12 +19,12 @@ export async function updateSubmission(params: {
 
   if (!isAdminOrEditor) {
     throw new ResourceError(
-      `You do not have write access to this ${user.name}'s material`,
+      `You do not have write access to ${user.name}'s material`,
       ResourceErrorReason.INVALID_ACCESS,
     );
   }
 
-  publisher.updateSubmission({
+  await publisher.updateSubmission({
     learningObjectId,
     updates,
   });

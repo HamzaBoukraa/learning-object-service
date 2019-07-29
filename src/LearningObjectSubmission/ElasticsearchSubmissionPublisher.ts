@@ -59,25 +59,33 @@ export class ElasticsearchSubmissionPublisher implements SubmissionPublisher {
   }) {
     const { learningObjectId, updates } = params;
     let updateField = Object.keys(updates);
-    let updateValue = Object.values(updates);
+    let updateSource: string = '';
+    updateField.map(field => {
+       let updateValue = updates[field];
+       updateSource = updateSource.concat(`ctx._source.${field} = \"${updateValue}\";`);
+    });
+    console.log(`This is our SOURCE: ${updateSource}!!!`);
     let learningObjectUpdateRequest = {
       query: {
         term: {
-          value: learningObjectId,
+          id: {
+            value: learningObjectId,
+          },
         },
       },
       script: {
-        source: `ctx._source.${updateField} = \"${updateValue}\"`,
+        source : updateSource,
       },
     };
     try {
-      await this.client.updateByQuery({
+     const apiResponse = await this.client.updateByQuery({
         index: INDEX_NAME,
         type: '_doc',
         body: learningObjectUpdateRequest,
       });
+     console.log(apiResponse);
     } catch (e) {
-      reportError(e);
+      console.log(e);
     }
   }
 
