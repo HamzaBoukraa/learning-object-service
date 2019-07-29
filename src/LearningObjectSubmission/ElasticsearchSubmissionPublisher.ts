@@ -64,7 +64,6 @@ export class ElasticsearchSubmissionPublisher implements SubmissionPublisher {
        let updateValue = updates[field];
        updateSource = updateSource.concat(`ctx._source.${field} = \"${updateValue}\";`);
     });
-    console.log(`This is our SOURCE: ${updateSource}!!!`);
     let learningObjectUpdateRequest = {
       query: {
         term: {
@@ -78,12 +77,11 @@ export class ElasticsearchSubmissionPublisher implements SubmissionPublisher {
       },
     };
     try {
-     const apiResponse = await this.client.updateByQuery({
+    await this.client.updateByQuery({
         index: INDEX_NAME,
         type: '_doc',
         body: learningObjectUpdateRequest,
       });
-     console.log(apiResponse);
     } catch (e) {
       console.log(e);
     }
