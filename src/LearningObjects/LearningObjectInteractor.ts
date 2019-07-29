@@ -1617,9 +1617,14 @@ function validateUpdates(params: {
   id: string;
   updates: LearningObjectMetadataUpdates;
 }): void {
-  if (params.updates.name) {
-    if (params.updates.name.trim() === '') {
-      throw new Error('Learning Object name cannot be empty.');
+ const learningObjectName = params.updates.name.trim();
+ const isValidName = learningObjectName.length >= 2 && learningObjectName.length < 50;
+ if (learningObjectName) {
+    if (learningObjectName === ''
+      || !isValidName ) {
+      throw new ResourceError(
+      'Learning Object name cannot be empty or over 50 characters.',
+      ResourceErrorReason.BAD_REQUEST);
     }
   }
 }
