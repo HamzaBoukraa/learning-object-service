@@ -20,6 +20,8 @@ export const ERROR_MESSAGES = {
     changes with those that already exist.`,
     INVALID_ACCESS: `You do not have permission to create a Revision for this Learning Object.
     Please contact the author or an editor if you would like to propose changes.`,
+    EXISTS: `This Learning Object already has a revision. Please complete or delete the current
+    revision before attempting to create a new one.`,
   },
 };
 
@@ -84,12 +86,7 @@ async function determineRevisionType(params: {
       requester: params.requester,
     })
   ) {
-    await saveRevision({
-      dataStore: params.dataStore,
-      learningObjectId: params.learningObjectId,
-      revisionStatus: LearningObject.Status.UNRELEASED,
-      releasedCopy,
-    });
+    await createRevision(params);
   } else if (requesterIsAdminOrEditor(params.requester)) {
     await createRevisionInProofing(params);
   } else {
@@ -110,7 +107,9 @@ async function determineRevisionType(params: {
  * @param params.dataStore the storage gateway for Learning Objects
  */
 async function saveRevision(params: {
-  revisionStatus: LearningObject.Status.UNRELEASED | LearningObject.Status.PROOFING;
+  revisionStatus:
+    | LearningObject.Status.UNRELEASED
+    | LearningObject.Status.PROOFING;
   releasedCopy: LearningObjectSummary;
   learningObjectId: string;
   dataStore: DataStore;
@@ -124,6 +123,38 @@ async function saveRevision(params: {
       status: params.revisionStatus,
     },
   });
+}
+
+async function createRevision({
+  releasedCopy,
+  learningObjectId,
+  dataStore,
+  requester,
+}: {
+  releasedCopy: LearningObjectSummary;
+  learningObjectId: string;
+  dataStore: DataStore;
+  requester: UserToken;
+}) {
+  try {
+    const revisionSummary = await getLearningObjectRevision({
+      dataStore,
+      requester,
+      learningObjectId,
+      revisionId: releasedCopy.revision + 1,
+      username: releasedCopy.author.username,
+      summary: true,
+    });
+  } catch (e) {
+    return await saveRevision({
+      dataStore,
+      learningObjectId,
+      revisionStatus: LearningObject.Status.UNRELEASED,
+      releasedCopy,
+    });
+  }
+  throw new ResourceError(ERROR_MESSAGES.REVISIONS.EXISTS, ResourceErrorReason.CONFLICT);
+  // if there is, 409 Conflict with Location header
 }
 
 /**
@@ -168,9 +199,7 @@ async function createRevisionInProofing({
       );
     }
   } catch (e) {
-    if (
-      e.name === ResourceErrorReason.NOT_FOUND
-    ) {
+    if (e.name === ResourceErrorReason.NOT_FOUND) {
       await saveRevision({
         dataStore: dataStore,
         learningObjectId: learningObjectId,

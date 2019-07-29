@@ -107,7 +107,31 @@ describe('createLearningObjectRevison', () => {
     const author = stubs.userToken;
     const spy = jest.spyOn(dataStore, 'editLearningObject');
 
-    // describe('and a revision already exists', () => {});
+    describe('and a revision already exists', () => {
+      it('should throw a ResourceError with the Conflict reason', async () => {
+        jest.doMock('./getLearningObjectRevision', () => {
+          return {
+            __esModule: true,
+            getLearningObjectRevision: () =>
+              Promise.resolve({
+                ...learningObject,
+                status: LearningObject.Status.UNRELEASED,
+              }),
+          };
+        });
+        const t = await import('./createLearningObjectRevision');
+        const createRevisionPromise = t.createLearningObjectRevision({
+          username: learningObject.author.username,
+          learningObjectId: learningObject.id,
+          dataStore,
+          requester: author,
+        });
+        await expect(createRevisionPromise).rejects.toEqual(new ResourceError(
+          ERROR_MESSAGES.REVISIONS.EXISTS,
+          ResourceErrorReason.CONFLICT,
+        ));
+      });
+    });
 
     describe('and there is no revision', () => {
       it('should set the revision status to Unreleased', async () => {
