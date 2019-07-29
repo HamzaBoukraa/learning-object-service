@@ -15,4 +15,13 @@ export class StubSubmissionPublisher implements SubmissionPublisher {
     deleteSubmission(learningObjectID: string): Promise<void> {
        return Promise.resolve();
     }
+    /**
+     * @inheritdoc
+     */
+    updateSubmission(params: {
+        learningObjectId: string;
+        updates: Partial<LearningObject>;
+    }): Promise<void> {
+        return Promise.resolve();
+    }
 }
