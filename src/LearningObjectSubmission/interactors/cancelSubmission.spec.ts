@@ -13,6 +13,11 @@ const publisher: SubmissionPublisher = {
     return Promise.resolve();
   },
   publishSubmission: (submission: LearningObject) => null,
+  updateSubmission: (params: {
+    learningObjectId: string,
+    updates: Partial<LearningObject>}) => {
+    return Promise.resolve();
+  },
 };
 
 const learningObjectDataStore = new MockDataStore();
