@@ -4,6 +4,7 @@ import { SubmissionPublisher } from './SubmissionPublisher';
 import { LearningObject } from '../../shared/entity';
 import { MockLibraryDriver } from '../../tests/mock-drivers/MockLibraryDriver';
 import { LearningObjectAdapter } from '../../LearningObjects/adapters/LearningObjectAdapter';
+import { LearningObjectSubmissionAdapter } from '../adapters/LearningObjectSubmissionAdapter';
 
 
 const dataStore = new MockDataStore();
@@ -19,6 +20,7 @@ const publisher: SubmissionPublisher = {
 };
 
 const learningObjectDataStore = new MockDataStore();
+LearningObjectSubmissionAdapter.open(publisher);
 LearningObjectAdapter.open(learningObjectDataStore, library);
 
 describe('cancelSubmission', () => {
