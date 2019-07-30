@@ -1564,56 +1564,19 @@ export class MongoDriver implements DataStore {
    *
    * @returns {LearningObjectRecord}
    */
-  async fetchLearningObject(params: {
+  async fetchLearningObject({
+    id,
+    full,
+  }: {
     id: string;
     full?: boolean;
   }): Promise<LearningObject> {
-    const results = await this.db
-      .collection<LearningObjectDocument & { orderedFiles: any[] }>(
-        COLLECTIONS.LEARNING_OBJECTS,
-      )
-      .aggregate([
-        {
-          // match learning object by params.id
-          $match: { _id: params.id },
-        },
-        {
-          $unwind: {
-            path: '$materials.files',
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        { $sort: { 'materials.files.date': -1 } },
-        { $addFields: { orderedFiles: '' } },
-        {
-          $group: {
-            _id: '$_id',
-            orderedFiles: {
-              $push: '$materials.files',
-            },
-            authorID: { $first: '$authorID' },
-            name: { $first: '$name' },
-            date: { $first: '$date' },
-            length: { $first: '$length' },
-            levels: { $first: '$levels' },
-            goals: { $first: '$goals' },
-            outcomes: { $first: '$outcomes' },
-            materials: { $first: '$materials' },
-            contributors: { $first: '$contributors' },
-            collection: { $first: '$collection' },
-            status: { $first: '$status' },
-            description: { $first: '$description' },
-            revision: { $first: '$revision' },
-          },
-        },
-      ])
-      .toArray();
-    if (results && results[0]) {
-      const object = results[0];
-      object.materials.files = object.orderedFiles;
-      delete object.orderedFiles;
-      const author = await this.fetchUser(object.authorID);
-      return this.generateLearningObject(author, object, params.full);
+    const doc = await this.db
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .findOne({ _id: id });
+    if (doc) {
+      const author = await this.fetchUser(doc.authorID);
+      return this.generateLearningObject(author, doc, full);
     }
     return null;
   }

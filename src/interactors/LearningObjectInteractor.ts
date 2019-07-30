@@ -192,81 +192,6 @@ export class LearningObjectInteractor {
   }
 
   /**
-   * Returns parent object's children
-   *
-   * @private
-   * @static
-   * @param {DataStore} dataStore
-   * @param {LibraryCommunicator} library
-   * @param {string} parentId
-   * @param {boolean} [full]
-   * @param {string[]} [status]
-   * @returns {Promise<LearningObject[]>}
-   * @memberof LearningObjectInteractor
-   */
-  private static async loadChildObjects(params: {
-    dataStore: DataStore;
-    library: LibraryCommunicator;
-    parentId: string;
-    full?: boolean;
-    status: string[];
-    loadWorkingCopies?: boolean;
-  }): Promise<LearningObject[]> {
-    const {
-      dataStore,
-      library,
-      parentId,
-      full,
-      status,
-      loadWorkingCopies,
-    } = params;
-
-    // Load Parent's children
-    let objects;
-    if (loadWorkingCopies) {
-      objects = await dataStore.loadChildObjects({
-        id: parentId,
-        full,
-        status,
-      });
-    } else {
-      objects = await dataStore.loadReleasedChildObjects({
-        id: parentId,
-        full,
-      });
-    }
-
-    // For each child object
-    return Promise.all(
-      objects.map(async obj => {
-        // Load their children
-        let children = await this.loadChildObjects({
-          dataStore,
-          library,
-          parentId: obj.id,
-          full,
-          status,
-          loadWorkingCopies,
-        });
-        // For each of the Child's children
-        children = await Promise.all(
-          children.map(async child => {
-            // Load child metrics
-            try {
-              child.metrics = await this.loadMetrics(library, child.id);
-            } catch (e) {
-              reportError(e);
-            }
-            return child;
-          }),
-        );
-
-        return new LearningObject({ ...obj.toPlainObject(), children });
-      }),
-    );
-  }
-
-  /**
    * Returns a Learning Object's Id by author's username and Learning Object's name
    * Will attempt to find released and unreleased object's id if authorized
    *
@@ -436,50 +361,23 @@ export class LearningObjectInteractor {
    * @returns {Promise<LearningObject[]>}
    * @memberof LearningObjectInteractor
    */
-  public static async fetchObjectsByIDs(params: {
+  public static async fetchObjectsByIDs({
+    dataStore,
+    ids,
+  }: {
     dataStore: DataStore;
-    library: LibraryCommunicator;
     ids: string[];
     full?: boolean;
   }): Promise<LearningObject[]> {
     try {
-      const { dataStore, library, ids, full } = params;
       let learningObjects = await dataStore.fetchMultipleObjects({
         ids,
-        full,
+        full: false,
         status: [
           ...LearningObjectState.IN_REVIEW,
           ...LearningObjectState.RELEASED,
         ],
       });
-
-      learningObjects = await Promise.all(
-        learningObjects.map(async object => {
-          try {
-            object.metrics = await this.loadMetrics(library, object.id);
-            return object;
-          } catch (e) {
-            reportError(e);
-            if (!full) {
-              return object;
-            }
-          }
-          if (full) {
-            const children = await this.loadChildObjects({
-              dataStore,
-              library,
-              parentId: object.id,
-              full: true,
-              status: [
-                ...LearningObjectState.IN_REVIEW,
-                ...LearningObjectState.RELEASED,
-              ],
-            });
-            children.forEach((child: LearningObject) => object.addChild(child));
-            return object;
-          }
-        }),
-      );
       return learningObjects;
     } catch (e) {
       handleError(e);
@@ -491,15 +389,17 @@ export class LearningObjectInteractor {
    *
    * @static
    * @param {DataStore} dataStore
-   * @param {LibraryCommunicator} library
    * @param {LearningObjectQuery} query
    * @param {UserToken} userToken
    * @returns {Promise<{ total: number; objects: LearningObject[] }>}
    * @memberof LearningObjectInteractor
    */
-  public static async searchObjects({dataStore, library, query, userToken}: {
+  public static async searchObjects({
+    dataStore,
+    query,
+    userToken,
+  }: {
     dataStore: DataStore;
-    library: LibraryCommunicator;
     query: LearningObjectQuery;
     userToken: UserToken;
   }): Promise<{ total: number; objects: LearningObject[] }> {
@@ -574,17 +474,7 @@ export class LearningObjectInteractor {
           limit,
         });
       }
-      const objects = await Promise.all(
-        response.objects.map(async object => {
-          try {
-            object.metrics = await this.loadMetrics(library, object.id);
-            return object;
-          } catch (e) {
-            return object;
-          }
-        }),
-      );
-      return { total: response.total, objects };
+      return { total: response.total, objects: response.objects };
     } catch (e) {
       handleError(e);
     }
@@ -844,21 +734,6 @@ export class LearningObjectInteractor {
       return false;
     }
     return params.authFunction(params.resourceVal, params.userToken);
-  }
-  /**
-   * Fetches Metrics for Learning Object
-   *
-   * @private
-   * @static
-   * @param library the gateway to library data
-   * @param {string} objectID
-   * @returns {Promise<LearningObject.Metrics>}
-   */
-  private static loadMetrics(
-    library: LibraryCommunicator,
-    objectID: string,
-  ): Promise<LearningObject.Metrics> {
-    return library.getMetrics(objectID);
   }
 
   /**
