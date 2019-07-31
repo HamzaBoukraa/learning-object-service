@@ -21,7 +21,7 @@ describe('LearningObjecs Hierarchy: HierarchyInteractor', () => {
 
   describe('fetchParents', () => {
     describe('when the Learning Object is released', () => {
-      it('should return released parents of the type LearningObjectSummary', async () => {
+      it('should query for released parents', async () => {
         const spy = jest.spyOn(dataStore, 'fetchReleasedParentObjects');
         const learningObjectID = stubs.learningObject.id;
         const userToken = {
@@ -37,7 +37,7 @@ describe('LearningObjecs Hierarchy: HierarchyInteractor', () => {
       });
     });
     describe('when the requestor is the Author', () => {
-      it('should return parents across every Learning Object status', async () => {
+      it('should query for parents across every Learning Object status', async () => {
         const spy = jest.spyOn(dataStore, 'fetchParentObjects');
         const learningObjectID = stubs.learningObject.id;
         const userToken = {
