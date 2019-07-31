@@ -196,7 +196,6 @@ export class ExpressAuthRouteDriver {
         const ids: string[] = req.params.ids.split(',');
         const objects = await LearningObjectInteractor.fetchObjectsByIDs({
           dataStore: this.dataStore,
-          library: this.library,
           ids,
         });
         res.status(200).send(objects.map(obj => obj.toPlainObject()));
@@ -212,7 +211,6 @@ export class ExpressAuthRouteDriver {
         const ids: string[] = req.params.ids.split(',');
         const objects = await LearningObjectInteractor.fetchObjectsByIDs({
           dataStore: this.dataStore,
-          library: this.library,
           ids,
           full: true,
         });

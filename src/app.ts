@@ -25,6 +25,7 @@ import { ElasticsearchSubmissionPublisher } from './LearningObjectSubmission/Ela
 // ----------------------------------------------------------------------------------
 
 const HTTP_SERVER_PORT = process.env.PORT || '3000';
+const KEEP_ALIVE_TIMEOUT = process.env.KEEP_ALIVE_TIMEOUT;
 
 let dburi: string;
 switch (process.env.NODE_ENV) {
@@ -101,6 +102,9 @@ function initModules() {
  */
 function startHttpServer(app: express.Express): void {
   const server = http.createServer(app);
+  server.keepAliveTimeout = KEEP_ALIVE_TIMEOUT
+    ? parseInt(KEEP_ALIVE_TIMEOUT, 10)
+    : server.keepAliveTimeout;
   server.listen(HTTP_SERVER_PORT, () =>
     console.log(
       `Learning Object Service running on http://localhost:${HTTP_SERVER_PORT}`,
