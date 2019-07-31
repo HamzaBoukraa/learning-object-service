@@ -14,7 +14,7 @@ export function initializePublic({ router, dataStore}: { router: Router, dataSto
         userToken,
         dataStore,
       });
-      res.status(200).send(parents.map(obj => obj.toPlainObject()));
+      res.status(200).send(parents);
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
       res.status(code).json({message});
