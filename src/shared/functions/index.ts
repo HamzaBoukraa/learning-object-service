@@ -121,8 +121,7 @@ export function mapLearningObjectToSummary(
     id: object.id,
     author: mapAuthorToSummary(object.author),
     children: object.children
-      ? object.children.map(mapChildToSummary)
-      : [],
+      || [],
     collection: object.collection,
     contributors: object.contributors
       ? object.contributors.map(mapAuthorToSummary)
@@ -134,23 +133,6 @@ export function mapLearningObjectToSummary(
     name: object.name,
     revision: object.revision,
     status: object.status,
-  };
-}
-
-/**
- * Converts Learning Object to LearningObjectChildSummary
- *
- * @export
- * @param {Partial<LearningObject>} child [The child Learning Object to get summary for]
- * @returns {LearningObjectChildSummary}
- */
-
-export function mapChildToSummary(
-  child: Partial<LearningObject>,
-): LearningObjectChildSummary {
-  return {
-    id: child.id,
-    name: child.name,
   };
 }
 
