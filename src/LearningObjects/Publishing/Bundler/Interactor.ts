@@ -1,8 +1,10 @@
 import 'dotenv/config';
 import { LearningObject, BundleData, BundleExtension } from './typings';
 import { BundlerModule } from './BundlerModule';
-import { Bundler, LicenseRetriever, FileGateway } from './interfaces';
+import { Bundler, LicenseRetriever, FileGateway, LearningObjectGateway } from './interfaces';
 import { handleError } from '../../../shared/errors';
+import { LearningObjectSummary } from '../../../shared/types';
+import { ModuleLearningObjectGateway } from '../../../FileMetadata/gateways';
 
 /**
  * Encapsulates Drivers used within this interactor in a namespace
@@ -15,6 +17,7 @@ namespace Drivers {
 
 namespace Gateways {
   export const fileGateway = () => BundlerModule.resolveDependency(FileGateway);
+  export const learningObjectGateway = () => BundlerModule.resolveDependency(LearningObjectGateway);
 }
 
 const CC_LICENSE = {
@@ -29,6 +32,7 @@ const CC_LICENSE = {
  */
 export async function bundleLearningObject({
   learningObject,
+  requester: UserToken,
 }: {
   learningObject: LearningObject;
 }) {
@@ -163,7 +167,7 @@ function addFiles({
 /**
  * addChildren triggers the process of building a bundle structure for each child of a Learning Object.
  *
- * @param {LearningObject[]} children [Array of child Learning Objects]
+ * @param {LearningObjectSummary[]} children [Array of child Learning Objects]
  * @param {string}: prefix [File path prefix (ie. fileName: 'World.txt', prefix: 'Hello' = filePath: 'Hello/World.txt')]
  * @returns {Promise<BundleData[]>}
  */
@@ -171,12 +175,13 @@ async function addChildren({
   children,
   prefix = '',
 }: {
-  children: LearningObject[];
+  children: LearningObjectSummary[];
   prefix: string;
 }): Promise<BundleData[]> {
   const childrenBundleData = await Promise.all(
     children.map(child => {
       // This is to ensure that the prefix property is only utilized at the first layer of children and below
+      
       const path = `${prefix}/${buildDirectoryName(child)}`;
       return buildBundleStructure({
         learningObject: child,
