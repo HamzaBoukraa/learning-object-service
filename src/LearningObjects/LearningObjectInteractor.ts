@@ -38,6 +38,7 @@ import {
   toArray,
   sanitizeObject,
   toBoolean,
+  mapChildToSummary,
 } from '../shared/functions';
 import {
   FileMetadataGateway,
@@ -1029,22 +1030,18 @@ export async function getLearningObjectById({
     if (!learningObject) {
       throw learningObjectNotFound;
     }
-    let children: LearningObject[] = [];
+
+    let children: LearningObjectSummary[];
     if (loadingReleased) {
       learningObject.materials.files = learningObject.materials.files.map(
         appendFilePreviewUrls(learningObject),
       );
-      children = await dataStore.loadReleasedChildObjects({
-        id: learningObject.id,
-        full: false,
+      children = await loadChildObjectSummaries({
+        parentId: learningObject.id,
+        dataStore,
+        childrenStatus: LearningObjectState.RELEASED,
+        requester,
       });
-      // FIXME: Children should be mapped to LearningObjectSummary type which doesn't include materials
-      children = await Promise.all(
-        children.map(async child => {
-          child.materials = await dataStore.fetchReleasedMaterials(child.id);
-          return child;
-        }),
-      );
     } else {
       const childrenStatus = requesterIsAuthor({
         requester,
@@ -1164,21 +1161,11 @@ async function loadChildObjectSummaries({
     full: false,
     status: childrenStatus,
   });
-  children = await Promise.all(
-    // FIXME: Children should be mapped to LearningObjectSummary type which doesn't include materials or files
-    children.map(async child => {
-      child.materials = await dataStore.getLearningObjectMaterials({
-        id: child.id,
-      });
-      child.materials.files = await Gateways.fileMetadata().getAllFileMetadata({
-        requester,
-        learningObjectId: child.id,
-        filter: 'unreleased',
-      });
-      return child;
-    }),
-  );
-  return children;
+  let childSummary = children.map(child => {
+     return mapLearningObjectToSummary(child);
+    });
+
+  return childSummary;
 }
 
 /**
