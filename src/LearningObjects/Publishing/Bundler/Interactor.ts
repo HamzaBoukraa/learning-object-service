@@ -1,10 +1,9 @@
 import 'dotenv/config';
-import { LearningObject, BundleData, BundleExtension } from './typings';
+import { LearningObject, BundleData, BundleExtension, HierarchicalLearningObject } from './typings';
 import { BundlerModule } from './BundlerModule';
-import { Bundler, LicenseRetriever, FileGateway, LearningObjectGateway } from './interfaces';
+import { Bundler, LicenseRetriever, FileGateway } from './interfaces';
 import { handleError } from '../../../shared/errors';
-import { LearningObjectSummary } from '../../../shared/types';
-import { ModuleLearningObjectGateway } from '../../../FileMetadata/gateways';
+import { LearningObjectSummary, LearningObjectChildSummary } from '../../../shared/types';
 
 /**
  * Encapsulates Drivers used within this interactor in a namespace
@@ -17,7 +16,6 @@ namespace Drivers {
 
 namespace Gateways {
   export const fileGateway = () => BundlerModule.resolveDependency(FileGateway);
-  export const learningObjectGateway = () => BundlerModule.resolveDependency(LearningObjectGateway);
 }
 
 const CC_LICENSE = {
@@ -27,14 +25,13 @@ const CC_LICENSE = {
 /**
  * bundleLearningObject creates a bundle of all materials for a Learning Object.
  *
- * @param {LearningObject} learningObject [The Learning Object to be downloaded]
+ * @param {HierarchicalLearningObject} learningObject [The Learning Object to be downloaded]
  * @returns a stream of the archive file that contains the bundled Learning Object
  */
 export async function bundleLearningObject({
   learningObject,
-  requester: UserToken,
 }: {
-  learningObject: LearningObject;
+  learningObject: HierarchicalLearningObject;
 }) {
   const extension = BundleExtension.Zip;
   const objectData = await buildBundleStructure({ learningObject });
@@ -47,7 +44,7 @@ export async function bundleLearningObject({
 /**
  * Bundles Learning Object with Creative Common's License, Readme, attached files, and children
  *
- * @param {LearningObject} [The Learning Object to be bundled]
+ * @param {HierarchicalLearningObject} [The Learning Object to be bundled]
  * @param {string} prefix [File path prefix (ie. fileName: 'World.txt', prefix: 'Hello' = filePath: 'Hello/World.txt')]
  * @returns {Promise<BundleData[]>}
  */
@@ -55,7 +52,7 @@ async function buildBundleStructure({
   learningObject,
   prefix = '',
 }: {
-  learningObject: LearningObject;
+  learningObject: HierarchicalLearningObject;
   prefix?: string;
 }): Promise<BundleData[]> {
   try {
@@ -167,7 +164,7 @@ function addFiles({
 /**
  * addChildren triggers the process of building a bundle structure for each child of a Learning Object.
  *
- * @param {LearningObjectSummary[]} children [Array of child Learning Objects]
+ * @param {HierarchicalLearningObject[]} children [Array of child Learning Objects]
  * @param {string}: prefix [File path prefix (ie. fileName: 'World.txt', prefix: 'Hello' = filePath: 'Hello/World.txt')]
  * @returns {Promise<BundleData[]>}
  */
@@ -175,13 +172,12 @@ async function addChildren({
   children,
   prefix = '',
 }: {
-  children: LearningObjectSummary[];
+  children: HierarchicalLearningObject[];
   prefix: string;
 }): Promise<BundleData[]> {
   const childrenBundleData = await Promise.all(
-    children.map(child => {
+    children.map(async child => {
       // This is to ensure that the prefix property is only utilized at the first layer of children and below
-      
       const path = `${prefix}/${buildDirectoryName(child)}`;
       return buildBundleStructure({
         learningObject: child,

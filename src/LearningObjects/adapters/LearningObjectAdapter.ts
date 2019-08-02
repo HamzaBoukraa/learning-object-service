@@ -184,7 +184,7 @@ export class LearningObjectAdapter {
    */
   async getLearningObjectById(params: {
     id: string;
-    requester: UserToken;
+    requester?: UserToken;
     filter?: LearningObjectFilter;
   }): Promise<LearningObject> {
     return getLearningObjectById({

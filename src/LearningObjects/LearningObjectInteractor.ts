@@ -9,6 +9,7 @@ import {
   UserLearningObjectSearchQuery,
   CollectionAccessMap,
   LearningObjectState,
+  LearningObjectChildSummary,
 } from '../shared/types';
 import {
   ResourceError,
@@ -29,7 +30,7 @@ import {
   getCollectionAccessMap,
   getAuthorizedStatuses,
 } from '../shared/AuthorizationManager';
-import { FileMeta, LearningObjectFilter, MaterialsFilter } from './typings';
+import { FileMeta, LearningObjectFilter, MaterialsFilter, HierarchicalLearningObject } from './typings';
 import * as PublishingService from './Publishing';
 import {
   mapLearningObjectToSummary,
@@ -38,7 +39,7 @@ import {
   toArray,
   sanitizeObject,
   toBoolean,
-  mapChildToSummary,
+  mapChildLearningObjectToSummary,
 } from '../shared/functions';
 import {
   FileMetadataGateway,
@@ -674,7 +675,7 @@ export async function getLearningObjectRevision({
   learningObjectId: string;
   revisionId: number;
   username: string;
-  summary?: boolean,
+  summary?: boolean;
 }): Promise<LearningObject | LearningObjectSummary> {
   try {
     if (revisionId === 0) {
@@ -708,7 +709,8 @@ export async function getLearningObjectRevision({
       );
     }
 
-    const releasedAccess = learningObject.status === LearningObject.Status.RELEASED;
+    const releasedAccess =
+      learningObject.status === LearningObject.Status.RELEASED;
     const authorAccess = requesterIsAuthor({
       requester,
       authorUsername: learningObject.author.username,
@@ -939,7 +941,7 @@ export async function updateLearningObject({
  * @param {UserToken} requester [The requester of the releasable Learning Object]
  * @returns {Promise<LearningObject>}
  */
-async function generateReleasableLearningObject({
+export async function generateReleasableLearningObject({
   dataStore,
   id,
   requester,
@@ -947,7 +949,7 @@ async function generateReleasableLearningObject({
   dataStore: DataStore;
   id: string;
   requester: UserToken;
-}): Promise<LearningObject> {
+}): Promise<HierarchicalLearningObject> {
   const [object, children, files] = await Promise.all([
     dataStore.fetchLearningObject({ id, full: true }),
     loadWorkingParentsReleasedChildObjects({
@@ -960,10 +962,10 @@ async function generateReleasableLearningObject({
       filter: 'unreleased',
     }),
   ]);
-  const releasableObject = new LearningObject({
+  const releasableObject = (new LearningObject({
     ...object.toPlainObject(),
-    children,
-  });
+  })) as HierarchicalLearningObject;
+  releasableObject.children = children;
   releasableObject.materials.files = files;
   return releasableObject;
 }
@@ -990,7 +992,7 @@ export async function getLearningObjectById({
   dataStore: DataStore;
   library: LibraryCommunicator;
   id: string;
-  requester: UserToken;
+  requester?: UserToken;
   filter?: LearningObjectFilter;
 }): Promise<LearningObject> {
   try {
@@ -1102,7 +1104,6 @@ async function loadWorkingParentsReleasedChildObjects({
       return child;
     }),
   );
-  return children;
 }
 
 /**
@@ -1119,11 +1120,12 @@ async function loadReleasedChildObjects({
 }: {
   dataStore: DataStore;
   parentId: string;
-}): Promise<LearningObject[]> {
-  let children = await dataStore.loadReleasedChildObjects({
+}): Promise<HierarchicalLearningObject[]> {
+  let children = (await dataStore.loadReleasedChildObjects({
     id: parentId,
     full: true,
-  });
+  })) as HierarchicalLearningObject[];
+
   children = await Promise.all(
     children.map(async child => {
       child.children = await loadReleasedChildObjects({
@@ -1163,8 +1165,8 @@ async function loadChildObjectSummaries({
     status: childrenStatus,
   });
   let childSummary = children.map(child => {
-     return mapLearningObjectToSummary(child);
-    });
+    return mapLearningObjectToSummary(child);
+  });
 
   return childSummary;
 }
@@ -1487,10 +1489,10 @@ export async function getMaterials({
  * }
  */
 export async function createLearningObjectRevision(params: {
-  username: string,
-  learningObjectId: string,
-  dataStore: DataStore,
-  requester: UserToken,
+  username: string;
+  learningObjectId: string;
+  dataStore: DataStore;
+  requester: UserToken;
 }): Promise<void> {
   await validateRequest({
     username: params.username,
@@ -1505,7 +1507,9 @@ export async function createLearningObjectRevision(params: {
 
   if (!releasedCopy) {
     throw new ResourceError(
-      `Cannot create a revision of Learning Object: ${params.learningObjectId} since it is not released.`,
+      `Cannot create a revision of Learning Object: ${
+        params.learningObjectId
+      } since it is not released.`,
       ResourceErrorReason.BAD_REQUEST,
     );
   }
@@ -1517,7 +1521,11 @@ export async function createLearningObjectRevision(params: {
     })
   ) {
     throw new ResourceError(
-      `Cannot create a revision. Requester ${params.requester.username} must be the author of Learning Object with id ${params.learningObjectId}`,
+      `Cannot create a revision. Requester ${
+        params.requester.username
+      } must be the author of Learning Object with id ${
+        params.learningObjectId
+      }`,
       ResourceErrorReason.INVALID_ACCESS,
     );
   }
@@ -1533,15 +1541,15 @@ export async function createLearningObjectRevision(params: {
   });
 }
 
- /** Appends file preview urls
-  *
-  * @param {LearningObject} learningObject
-  * @returns {(
-  *   value: LearningObject.Material.File,
-  *   index: number,
-  *   array: LearningObject.Material.File[],
-  * ) => LearningObject.Material.File}
-  */
+/** Appends file preview urls
+ *
+ * @param {LearningObject} learningObject
+ * @returns {(
+ *   value: LearningObject.Material.File,
+ *   index: number,
+ *   array: LearningObject.Material.File[],
+ * ) => LearningObject.Material.File}
+ */
 function appendFilePreviewUrls(
   learningObject: LearningObject,
 ): (
@@ -1588,9 +1596,9 @@ function sanitizeUpdates(
  * @param params
  */
 async function validateRequest(params: {
-  username: string,
-  learningObjectId: string,
-  dataStore: DataStore,
+  username: string;
+  learningObjectId: string;
+  dataStore: DataStore;
 }): Promise<void> {
   const learningObject = await params.dataStore.fetchLearningObject({
     id: params.learningObjectId,
@@ -1605,7 +1613,9 @@ async function validateRequest(params: {
 
   if (learningObject.author.username !== params.username) {
     throw new ResourceError(
-      `User ${params.username} does not own a Learning Object with id ${params.learningObjectId}`,
+      `User ${params.username} does not own a Learning Object with id ${
+        params.learningObjectId
+      }`,
       ResourceErrorReason.NOT_FOUND,
     );
   }

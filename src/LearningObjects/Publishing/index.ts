@@ -1,5 +1,5 @@
 import { releaseLearningObject, PublishingDataStore } from './interactor';
-import { LearningObject } from '../../shared/entity';
+import { LearningObject, HierarchicalLearningObject } from '../../shared/entity';
 import { ElasticMongoReleaseRequestDuplicator } from './ElasticMongoReleaseRequestDuplicator';
 import { UserToken } from '../../shared/types';
 import { LambdaGatewayFactory } from './ReleaseEmails/lambda-gateway-factory';
@@ -19,7 +19,7 @@ const setupElasticToggle = ({
   userToken: UserToken,
   authorUsername: string,
   dataStore: PublishingDataStore;
-  releasableObject: LearningObject;
+  releasableObject: HierarchicalLearningObject;
 }) => {
   const toggle = new ElasticMongoReleaseRequestDuplicator(dataStore);
   const releaseEmailGateway = LambdaGatewayFactory.buildGateway();
