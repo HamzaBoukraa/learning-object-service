@@ -18,9 +18,9 @@ import { HierarchicalLearningObject } from '../shared/entity';
 import { LearningObjectsModule } from './LearningObjectsModule';
 import { FileMetadataGateway, FileManagerGateway, ReadMeBuilder } from './interfaces';
 import { UserGateway } from './interfaces/UserGateway';
-import {StubFileMetadataGateway} from './gateways/FileMetadataGateway/StubFileMetadataGateway'
-import {StubFileManagerGateway} from './gateways/FileManagerGateway/StubFileManagerGateway'
-import {StubUserGateway} from './gateways/UserGateway/StubUserGateway'
+import {StubFileMetadataGateway} from './gateways/FileMetadataGateway/StubFileMetadataGateway';
+import {StubFileManagerGateway} from './gateways/FileManagerGateway/StubFileManagerGateway';
+import {StubUserGateway} from './gateways/UserGateway/StubUserGateway';
 import {StubReadMeBuilder} from './drivers/ReadMeBuilder/StubReadMeBuilder';
 
 
@@ -35,7 +35,7 @@ describe('Interactor: LearningObjectInteractor', () => {
       { provide: FileManagerGateway, useClass: StubFileManagerGateway },
       { provide: ReadMeBuilder, useClass: StubReadMeBuilder },
       { provide: UserGateway, useClass: StubUserGateway },
-    ]
+    ];
     LearningObjectsModule.initialize();
   });
   afterAll(() => {
