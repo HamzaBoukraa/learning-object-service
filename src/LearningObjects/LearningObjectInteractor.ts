@@ -1087,13 +1087,14 @@ async function loadWorkingParentsReleasedChildObjects({
 }: {
   dataStore: DataStore;
   parentId: string;
-}): Promise<LearningObject[]> {
+}): Promise<HierarchicalLearningObject[]> {
   let children = await dataStore.loadWorkingParentsReleasedChildObjects({
     id: parentId,
     full: true,
   });
-  children = await Promise.all(
-    children.map(async child => {
+
+  return Promise.all(
+    children.map(async (child: HierarchicalLearningObject) => {
       child.children = await loadWorkingParentsReleasedChildObjects({
         dataStore,
         parentId: child.id,
