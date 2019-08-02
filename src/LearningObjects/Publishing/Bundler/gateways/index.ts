@@ -1,3 +1,1 @@
-import { ModuleFileGateway } from './FileGateway/ModuleFileGateway';
-import { ModuleLearningObjectGateway} from './LearningObjectGateway/ModuleLearningObjectGateway';
-export { ModuleFileGateway, ModuleLearningObjectGateway };
+export { ModuleFileGateway } from './FileGateway/ModuleFileGateway';
