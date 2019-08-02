@@ -6,7 +6,7 @@ import { User } from '../user/user';
 import { LearningOutcome } from '../learning-outcome/learning-outcome';
 import { LEARNING_OBJECT_ERRORS } from './error-messages';
 import { EntityError } from '../errors/entity-error';
-import { LearningObjectSummary } from '../../types';
+import { LearningObjectSummary, LearningObjectChildSummary } from '../../types';
 
 const MIN_NAME_LENGTH = 3;
 const MAX_NAME_LENGTH = 170;
@@ -288,15 +288,15 @@ export class LearningObject {
     }
   }
 
-   children: LearningObjectSummary[] = [];
+   children: LearningObjectChildSummary[] = [];
 
   /**
    * Removes the object's i-th child.
    * @param {number} index the index to remove from this objects' children
    *
-   * @returns {LearningObjectSummary} the child object which was removed
+   * @returns {LearningObjectChildSummary} the child object which was removed
    */
-  removeChild(index: number): LearningObjectSummary {
+  removeChild(index: number): LearningObjectChildSummary {
     return this.children.splice(index, 1)[0];
   }
 
