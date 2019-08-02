@@ -78,7 +78,7 @@ describe('Interactor: LearningObjectInteractor', () => {
       ? expect(learningObject).toMatchObject(LearningObjectWithChildren)
       : expect(learningObject).toMatchObject(LearningObjectWithoutChildren);
   });
-  it("should generate a Learning Object with it's full heirarchy present", async () => {
+  it('should generate a Learning Object with it\'s full heirarchy present', async () => {
     try {
       const learningObject = await generateReleasableLearningObject({
         dataStore,
