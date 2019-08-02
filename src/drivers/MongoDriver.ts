@@ -195,15 +195,11 @@ export class MongoDriver implements DataStore {
     if (text) {
       searchQuery.$text = { $search: text };
     }
-    if (status) {
-      searchQuery.$or = searchQuery.$or || [];
-      searchQuery.$or.push({
-        status: { $in: status },
-      });
-    }
+
     const pipeline = this.buildAllObjectsPipeline({
       searchQuery,
       orConditions,
+      status,
       hasText: !!text,
     });
 
@@ -511,6 +507,11 @@ export class MongoDriver implements DataStore {
    * queries provided, then joining the working and released collection together, adding the hasRevision flag to released learning object based on
    * the status of the working object, removing duplicates then returns a filtered and sorted superset of working and released learning objects.
    *
+   * Status filter match stage is applied after initial match stage and creation of the super set in order to avoid filtering out
+   * Learning Objects in the released collection.
+   * ie. status filter = ['released']; Learning Object A is unreleased in `objects` collection and exists in the `released-objects` collection
+   * if this was applied before the collection joining, Learning Object A would not be returned.
+   *
    * @private
    * @param {({
    *     searchQuery?: any;
@@ -524,25 +525,25 @@ export class MongoDriver implements DataStore {
    * @returns {any[]}
    * @memberof MongoDriver
    */
-  private buildAllObjectsPipeline(params: {
+  private buildAllObjectsPipeline({
+    searchQuery,
+    orConditions,
+    hasText,
+    status,
+    page,
+    limit,
+    orderBy,
+    sortType,
+  }: {
     searchQuery?: any;
     orConditions?: any[];
     hasText?: boolean;
+    status?: string[];
     page?: number;
     limit?: number;
     orderBy?: string;
     sortType?: 1 | -1;
   }): any[] {
-    let {
-      searchQuery,
-      orConditions,
-      hasText,
-      page,
-      limit,
-      orderBy,
-      sortType,
-    } = params;
-
     let matcher: any = { ...searchQuery };
     if (orConditions && orConditions.length) {
       matcher.$or = matcher.$or || [];
@@ -589,7 +590,7 @@ export class MongoDriver implements DataStore {
       },
     };
 
-    // create a large filtered collection of learning objects with diplicates.
+    // create a large filtered collection of learning objects with duplicates.
     const createSuperSet = [
       { $unwind: { path: '$released', preserveNullAndEmptyArrays: true } },
       {
@@ -608,6 +609,21 @@ export class MongoDriver implements DataStore {
       },
       ...unWindArrayToRoot,
     ];
+
+    let statusFilterMatch: [
+      { $match: { $or: [{ status: { $in: string[] } }] } }
+    ] = [] as any;
+    if (status) {
+      statusFilterMatch[0] = {
+        $match: {
+          $or: [
+            {
+              status: { $in: status },
+            },
+          ],
+        },
+      };
+    }
 
     // filter and remove duplicates after grouping the objects by ID.
     const removeDuplicates = [
@@ -666,6 +682,7 @@ export class MongoDriver implements DataStore {
       match,
       joinCollections,
       ...createSuperSet,
+      ...statusFilterMatch,
       ...removeDuplicates,
       ...sort,
       {
