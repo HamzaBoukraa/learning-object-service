@@ -1,21 +1,18 @@
 import { DataStore } from '../../shared/interfaces/DataStore';
 import { LearningObject } from '../../shared/entity';
+import { LibraryCommunicator, } from '../../shared/interfaces/interfaces';
 import {
-  LibraryCommunicator,
-} from '../../shared/interfaces/interfaces';
-import {
-  updateReadme,
-  getLearningObjectById,
-  updateLearningObject,
-  getLearningObjectRevision,
-  getWorkingLearningObjectSummary,
   getActiveLearningObjectSummary,
+  getLearningObjectById,
   getReleasedFile,
   getReleasedFiles,
-  updateObjectLastModifiedDate,
   getReleasedLearningObjectSummary,
+  getWorkingLearningObjectSummary,
+  updateLearningObject,
+  updateObjectLastModifiedDate,
+  updateReadme,
 } from '../LearningObjectInteractor';
-import { UserToken, LearningObjectSummary } from '../../shared/types';
+import { LearningObjectSummary, UserToken } from '../../shared/types';
 import { LearningObjectFilter } from '../typings';
 
 /**
@@ -142,39 +139,6 @@ export class LearningObjectAdapter {
     });
   }
 
-  /**
-   *  Retrieves Learning Object summary by id and revision number
-   *
-   * @param {UserToken} requester [Object containing information about the requester]
-   * @param {string} learningObjectId [Id of the Learning Object]
-   * @param {number} revisionId [Revision number of the Learning Object]
-   * @param {string} username [Username of the requested Learning Object author]
-   * @param {boolean} summary [Boolean indicating whether or not to return a LearningObject or LearningObjectSummary]
-   * @returns {Promise<LearningObject | LearningObjectSummary>}
-   * @memberof LearningObjectAdapter
-   */
-  async getLearningObjectRevision({
-    requester,
-    learningObjectId,
-    revisionId,
-    username,
-    summary,
-  }: {
-    requester: UserToken;
-    learningObjectId: string;
-    revisionId: number;
-    username: string;
-    summary?: boolean;
-  }): Promise<LearningObject | LearningObjectSummary> {
-    return getLearningObjectRevision({
-      dataStore: this.dataStore,
-      requester,
-      learningObjectId,
-      revisionId,
-      username,
-      summary,
-    });
-  }
   /**
    * Fetches a learning object by ID
    *

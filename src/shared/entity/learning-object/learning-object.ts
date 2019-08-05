@@ -585,6 +585,7 @@ export class LearningObject {
       status: this.status,
       metrics: this.metrics,
       hasRevision: this.hasRevision,
+      revision: this.revision,
     };
     return object;
   }
