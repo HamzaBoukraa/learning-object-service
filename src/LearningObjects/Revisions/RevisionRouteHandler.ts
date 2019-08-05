@@ -27,7 +27,7 @@ export function initializePrivate({
     try {
       const params = { ...req.params, dataStore, requester: req.user };
       const newRevisionId = await RevisionInteractor.createLearningObjectRevision(params);
-      res.status(200).json({newRevisionId});
+      res.status(200).json({revision: newRevisionId});
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
       res.status(code).json({ message });
