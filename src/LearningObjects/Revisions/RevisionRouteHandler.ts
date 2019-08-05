@@ -26,8 +26,8 @@ export function initializePrivate({
   const createRevision = async (req: Request, res: Response) => {
     try {
       const params = { ...req.params, dataStore, requester: req.user };
-      await RevisionInteractor.createLearningObjectRevision(params);
-      res.sendStatus(204);
+      const newRevisionId = await RevisionInteractor.createLearningObjectRevision(params);
+      res.status(200).json({newRevisionId});
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
       res.status(code).json({ message });

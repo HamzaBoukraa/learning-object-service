@@ -38,7 +38,7 @@ export async function createLearningObjectRevision(params: {
   learningObjectId: string;
   dataStore: DataStore;
   requester: UserToken;
-}): Promise<void> {
+}): Promise<number> {
   const { dataStore, learningObjectId, requester, username } = params;
   await validateRequest({
     username: username,
@@ -57,12 +57,18 @@ export async function createLearningObjectRevision(params: {
       ResourceErrorReason.BAD_REQUEST,
     );
   }
+
+  const newRevisionId = releasedCopy.revision + 1;
+
   await determineRevisionType({
     dataStore,
+    newRevisionId,
     learningObjectId,
     requester,
     releasedCopy,
   });
+
+  return newRevisionId;
 }
 
 /**
@@ -75,6 +81,7 @@ export async function createLearningObjectRevision(params: {
  */
 async function determineRevisionType(params: {
   releasedCopy: LearningObjectSummary;
+  newRevisionId: number;
   learningObjectId: string;
   dataStore: DataStore;
   requester: UserToken;
@@ -110,6 +117,7 @@ async function saveRevision(params: {
   revisionStatus:
     | LearningObject.Status.UNRELEASED
     | LearningObject.Status.PROOFING;
+  newRevisionId: number;
   releasedCopy: LearningObjectSummary;
   learningObjectId: string;
   dataStore: DataStore;
@@ -138,11 +146,13 @@ async function saveRevision(params: {
 async function createRevision({
   releasedCopy,
   learningObjectId,
+  newRevisionId,
   dataStore,
   requester,
 }: {
   releasedCopy: LearningObjectSummary;
   learningObjectId: string;
+  newRevisionId: number;
   dataStore: DataStore;
   requester: UserToken;
 }) {
@@ -151,13 +161,14 @@ async function createRevision({
       dataStore,
       requester,
       learningObjectId,
-      revisionId: releasedCopy.revision + 1,
+      revisionId: newRevisionId,
       username: releasedCopy.author.username,
       summary: true,
     });
   } catch (e) {
     return await saveRevision({
       dataStore,
+      newRevisionId,
       learningObjectId,
       revisionStatus: LearningObject.Status.UNRELEASED,
       releasedCopy,
@@ -179,11 +190,13 @@ async function createRevision({
 async function createRevisionInProofing({
   releasedCopy,
   learningObjectId,
+  newRevisionId,
   dataStore,
   requester,
 }: {
   releasedCopy: LearningObjectSummary;
   learningObjectId: string;
+  newRevisionId: number;
   dataStore: DataStore;
   requester: UserToken;
 }) {
@@ -192,7 +205,7 @@ async function createRevisionInProofing({
       dataStore,
       requester,
       learningObjectId,
-      revisionId: releasedCopy.revision + 1,
+      revisionId: newRevisionId,
       username: releasedCopy.author.username,
       summary: true,
     });
@@ -212,6 +225,7 @@ async function createRevisionInProofing({
       await saveRevision({
         dataStore: dataStore,
         learningObjectId: learningObjectId,
+        newRevisionId,
         revisionStatus: LearningObject.Status.PROOFING,
         releasedCopy: releasedCopy,
       });
