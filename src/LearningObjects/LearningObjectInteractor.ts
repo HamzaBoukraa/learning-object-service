@@ -1051,7 +1051,7 @@ export async function getLearningObjectById({
         authorUsername: learningObject.author.username,
       })
         ? LearningObjectState.ALL
-        : LearningObjectState.IN_REVIEW;
+        : [...LearningObjectState.IN_REVIEW, ...LearningObjectState.RELEASED];
 
       children = await loadChildObjectSummaries({
         parentId: learningObject.id,

@@ -868,18 +868,20 @@ export class MongoDriver implements DataStore {
   }): Promise<LearningObject[]> {
     const { id, full, status, collection } = params;
     const matchQuery: { [index: string]: any } = {
-      $match: { _id: id, status: { $in: status } },
+      $match: { _id: id },
     };
 
-    const docs = await this.db
-      .collection<{ objects: LearningObjectDocument[] }>(
-        collection || COLLECTIONS.LEARNING_OBJECTS,
-      )
-      .aggregate([
-        // match based on id's and status array if given.
-        matchQuery,
-        {
-          // grab the children of learning objects
+    const findChildren: {
+      $graphLookup: {
+        from: string;
+        startWith: string;
+        connectFromField: string;
+        connectToField: string;
+        as: string;
+        maxDepth: number;
+        restrictSearchWithMatch?: { [index: string]: any };
+      };
+    } = {
           $graphLookup: {
             from: collection || COLLECTIONS.LEARNING_OBJECTS,
             startWith: '$children',
@@ -888,7 +890,21 @@ export class MongoDriver implements DataStore {
             as: 'objects',
             maxDepth: 0,
           },
-        },
+    };
+    if (status) {
+      findChildren.$graphLookup.restrictSearchWithMatch = {
+        status: { $in: status },
+      };
+    }
+
+    const docs = await this.db
+      .collection<{ objects: LearningObjectDocument[] }>(
+        collection || COLLECTIONS.LEARNING_OBJECTS,
+      )
+      .aggregate([
+        // match based on id's and status array if given.
+        matchQuery,
+        findChildren,
         // only return children.
         { $project: { _id: 0, objects: '$objects' } },
       ])
