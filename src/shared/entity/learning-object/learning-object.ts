@@ -655,6 +655,7 @@ export namespace LearningObject {
       size?: number;
       description?: string;
       packageable?: boolean;
+      storageRevision: number;
     }
     export interface Url {
       title: string;
