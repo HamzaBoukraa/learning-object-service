@@ -907,6 +907,7 @@ export async function updateLearningObject({
       }.`,
     });
     const cleanUpdates = sanitizeUpdates(updates);
+    validateUpdates(cleanUpdates);
 
     cleanUpdates.date = Date.now().toString();
     await dataStore.editLearningObject({
@@ -1599,7 +1600,6 @@ function sanitizeUpdates(
       updates[key] = typeof value === 'string' ? value.trim() : value;
     }
   }
-  validateUpdates(updates);
   return updates;
 }
 
