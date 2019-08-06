@@ -122,7 +122,7 @@ export class MongoDriver implements DataStore {
       searchQuery.$or = searchQuery.$or || [];
       searchQuery.$or.push(
         { $text: { $search: text } },
-        { name: RegExp(text, 'gi') },
+        { name: RegExp(sanitizeRegex(text), 'gi') },
       );
     }
     const resultSet = await this.db
@@ -200,7 +200,7 @@ export class MongoDriver implements DataStore {
       searchQuery.$or = searchQuery.$or || [];
       searchQuery.$or.push(
         { $text: { $search: text } },
-        { name: RegExp(text, 'gi') },
+        { name: RegExp(sanitizeRegex(text), 'gi') },
       );
     }
 
@@ -1830,12 +1830,10 @@ export class MongoDriver implements DataStore {
         query.status = { $in: params.status };
       }
       if (params.text) {
-        if (!query.$or) {
-          query.$or = [];
-        }
+        query.$or = query.$or || [];
         query.$or.push(
-          { description: { $regex: params.text, $options: 'i' } },
-          { name: { $regex: params.text, $options: 'i' } },
+          { name: new RegExp(sanitizeRegex(params.text)) },
+          { description: new RegExp(sanitizeRegex(params.text)) },
         );
       }
       let objectCursor = await this.db
@@ -2084,8 +2082,8 @@ export class MongoDriver implements DataStore {
     const regex = new RegExp(sanitizeRegex(text));
     query.$or = [
       { $text: { $search: text } },
-      { name: { $regex: regex } },
-      { contributors: { $regex: regex } },
+      { name: regex },
+      { contributors: regex },
     ];
     if (Array.isArray(learningObjectIds)) {
       query.$or.push({ _id: { $in: learningObjectIds } });
@@ -2282,9 +2280,9 @@ export class MongoDriver implements DataStore {
     if (text) {
       const regex = new RegExp(sanitizeRegex(text), 'ig');
       (<any[]>query.$or).push(
-        { username: { $regex: regex } },
-        { name: { $regex: regex } },
-        { email: { $regex: regex } },
+        { username: regex },
+        { name: regex },
+        { email: regex },
       );
     }
     return author || text
