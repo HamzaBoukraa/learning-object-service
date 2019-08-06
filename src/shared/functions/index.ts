@@ -120,9 +120,7 @@ export function mapLearningObjectToSummary(
   return {
     id: object.id,
     author: mapAuthorToSummary(object.author),
-    children: object.children
-      ? object.children.map(mapChildToSummary)
-      : [],
+    children: object.children || [],
     collection: object.collection,
     contributors: object.contributors
       ? object.contributors.map(mapAuthorToSummary)
@@ -138,22 +136,29 @@ export function mapLearningObjectToSummary(
 }
 
 /**
- * Converts Learning Object to LearningObjectChildSummary
+ * Converts Child LearningObject type into LearningObjectChildSummary
  *
- * @export
- * @param {Partial<LearningObject>} child [The child Learning Object to get summary for]
+ * @private
+ * @param {Partial<LearningObject>} object [The document data to convert to AuthorSummary]
  * @returns {LearningObjectChildSummary}
  */
-
-export function mapChildToSummary(
-  child: Partial<LearningObject>,
+export function mapChildLearningObjectToSummary(
+  object: Partial<LearningObject>,
 ): LearningObjectChildSummary {
   return {
-    id: child.id,
-    name: child.name,
+    id: object.id,
+    author: mapAuthorToSummary(object.author),
+    collection: object.collection,
+    contributors: object.contributors
+      ? object.contributors.map(mapAuthorToSummary)
+      : [],
+    date: object.date,
+    description: object.description,
+    length: object.length,
+    name: object.name,
+    status: object.status,
   };
 }
-
 /**
  * Converts  User type into AuthorSummary
  *

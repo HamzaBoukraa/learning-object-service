@@ -9,10 +9,15 @@ import {
   UserLearningObjectSearchQuery,
   UserToken,
   VALID_LEARNING_OBJECT_UPDATES,
+  LearningObjectChildSummary,
 } from '../shared/types';
-import { handleError, ResourceError, ResourceErrorReason, } from '../shared/errors';
+import {
+  handleError,
+  ResourceError,
+  ResourceErrorReason,
+} from '../shared/errors';
 import { reportError } from '../shared/SentryConnector';
-import { LearningObject } from '../shared/entity';
+import { LearningObject, User } from '../shared/entity';
 import {
   authorizeReadAccess,
   authorizeRequest,
@@ -26,10 +31,26 @@ import {
   requesterIsAuthor,
   requesterIsPrivileged,
 } from '../shared/AuthorizationManager';
-import { LearningObjectFilter, MaterialsFilter } from './typings';
+import {
+  LearningObjectFilter,
+  MaterialsFilter,
+  HierarchicalLearningObject,
+} from './typings';
 import * as PublishingService from './Publishing';
-import { mapLearningObjectToSummary, sanitizeLearningObjectName, sanitizeObject, sanitizeText, toArray, toBoolean, } from '../shared/functions';
-import { FileManagerGateway, FileMetadataGateway, ReadMeBuilder, } from './interfaces';
+import {
+  mapLearningObjectToSummary,
+  sanitizeLearningObjectName,
+  sanitizeText,
+  toArray,
+  sanitizeObject,
+  toBoolean,
+  mapChildLearningObjectToSummary,
+} from '../shared/functions';
+import {
+  FileMetadataGateway,
+  FileManagerGateway,
+  ReadMeBuilder,
+} from './interfaces';
 import { LearningObjectsModule } from './LearningObjectsModule';
 import { LearningObjectSubmissionAdapter } from '../LearningObjectSubmission/adapters/LearningObjectSubmissionAdapter';
 import { UserGateway } from './interfaces/UserGateway';
@@ -632,6 +653,99 @@ export async function getActiveLearningObjectSummary({
 }
 
 /**
+ * Retrieves Learning Object revision by id and revision number
+ *
+ * The working copy can only be returned if
+ * The requester is the author
+ * The requester is a reviewer/curator@<Learning Object's collection> && the Learning Object is not unreleased
+ * The requester is an admin/editor && the Learning Object is not unreleased
+ *
+ * @export
+ * @param {DataStore} dataStore [Driver for datastore]
+ * @param {UserToken} requester [Object containing information about the requester]
+ * @param {string} learningObjectId [Id of the Learning Object]
+ * @param {number} revisionId [Revision number of the Learning Object]
+ * @param {string} username [Username of the Learning Object author]
+ * @param {boolean} summary [Boolean indicating whether or not to return a LearningObject or LearningObjectSummary]
+ * @returns {Promise<LearningObject | LearningObjectSummary>}
+ */
+export async function getLearningObjectRevision({
+  dataStore,
+  requester,
+  learningObjectId,
+  revisionId,
+  username,
+  summary,
+}: {
+  dataStore: DataStore;
+  requester: UserToken;
+  learningObjectId: string;
+  revisionId: number;
+  username: string;
+  summary?: boolean;
+}): Promise<LearningObject | LearningObjectSummary> {
+  try {
+    if (revisionId === 0) {
+      throw new ResourceError(
+        `Cannot find revision ${revisionId} for Learning Object ${learningObjectId}`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+    await validateRequest({
+      username: username,
+      learningObjectId: learningObjectId,
+      dataStore: dataStore,
+    });
+
+    let learningObject: LearningObject | LearningObjectSummary;
+    let author: User;
+
+    if (!summary) {
+      author = await Gateways.user().getUser(username);
+    }
+    learningObject = await dataStore.fetchLearningObjectRevision({
+      id: learningObjectId,
+      revision: revisionId,
+      author,
+      summary,
+    });
+    if (!learningObject) {
+      throw new ResourceError(
+        `Cannot find revision ${revisionId} of Learning Object ${learningObjectId}.`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+
+    const releasedAccess =
+      learningObject.status === LearningObject.Status.RELEASED;
+    const authorAccess = requesterIsAuthor({
+      requester,
+      authorUsername: learningObject.author.username,
+    });
+    const isUnreleased = LearningObjectState.UNRELEASED.includes(
+      learningObject.status as LearningObject.Status,
+    );
+    const reviewerCuratorAccess =
+      !isUnreleased &&
+      hasReadAccessByCollection({
+        requester,
+        collection: learningObject.collection,
+      });
+    const adminEditorAccess =
+      !isUnreleased && requesterIsAdminOrEditor(requester);
+    authorizeRequest([
+      releasedAccess,
+      authorAccess,
+      reviewerCuratorAccess,
+      adminEditorAccess,
+    ]);
+    return learningObject;
+  } catch (e) {
+    handleError(e);
+  }
+}
+
+/**
  * Performs update operation on learning object's date
  *
  * @param {{
@@ -841,7 +955,7 @@ export async function updateLearningObject({
  * @param {UserToken} requester [The requester of the releasable Learning Object]
  * @returns {Promise<LearningObject>}
  */
-async function generateReleasableLearningObject({
+export async function generateReleasableLearningObject({
   dataStore,
   id,
   requester,
@@ -849,7 +963,7 @@ async function generateReleasableLearningObject({
   dataStore: DataStore;
   id: string;
   requester: UserToken;
-}): Promise<LearningObject> {
+}): Promise<HierarchicalLearningObject> {
   const [object, children, files] = await Promise.all([
     dataStore.fetchLearningObject({ id, full: true }),
     loadWorkingParentsReleasedChildObjects({
@@ -864,8 +978,8 @@ async function generateReleasableLearningObject({
   ]);
   const releasableObject = new LearningObject({
     ...object.toPlainObject(),
-    children,
-  });
+  }) as HierarchicalLearningObject;
+  releasableObject.children = children;
   releasableObject.materials.files = files;
   return releasableObject;
 }
@@ -873,7 +987,7 @@ async function generateReleasableLearningObject({
 /**
  * Fetches a learning object by id
  * If no filter is defined the released object is returned by default unless no released object exists
- * If no released object exists and no filter is specified, the unreleased object is loaded if the reuqester has access
+ * If no released object exists and no filter is specified, the unreleased object is loaded if the requester has access
  *
  * If neither object is found, NotFound ResourceError is thrown
  *
@@ -892,7 +1006,7 @@ export async function getLearningObjectById({
   dataStore: DataStore;
   library: LibraryCommunicator;
   id: string;
-  requester: UserToken;
+  requester?: UserToken;
   filter?: LearningObjectFilter;
 }): Promise<LearningObject> {
   try {
@@ -907,6 +1021,11 @@ export async function getLearningObjectById({
         id,
         full: true,
       });
+      if (learningObject) {
+        learningObject.materials.files.map(
+          appendFilePreviewUrls(learningObject),
+        );
+      }
     }
     if ((!learningObject && filter !== 'released') || filter === 'unreleased') {
       let files: LearningObject.Material.File[] = [];
@@ -932,39 +1051,14 @@ export async function getLearningObjectById({
     if (!learningObject) {
       throw learningObjectNotFound;
     }
-    let children: LearningObject[] = [];
-    if (loadingReleased) {
-      learningObject.materials.files = learningObject.materials.files.map(
-        appendFilePreviewUrls(learningObject),
-      );
-      children = await dataStore.loadReleasedChildObjects({
-        id: learningObject.id,
-        full: false,
-      });
-      // FIXME: Children should be mapped to LearningObjectSummary type which doesn't include materials
-      children = await Promise.all(
-        children.map(async child => {
-          child.materials = await dataStore.fetchReleasedMaterials(child.id);
-          return child;
-        }),
-      );
-    } else {
-      const childrenStatus = requesterIsAuthor({
-        requester,
-        authorUsername: learningObject.author.username,
-      })
-        ? LearningObjectState.ALL
-        : [...LearningObjectState.IN_REVIEW, ...LearningObjectState.RELEASED];
 
-      children = await loadChildObjectSummaries({
-        parentId: learningObject.id,
-        dataStore,
-        childrenStatus,
-        requester,
-      });
-    }
-
-    learningObject.children = children;
+    learningObject.children = await loadChildrenSummaries({
+      dataStore,
+      requester,
+      learningObjectId: learningObject.id,
+      authorUsername: learningObject.author.username,
+      released: loadingReleased,
+    });
 
     learningObject.metrics = await loadMetrics({
       library,
@@ -977,6 +1071,121 @@ export async function getLearningObjectById({
   } catch (e) {
     handleError(e);
   }
+}
+
+/**
+ * Fetches a Learning Object's summary by id
+ * If no filter is defined the released object is returned by default unless no released object exists
+ * If no released object exists and no filter is specified, the unreleased object is loaded if the reuqester has access
+ *
+ * If neither object is found, NotFound ResourceError is thrown
+ *
+ * @export
+ * @param {DataStore} dataStore
+ * @param {string} id the Learning Object's id
+ * @returns {Promise<LearningObjectSummary>}
+ */
+export async function getLearningObjectSummaryById({
+  dataStore,
+  id,
+  requester,
+  filter,
+}: {
+  dataStore: DataStore;
+  id: string;
+  requester?: UserToken;
+  filter?: LearningObjectFilter;
+  summary?: boolean;
+}): Promise<LearningObjectSummary> {
+  try {
+    let learningObject: Partial<LearningObject>;
+    let loadingReleased = true;
+    const learningObjectNotFound = new ResourceError(
+      `No Learning Object ${id} exists.`,
+      ResourceErrorReason.NOT_FOUND,
+    );
+    if (!filter || filter === 'released') {
+      learningObject = await dataStore.fetchReleasedLearningObject({
+        id,
+        full: false,
+      });
+    }
+    if ((!learningObject && filter !== 'released') || filter === 'unreleased') {
+      const learningObjectSummary = await dataStore.fetchLearningObject({
+        id,
+        full: false,
+      });
+      if (!learningObjectSummary) {
+        throw learningObjectNotFound;
+      }
+      authorizeReadAccess({ requester, learningObject: learningObjectSummary });
+      loadingReleased = false;
+    }
+    if (!learningObject) {
+      throw learningObjectNotFound;
+    }
+
+    learningObject.children = await loadChildrenSummaries({
+      dataStore,
+      requester,
+      learningObjectId: learningObject.id,
+      authorUsername: learningObject.author.username,
+      released: loadingReleased,
+    });
+
+    return mapLearningObjectToSummary(learningObject);
+  } catch (e) {
+    handleError(e);
+  }
+}
+
+/**
+ * @private
+ *
+ * Loads the summaries for a Learning Object's first level of children
+ *
+ * If released children are requested, only released children are returned
+ * Otherwise children are returned based on authorization level:
+ * Author: all children statuses
+ * Admin/Editor/Curator/Reviewer: released + in review
+ *
+ * If requester is not author or privileged the `released` param should be true
+ *
+ * @returns {Promise<LearningObjectChildSummary[]>}
+ */
+async function loadChildrenSummaries({
+  learningObjectId,
+  authorUsername,
+  released,
+  dataStore,
+  requester,
+}: {
+  learningObjectId: string;
+  authorUsername: string;
+  released: boolean;
+  dataStore: DataStore;
+  requester: UserToken;
+}): Promise<LearningObjectChildSummary[]> {
+  let children: LearningObjectChildSummary[];
+  if (released) {
+    children = (await dataStore.loadReleasedChildObjects({
+      id: learningObjectId,
+      full: false,
+    })).map(mapChildLearningObjectToSummary);
+  } else {
+    const childrenStatus = requesterIsAuthor({
+      requester,
+      authorUsername: authorUsername,
+    })
+      ? LearningObjectState.ALL
+      : [...LearningObjectState.IN_REVIEW, ...LearningObjectState.RELEASED];
+    children = (await dataStore.loadChildObjects({
+      id: learningObjectId,
+      full: false,
+      status: childrenStatus,
+    })).map(mapChildLearningObjectToSummary);
+  }
+  return children;
 }
 
 /**
@@ -993,13 +1202,14 @@ async function loadWorkingParentsReleasedChildObjects({
 }: {
   dataStore: DataStore;
   parentId: string;
-}): Promise<LearningObject[]> {
+}): Promise<HierarchicalLearningObject[]> {
   let children = await dataStore.loadWorkingParentsReleasedChildObjects({
     id: parentId,
     full: true,
   });
-  children = await Promise.all(
-    children.map(async child => {
+
+  return Promise.all(
+    children.map(async (child: HierarchicalLearningObject) => {
       child.children = await loadWorkingParentsReleasedChildObjects({
         dataStore,
         parentId: child.id,
@@ -1007,7 +1217,6 @@ async function loadWorkingParentsReleasedChildObjects({
       return child;
     }),
   );
-  return children;
 }
 
 /**
@@ -1024,59 +1233,17 @@ async function loadReleasedChildObjects({
 }: {
   dataStore: DataStore;
   parentId: string;
-}): Promise<LearningObject[]> {
-  let children = await dataStore.loadReleasedChildObjects({
+}): Promise<HierarchicalLearningObject[]> {
+  let children = (await dataStore.loadReleasedChildObjects({
     id: parentId,
     full: true,
-  });
+  })) as HierarchicalLearningObject[];
+
   children = await Promise.all(
     children.map(async child => {
       child.children = await loadReleasedChildObjects({
         dataStore,
         parentId: child.id,
-      });
-      return child;
-    }),
-  );
-  return children;
-}
-
-/**
- * Loads unreleased child object summaries
- *
- * @param {DataStore} dataStore [The datastore to fetch children from]
- * @param {string} parentId [The id of the parent Learning Object]
- * @param {LearningObject.Status[]} status [The statuses the children should match]
- * @param {UserToken} requester [Information about the requester used to authorize the request]
- *
- * @returns
- */
-async function loadChildObjectSummaries({
-  dataStore,
-  parentId,
-  childrenStatus,
-  requester,
-}: {
-  dataStore: DataStore;
-  parentId: string;
-  childrenStatus: LearningObject.Status[];
-  requester: UserToken;
-}) {
-  let children = await dataStore.loadChildObjects({
-    id: parentId,
-    full: false,
-    status: childrenStatus,
-  });
-  children = await Promise.all(
-    // FIXME: Children should be mapped to LearningObjectSummary type which doesn't include materials or files
-    children.map(async child => {
-      child.materials = await dataStore.getLearningObjectMaterials({
-        id: child.id,
-      });
-      child.materials.files = await Gateways.fileMetadata().getAllFileMetadata({
-        requester,
-        learningObjectId: child.id,
-        filter: 'unreleased',
       });
       return child;
     }),
@@ -1377,7 +1544,6 @@ export async function getMaterials({
     handleError(e);
   }
 }
-
 
 /**
  * createLearningObjectRevision is responsible

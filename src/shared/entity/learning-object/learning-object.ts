@@ -6,6 +6,7 @@ import { User } from '../user/user';
 import { LearningOutcome } from '../learning-outcome/learning-outcome';
 import { LEARNING_OBJECT_ERRORS } from './error-messages';
 import { EntityError } from '../errors/entity-error';
+import { LearningObjectSummary, LearningObjectChildSummary } from '../../types';
 
 const MIN_NAME_LENGTH = 3;
 const MAX_NAME_LENGTH = 170;
@@ -287,40 +288,16 @@ export class LearningObject {
     }
   }
 
-  private _children: LearningObject[];
-  get children(): LearningObject[] {
-    return this._children;
-  }
+   children: LearningObjectChildSummary[] = [];
 
-  set children(children: LearningObject[]) {
-    this._children = children;
-  }
-
-  /**
-   * Adds LearningObject to this object's children
-   *
-   * @param {LearningObject} object
-   * @returns {number} index of the child object
-   * @memberof LearningObject
-   */
-  addChild(object: LearningObject): number {
-    if (object) {
-      const addingObject =
-        object instanceof LearningObject ? object : new LearningObject(object);
-
-      return this._children.push(addingObject) - 1;
-    } else {
-      throw new EntityError(LEARNING_OBJECT_ERRORS.INVALID_CHILD, 'children');
-    }
-  }
   /**
    * Removes the object's i-th child.
    * @param {number} index the index to remove from this objects' children
    *
-   * @returns {LearningObject} the child object which was removed
+   * @returns {LearningObjectChildSummary} the child object which was removed
    */
-  removeChild(index: number): LearningObject {
-    return this._children.splice(index, 1)[0];
+  removeChild(index: number): LearningObjectChildSummary {
+    return this.children.splice(index, 1)[0];
   }
 
   private _contributors: User[];
@@ -488,7 +465,6 @@ export class LearningObject {
       folderDescriptions: [],
       pdf: { name: '' },
     };
-    this._children = [];
     this._contributors = [];
     this._collection = '';
     this._status = LearningObject.Status.UNRELEASED;
@@ -537,8 +513,8 @@ export class LearningObject {
     }
     this.materials =
       <LearningObject.Material>object.materials || this.materials;
-    if (object.children) {
-      (<LearningObject[]>object.children).map(child => this.addChild(child));
+    if (Array.isArray(object.children)) {
+      this.children = object.children;
     }
     if (object.contributors) {
       (<User[]>object.contributors).map(contributor =>
@@ -578,9 +554,7 @@ export class LearningObject {
       contributors: this.contributors.map(
         contributor => contributor.toPlainObject() as User,
       ),
-      children: this.children.map(
-        child => child.toPlainObject() as LearningObject,
-      ),
+      children: this.children,
       collection: this.collection,
       status: this.status,
       metrics: this.metrics,
