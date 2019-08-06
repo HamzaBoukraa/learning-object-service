@@ -11,20 +11,25 @@ import {
   getLearningObjectChildrenById,
   getLearningObjectById,
   generateReleasableLearningObject,
+  getLearningObjectSummaryById,
 } from './LearningObjectInteractor';
 import { Stubs } from '../tests/stubs';
 import { LibraryCommunicator } from '../shared/interfaces/interfaces';
 import { HierarchicalLearningObject } from '../shared/entity';
 import { LearningObjectsModule } from './LearningObjectsModule';
-import { FileMetadataGateway, FileManagerGateway, ReadMeBuilder } from './interfaces';
+import {
+  FileMetadataGateway,
+  FileManagerGateway,
+  ReadMeBuilder,
+} from './interfaces';
 import { UserGateway } from './interfaces/UserGateway';
-import {StubFileMetadataGateway} from './gateways/FileMetadataGateway/StubFileMetadataGateway';
-import {StubFileManagerGateway} from './gateways/FileManagerGateway/StubFileManagerGateway';
-import {StubUserGateway} from './gateways/UserGateway/StubUserGateway';
-import {StubReadMeBuilder} from './drivers/ReadMeBuilder/StubReadMeBuilder';
+import { StubFileMetadataGateway } from './gateways/FileMetadataGateway/StubFileMetadataGateway';
+import { StubFileManagerGateway } from './gateways/FileManagerGateway/StubFileManagerGateway';
+import { StubUserGateway } from './gateways/UserGateway/StubUserGateway';
+import { StubReadMeBuilder } from './drivers/ReadMeBuilder/StubReadMeBuilder';
+import { mapLearningObjectToSummary } from '../shared/functions';
 
-
-const dataStore: DataStore = new MockDataStore();
+let dataStore: DataStore = new MockDataStore();
 const library: LibraryCommunicator = new MockLibraryDriver();
 const stubs = new Stubs();
 
@@ -69,14 +74,24 @@ describe('Interactor: LearningObjectInteractor', () => {
   });
   it('should get a learning object by Id', async () => {
     expect.assertions(1);
+    const localDatastore = new MockDataStore();
     const learningObject = await getLearningObjectById({
-      dataStore,
-      id: stubs.learningObject.id,
+      dataStore: localDatastore,
+      id: localDatastore.stubs.learningObject.id,
       library,
     });
-    learningObject.children.length
-      ? expect(learningObject).toMatchObject(LearningObjectWithChildren)
-      : expect(learningObject).toMatchObject(LearningObjectWithoutChildren);
+    expect(learningObject).toEqual(localDatastore.stubs.learningObject);
+  });
+  it('should get a Learning Object Summary by Id', async () => {
+    expect.assertions(1);
+    const localDatastore = new MockDataStore();
+    const learningObject = await getLearningObjectSummaryById({
+      dataStore: localDatastore,
+      id: localDatastore.stubs.learningObject.id,
+    });
+    expect(learningObject).toEqual(
+      mapLearningObjectToSummary(localDatastore.stubs.learningObject),
+    );
   });
   it('should generate a Learning Object with it\'s full heirarchy present', async () => {
     try {
