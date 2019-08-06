@@ -115,7 +115,11 @@ export class MongoDriver implements DataStore {
       authorID,
     };
     if (text) {
-      searchQuery.$text = { $search: text };
+      searchQuery.$or = searchQuery.$or || [];
+      searchQuery.$or.push(
+        { $text: { $search: text } },
+        { name: RegExp(text, 'gi') },
+      );
     }
     const resultSet = await this.db
       .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
@@ -189,7 +193,11 @@ export class MongoDriver implements DataStore {
       searchQuery.revision = revision;
     }
     if (text) {
-      searchQuery.$text = { $search: text };
+      searchQuery.$or = searchQuery.$or || [];
+      searchQuery.$or.push(
+        { $text: { $search: text } },
+        { name: RegExp(text, 'gi') },
+      );
     }
 
     const pipeline = this.buildAllObjectsPipeline({
@@ -882,14 +890,14 @@ export class MongoDriver implements DataStore {
         restrictSearchWithMatch?: { [index: string]: any };
       };
     } = {
-          $graphLookup: {
-            from: collection || COLLECTIONS.LEARNING_OBJECTS,
-            startWith: '$children',
-            connectFromField: 'children',
-            connectToField: '_id',
-            as: 'objects',
-            maxDepth: 0,
-          },
+      $graphLookup: {
+        from: collection || COLLECTIONS.LEARNING_OBJECTS,
+        startWith: '$children',
+        connectFromField: 'children',
+        connectToField: '_id',
+        as: 'objects',
+        maxDepth: 0,
+      },
     };
     if (status) {
       findChildren.$graphLookup.restrictSearchWithMatch = {
