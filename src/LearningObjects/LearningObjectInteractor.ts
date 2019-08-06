@@ -1,36 +1,39 @@
 import { DataStore } from '../shared/interfaces/DataStore';
 import { LibraryCommunicator } from '../shared/interfaces/interfaces';
 import {
+  CollectionAccessMap,
   LearningObjectMetadataUpdates,
-  UserToken,
-  VALID_LEARNING_OBJECT_UPDATES,
+  LearningObjectState,
   LearningObjectSummary,
   UserLearningObjectQuery,
   UserLearningObjectSearchQuery,
-  CollectionAccessMap,
-  LearningObjectState,
-  LearningObjectChildSummary,
+  UserToken,
+  VALID_LEARNING_OBJECT_UPDATES,
 } from '../shared/types';
 import {
+  handleError,
   ResourceError,
   ResourceErrorReason,
-  handleError,
 } from '../shared/errors';
 import { reportError } from '../shared/SentryConnector';
 import { LearningObject, User } from '../shared/entity';
 import {
-  authorizeRequest,
-  requesterIsAuthor,
-  requesterIsAdminOrEditor,
-  hasReadAccessByCollection,
   authorizeReadAccess,
+  authorizeRequest,
   authorizeWriteAccess,
-  requesterIsPrivileged,
   getAccessGroupCollections,
-  getCollectionAccessMap,
   getAuthorizedStatuses,
+  getCollectionAccessMap,
+  hasReadAccessByCollection,
+  requesterIsAdminOrEditor,
+  requesterIsAuthor,
+  requesterIsPrivileged,
 } from '../shared/AuthorizationManager';
-import { FileMeta, LearningObjectFilter, MaterialsFilter, HierarchicalLearningObject } from './typings';
+import {
+  LearningObjectFilter,
+  MaterialsFilter,
+  HierarchicalLearningObject,
+} from './typings';
 import * as PublishingService from './Publishing';
 import {
   mapLearningObjectToSummary,
@@ -962,9 +965,9 @@ export async function generateReleasableLearningObject({
       filter: 'unreleased',
     }),
   ]);
-  const releasableObject = (new LearningObject({
+  const releasableObject = new LearningObject({
     ...object.toPlainObject(),
-  })) as HierarchicalLearningObject;
+  }) as HierarchicalLearningObject;
   releasableObject.children = children;
   releasableObject.materials.files = files;
   return releasableObject;
@@ -1050,7 +1053,7 @@ export async function getLearningObjectById({
         authorUsername: learningObject.author.username,
       })
         ? LearningObjectState.ALL
-        : LearningObjectState.IN_REVIEW;
+        : [...LearningObjectState.IN_REVIEW, ...LearningObjectState.RELEASED];
 
       children = await loadChildObjectSummaries({
         parentId: learningObject.id,
@@ -1373,6 +1376,7 @@ export async function updateReadme(params: {
     await Gateways.fileManager().uploadFile({
       authorUsername: object.author.username,
       learningObjectId: object.id,
+      learningObjectRevisionId: object.revision,
       file: { data: pdfFile, path: newPdfName },
     });
     if (oldPDF && oldPDF.name !== newPdfName) {
@@ -1380,6 +1384,7 @@ export async function updateReadme(params: {
         .deleteFile({
           authorUsername: object.author.username,
           learningObjectId: object.id,
+          learningObjectRevisionId: object.revision,
           path: oldPDF.name,
         })
         .catch(reportError);
