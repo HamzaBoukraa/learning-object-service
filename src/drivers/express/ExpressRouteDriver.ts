@@ -55,7 +55,6 @@ export class ExpressRouteDriver {
 
         objectResponse = await LearningObjectInteractor.searchObjects({
             dataStore: this.dataStore,
-            library: this.library,
             query,
             userToken,
         });
