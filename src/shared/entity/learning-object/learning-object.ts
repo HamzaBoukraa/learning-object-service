@@ -585,6 +585,7 @@ export class LearningObject {
       status: this.status,
       metrics: this.metrics,
       hasRevision: this.hasRevision,
+      revision: this.revision,
     };
     return object;
   }
@@ -654,6 +655,7 @@ export namespace LearningObject {
       size?: number;
       description?: string;
       packageable?: boolean;
+      storageRevision: number;
     }
     export interface Url {
       title: string;
