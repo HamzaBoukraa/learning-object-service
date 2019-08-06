@@ -19,6 +19,7 @@ import {
   ReleasedUserLearningObjectSearchQuery,
   UserLearningObjectSearchQuery,
   CollectionAccessMap,
+  LearningObjectChildSummary,
 } from '../shared/types';
 import { LearningOutcomeMongoDatastore } from '../LearningOutcomes/LearningOutcomeMongoDatastore';
 import {
@@ -40,7 +41,10 @@ import {
 import { reportError } from '../shared/SentryConnector';
 import { LearningObject, LearningOutcome, User } from '../shared/entity';
 import { MongoConnector } from '../shared/Mongo/MongoConnector';
-import { mapLearningObjectToSummary } from '../shared/functions';
+import {
+  mapLearningObjectToSummary,
+  mapChildLearningObjectToSummary,
+} from '../shared/functions';
 import {
   ReleasedLearningObjectDocument,
   OutcomeDocument,
@@ -2522,13 +2526,13 @@ export class MongoDriver implements DataStore {
     );
     const [author, contributors] = await Promise.all([author$, contributors$]);
 
-    let children: Partial<LearningObject>[] = [];
+    let children: LearningObjectChildSummary[] = [];
     if (record.children) {
-      children = await this.loadChildObjects({
+      children = (await this.loadChildObjects({
         id: record._id,
         full: false,
         status: [],
-      });
+      })).map(mapChildLearningObjectToSummary);
     }
 
     return mapLearningObjectToSummary({
@@ -2560,12 +2564,12 @@ export class MongoDriver implements DataStore {
     if (hasRevision == null) {
       hasRevision = await this.learningObjectHasRevision(record._id);
     }
-    let children: Partial<LearningObject>[] = [];
+    let children: LearningObjectChildSummary[] = [];
     if (record.children) {
-      children = await this.loadReleasedChildObjects({
+      children = (await this.loadReleasedChildObjects({
         id: record._id,
         full: false,
-      });
+      })).map(mapChildLearningObjectToSummary);
     }
 
     return mapLearningObjectToSummary({
