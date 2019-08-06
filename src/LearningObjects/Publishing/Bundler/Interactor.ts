@@ -186,7 +186,7 @@ async function addChildren({
   prefix: string;
 }): Promise<BundleData[]> {
   const childrenBundleData = await Promise.all(
-    children.map(async child => {
+    children.map(child => {
       // This is to ensure that the prefix property is only utilized at the first layer of children and below
       const path = `${prefix}/${buildDirectoryName(child)}`;
       return buildBundleStructure({
