@@ -1,4 +1,8 @@
 import { StandardOutcome } from '../standard-outcome/standard-outcome';
+import {
+  validate as _validate,
+  validateSubmittable as _validateSubmittable,
+} from './validators';
 import { levels, taxonomy } from '@cyber4all/clark-taxonomy';
 import { LEARNING_OUTCOME_ERROR_MESSAGES } from './error-messages';
 import { EntityError } from '../errors/entity-error';
@@ -188,4 +192,8 @@ export class LearningOutcome {
     };
     return outcome;
   }
+}
+export namespace LearningOutcome {
+  export const validate = _validate;
+  export const validateSubmittable = _validateSubmittable;
 }

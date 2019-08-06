@@ -61,7 +61,7 @@ export class LearningObject {
    * @returns {boolean}
    * @memberof LearningObject
    */
-  private isValidName(name: string): boolean {
+  public isValidName(name: string): boolean {
     if (name !== undefined && name !== null) {
       const trimmedName = name.trim();
       if (

@@ -48,6 +48,7 @@ import {
 import { LearningObjectsModule } from './LearningObjectsModule';
 import { LearningObjectSubmissionAdapter } from '../LearningObjectSubmission/adapters/LearningObjectSubmissionAdapter';
 import { UserGateway } from './interfaces/UserGateway';
+import { validateUpdates } from '../shared/entity/learning-object/validators';
 
 namespace Drivers {
   export const readMeBuilder = () =>
@@ -906,10 +907,7 @@ export async function updateLearningObject({
       }.`,
     });
     const cleanUpdates = sanitizeUpdates(updates);
-    validateUpdates({
-      id,
-      updates: cleanUpdates,
-    });
+
     cleanUpdates.date = Date.now().toString();
     await dataStore.editLearningObject({
       id,
@@ -1584,7 +1582,8 @@ function appendFilePreviewUrls(
 }
 
 /**
- * Sanitizes object containing updates to be stored by removing invalid update properties, cloning valid properties, and trimming strings
+ * Sanitizes object containing updates to be stored by removing invalid update properties, cloning valid properties, and trimming strings,
+ * then validating the updates after they have been properly formatted
  *
  * @param {Partial<LearningObject>} object [Object containing values to update existing Learning Object with]
  * @returns {LearningObjectMetadataUpdates}
@@ -1600,6 +1599,7 @@ function sanitizeUpdates(
       updates[key] = typeof value === 'string' ? value.trim() : value;
     }
   }
+  validateUpdates(updates);
   return updates;
 }
 
@@ -1631,30 +1631,6 @@ async function validateRequest(params: {
       `User ${params.username} does not own a Learning Object with id ${params.learningObjectId}`,
       ResourceErrorReason.NOT_FOUND,
     );
-  }
-}
-
-/**
- * Verifies update object contains valid update values
- *
- * @param {{
- *   id: string;
- *   updates: LearningObjectMetadataUpdates;
- * }} params
- */
-function validateUpdates(params: {
-  id: string;
-  updates: LearningObjectMetadataUpdates;
-}): void {
- if (params.updates.name) {
-  const learningObjectName = params.updates.name.trim();
-  const isValidName = learningObjectName.length >= 2 && learningObjectName.length < 50;
-  if (learningObjectName === ''
-      || !isValidName ) {
-      throw new ResourceError(
-      'Learning Object name cannot be empty or over 50 characters.',
-      ResourceErrorReason.BAD_REQUEST);
-    }
   }
 }
 
