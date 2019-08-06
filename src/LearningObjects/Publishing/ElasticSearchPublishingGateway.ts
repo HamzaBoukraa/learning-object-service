@@ -24,10 +24,64 @@ export class ElasticSearchPublishingGateway implements PublishingDataStore {
     this.client = new Client({ node: URI });
   }
   async addToReleased(releasableObject: LearningObject): Promise<void> {
-    await this.client.index({
+    let cleanObject = cleanLearningObject(releasableObject);
+    let releaseField = Object.keys(cleanObject);
+    let releaseSource: string = '';
+    releaseField.map(field => {
+      let updateValue = cleanObject[field];
+      if (
+        Array.isArray(field)
+        && field[0]
+        && typeof field[0] === 'object'
+      ) {
+        field.forEach(subObj => {
+          let subField = Object.keys(subObj);
+          subField.forEach(sub => {
+            let updateSubValue = cleanObject[sub];
+            releaseSource = releaseSource.concat(`ctx._source.${field}.${sub} = \"${updateSubValue}\";`);
+          });
+        });
+      } else if (typeof field === 'object') {
+        let subField = Object.keys(field);
+        subField.forEach(sub => {
+          let updateSubValue = cleanObject[sub];
+          releaseSource = releaseSource.concat(`ctx._source.${field}.${sub} = \"${updateSubValue}\";`);
+        });
+      } else {
+        releaseSource = releaseSource.concat(`ctx._source.${field} = \"${updateValue}\";`);
+      }
+    });
+    const updateResponse = await this.client.updateByQuery({
       index: 'learning-objects',
       type: '_doc',
-      body: cleanLearningObject(releasableObject),
+      body: {
+        query: {
+          bool: {
+            must: [
+              {
+                term: {
+                  'id.keyword': releasableObject.id,
+                },
+              },
+              {
+                term: {
+                  'status.keyword': LearningObject.Status.RELEASED,
+                },
+              },
+            ],
+          },
+        },
+        script: {
+          source: releaseSource,
+        },
+      },
     });
+    if (updateResponse.body.updated === 0) {
+      await this.client.index({
+        index: 'learning-objects',
+        type: '_doc',
+        body: cleanObject,
+      });
+    }
   }
 }
