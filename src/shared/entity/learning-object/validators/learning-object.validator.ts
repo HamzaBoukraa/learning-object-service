@@ -5,7 +5,11 @@ import {
 } from './error-messages';
 import { LearningOutcome } from '../../learning-outcome/learning-outcome';
 import { User } from '../../user/user';
-import { LearningObjectMetadataUpdates } from '../../../types';
+import {
+  LearningObjectMetadataUpdates,
+  LearningObjectChildSummary,
+  AuthorSummary,
+} from '../../../types';
 import { ResourceError, ResourceErrorReason } from '../../../errors';
 
 /**
@@ -19,9 +23,13 @@ export function validate(object: LearningObject): void | never {
   if (!object) {
     throw new Error(LEARNING_OBJECT_ERRORS.INVALID_OBJECT);
   }
-  validateChildren(object.children);
+  if (object.children) {
+    validateChildren(object.children);
+  }
   validateCollection(object.collection);
-  validateContributors(object.contributors);
+  if (object.contributors) {
+    validateContributors(object.contributors);
+  }
   validateDescription(object.description);
   validateLength(object.length);
   validateLevels(object.levels);
@@ -32,17 +40,44 @@ export function validate(object: LearningObject): void | never {
   validateStatus(object.status);
 }
 
-
 export function validateUpdates(object: LearningObjectMetadataUpdates) {
-    if (!object) {
-        throw new Error(LEARNING_OBJECT_ERRORS.INVALID_OBJECT);
-    } else {
-        if (object.name) { validateName(object.name); }
-        if (object.description) { validateDescription(object.description); }
-        if (object.length) { validateLength(object.length); }
-        if (object.levels) { validateLevels(object.levels); }
-        if (object.status) { validateStatus(object.status); }
+  if (!object) {
+    throw new Error(LEARNING_OBJECT_ERRORS.INVALID_OBJECT);
+  } else {
+    if (object.name) {
+      validateName(object.name);
     }
+    if (object.description) {
+      validateDescription(object.description);
+    }
+    if (object.length) {
+      validateLength(object.length);
+    }
+    if (object.levels) {
+      validateLevels(object.levels);
+    }
+    if (object.status) {
+      validateStatus(object.status);
+    }
+  }
+}
+
+function validateChildSummary(child: LearningObjectChildSummary) {
+  if (!child) {
+    throw new ResourceError(
+      LEARNING_OBJECT_ERRORS.INVALID_CHILDREN,
+      ResourceErrorReason.BAD_REQUEST,
+    );
+  } else {
+    validateCollection(child.collection);
+    if (child.contributors) {
+      validateContributors(child.contributors);
+    }
+    validateDescription(child.description);
+    validateLength(child.length);
+    validateName(child.name);
+    validateStatus(child.status);
+  }
 }
 /**
  * Validates object is a submittable Learning Object
@@ -63,13 +98,16 @@ export function validateSubmittable(object: LearningObject): void | never {
  * @param {LearningObject[]} children
  * @returns {(void | never)}
  */
-function validateChildren(children: LearningObject[]): void | never {
+function validateChildren(
+  children: LearningObjectChildSummary[],
+): void | never {
   if (!children) {
     throw new ResourceError(
       LEARNING_OBJECT_ERRORS.INVALID_CHILDREN,
-      ResourceErrorReason.BAD_REQUEST);
+      ResourceErrorReason.BAD_REQUEST,
+    );
   }
-  children.forEach(child => validate(child));
+  children.forEach(validateChildSummary);
 }
 
 /**
@@ -90,11 +128,14 @@ function validateCollection(collection: string): void | never {
  * @param {User[]} contributors
  * @returns {(void | never)}
  */
-function validateContributors(contributors: User[]): void | never {
+function validateContributors(
+  contributors: User[] | AuthorSummary[],
+): void | never {
   if (!contributors) {
     throw new ResourceError(
       LEARNING_OBJECT_ERRORS.INVALID_CONTRIBUTORS,
-      ResourceErrorReason.BAD_REQUEST);
+      ResourceErrorReason.BAD_REQUEST,
+    );
   }
 }
 
@@ -108,7 +149,8 @@ function validateDescription(description: string): void | never {
   if (description == null) {
     throw new ResourceError(
       LEARNING_OBJECT_ERRORS.INVALID_DESCRIPTION,
-      ResourceErrorReason.BAD_REQUEST);
+      ResourceErrorReason.BAD_REQUEST,
+    );
   }
 }
 
@@ -122,7 +164,8 @@ function validateSubmittableDescription(description: string): void | never {
   if (!description || (description && !description.trim())) {
     throw new ResourceError(
       SUBMITTABLE_LEARNING_OBJECT_ERRORS.INVALID_DESCRIPTION,
-      ResourceErrorReason.BAD_REQUEST);
+      ResourceErrorReason.BAD_REQUEST,
+    );
   }
 }
 
@@ -135,7 +178,8 @@ function validateLength(length: string): void | never {
   if (!isValidLength(length)) {
     throw new ResourceError(
       LEARNING_OBJECT_ERRORS.INVALID_LENGTH(length),
-      ResourceErrorReason.BAD_REQUEST);
+      ResourceErrorReason.BAD_REQUEST,
+    );
   }
 }
 
@@ -170,7 +214,8 @@ function validateLevels(levels: string[]): void | never {
   if (!levels || (levels && levels.length)) {
     throw new ResourceError(
       LEARNING_OBJECT_ERRORS.INVALID_LEVELS,
-      ResourceErrorReason.BAD_REQUEST);
+      ResourceErrorReason.BAD_REQUEST,
+    );
   }
   levels.forEach((level: LearningObject.Level) => {
     const [alreadyAdded, isValid] = isValidLevel(
@@ -180,12 +225,14 @@ function validateLevels(levels: string[]): void | never {
     if (alreadyAdded) {
       throw new ResourceError(
         LEARNING_OBJECT_ERRORS.INVALID_LEVEL(level),
-        ResourceErrorReason.BAD_REQUEST);
+        ResourceErrorReason.BAD_REQUEST,
+      );
     }
     if (!isValid) {
       throw new ResourceError(
         LEARNING_OBJECT_ERRORS.INVALID_LEVEL(level),
-        ResourceErrorReason.BAD_REQUEST);
+        ResourceErrorReason.BAD_REQUEST,
+      );
     }
   });
 }
@@ -223,7 +270,8 @@ function validateMaterials(material: LearningObject.Material): void | never {
   if (!material) {
     throw new ResourceError(
       LEARNING_OBJECT_ERRORS.INVALID_MATERIAL,
-      ResourceErrorReason.BAD_REQUEST);
+      ResourceErrorReason.BAD_REQUEST,
+    );
   }
 }
 
@@ -236,7 +284,8 @@ function validateMetrics(metrics: LearningObject.Metrics): void | never {
   if (!metrics) {
     throw new ResourceError(
       LEARNING_OBJECT_ERRORS.INVALID_METRICS,
-      ResourceErrorReason.BAD_REQUEST);
+      ResourceErrorReason.BAD_REQUEST,
+    );
   }
 }
 
@@ -250,7 +299,8 @@ function validateName(name: string): void | never {
   if (!isValidName(name)) {
     throw new ResourceError(
       LEARNING_OBJECT_ERRORS.INVALID_NAME,
-      ResourceErrorReason.BAD_REQUEST);
+      ResourceErrorReason.BAD_REQUEST,
+    );
   }
 }
 
@@ -305,7 +355,8 @@ function validateSubmittableOutcomes(
   if (!outcomes || (outcomes && !outcomes.length)) {
     throw new ResourceError(
       SUBMITTABLE_LEARNING_OBJECT_ERRORS.INVALID_OUTCOMES,
-      ResourceErrorReason.BAD_REQUEST);
+      ResourceErrorReason.BAD_REQUEST,
+    );
   }
   outcomes.forEach(o => {
     LearningOutcome.validateSubmittable(o);
@@ -322,7 +373,8 @@ function validateStatus(status: string): void | never {
   if (!isValidStatus(status as LearningObject.Status)) {
     throw new ResourceError(
       LEARNING_OBJECT_ERRORS.INVALID_STATUS(status),
-      ResourceErrorReason.BAD_REQUEST);
+      ResourceErrorReason.BAD_REQUEST,
+    );
   }
 }
 
