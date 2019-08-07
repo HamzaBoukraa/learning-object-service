@@ -4,6 +4,7 @@ import { cleanLearningObject } from '../shared/elasticsearch';
 import { SubmissionPublisher } from './interactors/SubmissionPublisher';
 import { Client } from '@elastic/elasticsearch';
 import { reportError } from '../shared/SentryConnector';
+import { LearningObjectMetadataUpdates } from '../shared/types';
 
 const INDEX_NAME = 'learning-objects';
 /**
@@ -55,14 +56,19 @@ export class ElasticsearchSubmissionPublisher implements SubmissionPublisher {
    */
   async updateSubmission(params: {
     learningObjectId: string;
-    updates: Partial<LearningObject>;
+    updates: LearningObjectMetadataUpdates;
   }) {
     const { learningObjectId, updates } = params;
     let updateField = Object.keys(updates);
-    let updateSource: string = '';
+    let updateSource: string;
     updateField.map(field => {
-       let updateValue = updates[field];
-       updateSource = updateSource.concat(`ctx._source.${field} = \"${updateValue}\";`);
+      if (Array.isArray(updates[field])) {
+        updates[field].map((arrayVal: string, index: number) => {
+          updateSource = updateSource.concat(`ctx.source.${field}[${index}] = \"${arrayVal}\";`);
+        });
+      }
+      let updateValue = updates[field];
+      updateSource = updateSource.concat(`ctx._source.${field} = \"${updateValue}\";`);
     });
     let learningObjectUpdateRequest = {
       query: {
@@ -83,7 +89,7 @@ export class ElasticsearchSubmissionPublisher implements SubmissionPublisher {
         body: learningObjectUpdateRequest,
       });
     } catch (e) {
-      console.log(e);
+      reportError(e);
     }
   }
 

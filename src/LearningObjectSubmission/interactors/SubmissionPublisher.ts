@@ -1,4 +1,5 @@
 import { LearningObject } from '../../shared/entity';
+import { LearningObjectMetadataUpdates } from '../../shared/types';
 export interface SubmissionPublisher {
   /**
    * publishSubmission makes a Learning Object searchable by reviewers, curators,
@@ -13,7 +14,7 @@ export interface SubmissionPublisher {
   updateSubmission(
     params: {
       learningObjectId: string,
-      updates: Partial<LearningObject>,
+      updates: LearningObjectMetadataUpdates,
   }): Promise<void>;
   /**
    * deleteSubmission removes a submitted Learning Object from access by

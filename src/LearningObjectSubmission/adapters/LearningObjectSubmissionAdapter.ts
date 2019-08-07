@@ -1,7 +1,7 @@
 import { SubmissionPublisher } from '../interactors/SubmissionPublisher';
 import { LearningObject } from '../../shared/entity';
 import { deleteSubmission } from '../interactors/deleteSubmission';
-import { UserToken } from '../../shared/types';
+import { UserToken, LearningObjectMetadataUpdates } from '../../shared/types';
 import { updateSubmission } from '../interactors';
 
 export class LearningObjectSubmissionAdapter {
@@ -53,7 +53,7 @@ export class LearningObjectSubmissionAdapter {
     user,
   }: {
     learningObjectId: string;
-    updates: Partial<LearningObject>;
+    updates: LearningObjectMetadataUpdates;
     user: UserToken;
   }): Promise<void> {
     return updateSubmission({

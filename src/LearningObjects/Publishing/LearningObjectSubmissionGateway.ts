@@ -1,4 +1,4 @@
-import { UserToken } from '../../shared/types';
+import { UserToken, LearningObjectMetadataUpdates } from '../../shared/types';
 import { LearningObject } from '../../shared/entity';
 
 export abstract class LearningObjectSubmissionGateway {
@@ -27,7 +27,7 @@ export abstract class LearningObjectSubmissionGateway {
    */
   abstract updateSubmission(params: {
     learningObjectId: string;
-    updates: Partial<LearningObject>;
+    updates: LearningObjectMetadataUpdates;
     user: UserToken;
   }): Promise<void>;
 }

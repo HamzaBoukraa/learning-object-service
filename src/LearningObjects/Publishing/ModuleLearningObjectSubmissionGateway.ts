@@ -1,6 +1,6 @@
 import { LearningObjectSubmissionGateway } from './LearningObjectSubmissionGateway';
 import { LearningObjectSubmissionAdapter } from '../../LearningObjectSubmission/adapters/LearningObjectSubmissionAdapter';
-import { UserToken } from '../../shared/types';
+import { UserToken, LearningObjectMetadataUpdates } from '../../shared/types';
 import { LearningObject } from '../../shared/entity';
 
 export class ModuleLearningObjectSubmissionGateway
@@ -28,7 +28,7 @@ export class ModuleLearningObjectSubmissionGateway
     user,
   }: {
     learningObjectId: string;
-    updates: Partial<LearningObject>;
+    updates: LearningObjectMetadataUpdates;
     user: UserToken;
   }): Promise<void> {
     return LearningObjectSubmissionAdapter.getInstance().updateLearningObjectSubmission(

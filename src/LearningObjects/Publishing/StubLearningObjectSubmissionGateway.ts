@@ -1,6 +1,6 @@
 import { LearningObjectSubmissionGateway } from './LearningObjectSubmissionGateway';
 import { UserToken } from '../../shared/types/user-token';
-import { LearningObject } from '../../shared/entity';
+import { LearningObjectMetadataUpdates } from '../../shared/types';
 
 export class StubLearningObjectSubmissionGateway implements LearningObjectSubmissionGateway {
     /** @inheritdoc */
@@ -12,7 +12,11 @@ export class StubLearningObjectSubmissionGateway implements LearningObjectSubmis
        return Promise.resolve();
     }
     /** @inheritdoc */
-    updateSubmission(params: { learningObjectId: string; updates: Partial<LearningObject>; user: UserToken; }): Promise<void> {
+    updateSubmission(params: {
+        learningObjectId: string;
+        updates: LearningObjectMetadataUpdates;
+        user: UserToken;
+    }): Promise<void> {
         return Promise.resolve();
     }
 }

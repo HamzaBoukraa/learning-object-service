@@ -925,7 +925,7 @@ export async function updateLearningObject({
     if (isInReview) {
       LearningObjectSubmissionAdapter
         .getInstance()
-        .updateLearningObjectSubmission({learningObjectId: id, updates, user: requester});
+        .updateLearningObjectSubmission({learningObjectId: id, updates: cleanUpdates, user: requester});
     }
 
     // Infer if this Learning Object is being released

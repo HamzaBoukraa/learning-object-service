@@ -5,6 +5,7 @@ import { LearningObject } from '../../shared/entity';
 import { MockLibraryDriver } from '../../tests/mock-drivers/MockLibraryDriver';
 import { LearningObjectAdapter } from '../../LearningObjects/adapters/LearningObjectAdapter';
 import { LearningObjectSubmissionAdapter } from '../adapters/LearningObjectSubmissionAdapter';
+import { LearningObjectMetadataUpdates } from '../../shared/types';
 
 
 const dataStore = new MockDataStore();
@@ -16,7 +17,7 @@ const publisher: SubmissionPublisher = {
   publishSubmission: (submission: LearningObject) => null,
   updateSubmission: (params: {
     learningObjectId: string,
-    updates: Partial<LearningObject>}) => null,
+    updates: LearningObjectMetadataUpdates}) => null,
 };
 
 const learningObjectDataStore = new MockDataStore();

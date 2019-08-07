@@ -1,5 +1,6 @@
 import { SubmissionPublisher } from './interactors/SubmissionPublisher';
 import { LearningObject } from '../shared/entity';
+import { LearningObjectMetadataUpdates } from '../shared/types';
 
 export class StubSubmissionPublisher implements SubmissionPublisher {
     /**
@@ -20,7 +21,7 @@ export class StubSubmissionPublisher implements SubmissionPublisher {
      */
     updateSubmission(params: {
         learningObjectId: string;
-        updates: Partial<LearningObject>;
+        updates: LearningObjectMetadataUpdates;
     }): Promise<void> {
         return Promise.resolve();
     }

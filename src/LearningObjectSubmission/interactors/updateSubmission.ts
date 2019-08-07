@@ -1,8 +1,7 @@
 import { SubmissionPublisher } from './SubmissionPublisher';
-import { UserToken } from '../../shared/types';
+import { UserToken, LearningObjectMetadataUpdates } from '../../shared/types';
 import { requesterIsAdminOrEditor } from '../../shared/AuthorizationManager';
 import { ResourceError, ResourceErrorReason } from '../../shared/errors';
-import { LearningObject } from '../../shared/entity';
 
 /**
  * updateSubmission allows admins and editors to publish changes to a submission for other
@@ -12,7 +11,7 @@ export async function updateSubmission(params: {
   publisher: SubmissionPublisher;
   learningObjectId: string;
   user: UserToken;
-  updates: Partial<LearningObject>;
+  updates: LearningObjectMetadataUpdates;
 }): Promise<void> {
   const { publisher, learningObjectId, user, updates } = params;
   const isAdminOrEditor = requesterIsAdminOrEditor(user);
