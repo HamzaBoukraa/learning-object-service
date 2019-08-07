@@ -3,6 +3,7 @@ import { LearningObject } from '../../shared/entity';
 import * as request from 'request-promise';
 import { cleanLearningObject } from '../../shared/elasticsearch';
 import { Client } from '@elastic/elasticsearch';
+import { formatUpdateQueryParam } from '../../shared/elasticsearch/HelperFunctions';
 
 /**
  * In the case where the ELASTICSEARCH_DOMAIN is defined in the environment,
@@ -23,34 +24,19 @@ export class ElasticSearchPublishingGateway implements PublishingDataStore {
   constructor() {
     this.client = new Client({ node: URI });
   }
+
+  /**
+   *
+   * @param releasableObject {LearningObject}
+   *
+   * addToReleased attempts to update the existing Released Learning
+   * Object document in Elasticsearch. If the Release Learning Object
+   * document does not exist, the function will insert the provided Learning
+   * Object.
+   */
   async addToReleased(releasableObject: LearningObject): Promise<void> {
-    let cleanObject = cleanLearningObject(releasableObject);
-    let releaseField = Object.keys(cleanObject);
-    let releaseSource: string = '';
-    releaseField.map(field => {
-      let updateValue = cleanObject[field];
-      if (
-        Array.isArray(field)
-        && field[0]
-        && typeof field[0] === 'object'
-      ) {
-        field.forEach(subObj => {
-          let subField = Object.keys(subObj);
-          subField.forEach(sub => {
-            let updateSubValue = cleanObject[sub];
-            releaseSource = releaseSource.concat(`ctx._source.${field}.${sub} = \"${updateSubValue}\";`);
-          });
-        });
-      } else if (typeof field === 'object') {
-        let subField = Object.keys(field);
-        subField.forEach(sub => {
-          let updateSubValue = cleanObject[sub];
-          releaseSource = releaseSource.concat(`ctx._source.${field}.${sub} = \"${updateSubValue}\";`);
-        });
-      } else {
-        releaseSource = releaseSource.concat(`ctx._source.${field} = \"${updateValue}\";`);
-      }
-    });
+    const cleanObject = cleanLearningObject(releasableObject);
+    const formattedUpdateParam = formatUpdateQueryParam(cleanObject);
     const updateResponse = await this.client.updateByQuery({
       index: 'learning-objects',
       type: '_doc',
@@ -60,19 +46,19 @@ export class ElasticSearchPublishingGateway implements PublishingDataStore {
             must: [
               {
                 term: {
-                  'id.keyword': releasableObject.id,
+                  id: releasableObject.id,
                 },
               },
               {
                 term: {
-                  'status.keyword': LearningObject.Status.RELEASED,
+                  status: LearningObject.Status.RELEASED,
                 },
               },
             ],
           },
         },
         script: {
-          source: releaseSource,
+          source: formattedUpdateParam,
         },
       },
     });
