@@ -19,6 +19,7 @@ import {
   ReleasedUserLearningObjectSearchQuery,
   UserLearningObjectSearchQuery,
   CollectionAccessMap,
+  LearningObjectChildSummary,
 } from '../shared/types';
 import { LearningOutcomeMongoDatastore } from '../LearningOutcomes/LearningOutcomeMongoDatastore';
 import {
@@ -40,7 +41,10 @@ import {
 import { reportError } from '../shared/SentryConnector';
 import { LearningObject, LearningOutcome, User } from '../shared/entity';
 import { MongoConnector } from '../shared/Mongo/MongoConnector';
-import { mapLearningObjectToSummary } from '../shared/functions';
+import {
+  mapLearningObjectToSummary,
+  mapChildLearningObjectToSummary,
+} from '../shared/functions';
 import {
   ReleasedLearningObjectDocument,
   OutcomeDocument,
@@ -118,7 +122,7 @@ export class MongoDriver implements DataStore {
       searchQuery.$or = searchQuery.$or || [];
       searchQuery.$or.push(
         { $text: { $search: text } },
-        { name: RegExp(text, 'gi') },
+        { name: RegExp(sanitizeRegex(text), 'gi') },
       );
     }
     const resultSet = await this.db
@@ -196,7 +200,7 @@ export class MongoDriver implements DataStore {
       searchQuery.$or = searchQuery.$or || [];
       searchQuery.$or.push(
         { $text: { $search: text } },
-        { name: RegExp(text, 'gi') },
+        { name: RegExp(sanitizeRegex(text), 'gi') },
       );
     }
 
@@ -1826,12 +1830,10 @@ export class MongoDriver implements DataStore {
         query.status = { $in: params.status };
       }
       if (params.text) {
-        if (!query.$or) {
-          query.$or = [];
-        }
+        query.$or = query.$or || [];
         query.$or.push(
-          { description: { $regex: params.text, $options: 'i' } },
-          { name: { $regex: params.text, $options: 'i' } },
+          { name: new RegExp(sanitizeRegex(params.text)) },
+          { description: new RegExp(sanitizeRegex(params.text)) },
         );
       }
       let objectCursor = await this.db
@@ -2080,8 +2082,8 @@ export class MongoDriver implements DataStore {
     const regex = new RegExp(sanitizeRegex(text));
     query.$or = [
       { $text: { $search: text } },
-      { name: { $regex: regex } },
-      { contributors: { $regex: regex } },
+      { name: regex },
+      { contributors: regex },
     ];
     if (Array.isArray(learningObjectIds)) {
       query.$or.push({ _id: { $in: learningObjectIds } });
@@ -2278,9 +2280,9 @@ export class MongoDriver implements DataStore {
     if (text) {
       const regex = new RegExp(sanitizeRegex(text), 'ig');
       (<any[]>query.$or).push(
-        { username: { $regex: regex } },
-        { name: { $regex: regex } },
-        { email: { $regex: regex } },
+        { username: regex },
+        { name: regex },
+        { email: regex },
       );
     }
     return author || text
@@ -2522,13 +2524,13 @@ export class MongoDriver implements DataStore {
     );
     const [author, contributors] = await Promise.all([author$, contributors$]);
 
-    let children: Partial<LearningObject>[] = [];
+    let children: LearningObjectChildSummary[] = [];
     if (record.children) {
-      children = await this.loadChildObjects({
+      children = (await this.loadChildObjects({
         id: record._id,
         full: false,
         status: [],
-      });
+      })).map(mapChildLearningObjectToSummary);
     }
 
     return mapLearningObjectToSummary({
@@ -2560,12 +2562,12 @@ export class MongoDriver implements DataStore {
     if (hasRevision == null) {
       hasRevision = await this.learningObjectHasRevision(record._id);
     }
-    let children: Partial<LearningObject>[] = [];
+    let children: LearningObjectChildSummary[] = [];
     if (record.children) {
-      children = await this.loadReleasedChildObjects({
+      children = (await this.loadReleasedChildObjects({
         id: record._id,
         full: false,
-      });
+      })).map(mapChildLearningObjectToSummary);
     }
 
     return mapLearningObjectToSummary({

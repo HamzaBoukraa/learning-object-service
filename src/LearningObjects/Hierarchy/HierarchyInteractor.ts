@@ -23,8 +23,8 @@ export async function fetchParents(params: {
   const author = await dataStore.fetchLearningObjectAuthorUsername(learningObjectID);
 
   if (userToken) {
-    hasFullAccess = hasFullReviewStageAccess(userToken.accessGroups);
-    collectionsWithAccess = identifyCollectionAccess(userToken.accessGroups);
+    hasFullAccess = hasFullReviewStageAccess(userToken.accessGroups || []);
+    collectionsWithAccess = identifyCollectionAccess(userToken.accessGroups || []);
     requestedByAuthor = userToken.username === author;
   }
 

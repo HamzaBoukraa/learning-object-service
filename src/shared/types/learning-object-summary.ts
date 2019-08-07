@@ -22,26 +22,14 @@ export interface AuthorSummary {
    */
   organization: string;
 }
-export interface LearningObjectChildSummary {
-  /**
-   * The name of the Learning Object
-   */
-
-  name: string;
-  /**
-   * Unique identifier of the Learning Object
-   */
-
-  id: string;
-}
 
 /**
  * An interface representation of the LearningObjectSummary type
  *
  * @export
- * @interface LearningObjectSummary
+ * @interface LearningObjectChildSummary
  */
-export interface LearningObjectSummary {
+export interface LearningObjectChildSummary {
   /**
    * Unique identifier of the Learning Object
    */
@@ -54,10 +42,6 @@ export interface LearningObjectSummary {
    * The collection the Learning Object was submitted to
    */
   collection: string;
-  /**
-   * Summary of Learning Objects that exist in this Learning Object's hierarchy
-   */
-  children: LearningObjectChildSummary[];
   /**
    * Summary information about users who have made contributions to the Learning Object
    */
@@ -72,10 +56,6 @@ export interface LearningObjectSummary {
    */
   description: string;
   /**
-   * Flag indicating whether or not a Learning Object has a working copy with dissimilar properties
-   */
-  hasRevision: boolean;
-  /**
    * How long the content of the Learning Object
    */
   length: string;
@@ -84,11 +64,28 @@ export interface LearningObjectSummary {
    */
   name: string;
   /**
-   * The version number of the Learning Object
-   */
-  revision: number;
-  /**
    * The stage within the review pipeline that the Learning Object exists
    */
   status: string;
 }
+/**
+ * An interface representation of the full learning object summary with the revision information included.
+ *
+ * @exports
+ * @interface LearningObjectSummary
+ */
+export interface LearningObjectSummary extends LearningObjectChildSummary {
+  /**
+   * Flag indicating whether or not a Learning Object has a working copy with dissimilar properties
+   */
+  hasRevision: boolean;
+  /**
+   * The version number of the Learning Object
+   */
+  revision: number;
+  /**
+   * Summary of Learning Objects that exist in this Learning Object's hierarchy
+   */
+  children: LearningObjectChildSummary [];
+}
+

@@ -2,11 +2,16 @@ import { Request, Response, Router } from 'express';
 import { mapErrorToResponseData } from '../../shared/errors';
 import { DataStore } from '../../shared/interfaces/DataStore';
 import { LibraryCommunicator } from '../../shared/interfaces/interfaces';
-import { UserLearningObjectQuery, UserToken } from '../../shared/types';
+import {
+  UserLearningObjectQuery,
+  UserToken,
+  LearningObjectSummary,
+} from '../../shared/types';
 import * as LearningObjectInteractor from '../LearningObjectInteractor';
 import { LearningObject } from '../../shared/entity';
 import { LearningObjectFilter, MaterialsFilter } from '../typings';
 import { initializePrivate as initializeRevisionRoutes } from '../Revisions/RevisionRouteHandler';
+import { toBoolean } from '../../shared/functions';
 
 /**
  * Initializes an express router with endpoints for public Retrieving
@@ -26,12 +31,14 @@ export function initializePublic({
       const requester: UserToken = req.user;
       const authorUsername: string = req.params.username;
       const query: UserLearningObjectQuery = req.query;
-      const learningObjects = await LearningObjectInteractor.searchUsersObjects({
-        dataStore,
-        authorUsername,
-        requester,
-        query,
-      });
+      const learningObjects = await LearningObjectInteractor.searchUsersObjects(
+        {
+          dataStore,
+          authorUsername,
+          requester,
+          query,
+        },
+      );
       res.status(200).send(learningObjects);
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
@@ -67,11 +74,23 @@ export function initializePublic({
     try {
       const requester: UserToken = req.user;
       const filter: LearningObjectFilter = req.query.status;
-      const id = req.params.learningObjectId;
-      const learningObject = await LearningObjectInteractor.getLearningObjectById(
-        { dataStore, library, id, requester, filter },
-      );
-      res.status(200).send(learningObject.toPlainObject());
+      const summary: boolean = toBoolean(req.query.summary);
+      const id: string = req.params.learningObjectId;
+      let learningObject: Partial<LearningObject> | LearningObjectSummary;
+      if (summary) {
+        learningObject = await LearningObjectInteractor.getLearningObjectSummaryById(
+          { dataStore, id, requester, filter },
+        );
+      } else {
+        learningObject = (await LearningObjectInteractor.getLearningObjectById({
+          dataStore,
+          library,
+          id,
+          requester,
+          filter,
+        })).toPlainObject();
+      }
+      res.status(200).send(learningObject);
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
       res.status(code).json({ message });

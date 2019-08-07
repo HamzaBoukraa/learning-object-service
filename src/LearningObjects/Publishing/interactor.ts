@@ -1,4 +1,4 @@
-import { LearningObject } from '../../shared/entity';
+import { LearningObject, HierarchicalLearningObject } from '../../shared/entity';
 import { ResourceError, ResourceErrorReason } from '../../shared/errors';
 import { UserToken } from '../../shared/types';
 import { ReleaseEmailGateway } from './ReleaseEmails/release-email-gateway';
@@ -48,7 +48,7 @@ export async function releaseLearningObject({
   authorUsername: string;
   userToken: UserToken;
   dataStore: PublishingDataStore;
-  releasableObject: LearningObject;
+  releasableObject: HierarchicalLearningObject;
   releaseEmailGateway: ReleaseEmailGateway;
   learningObjectSubmissionGateway: LearningObjectSubmissionGateway;
 }): Promise<void> {
@@ -74,11 +74,12 @@ export async function releaseLearningObject({
  * @param releasableObject the Learning Object to create artifacts for
  */
 async function createPublishingArtifacts(
-  releasableObject: LearningObject,
+  releasableObject: HierarchicalLearningObject,
 ) {
   Gateways.fileManager().uploadFile({
     authorUsername: releasableObject.author.username,
     learningObjectId: releasableObject.id,
+    learningObjectRevisionId: releasableObject.revision,
     file: {
       path: 'meta.json',
       data: JSON.stringify(releasableObject.toPlainObject()),
@@ -90,6 +91,7 @@ async function createPublishingArtifacts(
   await Gateways.fileManager().uploadFile({
     authorUsername: releasableObject.author.username,
     learningObjectId: releasableObject.id,
+    learningObjectRevisionId: releasableObject.revision,
     file: {
       path: 'bundle.zip',
       data: bundle,
