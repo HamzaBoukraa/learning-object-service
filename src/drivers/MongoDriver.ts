@@ -143,22 +143,57 @@ export class MongoDriver implements DataStore {
    * @returns {Promise<boolean>}
    * @memberof MongoDriver
    */
-  async learningObjectHasRevision(learningObjectId: string): Promise<boolean> {
-    const revision = this.db.collection(COLLECTIONS.LEARNING_OBJECTS).findOne(
+  async getLearningObjectRevisionVersion(params: {
+    releasedLearningObjectId: string,
+    releasedLearningObjectVersion: number,
+  }): Promise<number> {
+    const desiredVersion = params.releasedLearningObjectVersion + 1;
+    return this.db.collection(COLLECTIONS.LEARNING_OBJECTS).findOne(
       {
-        _id: learningObjectId,
+        _id: params.releasedLearningObjectId,
         status: { $ne: LearningObject.Status.RELEASED },
+        version: desiredVersion,
       },
       {
         projection: {
-          _id: 1,
+          version: 1,
         },
       },
     );
-    if (revision) {
-      return true;
+  }
+
+/**
+ * Builds a URL to the Learning Object revision resource
+ * according to a learning object's author username, learning object id and version
+ *
+ * @param {string} username [The username of the author of the learning object]
+ * @param {string} learningObjectId [The id of the specified learning object]
+ * @param {string} version [The version id of the learning object]
+ * @memberof MongoDriver
+ */
+  private generateLearningObjectRevisionURL(params: {
+    username: string,
+    learningObjectId: string,
+    version: number,
+  }): string {
+    if (
+      !params.username
+      || !params.learningObjectId
+      || !params.version
+    ) {
+      throw new Error(
+        'Parameters were not set during revision url generation',
+      );
     }
-    return false;
+    return `${
+      process.env.LEARNING_OBJECT_API
+    }/users/${
+      params.username
+    }/learning-objects/${
+      params.learningObjectId
+    }/revisions/${
+      params.version
+    }`;
   }
 
   /**
@@ -512,7 +547,7 @@ export class MongoDriver implements DataStore {
 
   /**
    * Constructs aggregation pipeline for searching all objects with pagination and sorting By matching learning obejcts based on
-   * queries provided, then joining the working and released collection together, adding the hasRevision flag to released learning object based on
+   * queries provided, then joining the working and released collection together, adding the revisionURL property to released learning object based on
    * the status of the working object, removing duplicates then returns a filtered and sorted superset of working and released learning objects.
    *
    * Status filter match stage is applied after initial match stage and creation of the super set in order to avoid filtering out
@@ -567,37 +602,70 @@ export class MongoDriver implements DataStore {
       },
     ];
     // perform a lookup on the Released collection by ID and assign two variables 'Object_id' and 'object_status' that will be used in this stage
-    const joinCollections = {
-      $lookup: {
-        from: COLLECTIONS.RELEASED_LEARNING_OBJECTS,
-        let: { object_id: '$_id', object_status: '$status' },
+    const joinCollections = [
+      {
+        $lookup: {
+          from: COLLECTIONS.RELEASED_LEARNING_OBJECTS,
+          let: {
+            object_id: '$_id',
+          },
+          pipeline: [
+            {
+              // match Released objects to working objects ID.
+              $match: {
+                $expr: { $and: [{ $eq: ['$_id', '$$object_id'] }] },
+              },
+            },
+          ],
+          // store all released objects under a 'released' array.
+          as: 'released',
+        },
+      },
+      { $unwind: '$released'},
+      {
+        $lookup: {
+          from: COLLECTIONS.USERS,
+          localField: 'authorID',
+          foreignField: '_id',
+          as: 'released_with_author',
+        let: {
+          author_username: '$username',
+          object_status: '$status',
+          object_version: '$version',
+          object_id: '$_id',
+        },
         pipeline: [
           {
-            // match Released objects to working objects ID.
-            $match: {
-              $expr: { $and: [{ $eq: ['$_id', '$$object_id'] }] },
-            },
-          },
-          {
-            // add the hasRevision Field to learning objects, set false if the working copy is released, true otherwise.
+            // add the revisionURL Field to learning objects, set false if the working copy is released, true otherwise.
             $addFields: {
-              hasRevision: {
+              revisionURL: {
                 $cond: [
                   {
                     $ne: ['$$object_status', LearningObject.Status.RELEASED],
+                    $version: { $add: ['$$object_version', 1] },
                   },
-                  true,
-                  false,
+                  {
+                    $concat: [
+                      process.env.LEARNING_OBJECT_API,
+                      '/users',
+                      '/',
+                      '$$author_username',
+                      '/learning-objects',
+                      '/',
+                      '$$object_id',
+                      '/revisions',
+                      '/',
+                      '$$object_version',
+                    ],
+                  },
                 ],
               },
             },
           },
         ],
-        // store all released objects under a 'released' array.
-        as: 'released',
+        },
       },
-    };
-
+    ];
     // create a large filtered collection of learning objects with duplicates.
     const createSuperSet = [
       { $unwind: { path: '$released', preserveNullAndEmptyArrays: true } },
@@ -656,10 +724,7 @@ export class MongoDriver implements DataStore {
                       input: '$objects',
                       as: 'object',
                       cond: {
-                        $or: [
-                          { $eq: ['$$object.hasRevision', true] },
-                          { $eq: ['$$object.hasRevision', false] },
-                        ],
+                        '$$object.revisionURL': { $exists: true },
                       },
                     },
                   },
@@ -689,6 +754,7 @@ export class MongoDriver implements DataStore {
     const pipeline = [
       match,
       joinCollections,
+      
       ...createSuperSet,
       ...statusFilterMatch,
       ...removeDuplicates,
@@ -1695,8 +1761,23 @@ export class MongoDriver implements DataStore {
         // so we add a the field 'hasRevision' with a true value
         {
           $addFields: {
-            hasRevision: {
-              $cond: [{ $ne: ['$copy.status', 'released'] }, true, false],
+            revisionURL: {
+              $cond: [
+                { $ne: ['$copy.status', LearningObject.Status.RELEASED] },
+                { $version: { $add: ['$copy.version', 1] } },
+              ],
+              $concat: [
+                process.env.LEARNING_OBJECT_API,
+                '/users',
+                '/',
+                '$$author_username',
+                '/learning-objects',
+                '/',
+                '$$object_id',
+                '/revisions',
+                '/',
+                '$$object_version',
+              ],
             },
           },
         },
@@ -2558,9 +2639,17 @@ export class MongoDriver implements DataStore {
       record.contributors.map(id => this.fetchUser(id)),
     );
     const [author, contributors] = await Promise.all([author$, contributors$]);
-    let hasRevision = record.hasRevision;
-    if (hasRevision == null) {
-      hasRevision = await this.learningObjectHasRevision(record._id);
+    let revisionURL = record.revisionURL;
+    if (revisionURL == null) {
+      const version = await this.getLearningObjectRevisionVersion({
+        releasedLearningObjectId: record._id,
+        releasedLearningObjectVersion: record.version,
+      });
+      revisionURL = this.generateLearningObjectRevisionURL({
+        username: author.username,
+        learningObjectId: record._id,
+        version,
+      });
     }
     let children: LearningObjectChildSummary[] = [];
     if (record.children) {
@@ -2575,7 +2664,7 @@ export class MongoDriver implements DataStore {
       author,
       contributors,
       children,
-      hasRevision,
+      revisionURL,
       id: record._id,
     });
   }
@@ -2628,7 +2717,7 @@ export class MongoDriver implements DataStore {
       materials,
       contributors,
       outcomes,
-      hasRevision: record.hasRevision,
+      revisionURL: record.revisionURL,
       children,
       revision: record.revision,
     });
@@ -2694,7 +2783,7 @@ export class MongoDriver implements DataStore {
       materials,
       contributors,
       outcomes: outcomes,
-      hasRevision: record.hasRevision,
+      revisionURL: record.revisionURL,
       children,
       revision: record.revision,
     });

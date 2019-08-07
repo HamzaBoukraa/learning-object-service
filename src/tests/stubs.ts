@@ -222,7 +222,7 @@ export class Stubs {
           materials,
           contributors,
           outcomes,
-          hasRevision: record.hasRevision,
+          revisionURL: record.revisionURL,
           children,
         });
 

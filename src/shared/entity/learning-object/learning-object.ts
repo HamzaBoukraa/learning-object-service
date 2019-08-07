@@ -379,14 +379,14 @@ export class LearningObject {
     }
   }
   /**
-   * @property {boolean} hasRevision
-   * An optional field on a learning object, denoting whether or not the object
-   * has a working copy with a different status in the working collection.
+   * @property {string} revisionURL
+   * An optional field on a learning object, denoting the URL to the revision
+   * resource if it exists.
    */
-  private _hasRevision?: boolean;
+  private _revisionURL?: string;
 
-  get hasRevision(): boolean {
-    return this._hasRevision;
+  get revisionURL(): string {
+    return this._revisionURL;
   }
 
   private _revision!: number;
@@ -521,8 +521,8 @@ export class LearningObject {
         this.addContributor(contributor),
       );
     }
-    if (object.hasRevision === true) {
-      this._hasRevision = object.hasRevision;
+    if (object.revisionURL) {
+      this._revisionURL = object.revisionURL;
     }
     if (object.revision != null) {
       this.revision = object.revision;
@@ -558,7 +558,7 @@ export class LearningObject {
       collection: this.collection,
       status: this.status,
       metrics: this.metrics,
-      hasRevision: this.hasRevision,
+      revisionURL: this.revisionURL,
       revision: this.revision,
     };
     return object;

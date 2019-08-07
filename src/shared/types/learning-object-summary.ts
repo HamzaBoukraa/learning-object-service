@@ -76,9 +76,9 @@ export interface LearningObjectChildSummary {
  */
 export interface LearningObjectSummary extends LearningObjectChildSummary {
   /**
-   * Flag indicating whether or not a Learning Object has a working copy with dissimilar properties
+   * Optional property that contains the URL to the revision resource if it exists
    */
-  hasRevision: boolean;
+  revisionURL?: string;
   /**
    * The version number of the Learning Object
    */

@@ -127,7 +127,7 @@ export function mapLearningObjectToSummary(
       : [],
     date: object.date,
     description: object.description,
-    hasRevision: object.hasRevision || false,
+    revisionURL: object.revisionURL || '',
     length: object.length,
     name: object.name,
     revision: object.revision,
