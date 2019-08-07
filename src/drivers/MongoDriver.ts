@@ -628,47 +628,40 @@ export class MongoDriver implements DataStore {
           localField: 'authorID',
           foreignField: '_id',
           as: 'released_with_author',
-        let: {
-          author_username: '$username',
-          object_status: '$status',
-          object_version: '$version',
-          object_id: '$_id',
         },
-        pipeline: [
-          {
-            // add the revisionURL Field to learning objects, set false if the working copy is released, true otherwise.
-            $addFields: {
-              revisionURL: {
-                $cond: [
-                  {
-                    $ne: ['$$object_status', LearningObject.Status.RELEASED],
-                    $version: { $add: ['$$object_version', 1] },
-                  },
-                  {
-                    $concat: [
-                      process.env.LEARNING_OBJECT_API,
-                      '/users',
-                      '/',
-                      '$$author_username',
-                      '/learning-objects',
-                      '/',
-                      '$$object_id',
-                      '/revisions',
-                      '/',
-                      '$$object_version',
-                    ],
-                  },
+      },
+      { $unwind: '$author'},
+      {
+        // add the revisionURL Field to learning objects, set false if the working copy is released, true otherwise.
+        $addFields: {
+          revisionURL: {
+            $cond: [
+              {
+                $ne: ['$status', LearningObject.Status.RELEASED],
+              },
+              {
+                $concat: [
+                  process.env.LEARNING_OBJECT_API,
+                  '/users',
+                  '/',
+                  '$username',
+                  '/learning-objects',
+                  '/',
+                  '$_id',
+                  '/revisions',
+                  '/',
+                  '$version',
                 ],
               },
-            },
+              '',
+            ],
           },
-        ],
         },
       },
     ];
     // create a large filtered collection of learning objects with duplicates.
     const createSuperSet = [
-      { $unwind: { path: '$released', preserveNullAndEmptyArrays: true } },
+      // { $unwind: { path: '$released', preserveNullAndEmptyArrays: true } },
       {
         // group released objects and with their working copy if one exists.
         $group: {
@@ -724,7 +717,7 @@ export class MongoDriver implements DataStore {
                       input: '$objects',
                       as: 'object',
                       cond: {
-                        '$$object.revisionURL': { $exists: true },
+                        $ne: ['$$object.revisionURL', undefined ],
                       },
                     },
                   },
@@ -753,8 +746,7 @@ export class MongoDriver implements DataStore {
 
     const pipeline = [
       match,
-      joinCollections,
-      
+      ...joinCollections,
       ...createSuperSet,
       ...statusFilterMatch,
       ...removeDuplicates,
@@ -1763,20 +1755,26 @@ export class MongoDriver implements DataStore {
           $addFields: {
             revisionURL: {
               $cond: [
-                { $ne: ['$copy.status', LearningObject.Status.RELEASED] },
-                { $version: { $add: ['$copy.version', 1] } },
-              ],
-              $concat: [
-                process.env.LEARNING_OBJECT_API,
-                '/users',
-                '/',
-                '$$author_username',
-                '/learning-objects',
-                '/',
-                '$$object_id',
-                '/revisions',
-                '/',
-                '$$object_version',
+                {
+                  $and: [
+                    { $ne: ['$copy.status', LearningObject.Status.RELEASED] },
+                  ],
+                },
+                {
+                  $concat: [
+                    process.env.LEARNING_OBJECT_API,
+                    '/users',
+                    '/',
+                    '$copy.author.username',
+                    '/learning-objects',
+                    '/',
+                    '$copy._id',
+                    '/revisions',
+                    '/',
+                    '$copy.version',
+                  ],
+                },
+                '',
               ],
             },
           },
