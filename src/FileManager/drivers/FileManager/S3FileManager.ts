@@ -169,7 +169,7 @@ export class S3FileManager implements FileManager {
       await this.deleteFolder({
         authorUsername,
         learningObjectId,
-        learningObjectRevisionId,
+        learningObjectVersion,
         path,
       });
   }

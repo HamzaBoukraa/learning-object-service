@@ -142,7 +142,7 @@ export async function deleteFolder({
 }: {
   authorUsername: string;
   learningObjectId: string;
-  learningObjectRevisionId: number;
+  learningObjectVersion: number;
   path: string;
 }): Promise<void> {
   await Drivers.fileManager().deleteFolder({
@@ -233,14 +233,14 @@ export async function downloadSingleFile({
     await Drivers.fileManager().hasAccess({
       authorUsername: author,
       learningObjectId,
-      learningObjectRevisionId: fileMetaData.storageRevision,
+      learningObjectVersion: fileMetaData.storageRevision,
       path: fileMetaData.fullPath || fileMetaData.name,
     })
   ) {
     const stream = await Drivers.fileManager().streamFile({
       authorUsername: author,
       learningObjectId,
-      learningObjectRevisionId: fileMetaData.storageRevision,
+      learningObjectVersion: fileMetaData.storageRevision,
       path: fileMetaData.fullPath || fileMetaData.name,
     });
     return { mimeType, stream, filename: fileMetaData.name };

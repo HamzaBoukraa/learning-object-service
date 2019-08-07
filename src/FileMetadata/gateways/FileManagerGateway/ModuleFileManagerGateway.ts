@@ -13,7 +13,7 @@ export class ModuleFileManagerGateway implements FileManagerGateway {
   deleteFile(params: {
     authorUsername: string;
     learningObjectId: string;
-    learningObjectRevisionId: number;
+    learningObjectVersion: number;
     path: string;
   }): Promise<void> {
     return FileManagerModule.deleteFile(params);
@@ -30,7 +30,7 @@ export class ModuleFileManagerGateway implements FileManagerGateway {
   deleteFolder(params: {
     authorUsername: string;
     learningObjectId: string;
-    learningObjectRevisionId: number;
+    learningObjectVersion: number;
     path: string;
   }): Promise<void> {
     return FileManagerModule.deleteFolder(params);
