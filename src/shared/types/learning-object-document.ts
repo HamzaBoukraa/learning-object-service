@@ -15,7 +15,7 @@ export interface LearningObjectDocument {
   collection: string;
   status: string;
   revisionURL?: string;
-  revision: number;
+  version: number;
 }
 
 export interface ReleasedLearningObjectDocument extends LearningObjectDocument {
@@ -37,7 +37,7 @@ export interface ReleasedLearningObjectDocument {
   outcomes: OutcomeDocument[];
   status: string;
   revisionURL?: string;
-  revision: number;
+  version: number;
 }
 
 export interface MaterialDocument {

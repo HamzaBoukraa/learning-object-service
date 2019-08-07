@@ -526,7 +526,7 @@ export class ElasticSearchLearningObjectDatastore
                     top_hits: {
                       sort: [
                         {
-                          revision: { order: 'asc' },
+                          version: { order: 'asc' },
                         },
                       ],
                       size: 1,

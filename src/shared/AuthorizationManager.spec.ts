@@ -366,9 +366,8 @@ describe('AuthorizationManager', () => {
       description: '',
       length: 'nanomodule',
       name: 'My LO',
-      revision: 0,
+      version: 0,
       status: LearningObject.Status.RELEASED,
-      rev
     };
     const requester = {
       name: '',
@@ -861,7 +860,7 @@ describe('AuthorizationManager', () => {
       description: '',
       length: 'nanomodule',
       name: 'My LO',
-      revision: 0,
+      version: 0,
       status: LearningObject.Status.RELEASED,
     };
     const requester = {

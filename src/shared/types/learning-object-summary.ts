@@ -82,7 +82,7 @@ export interface LearningObjectSummary extends LearningObjectChildSummary {
   /**
    * The version number of the Learning Object
    */
-  revision: number;
+  version: number;
   /**
    * Summary of Learning Objects that exist in this Learning Object's hierarchy
    */

@@ -50,14 +50,14 @@ export function initializePublic({
       const requester: UserToken = req.user;
       const authorUsername: string = req.params.username;
       const learningObjectName: string = req.params.learningObjectName;
-      const revision: boolean = req.query.revision;
+      const version: boolean = req.query.version;
       const object = await LearningObjectInteractor.getLearningObjectByName({
         dataStore,
         library,
         userToken: requester,
         username: authorUsername,
         learningObjectName,
-        revision,
+        version,
       });
       res.status(200).send(object.toPlainObject());
     } catch (e) {

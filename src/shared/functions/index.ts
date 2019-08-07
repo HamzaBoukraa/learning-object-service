@@ -130,7 +130,7 @@ export function mapLearningObjectToSummary(
     revisionURL: object.revisionURL || '',
     length: object.length,
     name: object.name,
-    revision: object.revision,
+    version: object.version,
     status: object.status,
   };
 }

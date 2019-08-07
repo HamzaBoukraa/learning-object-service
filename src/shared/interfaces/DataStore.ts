@@ -86,16 +86,16 @@ export interface DataStore
    */
   fetchReleasedMaterials(id: string): Promise<LearningObject.Material>;
   /**
-   * Fetches summary of Learning Object by id and revision number
+   * Fetches summary of Learning Object by id and version number
    *
    * @param {string} id [Id of the LearningObject]
-   * @param {number} revision [The revision number of the LearningObject]
+   * @param {number} version [The version number of the LearningObject]
    * @returns {Promise<LearningObjectSummary>}
    * @memberof DataStore
    */
   fetchLearningObjectRevision(params: {
     id: string;
-    revision: number;
+    version: number;
     author?: User,
     summary?: boolean,
   }): Promise<LearningObject | LearningObjectSummary>;

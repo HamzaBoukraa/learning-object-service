@@ -127,7 +127,7 @@ export async function getChangelogs(params: {
    * for all logged in users.
    */
   if (
-    learningObject.revision === 0 &&
+    learningObject.version === 0 &&
     learningObject.status === LearningObject.Status.RELEASED
   ) {
     if (params.recent) {
@@ -148,7 +148,7 @@ export async function getChangelogs(params: {
 
   // tslint:disable-next-line:one-line
   else if (
-    learningObject.revision === 0 &&
+    learningObject.version === 0 &&
     learningObject.status !== LearningObject.Status.RELEASED
   ) {
     await hasChangelogAccess({
@@ -173,7 +173,7 @@ export async function getChangelogs(params: {
 
   // tslint:disable-next-line:one-line
   else if (
-    learningObject.revision > 0 &&
+    learningObject.version > 0 &&
     toBoolean(params.minusRevision)
   ) {
     const releasedLearningObjectCopy = await params.learningObjectGateway.getReleasedLearningObjectSummary({
@@ -200,7 +200,7 @@ export async function getChangelogs(params: {
 
   // tslint:disable-next-line:one-line
   else if (
-    learningObject.revision > 0 &&
+    learningObject.version > 0 &&
     !toBoolean(params.minusRevision)
   ) {
     await hasChangelogAccess({

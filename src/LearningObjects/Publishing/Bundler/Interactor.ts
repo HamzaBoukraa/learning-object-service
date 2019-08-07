@@ -61,14 +61,14 @@ async function buildBundleStructure({
       addReadMe({
         authorUsername: learningObject.author.username,
         learningObjectId: learningObject.id,
-        learningObjectRevisionId: learningObject.revision,
+        learningObjectVersion: learningObject.version,
         name: learningObject.materials.pdf.name,
         prefix,
       }),
       addFiles({
         authorUsername: learningObject.author.username,
         learningObjectId: learningObject.id,
-        learningObjectRevisionId: learningObject.revision,
+        learningObjectVersion: learningObject.version,
         files: learningObject.materials.files,
         prefix,
       }),
@@ -101,7 +101,7 @@ async function addCCLicense(prefix: string = ''): Promise<BundleData> {
  *
  *  @param {string} authorUsername [The username of the Learning Object's author]
  * @param {string} learningObjectId [The id of the Learning Object]
- * @param {number} learningObjectRevisionId [The revision id of the Learning Object]
+ * @param {number} learningObjectVersion [The version id of the Learning Object]
  * @param {string} name [Name of the ReadMe file]
  * @param {string} prefix [File path prefix (ie. fileName: 'World.txt', prefix: 'Hello' = filePath: 'Hello/World.txt')]
  * @returns {Promise<BundleData>}
@@ -109,13 +109,13 @@ async function addCCLicense(prefix: string = ''): Promise<BundleData> {
 async function addReadMe({
   authorUsername,
   learningObjectId,
-  learningObjectRevisionId,
+  learningObjectVersion,
   name,
   prefix = '',
 }: {
   authorUsername: string;
   learningObjectId: string;
-  learningObjectRevisionId: number;
+  learningObjectVersion: number;
   name: string;
   prefix?: string;
 }): Promise<BundleData> {
@@ -125,7 +125,7 @@ async function addReadMe({
     data: await Gateways.fileGateway().getFileStream({
       authorUsername,
       learningObjectId,
-      learningObjectRevisionId,
+      learningObjectVersion,
       path: name,
     }),
   };
@@ -137,7 +137,7 @@ async function addReadMe({
  *
  * @param {string} authorUsername [The username of the Learning Object's author]
  * @param {string} learningObjectId [The id of the Learning Object]
- * @param {number} learningObjectRevisionId [The revision id of the Learning Object]
+ * @param {number} learningObjectVersion [The version id of the Learning Object]
  * @param {LearningObject.Material.File[]} files [List of file data from the Learning Object to get bundled];
  * @param {string}: prefix [File path prefix (ie. fileName: 'World.txt', prefix: 'Hello' = filePath: 'Hello/World.txt')]
  * @returns {Promise<BundleData[]>}
@@ -145,13 +145,13 @@ async function addReadMe({
 function addFiles({
   authorUsername,
   learningObjectId,
-  learningObjectRevisionId,
+  learningObjectVersion,
   files,
   prefix = '',
 }: {
   authorUsername: string;
   learningObjectId: string;
-  learningObjectRevisionId: number;
+  learningObjectVersion: number;
   files: LearningObject.Material.File[];
   prefix?: string;
 }): Promise<BundleData[]> {
@@ -163,7 +163,7 @@ function addFiles({
         data: await Gateways.fileGateway().getFileStream({
           authorUsername,
           learningObjectId,
-          learningObjectRevisionId,
+          learningObjectVersion,
           path: file.fullPath || file.name,
         }),
       };

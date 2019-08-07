@@ -20,7 +20,7 @@ describe('Given a summary param of false', () => {
       dataStore,
       requester: stubs.userToken,
       learningObjectId: stubs.learningObject.id,
-      revisionId: 1,
+      version: 1,
       username: stubs.user.username,
       summary: false,
     }))
@@ -33,7 +33,7 @@ describe('Given a summary param of true', () => {
       dataStore,
       requester: stubs.userToken,
       learningObjectId: stubs.learningObject.id,
-      revisionId: 1,
+      version: 1,
       username: stubs.user.username,
       summary: true,
     }))

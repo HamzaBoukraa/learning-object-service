@@ -214,7 +214,7 @@ export class MongoDriver implements DataStore {
     username: string,
     collectionRestrictions?: CollectionAccessMap,
   ): Promise<LearningObjectSummary[]> {
-    const { revision, status, text } = query;
+    const { version, status, text } = query;
     const authorID = await this.findUserId(username);
 
     let orConditions: QueryCondition[] = [];
@@ -228,8 +228,8 @@ export class MongoDriver implements DataStore {
     const searchQuery: { [index: string]: any } = {
       authorID,
     };
-    if (revision != null) {
-      searchQuery.revision = revision;
+    if (version != null) {
+      searchQuery.version = version;
     }
     if (text) {
       searchQuery.$or = searchQuery.$or || [];
@@ -377,7 +377,7 @@ export class MongoDriver implements DataStore {
    * If revision 1 of Learning Object exampleId was released, it's latest version will be stored in the released objects collection
    * If revision 1 is still be drafted or is in review, it will only exist in the working objects collection
    * @param {string} id [Id of the Learning Object]
-   * @param {number} revision [Revision number of the Learning Object]
+   * @param {number} version [Revision number of the Learning Object]
    * @param {User} author [User object of Learning Object author]
    * @param {boolean} summary [Boolean indicating whether or not to return a LearningObject or LearningObjectSummary]
    * @returns {Promise<LearningObject | LearningObjectSummary>}
@@ -385,22 +385,22 @@ export class MongoDriver implements DataStore {
    */
   async fetchLearningObjectRevision({
     id,
-    revision,
+    version,
     author,
     summary,
   }: {
     id: string;
-    revision: number;
+    version: number;
     author?: User;
     summary?: boolean;
   }): Promise<LearningObject | LearningObjectSummary> {
     const doc =
       (await this.db
         .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
-        .findOne({ _id: id, revision })) ||
+        .findOne({ _id: id, version })) ||
       (await this.db
         .collection(COLLECTIONS.LEARNING_OBJECTS)
-        .findOne({ _id: id, revision }));
+        .findOne({ _id: id, version }));
     if (doc) {
       if (summary) {
         return this.generateLearningObjectSummary(doc);
@@ -711,7 +711,7 @@ export class MongoDriver implements DataStore {
       },
       {
         // If the objects array has one learning object, project it,
-        // otherwise filter and project the object that contains a 'hasRevision' field.
+        // otherwise filter and project the object that contains a 'revisionURL' field.
         $project: {
           objects: {
             $cond: [
@@ -1694,8 +1694,8 @@ export class MongoDriver implements DataStore {
 
   /**
    * Fetches released object through aggregation pipeline by performing a match based on the object id, finding the duplicate object in the
-   * working collection, then checking the status of the duplicate to determine whether or not to set hasRevision to true or false.
-   * FIXME x 1000: clean this query up after files collection is created
+   * working collection, then checking the status of the duplicate as well as the version to determine whether or not to concatenate the revision url
+   * FIXME clean this query up after files collection is created
    *
    * The query fetches the specified released learning object and sorts the files by date (newest first)
    * If the query fails, the function throws a 404 Resource Error.
@@ -1743,7 +1743,7 @@ export class MongoDriver implements DataStore {
             collection: { $first: '$collection' },
             status: { $first: '$status' },
             description: { $first: '$description' },
-            revision: { $first: '$revision' },
+            version: { $first: '$version' },
           },
         },
         // perform a lookup and store the working copy of the object under the "Copy" array.
@@ -1757,8 +1757,8 @@ export class MongoDriver implements DataStore {
         },
         // unwind copy from array to object so we can check certain fields.
         { $unwind: { path: '$copy', preserveNullAndEmptyArrays: true } },
-        // if the copys' status differs from the released objects status, then the object has a revision.
-        // so we add a the field 'hasRevision' with a true value
+        // if the copys' status is not released and its version is one greater than the released copy, then the object has a revision.
+        // In this case, the revision url is concatenated.
         {
           $addFields: {
             revisionURL: {
@@ -2522,7 +2522,7 @@ export class MongoDriver implements DataStore {
       collection: object.collection,
       status: object.status,
       children: object.children.map(obj => obj.id),
-      revision: object.revision,
+      version: object.version,
     };
 
     return doc;
@@ -2563,7 +2563,7 @@ export class MongoDriver implements DataStore {
       outcomes: object.outcomes.map(this.documentOutcome),
       status: object.status,
       children: object.children.map(obj => obj.id),
-      revision: object.revision,
+      version: object.version,
     };
 
     return doc;
@@ -2719,7 +2719,7 @@ export class MongoDriver implements DataStore {
       outcomes,
       revisionURL: record.revisionURL,
       children,
-      revision: record.revision,
+      version: record.version,
     });
     return learningObject;
   }
@@ -2785,7 +2785,7 @@ export class MongoDriver implements DataStore {
       outcomes: outcomes,
       revisionURL: record.revisionURL,
       children,
-      revision: record.revision,
+      version: record.version,
     });
     return learningObject;
   }

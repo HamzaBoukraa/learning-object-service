@@ -142,7 +142,7 @@ export async function getFileMetadata({
  * @export
  * @param {Requester} requester [Information about the requester]
  * @param {string} learningObjectId [Id of the LearningObject the file meta belongs to]
- * @param {number} learningObjectRevision [The revision number of the Learning Object]
+ * @param {FileMeatadataFilter} filter specifies released or unreleased file metadata
  * @returns {Promise<LearningObjectFile[]>}
  */
 export async function getAllFileMetadata({
@@ -411,7 +411,7 @@ function generateFileMetaInsert(
     name: file.name,
     packageable: isPackageable(file.size),
     size: file.size,
-    storageRevision: learningObject.revision,
+    storageRevision: learningObject.version,
   };
 }
 
@@ -545,7 +545,7 @@ export async function deleteFileMeta({
       .deleteFile({
         authorUsername: learningObject.author.username,
         learningObjectId: learningObject.id,
-        learningObjectRevisionId: learningObject.revision,
+        learningObjectRevisionId: learningObject.version,
         path: fileMeta.fullPath,
       })
       .catch(reportError);
@@ -598,7 +598,7 @@ export async function deleteAllFileMetadata({
       .deleteFolder({
         authorUsername: learningObject.author.username,
         learningObjectId: learningObject.id,
-        learningObjectRevisionId: learningObject.revision,
+        learningObjectRevisionId: learningObject.version,
         path: '/',
       })
       .catch(reportError);

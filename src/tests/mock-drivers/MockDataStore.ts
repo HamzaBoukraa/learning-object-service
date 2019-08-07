@@ -88,7 +88,7 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
 
   fetchLearningObjectRevision(params: {
     id: string;
-    revision: number;
+    version: number;
     author?: User,
     summary?: boolean,
   }): Promise<LearningObject | LearningObjectSummary> {
@@ -166,23 +166,23 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
         return {
           ...this.stubs.learningObject,
           status: LearningObject.Status.RELEASED,
-          revision: 0,
+          version: 0,
         };
       case STUB_CHANGELOG_IDS.NOT_RELEASED:
         return {
           ...this.stubs.learningObject,
           status: LearningObject.Status.WAITING,
-          revision: 0,
+          version: 0,
         };
       case STUB_CHANGELOG_IDS.MINUS_REVISION:
         return {
           ...this.stubs.learningObject,
-          revision: 1,
+          version: 1,
         };
       case STUB_CHANGELOG_IDS.PLUS_REVISION:
         return {
           ...this.stubs.learningObject,
-          revision: 1,
+          version: 1,
         };
       default:
         return this.stubs.learningObject;
