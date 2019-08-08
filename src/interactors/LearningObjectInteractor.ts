@@ -420,7 +420,7 @@ export class LearningObjectInteractor {
         status,
       } = this.formatSearchQuery(query);
       let response: { total: number; objects: LearningObject[] };
-      console.log('Hitting the learning object interactor');
+
       if (userToken && requesterIsPrivileged(userToken)) {
         let conditions: QueryCondition[];
         if (!requesterIsAdminOrEditor(userToken)) {
