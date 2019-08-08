@@ -62,7 +62,7 @@ export class LearningObject {
    * @returns {boolean}
    * @memberof LearningObject
    */
-  public isValidName(name: string): boolean {
+  private isValidName(name: string): boolean {
     if (name !== undefined && name !== null) {
       const trimmedName = name.trim();
       if (
@@ -288,7 +288,7 @@ export class LearningObject {
     }
   }
 
-   children: LearningObjectChildSummary[] = [];
+  children: LearningObjectChildSummary[] = [];
 
   /**
    * Removes the object's i-th child.

@@ -905,7 +905,9 @@ export async function updateLearningObject({
       id,
       full: false,
     });
-    const isInReview = LearningObjectState.IN_REVIEW.includes(learningObject.status);
+    const isInReview = LearningObjectState.IN_REVIEW.includes(
+      learningObject.status,
+    );
     authorizeWriteAccess({
       learningObject,
       requester,
@@ -917,15 +919,16 @@ export async function updateLearningObject({
     validateUpdates(cleanUpdates);
 
     cleanUpdates.date = Date.now().toString();
+    console.log(cleanUpdates);
     await dataStore.editLearningObject({
       id,
       updates: cleanUpdates,
     });
 
     if (isInReview) {
-      LearningObjectSubmissionAdapter
-        .getInstance()
-        .updateLearningObjectSubmission({learningObjectId: id, updates: cleanUpdates, user: requester});
+      LearningObjectSubmissionAdapter.getInstance().updateLearningObjectSubmission(
+        { learningObjectId: id, updates: cleanUpdates, user: requester },
+      );
     }
 
     // Infer if this Learning Object is being released

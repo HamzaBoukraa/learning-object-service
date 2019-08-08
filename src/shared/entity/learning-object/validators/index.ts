@@ -1,3 +1,5 @@
-import { validate, validateSubmittable, validateUpdates} from './learning-object.validator';
-
-export { validate, validateSubmittable, validateUpdates };
+export {
+  validateLearningObject,
+  validateSubmittableLearningObject,
+  validateUpdates,
+} from './learning-object.validator';

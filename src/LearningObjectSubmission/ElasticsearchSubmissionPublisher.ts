@@ -59,17 +59,7 @@ export class ElasticsearchSubmissionPublisher implements SubmissionPublisher {
     updates: LearningObjectMetadataUpdates;
   }) {
     const { learningObjectId, updates } = params;
-    let updateField = Object.keys(updates);
-    let updateSource: string;
-    updateField.map(field => {
-      if (Array.isArray(updates[field])) {
-        updates[field].map((arrayVal: string, index: number) => {
-          updateSource = updateSource.concat(`ctx.source.${field}[${index}] = \"${arrayVal}\";`);
-        });
-      }
-      let updateValue = updates[field];
-      updateSource = updateSource.concat(`ctx._source.${field} = \"${updateValue}\";`);
-    });
+    let updateSource = this.formatUpdates(updates);
     let learningObjectUpdateRequest = {
       query: {
         term: {
@@ -79,11 +69,11 @@ export class ElasticsearchSubmissionPublisher implements SubmissionPublisher {
         },
       },
       script: {
-        source : updateSource,
+        source: updateSource,
       },
     };
     try {
-    await this.client.updateByQuery({
+      await this.client.updateByQuery({
         index: INDEX_NAME,
         type: '_doc',
         body: learningObjectUpdateRequest,
@@ -91,6 +81,37 @@ export class ElasticsearchSubmissionPublisher implements SubmissionPublisher {
     } catch (e) {
       reportError(e);
     }
+  }
+
+  private formatUpdates(updates: LearningObjectMetadataUpdates) {
+    let updateField = Object.keys(updates);
+    let updateSource = '';
+    updateField.map(field => {
+      if (Array.isArray(updates[field]) && updates[field].length) {
+        updateSource = this.formatArrayofUpdates(updateSource, field, updates);
+      } else {
+        let updateValue = updates[field];
+        updateSource = updateSource.concat(
+          `ctx._source.${field} = \"${updateValue}\";`,
+        );
+      }
+    });
+    return updateSource;
+  }
+
+  private formatArrayofUpdates(
+    updateSource: string,
+    field: string,
+    updates: LearningObjectMetadataUpdates,
+  ) {
+    let formattedArr: string[] = [];
+    updateSource = `ctx._source.${field} = `;
+    updates[field].map((arrayVal: string, index: number) => {
+      let formattedString = `\"${arrayVal}\"`;
+      formattedArr.push(formattedString);
+    });
+    updateSource += `[${formattedArr}];`;
+    return updateSource;
   }
 
   /**

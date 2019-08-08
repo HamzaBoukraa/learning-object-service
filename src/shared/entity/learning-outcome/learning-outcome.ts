@@ -1,7 +1,7 @@
 import { StandardOutcome } from '../standard-outcome/standard-outcome';
 import {
   validate as _validate,
-  validateSubmittable as _validateSubmittable,
+  validateSubmittableLearningOutcome as _validateSubmittable,
 } from './validators';
 import { levels, taxonomy } from '@cyber4all/clark-taxonomy';
 import { LEARNING_OUTCOME_ERROR_MESSAGES } from './error-messages';

@@ -27,7 +27,9 @@ export function validate(outcome: LearningOutcome): void | never {
  * @param {LearningOutcome} outcome
  * @returns {(void | never)}
  */
-export function validateSubmittable(outcome: LearningOutcome): void | never {
+export function validateSubmittableLearningOutcome(
+  outcome: LearningOutcome,
+): void | never {
   validate(outcome);
   validateSubmittableText(outcome.text);
 }

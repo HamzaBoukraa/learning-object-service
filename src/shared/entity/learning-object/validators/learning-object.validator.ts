@@ -19,7 +19,7 @@ import { ResourceError, ResourceErrorReason } from '../../../errors';
  * @param {LearningObject} object
  * @returns {(void | never)}
  */
-export function validate(object: LearningObject): void | never {
+export function validateLearningObject(object: LearningObject): void | never {
   if (!object) {
     throw new Error(LEARNING_OBJECT_ERRORS.INVALID_OBJECT);
   }
@@ -36,7 +36,7 @@ export function validate(object: LearningObject): void | never {
   validateMaterials(object.materials);
   validateMetrics(object.metrics);
   validateName(object.name);
-  validateOutcomes(object.outcomes);
+  validateSubmittableOutcomes(object.outcomes);
   validateStatus(object.status);
 }
 
@@ -52,9 +52,6 @@ export function validateUpdates(object: LearningObjectMetadataUpdates) {
     }
     if (object.length) {
       validateLength(object.length);
-    }
-    if (object.levels) {
-      validateLevels(object.levels);
     }
     if (object.status) {
       validateStatus(object.status);
@@ -86,8 +83,10 @@ function validateChildSummary(child: LearningObjectChildSummary) {
  * @param {LearningObject} object
  * @returns {(void | never)}
  */
-export function validateSubmittable(object: LearningObject): void | never {
-  validate(object);
+export function validateSubmittableLearningObject(
+  object: LearningObject,
+): void | never {
+  validateLearningObject(object);
   validateSubmittableDescription(object.description);
   validateSubmittableOutcomes(object.outcomes);
 }
@@ -211,7 +210,7 @@ function isValidLength(length: string): boolean {
  * @returns {(void | never)}
  */
 function validateLevels(levels: string[]): void | never {
-  if (!levels || (levels && levels.length)) {
+  if (!levels || !(levels && levels.length)) {
     throw new ResourceError(
       LEARNING_OBJECT_ERRORS.INVALID_LEVELS,
       ResourceErrorReason.BAD_REQUEST,
@@ -334,7 +333,7 @@ function isValidName(name: string): boolean {
  * @param {LearningOutcome[]} outcomes
  * @returns {(void | never)}
  */
-function validateOutcomes(outcomes: LearningOutcome[]): void | never {
+function validateLearningOutcome(outcomes: LearningOutcome[]): void | never {
   if (!outcomes) {
     throw new Error(LEARNING_OBJECT_ERRORS.INVALID_OUTCOMES);
   }
