@@ -128,15 +128,6 @@ export interface DataStore
   fetchLearningObjectStatus(id: string): Promise<string>;
   fetchLearningObjectCollection(id: string): Promise<string>;
   fetchLearningObjectAuthorUsername(id: string): Promise<string>;
-  searchReleasedObjects(
-    params: ReleasedLearningObjectQuery,
-  ): Promise<{ objects: LearningObject[]; total: number }>;
-  searchAllObjects(
-    params: LearningObjectQuery,
-  ): Promise<{
-    total: number;
-    objects: LearningObject[];
-  }>;
 
   /**
    * Search for the specified user's released objects.
