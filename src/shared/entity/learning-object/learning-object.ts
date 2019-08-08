@@ -288,7 +288,7 @@ export class LearningObject {
     }
   }
 
-   children: LearningObjectChildSummary[] = [];
+  children: LearningObjectChildSummary[] = [];
 
   /**
    * Removes the object's i-th child.
