@@ -24,6 +24,7 @@ import {
   authorizeWriteAccess,
   getAccessGroupCollections,
   getAuthorizedStatuses,
+  requesterIsEditor,
   getCollectionAccessMap,
   hasReadAccessByCollection,
   requesterIsAdminOrEditor,
@@ -51,7 +52,9 @@ import {
   ReadMeBuilder,
 } from './interfaces';
 import { LearningObjectsModule } from './LearningObjectsModule';
+import { LearningObjectSubmissionAdapter } from '../LearningObjectSubmission/adapters/LearningObjectSubmissionAdapter';
 import { UserGateway } from './interfaces/UserGateway';
+import { validateUpdates } from '../shared/entity/learning-object/validators';
 
 namespace Drivers {
   export const readMeBuilder = () =>
@@ -889,6 +892,7 @@ export async function updateLearningObject({
   updates: Partial<LearningObject>;
 }): Promise<void> {
   try {
+    const isEditor = requesterIsEditor(requester);
     if (updates.name) {
       await checkNameExists({
         id,
@@ -901,6 +905,9 @@ export async function updateLearningObject({
       id,
       full: false,
     });
+    const isInReview = LearningObjectState.IN_REVIEW.includes(
+      learningObject.status,
+    );
     authorizeWriteAccess({
       learningObject,
       requester,
@@ -909,15 +916,23 @@ export async function updateLearningObject({
       }.`,
     });
     const cleanUpdates = sanitizeUpdates(updates);
-    validateUpdates({
-      id,
-      updates: cleanUpdates,
-    });
+    validateUpdates(cleanUpdates);
+
     cleanUpdates.date = Date.now().toString();
+    console.log(cleanUpdates);
     await dataStore.editLearningObject({
       id,
       updates: cleanUpdates,
     });
+
+    if (isInReview) {
+      LearningObjectSubmissionAdapter.getInstance().applySubmissionUpdates({
+        learningObjectId: id,
+        updates: cleanUpdates,
+        user: requester,
+      });
+    }
+
     // Infer if this Learning Object is being released
     if (cleanUpdates.status === LearningObject.Status.RELEASED) {
       const releasableObject = await generateReleasableLearningObject({
@@ -1641,7 +1656,8 @@ function appendFilePreviewUrls(
 }
 
 /**
- * Sanitizes object containing updates to be stored by removing invalid update properties, cloning valid properties, and trimming strings
+ * Sanitizes object containing updates to be stored by removing invalid update properties, cloning valid properties, and trimming strings,
+ * then validating the updates after they have been properly formatted
  *
  * @param {Partial<LearningObject>} object [Object containing values to update existing Learning Object with]
  * @returns {LearningObjectMetadataUpdates}
@@ -1690,25 +1706,6 @@ async function validateRequest(params: {
       }`,
       ResourceErrorReason.NOT_FOUND,
     );
-  }
-}
-
-/**
- * Verifies update object contains valid update values
- *
- * @param {{
- *   id: string;
- *   updates: LearningObjectMetadataUpdates;
- * }} params
- */
-function validateUpdates(params: {
-  id: string;
-  updates: LearningObjectMetadataUpdates;
-}): void {
-  if (params.updates.name) {
-    if (params.updates.name.trim() === '') {
-      throw new Error('Learning Object name cannot be empty.');
-    }
   }
 }
 
