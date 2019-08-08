@@ -1,7 +1,6 @@
 import { LearningObjectSubmissionGateway } from './LearningObjectSubmissionGateway';
 import { LearningObjectSubmissionAdapter } from '../../LearningObjectSubmission/adapters/LearningObjectSubmissionAdapter';
 import { UserToken, LearningObjectMetadataUpdates } from '../../shared/types';
-import { LearningObject } from '../../shared/entity';
 
 export class ModuleLearningObjectSubmissionGateway
   implements LearningObjectSubmissionGateway {
@@ -14,7 +13,7 @@ export class ModuleLearningObjectSubmissionGateway
     authorUsername: string;
     user: UserToken;
   }): Promise<void> {
-    return LearningObjectSubmissionAdapter.getInstance().deleteLearningObjectSubmission(
+    return LearningObjectSubmissionAdapter.getInstance().deleteSubmission(
       params,
     );
   }
@@ -31,7 +30,7 @@ export class ModuleLearningObjectSubmissionGateway
     updates: LearningObjectMetadataUpdates;
     user: UserToken;
   }): Promise<void> {
-    return LearningObjectSubmissionAdapter.getInstance().updateLearningObjectSubmission(
+    return LearningObjectSubmissionAdapter.getInstance().applySubmissionUpdates(
       {
         learningObjectId,
         updates,

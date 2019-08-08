@@ -2,7 +2,7 @@ import { SubmissionPublisher } from '../interactors/SubmissionPublisher';
 import { LearningObject } from '../../shared/entity';
 import { deleteSubmission } from '../interactors/deleteSubmission';
 import { UserToken, LearningObjectMetadataUpdates } from '../../shared/types';
-import { updateSubmission } from '../interactors';
+import { applySubmissionUpdates } from '../interactors';
 
 export class LearningObjectSubmissionAdapter {
   private static _instance: LearningObjectSubmissionAdapter;
@@ -31,7 +31,7 @@ export class LearningObjectSubmissionAdapter {
    *   user: UserToken
    *  }
    */
-  deleteLearningObjectSubmission(params: {
+  deleteSubmission(params: {
     learningObjectId: string;
     authorUsername: string;
     user: UserToken;
@@ -47,7 +47,7 @@ export class LearningObjectSubmissionAdapter {
   /**
    * Calls the updateSubmission interactor function.
    */
-  updateLearningObjectSubmission({
+  applySubmissionUpdates({
     learningObjectId,
     updates,
     user,
@@ -56,7 +56,7 @@ export class LearningObjectSubmissionAdapter {
     updates: LearningObjectMetadataUpdates;
     user: UserToken;
   }): Promise<void> {
-    return updateSubmission({
+    return applySubmissionUpdates({
       publisher: this.publisher,
       user,
       learningObjectId,

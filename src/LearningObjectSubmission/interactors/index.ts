@@ -1,6 +1,11 @@
 import { cancelSubmission } from './cancelSubmission';
 import { checkFirstSubmission } from './checkFirstSubmission';
 import { submitForReview } from './submitForReview';
-import { updateSubmission } from './updateSubmission';
+import { applySubmissionUpdates } from './applySubmissionUpdates';
 
-export { cancelSubmission, submitForReview, checkFirstSubmission, updateSubmission };
+export {
+  cancelSubmission,
+  submitForReview,
+  checkFirstSubmission,
+  applySubmissionUpdates,
+};

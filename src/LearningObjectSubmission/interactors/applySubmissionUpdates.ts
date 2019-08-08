@@ -4,10 +4,10 @@ import { requesterIsAdminOrEditor } from '../../shared/AuthorizationManager';
 import { ResourceError, ResourceErrorReason } from '../../shared/errors';
 
 /**
- * updateSubmission allows admins and editors to publish changes to a submission for other
+ * applySubmissionUpdates allows admins and editors to publish changes to a submission for other
  * reviewers to see, as a Learning Object is moving through the submission pipeline.
  */
-export async function updateSubmission(params: {
+export async function applySubmissionUpdates(params: {
   publisher: SubmissionPublisher;
   learningObjectId: string;
   user: UserToken;

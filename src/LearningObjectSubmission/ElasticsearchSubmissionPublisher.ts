@@ -1,5 +1,4 @@
 import { LearningObject } from '../shared/entity';
-import * as request from 'request-promise';
 import { cleanLearningObject } from '../shared/elasticsearch';
 import { SubmissionPublisher } from './interactors/SubmissionPublisher';
 import { Client } from '@elastic/elasticsearch';
@@ -83,12 +82,16 @@ export class ElasticsearchSubmissionPublisher implements SubmissionPublisher {
     }
   }
 
+  /**
+   * format learning object updates to be used in the Elasticsearch 'updateByQuery'
+   * @param updates {LearningObjectMetadataUpdates}
+   */
   private formatUpdates(updates: LearningObjectMetadataUpdates) {
     let updateField = Object.keys(updates);
     let updateSource = '';
     updateField.map(field => {
       if (Array.isArray(updates[field]) && updates[field].length) {
-        updateSource = this.formatArrayofUpdates(updateSource, field, updates);
+        updateSource = this.formatArrayofUpdates(field, updates);
       } else {
         let updateValue = updates[field];
         updateSource = updateSource.concat(
@@ -99,11 +102,17 @@ export class ElasticsearchSubmissionPublisher implements SubmissionPublisher {
     return updateSource;
   }
 
+  /**
+   * fix the array structure of an update in order to make it compatible with
+   * Elasticsearch
+   * @param field {string} current learning object field that is an Array
+   * @param updates {LearningObjectMetadataUpdates} learning object updates
+   */
   private formatArrayofUpdates(
-    updateSource: string,
     field: string,
     updates: LearningObjectMetadataUpdates,
   ) {
+    let updateSource = '';
     let formattedArr: string[] = [];
     updateSource = `ctx._source.${field} = `;
     updates[field].map((arrayVal: string, index: number) => {
