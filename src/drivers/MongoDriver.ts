@@ -19,6 +19,7 @@ import {
   ReleasedUserLearningObjectSearchQuery,
   UserLearningObjectSearchQuery,
   CollectionAccessMap,
+  LearningObjectChildSummary,
 } from '../shared/types';
 import { LearningOutcomeMongoDatastore } from '../LearningOutcomes/LearningOutcomeMongoDatastore';
 import {
@@ -40,7 +41,10 @@ import {
 import { reportError } from '../shared/SentryConnector';
 import { LearningObject, LearningOutcome, User } from '../shared/entity';
 import { MongoConnector } from '../shared/Mongo/MongoConnector';
-import { mapLearningObjectToSummary } from '../shared/functions';
+import {
+  mapLearningObjectToSummary,
+  mapChildLearningObjectToSummary,
+} from '../shared/functions';
 import {
   ReleasedLearningObjectDocument,
   OutcomeDocument,
@@ -115,7 +119,11 @@ export class MongoDriver implements DataStore {
       authorID,
     };
     if (text) {
-      searchQuery.$text = { $search: text };
+      searchQuery.$or = searchQuery.$or || [];
+      searchQuery.$or.push(
+        { $text: { $search: text } },
+        { name: RegExp(sanitizeRegex(text), 'gi') },
+      );
     }
     const resultSet = await this.db
       .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
@@ -189,17 +197,17 @@ export class MongoDriver implements DataStore {
       searchQuery.revision = revision;
     }
     if (text) {
-      searchQuery.$text = { $search: text };
-    }
-    if (status) {
       searchQuery.$or = searchQuery.$or || [];
-      searchQuery.$or.push({
-        status: { $in: status },
-      });
+      searchQuery.$or.push(
+        { $text: { $search: text } },
+        { name: RegExp(sanitizeRegex(text), 'gi') },
+      );
     }
+
     const pipeline = this.buildAllObjectsPipeline({
       searchQuery,
       orConditions,
+      status,
       hasText: !!text,
     });
 
@@ -333,17 +341,24 @@ export class MongoDriver implements DataStore {
    * `id`='exampleId', `revision`=1
    * If revision 1 of Learning Object exampleId was released, it's latest version will be stored in the released objects collection
    * If revision 1 is still be drafted or is in review, it will only exist in the working objects collection
-   *
-   * @returns {Promise<LearningObjectSummary>}
+   * @param {string} id [Id of the Learning Object]
+   * @param {number} revision [Revision number of the Learning Object]
+   * @param {User} author [User object of Learning Object author]
+   * @param {boolean} summary [Boolean indicating whether or not to return a LearningObject or LearningObjectSummary]
+   * @returns {Promise<LearningObject | LearningObjectSummary>}
    * @memberof MongoDriver
    */
-  async fetchLearningObjectRevisionSummary({
+  async fetchLearningObjectRevision({
     id,
     revision,
+    author,
+    summary,
   }: {
     id: string;
     revision: number;
-  }): Promise<LearningObjectSummary> {
+    author?: User;
+    summary?: boolean;
+  }): Promise<LearningObject | LearningObjectSummary> {
     const doc =
       (await this.db
         .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
@@ -352,7 +367,10 @@ export class MongoDriver implements DataStore {
         .collection(COLLECTIONS.LEARNING_OBJECTS)
         .findOne({ _id: id, revision }));
     if (doc) {
-      return this.generateLearningObjectSummary(doc);
+      if (summary) {
+        return this.generateLearningObjectSummary(doc);
+      }
+      return this.generateLearningObject(author, doc);
     }
     return null;
   }
@@ -497,6 +515,11 @@ export class MongoDriver implements DataStore {
    * queries provided, then joining the working and released collection together, adding the hasRevision flag to released learning object based on
    * the status of the working object, removing duplicates then returns a filtered and sorted superset of working and released learning objects.
    *
+   * Status filter match stage is applied after initial match stage and creation of the super set in order to avoid filtering out
+   * Learning Objects in the released collection.
+   * ie. status filter = ['released']; Learning Object A is unreleased in `objects` collection and exists in the `released-objects` collection
+   * if this was applied before the collection joining, Learning Object A would not be returned.
+   *
    * @private
    * @param {({
    *     searchQuery?: any;
@@ -510,25 +533,25 @@ export class MongoDriver implements DataStore {
    * @returns {any[]}
    * @memberof MongoDriver
    */
-  private buildAllObjectsPipeline(params: {
+  private buildAllObjectsPipeline({
+    searchQuery,
+    orConditions,
+    hasText,
+    status,
+    page,
+    limit,
+    orderBy,
+    sortType,
+  }: {
     searchQuery?: any;
     orConditions?: any[];
     hasText?: boolean;
+    status?: string[];
     page?: number;
     limit?: number;
     orderBy?: string;
     sortType?: 1 | -1;
   }): any[] {
-    let {
-      searchQuery,
-      orConditions,
-      hasText,
-      page,
-      limit,
-      orderBy,
-      sortType,
-    } = params;
-
     let matcher: any = { ...searchQuery };
     if (orConditions && orConditions.length) {
       matcher.$or = matcher.$or || [];
@@ -575,7 +598,7 @@ export class MongoDriver implements DataStore {
       },
     };
 
-    // create a large filtered collection of learning objects with diplicates.
+    // create a large filtered collection of learning objects with duplicates.
     const createSuperSet = [
       { $unwind: { path: '$released', preserveNullAndEmptyArrays: true } },
       {
@@ -594,6 +617,21 @@ export class MongoDriver implements DataStore {
       },
       ...unWindArrayToRoot,
     ];
+
+    let statusFilterMatch: [
+      { $match: { $or: [{ status: { $in: string[] } }] } }
+    ] = [] as any;
+    if (status) {
+      statusFilterMatch[0] = {
+        $match: {
+          $or: [
+            {
+              status: { $in: status },
+            },
+          ],
+        },
+      };
+    }
 
     // filter and remove duplicates after grouping the objects by ID.
     const removeDuplicates = [
@@ -652,6 +690,7 @@ export class MongoDriver implements DataStore {
       match,
       joinCollections,
       ...createSuperSet,
+      ...statusFilterMatch,
       ...removeDuplicates,
       ...sort,
       {
@@ -841,8 +880,34 @@ export class MongoDriver implements DataStore {
   }): Promise<LearningObject[]> {
     const { id, full, status, collection } = params;
     const matchQuery: { [index: string]: any } = {
-      $match: { _id: id, status: { $in: status } },
+      $match: { _id: id },
     };
+
+    const findChildren: {
+      $graphLookup: {
+        from: string;
+        startWith: string;
+        connectFromField: string;
+        connectToField: string;
+        as: string;
+        maxDepth: number;
+        restrictSearchWithMatch?: { [index: string]: any };
+      };
+    } = {
+      $graphLookup: {
+        from: collection || COLLECTIONS.LEARNING_OBJECTS,
+        startWith: '$children',
+        connectFromField: 'children',
+        connectToField: '_id',
+        as: 'objects',
+        maxDepth: 0,
+      },
+    };
+    if (status) {
+      findChildren.$graphLookup.restrictSearchWithMatch = {
+        status: { $in: status },
+      };
+    }
 
     const docs = await this.db
       .collection<{ objects: LearningObjectDocument[] }>(
@@ -851,17 +916,7 @@ export class MongoDriver implements DataStore {
       .aggregate([
         // match based on id's and status array if given.
         matchQuery,
-        {
-          // grab the children of learning objects
-          $graphLookup: {
-            from: collection || COLLECTIONS.LEARNING_OBJECTS,
-            startWith: '$children',
-            connectFromField: 'children',
-            connectToField: '_id',
-            as: 'objects',
-            maxDepth: 0,
-          },
-        },
+        findChildren,
         // only return children.
         { $project: { _id: 0, objects: '$objects' } },
       ])
@@ -1554,56 +1609,19 @@ export class MongoDriver implements DataStore {
    *
    * @returns {LearningObjectRecord}
    */
-  async fetchLearningObject(params: {
+  async fetchLearningObject({
+    id,
+    full,
+  }: {
     id: string;
     full?: boolean;
   }): Promise<LearningObject> {
-    const results = await this.db
-      .collection<LearningObjectDocument & { orderedFiles: any[] }>(
-        COLLECTIONS.LEARNING_OBJECTS,
-      )
-      .aggregate([
-        {
-          // match learning object by params.id
-          $match: { _id: params.id },
-        },
-        {
-          $unwind: {
-            path: '$materials.files',
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        { $sort: { 'materials.files.date': -1 } },
-        { $addFields: { orderedFiles: '' } },
-        {
-          $group: {
-            _id: '$_id',
-            orderedFiles: {
-              $push: '$materials.files',
-            },
-            authorID: { $first: '$authorID' },
-            name: { $first: '$name' },
-            date: { $first: '$date' },
-            length: { $first: '$length' },
-            levels: { $first: '$levels' },
-            goals: { $first: '$goals' },
-            outcomes: { $first: '$outcomes' },
-            materials: { $first: '$materials' },
-            contributors: { $first: '$contributors' },
-            collection: { $first: '$collection' },
-            status: { $first: '$status' },
-            description: { $first: '$description' },
-            revision: { $first: '$revision' },
-          },
-        },
-      ])
-      .toArray();
-    if (results && results[0]) {
-      const object = results[0];
-      object.materials.files = object.orderedFiles;
-      delete object.orderedFiles;
-      const author = await this.fetchUser(object.authorID);
-      return this.generateLearningObject(author, object, params.full);
+    const doc = await this.db
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .findOne({ _id: id });
+    if (doc) {
+      const author = await this.fetchUser(doc.authorID);
+      return this.generateLearningObject(author, doc, full);
     }
     return null;
   }
@@ -1812,12 +1830,10 @@ export class MongoDriver implements DataStore {
         query.status = { $in: params.status };
       }
       if (params.text) {
-        if (!query.$or) {
-          query.$or = [];
-        }
+        query.$or = query.$or || [];
         query.$or.push(
-          { description: { $regex: params.text, $options: 'i' } },
-          { name: { $regex: params.text, $options: 'i' } },
+          { name: new RegExp(sanitizeRegex(params.text)) },
+          { description: new RegExp(sanitizeRegex(params.text)) },
         );
       }
       let objectCursor = await this.db
@@ -2066,8 +2082,8 @@ export class MongoDriver implements DataStore {
     const regex = new RegExp(sanitizeRegex(text));
     query.$or = [
       { $text: { $search: text } },
-      { name: { $regex: regex } },
-      { contributors: { $regex: regex } },
+      { name: regex },
+      { contributors: regex },
     ];
     if (Array.isArray(learningObjectIds)) {
       query.$or.push({ _id: { $in: learningObjectIds } });
@@ -2264,9 +2280,9 @@ export class MongoDriver implements DataStore {
     if (text) {
       const regex = new RegExp(sanitizeRegex(text), 'ig');
       (<any[]>query.$or).push(
-        { username: { $regex: regex } },
-        { name: { $regex: regex } },
-        { email: { $regex: regex } },
+        { username: regex },
+        { name: regex },
+        { email: regex },
       );
     }
     return author || text
@@ -2508,13 +2524,13 @@ export class MongoDriver implements DataStore {
     );
     const [author, contributors] = await Promise.all([author$, contributors$]);
 
-    let children: Partial<LearningObject>[] = [];
+    let children: LearningObjectChildSummary[] = [];
     if (record.children) {
-      children = await this.loadChildObjects({
+      children = (await this.loadChildObjects({
         id: record._id,
         full: false,
         status: [],
-      });
+      })).map(mapChildLearningObjectToSummary);
     }
 
     return mapLearningObjectToSummary({
@@ -2546,12 +2562,12 @@ export class MongoDriver implements DataStore {
     if (hasRevision == null) {
       hasRevision = await this.learningObjectHasRevision(record._id);
     }
-    let children: Partial<LearningObject>[] = [];
+    let children: LearningObjectChildSummary[] = [];
     if (record.children) {
-      children = await this.loadReleasedChildObjects({
+      children = (await this.loadReleasedChildObjects({
         id: record._id,
         full: false,
-      });
+      })).map(mapChildLearningObjectToSummary);
     }
 
     return mapLearningObjectToSummary({

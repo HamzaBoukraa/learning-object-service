@@ -1,8 +1,9 @@
 import 'dotenv/config';
-import { LearningObject, BundleData, BundleExtension } from './typings';
+import { LearningObject, BundleData, BundleExtension, HierarchicalLearningObject } from './typings';
 import { BundlerModule } from './BundlerModule';
 import { Bundler, LicenseRetriever, FileGateway } from './interfaces';
 import { handleError } from '../../../shared/errors';
+import { LearningObjectSummary, LearningObjectChildSummary } from '../../../shared/types';
 
 /**
  * Encapsulates Drivers used within this interactor in a namespace
@@ -24,13 +25,13 @@ const CC_LICENSE = {
 /**
  * bundleLearningObject creates a bundle of all materials for a Learning Object.
  *
- * @param {LearningObject} learningObject [The Learning Object to be downloaded]
+ * @param {HierarchicalLearningObject} learningObject [The Learning Object to be downloaded]
  * @returns a stream of the archive file that contains the bundled Learning Object
  */
 export async function bundleLearningObject({
   learningObject,
 }: {
-  learningObject: LearningObject;
+  learningObject: HierarchicalLearningObject;
 }) {
   const extension = BundleExtension.Zip;
   const objectData = await buildBundleStructure({ learningObject });
@@ -43,7 +44,7 @@ export async function bundleLearningObject({
 /**
  * Bundles Learning Object with Creative Common's License, Readme, attached files, and children
  *
- * @param {LearningObject} [The Learning Object to be bundled]
+ * @param {HierarchicalLearningObject} [The Learning Object to be bundled]
  * @param {string} prefix [File path prefix (ie. fileName: 'World.txt', prefix: 'Hello' = filePath: 'Hello/World.txt')]
  * @returns {Promise<BundleData[]>}
  */
@@ -51,7 +52,7 @@ async function buildBundleStructure({
   learningObject,
   prefix = '',
 }: {
-  learningObject: LearningObject;
+  learningObject: HierarchicalLearningObject;
   prefix?: string;
 }): Promise<BundleData[]> {
   try {
@@ -60,12 +61,14 @@ async function buildBundleStructure({
       addReadMe({
         authorUsername: learningObject.author.username,
         learningObjectId: learningObject.id,
+        learningObjectRevisionId: learningObject.revision,
         name: learningObject.materials.pdf.name,
         prefix,
       }),
       addFiles({
         authorUsername: learningObject.author.username,
         learningObjectId: learningObject.id,
+        learningObjectRevisionId: learningObject.revision,
         files: learningObject.materials.files,
         prefix,
       }),
@@ -98,6 +101,7 @@ async function addCCLicense(prefix: string = ''): Promise<BundleData> {
  *
  *  @param {string} authorUsername [The username of the Learning Object's author]
  * @param {string} learningObjectId [The id of the Learning Object]
+ * @param {number} learningObjectRevisionId [The revision id of the Learning Object]
  * @param {string} name [Name of the ReadMe file]
  * @param {string} prefix [File path prefix (ie. fileName: 'World.txt', prefix: 'Hello' = filePath: 'Hello/World.txt')]
  * @returns {Promise<BundleData>}
@@ -105,11 +109,13 @@ async function addCCLicense(prefix: string = ''): Promise<BundleData> {
 async function addReadMe({
   authorUsername,
   learningObjectId,
+  learningObjectRevisionId,
   name,
   prefix = '',
 }: {
   authorUsername: string;
   learningObjectId: string;
+  learningObjectRevisionId: number;
   name: string;
   prefix?: string;
 }): Promise<BundleData> {
@@ -119,6 +125,7 @@ async function addReadMe({
     data: await Gateways.fileGateway().getFileStream({
       authorUsername,
       learningObjectId,
+      learningObjectRevisionId,
       path: name,
     }),
   };
@@ -130,6 +137,7 @@ async function addReadMe({
  *
  * @param {string} authorUsername [The username of the Learning Object's author]
  * @param {string} learningObjectId [The id of the Learning Object]
+ * @param {number} learningObjectRevisionId [The revision id of the Learning Object]
  * @param {LearningObject.Material.File[]} files [List of file data from the Learning Object to get bundled];
  * @param {string}: prefix [File path prefix (ie. fileName: 'World.txt', prefix: 'Hello' = filePath: 'Hello/World.txt')]
  * @returns {Promise<BundleData[]>}
@@ -137,11 +145,13 @@ async function addReadMe({
 function addFiles({
   authorUsername,
   learningObjectId,
+  learningObjectRevisionId,
   files,
   prefix = '',
 }: {
   authorUsername: string;
   learningObjectId: string;
+  learningObjectRevisionId: number;
   files: LearningObject.Material.File[];
   prefix?: string;
 }): Promise<BundleData[]> {
@@ -153,6 +163,7 @@ function addFiles({
         data: await Gateways.fileGateway().getFileStream({
           authorUsername,
           learningObjectId,
+          learningObjectRevisionId,
           path: file.fullPath || file.name,
         }),
       };
@@ -163,7 +174,7 @@ function addFiles({
 /**
  * addChildren triggers the process of building a bundle structure for each child of a Learning Object.
  *
- * @param {LearningObject[]} children [Array of child Learning Objects]
+ * @param {HierarchicalLearningObject[]} children [Array of child Learning Objects]
  * @param {string}: prefix [File path prefix (ie. fileName: 'World.txt', prefix: 'Hello' = filePath: 'Hello/World.txt')]
  * @returns {Promise<BundleData[]>}
  */
@@ -171,7 +182,7 @@ async function addChildren({
   children,
   prefix = '',
 }: {
-  children: LearningObject[];
+  children: HierarchicalLearningObject[];
   prefix: string;
 }): Promise<BundleData[]> {
   const childrenBundleData = await Promise.all(

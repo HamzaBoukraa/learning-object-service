@@ -1,3 +1,4 @@
+export {HierarchicalLearningObject} from '../../shared/entity';
 export interface FileMeta {
   name: string;
   fileType: string;

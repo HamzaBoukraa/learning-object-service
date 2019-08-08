@@ -1,6 +1,5 @@
 import { DataStore, ParentLearningObjectQuery } from '../../shared/interfaces/DataStore';
-import { UserToken, LearningObjectState } from '../../shared/types';
-import { LearningObject } from '../../shared/entity';
+import { UserToken, LearningObjectState, LearningObjectSummary } from '../../shared/types';
 
 /**
  * Fetches the parents of a Learning Object.
@@ -10,35 +9,34 @@ import { LearningObject } from '../../shared/entity';
  * In this case, when there is a released Learning Object and a working copy,
  * the released copy will be what is returned.
  *
- * @returns {Promise<LearningObject[]>} the set of parent Learning Objects.
+ * @returns {Promise<LearningObjectSummary[]>} the set of parent Learning Objects.
  */
 export async function fetchParents(params: {
   dataStore: DataStore;
   learningObjectID: string;
   userToken: UserToken;
-  full?: boolean;
-}): Promise<LearningObject[]> {
-  const { dataStore, learningObjectID, userToken, full } = params;
+}): Promise<LearningObjectSummary[]> {
+  const { dataStore, learningObjectID, userToken } = params;
   let hasFullAccess = false;
   let collectionsWithAccess: string[] = [];
   let requestedByAuthor = false;
   const author = await dataStore.fetchLearningObjectAuthorUsername(learningObjectID);
 
   if (userToken) {
-    hasFullAccess = hasFullReviewStageAccess(userToken.accessGroups);
-    collectionsWithAccess = identifyCollectionAccess(userToken.accessGroups);
+    hasFullAccess = hasFullReviewStageAccess(userToken.accessGroups || []);
+    collectionsWithAccess = identifyCollectionAccess(userToken.accessGroups || []);
     requestedByAuthor = userToken.username === author;
   }
 
   if (!requestedByAuthor && !hasFullAccess && collectionsWithAccess.length < 1) {
     return await dataStore.fetchReleasedParentObjects({
       query: { id: learningObjectID },
-      full,
+      full: false,
     });
   } else {
     return await params.dataStore.fetchParentObjects({
       query: buildQuery(learningObjectID, requestedByAuthor, hasFullAccess, collectionsWithAccess),
-      full,
+      full: false,
     });
   }
 }

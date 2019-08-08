@@ -1,21 +1,18 @@
 import { DataStore } from '../../shared/interfaces/DataStore';
 import { LearningObject } from '../../shared/entity';
+import { LibraryCommunicator, } from '../../shared/interfaces/interfaces';
 import {
-  LibraryCommunicator,
-} from '../../shared/interfaces/interfaces';
-import {
-  updateReadme,
-  getLearningObjectById,
-  updateLearningObject,
-  getLearningObjectRevisionSummary,
-  getWorkingLearningObjectSummary,
   getActiveLearningObjectSummary,
+  getLearningObjectById,
   getReleasedFile,
   getReleasedFiles,
-  updateObjectLastModifiedDate,
   getReleasedLearningObjectSummary,
+  getWorkingLearningObjectSummary,
+  updateLearningObject,
+  updateObjectLastModifiedDate,
+  updateReadme,
 } from '../LearningObjectInteractor';
-import { UserToken, LearningObjectSummary } from '../../shared/types';
+import { LearningObjectSummary, UserToken } from '../../shared/types';
 import { LearningObjectFilter } from '../typings';
 
 /**
@@ -143,32 +140,6 @@ export class LearningObjectAdapter {
   }
 
   /**
-   *  Retrieves Learning Object summary by id and revision number
-   *
-   * @param {DataStore} dataStore [Driver for datastore]
-   * @param {UserToken} requester [Object containing information about the requester]
-   * @param {string} id [Id of the Learning Object]
-   * @param {number} revision [Revision number of the Learning Object]
-   * @returns {Promise<LearningObjectSummary>}
-   * @memberof LearningObjectAdapter
-   */
-  async getLearningObjectRevisionSummary({
-    requester,
-    id,
-    revision,
-  }: {
-    requester: UserToken;
-    id: string;
-    revision: number;
-  }): Promise<LearningObjectSummary> {
-    return getLearningObjectRevisionSummary({
-      dataStore: this.dataStore,
-      requester,
-      id,
-      revision,
-    });
-  }
-  /**
    * Fetches a learning object by ID
    *
    * @export
@@ -177,7 +148,7 @@ export class LearningObjectAdapter {
    */
   async getLearningObjectById(params: {
     id: string;
-    requester: UserToken;
+    requester?: UserToken;
     filter?: LearningObjectFilter;
   }): Promise<LearningObject> {
     return getLearningObjectById({
