@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import * as Interactor from '../Interactor';
+import * as Interactor from '../interactors/searchObjects/searchObjects';
 import { Requester } from '../typings';
 import { mapErrorToResponseData } from '../../shared/errors';
 import { LearningObjectQuery } from '../../shared/interfaces/DataStore';

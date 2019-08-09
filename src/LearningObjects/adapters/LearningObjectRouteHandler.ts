@@ -8,6 +8,7 @@ import {
   LearningObjectSummary,
 } from '../../shared/types';
 import * as LearningObjectInteractor from '../LearningObjectInteractor';
+import * as searchAllUserObjects from '../../LearningObjectSearch/interactors/searchAllUserObjects/searchAllUserObjects';
 import { LearningObject } from '../../shared/entity';
 import { LearningObjectFilter, MaterialsFilter } from '../typings';
 import { initializePrivate as initializeRevisionRoutes } from '../Revisions/RevisionRouteHandler';
@@ -31,7 +32,7 @@ export function initializePublic({
       const requester: UserToken = req.user;
       const authorUsername: string = req.params.username;
       const query: UserLearningObjectQuery = req.query;
-      const learningObjects = await LearningObjectInteractor.searchUsersObjects(
+      const learningObjects = await searchAllUserObjects.searchUsersObjects(
         {
           dataStore,
           authorUsername,
