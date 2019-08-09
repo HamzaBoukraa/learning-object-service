@@ -49,30 +49,21 @@ namespace Gateways {
  * @async
  *
  * @returns {LearningObjectSummary[]} the user's learning objects found by the query
- * @param params.dataStore
  * @param params.authorUsername
  * @param params.requester
  * @param params.query
  */
 export async function searchUsersObjects({
-    dataStore,
     authorUsername,
     requester,
     query,
   }: {
-    dataStore: DataStore;
     authorUsername: string;
     requester: UserToken;
     query?: UserLearningObjectQuery;
   }): Promise<LearningObjectSummary[]> {
     try {
       let { text, draftsOnly, status } = formatUserLearningObjectQuery(query);
-      if (!(await dataStore.findUserId(authorUsername))) {
-        throw new ResourceError(
-          `Cannot load Learning Objects for user ${authorUsername}. User ${authorUsername} does not exist.`,
-          ResourceErrorReason.NOT_FOUND,
-        );
-      }
       const isAuthor = requesterIsAuthor({ requester, authorUsername });
       const isPrivileged = requesterIsPrivileged(requester);
       const searchQuery: UserLearningObjectSearchQuery = {
@@ -110,11 +101,17 @@ export async function searchUsersObjects({
       }
 
       const user = await Gateways.userGateway().getUser(authorUsername);
+      if (!user) {
+        throw new ResourceError(
+          `Cannot load Learning Objects for user ${authorUsername}. User ${authorUsername} does not exist.`,
+          ResourceErrorReason.NOT_FOUND,
+        );
+      }
 
       if (!isAuthor && !isPrivileged) {
         return await Gateways.userLearningObjectDatastore().searchReleasedUserObjects(
           searchQuery,
-          authorUsername,
+          user.id,
         );
       }
 
@@ -139,7 +136,7 @@ export async function searchUsersObjects({
 
       return await Gateways.userLearningObjectDatastore().searchAllUserObjects(
         searchQuery,
-        authorUsername,
+        user.id,
         collectionAccessMap,
       );
     } catch (e) {

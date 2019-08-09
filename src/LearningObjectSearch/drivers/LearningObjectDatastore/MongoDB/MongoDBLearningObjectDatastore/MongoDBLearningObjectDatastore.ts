@@ -32,10 +32,9 @@ export class MongoDBLearningObjectDatastore implements UserLearningObjectDatasto
      */
     async searchReleasedUserObjects(
         query: ReleasedUserLearningObjectSearchQuery,
-        username: string,
+        authorID: string,
     ): Promise<LearningObjectSummary[]> {
         const { text } = query;
-        const authorID = await this.findUserId(username);
         const searchQuery: { [index: string]: any } = {
             authorID,
         };
@@ -72,11 +71,10 @@ export class MongoDBLearningObjectDatastore implements UserLearningObjectDatasto
      */
     async searchAllUserObjects(
         query: UserLearningObjectSearchQuery,
-        username: string,
+        authorID: string,
         collectionRestrictions?: CollectionAccessMap,
     ): Promise<LearningObjectSummary[]> {
         const { revision, status, text } = query;
-        const authorID = await this.findUserId(username);
 
         let orConditions: QueryCondition[] = [];
         if (collectionRestrictions) {

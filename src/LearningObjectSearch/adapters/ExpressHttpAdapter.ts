@@ -3,6 +3,8 @@ import * as Interactor from '../interactors/searchObjects/searchObjects';
 import { Requester } from '../typings';
 import { mapErrorToResponseData } from '../../shared/errors';
 import { LearningObjectQuery } from '../../shared/interfaces/DataStore';
+import { UserLearningObjectQuery } from '../../shared/types';
+import { searchUsersObjects } from '../interactors/searchUsersObjects/searchUsersObjects';
 
 /**
  * Builds the Express Router for this module
@@ -13,6 +15,7 @@ import { LearningObjectQuery } from '../../shared/interfaces/DataStore';
 export function buildRouter() {
   const router = Router();
   router.get('/learning-objects', searchObjects);
+  router.get('/users/:username/learning-objects', searchUserLearningObjects);
   return router;
 }
 
@@ -35,3 +38,22 @@ async function searchObjects(req: Request, res: Response, next: NextFunction) {
     res.status(code).json({ message });
   }
 }
+
+async function searchUserLearningObjects(req: Request, res: Response) {
+  try {
+    const requester: Requester = req.user;
+    const authorUsername: string = req.params.username;
+    const query: UserLearningObjectQuery = req.query;
+    const learningObjects = await searchUsersObjects(
+      {
+        authorUsername,
+        requester,
+        query,
+      },
+    );
+    res.status(200).send(learningObjects);
+  } catch (e) {
+    const { code, message } = mapErrorToResponseData(e);
+    res.status(code).json({ message });
+  }
+};

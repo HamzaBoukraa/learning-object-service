@@ -1,6 +1,5 @@
 import { Stubs } from '../../../tests/stubs';
-import { searchUserObjects } from './searchAllUserObjects';
-import { MockDataStore } from '../../../tests/mock-drivers/MockDataStore';
+import { searchUsersObjects } from './searchUsersObjects';
 
 const stubs = new Stubs();
 
@@ -8,9 +7,9 @@ describe('If draftsOnly is specified', () => {
     describe('and the requester is not the author and is not a priveleged user', () => {
         it('should throw an error', () => {
             stubs.searchUserObjectsUserToken 
-            searchUserObjects({
+            searchUsersObjects({
 
-            })
+            });
         });
     });
     describe('and the requester does not specify status', () => {
