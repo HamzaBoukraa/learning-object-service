@@ -188,6 +188,10 @@ export class Stubs {
     set metrics(metrics: { saves: number, downloads: number}) {
         this._metrics = metrics;
     }
+
+    get searchUserObjectsUserToken() {
+        return this._searchUserObjectsUserToken;
+    }
   /**
    * Generates Learning Object from untyped js module object
    *

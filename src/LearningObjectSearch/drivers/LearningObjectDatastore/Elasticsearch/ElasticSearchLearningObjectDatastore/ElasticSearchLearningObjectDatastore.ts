@@ -10,21 +10,21 @@ import {
   TermsQuery,
   LearningObjectSummary,
   LearningObject,
-} from '../../../typings';
+} from '../../../../typings';
 import { SearchResponse } from 'elasticsearch';
 import * as request from 'request-promise';
-import { LearningObjectDatastore } from '../../../interfaces';
+import { LearningObjectDatastore } from '../../../../interfaces';
 import {
   sanitizeObject,
   mapLearningObjectToSummary,
-} from '../../../../shared/functions';
+} from '../../../../../shared/functions';
 import { RequestError, StatusCodeError } from 'request-promise/errors';
 import {
   ResourceError,
   ResourceErrorReason,
   ServiceError,
   ServiceErrorReason,
-} from '../../../../shared/errors';
+} from '../../../../../shared/errors';
 
 const ELASTICSEARCH_DOMAIN = process.env.ELASTICSEARCH_DOMAIN;
 const LEARNING_OBJECT_INDEX = 'learning-objects';

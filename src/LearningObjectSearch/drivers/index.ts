@@ -1,3 +1,3 @@
-import { ElasticSearchLearningObjectDatastore } from './LearningObjectDatastore/ElasticSearchLearningObjectDatastore/ElasticSearchLearningObjectDatastore';
+import { ElasticSearchLearningObjectDatastore } from './LearningObjectDatastore/Elasticsearch/ElasticSearchLearningObjectDatastore/ElasticSearchLearningObjectDatastore';
 
 export { ElasticSearchLearningObjectDatastore };
