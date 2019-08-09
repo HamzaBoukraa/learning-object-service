@@ -22,7 +22,16 @@ import {
 } from '../../../shared/AuthorizationManager';
 import { LearningObject } from '../../../shared/entity';
 import { sanitizeText, sanitizeObject, toArray, toBoolean } from '../../../shared/functions';
+import { LearningObjectSearch } from '../..';
+import { UserGateway } from '../../../LearningObjects/interfaces';
 
+namespace Gateways {
+  export const userGateway = () =>
+    LearningObjectSearch.resolveDependency(UserGateway);
+
+  export const userLearningObjectDatastore = () =>
+    LearningObjectSearch.resolveDependency(userLearningObjectDatastore);
+}
 
 /**
  * Performs a search on the specified user's Learning Objects.
@@ -100,8 +109,10 @@ export async function searchUsersObjects({
         searchQuery.revision = 0;
       }
 
+      const user = await Gateways.userGateway().getUser(authorUsername);
+
       if (!isAuthor && !isPrivileged) {
-        return await dataStore.searchReleasedUserObjects(
+        return await Gateways.userLearningObjectDatastore().searchReleasedUserObjects(
           searchQuery,
           authorUsername,
         );
@@ -126,7 +137,7 @@ export async function searchUsersObjects({
         }
       }
 
-      return await dataStore.searchAllUserObjects(
+      return await Gateways.userLearningObjectDatastore().searchAllUserObjects(
         searchQuery,
         authorUsername,
         collectionAccessMap,

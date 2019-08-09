@@ -5,6 +5,10 @@ import {
 import { LearningObjectDatastore } from './interfaces';
 import { ExpressHttpAdapter } from './adapters';
 import { ElasticSearchLearningObjectDatastore } from './drivers';
+import { UserGateway } from './interfaces/UserGateway';
+import { UserServiceGateway } from './gateways/UserServiceGateway';
+import { UserLearningObjectDatastore } from './interfaces/UserLearningObjectDatastore';
+import { MongoDBLearningObjectDatastore } from './drivers/LearningObjectDatastore/MongoDB/MongoDBLearningObjectDatastore/MongoDBLearningObjectDatastore';
 
 @expressServiceModule({
   expressRouter: ExpressHttpAdapter.buildRouter(),
@@ -12,6 +16,14 @@ import { ElasticSearchLearningObjectDatastore } from './drivers';
     {
       provide: LearningObjectDatastore,
       useClass: ElasticSearchLearningObjectDatastore,
+    },
+    {
+      provide: UserGateway,
+      useClass: UserServiceGateway,
+    },
+    {
+      provide: UserLearningObjectDatastore,
+      useClass: MongoDBLearningObjectDatastore,
     },
   ],
 })
