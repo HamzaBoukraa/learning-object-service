@@ -1,11 +1,8 @@
-import { Cursor, Db, MongoClient, ObjectID } from 'mongodb';
+import { Cursor, Db, MongoClient } from 'mongodb';
 import { DataStore } from '../shared/interfaces/interfaces';
 import {
   Filters,
   LearningObjectCollection,
-  ReleasedLearningObjectQuery,
-  QueryCondition,
-  LearningObjectQuery,
   ParentLearningObjectQuery,
 } from '../shared/interfaces/DataStore';
 import * as ObjectMapper from './Mongo/ObjectMapper';
@@ -16,10 +13,6 @@ import {
   LearningOutcomeDocument,
   StandardOutcomeDocument,
   LearningObjectSummary,
-  ReleasedUserLearningObjectSearchQuery,
-  UserLearningObjectSearchQuery,
-  CollectionAccessMap,
-  LearningObjectChildSummary,
 } from '../shared/types';
 import { LearningOutcomeMongoDatastore } from '../LearningOutcomes/LearningOutcomeMongoDatastore';
 import {
@@ -41,15 +34,15 @@ import {
 import { reportError } from '../shared/SentryConnector';
 import { LearningObject, LearningOutcome, User } from '../shared/entity';
 import { MongoConnector } from '../shared/Mongo/MongoConnector';
-import {
-  mapLearningObjectToSummary,
-  mapChildLearningObjectToSummary,
-} from '../shared/functions';
-import {
-  ReleasedLearningObjectDocument,
-  OutcomeDocument,
-} from '../shared/types/learning-object-document';
 import { LearningObjectUpdates } from '../shared/types/learning-object-updates';
+import {
+  generateLearningObject,
+  generateLearningObjectSummary,
+  documentReleasedLearningObject,
+  documentLearningObject,
+  generateReleasedLearningObject,
+} from '../shared/Mongo/HelperFunctions';
+import { isEmail, sanitizeRegex } from '../shared/functions';
 
 export enum COLLECTIONS {
   USERS = 'users',
@@ -245,9 +238,9 @@ export class MongoDriver implements DataStore {
         .findOne({ _id: id, revision }));
     if (doc) {
       if (summary) {
-        return this.generateLearningObjectSummary(doc);
+        return generateLearningObjectSummary(doc);
       }
-      return this.generateLearningObject(author, doc);
+      return generateLearningObject(author, doc);
     }
     return null;
   }
@@ -298,7 +291,7 @@ export class MongoDriver implements DataStore {
    * @memberof MongoDriver
    */
   async addToReleased(object: LearningObject): Promise<void> {
-    const doc = await this.documentReleasedLearningObject(object);
+    const doc = await documentReleasedLearningObject(object);
     await this.db
       .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
       .replaceOne({ _id: object.id }, doc, { upsert: true });
@@ -570,7 +563,7 @@ export class MongoDriver implements DataStore {
    */
   async insertLearningObject(object: LearningObject): Promise<string> {
     try {
-      const doc = await this.documentLearningObject(object);
+      const doc = await documentLearningObject(object);
       // insert object into the database
       await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).insertOne(doc);
       return doc._id;
@@ -1144,7 +1137,7 @@ export class MongoDriver implements DataStore {
       .findOne({ _id: id });
     if (doc) {
       const author = await this.fetchUser(doc.authorID);
-      return this.generateLearningObject(author, doc, full);
+      return generateLearningObject(author, doc, full);
     }
     return null;
   }
@@ -1231,7 +1224,7 @@ export class MongoDriver implements DataStore {
       object.materials.files = object.orderedFiles;
       delete object.orderedFiles;
       const author = await this.fetchUser(object.authorID);
-      return this.generateReleasedLearningObject(author, object, params.full);
+      return generateReleasedLearningObject(author, object, params.full);
     }
     return null;
   }
@@ -1310,7 +1303,7 @@ export class MongoDriver implements DataStore {
     return await Promise.all(
       docs.map(async doc => {
         const author = await this.fetchUser(doc.authorID);
-        const learningObject = await this.generateLearningObject(
+        const learningObject = await generateLearningObject(
           author,
           doc,
           full,
@@ -1847,334 +1840,4 @@ export class MongoDriver implements DataStore {
     });
   }
 
-  ////////////////////////////////////////////////
-  // GENERIC HELPER METHODS - not in public API //
-  ////////////////////////////////////////////////
-  /**
-   * Converts Learning Object to Document
-   *
-   * @private
-   * @param {LearningObject} object
-   * @param {boolean} [isNew]
-   * @param {string} [id]
-   * @returns {Promise<LearningObjectDocument>}
-   * @memberof MongoDriver
-   */
-  private async documentLearningObject(
-    object: LearningObject,
-  ): Promise<LearningObjectDocument> {
-    const authorID = await this.findUser(object.author.username);
-    let contributorIds: string[] = [];
-
-    if (object.contributors && object.contributors.length) {
-      contributorIds = await Promise.all(
-        object.contributors.map(user => this.findUser(user.username)),
-      );
-    }
-
-    const doc: LearningObjectDocument = {
-      _id: object.id || new ObjectID().toHexString(),
-      authorID: authorID,
-      name: object.name,
-      date: object.date,
-      length: object.length,
-      levels: object.levels,
-      description: object.description,
-      materials: object.materials,
-      contributors: contributorIds,
-      collection: object.collection,
-      status: object.status,
-      children: object.children.map(obj => obj.id),
-      revision: object.revision,
-    };
-
-    return doc;
-  }
-
-  /**
-   * Converts Released Learning Object to Document
-   *
-   * @private
-   * @param {LearningObject} object
-   * @param {boolean} [isNew]
-   * @param {string} [id]
-   * @returns {Promise<LearningObjectDocument>}
-   * @memberof MongoDriver
-   */
-  private async documentReleasedLearningObject(
-    object: LearningObject,
-  ): Promise<LearningObjectDocument> {
-    let contributorIds: string[] = [];
-
-    if (object.contributors && object.contributors.length) {
-      contributorIds = await Promise.all(
-        object.contributors.map(user => this.findUser(user.username)),
-      );
-    }
-
-    const doc: ReleasedLearningObjectDocument = {
-      _id: object.id,
-      authorID: object.author.id,
-      name: object.name,
-      date: object.date,
-      length: object.length,
-      levels: object.levels,
-      description: object.description,
-      materials: object.materials,
-      contributors: contributorIds,
-      collection: object.collection,
-      outcomes: object.outcomes.map(this.documentOutcome),
-      status: object.status,
-      children: object.children.map(obj => obj.id),
-      revision: object.revision,
-    };
-
-    return doc;
-  }
-
-  /**
-   * Converts Learning Outcome into OutcomeDocument
-   *
-   * @private
-   * @param {LearningOutcome} outcome [Learning Outcome to convert to OutcomeDocument]
-   * @returns {OutcomeDocument}
-   * @memberof MongoDriver
-   */
-  private documentOutcome(outcome: LearningOutcome): OutcomeDocument {
-    return {
-      id: outcome.id,
-      outcome: outcome.outcome,
-      bloom: outcome.bloom,
-      verb: outcome.verb,
-      text: outcome.text,
-      mappings: outcome.mappings.map(guideline => guideline.id),
-    };
-  }
-
-  /**
-   * Converts LearningObjectDocument to LearningObjectSummary
-   *
-   * @private
-   * @param {LearningObjectDocument} record [Learning Object data]
-   * @returns {Promise<LearningObjectSummary>}
-   * @memberof MongoDriver
-   */
-  private async generateLearningObjectSummary(
-    record: LearningObjectDocument,
-  ): Promise<LearningObjectSummary> {
-    const author$ = this.fetchUser(record.authorID);
-    const contributors$ = Promise.all(
-      record.contributors.map(id => this.fetchUser(id)),
-    );
-    const [author, contributors] = await Promise.all([author$, contributors$]);
-
-    let children: LearningObjectChildSummary[] = [];
-    if (record.children) {
-      children = (await this.loadChildObjects({
-        id: record._id,
-        full: false,
-        status: [],
-      })).map(mapChildLearningObjectToSummary);
-    }
-
-    return mapLearningObjectToSummary({
-      ...(record as any),
-      author,
-      contributors,
-      children,
-      id: record._id,
-    });
-  }
-
-  /**
-   * Converts LearningObjectDocument to LearningObjectSummary
-   *
-   * @private
-   * @param {LearningObjectDocument} record [Learning Object data]
-   * @returns {Promise<LearningObjectSummary>}
-   * @memberof MongoDriver
-   */
-  private async generateReleasedLearningObjectSummary(
-    record: LearningObjectDocument,
-  ): Promise<LearningObjectSummary> {
-    const author$ = this.fetchUser(record.authorID);
-    const contributors$ = Promise.all(
-      record.contributors.map(id => this.fetchUser(id)),
-    );
-    const [author, contributors] = await Promise.all([author$, contributors$]);
-    let hasRevision = record.hasRevision;
-    if (hasRevision == null) {
-      hasRevision = await this.learningObjectHasRevision(record._id);
-    }
-    let children: LearningObjectChildSummary[] = [];
-    if (record.children) {
-      children = (await this.loadReleasedChildObjects({
-        id: record._id,
-        full: false,
-      })).map(mapChildLearningObjectToSummary);
-    }
-
-    return mapLearningObjectToSummary({
-      ...(record as any),
-      author,
-      contributors,
-      children,
-      hasRevision,
-      id: record._id,
-    });
-  }
-
-  /**
-   * Generates Learning Object from Document
-   *
-   * @private
-   * @param {User} author
-   * @param {LearningObjectDocument} record
-   * @param {boolean} [full]
-   * @returns {Promise<LearningObject>}
-   * @memberof MongoDriver
-   */
-  private async generateLearningObject(
-    author: User,
-    record: LearningObjectDocument,
-    full?: boolean,
-  ): Promise<LearningObject> {
-    // Logic for loading any learning object
-    let learningObject: LearningObject;
-    let materials: LearningObject.Material;
-    let contributors: User[] = [];
-    let outcomes: LearningOutcome[] = [];
-    let children: LearningObject[] = [];
-    // Load Contributors
-    if (record.contributors && record.contributors.length) {
-      contributors = await Promise.all(
-        record.contributors.map(userId => this.fetchUser(userId)),
-      );
-    }
-    // If full object requested, load up non-summary properties
-    if (full) {
-      // Logic for loading 'full' learning objects
-      materials = <LearningObject.Material>record.materials;
-      outcomes = await this.getAllLearningOutcomes({
-        source: record._id,
-      });
-    }
-    learningObject = new LearningObject({
-      id: record._id,
-      author,
-      name: record.name,
-      date: record.date,
-      length: record.length as LearningObject.Length,
-      levels: record.levels as LearningObject.Level[],
-      collection: record.collection,
-      status: record.status as LearningObject.Status,
-      description: record.description,
-      materials,
-      contributors,
-      outcomes,
-      hasRevision: record.hasRevision,
-      children,
-      revision: record.revision,
-    });
-    return learningObject;
-  }
-
-  /**
-   * Generates released Learning Object from Document
-   *
-   * @private
-   * @param {User} author
-   * @param {ReleasedLearningObjectDocument} record
-   * @param {boolean} [full]
-   * @returns {Promise<LearningObject>}
-   * @memberof MongoDriver
-   */
-  private async generateReleasedLearningObject(
-    author: User,
-    record: ReleasedLearningObjectDocument,
-    full?: boolean,
-  ): Promise<LearningObject> {
-    // Logic for loading any learning object
-    let learningObject: LearningObject;
-    let materials: LearningObject.Material;
-    let contributors: User[] = [];
-    let children: LearningObject[] = [];
-    let outcomes: LearningOutcome[] = [];
-    // Load Contributors
-    if (record.contributors && record.contributors.length) {
-      contributors = await Promise.all(
-        record.contributors.map(userId => this.fetchUser(userId)),
-      );
-    }
-    // If full object requested, load up non-summary properties
-    if (full) {
-      // Logic for loading 'full' learning objects
-      materials = <LearningObject.Material>record.materials;
-      for (let i = 0; i < record.outcomes.length; i++) {
-        const mappings = await this.learningOutcomeStore.getAllStandardOutcomes(
-          {
-            ids: record.outcomes[i].mappings,
-          },
-        );
-        outcomes.push(
-          new LearningOutcome({
-            ...record.outcomes[i],
-            mappings: mappings,
-            id: record.outcomes[i]['_id'],
-          }),
-        );
-      }
-    }
-    learningObject = new LearningObject({
-      id: record._id,
-      author,
-      name: record.name,
-      date: record.date,
-      length: record.length as LearningObject.Length,
-      levels: record.levels as LearningObject.Level[],
-      collection: record.collection,
-      status: record.status as LearningObject.Status,
-      description: record.description,
-      materials,
-      contributors,
-      outcomes: outcomes,
-      hasRevision: record.hasRevision,
-      children,
-      revision: record.revision,
-    });
-    return learningObject;
-  }
-}
-
-export function isEmail(value: string): boolean {
-  const emailPattern = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-  if (emailPattern.test(value)) {
-    return true;
-  }
-  return false;
-}
-
-/**
- * Escapes Regex quantifier, alternation, single sequence anchor, new line, and parenthesis characters in a string
- *
- * @export
- * @param {string} text
- * @returns {string}
- */
-export function sanitizeRegex(text: string): string {
-  const regexChars = /\.|\+|\*|\^|\$|\?|\[|\]|\(|\)|\|/;
-  if (regexChars.test(text)) {
-    let newString = '';
-    const chars = text.split('');
-    for (const c of chars) {
-      const isSpecial = regexChars.test(c.trim());
-      if (isSpecial) {
-        newString += `\\${c}`;
-      } else {
-        newString += c;
-      }
-    }
-    text = newString;
-  }
-  return text;
 }

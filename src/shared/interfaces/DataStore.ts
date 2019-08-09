@@ -129,34 +129,6 @@ export interface DataStore
   fetchLearningObjectCollection(id: string): Promise<string>;
   fetchLearningObjectAuthorUsername(id: string): Promise<string>;
 
-  /**
-   * Search for the specified user's released objects.
-   *
-   * @param {ReleasedUserLearningObjectSearchQuery} query Object containing query parameters to apply to search
-   * @param {String} username  username of an author in CLARK
-   *
-   * @returns {Promise<LearningObjectSummary[]>}
-   */
-  searchReleasedUserObjects(
-    query: ReleasedUserLearningObjectSearchQuery,
-    username: string,
-  ): Promise<LearningObjectSummary[]>;
-
-  /**
-   * Search for the specified user's released or working objects depending on requested status's
-   *
-   * @param  {LearningObjectQuery} query query containing status and text for field searching.
-   * @param username username of an author in CLARK.
-   * @param collectionRestrictions Object mapping accessible collections and statuses
-   *
-   * @returns {Promise<LearningObjectSummary[]>}
-   */
-  searchAllUserObjects(
-    query: LearningObjectQuery,
-    username: string,
-    collectionRestrictions?: CollectionAccessMap,
-  ): Promise<LearningObjectSummary[]>;
-
   fetchParentObjects(params: {
     query: ParentLearningObjectQuery;
     full?: boolean;

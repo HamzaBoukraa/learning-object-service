@@ -1,10 +1,21 @@
 import { Db } from 'mongodb';
 import { UserLearningObjectDatastore } from '../../../../interfaces/UserLearningObjectDatastore';
 import { MongoConnector } from '../../../../../shared/Mongo/MongoConnector';
-import { ReleasedUserLearningObjectSearchQuery, LearningObjectSummary, UserLearningObjectSearchQuery, CollectionAccessMap, LearningObjectDocument } from '../../../../../shared/types';
+import {
+    ReleasedUserLearningObjectSearchQuery,
+    LearningObjectSummary,
+    UserLearningObjectSearchQuery,
+    CollectionAccessMap,
+    LearningObjectDocument,
+} from '../../../../../shared/types';
 import { QueryCondition } from '../../../../../shared/interfaces/DataStore';
 import { COLLECTIONS } from '../../../../../drivers/MongoDriver';
 import { LearningObject } from '../../../../../shared/entity';
+import { sanitizeRegex } from '../../../../../shared/functions/sanitizeRegex/sanitizeRegex';
+import {
+    generateReleasedLearningObjectSummary,
+    generateLearningObjectSummary,
+} from '../../../../../shared/Mongo/HelperFunctions';
 
 
 export class MongoDBLearningObjectDatastore implements UserLearningObjectDatastore {
@@ -23,7 +34,7 @@ export class MongoDBLearningObjectDatastore implements UserLearningObjectDatasto
         query: ReleasedUserLearningObjectSearchQuery,
         username: string,
     ): Promise<LearningObjectSummary[]> {
-    const { text } = query;
+        const { text } = query;
         const authorID = await this.findUserId(username);
         const searchQuery: { [index: string]: any } = {
             authorID,
@@ -41,7 +52,7 @@ export class MongoDBLearningObjectDatastore implements UserLearningObjectDatasto
             .toArray();
         return Promise.all(
             resultSet.map(async learningObject =>
-            this.generateReleasedLearningObjectSummary(learningObject),
+            generateReleasedLearningObjectSummary(learningObject),
             ),
         );
     }
@@ -106,8 +117,8 @@ export class MongoDBLearningObjectDatastore implements UserLearningObjectDatasto
         const learningObjects: LearningObjectSummary[] = await Promise.all(
         resultSet[0].objects.map(learningObject => {
             return learningObject.status === LearningObject.Status.RELEASED
-            ? this.generateReleasedLearningObjectSummary(learningObject)
-            : this.generateLearningObjectSummary(learningObject);
+            ? generateReleasedLearningObjectSummary(learningObject)
+            : generateLearningObjectSummary(learningObject);
         }),
         );
 
