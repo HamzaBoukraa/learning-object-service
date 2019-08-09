@@ -1,3 +1,7 @@
+/**
+ * The identity of a user in the CLARK system that allows us to authorize requests.
+ * @interface
+ */
 export interface UserToken {
   username: string;
   name: string;
