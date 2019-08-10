@@ -1,9 +1,8 @@
 import { LearningObject } from '../shared/entity';
-import * as request from 'request-promise';
-import { cleanLearningObject } from '../shared/elasticsearch';
 import { SubmissionPublisher } from './interactors/SubmissionPublisher';
 import { Client } from '@elastic/elasticsearch';
 import { reportError } from '../shared/SentryConnector';
+import { cleanLearningObjectSearchDocument } from '../shared/elasticsearch/CleanLearningObject/CleanLearningObject';
 
 const INDEX_NAME = 'learning-objects';
 /**
@@ -39,7 +38,7 @@ export class ElasticsearchSubmissionPublisher implements SubmissionPublisher {
       await this.client.index({
         index: INDEX_NAME,
         type: '_doc',
-        body: cleanLearningObject(submission),
+        body: cleanLearningObjectSearchDocument(submission),
       });
     } catch (e) {
       reportError(e);

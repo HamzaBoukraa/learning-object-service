@@ -1,9 +1,10 @@
 import { PublishingDataStore } from './interactor';
 import { LearningObject } from '../../shared/entity';
-import * as request from 'request-promise';
-import { cleanLearningObject } from '../../shared/elasticsearch';
+import {
+  cleanLearningObjectSearchDocument,
+  formatUpdateQueryParam,
+} from '../../shared/elasticsearch';
 import { Client } from '@elastic/elasticsearch';
-import { formatUpdateQueryParam } from '../../shared/elasticsearch/HelperFunctions';
 
 /**
  * In the case where the ELASTICSEARCH_DOMAIN is defined in the environment,
@@ -35,7 +36,7 @@ export class ElasticSearchPublishingGateway implements PublishingDataStore {
    * Object.
    */
   async addToReleased(releasableObject: LearningObject): Promise<void> {
-    const cleanObject = cleanLearningObject(releasableObject);
+    const cleanObject = cleanLearningObjectSearchDocument(releasableObject);
     const formattedUpdateParam = formatUpdateQueryParam(cleanObject);
     const updateResponse = await this.client.updateByQuery({
       index: 'learning-objects',
