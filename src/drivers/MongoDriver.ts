@@ -10,7 +10,6 @@ import {
   LearningObjectMetadataUpdates,
   LearningObjectDocument,
   UserDocument,
-  LearningOutcomeDocument,
   StandardOutcomeDocument,
   LearningObjectSummary,
 } from '../shared/types';

@@ -1,5 +1,7 @@
 import { User, LearningObject, LearningOutcome } from '../../../entity';
 import { ReleasedLearningObjectDocument } from '../../../types/learning-object-document';
+import { LearningOutcomeMongoDatastore } from '../../../../LearningOutcomes/LearningOutcomeMongoDatastore';
+import { MongoConnector } from '../../MongoConnector';
 
 /**
  * Generates released Learning Object from Document
@@ -16,6 +18,9 @@ export async function generateReleasedLearningObject(
   record: ReleasedLearningObjectDocument,
   full?: boolean,
 ): Promise<LearningObject> {
+  const LEARNING_OUTCOME_DATASTORE = new LearningOutcomeMongoDatastore(
+    MongoConnector.client().db('onion'),
+  );
   // Logic for loading any learning object
   let learningObject: LearningObject;
   let materials: LearningObject.Material;
@@ -33,7 +38,7 @@ export async function generateReleasedLearningObject(
     // Logic for loading 'full' learning objects
     materials = <LearningObject.Material>record.materials;
     for (let i = 0; i < record.outcomes.length; i++) {
-      const mappings = await this.learningOutcomeStore.getAllStandardOutcomes(
+      const mappings = await LEARNING_OUTCOME_DATASTORE.getAllStandardOutcomes(
         {
           ids: record.outcomes[i].mappings,
         },

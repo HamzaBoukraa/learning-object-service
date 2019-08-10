@@ -83,6 +83,15 @@ export function initializePublic({
    * if requesting a Learning Object by id
    */
   router.get('/learning-objects/:learningObjectId', getLearningObjectById);
+  /**
+   * @deprecated This route will be deprecated because of its non RESTful route structure
+   * Please update to using `/users/:username/learning-objects/:learningObjectId` route.
+   * if requesting a Learning Object by name.
+   */
+  router.get(
+    '/learning-objects/:username/:learningObjectName',
+    getLearningObjectByName,
+  );
   router.get(
     '/users/:username/learning-objects/:learningObjectId',
     getLearningObjectById,
