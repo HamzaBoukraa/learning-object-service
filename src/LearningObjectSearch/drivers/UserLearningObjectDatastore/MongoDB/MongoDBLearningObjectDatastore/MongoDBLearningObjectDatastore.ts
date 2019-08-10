@@ -1,6 +1,6 @@
 import { Db } from 'mongodb';
 import { UserLearningObjectDatastore } from '../../../../interfaces/UserLearningObjectDatastore';
-import { MongoConnector } from '../../../../../shared/Mongo/MongoConnector';
+import { MongoConnector } from '../../../../../shared/MongoDB/MongoConnector';
 import {
     ReleasedUserLearningObjectSearchQuery,
     LearningObjectSummary,
@@ -15,7 +15,10 @@ import { sanitizeRegex } from '../../../../../shared/functions/sanitizeRegex/san
 import {
     generateReleasedLearningObjectSummary,
     generateLearningObjectSummary,
-} from '../../../../../shared/Mongo/HelperFunctions';
+    calculateDocumentsToSkip,
+    validatePageNumber,
+} from '../../../../../shared/MongoDB/HelperFunctions';
+import { validate } from '../../../../../shared/entity/learning-outcome/validators';
 
 
 export class MongoDBLearningObjectDatastore implements UserLearningObjectDatastore {
@@ -346,8 +349,8 @@ export class MongoDBLearningObjectDatastore implements UserLearningObjectDatasto
      let paginate: {
        [index: string]: number;
      }[] = [{ $skip: 0 }];
-     page = this.formatPage(page);
-     const skip = this.calcSkip({ page, limit });
+     page = validatePageNumber(page);
+     const skip = calculateDocumentsToSkip({ page, limit });
      // Paginate
      if (skip != null && limit) {
        paginate = [{ $skip: skip }, { $limit: limit }];

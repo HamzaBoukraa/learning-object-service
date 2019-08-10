@@ -4,6 +4,8 @@ import { generateLearningObject } from './generateLearningObject/generateLearnin
 import { generateLearningObjectSummary } from './generateLearningObjectSummary/generateLearningObjectSummary';
 import { generateReleasedLearningObject } from './generateReleasedLearningObject/generateReleasedLearningObject';
 import { generateReleasedLearningObjectSummary } from './generateReleasedLearningObjectSummary/generateReleasedLearningObjectSummary';
+import { calculateDocumentsToSkip } from './calculateDocumentsToSkip/calculateDocumentsToSkip';
+import { validatePageNumber } from './validatePageNumber/validatePageNumber';
 
 export {
     documentLearningObject,
@@ -12,4 +14,6 @@ export {
     generateLearningObjectSummary,
     generateReleasedLearningObject,
     generateReleasedLearningObjectSummary,
+    calculateDocumentsToSkip,
+    validatePageNumber,
  };

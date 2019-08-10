@@ -33,7 +33,7 @@ import {
 } from '../shared/errors';
 import { reportError } from '../shared/SentryConnector';
 import { LearningObject, LearningOutcome, User } from '../shared/entity';
-import { MongoConnector } from '../shared/Mongo/MongoConnector';
+import { MongoConnector } from '../shared/MongoDB/MongoConnector';
 import { LearningObjectUpdates } from '../shared/types/learning-object-updates';
 import {
   generateLearningObject,
@@ -41,7 +41,9 @@ import {
   documentReleasedLearningObject,
   documentLearningObject,
   generateReleasedLearningObject,
-} from '../shared/Mongo/HelperFunctions';
+  calculateDocumentsToSkip,
+  validatePageNumber,
+} from '../shared/MongoDB/HelperFunctions';
 import { isEmail, sanitizeRegex } from '../shared/functions';
 
 export enum COLLECTIONS {
@@ -1381,8 +1383,8 @@ export class MongoDriver implements DataStore {
     filters: Filters,
   ): Cursor<T> {
     let { page, limit, orderBy, sortType } = filters;
-    page = this.formatPage(filters.page);
-    const skip = this.calcSkip({ page, limit });
+    page = validatePageNumber(filters.page);
+    const skip = calculateDocumentsToSkip({ page, limit });
 
     // Paginate
     if (skip != null && limit) {
@@ -1396,33 +1398,6 @@ export class MongoDriver implements DataStore {
       cursor = cursor.sort(orderBy, sortType ? sortType : 1);
     }
     return cursor;
-  }
-
-  /**
-   * Ensures page is not less than 1 if defined
-   *
-   * @private
-   * @param {number} page
-   * @returns
-   * @memberof MongoDriver
-   */
-  private formatPage(page: number) {
-    if (page != null && page <= 0) {
-      return 1;
-    }
-    return page;
-  }
-
-  /**
-   * Calculated number of docs to skip based on page and limit
-   *
-   * @private
-   * @param {{ page: number; limit: number }} params
-   * @returns
-   * @memberof MongoDriver
-   */
-  private calcSkip(params: { page: number; limit: number }) {
-    return params.page && params.limit ? (params.page - 1) * params.limit : 0;
   }
 
   /**

@@ -5,7 +5,7 @@ import {UserDocument} from '../shared/types';
 import {LearningObject, User} from '../shared/entity';
 import {Submission} from './types/Submission';
 import {SubmissionDataStore} from './SubmissionDatastore';
-import {MongoConnector} from '../shared/Mongo/MongoConnector';
+import {MongoConnector} from '../shared/MongoDB/MongoConnector';
 
 export class MongoSubmissionDatastore implements SubmissionDataStore {
   db: Db;
