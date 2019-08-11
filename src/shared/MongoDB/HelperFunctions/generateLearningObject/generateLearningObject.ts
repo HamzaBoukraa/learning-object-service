@@ -25,7 +25,7 @@ export async function generateLearningObject(
   // Load Contributors
   if (record.contributors && record.contributors.length) {
     contributors = await Promise.all(
-      record.contributors.map(userId => this.fetchUser(userId)),
+      record.contributors.map(userId => this.queryUserById(userId)),
     );
   }
   // If full object requested, load up non-summary properties

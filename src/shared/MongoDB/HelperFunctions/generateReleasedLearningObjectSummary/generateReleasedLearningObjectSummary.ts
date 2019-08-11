@@ -12,9 +12,9 @@ import { mapChildLearningObjectToSummary, mapLearningObjectToSummary } from '../
 export async function generateReleasedLearningObjectSummary(
   record: LearningObjectDocument,
 ): Promise<LearningObjectSummary> {
-  const author$ = this.fetchUser(record.authorID);
+  const author$ = this.queryUserById(record.authorID);
   const contributors$ = Promise.all(
-    record.contributors.map(id => this.fetchUser(id)),
+    record.contributors.map(id => this.queryUserById(id)),
   );
   const [author, contributors] = await Promise.all([author$, contributors$]);
   let hasRevision = record.hasRevision;

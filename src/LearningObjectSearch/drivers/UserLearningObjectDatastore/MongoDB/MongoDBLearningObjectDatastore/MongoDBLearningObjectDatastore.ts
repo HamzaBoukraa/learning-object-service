@@ -18,8 +18,6 @@ import {
     calculateDocumentsToSkip,
     validatePageNumber,
 } from '../../../../../shared/MongoDB/HelperFunctions';
-import { validate } from '../../../../../shared/entity/learning-outcome/validators';
-
 
 export class MongoDBLearningObjectDatastore implements UserLearningObjectDatastore {
     private db: Db;

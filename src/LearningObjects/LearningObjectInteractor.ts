@@ -713,7 +713,7 @@ export async function addLearningObject({
       name: object.name,
     });
     const authorID = await dataStore.findUser(authorUsername);
-    const author = await dataStore.fetchUser(authorID);
+    const author = await dataStore.queryUserById(authorID);
     const objectInsert = new LearningObject({
       ...object,
       author,

@@ -181,7 +181,7 @@ export interface DataStore
    */
   findUserId(username: string): Promise<string>;
   findUser(username: string): Promise<string>;
-  fetchUser(id: string): Promise<User>;
+  queryUserById(id: string): Promise<User>;
   peek<T>(params: {
     query: { [index: string]: string };
     fields: { [index: string]: 0 | 1 };

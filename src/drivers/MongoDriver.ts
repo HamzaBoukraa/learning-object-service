@@ -951,66 +951,6 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Look up a user by its login id.
-   *
-   * @deprecated This function is no longer supported, please use `findUserId` instead.
-   *
-   * @async
-   *
-   * @param {string} id the user's login id
-   *
-   * @returns {UserID}
-   */
-  async findUser(username: string): Promise<string> {
-    try {
-      const query = {};
-      if (isEmail(username)) {
-        query['email'] = username;
-      } else {
-        query['username'] = username;
-      }
-      const userRecord = await this.db
-        .collection(COLLECTIONS.USERS)
-        .findOne<UserDocument>(query, { projection: { _id: 1 } });
-      if (!userRecord)
-        return Promise.reject(
-          new ResourceError(
-            `Cannot find user with username ${username}`,
-            ResourceErrorReason.NOT_FOUND,
-          ),
-        );
-      return `${userRecord._id}`;
-    } catch (e) {
-      reportError(e);
-      return Promise.reject(new ServiceError(ServiceErrorReason.INTERNAL));
-    }
-  }
-
-  /**
-   * @inheritdoc
-   * @async
-   *
-   * @param {string} userIdentifier the user's username or email
-   *
-   * @returns {UserID}
-   */
-  async findUserId(userIdentifier: string): Promise<string> {
-    const query = {};
-    if (isEmail(userIdentifier)) {
-      query['email'] = userIdentifier;
-    } else {
-      query['username'] = userIdentifier;
-    }
-    const userRecord = await this.db
-      .collection(COLLECTIONS.USERS)
-      .findOne<UserDocument>(query, { projection: { _id: 1 } });
-    if (userRecord) {
-      return `${userRecord._id}`;
-    }
-    return null;
-  }
-
-  /**
    * Look up a learning object by its author and name.
    * By default it will perform this query on the objects collection.
    * If collection param is passed then it will perform the query on specified collection
@@ -1095,28 +1035,8 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Fetch the user document associated with the given id.
-   * @async
-   *
-   * @param id database id
-   *
-   * @returns {UserRecord}
-   */
-  async fetchUser(id: string): Promise<User> {
-    try {
-      const doc = await this.db
-        .collection<UserDocument>(COLLECTIONS.USERS)
-        .findOne({ _id: id });
-      const user = ObjectMapper.generateUser(doc);
-      return user;
-    } catch (e) {
-      return Promise.reject(e);
-    }
-  }
-
-  /**
    * Fetch the learning object document associated with the given id.
-   * FIXME x 1000: clean this query up after files collection is created
+   * FIXME:clean this query up after files collection is created
    *
    * The query fetches the specified released learning object and sorts the files by date (newest first)
    * If the query fails, the function throws a 404 Resource Error.
@@ -1137,7 +1057,7 @@ export class MongoDriver implements DataStore {
       .collection(COLLECTIONS.LEARNING_OBJECTS)
       .findOne({ _id: id });
     if (doc) {
-      const author = await this.fetchUser(doc.authorID);
+      const author = await this.queryUserById(doc.authorID);
       return generateLearningObject(author, doc, full);
     }
     return null;
@@ -1224,7 +1144,7 @@ export class MongoDriver implements DataStore {
       const object = results[0];
       object.materials.files = object.orderedFiles;
       delete object.orderedFiles;
-      const author = await this.fetchUser(object.authorID);
+      const author = await this.queryUserById(object.authorID);
       return generateReleasedLearningObject(author, object, params.full);
     }
     return null;
@@ -1303,7 +1223,7 @@ export class MongoDriver implements DataStore {
   ): Promise<LearningObject[]> {
     return await Promise.all(
       docs.map(async doc => {
-        const author = await this.fetchUser(doc.authorID);
+        const author = await this.queryUserById(doc.authorID);
         const learningObject = await generateLearningObject(
           author,
           doc,

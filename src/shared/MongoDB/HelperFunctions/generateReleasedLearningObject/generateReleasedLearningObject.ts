@@ -21,23 +21,23 @@ export async function generateReleasedLearningObject(
   const LEARNING_OUTCOME_DATASTORE = new LearningOutcomeMongoDatastore(
     MongoConnector.client().db('onion'),
   );
-  // Logic for loading any learning object
   let learningObject: LearningObject;
   let materials: LearningObject.Material;
   let contributors: User[] = [];
   let children: LearningObject[] = [];
   let outcomes: LearningOutcome[] = [];
-  // Load Contributors
   if (record.contributors && record.contributors.length) {
     contributors = await Promise.all(
-      record.contributors.map(userId => this.fetchUser(userId)),
+      // TODO: Store contibutors as an array of usernames so that
+      // we can fetch users from user service.
+      record.contributors.map(userId => this.queryUserById(userId)),
     );
   }
-  // If full object requested, load up non-summary properties
   if (full) {
-    // Logic for loading 'full' learning objects
     materials = <LearningObject.Material>record.materials;
     for (let i = 0; i < record.outcomes.length; i++) {
+      // FIXME: Direct access to a module's datastore couples the
+      // module to this service.
       const mappings = await LEARNING_OUTCOME_DATASTORE.getAllStandardOutcomes(
         {
           ids: record.outcomes[i].mappings,

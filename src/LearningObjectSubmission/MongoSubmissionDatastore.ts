@@ -107,7 +107,7 @@ export class MongoSubmissionDatastore implements SubmissionDataStore {
    * @param username of the user to be fetched
    * @returns the full user entity
    */
-  async fetchUser(username: string): Promise<User> {
+  async queryUserById(username: string): Promise<User> {
     const doc = await this.fetchUserDocument(username);
     return ObjectMapper.generateUser(doc);
   }

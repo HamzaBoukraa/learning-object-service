@@ -228,7 +228,7 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
   findChildObjectIds(params: { parentId: string }): Promise<string[]> {
     return Promise.resolve([]);
   }
-  fetchUser(id: string): Promise<User> {
+  queryUserById(id: string): Promise<User> {
     return Promise.resolve(this.stubs.user);
   }
 
