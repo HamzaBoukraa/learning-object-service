@@ -44,6 +44,7 @@ import { LearningObjectsModule } from './LearningObjectsModule';
 import { LearningObjectSubmissionAdapter } from '../LearningObjectSubmission/adapters/LearningObjectSubmissionAdapter';
 import { UserGateway } from './interfaces/UserGateway';
 import { validateUpdates } from '../shared/entity/learning-object/validators';
+import { UserServiceGateway } from '../shared/gateways/user-service/UserServiceGateway';
 
 namespace Drivers {
   export const readMeBuilder = () =>
@@ -57,6 +58,8 @@ namespace Gateways {
   export const user = () =>
     LearningObjectsModule.resolveDependency(UserGateway);
 }
+
+let userServiceGateway = new UserServiceGateway();
 
 /**
  * Load a full learning object by name
@@ -179,7 +182,7 @@ async function findAuthorIdByUsername(params: {
   username: string;
 }): Promise<string> {
   const { dataStore, username } = params;
-  const authorId = await dataStore.findUser(username);
+  const authorId = await userServiceGateway.findUser(username);
   if (!authorId) {
     throw new ResourceError(
       `No user with username ${username} exists`,
@@ -712,8 +715,8 @@ export async function addLearningObject({
       username: authorUsername,
       name: object.name,
     });
-    const authorID = await dataStore.findUser(authorUsername);
-    const author = await dataStore.queryUserById(authorID);
+    const authorID = await userServiceGateway.findUser(authorUsername);
+    const author = await userServiceGateway.queryUserById(authorID);
     const objectInsert = new LearningObject({
       ...object,
       author,
@@ -1232,7 +1235,7 @@ export async function deleteLearningObjectByName({
   user: UserToken;
 }): Promise<void> {
   try {
-    const authorId = await dataStore.findUser(user.username);
+    const authorId = await userServiceGateway.findUser(user.username);
     if (!authorId) {
       throw new ResourceError(
         `Unable to delete Learning Object ${learningObjectName}. No user ${
@@ -1589,7 +1592,7 @@ async function checkNameExists({
   name: string;
   id?: string;
 }) {
-  const authorId = await dataStore.findUser(username);
+  const authorId = await userServiceGateway.findUser(username);
   const existing = await dataStore.findLearningObject({ authorId, name });
   if (existing && id !== existing) {
     throw new ResourceError(

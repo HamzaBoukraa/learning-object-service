@@ -1,5 +1,6 @@
 import { LearningObjectDocument, LearningObjectSummary, LearningObjectChildSummary } from '../../../types';
 import { mapLearningObjectToSummary, mapChildLearningObjectToSummary } from '../../../functions';
+import { UserServiceGateway } from '../../../gateways/user-service/UserServiceGateway';
 
 /**
  * Converts LearningObjectDocument to LearningObjectSummary
@@ -12,9 +13,10 @@ import { mapLearningObjectToSummary, mapChildLearningObjectToSummary } from '../
 export async function generateLearningObjectSummary(
   record: LearningObjectDocument,
 ): Promise<LearningObjectSummary> {
-  const author$ = this.queryUserById(record.authorID);
+  let userServiceGateway = new UserServiceGateway();
+  const author$ = userServiceGateway.queryUserById(record.authorID);
   const contributors$ = Promise.all(
-    record.contributors.map(id => this.queryUserById(id)),
+    record.contributors.map(id => userServiceGateway.queryUserById(id)),
   );
   const [author, contributors] = await Promise.all([author$, contributors$]);
 

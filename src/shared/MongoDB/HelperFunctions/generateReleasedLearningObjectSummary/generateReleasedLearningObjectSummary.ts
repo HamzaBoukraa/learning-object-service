@@ -1,5 +1,8 @@
 import { LearningObjectDocument, LearningObjectSummary, LearningObjectChildSummary } from '../../../types';
 import { mapChildLearningObjectToSummary, mapLearningObjectToSummary } from '../../../functions';
+import { UserServiceGateway } from '../../../gateways/user-service/UserServiceGateway';
+
+let userServiceGateway = new UserServiceGateway();
 
 /**
  * Converts LearningObjectDocument to LearningObjectSummary
@@ -12,9 +15,9 @@ import { mapChildLearningObjectToSummary, mapLearningObjectToSummary } from '../
 export async function generateReleasedLearningObjectSummary(
   record: LearningObjectDocument,
 ): Promise<LearningObjectSummary> {
-  const author$ = this.queryUserById(record.authorID);
+  const author$ = userServiceGateway.queryUserById(record.authorID);
   const contributors$ = Promise.all(
-    record.contributors.map(id => this.queryUserById(id)),
+    record.contributors.map(id => userServiceGateway.queryUserById(id)),
   );
   const [author, contributors] = await Promise.all([author$, contributors$]);
   let hasRevision = record.hasRevision;

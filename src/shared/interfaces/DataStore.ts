@@ -171,22 +171,6 @@ export interface DataStore
     id: string;
   }): Promise<LearningObject.Material>;
 
-  // Users
-  /**
-   *
-   * lookup a user by their username or email
-   * @param {string} username
-   * @returns {Promise<string>}
-   * @memberof DataStore
-   */
-  findUserId(username: string): Promise<string>;
-  findUser(username: string): Promise<string>;
-  queryUserById(id: string): Promise<User>;
-  peek<T>(params: {
-    query: { [index: string]: string };
-    fields: { [index: string]: 0 | 1 };
-  }): Promise<T>;
-
   /*
    * UPDATE Operations
    */

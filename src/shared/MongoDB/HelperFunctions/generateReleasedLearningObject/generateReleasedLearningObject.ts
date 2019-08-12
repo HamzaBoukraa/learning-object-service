@@ -2,6 +2,7 @@ import { User, LearningObject, LearningOutcome } from '../../../entity';
 import { ReleasedLearningObjectDocument } from '../../../types/learning-object-document';
 import { LearningOutcomeMongoDatastore } from '../../../../LearningOutcomes/LearningOutcomeMongoDatastore';
 import { MongoConnector } from '../../MongoConnector';
+import { UserServiceGateway } from '../../../gateways/user-service/UserServiceGateway';
 
 /**
  * Generates released Learning Object from Document
@@ -21,6 +22,7 @@ export async function generateReleasedLearningObject(
   const LEARNING_OUTCOME_DATASTORE = new LearningOutcomeMongoDatastore(
     MongoConnector.client().db('onion'),
   );
+  let userServiceGateway = new UserServiceGateway();
   let learningObject: LearningObject;
   let materials: LearningObject.Material;
   let contributors: User[] = [];
@@ -30,7 +32,7 @@ export async function generateReleasedLearningObject(
     contributors = await Promise.all(
       // TODO: Store contibutors as an array of usernames so that
       // we can fetch users from user service.
-      record.contributors.map(userId => this.queryUserById(userId)),
+      record.contributors.map(userId => userServiceGateway.queryUserById(userId)),
     );
   }
   if (full) {

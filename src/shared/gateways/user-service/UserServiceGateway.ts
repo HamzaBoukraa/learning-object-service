@@ -3,8 +3,17 @@ import { generateServiceToken } from '../../../drivers/TokenManager';
 import * as request from 'request-promise';
 import { User } from '../../entity';
 import { isEmail } from '../../functions';
+import * as ObjectMapper from '../../../drivers/Mongo/ObjectMapper';
+import { COLLECTIONS } from '../../../drivers/MongoDriver';
+import { UserDocument } from '../../types';
+import { ResourceError, ResourceErrorReason, ServiceError, ServiceErrorReason } from '../../errors';
+import { reportError } from '../../SentryConnector';
+import { Db } from 'mongodb';
 
 export class UserServiceGateway {
+
+  private db: Db;
+
   private options = {
     uri: '',
     json: true,

@@ -1,5 +1,6 @@
 import { User, LearningObject, LearningOutcome } from '../../../entity';
 import { LearningObjectDocument } from '../../../types';
+import { UserServiceGateway } from '../../../gateways/user-service/UserServiceGateway';
 
 /**
  * Generates Learning Object from Document
@@ -16,6 +17,7 @@ export async function generateLearningObject(
   record: LearningObjectDocument,
   full?: boolean,
 ): Promise<LearningObject> {
+  let userServiceGateway = new UserServiceGateway();
   // Logic for loading any learning object
   let learningObject: LearningObject;
   let materials: LearningObject.Material;
@@ -25,7 +27,7 @@ export async function generateLearningObject(
   // Load Contributors
   if (record.contributors && record.contributors.length) {
     contributors = await Promise.all(
-      record.contributors.map(userId => this.queryUserById(userId)),
+      record.contributors.map(userId => userServiceGateway.queryUserById(userId)),
     );
   }
   // If full object requested, load up non-summary properties
