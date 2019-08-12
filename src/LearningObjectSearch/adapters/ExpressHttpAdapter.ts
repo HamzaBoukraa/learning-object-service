@@ -3,10 +3,6 @@ import * as Interactor from '../Interactor';
 import { Requester } from '../typings';
 import { mapErrorToResponseData } from '../../shared/errors';
 import { LearningObjectQuery } from '../../shared/interfaces/DataStore';
-import { requesterIsAdmin } from '../../shared/AuthorizationManager';
-
-const ALLOW_ELASTICSEARCH_TEST_TRAFFIC =
-  process.env.ALLOW_ELASTICSEARCH_TEST_TRAFFIC === 'true';
 
 /**
  * Builds the Express Router for this module
@@ -29,26 +25,13 @@ export function buildRouter() {
 async function searchObjects(req: Request, res: Response, next: NextFunction) {
   try {
     const requester: Requester = req.user;
-    if (allowTraffic(requester)) {
-      const page = req.query.currPage != null ? req.query.currPage : req.query.page;
-      const query: LearningObjectQuery = {...req.query, page};
-      const results = await Interactor.searchObjects({ requester, query });
-      res.send(results);
-    } else {
-      next();
-    }
+    const page =
+      req.query.currPage != null ? req.query.currPage : req.query.page;
+    const query: LearningObjectQuery = { ...req.query, page };
+    const results = await Interactor.searchObjects({ requester, query });
+    res.send(results);
   } catch (e) {
     const { code, message } = mapErrorToResponseData(e);
     res.status(code).json({ message });
   }
-}
-
-/**
- * Determines whether or not traffic should be routed
- *
- * @param {Requester} requester [Information about the requester]
- * @returns {boolean}
- */
-function allowTraffic(requester: Requester): boolean {
-  return ALLOW_ELASTICSEARCH_TEST_TRAFFIC || requesterIsAdmin(requester);
 }
