@@ -9,6 +9,7 @@ import {
 import { DataStore } from './interfaces/DataStore';
 import { ResourceError, ResourceErrorReason } from './errors';
 import { LearningObject } from './entity';
+import { UserServiceGateway } from './gateways/user-service/UserServiceGateway';
 
 const PRIVILEGED_GROUPS = [
   AccessGroup.ADMIN,
@@ -16,6 +17,8 @@ const PRIVILEGED_GROUPS = [
   AccessGroup.CURATOR,
   AccessGroup.REVIEWER,
 ];
+
+let userServiceGateway = new UserServiceGateway();
 
 /**
  * Checks if a user has the authority to modify a Learning Object.
@@ -138,7 +141,7 @@ async function userIsOwner(params: {
   user: UserToken;
   objectId: string;
 }) {
-  const userId = await params.dataStore.findUser(params.user.username);
+  const userId = await userServiceGateway.findUser(params.user.username);
   const object = await params.dataStore.peek<{
     authorID: string;
   }>({

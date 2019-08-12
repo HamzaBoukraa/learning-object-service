@@ -37,11 +37,14 @@ import {
 import { LearningObject } from '../shared/entity';
 import { LearningObjectsModule } from '../LearningObjects/LearningObjectsModule';
 import { FileMetadataGateway } from '../LearningObjects/interfaces';
+import { UserServiceGateway } from '../shared/gateways/user-service/UserServiceGateway';
 
 namespace Gateways {
   export const fileMetadata = () =>
     LearningObjectsModule.resolveDependency(FileMetadataGateway);
 }
+
+let userServiceGateway = new UserServiceGateway();
 
 export class LearningObjectInteractor {
   /**
@@ -60,8 +63,8 @@ export class LearningObjectInteractor {
     dataStore: DataStore;
     username: string;
   }): Promise<string> {
-    const { dataStore, username } = params;
-    const authorId = await dataStore.findUser(username);
+    const { username } = params;
+    const authorId = await userServiceGateway.findUser(username);
     if (!authorId) {
       throw new ResourceError(
         `No user with username ${username} exists`,
@@ -601,7 +604,7 @@ export class LearningObjectInteractor {
     const { dataStore, children, username, parentName, userToken } = params;
 
     try {
-      const authorId = await dataStore.findUser(username);
+      const authorId = await userServiceGateway.findUser(username);
       const parentID = await dataStore.findLearningObject({
         authorId,
         name: parentName,
@@ -651,7 +654,7 @@ export class LearningObjectInteractor {
   }) {
     const { dataStore, childId, username, parentName, userToken } = params;
     try {
-      const authorId = await dataStore.findUser(username);
+      const authorId = await userServiceGateway.findUser(username);
       const parentID = await dataStore.findLearningObject({
         authorId,
         name: parentName,

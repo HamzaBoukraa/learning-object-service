@@ -171,6 +171,12 @@ export interface DataStore
     id: string;
   }): Promise<LearningObject.Material>;
 
+  // Users
+  peek<T>(params: {
+    query: { [index: string]: string };
+    fields: { [index: string]: 0 | 1 };
+  }): Promise<T>;
+
   /*
    * UPDATE Operations
    */
