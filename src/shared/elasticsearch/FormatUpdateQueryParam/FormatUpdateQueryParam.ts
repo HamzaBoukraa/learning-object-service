@@ -19,11 +19,25 @@ export function formatUpdateQueryParam(
   let rootProperties = generateObjectPropertiesArray(cleanObject);
   let formattedUpdateParam: string = '';
   rootProperties.forEach(propertyName => {
-    let propertyValue = cleanObject[propertyName];
+    let propertyValue = getPropertyValue({
+      learningObjectSearchDocument: cleanObject,
+      propertyName,
+    });
     const property = propertyFactory(propertyValue);
-    formattedUpdateParam.concat(property.format());
+    const formattedProperty = property.format({
+      propertyName,
+      propertyValue,
+    });
+    formattedUpdateParam = formattedUpdateParam.concat(formattedProperty);
   });
   return formattedUpdateParam;
+}
+
+function getPropertyValue(params: {
+  learningObjectSearchDocument: LearningObjectSearchDocument;
+  propertyName: string
+}): any {
+  return params.learningObjectSearchDocument[params.propertyName];
 }
 
 function propertyFactory<T>(cleanObjectProperty: T): Property {
@@ -52,18 +66,24 @@ function isObject<T>(cleanObjectProperty: T): boolean {
 }
 
 interface Property {
-  format<T>(cleanObjectProperty: T): string;
+  format( params: {
+    propertyName: string,
+    propertyValue: any,
+  }): string;
 }
 
 class ObjectArrayProperty implements Property {
 
-  format<Array>(cleanObjectProperty: Array<T>): string {
+  format(params: {
+    propertyName: string;
+    propertyValue: Object[];
+  }): string {
     let formattedUpdateParam = '';
-    cleanObjectProperty.forEach((subObject: {}, index: number) => {
+    params.propertyValue.forEach((subObject: {}, index: number) => {
       let subProperties = generateObjectPropertiesArray(subObject);
       subProperties.forEach(subProperty => {
-        let subValue = cleanObjectProperty[index][subProperty];
-        formattedUpdateParam = formattedUpdateParam.concat(`ctx._source.${property}[${index}].${subProperty} = \"${subValue}\";`);
+        let subValue = params.propertyValue[index][subProperty];
+        formattedUpdateParam = formattedUpdateParam.concat(`ctx._source.${params.propertyName}[${index}].${subProperty} = \"${subValue}\";`);
       });
     });
     return formattedUpdateParam;
@@ -72,20 +92,26 @@ class ObjectArrayProperty implements Property {
 
 class ObjectProperty implements Property {
 
-  format(cleanObjectProperty: Object): string {
+  format(params: {
+    propertyName: string;
+    propertyValue: {};
+  }): string {
     let formattedUpdateParam = '';
-    let subProperties = generateObjectPropertiesArray(cleanObjectProperty);
+    let subProperties = generateObjectPropertiesArray(params.propertyValue);
     subProperties.forEach(subProperty => {
-      let subValue = cleanObjectProperty[subProperty];
-      formattedUpdateParam = formattedUpdateParam.concat(`ctx._source.${property}.${subProperty} = \"${subValue}\";`);
+      let subValue = params.propertyValue[subProperty];
+      formattedUpdateParam = formattedUpdateParam.concat(`ctx._source.${params.propertyName}.${subProperty} = \"${subValue}\";`);
     });
     return formattedUpdateParam;
   }
 }
 
 class GeneralProperty implements Property {
-   format(): string {
-      return `ctx._source.${property} = \"${rootValue}\";`;
+   format(params: {
+     propertyName: string;
+     propertyValue: any;
+   }): string {
+      return `ctx._source.${params.propertyName} = \"${params.propertyValue}\";`;
    }
 }
 

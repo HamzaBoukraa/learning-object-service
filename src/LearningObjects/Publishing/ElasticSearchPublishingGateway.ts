@@ -27,13 +27,12 @@ export class ElasticSearchPublishingGateway implements PublishingDataStore {
   }
 
   /**
-   *
-   * @param releasableObject {LearningObject}
-   *
    * addToReleased attempts to update the existing Released Learning
    * Object document in Elasticsearch. If the Release Learning Object
    * document does not exist, the function will insert the provided Learning
    * Object.
+   *
+   * @param releasableObject {LearningObject}
    */
   async addToReleased(releasableObject: LearningObject): Promise<void> {
     const cleanObject = cleanLearningObjectSearchDocument(releasableObject);
