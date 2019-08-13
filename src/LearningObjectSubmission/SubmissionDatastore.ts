@@ -9,5 +9,5 @@ export interface SubmissionDataStore {
    * Checks if a Learning Object has been submitted before.
    * @param learningObjectId the ID of the Learning Object
    */
-  hasSubmission(learningObjectId: string, collection: string): Promise<boolean>;
+  hasSubmission(params: {learningObjectId: string, collection: string}): Promise<boolean>;
 }

@@ -17,5 +17,8 @@ export async function checkFirstSubmission(params: {
   userId: string;
   emailVerified: boolean;
 }): Promise<boolean> {
-  return await params.dataStore.hasSubmission(params.collection, params.learningObjectId);
+  return !(await params.dataStore.hasSubmission({
+    collection: params.collection,
+    learningObjectId: params.learningObjectId,
+  }));
 }
