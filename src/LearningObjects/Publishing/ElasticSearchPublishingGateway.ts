@@ -1,7 +1,9 @@
 import { PublishingDataStore } from './interactor';
 import { LearningObject } from '../../shared/entity';
-import * as request from 'request-promise';
-import { cleanLearningObject } from '../../shared/elasticsearch';
+import {
+  cleanLearningObjectSearchDocument,
+  formatUpdateQueryParam,
+} from '../../shared/elasticsearch';
 import { Client } from '@elastic/elasticsearch';
 
 /**
@@ -23,11 +25,49 @@ export class ElasticSearchPublishingGateway implements PublishingDataStore {
   constructor() {
     this.client = new Client({ node: URI });
   }
+
+  /**
+   * addToReleased attempts to update the existing Released Learning
+   * Object document in Elasticsearch. If the Released Learning Object
+   * document does not exist, the function will insert the provided Learning
+   * Object.
+   *
+   * @param releasableObject {LearningObject}
+   */
   async addToReleased(releasableObject: LearningObject): Promise<void> {
-    await this.client.index({
+    const cleanObject = cleanLearningObjectSearchDocument(releasableObject);
+    const formattedUpdateParam = formatUpdateQueryParam(cleanObject);
+    const updateResponse = await this.client.updateByQuery({
       index: 'learning-objects',
       type: '_doc',
-      body: cleanLearningObject(releasableObject),
+      body: {
+        query: {
+          bool: {
+            must: [
+              {
+                term: {
+                  id: releasableObject.id,
+                },
+              },
+              {
+                term: {
+                  status: LearningObject.Status.RELEASED,
+                },
+              },
+            ],
+          },
+        },
+        script: {
+          source: formattedUpdateParam,
+        },
+      },
     });
+    if (updateResponse.body.updated === 0) {
+      await this.client.index({
+        index: 'learning-objects',
+        type: '_doc',
+        body: cleanObject,
+      });
+    }
   }
 }

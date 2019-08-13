@@ -1,3 +1,7 @@
-import { cleanLearningObject } from './HelperFunctions';
+import { cleanLearningObjectSearchDocument } from './CleanLearningObject/CleanLearningObject';
+import { formatUpdateQueryParam } from './FormatUpdateQueryParam/FormatUpdateQueryParam';
 
-export { cleanLearningObject };
+export {
+    cleanLearningObjectSearchDocument,
+    formatUpdateQueryParam,
+};
