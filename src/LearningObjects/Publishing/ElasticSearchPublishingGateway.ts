@@ -28,7 +28,7 @@ export class ElasticSearchPublishingGateway implements PublishingDataStore {
 
   /**
    * addToReleased attempts to update the existing Released Learning
-   * Object document in Elasticsearch. If the Release Learning Object
+   * Object document in Elasticsearch. If the Released Learning Object
    * document does not exist, the function will insert the provided Learning
    * Object.
    *
