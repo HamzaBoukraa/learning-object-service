@@ -1,43 +1,21 @@
-import { ServiceToken } from '../../../shared/types';
+import { Datastores } from '../shared/resolved-dependencies/Datastores';
 import { ResourceError, ResourceErrorReason } from '../../../shared/errors';
 
-export async function getFileAccessIdentity(params: {
-    username: string,
-    fileAccessIdentity: string,
-    requester: ServiceToken,
-}): Promise<string> {
-    checkIfRequesterHasPermission(params.requester);
-    const fileAccessIdentity = queryFileAccessIdentity({
-        username: params.username,
-        fileAccessIdentity: params.fileAccessIdentity,
-    });
-    const resourceURL = generateResourceURL(params.username);
-    return resourceURL;
+export async function getFileAccessIdentity(username: string): Promise<string> {
+    const fileAccessIdentity = await queryFileAccessIdentity(username);
+    checkIfResultWasFound(fileAccessIdentity);
+    return fileAccessIdentity;
 }
 
-function checkIfRequesterHasPermission(requester: ServiceToken) {
-    if (
-        !requester.SERVICE_KEY
-        || !(requester.SERVICE_KEY === process.env.USER_SERVICE_KEY)
-    ) {
+function queryFileAccessIdentity(username: string): Promise<string> {
+    return Datastores.fileAccessIdentity().findFileAccessIdentity(username);
+}
+
+function checkIfResultWasFound(fileAccessIdentity: string) {
+    if (!fileAccessIdentity) {
         throw new ResourceError(
-            'Requester does not have access',
-            ResourceErrorReason.FORBIDDEN,
+            'File Access Identity was not found',
+            ResourceErrorReason.NOT_FOUND,
         );
     }
-}
-
-function checkIfFileAccessIdentityExists(username: string) {
-
-}
-
-function saveFileAccessIdentity(params: {
-    username: string,
-    fileAccessIdentity: string,
-}) {
-    
-}
-
-function generateResourceURL(username: string) {
-    return `${process.env.LEARNING_OBJECT_API}/file-access-identity/${username}`;
 }

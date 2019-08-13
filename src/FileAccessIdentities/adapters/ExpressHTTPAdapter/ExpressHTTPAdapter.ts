@@ -5,7 +5,7 @@ import {
     updateFileAccessIdentityHandler,
 } from './handlers';
 
-export function buildHTTPAdapter() {
+export function buildHTTPAdapter(): Router {
     const router = Router();
     router.post(
         '/file-access-identity',
@@ -19,5 +19,6 @@ export function buildHTTPAdapter() {
         '/file-access-identity/:usename',
         updateFileAccessIdentityHandler,
     );
+    return router;
 }
 

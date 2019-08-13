@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { Response } from './node_modules/express';
 import { mapErrorToResponseData } from '../../../../../../shared/errors';
 
 export function handleError(params: {

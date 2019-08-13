@@ -2,7 +2,9 @@ import {
     Request,
     Response,
 } from 'express';
-import { handleError } from '../shared/HandleError/handleError';
+import { handleError } from '../shared/handleError/handleError';
+import { getFileAccessIdentity } from '../../../../interactors/GetFileAccessIdentity/getFileAccessIdentity';
+import { checkIfRequesterHasPermission } from '../shared';
 
 export function getFileAccessIdentityHandler(
     req: Request,
@@ -17,7 +19,8 @@ export function getFileAccessIdentityHandler(
 
 async function handleRequest(req: Request, res: Response) {
     const params = parseRequestParams(req);
-    const fileAccessIdentity = getFileAccessIdentity(params);
+    checkIfRequesterHasPermission(params.requester);
+    const fileAccessIdentity = await getFileAccessIdentity(params);
     respondWithFileAccessIdentity({res, fileAccessIdentity});
 }
 
