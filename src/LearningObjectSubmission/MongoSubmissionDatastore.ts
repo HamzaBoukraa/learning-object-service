@@ -96,7 +96,7 @@ export class MongoSubmissionDatastore implements SubmissionDataStore {
     learningObjectId: string,
     collection: string,
   }): Promise<boolean> {
-    const submission = await this.db.collection(COLLECTIONS.SUBMISSIONS)
+    const submissions = await this.db.collection(COLLECTIONS.SUBMISSIONS)
       .find(
         {
           learningObjectId: params.learningObjectId,
@@ -105,7 +105,7 @@ export class MongoSubmissionDatastore implements SubmissionDataStore {
         { projection: { _id: 1 }})
       .limit(1)
       .toArray();
-    return submission[0] !== undefined;
+    return submissions[0] !== undefined;
   }
 
   // TODO: Should this be an external helper?
