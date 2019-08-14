@@ -56,4 +56,4 @@ async function searchUserLearningObjects(req: Request, res: Response) {
     const { code, message } = mapErrorToResponseData(e);
     res.status(code).json({ message });
   }
-};
+}
