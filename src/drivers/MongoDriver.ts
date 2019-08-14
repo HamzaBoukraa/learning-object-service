@@ -66,7 +66,6 @@ export class MongoDriver implements DataStore {
 
   private mongoClient: MongoClient;
   private db: Db;
-  private userServiceGateway = new UserServiceGateway();
 
   private constructor() {}
 
@@ -1059,7 +1058,7 @@ export class MongoDriver implements DataStore {
       .collection(COLLECTIONS.LEARNING_OBJECTS)
       .findOne({ _id: id });
     if (doc) {
-      const author = await this.userServiceGateway.queryUserById(doc.authorID);
+      const author = await UserServiceGateway.getInstance().queryUserById(doc.authorID);
       return generateLearningObject(author, doc, full);
     }
     return null;
@@ -1146,7 +1145,7 @@ export class MongoDriver implements DataStore {
       const object = results[0];
       object.materials.files = object.orderedFiles;
       delete object.orderedFiles;
-      const author = await this.userServiceGateway.queryUserById(object.authorID);
+      const author = await UserServiceGateway.getInstance().queryUserById(object.authorID);
       return generateReleasedLearningObject(author, object, params.full);
     }
     return null;
@@ -1225,7 +1224,7 @@ export class MongoDriver implements DataStore {
   ): Promise<LearningObject[]> {
     return await Promise.all(
       docs.map(async doc => {
-        const author = await this.userServiceGateway.queryUserById(doc.authorID);
+        const author = await UserServiceGateway.getInstance().queryUserById(doc.authorID);
         const learningObject = await generateLearningObject(
           author,
           doc,
@@ -1253,7 +1252,7 @@ export class MongoDriver implements DataStore {
     text?: string;
   }): Promise<LearningObject[]> {
     try {
-      const query: any = {
+      const query: any =  {
         _id: { $in: params.ids },
       };
 

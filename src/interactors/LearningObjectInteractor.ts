@@ -44,7 +44,6 @@ namespace Gateways {
     LearningObjectsModule.resolveDependency(FileMetadataGateway);
 }
 
-let userServiceGateway = new UserServiceGateway();
 
 export class LearningObjectInteractor {
   /**
@@ -64,7 +63,7 @@ export class LearningObjectInteractor {
     username: string;
   }): Promise<string> {
     const { username } = params;
-    const authorId = await userServiceGateway.findUser(username);
+    const authorId = await UserServiceGateway.getInstance().findUser(username);
     if (!authorId) {
       throw new ResourceError(
         `No user with username ${username} exists`,
@@ -604,7 +603,7 @@ export class LearningObjectInteractor {
     const { dataStore, children, username, parentName, userToken } = params;
 
     try {
-      const authorId = await userServiceGateway.findUser(username);
+      const authorId = await UserServiceGateway.getInstance().findUser(username);
       const parentID = await dataStore.findLearningObject({
         authorId,
         name: parentName,
@@ -654,7 +653,7 @@ export class LearningObjectInteractor {
   }) {
     const { dataStore, childId, username, parentName, userToken } = params;
     try {
-      const authorId = await userServiceGateway.findUser(username);
+      const authorId = await UserServiceGateway.getInstance().findUser(username);
       const parentID = await dataStore.findLearningObject({
         authorId,
         name: parentName,

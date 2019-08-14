@@ -13,10 +13,9 @@ import { UserServiceGateway } from '../../../gateways/user-service/UserServiceGa
 export async function generateLearningObjectSummary(
   record: LearningObjectDocument,
 ): Promise<LearningObjectSummary> {
-  let userServiceGateway = new UserServiceGateway();
-  const author$ = userServiceGateway.queryUserById(record.authorID);
+  const author$ = UserServiceGateway.getInstance().queryUserById(record.authorID);
   const contributors$ = Promise.all(
-    record.contributors.map(id => userServiceGateway.queryUserById(id)),
+    record.contributors.map(id => UserServiceGateway.getInstance().queryUserById(id)),
   );
   const [author, contributors] = await Promise.all([author$, contributors$]);
 

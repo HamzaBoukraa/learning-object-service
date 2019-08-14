@@ -1,6 +1,8 @@
 import { User, LearningObject, LearningOutcome } from '../../../entity';
 import { LearningObjectDocument } from '../../../types';
 import { UserServiceGateway } from '../../../gateways/user-service/UserServiceGateway';
+import { LearningOutcomeMongoDatastore } from '../../../../LearningOutcomes/LearningOutcomeMongoDatastore';
+import { MongoConnector } from '../../MongoConnector';
 
 /**
  * Generates Learning Object from Document
@@ -17,7 +19,9 @@ export async function generateLearningObject(
   record: LearningObjectDocument,
   full?: boolean,
 ): Promise<LearningObject> {
-  let userServiceGateway = new UserServiceGateway();
+  const LEARNING_OUTCOME_DATASTORE = new LearningOutcomeMongoDatastore(
+    MongoConnector.client().db('onion'),
+  );
   // Logic for loading any learning object
   let learningObject: LearningObject;
   let materials: LearningObject.Material;
@@ -27,14 +31,14 @@ export async function generateLearningObject(
   // Load Contributors
   if (record.contributors && record.contributors.length) {
     contributors = await Promise.all(
-      record.contributors.map(userId => userServiceGateway.queryUserById(userId)),
+      record.contributors.map(userId => UserServiceGateway.getInstance().queryUserById(userId)),
     );
   }
   // If full object requested, load up non-summary properties
   if (full) {
     // Logic for loading 'full' learning objects
     materials = <LearningObject.Material>record.materials;
-    outcomes = await this.getAllLearningOutcomes({
+    outcomes = await LEARNING_OUTCOME_DATASTORE.getAllLearningOutcomes({
       source: record._id,
     });
   }

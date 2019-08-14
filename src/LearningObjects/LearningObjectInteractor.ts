@@ -59,8 +59,6 @@ namespace Gateways {
     LearningObjectsModule.resolveDependency(UserGateway);
 }
 
-let userServiceGateway = new UserServiceGateway();
-
 /**
  * Load a full learning object by name
  * @async
@@ -182,7 +180,7 @@ async function findAuthorIdByUsername(params: {
   username: string;
 }): Promise<string> {
   const { dataStore, username } = params;
-  const authorId = await userServiceGateway.findUser(username);
+  const authorId = await UserServiceGateway.getInstance().findUser(username);
   if (!authorId) {
     throw new ResourceError(
       `No user with username ${username} exists`,
@@ -715,8 +713,8 @@ export async function addLearningObject({
       username: authorUsername,
       name: object.name,
     });
-    const authorID = await userServiceGateway.findUser(authorUsername);
-    const author = await userServiceGateway.queryUserById(authorID);
+    const authorID = await UserServiceGateway.getInstance().findUser(authorUsername);
+    const author = await UserServiceGateway.getInstance().queryUserById(authorID);
     const objectInsert = new LearningObject({
       ...object,
       author,
@@ -1235,7 +1233,7 @@ export async function deleteLearningObjectByName({
   user: UserToken;
 }): Promise<void> {
   try {
-    const authorId = await userServiceGateway.findUser(user.username);
+    const authorId = await UserServiceGateway.getInstance().findUser(user.username);
     if (!authorId) {
       throw new ResourceError(
         `Unable to delete Learning Object ${learningObjectName}. No user ${
@@ -1592,7 +1590,7 @@ async function checkNameExists({
   name: string;
   id?: string;
 }) {
-  const authorId = await userServiceGateway.findUser(username);
+  const authorId = await UserServiceGateway.getInstance().findUser(username);
   const existing = await dataStore.findLearningObject({ authorId, name });
   if (existing && id !== existing) {
     throw new ResourceError(

@@ -1,6 +1,7 @@
 import { UserToken } from '../shared/types';
 import { DataStore } from '../shared/interfaces/DataStore';
 import { ResourceError, ResourceErrorReason } from '../shared/errors';
+import { UserServiceGateway } from '../shared/gateways/user-service/UserServiceGateway';
 
 
 const ROLE = {
@@ -33,8 +34,7 @@ export async function hasChangelogAccess(params: {
     dataStore: DataStore,
     learningObjectId: string,
 }) {
-
-    const userId = await params.dataStore.findUser(params.user.username);
+    const userId = await UserServiceGateway.getInstance().findUser(params.user.username);
     const isOwnedByAuthor = await params.dataStore.checkLearningObjectExistence({
         userId,
         learningObjectId: params.learningObjectId,

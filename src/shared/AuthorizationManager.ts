@@ -18,8 +18,6 @@ const PRIVILEGED_GROUPS = [
   AccessGroup.REVIEWER,
 ];
 
-let userServiceGateway = new UserServiceGateway();
-
 /**
  * Checks if a user has the authority to modify a Learning Object.
  * If they have privileged access, immediately return true. Otherwise,
@@ -141,7 +139,7 @@ async function userIsOwner(params: {
   user: UserToken;
   objectId: string;
 }) {
-  const userId = await userServiceGateway.findUser(params.user.username);
+  const userId = await UserServiceGateway.getInstance().findUser(params.user.username);
   const object = await params.dataStore.peek<{
     authorID: string;
   }>({

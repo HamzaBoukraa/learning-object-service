@@ -19,6 +19,7 @@ import { FileManagerModule } from './FileManager/FileManagerModule';
 import { LearningObjectsModule } from './LearningObjects/LearningObjectsModule';
 import { LearningObjectSubmissionAdapter } from './LearningObjectSubmission/adapters/LearningObjectSubmissionAdapter';
 import { ElasticsearchSubmissionPublisher } from './LearningObjectSubmission/ElasticsearchSubmissionPublisher';
+import { UserServiceGateway } from './shared/gateways/user-service/UserServiceGateway';
 
 // ----------------------------------------------------------------------------------
 // Initializations
@@ -54,6 +55,7 @@ switch (process.env.NODE_ENV) {
 const library: LibraryCommunicator = new LibraryDriver();
 let dataStore: DataStore;
 const publisher = new ElasticsearchSubmissionPublisher();
+let userServiceGateway: UserServiceGateway;
 
 /**
  * Starts the application by
@@ -93,6 +95,7 @@ function initModules() {
   FileManagerModule.initialize();
   BundlerModule.initialize();
   FileMetadataModule.initialize();
+  UserServiceGateway.build();
 }
 
 /**

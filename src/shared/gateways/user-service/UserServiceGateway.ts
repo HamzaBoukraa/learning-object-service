@@ -1,18 +1,20 @@
 import { USER_ROUTES } from './routes';
 import { generateServiceToken } from '../../../drivers/TokenManager';
 import * as request from 'request-promise';
-import { User } from '../../entity';
+import { User, LearningObject } from '../../entity';
 import { isEmail } from '../../functions';
 import * as ObjectMapper from '../../../drivers/Mongo/ObjectMapper';
 import { COLLECTIONS } from '../../../drivers/MongoDriver';
 import { UserDocument } from '../../types';
 import { ResourceError, ResourceErrorReason, ServiceError, ServiceErrorReason } from '../../errors';
 import { reportError } from '../../SentryConnector';
-import { Db } from 'mongodb';
+import { Db, MongoClient } from 'mongodb';
+import { MongoConnector } from '../../MongoDB/MongoConnector';
 
 export class UserServiceGateway {
 
   private db: Db;
+  private static instance: UserServiceGateway;
 
   private options = {
     uri: '',
@@ -22,6 +24,25 @@ export class UserServiceGateway {
     },
     method: 'GET',
   };
+
+  private constructor() {
+    this.db = MongoConnector.client().db('onion');
+  }
+
+  static build() {
+    if (!this.instance) {
+      this.instance = new UserServiceGateway();
+    } else {
+      throw new Error('UserServiceGateway has already been created');
+    }
+  }
+
+  static getInstance() {
+    if (!this.instance) {
+      throw new Error('UserServiceGateway has not been created yet');
+    }
+    return this.instance;
+  }
 
   /**
    * @inheritdoc
@@ -76,8 +97,8 @@ export class UserServiceGateway {
         query['username'] = username;
       }
       const userRecord = await this.db
-        .collection(COLLECTIONS.USERS)
-        .findOne<UserDocument>(query, { projection: { _id: 1 } });
+       .collection(COLLECTIONS.USERS)
+       .findOne<UserDocument>(query, { projection: { _id: 1 } });
       if (!userRecord)
         return Promise.reject(
           new ResourceError(
