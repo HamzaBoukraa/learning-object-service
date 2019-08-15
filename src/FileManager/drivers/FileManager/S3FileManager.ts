@@ -292,7 +292,6 @@ export class S3FileManager implements FileManager {
     path: string;
   }): Promise<string> {
     try {
-      console.log('here!');
       const cognitoId: string = await FileAccessIdentitiesAdapter.getInstance().getFileAccessIdentity(
         authorUsername,
       );
