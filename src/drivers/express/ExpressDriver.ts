@@ -62,7 +62,8 @@ export class ExpressDriver {
     // These sentry handlers must come first
     this.app.use(sentryRequestHandler);
     this.app.use(sentryErrorHandler);
-    this.app.use(logger('dev'));
+    const logType = process.env.NODE_ENV === 'production' ? 'common' : 'dev';
+    this.app.use(logger(logType));
     this.app.use(
       bodyParser.urlencoded({
         extended: true,
