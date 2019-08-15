@@ -71,13 +71,10 @@ export class ElasticSearchLearningObjectDatastore
   async searchReleasedObjects(
     params: LearningObjectSearchQuery,
   ): Promise<LearningObjectSearchResult> {
-    console.log('before released search query');
     const elasticQuery: ElasticSearchQuery = this.buildReleasedSearchQuery(
       params,
     );
-    console.log('before execute elastic query');
     const results = await this.executeQuery(elasticQuery);
-    console.log('before convert results');
     return this.convertHitsToLearningObjectSearchResult(results);
   }
 
@@ -93,9 +90,7 @@ export class ElasticSearchLearningObjectDatastore
     const elasticQuery: ElasticSearchQuery = this.buildPrivilegedSearchQuery(
       params,
     );
-    console.log('');
     const results = await this.executeQuery(elasticQuery);
-    console.log('');
     return this.convertAggregationToLearningObjectSearchResult(results);
   }
 
@@ -108,34 +103,28 @@ export class ElasticSearchLearningObjectDatastore
   private buildReleasedSearchQuery(
     params: LearningObjectSearchQuery,
   ): ElasticSearchQuery {
-    console.log('start of build released query');
     const query = this.buildSearchQuery(params);
     const queryFilters = this.getQueryFilters(params);
     const { limit, page, sortType, orderBy } = params;
     if (Object.keys(queryFilters).length) {
-      console.log('before append query filters');
       this.appendQueryFilters({
         query,
         filters: queryFilters,
       });
     }
     if (orderBy) {
-      console.log('before append sort stage');
       this.appendSortStage({
         query,
         sortType,
         orderBy,
       });
     }
-    console.log('before append paginator');
     this.appendPaginator({
       query,
       limit,
       page,
     });
-    console.log('before append released status filter');
     this.appendReleasedStatusFilter(query);
-    console.log('end of build released search query');
     return query;
   }
 
@@ -628,15 +617,11 @@ export class ElasticSearchLearningObjectDatastore
   private convertHitsToLearningObjectSearchResult(
     results: SearchResponse<Partial<LearningObject>>,
   ): LearningObjectSearchResult {
-    console.log('start of convert hits');
     const total = results.hits.total;
-    console.log('after total');
     const hits = results.hits.hits;
-    console.log('after hits');
     const objects: LearningObjectSummary[] = hits.map(doc =>
       mapLearningObjectToSummary(doc._source),
     );
-    console.log('end of convert hits');
     return { total, objects };
   }
 
