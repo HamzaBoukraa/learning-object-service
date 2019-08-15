@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
-import { handleError } from '../shared/handleError/handleError';
 import { getFileAccessIdentity } from '../../../../interactors/GetFileAccessIdentity/getFileAccessIdentity';
-import { checkIfRequesterHasPermission } from '../shared';
+import { checkIfRequesterHasPermission, handleError } from '../shared';
 
 export function getFileAccessIdentityHandler(req: Request, res: Response) {
   try {
