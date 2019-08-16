@@ -8,15 +8,15 @@ import {
 export function buildHTTPAdapter(): Router {
     const router = Router();
     router.post(
-        '/file-access-identity',
+        '/users/:username/file-access-identity',
         createFileAccessIdentityHandler,
     );
     router.get(
-        '/file-access-identity/:username',
+        '/users/:username/file-access-identity',
         getFileAccessIdentityHandler,
     );
     router.patch(
-        '/file-access-identity/:usename',
+        '/users/:username/file-access-identity',
         updateFileAccessIdentityHandler,
     );
     return router;
