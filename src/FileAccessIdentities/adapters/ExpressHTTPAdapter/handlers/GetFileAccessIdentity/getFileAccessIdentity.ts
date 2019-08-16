@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { getFileAccessIdentity } from '../../../../interactors/GetFileAccessIdentity/getFileAccessIdentity';
 import { checkIfRequesterHasPermission, handleError } from '../shared';
+import { ResourceError, ResourceErrorReason } from '../../../../../shared/errors';
 
 export function getFileAccessIdentityHandler(req: Request, res: Response) {
   try {
@@ -12,7 +13,15 @@ export function getFileAccessIdentityHandler(req: Request, res: Response) {
 
 async function handleRequest(req: Request, res: Response) {
   const params = parseRequestParams(req);
-  checkIfRequesterHasPermission(params.requester);
+
+  const hasPermission = checkIfRequesterHasPermission(params.requester);
+  if (!hasPermission) {
+    throw new ResourceError(
+      'Requester does not have access',
+      ResourceErrorReason.FORBIDDEN,
+    );
+  }
+
   const fileAccessIdentity = await getFileAccessIdentity(params.username);
   respondWithFileAccessIdentity({ res, fileAccessIdentity });
 }

@@ -4,23 +4,26 @@ import {
     generateResourceURL,
 } from '../shared/functions';
 import { FileAccessIdentityWriteParam } from '../shared/types/FileAccessIdentityWriteParam';
+import { ResourceError, ResourceErrorReason } from '../../../shared/errors';
 
 export async function createFileAccessIdentity(
     param: FileAccessIdentityWriteParam,
 ): Promise<string> {
-    checkIfFileAccessIdentityExists(param.username);
-    saveFileAccessIdentity({
-        username: param.username,
-        fileAccessIdentity: param.fileAccessIdentity,
-    });
+    const identityExists = await checkIfFileAccessIdentityExists(param.username);
+    if (identityExists) {
+        throw new ResourceError(
+            'File Access Identity already exists',
+            ResourceErrorReason.BAD_REQUEST,
+        );
+    }
+
+    saveFileAccessIdentity(param);
+
     const resourceURL = generateResourceURL(param.username);
     return resourceURL;
 }
 
 
-function saveFileAccessIdentity(params: {
-    username: string,
-    fileAccessIdentity: string,
-}) {
-    Datastores.fileAccessIdentity().insertFileAccessIdentity(params);
+function saveFileAccessIdentity(param: FileAccessIdentityWriteParam) {
+    Datastores.fileAccessIdentity().insertFileAccessIdentity(param);
 }

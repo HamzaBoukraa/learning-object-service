@@ -2,6 +2,10 @@ import { Request, Response } from 'express';
 
 import { createFileAccessIdentity } from '../../../../interactors/CreateFileAccessIdentity/createFileAccessIdentity';
 import { checkIfRequesterHasPermission, handleError } from '../shared';
+import {
+  ResourceError,
+  ResourceErrorReason,
+} from '../../../../../shared/errors';
 
 export function createFileAccessIdentityHandler(req: Request, res: Response) {
   try {
@@ -13,7 +17,15 @@ export function createFileAccessIdentityHandler(req: Request, res: Response) {
 
 async function handleRequest(req: Request, res: Response) {
   const params = parseRequestParams(req);
-  checkIfRequesterHasPermission(params.requester);
+
+  const hasPermission = checkIfRequesterHasPermission(params.requester);
+  if (!hasPermission) {
+    throw new ResourceError(
+      'Requester does not have access',
+      ResourceErrorReason.FORBIDDEN,
+    );
+  }
+
   const resourceURL = await createFileAccessIdentity(params);
   respondWithResourceURL({ res, resourceURL });
 }

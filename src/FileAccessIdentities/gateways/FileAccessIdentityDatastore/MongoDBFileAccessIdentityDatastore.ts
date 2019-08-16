@@ -5,7 +5,7 @@ import { FileAccessIdentityDatastore } from '../../shared/abstract-classes/FileA
 const DB = process.env.CLARK_DB_NAME;
 
 export class MongoDBFileAccessIdentityDatastore
-  implements FileAccessIdentityDatastore {
+implements FileAccessIdentityDatastore {
   private db: Db;
   constructor() {
     this.db = MongoConnector.client().db(DB);

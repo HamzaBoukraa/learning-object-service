@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { updateFileAccessIdentity } from '../../../../interactors/UpdateFileAccessIdentity/updateFileAccessIdentity';
 import { checkIfRequesterHasPermission, handleError } from '../shared';
+import { ResourceError, ResourceErrorReason } from '../../../../../shared/errors';
 
 export async function updateFileAccessIdentityHandler(
   req: Request,
@@ -15,7 +16,15 @@ export async function updateFileAccessIdentityHandler(
 
 async function handleRequest(req: Request, res: Response) {
   const params = parseRequestParams(req);
-  checkIfRequesterHasPermission(params.requester);
+
+  const hasPermission = checkIfRequesterHasPermission(params.requester);
+  if (!hasPermission) {
+    throw new ResourceError(
+      'Requester does not have access',
+      ResourceErrorReason.FORBIDDEN,
+    );
+  }
+
   const resourceURL = await updateFileAccessIdentity(params);
   respondWithResourceURL({ res, resourceURL });
 }

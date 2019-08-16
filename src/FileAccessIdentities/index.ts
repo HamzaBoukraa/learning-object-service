@@ -15,4 +15,4 @@ import { buildHTTPAdapter } from './adapters/ExpressHTTPAdapter/ExpressHTTPAdapt
         },
     ],
 })
-export class FileAccessIdentites extends ExpressServiceModule {}
+export class FileAccessIdentities extends ExpressServiceModule {}
