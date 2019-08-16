@@ -1,5 +1,5 @@
 import { checkIfRequesterHasPermission } from './checkIfRequesterHasPermission/checkIfRequesterHasPermission';
-import { handleError } from './handleError/handleError';
+import { handleError } from './HandleError/handleError';
 
 export {
     checkIfRequesterHasPermission,
