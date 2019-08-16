@@ -14,7 +14,7 @@ export class FileAccessIdentitiesAdapter {
       return this._instance;
     }
     throw new Error(
-      'Learning Object Submission Adapter has not been created yet.',
+      'File Access Identities Adapter has not been created yet.',
     );
   }
 

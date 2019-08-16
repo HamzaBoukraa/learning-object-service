@@ -295,9 +295,6 @@ export class S3FileManager implements FileManager {
       const cognitoId: string = await FileAccessIdentitiesAdapter.getInstance().getFileAccessIdentity(
         authorUsername,
       );
-      console.log(
-        `${cognitoId}/${learningObjectId}/${learningObjectRevisionId}/${path}`,
-      );
       return `${cognitoId}/${learningObjectId}/${learningObjectRevisionId}/${path}`;
     } catch (err) {
       reportError(err);
