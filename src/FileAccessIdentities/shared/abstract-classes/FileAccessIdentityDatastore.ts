@@ -21,7 +21,7 @@ export abstract class FileAccessIdentityDatastore {
 
     /**
      * This operation should be performed when
-     * a user's privileges is changed. Users with
+     * a user's privileges are changed. Users with
      * different privileges will have ids with
      * different signatures.
      */
