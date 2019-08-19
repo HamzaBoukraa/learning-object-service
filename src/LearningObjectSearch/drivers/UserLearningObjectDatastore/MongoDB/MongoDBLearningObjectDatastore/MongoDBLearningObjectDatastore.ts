@@ -14,9 +14,9 @@ import { LearningObject } from '../../../../../shared/entity';
 import { sanitizeRegex } from '../../../../../shared/functions/sanitizeRegex/sanitizeRegex';
 import {
     generateReleasedLearningObjectSummary,
-    generateLearningObjectSummary,
     calculateDocumentsToSkip,
     validatePageNumber,
+    generateLearningObjectSummary,
 } from '../../../../../shared/MongoDB/HelperFunctions';
 
 export class MongoDBLearningObjectDatastore implements UserLearningObjectDatastore {
@@ -79,24 +79,24 @@ export class MongoDBLearningObjectDatastore implements UserLearningObjectDatasto
 
         let orConditions: QueryCondition[] = [];
         if (collectionRestrictions) {
-        const conditions: QueryCondition[] = this.buildCollectionQueryConditions(
+          const conditions: QueryCondition[] = this.buildCollectionQueryConditions(
             collectionRestrictions,
-        );
-        orConditions = this.buildQueryConditions(conditions);
+          );
+          orConditions = this.buildQueryConditions(conditions);
         }
 
         const searchQuery: { [index: string]: any } = {
         authorID,
         };
         if (revision != null) {
-        searchQuery.revision = revision;
+          searchQuery.revision = revision;
         }
         if (text) {
-        searchQuery.$or = searchQuery.$or || [];
-        searchQuery.$or.push(
+          searchQuery.$or = searchQuery.$or || [];
+          searchQuery.$or.push(
             { $text: { $search: text } },
             { name: RegExp(sanitizeRegex(text), 'gi') },
-        );
+          );
         }
 
         const pipeline = this.buildAllObjectsPipeline({

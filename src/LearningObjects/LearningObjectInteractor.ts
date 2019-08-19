@@ -45,6 +45,8 @@ import { LearningObjectSubmissionAdapter } from '../LearningObjectSubmission/ada
 import { UserGateway } from './interfaces/UserGateway';
 import { validateUpdates } from '../shared/entity/learning-object/validators';
 import { UserServiceGateway } from '../shared/gateways/user-service/UserServiceGateway';
+import { loadChildObjects } from '../shared/MongoDB/HelperFunctions';
+import * as DatastoreHelperFunctions from '../shared/MongoDB/HelperFunctions';
 
 namespace Drivers {
   export const readMeBuilder = () =>
@@ -1034,7 +1036,7 @@ async function loadChildrenSummaries({
 }): Promise<LearningObjectChildSummary[]> {
   let children: LearningObjectChildSummary[];
   if (released) {
-    children = (await dataStore.loadReleasedChildObjects({
+      children = (await DatastoreHelperFunctions.loadReleasedChildObjects({
       id: learningObjectId,
       full: false,
     })).map(mapChildLearningObjectToSummary);
@@ -1045,7 +1047,7 @@ async function loadChildrenSummaries({
     })
       ? LearningObjectState.ALL
       : [...LearningObjectState.IN_REVIEW, ...LearningObjectState.RELEASED];
-    children = (await dataStore.loadChildObjects({
+    children = (await loadChildObjects({
       id: learningObjectId,
       full: false,
       status: childrenStatus,
@@ -1094,13 +1096,11 @@ async function loadWorkingParentsReleasedChildObjects({
  * @returns
  */
 async function loadReleasedChildObjects({
-  dataStore,
   parentId,
 }: {
-  dataStore: DataStore;
   parentId: string;
 }): Promise<HierarchicalLearningObject[]> {
-  let children = (await dataStore.loadReleasedChildObjects({
+  let children = (await DatastoreHelperFunctions.loadReleasedChildObjects({
     id: parentId,
     full: true,
   })) as HierarchicalLearningObject[];
@@ -1108,7 +1108,6 @@ async function loadReleasedChildObjects({
   children = await Promise.all(
     children.map(async child => {
       child.children = await loadReleasedChildObjects({
-        dataStore,
         parentId: child.id,
       });
       return child;
@@ -1133,7 +1132,7 @@ export async function getLearningObjectChildrenById(
     parentId: objectId,
   });
 
-  const childrenOrder = await dataStore.loadChildObjects({
+  const childrenOrder = await loadChildObjects({
     id: objectId,
     full: true,
     status: LearningObjectState.ALL,

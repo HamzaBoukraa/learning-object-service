@@ -36,13 +36,14 @@ import { LearningObject, LearningOutcome, User } from '../shared/entity';
 import { MongoConnector } from '../shared/MongoDB/MongoConnector';
 import { LearningObjectUpdates } from '../shared/types/learning-object-updates';
 import {
+  bulkGenerateLearningObjects,
   generateLearningObject,
-  generateLearningObjectSummary,
   documentReleasedLearningObject,
   documentLearningObject,
   generateReleasedLearningObject,
   calculateDocumentsToSkip,
   validatePageNumber,
+  generateLearningObjectSummary,
 } from '../shared/MongoDB/HelperFunctions';
 import { isEmail, sanitizeRegex } from '../shared/functions';
 
@@ -382,90 +383,6 @@ export class MongoDriver implements DataStore {
     }
     return [];
   }
-  /**
-   *  Fetches all child objects for object with given parent id and status starting with a match, then performing a
-   *  lookup to grab the children of the specified parent and returning only the children
-   *
-   * @param {string} id
-   * @returns {Promise<LearningObject[]>}
-   * @memberof MongoDriver
-   */
-  async loadChildObjects(params: {
-    id: string;
-    full?: boolean;
-    status: string[];
-    collection?: string;
-  }): Promise<LearningObject[]> {
-    const { id, full, status, collection } = params;
-    const matchQuery: { [index: string]: any } = {
-      $match: { _id: id },
-    };
-
-    const findChildren: {
-      $graphLookup: {
-        from: string;
-        startWith: string;
-        connectFromField: string;
-        connectToField: string;
-        as: string;
-        maxDepth: number;
-        restrictSearchWithMatch?: { [index: string]: any };
-      };
-    } = {
-      $graphLookup: {
-        from: collection || COLLECTIONS.LEARNING_OBJECTS,
-        startWith: '$children',
-        connectFromField: 'children',
-        connectToField: '_id',
-        as: 'objects',
-        maxDepth: 0,
-      },
-    };
-    if (status) {
-      findChildren.$graphLookup.restrictSearchWithMatch = {
-        status: { $in: status },
-      };
-    }
-
-    const docs = await this.db
-      .collection<{ objects: LearningObjectDocument[] }>(
-        collection || COLLECTIONS.LEARNING_OBJECTS,
-      )
-      .aggregate([
-        // match based on id's and status array if given.
-        matchQuery,
-        findChildren,
-        // only return children.
-        { $project: { _id: 0, objects: '$objects' } },
-      ])
-      .toArray();
-    if (docs[0]) {
-      const objects = docs[0].objects;
-      return this.bulkGenerateLearningObjects(objects, full);
-    }
-    return [];
-  }
-
-  /**
-   * Loads released child objects
-   *
-   * @param {{
-   *     id: string;
-   *     full?: boolean;
-   *   }} params
-   * @returns {Promise<LearningObject[]>}
-   * @memberof MongoDriver
-   */
-  async loadReleasedChildObjects(params: {
-    id: string;
-    full?: boolean;
-  }): Promise<LearningObject[]> {
-    return this.loadChildObjects({
-      ...params,
-      collection: COLLECTIONS.RELEASED_LEARNING_OBJECTS,
-      status: [LearningObject.Status.RELEASED],
-    });
-  }
 
   /**
    * @inheritdoc
@@ -507,7 +424,7 @@ export class MongoDriver implements DataStore {
       .toArray();
     if (docs[0]) {
       const objects = docs[0].objects;
-      return this.bulkGenerateLearningObjects(objects, full);
+      return bulkGenerateLearningObjects(objects, full);
     }
     return [];
   }
@@ -782,8 +699,64 @@ export class MongoDriver implements DataStore {
       ])
       .toArray();
 
-    return this.bulkGenerateLearningObjects(parents);
+    return bulkGenerateLearningObjects(parents);
   }
+
+  async loadChildObjects(params: {
+    id: string;
+    full?: boolean;
+    status: string[];
+    collection?: string;
+  }): Promise<LearningObject[]> {
+    const { id, full, status, collection } = params;
+    const matchQuery: { [index: string]: any } = {
+      $match: { _id: id },
+    };
+
+    const findChildren: {
+      $graphLookup: {
+        from: string;
+        startWith: string;
+        connectFromField: string;
+        connectToField: string;
+        as: string;
+        maxDepth: number;
+        restrictSearchWithMatch?: { [index: string]: any };
+      };
+    } = {
+      $graphLookup: {
+        from: collection || COLLECTIONS.LEARNING_OBJECTS,
+        startWith: '$children',
+        connectFromField: 'children',
+        connectToField: '_id',
+        as: 'objects',
+        maxDepth: 0,
+      },
+    };
+    if (status) {
+      findChildren.$graphLookup.restrictSearchWithMatch = {
+        status: { $in: status },
+      };
+    }
+    const docs = await this.db
+      .collection<{ objects: LearningObjectDocument[] }>(
+        collection || COLLECTIONS.LEARNING_OBJECTS,
+      )
+      .aggregate([
+        // match based on id's and status array if given.
+        matchQuery,
+        findChildren,
+        // only return children.
+        { $project: { _id: 0, objects: '$objects' } },
+      ])
+      .toArray();
+    if (docs[0]) {
+      const objects = docs[0].objects;
+      return bulkGenerateLearningObjects(objects, full);
+    }
+    return [];
+  }
+
 
   /**
    * Fetches Parents of requested Learning Object from released collection
@@ -805,7 +778,7 @@ export class MongoDriver implements DataStore {
       .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
       .find<LearningObjectDocument>(mongoQuery)
       .toArray();
-    return await this.bulkGenerateLearningObjects(parentDocs, full);
+    return await bulkGenerateLearningObjects(parentDocs, full);
   }
 
   ///////////////////////////////////////////////////////////////////
@@ -1211,31 +1184,6 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Converts array of LearningObjectDocuments to Learning Objects
-   *
-   * @private
-   * @param {LearningObjectDocument[]} docs
-   * @returns {Promise<LearningObject[]>}
-   * @memberof MongoDriver
-   */
-  private async bulkGenerateLearningObjects(
-    docs: LearningObjectDocument[],
-    full?: boolean,
-  ): Promise<LearningObject[]> {
-    return await Promise.all(
-      docs.map(async doc => {
-        const author = await UserServiceGateway.getInstance().queryUserById(doc.authorID);
-        const learningObject = await generateLearningObject(
-          author,
-          doc,
-          full,
-        );
-        return learningObject;
-      }),
-    );
-  }
-
-  /**
    * Fetches the learning object documents associated with the given ids.
    *
    * @param ids array of database ids
@@ -1285,7 +1233,7 @@ export class MongoDriver implements DataStore {
 
       const docs = await objectCursor.toArray();
 
-      const learningObjects: LearningObject[] = await this.bulkGenerateLearningObjects(
+      const learningObjects: LearningObject[] = await bulkGenerateLearningObjects(
         docs,
         params.full,
       );

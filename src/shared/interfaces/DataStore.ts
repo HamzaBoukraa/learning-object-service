@@ -140,11 +140,6 @@ export interface DataStore
   findParentObjectIds(params: { childId: string }): Promise<string[]>;
   findParentObjectId(params: { childId: string }): Promise<string>;
   findChildObjectIds(params: { parentId: string }): Promise<string[]>;
-  loadChildObjects(params: {
-    id: string;
-    full?: boolean;
-    status: string[];
-  }): Promise<LearningObject[]>;
 
   /**
    * Loads released child Learning Objects for a working parent Learning Object
@@ -155,10 +150,6 @@ export interface DataStore
    * @returns {Promise<LearningObject[]>}
    */
   loadWorkingParentsReleasedChildObjects(params: {
-    id: string;
-    full?: boolean;
-  }): Promise<LearningObject[]>;
-  loadReleasedChildObjects(params: {
     id: string;
     full?: boolean;
   }): Promise<LearningObject[]>;

@@ -24,13 +24,14 @@ import { LearningObject } from '../../../shared/entity';
 import { sanitizeText, sanitizeObject, toArray, toBoolean } from '../../../shared/functions';
 import { LearningObjectSearch } from '../..';
 import { UserGateway } from '../../../LearningObjects/interfaces';
+import { UserLearningObjectDatastore } from '../../interfaces/UserLearningObjectDatastore';
 
 namespace Gateways {
   export const userGateway = () =>
     LearningObjectSearch.resolveDependency(UserGateway);
 
   export const userLearningObjectDatastore = () =>
-    LearningObjectSearch.resolveDependency(userLearningObjectDatastore);
+    LearningObjectSearch.resolveDependency(UserLearningObjectDatastore);
 }
 
 /**
