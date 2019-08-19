@@ -9,16 +9,18 @@ import { bulkGenerateLearningObjects } from './bulkGenerateLearningObjects/bulkG
 import { generateLearningObjectSummary } from './generateLearningObjectSummary/generateLearningObjectSummary';
 import { loadChildObjects } from './loadChildObjects/loadChildObjects';
 import { loadReleasedChildObjects } from './loadReleasedChildObjects/loadReleasedChildObjects';
+import { learningObjectHasRevision } from './learningObjectHasRevision/learningObjectHasRevision';
 
 export {
     bulkGenerateLearningObjects,
+    calculateDocumentsToSkip,
     documentLearningObject,
     documentReleasedLearningObject,
     generateLearningObject,
     generateLearningObjectSummary,
     generateReleasedLearningObject,
     generateReleasedLearningObjectSummary,
-    calculateDocumentsToSkip,
+    learningObjectHasRevision,
     loadChildObjects,
     loadReleasedChildObjects,
     validatePageNumber,
