@@ -4,7 +4,10 @@ import * as express from 'express';
 import { reportError } from './shared/SentryConnector';
 
 import { MongoDriver, ExpressDriver } from './drivers/drivers';
-import { LibraryCommunicator, DataStore } from './shared/interfaces/interfaces';
+import {
+  LibraryCommunicator,
+  DataStore,
+} from './shared/interfaces/interfaces';
 import { LibraryDriver } from './drivers/LibraryDriver';
 import { MongoConnector } from './shared/Mongo/MongoConnector';
 import { LearningObjectAdapter } from './LearningObjects/adapters/LearningObjectAdapter';
@@ -16,8 +19,7 @@ import { FileManagerModule } from './FileManager/FileManagerModule';
 import { LearningObjectsModule } from './LearningObjects/LearningObjectsModule';
 import { LearningObjectSubmissionAdapter } from './LearningObjectSubmission/adapters/LearningObjectSubmissionAdapter';
 import { ElasticsearchSubmissionPublisher } from './LearningObjectSubmission/ElasticsearchSubmissionPublisher';
-import { FileAccessIdentitiesAdapter } from './FileAccessIdentities/adapters/FileAccessIdentitiesAdapter/FileAccessIdentitiesAdapter';
-import { FileAccessIdentites } from './FileAccessIdentities';
+import { Severity } from '@sentry/node';
 
 // ----------------------------------------------------------------------------------
 // Initializations
@@ -92,8 +94,6 @@ function initModules() {
   FileManagerModule.initialize();
   BundlerModule.initialize();
   FileMetadataModule.initialize();
-  FileAccessIdentites.initialize();
-  FileAccessIdentitiesAdapter.open();
 }
 
 /**
