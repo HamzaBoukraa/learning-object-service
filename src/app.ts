@@ -4,10 +4,7 @@ import * as express from 'express';
 import { reportError } from './shared/SentryConnector';
 
 import { MongoDriver, ExpressDriver } from './drivers/drivers';
-import {
-  LibraryCommunicator,
-  DataStore,
-} from './shared/interfaces/interfaces';
+import { LibraryCommunicator, DataStore } from './shared/interfaces/interfaces';
 import { LibraryDriver } from './drivers/LibraryDriver';
 import { MongoConnector } from './shared/Mongo/MongoConnector';
 import { LearningObjectAdapter } from './LearningObjects/adapters/LearningObjectAdapter';
@@ -103,8 +100,7 @@ function initModules() {
  */
 function startHttpServer(app: express.Express): void {
   const server = http.createServer(app);
-  server.keepAliveTimeout = 95000;
-  server.headersTimeout = 99000;
+  server.keepAliveTimeout = +process.env.KEEP_ALIVE_TIMEOUT;
   server.listen(HTTP_SERVER_PORT, () =>
     console.log(
       `Learning Object Service running on http://localhost:${HTTP_SERVER_PORT}`,
