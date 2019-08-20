@@ -25,6 +25,7 @@ import {
   ServiceError,
   ServiceErrorReason,
 } from '../../../shared/errors';
+import { reportError } from '../../../shared/SentryConnector';
 
 const ELASTICSEARCH_DOMAIN = process.env.ELASTICSEARCH_DOMAIN;
 const LEARNING_OBJECT_INDEX = 'learning-objects';
@@ -675,11 +676,13 @@ export class ElasticSearchLearningObjectDatastore
             ResourceErrorReason.NOT_FOUND,
           );
         case 500:
+          reportError(e);
           throw new ServiceError(ServiceErrorReason.INTERNAL);
         default:
           break;
       }
     }
+    reportError(e);
     throw new ServiceError(ServiceErrorReason.INTERNAL);
   }
 }
