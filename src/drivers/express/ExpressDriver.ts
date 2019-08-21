@@ -24,6 +24,7 @@ import {
 import { LearningObjectSearch } from '../../LearningObjectSearch';
 import { FileMetadataModule } from '../../FileMetadata/FileMetadataModule';
 import { FileManagerModule } from '../../FileManager/FileManagerModule';
+import { FileAccessIdentities } from '../../FileAccessIdentities';
 
 export class ExpressDriver {
   static app = express();
@@ -92,6 +93,7 @@ export class ExpressDriver {
         this.library,
       ),
     );
+    this.app.use(FileAccessIdentities.expressRouter);
   }
 
   /**

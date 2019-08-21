@@ -17,7 +17,7 @@ export abstract class FileAccessIdentityDatastore {
     * This function is used by the File Manager module
     * when constructing file paths.
     */
-    abstract findFileAccessIdentity(username: string): Promise<string>;
+    abstract findFileAccessIdentity(username: string): Promise<string | Error>;
 
     /**
      * This operation should be performed when

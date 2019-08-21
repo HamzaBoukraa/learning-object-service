@@ -1,6 +1,7 @@
 import { Db } from 'mongodb';
 import { MongoConnector } from '../../../shared/Mongo/MongoConnector';
 import { FileAccessIdentityDatastore } from '../../shared/abstract-classes/FileAccessIdentityDatastore';
+import { ResourceError, ResourceErrorReason } from '../../../shared/errors';
 
 const DB = process.env.CLARK_DB_NAME;
 
@@ -24,13 +25,18 @@ implements FileAccessIdentityDatastore {
     });
   }
 
-  async findFileAccessIdentity(username: string): Promise<string> {
+  async findFileAccessIdentity(username: string): Promise<string | Error> {
     const fileAccessInfo = await this.db
       .collection('file-access-ids')
       .find({ username }, { projection: { fileAccessId: 1 } })
       .limit(1)
       .toArray();
-    return fileAccessInfo[0].fileAccessId;
+    return fileAccessInfo[0] ?
+      fileAccessInfo[0].fileAccessId
+      : new ResourceError(
+        'not found',
+        ResourceErrorReason.NOT_FOUND,
+      );
   }
 
   async updateFileAccessIdentity({

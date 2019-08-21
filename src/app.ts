@@ -17,7 +17,7 @@ import { LearningObjectsModule } from './LearningObjects/LearningObjectsModule';
 import { LearningObjectSubmissionAdapter } from './LearningObjectSubmission/adapters/LearningObjectSubmissionAdapter';
 import { ElasticsearchSubmissionPublisher } from './LearningObjectSubmission/ElasticsearchSubmissionPublisher';
 import { FileAccessIdentitiesAdapter } from './FileAccessIdentities/adapters/FileAccessIdentitiesAdapter/FileAccessIdentitiesAdapter';
-import { FileAccessIdentites } from './FileAccessIdentities';
+import { FileAccessIdentities } from './FileAccessIdentities';
 
 // ----------------------------------------------------------------------------------
 // Initializations
@@ -92,7 +92,7 @@ function initModules() {
   FileManagerModule.initialize();
   BundlerModule.initialize();
   FileMetadataModule.initialize();
-  FileAccessIdentites.initialize();
+  FileAccessIdentities.initialize();
   FileAccessIdentitiesAdapter.open();
 }
 
@@ -103,7 +103,7 @@ function initModules() {
  */
 function startHttpServer(app: express.Express): void {
   const server = http.createServer(app);
-  server.keepAliveTimeout = 95000;
+  server.keepAliveTimeout = 100000;
   server.headersTimeout = 99000;
   server.listen(HTTP_SERVER_PORT, () =>
     console.log(

@@ -3,7 +3,7 @@ import { ResourceError, ResourceErrorReason } from '../../../shared/errors';
 
 export async function getFileAccessIdentity(username: string): Promise<string> {
     const fileAccessIdentity = await queryFileAccessIdentity(username);
-    if (!fileAccessIdentity) {
+    if (fileAccessIdentity instanceof Error) {
         throw new ResourceError(
             'File Access Identity was not found',
             ResourceErrorReason.NOT_FOUND,
@@ -13,6 +13,6 @@ export async function getFileAccessIdentity(username: string): Promise<string> {
     return fileAccessIdentity;
 }
 
-function queryFileAccessIdentity(username: string): Promise<string> {
+function queryFileAccessIdentity(username: string): Promise<string | Error> {
     return Datastores.fileAccessIdentity().findFileAccessIdentity(username);
 }
