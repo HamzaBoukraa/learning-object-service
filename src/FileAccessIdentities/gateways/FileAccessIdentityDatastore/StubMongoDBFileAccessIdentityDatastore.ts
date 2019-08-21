@@ -3,6 +3,7 @@ import {
     STUB_USERNAMES,
     STUB_FILE_ACCESS_IDENTITIES,
 } from '../../shared/test-stubs';
+import { ResourceError, ResourceErrorReason } from '../../../shared/errors';
 
 export class StubMongoDBFileAccessIdentityDatastore
 implements FileAccessIdentityDatastore {
@@ -17,11 +18,11 @@ implements FileAccessIdentityDatastore {
         return Promise.resolve();
     }
 
-    async findFileAccessIdentity(username: string): Promise<string> {
+    async findFileAccessIdentity(username: string): Promise<string | Error> {
         if (username === STUB_USERNAMES.correct) {
             return STUB_FILE_ACCESS_IDENTITIES.valid;
         }
-        return null;
+        return new ResourceError('not found', ResourceErrorReason.NOT_FOUND);
     }
 
     updateFileAccessIdentity({
