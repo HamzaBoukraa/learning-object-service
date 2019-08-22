@@ -95,9 +95,6 @@ workflows:
           filters:
             branches:
               ignore: /master/
-      - elasticsearch-smoke-test:
-          requires:
-            - build
 
   build-test-create-sentry-release-and-deploy-production:
     jobs:
