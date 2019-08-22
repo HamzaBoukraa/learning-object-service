@@ -2,8 +2,9 @@ import * as request from 'request-promise';
 import { User } from '../../shared/entity';
 import { USER_ROUTES } from '../shared/routes';
 import { generateServiceToken } from '../../drivers/TokenManager';
+import { UserGateway } from '../interfaces/UserGateway';
 
-export class UserServiceGateway {
+export class UserServiceGateway implements UserGateway {
   private options = {
     uri: '',
     json: true,

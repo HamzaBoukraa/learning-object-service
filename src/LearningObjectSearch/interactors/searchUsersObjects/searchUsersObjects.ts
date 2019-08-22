@@ -1,4 +1,3 @@
-import { DataStore } from '../../../shared/interfaces/DataStore';
 import {
     UserToken,
     UserLearningObjectQuery,
@@ -23,8 +22,8 @@ import {
 import { LearningObject } from '../../../shared/entity';
 import { sanitizeText, sanitizeObject, toArray, toBoolean } from '../../../shared/functions';
 import { LearningObjectSearch } from '../..';
-import { UserGateway } from '../../../LearningObjects/interfaces';
 import { UserLearningObjectDatastore } from '../../interfaces/UserLearningObjectDatastore';
+import { UserGateway } from '../../interfaces/UserGateway';
 
 namespace Gateways {
   export const userGateway = () =>
