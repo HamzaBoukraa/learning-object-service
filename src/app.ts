@@ -16,7 +16,8 @@ import { FileManagerModule } from './FileManager/FileManagerModule';
 import { LearningObjectsModule } from './LearningObjects/LearningObjectsModule';
 import { LearningObjectSubmissionAdapter } from './LearningObjectSubmission/adapters/LearningObjectSubmissionAdapter';
 import { ElasticsearchSubmissionPublisher } from './LearningObjectSubmission/ElasticsearchSubmissionPublisher';
-import { Severity } from '@sentry/node';
+import { FileAccessIdentitiesAdapter } from './FileAccessIdentities/adapters/FileAccessIdentitiesAdapter/FileAccessIdentitiesAdapter';
+import { FileAccessIdentities } from './FileAccessIdentities';
 
 // ----------------------------------------------------------------------------------
 // Initializations
@@ -91,6 +92,8 @@ function initModules() {
   FileManagerModule.initialize();
   BundlerModule.initialize();
   FileMetadataModule.initialize();
+  FileAccessIdentities.initialize();
+  FileAccessIdentitiesAdapter.open();
 }
 
 /**
@@ -100,7 +103,7 @@ function initModules() {
  */
 function startHttpServer(app: express.Express): void {
   const server = http.createServer(app);
-  server.keepAliveTimeout = +process.env.KEEP_ALIVE_TIMEOUT;
+  server.keepAliveTimeout = parseInt(process.env.KEEP_ALIVE_TIMEOUT, 10);
   server.listen(HTTP_SERVER_PORT, () =>
     console.log(
       `Learning Object Service running on http://localhost:${HTTP_SERVER_PORT}`,
