@@ -5,7 +5,6 @@ import { reportError } from '../../../shared/SentryConnector';
 
 import { FileManager } from '../../interfaces/FileManager';
 import { FileUpload } from '../../../shared/types';
-import { FileAccessIdentitiesAdapter } from '../../../FileAccessIdentities/adapters/FileAccessIdentitiesAdapter/FileAccessIdentitiesAdapter';
 
 export const AWS_SDK_CONFIG = {
   credentials: {
@@ -269,6 +268,7 @@ export class S3FileManager implements FileManager {
 
   /**
    * Constructs storage path of file by mapping value provided for author's username to a Cognito Identity Id
+   * If Cognito Identity Id is not found in the admin pool, the general user pool is searched.
    *
    *
    * @private
@@ -291,13 +291,29 @@ export class S3FileManager implements FileManager {
     learningObjectRevisionId: number;
     path: string;
   }): Promise<string> {
+    let cognitoId: string;
     try {
-      const cognitoId: string = await FileAccessIdentitiesAdapter.getInstance().getFileAccessIdentity(
-        authorUsername,
-      );
-      return `${cognitoId}/${learningObjectId}/${learningObjectRevisionId}/${path}`;
-    } catch (err) {
-      reportError(err);
+      const adminLookupResponse = await this.cognito
+        .lookupDeveloperIdentity({
+          IdentityPoolId: COGNITO_CONFIG.CLARK_ADMIN_IDENTITY_POOL_ID,
+          DeveloperUserIdentifier: authorUsername,
+          MaxResults: 1,
+        })
+        .promise();
+      cognitoId = adminLookupResponse.IdentityId;
+    } catch (e) {
+      if (e.code !== COGNITO_IDENTITY_NOT_FOUND) {
+        throw e;
+      }
+      const lookupResponse = await this.cognito
+        .lookupDeveloperIdentity({
+          IdentityPoolId: COGNITO_CONFIG.CLARK_IDENTITY_POOL_ID,
+          DeveloperUserIdentifier: authorUsername,
+          MaxResults: 1,
+        })
+        .promise();
+      cognitoId = lookupResponse.IdentityId;
     }
+    return `${cognitoId}/${learningObjectId}/${learningObjectRevisionId}/${path}`;
   }
 }

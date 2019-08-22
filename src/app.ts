@@ -103,8 +103,7 @@ function initModules() {
  */
 function startHttpServer(app: express.Express): void {
   const server = http.createServer(app);
-  server.keepAliveTimeout = 100000;
-  server.headersTimeout = 99000;
+  server.keepAliveTimeout = parseInt(process.env.KEEP_ALIVE_TIMEOUT, 10);
   server.listen(HTTP_SERVER_PORT, () =>
     console.log(
       `Learning Object Service running on http://localhost:${HTTP_SERVER_PORT}`,
