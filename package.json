@@ -1,6 +1,6 @@
 {
   "name": "learning-object-service",
-  "version": "3.11.1",
+  "version": "3.11.2",
   "description": "Learning Object Microservice.",
   "main": "app.ts",
   "scripts": {
@@ -12,7 +12,9 @@
     "gulp-tsc": "node_modules/.bin/gulp start",
     "pack": "npm run build && cp ./package.json ./dist && cp -r ./.ebextensions ./dist && cd ./dist && zip -r ../dist.zip  ./* & cd ..",
     "zip": "cp ./package.json ./dist && cp -r ./.ebextensions ./dist && cd ./dist && zip -r ../dist.zip  ./* & cd ..",
-    "deploy": "eb deploy LearningObject-Service-Production --profile clark --label Learning-Object-Service-v$(node -p \"require('./package.json').version\")"
+    "deploy": "eb deploy LearningObject-Service-Production --profile clark --label Learning-Object-Service-v$(node -p \"require('./package.json').version\")",
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
   },
   "repository": {
     "type": "git",
@@ -46,7 +48,8 @@
     "pdfkit": "^0.9.0",
     "request-promise": "^4.2.2",
     "stopword": "^0.1.10",
-    "striptags": "^3.1.1"
+    "striptags": "^3.1.1",
+    "snyk": "^1.189.0"
   },
   "devDependencies": {
     "@types/bcrypt": "^2.0.0",
@@ -81,5 +84,6 @@
   "prettier": {
     "singleQuote": true,
     "trailingComma": "all"
-  }
+  },
+  "snyk": true
 }
