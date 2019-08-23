@@ -80,6 +80,23 @@ export async function getLearningOutcome(params: {
   }
 }
 
+/**
+ * Fetch all of the Learning Outcomes associated with a specified Learning Object
+ *
+ * @export
+ * @param {{
+ *   dataStore: LearningOutcomeDatastore,
+ *   requester: UserToken,
+ *   learningObjectGateway: LearningObjectGateway,
+ *   source: string,
+ * }} {
+ *   dataStore,
+ *   requester,
+ *   learningObjectGateway,
+ *   source,
+ * }
+ * @returns
+ */
 export async function getAllLearningOutcomes({
   dataStore,
   requester,
