@@ -919,7 +919,7 @@ export async function updateLearningObject({
     validateUpdates(cleanUpdates);
 
     cleanUpdates.date = Date.now().toString();
-    console.log(cleanUpdates);
+
     await dataStore.editLearningObject({
       id,
       updates: cleanUpdates,
@@ -1434,6 +1434,7 @@ export async function deleteLearningObjectByName({
  */
 export async function updateReadme(params: {
   dataStore: DataStore;
+  requester: UserToken,
   object?: LearningObject;
   id?: string;
 }): Promise<void> {
@@ -1441,7 +1442,16 @@ export async function updateReadme(params: {
     let object = params.object;
     const id = params.id;
     if (!object && id) {
-      object = await params.dataStore.fetchLearningObject({ id, full: true });
+      let files: LearningObject.Material.File[] = [];
+      [object, files] = await Promise.all([
+        params.dataStore.fetchLearningObject({ id, full: true }),
+        Gateways.fileMetadata().getAllFileMetadata({
+          requester: params.requester,
+          learningObjectId: id,
+          filter: 'unreleased',
+        }),
+      ]);
+      object.materials.files = files;
     } else if (!object && !id) {
       throw new ResourceError(
         `No learning object or id provided.`,

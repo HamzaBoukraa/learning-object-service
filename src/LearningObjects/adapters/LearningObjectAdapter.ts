@@ -172,12 +172,14 @@ export class LearningObjectAdapter {
    */
   async updateReadme(params: {
     object?: LearningObject;
+    requester: UserToken;
     id?: string;
   }): Promise<void> {
     return updateReadme({
       dataStore: this.dataStore,
       object: params.object,
       id: params.id,
+      requester: params.requester,
     });
   }
 
