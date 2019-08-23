@@ -71,7 +71,7 @@ export class ExpressAuthRouteDriver {
       library: this.library,
     });
 
-    LearningOutcomeRouteHandler.initialize({
+    LearningOutcomeRouteHandler.initializePrivate({
       router,
       dataStore: this.dataStore,
     });
