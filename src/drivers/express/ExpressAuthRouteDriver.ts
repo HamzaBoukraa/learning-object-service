@@ -104,6 +104,7 @@ export class ExpressAuthRouteDriver {
       try {
         const id = req.params.id;
         await updateReadme({
+          requester: req.user,
           id,
           dataStore: this.dataStore,
         });
