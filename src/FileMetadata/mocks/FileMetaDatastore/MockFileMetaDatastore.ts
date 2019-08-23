@@ -49,7 +49,7 @@ export class MockFileMetaDatastore implements FileMetaDatastore {
   deleteFileMeta(id: string): Promise<void> {
     return Promise.resolve();
   }
-  deleteAllFileMeta(learningObjectId: string): Promise<void> {
+  deleteAllFileMetadata(learningObjectId: string): Promise<void> {
     return Promise.resolve();
   }
 }

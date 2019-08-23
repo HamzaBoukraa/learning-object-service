@@ -148,7 +148,9 @@ describe('AuthorizationManager', () => {
       expect(requesterIsPrivileged(undefined)).toBe(false);
     });
     it('should return false when accessGroups are undefined', () => {
-      expect(requesterIsPrivileged({...requester, accessGroups: undefined})).toBe(false);
+      expect(
+        requesterIsPrivileged({ ...requester, accessGroups: undefined }),
+      ).toBe(false);
     });
   });
 
@@ -358,6 +360,7 @@ describe('AuthorizationManager', () => {
         organization: 'My Org',
       },
       collection: 'special-collection',
+      children: [],
       contributors: [],
       date: Date.now().toString(),
       description: '',
@@ -365,6 +368,7 @@ describe('AuthorizationManager', () => {
       name: 'My LO',
       revision: 0,
       status: LearningObject.Status.RELEASED,
+      hasRevision: false,
     };
     const requester = {
       name: '',
@@ -852,12 +856,14 @@ describe('AuthorizationManager', () => {
       },
       collection: 'special-collection',
       contributors: [],
+      children: [],
       date: Date.now().toString(),
       description: '',
       length: 'nanomodule',
       name: 'My LO',
       revision: 0,
       status: LearningObject.Status.RELEASED,
+      hasRevision: false,
     };
     const requester = {
       name: '',
@@ -1059,6 +1065,85 @@ describe('AuthorizationManager', () => {
           } catch (e) {
             expect(e).toBeInstanceOf(ResourceError);
           }
+        });
+      });
+      describe('and the requester is a curator within the Learning Object collection', () => {
+        requester.accessGroups = [
+          `${AccessGroup.CURATOR}@${summary.collection}`,
+        ];
+        it('should not allow write access and throw an error', () => {
+          try {
+            authorizeWriteAccess({
+              learningObject: summary,
+              requester,
+            });
+          } catch (e) {
+            expect(e).toBeInstanceOf(ResourceError);
+          }
+        });
+      });
+      describe('and the requester is a reviewer within the Learning Object collection', () => {
+        requester.accessGroups = [
+          `${AccessGroup.REVIEWER}@${summary.collection}`,
+        ];
+        it('should not allow write access and throw an error', () => {
+          try {
+            authorizeWriteAccess({
+              learningObject: summary,
+              requester,
+            });
+          } catch (e) {
+            expect(e).toBeInstanceOf(ResourceError);
+          }
+        });
+      });
+      describe('and the requester is an editor', () => {
+        requester.accessGroups = [AccessGroup.EDITOR];
+        it('should allow write access and not throw an error', () => {
+          expect(
+            authorizeWriteAccess({
+              learningObject: summary,
+              requester,
+            }),
+          ).toBeUndefined();
+        });
+      });
+      describe('and the requester is an admin', () => {
+        requester.accessGroups = [AccessGroup.ADMIN];
+        it('should allow write access and not throw an error', () => {
+          expect(
+            authorizeWriteAccess({
+              learningObject: summary,
+              requester,
+            }),
+          ).toBeUndefined();
+        });
+      });
+    });
+
+    describe('when the Learning Object is in waiting', () => {
+      summary.status = LearningObject.Status.WAITING;
+      describe('and the requester is a visitor', () => {
+        it('should not allow write access and throw an error', () => {
+          try {
+            authorizeWriteAccess({
+              learningObject: summary,
+              requester,
+            });
+          } catch (e) {
+            expect(e).toBeInstanceOf(ResourceError);
+          }
+        });
+      });
+      describe('and the requester is the author', () => {
+        requester.username = summary.author.username;
+        it('should allow write access and not throw an error', () => {
+          expect(
+            authorizeWriteAccess({
+              learningObject: summary,
+              requester,
+            }),
+          ).toBeUndefined();
         });
       });
       describe('and the requester is a curator within the Learning Object collection', () => {

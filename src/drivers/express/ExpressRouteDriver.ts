@@ -1,19 +1,14 @@
 import {
   DataStore,
-  FileManager,
   LibraryCommunicator,
 } from '../../shared/interfaces/interfaces';
 import { Router } from 'express';
 import { LearningObjectInteractor } from '../../interactors/interactors';
 import * as LearningObjectStatsRouteHandler from '../../LearningObjectStats/LearningObjectStatsRouteHandler';
-import { UserToken } from '../../shared/types';
-import { initializeSingleFileDownloadRouter } from '../../SingleFileDownload/RouteHandler';
-import * as LearningObjectRouteHandler from '../../LearningObjects/LearningObjectRouteHandler';
+import * as LearningObjectRouteHandler from '../../LearningObjects/adapters/LearningObjectRouteHandler';
 import { initializeCollectionRouter } from '../../Collections/RouteHandler';
 import {
-  ResourceError,
   mapErrorToResponseData,
-  ServiceError,
 } from '../../shared/errors';
 import { LearningObject } from '../../shared/entity';
 import { initializePublic as initializePublicHierarchyRoutes } from '../../LearningObjects/Hierarchy/HierarchyRouteHandler';
@@ -26,15 +21,13 @@ export class ExpressRouteDriver {
   constructor(
     private dataStore: DataStore,
     private library: LibraryCommunicator,
-    private fileManager: FileManager,
   ) {}
 
   public static buildRouter(
     dataStore: DataStore,
     library: LibraryCommunicator,
-    fileManager: FileManager,
   ): Router {
-    const e = new ExpressRouteDriver(dataStore, library, fileManager);
+    const e = new ExpressRouteDriver(dataStore, library);
     const router: Router = Router();
     e.setRoutes(router);
     return router;
@@ -62,7 +55,6 @@ export class ExpressRouteDriver {
 
         objectResponse = await LearningObjectInteractor.searchObjects({
             dataStore: this.dataStore,
-            library: this.library,
             query,
             userToken,
         });
@@ -78,69 +70,15 @@ export class ExpressRouteDriver {
     });
     initializePublicHierarchyRoutes({ router, dataStore: this.dataStore });
 
-    router
-      .route('/learning-objects/:username/:learningObjectName')
-      .get(async (req, res) => {
-        try {
-          const username = req.params.username;
-          const learningObjectName = req.params.learningObjectName;
-          const userToken = req.user;
-          const revision = req.query.revision;
-          const object = await LearningObjectInteractor.loadLearningObject({
-            dataStore: this.dataStore,
-            library: this.library,
-            username,
-            learningObjectName,
-            userToken,
-            revision,
-          });
-          res.status(200).send(object.toPlainObject());
-        } catch (e) {
-          const { code, message } = mapErrorToResponseData(e);
-          res.status(code).json({message});
-        }
-      });
-
     initializeCollectionRouter({ router, dataStore: this.dataStore });
 
-    router.get('/users/:username/learning-objects', async (req, res) => {
-      try {
-        const query = req.query;
-        const userToken: UserToken = req.user;
-        const loadChildren: boolean = query.children;
-        delete query.children;
-        const objects = await LearningObjectInteractor.loadUsersObjectSummaries(
-          {
-            query,
-            userToken,
-            loadChildren,
-            dataStore: this.dataStore,
-            library: this.library,
-            username: req.params.username,
-          },
-        );
-        res.status(200).send(objects.map(obj => obj.toPlainObject()));
-      } catch (e) {
-        const { code, message } = mapErrorToResponseData(e);
-        res.status(code).json({ message });
-      }
-    });
-
+    /**
+     * @deprecated
+     */
     router.get(
       '/users/:username/learning-objects/profile',
       async (req, res) => {
-        try {
-          const objects = await LearningObjectInteractor.loadProfile({
-            dataStore: this.dataStore,
-            username: req.params.username,
-            userToken: req.user,
-          });
-
-          res.status(200).send(objects.map(x => x.toPlainObject()));
-        } catch (e) {
-          const { code, message } = mapErrorToResponseData(e);
-          res.status(code).json({message});
-        }
+        res.redirect(301, req.originalUrl.replace('/profile', ''));
       },
     );
 
@@ -153,12 +91,6 @@ export class ExpressRouteDriver {
       router,
       dataStore: this.dataStore,
       library: this.library,
-    });
-
-    initializeSingleFileDownloadRouter({
-      router,
-      dataStore: this.dataStore,
-      fileManager: this.fileManager,
     });
   }
 }

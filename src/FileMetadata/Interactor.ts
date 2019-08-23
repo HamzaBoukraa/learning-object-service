@@ -1,5 +1,9 @@
-import { FileMetadata as Module } from '.';
-import { FileMetaDatastore, LearningObjectGateway } from './interfaces';
+import { FileMetadataModule } from './FileMetadataModule';
+import {
+  FileMetaDatastore,
+  LearningObjectGateway,
+  FileManagerGateway,
+} from './interfaces';
 import {
   LearningObjectFile,
   Requester,
@@ -10,21 +14,34 @@ import {
   FileMetadataInsert,
   FileMetadataFilter,
 } from './typings';
-import { handleError } from '../interactors/LearningObjectInteractor';
-import { ResourceError, ResourceErrorReason } from '../shared/errors';
+import {
+  ResourceError,
+  ResourceErrorReason,
+  handleError,
+} from '../shared/errors';
 import {
   authorizeWriteAccess,
   authorizeReadAccess,
 } from '../shared/AuthorizationManager';
 import { sanitizeObject, toNumber } from '../shared/functions';
+import { reportError } from '../shared/SentryConnector';
+import * as mime from 'mime-types';
+import { LearningObject } from '../shared/entity';
+
+const DEFAULT_MIME_TYPE = 'application/octet-stream';
+const MICROSOFT_PREVIEW_URL = process.env.MICROSOFT_PREVIEW_URL;
+const FILE_API_URI = process.env.LEARNING_OBJECT_API;
 
 namespace Drivers {
-  export const datastore = () => Module.resolveDependency(FileMetaDatastore);
+  export const datastore = () =>
+    FileMetadataModule.resolveDependency(FileMetaDatastore);
 }
 
 namespace Gateways {
   export const learningObjectGateway = () =>
-    Module.resolveDependency(LearningObjectGateway);
+    FileMetadataModule.resolveDependency(LearningObjectGateway);
+  export const fileManager = () =>
+    FileMetadataModule.resolveDependency(FileManagerGateway);
 }
 
 /**
@@ -43,7 +60,7 @@ namespace Gateways {
  *
  * @returns {Promise<LearningObjectFile>}
  */
-export async function getFileMeta({
+export async function getFileMetadata({
   requester,
   learningObjectId,
   id,
@@ -78,15 +95,36 @@ export async function getFileMeta({
 
       authorizeReadAccess({ learningObject, requester });
 
-      return Drivers.datastore()
-        .fetchFileMeta(id)
-        .then(transformFileMetaToLearningObjectFile);
+      const file = await Drivers.datastore().fetchFileMeta(id);
+      if (!file) {
+        throw new ResourceError(
+          `Unable to get file metadata for file ${id}. File does not exist.`,
+          ResourceErrorReason.NOT_FOUND,
+        );
+      }
+      return transformFileMetaToLearningObjectFile({
+        authorUsername: learningObject.author.username,
+        learningObjectId: learningObject.author.id,
+        file,
+      });
     }
-
-    return Gateways.learningObjectGateway().getReleasedFile({
-      id: learningObjectId,
-      fileId: id,
-    });
+    const releasedObject: LearningObjectSummary = await Gateways.learningObjectGateway().getReleasedLearningObjectSummary(
+      learningObjectId,
+    );
+    return Gateways.learningObjectGateway()
+      .getReleasedFile({
+        id: learningObjectId,
+        fileId: id,
+      })
+      .then(file => {
+        file.previewUrl = getFilePreviewUrl({
+          authorUsername: releasedObject.author.username,
+          learningObjectId: releasedObject.id,
+          fileId: file.id,
+          extension: file.extension,
+        });
+        return file;
+      });
   } catch (e) {
     handleError(e);
   }
@@ -107,7 +145,7 @@ export async function getFileMeta({
  * @param {number} learningObjectRevision [The revision number of the Learning Object]
  * @returns {Promise<LearningObjectFile[]>}
  */
-export async function getAllFileMeta({
+export async function getAllFileMetadata({
   requester,
   learningObjectId,
   filter,
@@ -129,9 +167,12 @@ export async function getAllFileMeta({
     });
     let releasedFiles$: Promise<LearningObjectFile[]>;
     if (!filter || filter === 'released') {
-      releasedFiles$ = Gateways.learningObjectGateway().getReleasedFiles(
+      const releasedObject: LearningObjectSummary = await Gateways.learningObjectGateway().getReleasedLearningObjectSummary(
         learningObjectId,
       );
+      releasedFiles$ = Gateways.learningObjectGateway()
+        .getReleasedFiles(learningObjectId)
+        .then(files => files.map(appendFilePreviewUrls(releasedObject)));
       if (filter === 'released') return releasedFiles$;
     }
     const learningObject: LearningObjectSummary = await Gateways.learningObjectGateway().getWorkingLearningObjectSummary(
@@ -147,7 +188,15 @@ export async function getAllFileMeta({
 
     const workingFiles$ = Drivers.datastore()
       .fetchAllFileMeta(learningObjectId)
-      .then(files => files.map(transformFileMetaToLearningObjectFile));
+      .then(files =>
+        files.map(file =>
+          transformFileMetaToLearningObjectFile({
+            authorUsername: learningObject.author.username,
+            learningObjectId: learningObject.id,
+            file,
+          }),
+        ),
+      );
 
     if (filter === 'unreleased') return workingFiles$;
 
@@ -161,6 +210,35 @@ export async function getAllFileMeta({
   } catch (e) {
     handleError(e);
   }
+}
+
+/**
+ * Appends file preview urls to files
+ *
+ * @param {LearningObjectSummary} learningObject
+ * @returns {(
+ *   value: LearningObjectFile,
+ *   index: number,
+ *   array: LearningObjectFile[],
+ * ) => LearningObjectFile}
+ */
+function appendFilePreviewUrls(
+  learningObject: LearningObjectSummary,
+): (
+  value: LearningObjectFile,
+  index: number,
+  array: LearningObjectFile[],
+) => LearningObjectFile {
+  return file => {
+    file.previewUrl = getFilePreviewUrl({
+      authorUsername: learningObject.author.username,
+      learningObjectId: learningObject.id,
+      unreleased: learningObject.status !== LearningObject.Status.RELEASED,
+      fileId: file.id,
+      extension: file.extension,
+    });
+    return file;
+  };
 }
 
 /**
@@ -264,13 +342,20 @@ function handleFileMetadataInsert(
         updates: insert,
       });
       return transformFileMetaToLearningObjectFile({
-        ...existingFile,
-        ...insert,
+        authorUsername: learningObject.author.username,
+        learningObjectId: learningObject.id,
+        file: { ...existingFile, ...insert },
       });
     }
     return Drivers.datastore()
       .insertFileMeta(insert)
-      .then(transformFileMetaToLearningObjectFile);
+      .then(insertedFile =>
+        transformFileMetaToLearningObjectFile({
+          authorUsername: learningObject.author.username,
+          learningObjectId: learningObject.id,
+          file: insertedFile,
+        }),
+      );
   };
 }
 
@@ -282,14 +367,14 @@ function handleFileMetadataInsert(
  *
  * @param {FileMetadata[]} files [The array of file metadata to generate inserts for]
  * @param {LearningObjectSummary} learningObject [Information about the Learning Object the files belong to]
- * @returns
+ * @returns {FileMetadataInsert[]}
  */
 function generateFileMetadataInserts(
   files: FileMetadata[],
   learningObject: LearningObjectSummary,
-) {
+): FileMetadataInsert[] {
   const inserts: FileMetadataInsert[] = [];
-  files.forEach(async file => {
+  for (const file of files) {
     const cleanFile = sanitizeObject({ object: file }, false);
     validateFileMeta(cleanFile);
     const newInsert: FileMetadataInsert = generateFileMetaInsert(
@@ -297,7 +382,7 @@ function generateFileMetadataInserts(
       learningObject,
     );
     inserts.push(newInsert);
-  });
+  }
   return inserts;
 }
 
@@ -322,7 +407,7 @@ function generateFileMetaInsert(
     fullPath: file.fullPath || file.name,
     lastUpdatedDate: Date.now().toString(),
     learningObjectId: learningObject.id,
-    mimeType: file.mimeType,
+    mimeType: file.mimeType || mime.lookup(extension) || DEFAULT_MIME_TYPE,
     name: file.name,
     packageable: isPackageable(file.size),
     size: file.size,
@@ -446,7 +531,24 @@ export async function deleteFileMeta({
 
     authorizeWriteAccess({ learningObject, requester });
 
+    const fileMeta = await Drivers.datastore().fetchFileMeta(id);
+
+    if (!fileMeta) {
+      throw new ResourceError(
+        `Unable to delete file ${id}. File does not exist.`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+
     await Drivers.datastore().deleteFileMeta(id);
+    Gateways.fileManager()
+      .deleteFile({
+        authorUsername: learningObject.author.username,
+        learningObjectId: learningObject.id,
+        learningObjectRevisionId: learningObject.revision,
+        path: fileMeta.fullPath,
+      })
+      .catch(reportError);
     Gateways.learningObjectGateway().updateObjectLastModifiedDate(
       learningObjectId,
     );
@@ -466,7 +568,7 @@ export async function deleteFileMeta({
  *
  * @returns {Promise<void>}
  */
-export async function deleteAllFileMeta({
+export async function deleteAllFileMetadata({
   requester,
   learningObjectId,
 }: {
@@ -491,7 +593,15 @@ export async function deleteAllFileMeta({
 
     authorizeWriteAccess({ learningObject, requester });
 
-    await Drivers.datastore().deleteAllFileMeta(learningObjectId);
+    await Drivers.datastore().deleteAllFileMetadata(learningObjectId);
+    Gateways.fileManager()
+      .deleteFolder({
+        authorUsername: learningObject.author.username,
+        learningObjectId: learningObject.id,
+        learningObjectRevisionId: learningObject.revision,
+        path: '/',
+      })
+      .catch(reportError);
   } catch (e) {
     handleError(e);
   }
@@ -501,22 +611,37 @@ export async function deleteAllFileMeta({
  * Transforms file metadata document into LearningObjectFile
  *
  * @param {FileMetadataDocument} file [File metadata to use to create LearningObjectFile]
+ * @param {string} learningObjectId [Id of the LearningObject the file meta belongs to]
+ * @param {string} authorUsername [Username of the LearningObject's author the file meta belongs to]
  * @returns {LearningObjectFile}
  */
-function transformFileMetaToLearningObjectFile(
-  file: FileMetadataDocument,
-): LearningObjectFile {
+function transformFileMetaToLearningObjectFile({
+  authorUsername,
+  learningObjectId,
+  file,
+}: {
+  authorUsername: string;
+  learningObjectId: string;
+  file: FileMetadataDocument;
+}): LearningObjectFile {
   return {
     id: file.id,
     name: file.name,
     fileType: file.mimeType,
     extension: file.extension,
-    url: '',
+    previewUrl: getFilePreviewUrl({
+      authorUsername,
+      learningObjectId,
+      fileId: file.id,
+      extension: file.extension,
+      unreleased: true,
+    }),
     date: file.lastUpdatedDate,
     fullPath: file.fullPath,
     size: file.size,
     description: file.description,
     packageable: file.packageable,
+    storageRevision: file.storageRevision,
   };
 }
 
@@ -579,10 +704,6 @@ function validateFileMeta(file: FileMetadata) {
     invalidInput.message = 'File metadata must contain a valid ETag.';
     throw invalidInput;
   }
-  if (!Validators.stringHasContent(file.mimeType)) {
-    invalidInput.message = 'File metadata must contain a valid mimeType.';
-    throw invalidInput;
-  }
   if (!Validators.stringHasContent(file.name)) {
     invalidInput.message = 'File metadata must contain a file name.';
     throw invalidInput;
@@ -634,4 +755,103 @@ namespace Validators {
   export function valueIsNumber(val: number): boolean {
     return valueDefined(val) && !isNaN(+val);
   }
+}
+
+const MICROSOFT_EXTENSIONS = [
+  'doc',
+  'docx',
+  'xls',
+  'xlsx',
+  'ppt',
+  'pptx',
+  'odt',
+  'ott',
+  'oth',
+  'odm',
+];
+
+const CAN_PREVIEW = ['pdf', ...MICROSOFT_EXTENSIONS];
+
+/**
+ * Returns preview url for file based on extension
+ * If the file's extension matches a Microsoft file extension, the Microsoft preview url for the file is returned
+ * If the file's extension can be opened in browser, the file's url is returned
+ * If the extension does not match any case, an empty string is returned.
+ *
+ * @export
+ * @param {string} learningObjectId [Id of the LearningObject the file meta belongs to]
+ * @param {string} authorUsername [Username of the LearningObject's author the file meta belongs to]
+ * @param {string} fileId [The id of the file metadata]
+ * @param {string} extension [The file type of the file including the '.' (ie. '.pdf')]
+ *
+ * @returns {string} [Preview url]
+ */
+export function getFilePreviewUrl({
+  authorUsername,
+  learningObjectId,
+  fileId,
+  extension,
+  unreleased,
+}: {
+  authorUsername: string;
+  learningObjectId: string;
+  fileId: string;
+  extension: string;
+  unreleased?: boolean;
+}): string {
+  const extensionType = extension
+    ? extension
+        .trim()
+        .toLowerCase()
+        .replace('.', '')
+    : null;
+  if (CAN_PREVIEW.includes(extensionType)) {
+    if (MICROSOFT_EXTENSIONS.includes(extensionType)) {
+      return generatePreviewUrl({
+        authorUsername,
+        learningObjectId,
+        fileId,
+        unreleased,
+        microsoftPreview: true,
+      });
+    }
+    return generatePreviewUrl({
+      authorUsername,
+      learningObjectId,
+      fileId,
+      unreleased,
+    });
+  }
+  return null;
+}
+
+/**
+ * Generates preview url for a file.
+ *
+ * @param {string} learningObjectId [Id of the LearningObject the file meta belongs to]
+ * @param {string} authorUsername [Username of the LearningObject's author the file meta belongs to]
+ * @param {string} fileId [The id of the file metadata]
+ * @param {boolean} microsoftPreview [Whether or not the file can be previewed using Microsoft's file previewer]
+ * @returns {string}
+ */
+function generatePreviewUrl({
+  learningObjectId,
+  authorUsername,
+  fileId,
+  unreleased,
+  microsoftPreview,
+}: {
+  learningObjectId: string;
+  authorUsername: string;
+  fileId: string;
+  unreleased?: boolean;
+  microsoftPreview?: boolean;
+}): string {
+  let fileSource =
+    `${FILE_API_URI}/users/${authorUsername}/learning-objects/${learningObjectId}/materials/files/${fileId}/download` +
+    `?status=${unreleased ? 'unreleased' : 'released'}`;
+  if (microsoftPreview) {
+    return `${MICROSOFT_PREVIEW_URL}?src=${fileSource}`;
+  }
+  return fileSource + '&open=true';
 }

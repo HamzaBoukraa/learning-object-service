@@ -56,22 +56,6 @@ export class SubmittableLearningObject extends LearningObject {
   }
 
   /**
-   * Adds SubmittableLearningObject to this object's children
-   * If not a SubmittableLearningObject a new SubmittableLearningObject is created with outcome's properties and added.
-   *
-   * @param {SubmittableLearningObject} object
-   * @returns {number}
-   * @memberof SubmittableLearningObject
-   */
-  addChild(object: SubmittableLearningObject): number {
-    return super.addChild(
-      object instanceof SubmittableLearningObject
-        ? object
-        : new SubmittableLearningObject(object),
-    );
-  }
-
-  /**
    * Creates an instance of SubmittableLearningObject.
    * @param {LearningObject} object
    * @memberof SubmittableLearningObject
@@ -80,7 +64,6 @@ export class SubmittableLearningObject extends LearningObject {
     super(object);
     this.description = object.description;
     this.validateOutcomes(object.outcomes as SubmittableLearningOutcome[]);
-    this.validateChildren(object.children as SubmittableLearningObject[]);
   }
 
   /**
@@ -98,19 +81,6 @@ export class SubmittableLearningObject extends LearningObject {
         SUBMITTABLE_LEARNING_OBJECT_ERRORS.INVALID_OUTCOMES,
         'outcomes',
       );
-    }
-  }
-
-  /**
-   * Validates children are SubmittableOutcomes
-   *
-   * @private
-   * @param {SubmittableLearningObject[]} children
-   * @memberof SubmittableLearningObject
-   */
-  private validateChildren(children: SubmittableLearningObject[]): void {
-    if (children && children.length) {
-      children.map(child => this.addChild(child));
     }
   }
 }
@@ -150,19 +120,6 @@ export namespace SubmittableLearningObject {
       );
     }
   }
-  export function validateChildren(children: LearningObject[]) {
-    if (children && children.length) {
-      const errors = children
-        .map((child, index) => ({
-          index,
-          ...SubmittableLearningObject.validateObject(child),
-        }))
-        .filter(err => !!err && Object.keys(err).length > 1);
-      if (errors.length) {
-        throw { property: 'children', message: errors };
-      }
-    }
-  }
 
   export function validateObject(
     object: LearningObject,
@@ -180,10 +137,6 @@ export namespace SubmittableLearningObject {
       {
         function: SubmittableLearningObject.validateOutcomes,
         arguments: [object.outcomes],
-      },
-      {
-        function: SubmittableLearningObject.validateChildren,
-        arguments: [object.children],
       },
     ];
     validationFunctions.forEach(func => {

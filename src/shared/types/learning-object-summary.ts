@@ -27,9 +27,9 @@ export interface AuthorSummary {
  * An interface representation of the LearningObjectSummary type
  *
  * @export
- * @interface LearningObjectSummary
+ * @interface LearningObjectChildSummary
  */
-export interface LearningObjectSummary {
+export interface LearningObjectChildSummary {
   /**
    * Unique identifier of the Learning Object
    */
@@ -64,11 +64,28 @@ export interface LearningObjectSummary {
    */
   name: string;
   /**
-   * The version number of the Learning Object
-   */
-  revision: number;
-  /**
    * The stage within the review pipeline that the Learning Object exists
    */
   status: string;
 }
+/**
+ * An interface representation of the full learning object summary with the revision information included.
+ *
+ * @exports
+ * @interface LearningObjectSummary
+ */
+export interface LearningObjectSummary extends LearningObjectChildSummary {
+  /**
+   * Flag indicating whether or not a Learning Object has a working copy with dissimilar properties
+   */
+  hasRevision: boolean;
+  /**
+   * The version number of the Learning Object
+   */
+  revision: number;
+  /**
+   * Summary of Learning Objects that exist in this Learning Object's hierarchy
+   */
+  children: LearningObjectChildSummary [];
+}
+

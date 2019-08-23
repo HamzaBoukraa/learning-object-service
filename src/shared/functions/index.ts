@@ -1,5 +1,5 @@
 import { LearningObject, User } from '../entity';
-import { LearningObjectSummary, AuthorSummary } from '../types';
+import { LearningObjectSummary, AuthorSummary, LearningObjectChildSummary } from '../types';
 
 /**
  * Formats text properly for usage in DataStore
@@ -15,7 +15,7 @@ export function sanitizeText(text: string, lowerCase = true): string {
     if (lowerCase) {
       clean = clean.toLowerCase();
     }
-    clean.trim();
+    clean = clean.trim();
   }
 
   return clean;
@@ -92,6 +92,22 @@ export function toNumber(value: any): number {
 }
 
 /**
+ *
+ * Converts value to boolean if not yet a boolean
+ * @param {*} value
+ * @returns {boolean}
+ */
+export function toBoolean(value: any): boolean {
+  if (value === 'true' || value === true) {
+    return true;
+  }
+  if (value === 'false' || value === false) {
+    return false;
+  }
+  return false;
+}
+
+/**
  * Converts LearningObject type into LearningObjectSummary
  *
  * @private
@@ -104,10 +120,14 @@ export function mapLearningObjectToSummary(
   return {
     id: object.id,
     author: mapAuthorToSummary(object.author),
+    children: object.children || [],
     collection: object.collection,
-    contributors: object.contributors.map(mapAuthorToSummary),
+    contributors: object.contributors
+      ? object.contributors.map(mapAuthorToSummary)
+      : [],
     date: object.date,
     description: object.description,
+    hasRevision: object.hasRevision || false,
     length: object.length,
     name: object.name,
     revision: object.revision,
@@ -115,6 +135,30 @@ export function mapLearningObjectToSummary(
   };
 }
 
+/**
+ * Converts Child LearningObject type into LearningObjectChildSummary
+ *
+ * @private
+ * @param {Partial<LearningObject>} object [The document data to convert to AuthorSummary]
+ * @returns {LearningObjectChildSummary}
+ */
+export function mapChildLearningObjectToSummary(
+  object: Partial<LearningObject>,
+): LearningObjectChildSummary {
+  return {
+    id: object.id,
+    author: mapAuthorToSummary(object.author),
+    collection: object.collection,
+    contributors: object.contributors
+      ? object.contributors.map(mapAuthorToSummary)
+      : [],
+    date: object.date,
+    description: object.description,
+    length: object.length,
+    name: object.name,
+    status: object.status,
+  };
+}
 /**
  * Converts  User type into AuthorSummary
  *
@@ -129,4 +173,31 @@ export function mapAuthorToSummary(author: Partial<User>): AuthorSummary {
     name: author.name,
     organization: author.organization,
   };
+}
+
+/**
+ * Capitalizes the first letter of each word in the provided string.
+ *
+ * @export
+ * @param {string} text
+ * @returns {string}
+ */
+export function titleCase(text: string): string {
+  const textArr = text.split(' ');
+  for (let i = 0; i < textArr.length; i++) {
+    let word = textArr[i];
+    word = word.charAt(0).toUpperCase() + word.slice(1, word.length + 1);
+    textArr[i] = word;
+  }
+  return textArr.join(' ');
+}
+
+/**
+ * Replaces invalid file path characters in a Learning Object's name with _ characters
+ *
+ * @param {string} path
+ * @returns {string}
+ */
+export function sanitizeLearningObjectName(path: string): string {
+  return path.replace(/[\\/:"*?<>|]/gi, '_');
 }

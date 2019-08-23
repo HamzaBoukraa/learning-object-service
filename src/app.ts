@@ -3,26 +3,28 @@ import * as http from 'http';
 import * as express from 'express';
 import { reportError } from './shared/SentryConnector';
 
-import { MongoDriver, S3Driver, ExpressDriver } from './drivers/drivers';
-import {
-  FileManager,
-  LibraryCommunicator,
-  DataStore,
-} from './shared/interfaces/interfaces';
+import { MongoDriver, ExpressDriver } from './drivers/drivers';
+import { LibraryCommunicator, DataStore } from './shared/interfaces/interfaces';
 import { LibraryDriver } from './drivers/LibraryDriver';
 import { MongoConnector } from './shared/Mongo/MongoConnector';
-import { LearningObjectAdapter } from './LearningObjects/LearningObjectAdapter';
+import { LearningObjectAdapter } from './LearningObjects/adapters/LearningObjectAdapter';
 import { LearningObjectSearch } from './LearningObjectSearch';
 import { HierarchyAdapter } from './LearningObjects/Hierarchy/HierarchyAdapter';
-import { FileManagerAdapter } from './FileManager/FileManagerAdapter';
 import { BundlerModule } from './LearningObjects/Publishing/Bundler/BundlerModule';
-import { FileMetadata } from './FileMetadata';
+import { FileMetadataModule } from './FileMetadata/FileMetadataModule';
+import { FileManagerModule } from './FileManager/FileManagerModule';
+import { LearningObjectsModule } from './LearningObjects/LearningObjectsModule';
+import { LearningObjectSubmissionAdapter } from './LearningObjectSubmission/adapters/LearningObjectSubmissionAdapter';
+import { ElasticsearchSubmissionPublisher } from './LearningObjectSubmission/ElasticsearchSubmissionPublisher';
+import { FileAccessIdentitiesAdapter } from './FileAccessIdentities/adapters/FileAccessIdentitiesAdapter/FileAccessIdentitiesAdapter';
+import { FileAccessIdentities } from './FileAccessIdentities';
 
 // ----------------------------------------------------------------------------------
 // Initializations
 // ----------------------------------------------------------------------------------
 
 const HTTP_SERVER_PORT = process.env.PORT || '3000';
+const KEEP_ALIVE_TIMEOUT = process.env.KEEP_ALIVE_TIMEOUT;
 
 let dburi: string;
 switch (process.env.NODE_ENV) {
@@ -48,9 +50,9 @@ switch (process.env.NODE_ENV) {
   default:
     break;
 }
-const fileManager: FileManager = new S3Driver();
 const library: LibraryCommunicator = new LibraryDriver();
 let dataStore: DataStore;
+const publisher = new ElasticsearchSubmissionPublisher();
 
 /**
  * Starts the application by
@@ -71,7 +73,7 @@ async function startApp() {
     await MongoConnector.open(dburi);
     dataStore = await MongoDriver.build(dburi);
     initModules();
-    const app = ExpressDriver.build(dataStore, fileManager, library);
+    const app = ExpressDriver.build(dataStore, library);
     startHttpServer(app);
   } catch (e) {
     reportError(e);
@@ -83,11 +85,15 @@ async function startApp() {
  */
 function initModules() {
   HierarchyAdapter.open(dataStore);
-  LearningObjectAdapter.open(dataStore, fileManager, library);
+  LearningObjectAdapter.open(dataStore, library);
+  LearningObjectSubmissionAdapter.open(publisher);
+  LearningObjectsModule.initialize();
   LearningObjectSearch.initialize();
-  FileManagerAdapter.open(fileManager);
+  FileManagerModule.initialize();
   BundlerModule.initialize();
-  FileMetadata.initialize();
+  FileMetadataModule.initialize();
+  FileAccessIdentities.initialize();
+  FileAccessIdentitiesAdapter.open();
 }
 
 /**
@@ -97,6 +103,7 @@ function initModules() {
  */
 function startHttpServer(app: express.Express): void {
   const server = http.createServer(app);
+  server.keepAliveTimeout = parseInt(process.env.KEEP_ALIVE_TIMEOUT, 10);
   server.listen(HTTP_SERVER_PORT, () =>
     console.log(
       `Learning Object Service running on http://localhost:${HTTP_SERVER_PORT}`,

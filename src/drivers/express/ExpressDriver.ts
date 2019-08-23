@@ -2,7 +2,6 @@ import * as express from 'express';
 import * as bodyParser from 'body-parser';
 import {
   DataStore,
-  FileManager,
   LibraryCommunicator,
 } from '../../shared/interfaces/interfaces';
 import {
@@ -23,24 +22,22 @@ import {
   sentryErrorHandler,
 } from '../../shared/SentryConnector';
 import { LearningObjectSearch } from '../../LearningObjectSearch';
-import { FileMetadata } from '../../FileMetadata';
+import { FileMetadataModule } from '../../FileMetadata/FileMetadataModule';
+import { FileManagerModule } from '../../FileManager/FileManagerModule';
+import { FileAccessIdentities } from '../../FileAccessIdentities';
 
 export class ExpressDriver {
   static app = express();
 
   static dataStore: DataStore;
 
-  static fileManager: FileManager;
-
   static library: LibraryCommunicator;
 
   static build(
     dataStore: DataStore,
-    fileManager: FileManager,
     library: LibraryCommunicator,
   ) {
     this.dataStore = dataStore;
-    this.fileManager = fileManager;
     this.library = library;
 
     this.attachConfigHandlers();
@@ -66,7 +63,8 @@ export class ExpressDriver {
     // These sentry handlers must come first
     this.app.use(sentryRequestHandler);
     this.app.use(sentryErrorHandler);
-    this.app.use(logger('dev'));
+    const logType = process.env.NODE_ENV === 'production' ? 'common' : 'dev';
+    this.app.use(logger(logType));
     this.app.use(
       bodyParser.urlencoded({
         extended: true,
@@ -87,14 +85,15 @@ export class ExpressDriver {
    */
   private static attachPublicRouters() {
     this.app.use(LearningObjectSearch.expressRouter);
-    this.app.use(FileMetadata.expressRouter);
+    this.app.use(FileMetadataModule.expressRouter);
+    this.app.use(FileManagerModule.expressRouter);
     this.app.use(
       ExpressRouteDriver.buildRouter(
         this.dataStore,
         this.library,
-        this.fileManager,
       ),
     );
+    this.app.use(FileAccessIdentities.expressRouter);
   }
 
   /**
@@ -106,7 +105,6 @@ export class ExpressDriver {
     this.app.use(
       ExpressAuthRouteDriver.buildRouter(
         this.dataStore,
-        this.fileManager,
         this.library,
       ),
     );

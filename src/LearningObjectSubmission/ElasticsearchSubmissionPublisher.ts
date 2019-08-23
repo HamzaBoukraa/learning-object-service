@@ -1,9 +1,9 @@
 import { LearningObject } from '../shared/entity';
-import * as request from 'request-promise';
-import { cleanLearningObject } from '../shared/elasticsearch';
 import { SubmissionPublisher } from './interactors/SubmissionPublisher';
 import { Client } from '@elastic/elasticsearch';
 import { reportError } from '../shared/SentryConnector';
+import { cleanLearningObjectSearchDocument } from '../shared/elasticsearch/CleanLearningObject/CleanLearningObject';
+import { LearningObjectMetadataUpdates } from '../shared/types';
 
 const INDEX_NAME = 'learning-objects';
 /**
@@ -39,11 +39,88 @@ export class ElasticsearchSubmissionPublisher implements SubmissionPublisher {
       await this.client.index({
         index: INDEX_NAME,
         type: '_doc',
-        body: cleanLearningObject(submission),
+        body: cleanLearningObjectSearchDocument(submission),
       });
     } catch (e) {
       reportError(e);
     }
+  }
+
+  /**
+   * @description
+   * In the case that an update does fail, an error will be reported for us to fix retrospectively.
+   * Until that is done, the searchable submissions will be out of date with the Learning Object data
+   * in storage.
+   * @inheritdoc
+   */
+  async updateSubmission(params: {
+    learningObjectId: string;
+    updates: LearningObjectMetadataUpdates;
+  }) {
+    const { learningObjectId, updates } = params;
+    let updateSource = this.formatUpdates(updates);
+    let learningObjectUpdateRequest = {
+      query: {
+        term: {
+          id: {
+            value: learningObjectId,
+          },
+        },
+      },
+      script: {
+        source: updateSource,
+      },
+    };
+    try {
+      await this.client.updateByQuery({
+        index: INDEX_NAME,
+        type: '_doc',
+        body: learningObjectUpdateRequest,
+      });
+    } catch (e) {
+      reportError(e);
+    }
+  }
+
+  /**
+   * format learning object updates to be used in the Elasticsearch 'updateByQuery'
+   * @param updates {LearningObjectMetadataUpdates}
+   */
+  private formatUpdates(updates: LearningObjectMetadataUpdates) {
+    let updateField = Object.keys(updates);
+    let updateSource = '';
+    updateField.map(field => {
+      if (Array.isArray(updates[field]) && updates[field].length) {
+        updateSource = this.formatArrayofUpdates(field, updates);
+      } else {
+        let updateValue = updates[field];
+        updateSource = updateSource.concat(
+          `ctx._source.${field} = \"${updateValue}\";`,
+        );
+      }
+    });
+    return updateSource;
+  }
+
+  /**
+   * fix the array structure of an update in order to make it compatible with
+   * Elasticsearch
+   * @param field {string} current learning object field that is an Array
+   * @param updates {LearningObjectMetadataUpdates} learning object updates
+   */
+  private formatArrayofUpdates(
+    field: string,
+    updates: LearningObjectMetadataUpdates,
+  ) {
+    let updateSource = '';
+    let formattedArr: string[] = [];
+    updateSource = `ctx._source.${field} = `;
+    updates[field].map((arrayVal: string, index: number) => {
+      let formattedString = `\"${arrayVal}\"`;
+      formattedArr.push(formattedString);
+    });
+    updateSource += `[${formattedArr}];`;
+    return updateSource;
   }
 
   /**
@@ -53,9 +130,9 @@ export class ElasticsearchSubmissionPublisher implements SubmissionPublisher {
    * the action on their end.
    * @inheritdoc
    */
-  async withdrawlSubmission(learningObjectID: string) {
+  async deleteSubmission(learningObjectID: string) {
     try {
-      const response = await this.client.deleteByQuery({
+      await this.client.deleteByQuery({
         index: INDEX_NAME,
         body: {
           query: {
@@ -65,7 +142,13 @@ export class ElasticsearchSubmissionPublisher implements SubmissionPublisher {
                   match: { id: learningObjectID },
                 },
                 {
-                  match: { status: LearningObject.Status.WAITING },
+                  bool: {
+                    should: [
+                      { term: { status: LearningObject.Status.WAITING } },
+                      { term: { status: LearningObject.Status.PROOFING } },
+                      { term: { status: LearningObject.Status.REVIEW } },
+                    ],
+                  },
                 },
               ],
             },

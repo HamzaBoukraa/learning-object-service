@@ -182,7 +182,7 @@ const SEED_OBJECTS = {
         name: 'Input Validation - CS0 - C',
         date: '1523479539862',
         length: 'nanomodule',
-        levels: [],
+        levels: ['undergraduate'],
         goals: [],
         outcomes: [],
         materials:

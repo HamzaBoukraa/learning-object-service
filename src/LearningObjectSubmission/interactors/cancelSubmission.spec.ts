@@ -1,50 +1,34 @@
 import { cancelSubmission } from './cancelSubmission';
 import { MockDataStore } from '../../tests/mock-drivers/MockDataStore';
-import { LearningObjectAdapter } from '../../LearningObjects/LearningObjectAdapter';
 import { SubmissionPublisher } from './SubmissionPublisher';
 import { LearningObject } from '../../shared/entity';
-import { Stubs } from '../../tests/stubs';
 import { MockLibraryDriver } from '../../tests/mock-drivers/MockLibraryDriver';
-import { FileMetadata } from '../../FileMetadata';
-import {
-  FileMetaDatastore,
-  LearningObjectGateway,
-} from '../../FileMetadata/interfaces';
-import {
-  MockFileMetaDatastore,
-  MockLearningObjectGateway,
-} from '../../FileMetadata/mocks';
+import { LearningObjectAdapter } from '../../LearningObjects/adapters/LearningObjectAdapter';
+import { LearningObjectSubmissionAdapter } from '../adapters/LearningObjectSubmissionAdapter';
+import { LearningObjectMetadataUpdates } from '../../shared/types';
+
 
 const dataStore = new MockDataStore();
 const library = new MockLibraryDriver();
 const publisher: SubmissionPublisher = {
-  withdrawlSubmission: (id: string) => {
+  deleteSubmission: (id: string) => {
     return Promise.resolve();
   },
   publishSubmission: (submission: LearningObject) => null,
+  updateSubmission: (params: {
+    learningObjectId: string,
+    updates: LearningObjectMetadataUpdates}) => null,
 };
 
 const learningObjectDataStore = new MockDataStore();
-LearningObjectAdapter.open(learningObjectDataStore, null, library);
+LearningObjectSubmissionAdapter.open(publisher);
+LearningObjectAdapter.open(learningObjectDataStore, library);
 
 describe('cancelSubmission', () => {
-  beforeAll(() => {
-    // FIXME: Module should not need to be initialized here, instead, the LearningObjectAdapter's interactor methods should resolve it instead of directly importing
-    // Or LearningObjectAdapter should be mocked
-    FileMetadata.providers = [
-      { provide: FileMetaDatastore, useClass: MockFileMetaDatastore },
-      { provide: LearningObjectGateway, useClass: MockLearningObjectGateway },
-    ];
-    FileMetadata.initialize();
-  });
-
-  afterAll(() => {
-    FileMetadata.destroy();
-  });
   it('should cancel the submission given a valid username and id', async done => {
     learningObjectDataStore.stubs.learningObject.status =
       LearningObject.Status.WAITING;
-    const spy = spyOn(publisher, 'withdrawlSubmission');
+    const spy = spyOn(publisher, 'deleteSubmission');
     await expect(
       cancelSubmission({
         dataStore,

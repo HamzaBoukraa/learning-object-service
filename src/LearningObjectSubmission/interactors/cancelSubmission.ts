@@ -1,6 +1,6 @@
 import { SubmissionDataStore } from '../SubmissionDatastore';
 import { ResourceError, ResourceErrorReason } from '../../shared/errors';
-import { LearningObjectAdapter } from '../../LearningObjects/LearningObjectAdapter';
+import { LearningObjectAdapter } from '../../LearningObjects/adapters/LearningObjectAdapter';
 import { SubmissionPublisher } from './SubmissionPublisher';
 import { LearningObject } from '../../shared/entity';
 import { UserToken } from '../../shared/types';
@@ -23,16 +23,22 @@ export async function cancelSubmission(params: {
   emailVerified: boolean;
 }): Promise<void> {
   const LearningObjectGateway = LearningObjectAdapter.getInstance();
-  const object = await LearningObjectGateway.getLearningObjectById({
+  const object = await LearningObjectGateway.getWorkingLearningObjectSummary({
     id: params.learningObjectId,
     requester: params.user,
-    filter: 'unreleased',
   });
 
   if (params.userId !== object.author.id) {
     throw new ResourceError(
       'Only the author may cancel a submission.',
       ResourceErrorReason.FORBIDDEN,
+    );
+  }
+
+  if (object.status !== LearningObject.Status.WAITING) {
+    throw new ResourceError(
+      `Learning Object with id ${params.learningObjectId} is not in Waiting`,
+      ResourceErrorReason.CONFLICT,
     );
   }
 
@@ -58,6 +64,5 @@ export async function cancelSubmission(params: {
       status: LearningObject.Status.UNRELEASED,
     },
   });
-  // FIXME: Rename to withdrawSubmission
-  await params.publisher.withdrawlSubmission(params.learningObjectId);
+  await params.publisher.deleteSubmission(params.learningObjectId);
 }

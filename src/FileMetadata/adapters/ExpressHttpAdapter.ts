@@ -39,7 +39,7 @@ async function getAllFiles(req: Request, res: Response) {
     const requester: Requester = req.user;
     const filter: FileMetadataFilter = req.query.status;
     const learningObjectId: string = req.params.loId;
-    const files = await Interactor.getAllFileMeta({
+    const files = await Interactor.getAllFileMetadata({
       requester,
       learningObjectId,
       filter,
@@ -87,7 +87,7 @@ async function getFile(req: Request, res: Response) {
     const learningObjectId: string = req.params.loId;
     const fileId: string = req.params.fileId;
 
-    const file = await Interactor.getFileMeta({
+    const file = await Interactor.getFileMetadata({
       requester,
       learningObjectId,
       filter,

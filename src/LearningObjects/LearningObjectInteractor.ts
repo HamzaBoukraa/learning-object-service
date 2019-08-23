@@ -1,53 +1,446 @@
 import { DataStore } from '../shared/interfaces/DataStore';
+import { LibraryCommunicator } from '../shared/interfaces/interfaces';
 import {
-  FileManager,
-  LibraryCommunicator,
-} from '../shared/interfaces/interfaces';
-import { generatePDF } from './PDFKitDriver';
-import {
-  LearningObjectUpdates,
+  CollectionAccessMap,
+  LearningObjectMetadataUpdates,
+  LearningObjectState,
+  LearningObjectSummary,
+  UserLearningObjectQuery,
+  UserLearningObjectSearchQuery,
   UserToken,
   VALID_LEARNING_OBJECT_UPDATES,
-  LearningObjectSummary,
+  LearningObjectChildSummary,
 } from '../shared/types';
-import { ResourceError, ResourceErrorReason } from '../shared/errors';
-import { reportError } from '../shared/SentryConnector';
-import { LearningObject } from '../shared/entity';
-import { handleError } from '../interactors/LearningObjectInteractor';
 import {
-  authorizeRequest,
-  requesterIsAuthor,
-  requesterIsAdminOrEditor,
-  hasReadAccessByCollection,
-  hasLearningObjectWriteAccess,
+  handleError,
+  ResourceError,
+  ResourceErrorReason,
+} from '../shared/errors';
+import { reportError } from '../shared/SentryConnector';
+import { LearningObject, User } from '../shared/entity';
+import {
   authorizeReadAccess,
+  authorizeRequest,
   authorizeWriteAccess,
+  getAccessGroupCollections,
+  getAuthorizedStatuses,
+  requesterIsEditor,
+  getCollectionAccessMap,
+  hasReadAccessByCollection,
+  requesterIsAdminOrEditor,
+  requesterIsAuthor,
+  requesterIsPrivileged,
 } from '../shared/AuthorizationManager';
-import { FileMeta, LearningObjectFilter, MaterialsFilter } from './typings';
+import {
+  LearningObjectFilter,
+  MaterialsFilter,
+  HierarchicalLearningObject,
+} from './typings';
 import * as PublishingService from './Publishing';
-import { mapLearningObjectToSummary } from '../shared/functions';
-import { FileMetadata } from '../FileMetadata';
+import {
+  mapLearningObjectToSummary,
+  sanitizeLearningObjectName,
+  sanitizeText,
+  toArray,
+  sanitizeObject,
+  toBoolean,
+  mapChildLearningObjectToSummary,
+} from '../shared/functions';
+import {
+  FileMetadataGateway,
+  FileManagerGateway,
+  ReadMeBuilder,
+} from './interfaces';
+import { LearningObjectsModule } from './LearningObjectsModule';
+import { LearningObjectSubmissionAdapter } from '../LearningObjectSubmission/adapters/LearningObjectSubmissionAdapter';
+import { UserGateway } from './interfaces/UserGateway';
+import { validateUpdates } from '../shared/entity/learning-object/validators';
 
-const LearningObjectState = {
-  UNRELEASED: [
-    LearningObject.Status.REJECTED,
-    LearningObject.Status.UNRELEASED,
-  ],
-  IN_REVIEW: [
-    LearningObject.Status.WAITING,
-    LearningObject.Status.REVIEW,
-    LearningObject.Status.PROOFING,
-  ],
-  RELEASED: [LearningObject.Status.RELEASED],
-  ALL: [
-    LearningObject.Status.REJECTED,
-    LearningObject.Status.UNRELEASED,
-    LearningObject.Status.WAITING,
-    LearningObject.Status.REVIEW,
-    LearningObject.Status.PROOFING,
-    LearningObject.Status.RELEASED,
-  ],
-};
+namespace Drivers {
+  export const readMeBuilder = () =>
+    LearningObjectsModule.resolveDependency(ReadMeBuilder);
+}
+namespace Gateways {
+  export const fileManager = () =>
+    LearningObjectsModule.resolveDependency(FileManagerGateway);
+  export const fileMetadata = () =>
+    LearningObjectsModule.resolveDependency(FileMetadataGateway);
+  export const user = () =>
+    LearningObjectsModule.resolveDependency(UserGateway);
+}
+
+/**
+ * Performs a search on the specified user's Learning Objects.
+ *
+ * *** NOTES ***
+ * If the specified user cannot be found, a NotFound ResourceError is thrown.
+ * Only the author and privileged users are allowed to view Learning Object drafts.
+ * "Drafts" are defined as 'not released' Learning Objects that have never been released or have a `revision` id of `0`, so
+ * if the `draftsOnly` filter is specified, the `status` filter must not have a value of `released`.
+ * Only authors can see drafts that are not submitted for review; `unreleased` || `rejected`.
+ * Admins and editors can see all Learning Objects submitted for review.
+ * Reviewers and curators can only see Learning Objects submitted for review to their collection.
+ *
+ *
+ * @async
+ *
+ * @returns {LearningObjectSummary[]} the user's learning objects found by the query
+ * @param params.dataStore
+ * @param params.authorUsername
+ * @param params.requester
+ * @param params.query
+ */
+export async function searchUsersObjects({
+  dataStore,
+  authorUsername,
+  requester,
+  query,
+}: {
+  dataStore: DataStore;
+  authorUsername: string;
+  requester: UserToken;
+  query?: UserLearningObjectQuery;
+}): Promise<LearningObjectSummary[]> {
+  try {
+    let { text, draftsOnly, status } = formatUserLearningObjectQuery(query);
+    if (!(await dataStore.findUserId(authorUsername))) {
+      throw new ResourceError(
+        `Cannot load Learning Objects for user ${authorUsername}. User ${authorUsername} does not exist.`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+    const isAuthor = requesterIsAuthor({ requester, authorUsername });
+    const isPrivileged = requesterIsPrivileged(requester);
+    const searchQuery: UserLearningObjectSearchQuery = {
+      text,
+      status,
+    };
+
+    if (draftsOnly) {
+      if (!isAuthor && !isPrivileged) {
+        throw new ResourceError(
+          `Invalid access. You are not authorized to view ${authorUsername}'s drafts.`,
+          ResourceErrorReason.INVALID_ACCESS,
+        );
+      }
+
+      if (!searchQuery.status) {
+        if (isAuthor) {
+          searchQuery.status = [
+            ...LearningObjectState.UNRELEASED,
+            ...LearningObjectState.IN_REVIEW,
+          ];
+        } else {
+          searchQuery.status = [...LearningObjectState.IN_REVIEW];
+        }
+      }
+
+      if (searchQuery.status.includes(LearningObject.Status.RELEASED)) {
+        throw new ResourceError(
+          'Illegal query arguments. Cannot specify both draftsOnly and released status filters.',
+          ResourceErrorReason.BAD_REQUEST,
+        );
+      }
+
+      searchQuery.revision = 0;
+    }
+
+    if (!isAuthor && !isPrivileged) {
+      return await dataStore.searchReleasedUserObjects(
+        searchQuery,
+        authorUsername,
+      );
+    }
+
+    let collectionAccessMap: CollectionAccessMap;
+
+    if (!isAuthor) {
+      searchQuery.status = getAuthorizedStatuses(searchQuery.status);
+      if (!requesterIsAdminOrEditor(requester)) {
+        const privilegedCollections = getAccessGroupCollections(requester);
+        collectionAccessMap = getCollectionAccessMap(
+          [],
+          privilegedCollections,
+          searchQuery.status,
+        );
+        searchQuery.status = searchQuery.status.includes(
+          LearningObject.Status.RELEASED,
+        )
+          ? LearningObjectState.RELEASED
+          : null;
+      }
+    }
+
+    return await dataStore.searchAllUserObjects(
+      searchQuery,
+      authorUsername,
+      collectionAccessMap,
+    );
+  } catch (e) {
+    handleError(e);
+  }
+}
+/**
+ * Formats search query to verify params are the appropriate types
+ *
+ * @private
+ * @static
+ * @param {UserLearningObjectQuery} query
+ * @returns {UserLearningObjectQuery}
+ */
+function formatUserLearningObjectQuery(
+  query: UserLearningObjectQuery,
+): UserLearningObjectQuery {
+  const formattedQuery = { ...query };
+  formattedQuery.text = sanitizeText(formattedQuery.text) || null;
+  formattedQuery.status = toArray(formattedQuery.status);
+  formattedQuery.draftsOnly = toBoolean(formattedQuery.draftsOnly);
+  return sanitizeObject({ object: formattedQuery }, false);
+}
+
+/**
+ * Load a full learning object by name
+ * @async
+ *
+ *
+ * @param dataStore [The datastore to fetch the Learning Object from]
+ * @param library [The library communicator used to fetch metrics about the Learning Object]
+ * @param username [The username of the Learning Object's author]
+ * @param learningObjectName [The name of the Learning Object]
+ * @param userToken [Information about the requester of the Learning Object]
+ *
+ * @returns {LearningObject}
+ */
+export async function getLearningObjectByName({
+  dataStore,
+  library,
+  username,
+  learningObjectName,
+  userToken,
+  revision,
+}: {
+  dataStore: DataStore;
+  library: LibraryCommunicator;
+  username: string;
+  learningObjectName: string;
+  userToken: UserToken;
+  revision?: boolean;
+}): Promise<LearningObject> {
+  try {
+    let learningObject: LearningObject;
+    if (!revision) {
+      learningObject = await loadReleasedLearningObjectByAuthorAndName({
+        dataStore,
+        library,
+        authorUsername: username,
+        learningObjectName,
+      }).catch(error =>
+        bypassNotFoundResourceError({
+          error,
+        }),
+      );
+    }
+    if (revision || !learningObject) {
+      learningObject = await loadLearningObjectByNameByAuthorAndName({
+        dataStore,
+        library,
+        authorUsername: username,
+        learningObjectName,
+        userToken,
+      });
+    }
+
+    return learningObject;
+  } catch (e) {
+    handleError(e);
+  }
+}
+
+/**
+ * Loads working copy of a Learning Object by author's username and Learning Object's name
+ *
+ * @private
+ * @static
+ * @param {{
+ *     dataStore: DataStore;
+ *     authorUsername: string;
+ *     learningObjectName: string;
+ *     userToken: UserToken;
+ *   }} params
+ * @returns
+ * @memberof LearningObjectInteractor
+ */
+async function loadLearningObjectByNameByAuthorAndName({
+  dataStore,
+  library,
+  authorUsername,
+  learningObjectName,
+  userToken,
+}: {
+  dataStore: DataStore;
+  library: LibraryCommunicator;
+  authorUsername: string;
+  learningObjectName: string;
+  userToken: UserToken;
+}) {
+  const authorId = await findAuthorIdByUsername({
+    dataStore,
+    username: authorUsername,
+  });
+  const learningObjectID = await getLearningObjectIdByAuthorAndName({
+    dataStore,
+    authorId,
+    authorUsername,
+    name: learningObjectName,
+  });
+  return getLearningObjectById({
+    dataStore,
+    library,
+    id: learningObjectID,
+    requester: userToken,
+    filter: 'unreleased',
+  });
+}
+
+/**
+ * Finds author's id by username.
+ * If id is not found a ResourceError is thrown
+ *
+ * @private
+ * @param {{
+ *     dataStore: DataStore;
+ *     username: string;
+ *   }} params
+ * @returns {Promise<string>}
+ * @memberof LearningObjectInteractor
+ */
+async function findAuthorIdByUsername(params: {
+  dataStore: DataStore;
+  username: string;
+}): Promise<string> {
+  const { dataStore, username } = params;
+  const authorId = await dataStore.findUser(username);
+  if (!authorId) {
+    throw new ResourceError(
+      `No user with username ${username} exists`,
+      ResourceErrorReason.NOT_FOUND,
+    );
+  }
+
+  return authorId;
+}
+
+/**
+ * Finds Learning Object's id by name and authorID.
+ * If id is not found a ResourceError is thrown
+ *
+ * @private
+ * @param {{
+ *     dataStore: DataStore;
+ *     name: string; [Learning Object's name]
+ *     authorId: string [Learning Object's author's id]
+ *     authorUsername: string [Learning Object's author's username]
+ *   }} params
+ * @returns {Promise<string>}
+ * @memberof LearningObjectInteractor
+ */
+async function getLearningObjectIdByAuthorAndName(params: {
+  dataStore: DataStore;
+  name: string;
+  authorId: string;
+  authorUsername: string;
+}): Promise<string> {
+  const { dataStore, name, authorId, authorUsername } = params;
+  const learningObjectId = await dataStore.findLearningObject({
+    authorId,
+    name,
+  });
+  if (!learningObjectId) {
+    throw new ResourceError(
+      `No Learning Object with name ${name} by ${authorUsername} exists`,
+      ResourceErrorReason.NOT_FOUND,
+    );
+  }
+  return learningObjectId;
+}
+
+/**
+ * Loads released Learning Object by author's id and Learning Object's name
+ *
+ * @private
+ * @static
+ * @param {{
+ *     dataStore: DataStore;
+ *     authorId: string;
+ *     authorUsername: string;
+ *     learningObjectName: string;
+ *   }} params
+ * @returns
+ * @memberof LearningObjectInteractor
+ */
+async function loadReleasedLearningObjectByAuthorAndName({
+  dataStore,
+  library,
+  authorUsername,
+  learningObjectName,
+}: {
+  dataStore: DataStore;
+  library: LibraryCommunicator;
+  authorUsername: string;
+  learningObjectName: string;
+}) {
+  const authorId = await findAuthorIdByUsername({
+    dataStore,
+    username: authorUsername,
+  });
+  const learningObjectID = await getReleasedLearningObjectIdByAuthorAndName({
+    dataStore,
+    authorId,
+    authorUsername,
+    name: learningObjectName,
+  });
+  return getLearningObjectById({
+    dataStore,
+    library,
+    id: learningObjectID,
+    requester: null,
+    filter: 'released',
+  });
+}
+
+/**
+ * Finds released Learning Object's id by name and authorID.
+ * If id is not found a ResourceError is thrown
+ *
+ * @private
+ * @param {{
+ *     dataStore: DataStore;
+ *     name: string; [Learning Object's name]
+ *     authorId: string [Learning Object's author's id]
+ *     authorUsername: string [Learning Object's author's username]
+ *   }} params
+ * @returns {Promise<string>}
+ * @memberof LearningObjectInteractor
+ */
+async function getReleasedLearningObjectIdByAuthorAndName(params: {
+  dataStore: DataStore;
+  name: string;
+  authorId: string;
+  authorUsername: string;
+}): Promise<string> {
+  const { dataStore, name, authorId, authorUsername } = params;
+  const learningObjectId = await dataStore.findReleasedLearningObject({
+    authorId,
+    name,
+  });
+  if (!learningObjectId) {
+    throw new ResourceError(
+      `No released Learning Object with name ${name} by ${authorUsername} exists`,
+      ResourceErrorReason.NOT_FOUND,
+    );
+  }
+  return learningObjectId;
+}
 
 /**
  * Retrieves released file metadata by id
@@ -164,6 +557,39 @@ export async function getWorkingLearningObjectSummary({
 }
 
 /**
+ * Retrieves a summary of the released copy Learning Object
+ *
+ *
+ * @export
+ * @param {DataStore} dataStore [Driver for datastore]
+ * @param {string} id [Id of the Learning Object]
+ * @returns {Promise<LearningObjectSummary>}
+ */
+export async function getReleasedLearningObjectSummary({
+  dataStore,
+  id,
+}: {
+  dataStore: DataStore;
+  id: string;
+}): Promise<LearningObjectSummary> {
+  try {
+    const object = await dataStore.fetchReleasedLearningObject({
+      id,
+      full: false,
+    });
+    if (!object) {
+      throw new ResourceError(
+        `Learning Object ${id} does not exist.`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+    return mapLearningObjectToSummary(object);
+  } catch (e) {
+    handleError(e);
+  }
+}
+
+/**
  * Retrieves the Learning Object copy that is furthest along in the review pipeline
  *
  * The working copy can only be returned if
@@ -227,7 +653,7 @@ export async function getActiveLearningObjectSummary({
 }
 
 /**
- * Retrieves Learning Object summary by id and revision number
+ * Retrieves Learning Object revision by id and revision number
  *
  * The working copy can only be returned if
  * The requester is the author
@@ -237,46 +663,73 @@ export async function getActiveLearningObjectSummary({
  * @export
  * @param {DataStore} dataStore [Driver for datastore]
  * @param {UserToken} requester [Object containing information about the requester]
- * @param {string} id [Id of the Learning Object]
- * @param {number} revision [Revision number of the Learning Object]
- * @returns {Promise<LearningObjectSummary>}
+ * @param {string} learningObjectId [Id of the Learning Object]
+ * @param {number} revisionId [Revision number of the Learning Object]
+ * @param {string} username [Username of the Learning Object author]
+ * @param {boolean} summary [Boolean indicating whether or not to return a LearningObject or LearningObjectSummary]
+ * @returns {Promise<LearningObject | LearningObjectSummary>}
  */
-export async function getLearningObjectRevisionSummary({
+export async function getLearningObjectRevision({
   dataStore,
   requester,
-  id,
-  revision,
+  learningObjectId,
+  revisionId,
+  username,
+  summary,
 }: {
   dataStore: DataStore;
   requester: UserToken;
-  id: string;
-  revision: number;
-}): Promise<LearningObjectSummary> {
+  learningObjectId: string;
+  revisionId: number;
+  username: string;
+  summary?: boolean;
+}): Promise<LearningObject | LearningObjectSummary> {
   try {
-    const object = await dataStore.fetchLearningObjectRevisionSummary({
-      id,
-      revision,
-    });
-    if (!object) {
+    if (revisionId === 0) {
       throw new ResourceError(
-        `Cannot find revision ${revision} of Learning Object ${id}.`,
+        `Cannot find revision ${revisionId} for Learning Object ${learningObjectId}`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+    await validateRequest({
+      username: username,
+      learningObjectId: learningObjectId,
+      dataStore: dataStore,
+    });
+
+    let learningObject: LearningObject | LearningObjectSummary;
+    let author: User;
+
+    if (!summary) {
+      author = await Gateways.user().getUser(username);
+    }
+    learningObject = await dataStore.fetchLearningObjectRevision({
+      id: learningObjectId,
+      revision: revisionId,
+      author,
+      summary,
+    });
+    if (!learningObject) {
+      throw new ResourceError(
+        `Cannot find revision ${revisionId} of Learning Object ${learningObjectId}.`,
         ResourceErrorReason.NOT_FOUND,
       );
     }
 
-    const releasedAccess = object.status === LearningObject.Status.RELEASED;
+    const releasedAccess =
+      learningObject.status === LearningObject.Status.RELEASED;
     const authorAccess = requesterIsAuthor({
       requester,
-      authorUsername: object.author.username,
+      authorUsername: learningObject.author.username,
     });
     const isUnreleased = LearningObjectState.UNRELEASED.includes(
-      object.status as LearningObject.Status,
+      learningObject.status as LearningObject.Status,
     );
     const reviewerCuratorAccess =
       !isUnreleased &&
       hasReadAccessByCollection({
         requester,
-        collection: object.collection,
+        collection: learningObject.collection,
       });
     const adminEditorAccess =
       !isUnreleased && requesterIsAdminOrEditor(requester);
@@ -286,176 +739,9 @@ export async function getLearningObjectRevisionSummary({
       reviewerCuratorAccess,
       adminEditorAccess,
     ]);
-    return object;
+    return learningObject;
   } catch (e) {
     handleError(e);
-  }
-}
-
-/**
- * Adds or updates Learning Object file metadata
- * *** Only the author of Learning Object, admins, and editors are allowed to add file metadata to a Learning Object ***
- * @export
- * @param {DataStore} dataStore [Driver for datastore]
- * @param {UserToken} requester [Object containing information about the requester]
- * @param {string} authorUsername [Learning Object's author's username]
- * @param {string} learningObjectId [Id of the Learning Object to add the file metadata to]
- * @param {FileMeta} fileMeta [Object containing metadata about the file]
- * @returns {Promise<string>} [Id of the added Learning Object file]
- */
-export async function addLearningObjectFile({
-  dataStore,
-  requester,
-  authorUsername,
-  learningObjectId,
-  fileMeta,
-}: {
-  dataStore: DataStore;
-  requester: UserToken;
-  authorUsername: string;
-  learningObjectId: string;
-  fileMeta: FileMeta;
-}): Promise<string> {
-  try {
-    const isAuthor = requesterIsAuthor({ authorUsername, requester });
-    const isAdminOrEditor = requesterIsAdminOrEditor(requester);
-    authorizeRequest([isAuthor, isAdminOrEditor]);
-    validateRequestParams({
-      params: [fileMeta.name, fileMeta.url, fileMeta.size],
-      mustProvide: ['name', 'url', 'size'],
-    });
-    const loFile: LearningObject.Material.File = generateLearningObjectFile(
-      fileMeta,
-    );
-    const loFileId = await dataStore.addToFiles({
-      loFile,
-      id: learningObjectId,
-    });
-    updateObjectLastModifiedDate({ dataStore, id: learningObjectId });
-    return loFileId;
-  } catch (e) {
-    handleError(e);
-  }
-}
-
-/**
- * Adds or updates Learning Object mutliple file metadata
- * @export
- * @param {DataStore} dataStore [Driver for datastore]
- * @param {UserToken} requester [Object containing information about the requester]
- * @param {string} authorUsername [Learning Object's author's username]
- * @param {string} learningObjectId [Id of the Learning Object to add the file metadata to]
- * @param {FileMeta[]} fileMeta [Object containing metadata about the file]
- * @returns {Promise<string[]>} [Ids of the added Learning Object files]
- */
-export async function addLearningObjectFiles({
-  dataStore,
-  requester,
-  authorUsername,
-  learningObjectId,
-  fileMeta,
-}: {
-  dataStore: DataStore;
-  requester: UserToken;
-  authorUsername: string;
-  learningObjectId: string;
-  fileMeta: FileMeta[];
-}): Promise<string[]> {
-  try {
-    const promises$ = fileMeta.map(file => {
-      return addLearningObjectFile({
-        dataStore,
-        authorUsername,
-        learningObjectId,
-        fileMeta: file,
-        requester,
-      });
-    });
-    return await Promise.all(promises$);
-  } catch (e) {
-    handleError(e);
-  }
-}
-
-/**
- * Generates new LearningObject.Material.File Object
- *
- * @private
- * @param {FileMeta} file
- * @param {string} url
- * @returns
- */
-function generateLearningObjectFile(
-  file: FileMeta,
-): LearningObject.Material.File {
-  const extension = file.name.split('.').pop();
-  const fileType = file.fileType || '';
-  const learningObjectFile: Partial<LearningObject.Material.File> = {
-    extension,
-    fileType,
-    url: file.url,
-    date: Date.now().toString(),
-    name: file.name,
-    fullPath: file.fullPath,
-    size: +file.size,
-    packageable: isPackageable(+file.size),
-  };
-
-  // Sanitize object. Remove undefined or null values
-  const keys = Object.keys(learningObjectFile);
-  for (const key of keys) {
-    const prop = learningObjectFile[key];
-    if (!prop && prop !== 0) {
-      delete learningObjectFile[key];
-    }
-  }
-
-  return learningObjectFile as LearningObject.Material.File;
-}
-
-// 100 MB in bytes; File size is in bytes
-const MAX_PACKAGEABLE_FILE_SIZE = 100000000;
-function isPackageable(size: number) {
-  // if dztotalfilesize doesn't exist it must not be a chunk upload.
-  // this means by default it must be a packageable file size
-  return !(size > MAX_PACKAGEABLE_FILE_SIZE);
-}
-
-/**
- * Validates all required values are provided for request
- *
- * @param {any[]} params
- * @param {string[]} [mustProvide]
- * @returns {(void | never)}
- */
-function validateRequestParams({
-  params,
-  mustProvide,
-}: {
-  params: any[];
-  mustProvide?: string[];
-}): void | never {
-  const values = [...params].map(val => {
-    if (typeof val === 'string') {
-      val = val.trim();
-    }
-    return val;
-  });
-  if (
-    values.includes(null) ||
-    values.includes('null') ||
-    values.includes(undefined) ||
-    values.includes('undefined') ||
-    values.includes('')
-  ) {
-    const multipleParams = mustProvide.length > 1;
-    let message = 'Invalid parameters provided';
-    if (Array.isArray(mustProvide)) {
-      message = `Must provide ${multipleParams ? '' : 'a'} valid value${
-        multipleParams ? 's' : ''
-      } for ${mustProvide}`;
-    }
-    throw new ResourceError(message, ResourceErrorReason.BAD_REQUEST);
   }
 }
 
@@ -606,6 +892,7 @@ export async function updateLearningObject({
   updates: Partial<LearningObject>;
 }): Promise<void> {
   try {
+    const isEditor = requesterIsEditor(requester);
     if (updates.name) {
       await checkNameExists({
         id,
@@ -618,6 +905,9 @@ export async function updateLearningObject({
       id,
       full: false,
     });
+    const isInReview = LearningObjectState.IN_REVIEW.includes(
+      learningObject.status,
+    );
     authorizeWriteAccess({
       learningObject,
       requester,
@@ -626,22 +916,32 @@ export async function updateLearningObject({
       }.`,
     });
     const cleanUpdates = sanitizeUpdates(updates);
-    validateUpdates({
-      id,
-      updates: cleanUpdates,
-    });
+    validateUpdates(cleanUpdates);
+
     cleanUpdates.date = Date.now().toString();
+    console.log(cleanUpdates);
     await dataStore.editLearningObject({
       id,
       updates: cleanUpdates,
     });
+
+    if (isInReview) {
+      LearningObjectSubmissionAdapter.getInstance().applySubmissionUpdates({
+        learningObjectId: id,
+        updates: cleanUpdates,
+        user: requester,
+      });
+    }
+
     // Infer if this Learning Object is being released
     if (cleanUpdates.status === LearningObject.Status.RELEASED) {
-      const releasableObject = await generateReleasableLearningObject(
+      const releasableObject = await generateReleasableLearningObject({
         dataStore,
         id,
-      );
+        requester,
+      });
       await PublishingService.releaseLearningObject({
+        authorUsername,
         userToken: requester,
         dataStore,
         releasableObject,
@@ -653,32 +953,46 @@ export async function updateLearningObject({
 }
 
 /**
- * FIXME: Once the return type of `fetchLearningObject` is updated to the `Datastore's` schema type,
- * this function should be updated to not fetch children ids as they should be returned with the document
+ * Generates a full releasable Learning Object including full metadata for all materials and children
+ *
+ * @param {DataStore} dataStore [The datastore to use to fetch the Learning Object data]
+ * @param {string} id [The id of the Learning Object to get releasable copy of]
+ * @param {UserToken} requester [The requester of the releasable Learning Object]
+ * @returns {Promise<LearningObject>}
  */
-async function generateReleasableLearningObject(
-  dataStore: DataStore,
-  id: string,
-) {
-  const [object, childIds] = await Promise.all([
+export async function generateReleasableLearningObject({
+  dataStore,
+  id,
+  requester,
+}: {
+  dataStore: DataStore;
+  id: string;
+  requester: UserToken;
+}): Promise<HierarchicalLearningObject> {
+  const [object, children, files] = await Promise.all([
     dataStore.fetchLearningObject({ id, full: true }),
-    dataStore.findChildObjectIds({ parentId: id }),
+    loadWorkingParentsReleasedChildObjects({
+      dataStore,
+      parentId: id,
+    }),
+    Gateways.fileMetadata().getAllFileMetadata({
+      requester,
+      learningObjectId: id,
+      filter: 'unreleased',
+    }),
   ]);
-  let children: LearningObject[] = [];
-  if (Array.isArray(childIds)) {
-    children = childIds.map(childId => new LearningObject({ id: childId }));
-  }
   const releasableObject = new LearningObject({
     ...object.toPlainObject(),
-    children,
-  });
+  }) as HierarchicalLearningObject;
+  releasableObject.children = children;
+  releasableObject.materials.files = files;
   return releasableObject;
 }
 
 /**
  * Fetches a learning object by id
  * If no filter is defined the released object is returned by default unless no released object exists
- * If no released object exists and no filter is specified, the unreleased object is loaded if the reuqester has access
+ * If no released object exists and no filter is specified, the unreleased object is loaded if the requester has access
  *
  * If neither object is found, NotFound ResourceError is thrown
  *
@@ -697,7 +1011,7 @@ export async function getLearningObjectById({
   dataStore: DataStore;
   library: LibraryCommunicator;
   id: string;
-  requester: UserToken;
+  requester?: UserToken;
   filter?: LearningObjectFilter;
 }): Promise<LearningObject> {
   try {
@@ -712,6 +1026,11 @@ export async function getLearningObjectById({
         id,
         full: true,
       });
+      if (learningObject) {
+        learningObject.materials.files.map(
+          appendFilePreviewUrls(learningObject),
+        );
+      }
     }
     if ((!learningObject && filter !== 'released') || filter === 'unreleased') {
       let files: LearningObject.Material.File[] = [];
@@ -725,7 +1044,7 @@ export async function getLearningObjectById({
       authorizeReadAccess({ requester, learningObject: learningObjectSummary });
       [learningObject, files] = await Promise.all([
         dataStore.fetchLearningObject({ id, full: true }),
-        FileMetadata.getAllFileMetadata({
+        Gateways.fileMetadata().getAllFileMetadata({
           requester,
           learningObjectId: id,
           filter: 'unreleased',
@@ -737,29 +1056,14 @@ export async function getLearningObjectById({
     if (!learningObject) {
       throw learningObjectNotFound;
     }
-    let children: LearningObject[] = [];
-    if (loadingReleased) {
-      children = await dataStore.loadReleasedChildObjects({
-        id: learningObject.id,
-        full: false,
-      });
-    } else {
-      const childrenStatus = requesterIsAuthor({
-        requester,
-        authorUsername: learningObject.author.username,
-      })
-        ? LearningObjectState.ALL
-        : LearningObjectState.IN_REVIEW;
 
-      children = await loadChildObjectSummaries({
-        parentId: learningObject.id,
-        dataStore,
-        childrenStatus,
-        requester,
-      });
-    }
-
-    learningObject.children = children;
+    learningObject.children = await loadChildrenSummaries({
+      dataStore,
+      requester,
+      learningObjectId: learningObject.id,
+      authorUsername: learningObject.author.username,
+      released: loadingReleased,
+    });
 
     learningObject.metrics = await loadMetrics({
       library,
@@ -775,37 +1079,176 @@ export async function getLearningObjectById({
 }
 
 /**
- * Loads unreleased child object summaries
+ * Fetches a Learning Object's summary by id
+ * If no filter is defined the released object is returned by default unless no released object exists
+ * If no released object exists and no filter is specified, the unreleased object is loaded if the reuqester has access
+ *
+ * If neither object is found, NotFound ResourceError is thrown
+ *
+ * @export
+ * @param {DataStore} dataStore
+ * @param {string} id the Learning Object's id
+ * @returns {Promise<LearningObjectSummary>}
+ */
+export async function getLearningObjectSummaryById({
+  dataStore,
+  id,
+  requester,
+  filter,
+}: {
+  dataStore: DataStore;
+  id: string;
+  requester?: UserToken;
+  filter?: LearningObjectFilter;
+  summary?: boolean;
+}): Promise<LearningObjectSummary> {
+  try {
+    let learningObject: Partial<LearningObject>;
+    let loadingReleased = true;
+    const learningObjectNotFound = new ResourceError(
+      `No Learning Object ${id} exists.`,
+      ResourceErrorReason.NOT_FOUND,
+    );
+    if (!filter || filter === 'released') {
+      learningObject = await dataStore.fetchReleasedLearningObject({
+        id,
+        full: false,
+      });
+    }
+    if ((!learningObject && filter !== 'released') || filter === 'unreleased') {
+      const learningObjectSummary = await dataStore.fetchLearningObject({
+        id,
+        full: false,
+      });
+      if (!learningObjectSummary) {
+        throw learningObjectNotFound;
+      }
+      authorizeReadAccess({ requester, learningObject: learningObjectSummary });
+      loadingReleased = false;
+    }
+    if (!learningObject) {
+      throw learningObjectNotFound;
+    }
+
+    learningObject.children = await loadChildrenSummaries({
+      dataStore,
+      requester,
+      learningObjectId: learningObject.id,
+      authorUsername: learningObject.author.username,
+      released: loadingReleased,
+    });
+
+    return mapLearningObjectToSummary(learningObject);
+  } catch (e) {
+    handleError(e);
+  }
+}
+
+/**
+ * @private
+ *
+ * Loads the summaries for a Learning Object's first level of children
+ *
+ * If released children are requested, only released children are returned
+ * Otherwise children are returned based on authorization level:
+ * Author: all children statuses
+ * Admin/Editor/Curator/Reviewer: released + in review
+ *
+ * If requester is not author or privileged the `released` param should be true
+ *
+ * @returns {Promise<LearningObjectChildSummary[]>}
+ */
+async function loadChildrenSummaries({
+  learningObjectId,
+  authorUsername,
+  released,
+  dataStore,
+  requester,
+}: {
+  learningObjectId: string;
+  authorUsername: string;
+  released: boolean;
+  dataStore: DataStore;
+  requester: UserToken;
+}): Promise<LearningObjectChildSummary[]> {
+  let children: LearningObjectChildSummary[];
+  if (released) {
+    children = (await dataStore.loadReleasedChildObjects({
+      id: learningObjectId,
+      full: false,
+    })).map(mapChildLearningObjectToSummary);
+  } else {
+    const childrenStatus = requesterIsAuthor({
+      requester,
+      authorUsername: authorUsername,
+    })
+      ? LearningObjectState.ALL
+      : [...LearningObjectState.IN_REVIEW, ...LearningObjectState.RELEASED];
+    children = (await dataStore.loadChildObjects({
+      id: learningObjectId,
+      full: false,
+      status: childrenStatus,
+    })).map(mapChildLearningObjectToSummary);
+  }
+  return children;
+}
+
+/**
+ * Recursively loads all levels of full released child Learning Objects for an working parent Learning Object
  *
  * @param {DataStore} dataStore [The datastore to fetch children from]
- * @param {string} parentId [The id of the parent Learning Object]
- * @param {LearningObject.Status[]} status [The statuses the children should match]
- * @param {UserToken} requester [Information about the requester used to authorize the request]
+ * @param {string} parentId [The id of the working parent Learning Object]
  *
  * @returns
  */
-async function loadChildObjectSummaries({
+async function loadWorkingParentsReleasedChildObjects({
   dataStore,
   parentId,
-  childrenStatus,
-  requester,
 }: {
   dataStore: DataStore;
   parentId: string;
-  childrenStatus: LearningObject.Status[];
-  requester: UserToken;
-}) {
-  let children = await dataStore.loadChildObjects({
+}): Promise<HierarchicalLearningObject[]> {
+  let children = await dataStore.loadWorkingParentsReleasedChildObjects({
     id: parentId,
-    full: false,
-    status: childrenStatus,
+    full: true,
   });
+
+  return Promise.all(
+    children.map(async (child: HierarchicalLearningObject) => {
+      child.children = await loadWorkingParentsReleasedChildObjects({
+        dataStore,
+        parentId: child.id,
+      });
+      return child;
+    }),
+  );
+}
+
+/**
+ * Recursively loads all levels of full released child Learning Objects for a released parent Learning Object
+ *
+ * @param {DataStore} dataStore [The datastore to fetch children from]
+ * @param {string} parentId [The id of the released parent Learning Object]
+ *
+ * @returns
+ */
+async function loadReleasedChildObjects({
+  dataStore,
+  parentId,
+}: {
+  dataStore: DataStore;
+  parentId: string;
+}): Promise<HierarchicalLearningObject[]> {
+  let children = (await dataStore.loadReleasedChildObjects({
+    id: parentId,
+    full: true,
+  })) as HierarchicalLearningObject[];
+
   children = await Promise.all(
     children.map(async child => {
-      child.materials.files = await FileMetadata.getAllFileMetadata({
-        requester,
-        learningObjectId: parentId,
-        filter: 'unreleased',
+      child.children = await loadReleasedChildObjects({
+        dataStore,
+        parentId: child.id,
       });
       return child;
     }),
@@ -858,7 +1301,6 @@ export async function getLearningObjectChildrenById(
  *
  * @export
  * @param {DataStore} datastore [The datastore to delete the Learning Object from]
- * @param {FileManager} fileManager [The file manager to delete files from]
  * @param {LibraryCommunicator} library [The library communicator to use to remove Learning Objects on delete]
  * @param {UserToken} requester [Information about the user making the delete request]
  * @param {string} id [The id of the Learning Object to be deleted]
@@ -867,12 +1309,10 @@ export async function getLearningObjectChildrenById(
 export async function deleteLearningObject({
   dataStore,
   library,
-  fileManager,
   requester,
   id,
 }: {
   dataStore: DataStore;
-  fileManager: FileManager;
   library: LibraryCommunicator;
   requester: UserToken;
   id: string;
@@ -890,21 +1330,11 @@ export async function deleteLearningObject({
     }
     authorizeWriteAccess({ learningObject, requester });
     await library.cleanObjectsFromLibraries([learningObject.id]);
-    await FileMetadata.deleteAllFileMetadata({
+    await Gateways.fileMetadata().deleteAllFileMetadata({
       requester,
       learningObjectId: learningObject.id,
-    }).catch(reportError);
-    await dataStore.deleteLearningObject(learningObject.id);
-    const path = `${learningObject.author.username}/${learningObject.id}/`;
-    fileManager.deleteAll({ path }).catch(e => {
-      reportError(
-        new Error(
-          `Problem deleting files for Learning Object ${
-            learningObject.id
-          }: ${path}. ${e}`,
-        ),
-      );
     });
+    await dataStore.deleteLearningObject(learningObject.id);
     dataStore
       .deleteChangelog({ learningObjectId: learningObject.id })
       .catch(e => {
@@ -920,65 +1350,73 @@ export async function deleteLearningObject({
     handleError(e);
   }
 }
-
-export async function deleteLearningObjectByName(params: {
+/**
+ * Deletes a Learning Object and all associated resources by name
+ *
+ * @export
+ * @param {DataStore} datastore [The datastore to delete the Learning Object from]
+ * @param {LibraryCommunicator} library [The library communicator to use to remove Learning Objects on delete]
+ * @param {UserToken} requester [Information about the user making the delete request]
+ * @param {string} id [The id of the Learning Object to be deleted]
+ * @returns {Promise<void>}
+ */
+export async function deleteLearningObjectByName({
+  dataStore,
+  learningObjectName,
+  library,
+  user,
+}: {
   dataStore: DataStore;
-  fileManager: FileManager;
   learningObjectName: string;
   library: LibraryCommunicator;
   user: UserToken;
 }): Promise<void> {
   try {
-    const hasAccess = await hasLearningObjectWriteAccess(
-      params.user,
-      params.dataStore,
-      params.learningObjectName,
-    );
-    if (hasAccess) {
-      const object = await params.dataStore.peek<{
-        id: string;
-      }>({
-        query: { name: params.learningObjectName },
-        fields: {},
-      });
-
-      await params.library.cleanObjectsFromLibraries([object.id]);
-      await FileMetadata.deleteAllFileMetadata({
-        requester: params.user,
-        learningObjectId: object.id,
-      }).catch(reportError);
-      await params.dataStore.deleteLearningObject(object.id);
-      const path = `${params.user.username}/${object.id}/`;
-      params.fileManager.deleteAll({ path }).catch(e => {
-        reportError(
-          new Error(
-            `Problem deleting files for ${
-              params.learningObjectName
-            }: ${path}. ${e}`,
-          ),
-        );
-      });
-      params.dataStore
-        .deleteChangelog({ learningObjectId: object.id })
-        .catch(e => {
-          reportError(
-            new Error(
-              `Problem deleting changelogs for ${
-                params.learningObjectName
-              }: ${e}`,
-            ),
-          );
-        });
-    } else {
-      return Promise.reject(
-        new Error('User does not have authorization to perform this action'),
+    const authorId = await dataStore.findUser(user.username);
+    if (!authorId) {
+      throw new ResourceError(
+        `Unable to delete Learning Object ${learningObjectName}. No user ${
+          user.username
+        } with Learning Object ${learningObjectName} found.`,
+        ResourceErrorReason.NOT_FOUND,
       );
     }
+    const objectId = await dataStore.findLearningObject({
+      authorId,
+      name: learningObjectName,
+    });
+    if (!objectId) {
+      throw new ResourceError(
+        `Unable to delete Learning Object ${learningObjectName}. No Learning Object ${learningObjectName} exists.`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+    const object = await dataStore.fetchLearningObject({
+      id: objectId,
+      full: false,
+    });
+
+    authorizeWriteAccess({
+      learningObject: object,
+      requester: user,
+      message: `Unable to delete Learning Object ${objectId}.`,
+    });
+
+    await library.cleanObjectsFromLibraries([object.id]);
+    await Gateways.fileMetadata().deleteAllFileMetadata({
+      requester: user,
+      learningObjectId: object.id,
+    });
+    await dataStore.deleteLearningObject(object.id);
+    dataStore.deleteChangelog({ learningObjectId: object.id }).catch(e => {
+      reportError(
+        new Error(
+          `Problem deleting changelogs for Learning Object ${object.id}: ${e}`,
+        ),
+      );
+    });
   } catch (e) {
-    reportError(e);
-    return Promise.reject(
-      new Error(`Problem deleting Learning Object. Error: ${e}`),
-    );
+    handleError(e);
   }
 }
 
@@ -988,7 +1426,6 @@ export async function deleteLearningObjectByName(params: {
  * @static
  * @param {{
  *     dataStore: DataStore;
- *     fileManager: FileManager;
  *     object?: LearningObject;
  *     id?: string;
  *   }} params
@@ -997,7 +1434,6 @@ export async function deleteLearningObjectByName(params: {
  */
 export async function updateReadme(params: {
   dataStore: DataStore;
-  fileManager: FileManager;
   object?: LearningObject;
   id?: string;
 }): Promise<void> {
@@ -1007,122 +1443,45 @@ export async function updateReadme(params: {
     if (!object && id) {
       object = await params.dataStore.fetchLearningObject({ id, full: true });
     } else if (!object && !id) {
-      throw new Error(`No learning object or id provided.`);
+      throw new ResourceError(
+        `No learning object or id provided.`,
+        ResourceErrorReason.BAD_REQUEST,
+      );
     }
     const oldPDF: LearningObject.Material.PDF = object.materials['pdf'];
-    const pdf = await generatePDF(params.fileManager, object);
-    if (oldPDF && oldPDF.name !== pdf.name) {
-      const path = `${object.author.username}/${object.id}/${oldPDF.name}`;
-      deleteFile(params.fileManager, path);
+
+    const pdfFile = await Drivers.readMeBuilder().buildReadMe(object);
+    const newPdfName: string = `0ReadMeFirst - ${sanitizeLearningObjectName(
+      object.name,
+    )}.pdf`;
+
+    await Gateways.fileManager().uploadFile({
+      authorUsername: object.author.username,
+      learningObjectId: object.id,
+      learningObjectRevisionId: object.revision,
+      file: { data: pdfFile, path: newPdfName },
+    });
+    if (oldPDF && oldPDF.name !== newPdfName) {
+      Gateways.fileManager()
+        .deleteFile({
+          authorUsername: object.author.username,
+          learningObjectId: object.id,
+          learningObjectRevisionId: object.revision,
+          path: oldPDF.name,
+        })
+        .catch(reportError);
     }
 
     return await params.dataStore.editLearningObject({
       id: object.id,
       updates: {
         'materials.pdf': {
-          name: pdf.name,
-          url: pdf.url,
+          name: newPdfName,
         },
       },
     });
   } catch (e) {
-    return Promise.reject(
-      `Problem updating Readme for learning object. Error: ${e}`,
-    );
-  }
-}
-
-/**
- * Updates file description
- *
- * @static
- * @param {string} objectId
- * @param {string} fileId
- * @returns {Promise<void>}
- * @memberof LearningObjectInteractor
- */
-export async function updateFileDescription(params: {
-  dataStore: DataStore;
-  objectId: string;
-  fileId: string;
-  description: string;
-}): Promise<void> {
-  try {
-    await params.dataStore.updateFileDescription({
-      learningObjectId: params.objectId,
-      fileId: params.fileId,
-      description: params.description,
-    });
-    await updateObjectLastModifiedDate({
-      dataStore: params.dataStore,
-      id: params.objectId,
-    });
-  } catch (e) {
-    return Promise.reject(`Problem updating file description. Error: ${e}`);
-  }
-}
-
-/**
- * Removes file metadata and deletes from S3
- *
- * @static
- * @param {FileManager} fileManager
- * @param {string} id
- * @param {string} username
- * @param {string} filename
- * @returns {Promise<void>}
- * @memberof LearningObjectInteractor
- */
-export async function removeFile(params: {
-  dataStore: DataStore;
-  fileManager: FileManager;
-  objectId: string;
-  username: string;
-  fileId: string;
-}): Promise<void> {
-  try {
-    const file = await params.dataStore.findSingleFile({
-      learningObjectId: params.objectId,
-      fileId: params.fileId,
-    });
-    if (file) {
-      const path = `${params.username}/${params.objectId}/${
-        file.fullPath ? file.fullPath : file.name
-      }`;
-      await params.dataStore.removeFromFiles({
-        objectId: params.objectId,
-        fileId: params.fileId,
-      });
-      await deleteFile(params.fileManager, path);
-      await updateObjectLastModifiedDate({
-        dataStore: params.dataStore,
-        id: params.objectId,
-      });
-    }
-  } catch (e) {
-    return Promise.reject(`Problem deleting file. Error: ${e}`);
-  }
-}
-
-/**
- * Deletes specified file
- *
- * @static
- * @param {FileManager} fileManager
- * @param {string} id
- * @param {string} username
- * @param {string} filename
- * @returns {Promise<void>}
- * @memberof LearningObjectInteractor
- */
-async function deleteFile(
-  fileManager: FileManager,
-  path: string,
-): Promise<void> {
-  try {
-    return fileManager.delete({ path });
-  } catch (e) {
-    return Promise.reject(`Problem deleting file. Error: ${e}`);
+    handleError(e);
   }
 }
 
@@ -1150,14 +1509,14 @@ export async function getMaterials({
   try {
     let materials: LearningObject.Material;
     let workingFiles: LearningObject.Material.File[];
+    const learningObject = await dataStore.fetchLearningObject({
+      id,
+      full: false,
+    });
     if (filter === 'unreleased') {
-      const learningObject = await dataStore.fetchLearningObject({
-        id,
-        full: false,
-      });
       authorizeReadAccess({ learningObject, requester });
       const materials$ = dataStore.getLearningObjectMaterials({ id });
-      const workingFiles$ = FileMetadata.getAllFileMetadata({
+      const workingFiles$ = Gateways.fileMetadata().getAllFileMetadata({
         requester,
         learningObjectId: id,
         filter: 'unreleased',
@@ -1179,6 +1538,10 @@ export async function getMaterials({
 
     if (workingFiles) {
       materials.files = workingFiles;
+    } else {
+      materials.files = materials.files.map(
+        appendFilePreviewUrls(learningObject),
+      );
     }
 
     return materials;
@@ -1188,16 +1551,122 @@ export async function getMaterials({
 }
 
 /**
- * Sanitizes object containing updates to be stored by removing invalid update properties, cloning valid properties, and trimming strings
+ * createLearningObjectRevision is responsible
+ * for orchestrating the creation of a Learning
+ * Object revision. The function starts by validating
+ * the request structure. This is done by calling the
+ * validateRequest function, which ensures that
+ * the given userId and learningObjectId pair produce
+ * a Learning Object. After the request is validated,
+ * the function retrieves the Released Copy of the
+ * Learning Object. If the Released Copy of the
+ * Learning Object is not found, the function throws a
+ * Resource Error. The Released Copy is used to validate
+ * that the requester is the Learning Object author. It is
+ * also used to increment the revision property of the
+ * Working Copy. The function ends by updating the Working
+ * Copy to have a revision that is one greater than the Released Copy
+ * revision and a status of unreleased.
+ *
+ * @param {
+ *  userId string
+ *  learningObjectId string
+ *  dataStore DataStore
+ *  requester UserToken
+ * }
+ */
+export async function createLearningObjectRevision(params: {
+  username: string;
+  learningObjectId: string;
+  dataStore: DataStore;
+  requester: UserToken;
+}): Promise<void> {
+  await validateRequest({
+    username: params.username,
+    learningObjectId: params.learningObjectId,
+    dataStore: params.dataStore,
+  });
+
+  const releasedCopy = await getReleasedLearningObjectSummary({
+    dataStore: params.dataStore,
+    id: params.learningObjectId,
+  });
+
+  if (!releasedCopy) {
+    throw new ResourceError(
+      `Cannot create a revision of Learning Object: ${
+        params.learningObjectId
+      } since it is not released.`,
+      ResourceErrorReason.BAD_REQUEST,
+    );
+  }
+
+  if (
+    !requesterIsAuthor({
+      authorUsername: releasedCopy.author.username,
+      requester: params.requester,
+    })
+  ) {
+    throw new ResourceError(
+      `Cannot create a revision. Requester ${
+        params.requester.username
+      } must be the author of Learning Object with id ${
+        params.learningObjectId
+      }`,
+      ResourceErrorReason.INVALID_ACCESS,
+    );
+  }
+
+  releasedCopy.revision++;
+
+  await params.dataStore.editLearningObject({
+    id: params.learningObjectId,
+    updates: {
+      revision: releasedCopy.revision,
+      status: LearningObject.Status.UNRELEASED,
+    },
+  });
+}
+
+/** Appends file preview urls
+ *
+ * @param {LearningObject} learningObject
+ * @returns {(
+ *   value: LearningObject.Material.File,
+ *   index: number,
+ *   array: LearningObject.Material.File[],
+ * ) => LearningObject.Material.File}
+ */
+function appendFilePreviewUrls(
+  learningObject: LearningObject,
+): (
+  value: LearningObject.Material.File,
+  index: number,
+  array: LearningObject.Material.File[],
+) => LearningObject.Material.File {
+  return file => {
+    file.previewUrl = Gateways.fileMetadata().getFilePreviewUrl({
+      authorUsername: learningObject.author.username,
+      learningObjectId: learningObject.id,
+      file,
+      unreleased: learningObject.status !== LearningObject.Status.RELEASED,
+    });
+    return file;
+  };
+}
+
+/**
+ * Sanitizes object containing updates to be stored by removing invalid update properties, cloning valid properties, and trimming strings,
+ * then validating the updates after they have been properly formatted
  *
  * @param {Partial<LearningObject>} object [Object containing values to update existing Learning Object with]
- * @returns {LearningObjectUpdates}
+ * @returns {LearningObjectMetadataUpdates}
  */
 function sanitizeUpdates(
   object: Partial<LearningObject>,
-): LearningObjectUpdates {
+): LearningObjectMetadataUpdates {
   delete object.id;
-  const updates: LearningObjectUpdates = {};
+  const updates: LearningObjectMetadataUpdates = {};
   for (const key of VALID_LEARNING_OBJECT_UPDATES) {
     if (object[key]) {
       const value = object[key];
@@ -1208,21 +1677,35 @@ function sanitizeUpdates(
 }
 
 /**
- * Verifies update object contains valid update values
- *
- * @param {{
- *   id: string;
- *   updates: LearningObjectUpdates;
- * }} params
+ * validateRequest tries to find a Learning Object
+ * with the given userId and Learning Object Id.
+ * If it does not find a Learning Object that matches
+ * the given criteria, it throws a Resource Error.
+ * @param params
  */
-function validateUpdates(params: {
-  id: string;
-  updates: LearningObjectUpdates;
-}): void {
-  if (params.updates.name) {
-    if (params.updates.name.trim() === '') {
-      throw new Error('Learning Object name cannot be empty.');
-    }
+async function validateRequest(params: {
+  username: string;
+  learningObjectId: string;
+  dataStore: DataStore;
+}): Promise<void> {
+  const learningObject = await params.dataStore.fetchLearningObject({
+    id: params.learningObjectId,
+  });
+
+  if (!learningObject) {
+    throw new ResourceError(
+      `Learning Object with id ${params.learningObjectId} does not exist`,
+      ResourceErrorReason.NOT_FOUND,
+    );
+  }
+
+  if (learningObject.author.username !== params.username) {
+    throw new ResourceError(
+      `User ${params.username} does not own a Learning Object with id ${
+        params.learningObjectId
+      }`,
+      ResourceErrorReason.NOT_FOUND,
+    );
   }
 }
 
@@ -1271,4 +1754,25 @@ function loadMetrics({
   id: string;
 }): Promise<LearningObject.Metrics> {
   return library.getMetrics(id);
+}
+
+/**
+ * This handler allows execution to proceed if a ResourceError occurs because of a resource not being found.
+ *
+ * @param {Error} error
+ * @returns {null} [Returns null so that the value resolves to null indicating resource was not loaded]
+ */
+function bypassNotFoundResourceError({
+  error,
+}: {
+  error: Error;
+}): null | never {
+  if (
+    !(error instanceof ResourceError) ||
+    (error instanceof ResourceError &&
+      error.name !== ResourceErrorReason.NOT_FOUND)
+  ) {
+    throw error;
+  }
+  return null;
 }
