@@ -55,6 +55,7 @@ import { LearningObjectsModule } from './LearningObjectsModule';
 import { LearningObjectSubmissionAdapter } from '../LearningObjectSubmission/adapters/LearningObjectSubmissionAdapter';
 import { UserGateway } from './interfaces/UserGateway';
 import { validateUpdates } from '../shared/entity/learning-object/validators';
+import { LIBRARY_ROUTES as LibraryRoutes } from '../shared/routes';
 
 namespace Drivers {
   export const readMeBuilder = () =>
@@ -249,6 +250,19 @@ export async function getLearningObjectByName({
         userToken,
       });
     }
+
+    // attach additional properties
+    if (!learningObject.resourceUris) {
+      learningObject.resourceUris = {};
+    }
+
+    const resourceUriHost = process.env.GATEWAY_API;
+
+    learningObject.resourceUris.children = `${resourceUriHost}/learning-objects/${learningObject.id}/children/summmary`;
+    learningObject.resourceUris.materials = `${resourceUriHost}/users/:username/learning-objects/${learningObject.id}/materials`;
+    learningObject.resourceUris.metrics = `${resourceUriHost}/learning-objects/${learningObject.id}/metrics`;
+    learningObject.resourceUris.parents = `${resourceUriHost}/learning-objects/${learningObject.id}/parents`;
+    learningObject.resourceUris.ratings = `${resourceUriHost}/learning-objects/${learningObject.id}/ratings`;
 
     return learningObject;
   } catch (e) {

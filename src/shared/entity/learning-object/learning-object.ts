@@ -402,6 +402,14 @@ export class LearningObject {
   }
 
   /**
+   * Store's URI's to additional pieces of the Learning Object to be fetched asynchronously
+   *
+   * @type {{ [key: string]: string }}
+   * @memberof LearningObject
+   */
+  resourceUris?: { [key: string]: string };
+
+  /**
    * Map deprecated status values to new LearningObject.Status values
    *
    * @private
@@ -560,6 +568,7 @@ export class LearningObject {
       metrics: this.metrics,
       hasRevision: this.hasRevision,
       revision: this.revision,
+      resourceUris: this.resourceUris,
     };
     return object;
   }

@@ -266,7 +266,7 @@ export function initializePrivate({
     deleteLearningObjectByName,
   );
   router.get('/users/:username/learning-objects/:id/materials', getMaterials);
-  router.get('/learning-objects/:id/materials/all', getMaterials);
+  router.get('/users/:username/learning-objects/:id/materials/all', getMaterials);
   router.get(
     '/learning-objects/:id/children/summary',
     getLearningObjectChildren,
