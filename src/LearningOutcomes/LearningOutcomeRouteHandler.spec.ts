@@ -21,7 +21,7 @@ describe('LearningOutcomeRouteHandler', () => {
   beforeAll(async () => {
     driver = await MongoDriver.build(global['__MONGO_URI__']);
     dataStore = driver.learningOutcomeStore;
-    LearningOutcomeRouteHandler.initialize({ router, dataStore });
+    LearningOutcomeRouteHandler.initializePrivate({ router, dataStore });
   });
   describe('POST /learning-objects/:id/learning-outcomes', () => {
     it('should return a status of 200 and the id of the inserted outcome', done => {
