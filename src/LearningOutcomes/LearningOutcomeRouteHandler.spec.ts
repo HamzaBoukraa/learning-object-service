@@ -4,7 +4,7 @@ import { MongoDriver } from '../drivers/MongoDriver';
 import * as supertest from 'supertest';
 import * as LearningOutcomeRouteHandler from './LearningOutcomeRouteHandler';
 import { LearningOutcome } from '../shared/entity';
-import { LearningOutcomeDatastore } from './LearningOutcomeDataStore';
+import { LearningOutcomeDatastore } from './datastores/LearningOutcomeDataStore';
 import { Stubs } from '../tests/stubs';
 
 const app = express();

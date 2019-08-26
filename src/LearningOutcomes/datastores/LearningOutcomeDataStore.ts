@@ -1,5 +1,5 @@
-import { LearningOutcome } from '../shared/entity';
-import { LearningOutcomeUpdate, LearningOutcomeInsert } from './types';
+import { LearningOutcome } from '../../shared/entity';
+import { LearningOutcomeUpdate, LearningOutcomeInsert } from '../types';
 
 export interface LearningOutcomeDatastore {
   insertLearningOutcome(params: {

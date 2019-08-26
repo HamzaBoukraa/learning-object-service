@@ -4,6 +4,7 @@ import { LearningOutcomeUpdate } from './types';
 import { UserToken } from '../shared/types';
 import { mapErrorToResponseData } from '../shared/errors';
 import { ModuleLearningObjectGateway, LearningObjectGateway } from './gateways/ModuleLearningObjectGateway';
+import { LearningOutcomeDatastore } from './datastores/LearningOutcomeDataStore';
 
 /**
  * Returns a new instance of ModuleLearningObjectGateway
@@ -19,7 +20,7 @@ export function initializePublic({
   dataStore,
 }: {
   router: Router,
-  dataStore: LearningOutcomeInteractor.LearningOutcomeDatastore,
+  dataStore: LearningOutcomeDatastore,
 }) {
   const getLearningObjectsOutcomes = async (req: Request, res: Response) => {
     try {
@@ -46,7 +47,7 @@ export function initializePrivate({
   dataStore,
 }: {
   router: Router;
-  dataStore: LearningOutcomeInteractor.LearningOutcomeDatastore;
+  dataStore: LearningOutcomeDatastore;
 }) {
   const addLearningOutcome = async (req: Request, res: Response) => {
     try {
