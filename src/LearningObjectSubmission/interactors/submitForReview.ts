@@ -65,6 +65,7 @@ async function updateLearningObjectFields(params: { user: UserToken; learningObj
   });
   await LearningObjectGateway.updateReadme({
     id: params.learningObjectId,
+    requester: params.user,
   });
 }
 
