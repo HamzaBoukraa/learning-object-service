@@ -7,23 +7,7 @@ import { sanitizeObject } from '../shared/functions';
 import { LearningOutcome } from '../shared/entity';
 import { ResourceError, ResourceErrorReason } from '../shared/errors';
 import { LearningObjectGateway } from './gateways/ModuleLearningObjectGateway';
-
-export interface LearningOutcomeDatastore {
-  insertLearningOutcome(params: {
-    source: string;
-    outcome: Partial<LearningOutcome>;
-  }): Promise<string>;
-  getLearningOutcome(params: { id: string }): Promise<LearningOutcome>;
-  getAllLearningOutcomes(params: {
-    source: string;
-  }): Promise<LearningOutcome[]>;
-  updateLearningOutcome(params: {
-    id: string;
-    updates: LearningOutcomeUpdate & LearningOutcomeInsert;
-  }): Promise<LearningOutcome>;
-  deleteLearningOutcome(params: { id: string }): Promise<void>;
-  deleteAllLearningOutcomes(params: { source: string }): Promise<void>;
-}
+import { LearningOutcomeDatastore } from './datastores/LearningOutcomeDataStore';
 
 /**
  * Inserts LearningOutcome
@@ -73,11 +57,7 @@ export async function getLearningOutcome(params: {
   user: UserToken;
   id: string;
 }): Promise<LearningOutcome> {
-  try {
-    return await params.dataStore.getLearningOutcome({ id: params.id });
-  } catch (e) {
-    return Promise.reject(`Problem getting outcome: ${params.id}. ${e}`);
-  }
+  return await params.dataStore.getLearningOutcome({ id: params.id });
 }
 
 /**
