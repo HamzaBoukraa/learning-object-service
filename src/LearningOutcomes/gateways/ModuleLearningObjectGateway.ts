@@ -14,7 +14,7 @@ export class ModuleLearningObjectGateway implements LearningObjectGateway {
   }
 
   /**
-   * Reetrieves a Learning Object by id
+   * Retrieves a Learning Object by id
    *
    * Attempts to retrieve first from the released copy and then, failing that, attempts to retrieve
    * the working copy, performing authorization against the requester's UserToken

@@ -97,7 +97,8 @@ export async function getLearningOutcome(params: {
  *   learningObjectGateway,
  *   source,
  * }
- * @returns
+ * @returns {Promise<LearningOutcome[]}
+ * @throws {ResourceError | ServiceError}
  */
 export async function getAllLearningOutcomes({
   dataStore,
