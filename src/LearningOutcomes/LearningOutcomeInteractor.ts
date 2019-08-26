@@ -83,6 +83,8 @@ export async function getLearningOutcome(params: {
 /**
  * Fetch all of the Learning Outcomes associated with a specified Learning Object
  *
+ * Authorization/not-found errors are thrown in the LearningObjectAdapter and handled in the LearningOutcomeRouteHandler
+ *
  * @export
  * @param {{
  *   dataStore: LearningOutcomeDatastore,
@@ -107,8 +109,7 @@ export async function getAllLearningOutcomes({
   requester: UserToken,
   learningObjectGateway: LearningObjectGateway,
   source: string,
-}) {
-    // authorization/not-found errors are thrown in the LearningObjectAdapter and handled in the LearningOutcomeRouteHandler
+}): Promise<LearningOutcome[]> {
     await learningObjectGateway.getLearningObject(source, requester);
     return dataStore.getAllLearningOutcomes({ source });
 }
