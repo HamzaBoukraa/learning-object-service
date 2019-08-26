@@ -33,7 +33,6 @@ export class ModuleLearningObjectGateway implements LearningObjectGateway {
         // handle the not found error and check for a working-copy
         return await this.adapter.getWorkingLearningObjectSummary({ id: learningObjectId, requester });
       } else {
-        // throw the error
         throw error;
       }
     }
