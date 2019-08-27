@@ -1259,7 +1259,7 @@ async function loadReleasedChildObjects({
 /**
  * Fetches a learning objects children by ID
  *
- * Authorization is performed by first requsting the source object with a call to getLearningObjectsById()
+ * Authorization is performed by first requesting the source object with a call to getLearningObjectsById()
  *
  * @export
  * @param {DataStore} dataStore
