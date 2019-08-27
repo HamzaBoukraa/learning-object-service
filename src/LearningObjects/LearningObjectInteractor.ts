@@ -15,6 +15,7 @@ import {
   handleError,
   ResourceError,
   ResourceErrorReason,
+  ServiceError,
 } from '../shared/errors';
 import { reportError } from '../shared/SentryConnector';
 import { LearningObject, User } from '../shared/entity';
@@ -1274,9 +1275,21 @@ export async function getLearningObjectChildrenSummariesById(
   requester: UserToken,
   libraryDriver: LibraryCommunicator,
   objectId: string,
-): Promise<LearningObject[]> {
-  // handle authorization by attempting to retrieve and read the source object
-  await getLearningObjectById({ dataStore, library: libraryDriver, id: objectId, requester });
+): Promise<LearningObjectSummary[]> {
+  try {
+    // handle authorization by attempting to retrieve and read the source object
+    await getLearningObjectById({ dataStore, library: libraryDriver, id: objectId, requester });
+  } catch (error) {
+    if (error instanceof ResourceError) {
+      if (error.name === ResourceErrorReason.NOT_FOUND) {
+        throw new ResourceError(
+          `Children for the Learning Object with id ${objectId} cannot be found because no Learning Object with id ${objectId} exists.`, ResourceErrorReason.NOT_FOUND,
+        );
+      }
+    } else {
+      throw error;
+    }
+  }
 
   // retrieve the ids of the children in the order in which they were set by user
   const childrenIDs = await dataStore.findChildObjectIds({
@@ -1288,7 +1301,7 @@ export async function getLearningObjectChildrenSummariesById(
     status: LearningObjectState.ALL,
   });
   // array to return the children in correct order
-  const children: LearningObject[] = [];
+  const children: LearningObjectSummary[] = [];
 
   // fill children array with correct order of children
   let cIDs = 0;
@@ -1297,7 +1310,7 @@ export async function getLearningObjectChildrenSummariesById(
   // order the children payload to the same order as the array of child ids stored in `childrenIDs`
   while (c < childrenOrder.length) {
     if (childrenIDs[cIDs] === childrenOrder[c].id) {
-      children.push(childrenOrder[c]);
+      children.push(childrenOrder[c].toSummary());
       cIDs++;
       c = 0;
     } else {

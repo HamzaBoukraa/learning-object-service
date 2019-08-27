@@ -107,7 +107,7 @@ export function initializePublic({
         new LibraryDriver(),
         learningObjectId,
       );
-      res.status(200).json(children.map(c => c.toPlainObject()));
+      res.status(200).json(children);
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
       res.status(code).json({ message });
