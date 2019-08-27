@@ -1285,7 +1285,7 @@ export async function getLearningObjectChildrenById(
 
   const childrenOrder = await dataStore.loadChildObjects({
     id: objectId,
-    full: true,
+    full: false,
     status: LearningObjectState.ALL,
   });
   // array to return the children in correct order
