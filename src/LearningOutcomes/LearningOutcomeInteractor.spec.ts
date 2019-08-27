@@ -28,7 +28,6 @@ describe('LearningOutcomeInteractor', () => {
   describe('When getAllLearningOutcomes is called', () => {
     describe('and the user makes a valid request', () => {
       it('should return all learning outcomes for a given learning object', async () => {
-        expect.assertions(3);
         const outcomes = await LearningOutcomeInteractor.getAllLearningOutcomes(
           {
             dataStore,
@@ -49,8 +48,6 @@ describe('LearningOutcomeInteractor', () => {
   describe('When addLearningOutcome is called', () => {
     describe('and the user makes a valid request', () => {
       it('should return the id of the newly-created learning outcome', async () => {
-        expect.assertions(2);
-
         const id = await LearningOutcomeInteractor.addLearningOutcome(
           {
             dataStore,
@@ -67,8 +64,6 @@ describe('LearningOutcomeInteractor', () => {
 
     describe('and the user makes an invalid request', () => {
       it('should throw a ResourceError', async () => {
-        expect.assertions(1);
-
         let promise = LearningOutcomeInteractor.addLearningOutcome(
           {
             dataStore,
@@ -86,7 +81,6 @@ describe('LearningOutcomeInteractor', () => {
   describe('When getLearningOutcome is called', () => {
     describe('and the user makes a valid request', () => {
       it('should return an instance of Learning Outcome', async () => {
-        expect.assertions(1);
         const outcome = await LearningOutcomeInteractor.getLearningOutcome({ dataStore, user: new UserStub(), id: 'someOutcomeId' });
         expect(outcome).toBeInstanceOf(LearningOutcome);
       });
@@ -96,7 +90,6 @@ describe('LearningOutcomeInteractor', () => {
   describe('When updateLearningOutcome is called', () => {
     describe('and the user makes a valid request', () => {
       it('should return an updated instance of Learning Outcome', async () => {
-        expect.assertions(1);
         const outcome = await LearningOutcomeInteractor.updateLearningOutcome(
           {
             dataStore,
@@ -114,7 +107,6 @@ describe('LearningOutcomeInteractor', () => {
 describe('When deleteLearningObject is called', () => {
   describe('and the user makes a valid request', () => {
     it('should return a promise that resolves', async () => {
-      expect.assertions(1);
       const promise = LearningOutcomeInteractor.deleteLearningOutcome(
         {
           dataStore,
