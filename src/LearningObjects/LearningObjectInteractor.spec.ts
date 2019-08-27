@@ -8,7 +8,7 @@ import {
 import {
   updateObjectLastModifiedDate,
   updateParentsDate,
-  getLearningObjectChildrenById,
+  getLearningObjectChildrenSummariesById,
   getLearningObjectById,
   generateReleasableLearningObject,
   getLearningObjectSummaryById,
@@ -69,7 +69,7 @@ describe('Interactor: LearningObjectInteractor', () => {
   it(`should get object's children`, async () => {
     expect.assertions(1);
     await expect(
-      getLearningObjectChildrenById(dataStore, stubs.userToken, new MockLibraryDriver(), stubs.learningObject.id),
+      getLearningObjectChildrenSummariesById(dataStore, stubs.userToken, new MockLibraryDriver(), stubs.learningObject.id),
     ).resolves.toEqual([]);
   });
   it('should get a learning object by Id', async () => {
