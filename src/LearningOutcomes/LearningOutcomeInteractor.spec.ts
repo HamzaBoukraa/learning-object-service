@@ -7,7 +7,7 @@ import { LearningObjectGateway } from './gateways/ModuleLearningObjectGateway';
 import { MockLearningObjectGateway } from './gateways/MockLearningObjectGateway';
 import { ResourceError } from '../shared/errors';
 
-export class UserStub implements UserToken {
+class UserStub implements UserToken {
   username = 'testuser';
   name = 'Test User';
   email = 'testuser@imatestuser.com';
