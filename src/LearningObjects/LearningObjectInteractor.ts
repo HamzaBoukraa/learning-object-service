@@ -1274,7 +1274,7 @@ export async function getLearningObjectChildrenSummariesById(
   requester: UserToken,
   libraryDriver: LibraryCommunicator,
   objectId: string,
-): Promise<LearningObjectSummary[]> {
+): Promise<LearningObject[]> {
   // handle authorization by attempting to retrieve and read the source object
   await getLearningObjectById({ dataStore, library: libraryDriver, id: objectId, requester });
 
@@ -1288,7 +1288,7 @@ export async function getLearningObjectChildrenSummariesById(
     status: LearningObjectState.ALL,
   });
   // array to return the children in correct order
-  const children: LearningObjectSummary[] = [];
+  const children: LearningObject[] = [];
 
   // fill children array with correct order of children
   let cIDs = 0;
