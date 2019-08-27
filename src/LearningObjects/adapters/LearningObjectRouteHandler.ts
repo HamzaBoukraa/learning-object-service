@@ -101,7 +101,7 @@ export function initializePublic({
   const getLearningObjectChildren = async (req: Request, res: Response) => {
     try {
       const learningObjectId = req.params.id;
-      const children = await LearningObjectInteractor.getLearningObjectChildrenById(
+      const children = await LearningObjectInteractor.getLearningObjectChildrenSummariesById(
         dataStore,
         req.user,
         new LibraryDriver(),

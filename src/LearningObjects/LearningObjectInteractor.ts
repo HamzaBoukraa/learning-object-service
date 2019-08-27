@@ -1269,12 +1269,12 @@ async function loadReleasedChildObjects({
  *
  * @throws { ResourceError }
  */
-export async function getLearningObjectChildrenById(
+export async function getLearningObjectChildrenSummariesById(
   dataStore: DataStore,
   requester: UserToken,
   libraryDriver: LibraryCommunicator,
   objectId: string,
-): Promise<LearningObject[]> {
+): Promise<LearningObjectSummary[]> {
   // handle authorization by attempting to retrieve and read the source object
   await getLearningObjectById({ dataStore, library: libraryDriver, id: objectId, requester });
 
@@ -1285,11 +1285,10 @@ export async function getLearningObjectChildrenById(
 
   const childrenOrder = await dataStore.loadChildObjects({
     id: objectId,
-    full: false,
     status: LearningObjectState.ALL,
   });
   // array to return the children in correct order
-  const children: LearningObject[] = [];
+  const children: LearningObjectSummary[] = [];
 
   // fill children array with correct order of children
   let cIDs = 0;
