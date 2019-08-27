@@ -100,12 +100,12 @@ export function initializePublic({
 
   const getLearningObjectChildren = async (req: Request, res: Response) => {
     try {
-      const id = req.params.id;
+      const learningObjectId = req.params.id;
       const children = await LearningObjectInteractor.getLearningObjectChildrenById(
         dataStore,
         req.user,
         new LibraryDriver(),
-        id,
+        learningObjectId,
       );
       res.status(200).json(children.map(c => c.toPlainObject()));
     } catch (e) {
