@@ -4,7 +4,7 @@ import { MongoDriver } from '../drivers/MongoDriver';
 import * as supertest from 'supertest';
 import * as LearningOutcomeRouteHandler from './LearningOutcomeRouteHandler';
 import { LearningOutcome } from '../shared/entity';
-import { LearningOutcomeDatastore } from './LearningOutcomeInteractor';
+import { LearningOutcomeDatastore } from './datastores/LearningOutcomeDataStore';
 import { Stubs } from '../tests/stubs';
 
 const app = express();
@@ -21,8 +21,10 @@ describe('LearningOutcomeRouteHandler', () => {
   beforeAll(async () => {
     driver = await MongoDriver.build(global['__MONGO_URI__']);
     dataStore = driver.learningOutcomeStore;
-    LearningOutcomeRouteHandler.initialize({ router, dataStore });
+    LearningOutcomeRouteHandler.initializePublic({ router, dataStore });
+    LearningOutcomeRouteHandler.initializePrivate({ router, dataStore });
   });
+
   describe('POST /learning-objects/:id/learning-outcomes', () => {
     it('should return a status of 200 and the id of the inserted outcome', done => {
       request

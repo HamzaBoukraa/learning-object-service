@@ -1,5 +1,4 @@
 import {
-  LearningOutcomeInput,
   LearningOutcomeInsert,
   LearningOutcomeUpdate,
 } from './types';
@@ -7,23 +6,8 @@ import { UserToken } from '../shared/types';
 import { sanitizeObject } from '../shared/functions';
 import { LearningOutcome } from '../shared/entity';
 import { ResourceError, ResourceErrorReason } from '../shared/errors';
-
-export interface LearningOutcomeDatastore {
-  insertLearningOutcome(params: {
-    source: string;
-    outcome: Partial<LearningOutcome>;
-  }): Promise<string>;
-  getLearningOutcome(params: { id: string }): Promise<LearningOutcome>;
-  getAllLearningOutcomes(params: {
-    source: string;
-  }): Promise<LearningOutcome[]>;
-  updateLearningOutcome(params: {
-    id: string;
-    updates: LearningOutcomeUpdate & LearningOutcomeInsert;
-  }): Promise<LearningOutcome>;
-  deleteLearningOutcome(params: { id: string }): Promise<void>;
-  deleteAllLearningOutcomes(params: { source: string }): Promise<void>;
-}
+import { LearningObjectGateway } from './gateways/ModuleLearningObjectGateway';
+import { LearningOutcomeDatastore } from './datastores/LearningOutcomeDataStore';
 
 /**
  * Inserts LearningOutcome
@@ -42,7 +26,7 @@ export async function addLearningOutcome(params: {
   source: string;
   outcomeInput: Partial<LearningOutcome>;
 }): Promise<string> {
-  const {dataStore, user, source, outcomeInput} = params;
+  const { dataStore, user, source, outcomeInput } = params;
   let outcome: Partial<LearningOutcome>;
   try {
     outcome = new LearningOutcome(outcomeInput);
@@ -73,11 +57,43 @@ export async function getLearningOutcome(params: {
   user: UserToken;
   id: string;
 }): Promise<LearningOutcome> {
-  try {
-    return await params.dataStore.getLearningOutcome({ id: params.id });
-  } catch (e) {
-    return Promise.reject(`Problem getting outcome: ${params.id}. ${e}`);
-  }
+  return await params.dataStore.getLearningOutcome({ id: params.id });
+}
+
+/**
+ * Fetch all of the Learning Outcomes associated with a specified Learning Object
+ *
+ * Authorization/not-found errors are thrown in the LearningObjectAdapter and handled in the LearningOutcomeRouteHandler
+ *
+ * @export
+ * @param {{
+ *   dataStore: LearningOutcomeDatastore,
+ *   requester: UserToken,
+ *   learningObjectGateway: LearningObjectGateway,
+ *   source: string,
+ * }} {
+ *   dataStore,
+ *   requester,
+ *   learningObjectGateway,
+ *   source,
+ * }
+ * @returns {Promise<LearningOutcome[]}
+ * @throws {ResourceError}
+ * @throws {ServiceError}
+ */
+export async function getAllLearningOutcomes({
+  dataStore,
+  requester,
+  learningObjectGateway,
+  source,
+}: {
+  dataStore: LearningOutcomeDatastore,
+  requester: UserToken,
+  learningObjectGateway: LearningObjectGateway,
+  source: string,
+}): Promise<LearningOutcome[]> {
+    await learningObjectGateway.getLearningObject(source, requester);
+    return dataStore.getAllLearningOutcomes({ source });
 }
 
 /**
@@ -132,4 +148,3 @@ export async function deleteLearningOutcome(params: {
     );
   }
 }
-

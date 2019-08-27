@@ -1,14 +1,14 @@
-import { LearningOutcomeDatastore } from './LearningOutcomeInteractor';
+import { LearningOutcomeDatastore } from './LearningOutcomeDataStore';
 import {
   LearningOutcomeInput,
   LearningOutcomeInsert,
   LearningOutcomeUpdate,
-} from './types';
+} from '../types';
 import { Db, ObjectID } from 'mongodb';
-import { COLLECTIONS } from '../drivers/MongoDriver';
-import { mapId } from '../drivers/Mongo/functions';
-import { LearningOutcome, StandardOutcome } from '../shared/entity';
-import { ResourceError, ResourceErrorReason } from '../shared/errors';
+import { COLLECTIONS } from '../../drivers/MongoDriver';
+import { mapId } from '../../drivers/Mongo/functions';
+import { LearningOutcome, StandardOutcome } from '../../shared/entity';
+import { ResourceError, ResourceErrorReason } from '../../shared/errors';
 
 export class LearningOutcomeMongoDatastore implements LearningOutcomeDatastore {
   constructor(private db: Db) {}
