@@ -12,6 +12,7 @@ import { LearningObject } from '../../shared/entity';
 import { LearningObjectFilter, MaterialsFilter } from '../typings';
 import { initializePrivate as initializeRevisionRoutes } from '../Revisions/RevisionRouteHandler';
 import { toBoolean } from '../../shared/functions';
+import { LibraryDriver } from '../../drivers/LibraryDriver';
 
 /**
  * Initializes an express router with endpoints for public Retrieving
@@ -96,6 +97,23 @@ export function initializePublic({
       res.status(code).json({ message });
     }
   };
+
+  const getLearningObjectChildren = async (req: Request, res: Response) => {
+    try {
+      const id = req.params.id;
+      const children = await LearningObjectInteractor.getLearningObjectChildrenById(
+        dataStore,
+        req.user,
+        new LibraryDriver(),
+        id,
+      );
+      res.status(200).json(children.map(c => c.toPlainObject()));
+    } catch (e) {
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({ message });
+    }
+  };
+
   /**
    * @deprecated This route will be deprecated because of its non-RESTFul route structure
    * Please update to using `/users/:username/learning-objects` route.
@@ -123,6 +141,11 @@ export function initializePublic({
   router.get(
     '/users/:username/learning-objects/:learningObjectId',
     getLearningObjectById,
+  );
+
+  router.get(
+    '/learning-objects/:id/children/summary',
+    getLearningObjectChildren,
   );
 
   return router;
@@ -240,20 +263,6 @@ export function initializePrivate({
     }
   };
 
-  const getLearningObjectChildren = async (req: Request, res: Response) => {
-    try {
-      const id = req.params.id;
-      const children = await LearningObjectInteractor.getLearningObjectChildrenById(
-        dataStore,
-        id,
-      );
-      res.status(200).json(children.map(c => c.toPlainObject()));
-    } catch (e) {
-      const { code, message } = mapErrorToResponseData(e);
-      res.status(code).json({ message });
-    }
-  };
-
   router.route('/learning-objects').post(addLearningObject);
   router.post('/users/:username/learning-objects', addLearningObject);
   router.patch('/learning-objects/:id', updateLearningObject);
@@ -267,9 +276,5 @@ export function initializePrivate({
   );
   router.get('/users/:username/learning-objects/:id/materials', getMaterials);
   router.get('/learning-objects/:id/materials/all', getMaterials);
-  router.get(
-    '/learning-objects/:id/children/summary',
-    getLearningObjectChildren,
-  );
   initializeRevisionRoutes({ router, dataStore, library });
 }

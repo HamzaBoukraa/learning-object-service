@@ -1258,16 +1258,27 @@ async function loadReleasedChildObjects({
 
 /**
  * Fetches a learning objects children by ID
+ * 
+ * Authorization is performed by first requsting the source object with a call to getLearningObjectsById()
  *
  * @export
  * @param {DataStore} dataStore
  * @param {string} id the learning object's id
+ *
+ * @returns { Promise<LearningObject[]> }
+ *
+ * @throws { ResourceError }
  */
 export async function getLearningObjectChildrenById(
   dataStore: DataStore,
+  requester: UserToken,
+  libraryDriver: LibraryCommunicator,
   objectId: string,
-) {
-  // Retrieve the ids of the children in the order in which they were set by user
+): Promise<LearningObject[]> {
+  // handle authorization by attempting to retrieve and read the source object
+  await getLearningObjectById({ dataStore, library: libraryDriver, id: objectId, requester });
+
+  // retrieve the ids of the children in the order in which they were set by user
   const childrenIDs = await dataStore.findChildObjectIds({
     parentId: objectId,
   });
