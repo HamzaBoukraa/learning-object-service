@@ -1294,6 +1294,7 @@ export async function getLearningObjectChildrenSummariesById(
   let cIDs = 0;
   let c = 0;
 
+  // order the children payload to the same order as the array of child ids stored in `childrenIDs`
   while (c < childrenOrder.length) {
     if (childrenIDs[cIDs] === childrenOrder[c].id) {
       children.push(childrenOrder[c]);
