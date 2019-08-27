@@ -98,7 +98,7 @@ export function initializePublic({
     }
   };
 
-  const getLearningObjectChildren = async (req: Request, res: Response) => {
+  const getLearningObjectChildrenSummaries = async (req: Request, res: Response) => {
     try {
       const learningObjectId = req.params.id;
       const children = await LearningObjectInteractor.getLearningObjectChildrenSummariesById(
@@ -150,12 +150,12 @@ export function initializePublic({
    */
   router.get(
     '/learning-objects/:id/children/summary',
-    getLearningObjectChildren,
+    getLearningObjectChildrenSummaries,
   );
 
   router.get(
     '/users/:username/learning-objects/:id/children',
-    getLearningObjectChildren,
+    getLearningObjectChildrenSummaries,
   );
 
   return router;
