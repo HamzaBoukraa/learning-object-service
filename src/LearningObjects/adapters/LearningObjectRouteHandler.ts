@@ -12,6 +12,7 @@ import { LearningObject } from '../../shared/entity';
 import { LearningObjectFilter, MaterialsFilter } from '../typings';
 import { initializePrivate as initializeRevisionRoutes } from '../Revisions/RevisionRouteHandler';
 import { toBoolean } from '../../shared/functions';
+import { LibraryDriver } from '../../drivers/LibraryDriver';
 
 /**
  * Initializes an express router with endpoints for public Retrieving
@@ -113,6 +114,21 @@ export function initializePublic({
       res.status(code).json({ message });
     }
   };
+  const getLearningObjectChildrenSummaries = async (req: Request, res: Response) => {
+    try {
+      const learningObjectId = req.params.id;
+      const children = await LearningObjectInteractor.getLearningObjectChildrenSummariesById(
+        dataStore,
+        req.user,
+        new LibraryDriver(),
+        learningObjectId,
+      );
+      res.status(200).json(children);
+    } catch (e) {
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({ message });
+    }
+  };
   /**
    * @deprecated This route will be deprecated because of its non-RESTFul route structure
    * Please update to using `/users/:username/learning-objects` route.
@@ -148,6 +164,21 @@ export function initializePublic({
    * Please update to using `/users/:username/learning-objects/:learningObjectId/materials`
    */
   router.get('/learning-objects/:id/materials/all', getMaterials);
+
+  /**
+   * @deprecated This route will be deprecated because of its non RESTful route structure
+   * Please update to using `/users/:username/learning-objects/:learningObjectId/children` route.
+   *
+   */
+  router.get(
+    '/learning-objects/:id/children/summary',
+    getLearningObjectChildrenSummaries,
+  );
+
+  router.get(
+    '/users/:username/learning-objects/:id/children',
+    getLearningObjectChildrenSummaries,
+  );
 
   return router;
 }
@@ -247,20 +278,6 @@ export function initializePrivate({
     }
   };
 
-  const getLearningObjectChildren = async (req: Request, res: Response) => {
-    try {
-      const id = req.params.id;
-      const children = await LearningObjectInteractor.getLearningObjectChildrenById(
-        dataStore,
-        id,
-      );
-      res.status(200).json(children.map(c => c.toPlainObject()));
-    } catch (e) {
-      const { code, message } = mapErrorToResponseData(e);
-      res.status(code).json({ message });
-    }
-  };
-
   router.route('/learning-objects').post(addLearningObject);
   router.post('/users/:username/learning-objects', addLearningObject);
   router.patch('/learning-objects/:id', updateLearningObject);
@@ -271,10 +288,6 @@ export function initializePrivate({
   router.delete(
     '/learning-objects/:learningObjectName',
     deleteLearningObjectByName,
-  );
-  router.get(
-    '/learning-objects/:id/children/summary',
-    getLearningObjectChildren,
   );
   initializeRevisionRoutes({ router, dataStore, library });
 }
