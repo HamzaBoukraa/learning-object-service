@@ -8,7 +8,7 @@ import {
   deleteFile,
   deleteFolder,
   getFileStream,
-} from './Interactor';
+} from './interactors/Interactor';
 import {
   FileManager,
   LearningObjectGateway,

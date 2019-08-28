@@ -1,6 +1,6 @@
 import { DataStore } from '../../shared/interfaces/DataStore';
 import { LearningObject } from '../../shared/entity';
-import { LibraryCommunicator, } from '../../shared/interfaces/interfaces';
+import { LibraryCommunicator } from '../../shared/interfaces/interfaces';
 import {
   getActiveLearningObjectSummary,
   getLearningObjectById,
@@ -11,6 +11,7 @@ import {
   updateLearningObject,
   updateObjectLastModifiedDate,
   updateReadme,
+  getLearningObjectByName,
 } from '../LearningObjectInteractor';
 import { LearningObjectSummary, UserToken } from '../../shared/types';
 import { LearningObjectFilter } from '../typings';
@@ -206,6 +207,23 @@ export class LearningObjectAdapter {
       authorUsername: params.authorUsername,
       updates: params.updates,
       dataStore: this.dataStore,
+    });
+  }
+
+  // FIXME: Remove once downloads use id instead of Learning Object name in the URL
+  async getLearningObjectByName(params: {
+    username: string,
+    learningObjectName: string,
+    userToken: UserToken,
+    revision: boolean,
+  }): Promise<LearningObject> {
+    return getLearningObjectByName({
+      dataStore: this.dataStore,
+      library: this.library,
+      username: params.username,
+      learningObjectName: params.learningObjectName,
+      userToken: params.userToken,
+      revision: params.revision,
     });
   }
 }

@@ -1,4 +1,4 @@
-import { downloadSingleFile } from '../Interactor';
+import { downloadSingleFile } from '../interactors/Interactor';
 import { Router, Response, Request } from 'express';
 import { LEARNING_OBJECT_ROUTES } from '../../shared/routes';
 import { mapErrorToResponseData } from '../../shared/errors';
