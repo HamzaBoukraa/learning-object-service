@@ -99,7 +99,6 @@ export function initializePublic({
   const getMaterials = async (req: Request, res: Response) => {
     try {
       const requester: UserToken = req.user;
-      console.log(requester);
       const id: string = req.params.id;
       const filter: MaterialsFilter = req.query.status;
       const materials = await LearningObjectInteractor.getMaterials({
