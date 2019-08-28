@@ -11,9 +11,7 @@ type DownloadBundleParams = {
   learningObjectId: string,
   revision: boolean,
 };
-/**
- *
- */
+
 export async function downloadBundle(params: DownloadBundleParams) {
   const { revision } = params;
   // is it a revision or not
@@ -29,7 +27,10 @@ async function downloadWorkingCopy(params: DownloadBundleParams) {
   const learningObject = await getLearningObject(params, true);
   const hasAccess = authorizeDownloadRequest(requester, learningObject);
   if (!hasAccess) {
-    throw new ResourceError(``, ResourceErrorReason.FORBIDDEN);
+    throw new ResourceError(
+      `User ${requester.username} does not have access to download the requested Learning Object`,
+      ResourceErrorReason.FORBIDDEN,
+    );
   }
 }
 
@@ -38,6 +39,7 @@ function authorizeDownloadRequest(requester: UserToken, learningObject: Learning
     || hasCollectionAccess(requester, learningObject)
     || requesterIsAuthor({ authorUsername: learningObject.author.username, requester });
 }
+
 function hasCollectionAccess(requester: UserToken, learningObject: LearningObject): boolean {
   return (
     requester.accessGroups.indexOf(
