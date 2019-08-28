@@ -29,6 +29,7 @@ const MOCK_PROVIDERS = [
       useClass: MockUserLearningObjectDatastore,
     },
   ];
+
 beforeAll(() => {
     LearningObjectSearch.providers = MOCK_PROVIDERS;
     LearningObjectSearch.initialize();
@@ -46,6 +47,7 @@ const nonPrivilegedUserToken = {
     emailVerified: true,
     accessGroups: ['user'],
 };
+
 const nonPrivilegedUser = new User({
     id: 'wooooo',
     username: nonPrivilegedUserToken.username,
@@ -103,37 +105,66 @@ const admin = new User({
     username: adminUserToken.username,
 });
 
+const isAuthorDraftsOnlyQuery = {
+    revision: 0,
+    status: [
+        ...LearningObjectState.UNRELEASED,
+        ...LearningObjectState.IN_REVIEW,
+    ],
+};
 
+const isPrivilegedDraftsOnlyQuery = {
+    revision: 0,
+    status: LearningObjectState.IN_REVIEW,
+};
+
+const nonPrivilegedQuery = {};
+
+const isCuratorOrReviewerQuery = {
+    status: LearningObjectState.RELEASED,
+};
+
+const collectionAccessDenied = {
+    nccp: ['released'],
+};
+
+const collectionAccess = {
+    nccp: ['waiting', 'review', 'proofing', 'released'],
+};
+
+const isAdminOrEditorSearchReleasedQuery = {
+    status: LearningObjectState.RELEASED,
+};
+
+const isAdminOrEditorQuery = {
+    status: [
+        ...LearningObjectState.IN_REVIEW,
+        ...LearningObjectState.RELEASED,
+    ],
+};
+
+class MockUserGatewayAdmin implements UserGateway {
+    getUser(username: string): Promise<User> {
+        return Promise.resolve(admin);
+    }
+}
 describe('If draftsOnly is specified', () => {
     describe('and the requester is not the author and is not a priveleged user', () => {
-        const randomUser = {
-            username: 'randomuser',
-            name: 'Rand Um',
-            email: 'rand@clark.center',
-            organization: 'CLARK',
-            emailVerified: true,
-            accessGroups: ['user'],
-        };
         it('should throw an error', async () => {
             const promise = searchUsersObjects({
                 authorUsername: stubs.user.username,
-                requester: randomUser,
+                requester: nonPrivilegedUserToken,
                 query: { draftsOnly: true },
             });
             expect(promise).rejects.toEqual(new ResourceError(INVALID_ACCESS, ResourceErrorReason.INVALID_ACCESS));
         });
     });
     describe('and the requester does not specify status', () => {
-        class MockUserGatewayTwo implements UserGateway {
-            getUser(username: string): Promise<User> {
-                return Promise.resolve(admin);
-            }
-        }
         beforeAll(() => {
             LearningObjectSearch.destroy();
             LearningObjectSearch.providers = [
                 ...MOCK_PROVIDERS,
-                { provide: UserGateway, useClass: MockUserGatewayTwo },
+                { provide: UserGateway, useClass: MockUserGatewayAdmin },
               ];
             LearningObjectSearch.initialize();
         });
@@ -146,14 +177,7 @@ describe('If draftsOnly is specified', () => {
                     requester: adminUserToken,
                     query: { draftsOnly: true },
                 });
-                const query = {
-                    revision: 0,
-                    status: [
-                        ...LearningObjectState.UNRELEASED,
-                        ...LearningObjectState.IN_REVIEW,
-                    ],
-                };
-                expect(spy).toBeCalledWith(query, admin.id, undefined);
+                expect(spy).toBeCalledWith(isAuthorDraftsOnlyQuery, admin.id, undefined);
             });
         });
         describe('and the requester is not the author, but is a privileged user', () => {
@@ -165,19 +189,15 @@ describe('If draftsOnly is specified', () => {
                     requester: adminUserToken,
                     query: { draftsOnly: true },
                 });
-                const query = {
-                    revision: 0,
-                    status: LearningObjectState.IN_REVIEW,
-                };
-                expect(spy).toBeCalledWith(query, admin.id, undefined);
+                expect(spy).toBeCalledWith(isPrivilegedDraftsOnlyQuery, admin.id, undefined);
             });
         });
     });
     describe('and the status is set to released', () => {
         it('should throw an error.', () => {
             const p = searchUsersObjects({
-                authorUsername: stubs.searchUserObjectsUserToken.username,
-                requester: stubs.searchUserObjectsUserToken,
+                authorUsername: stubs.user.username,
+                requester: stubs.userToken,
                 query: { draftsOnly: true, status: LearningObjectState.RELEASED },
             });
             expect(p).rejects.toEqual(new ResourceError(BAD_REQUEST, ResourceErrorReason.BAD_REQUEST));
@@ -186,7 +206,7 @@ describe('If draftsOnly is specified', () => {
 });
 describe('If draftsOnly is not specified', () => {
     describe('and the requester is not the author and is not a priveleged user', () => {
-        class MockUserGatewayThree implements UserGateway {
+        class MockUserGatewayNonPrivilege implements UserGateway {
             getUser(username: string): Promise<User> {
                 return Promise.resolve(nonPrivilegedUser);
             }
@@ -195,7 +215,7 @@ describe('If draftsOnly is not specified', () => {
             LearningObjectSearch.destroy();
             LearningObjectSearch.providers = [
                 ...MOCK_PROVIDERS,
-                { provide: UserGateway, useClass: MockUserGatewayThree },
+                { provide: UserGateway, useClass: MockUserGatewayNonPrivilege },
               ];
             LearningObjectSearch.initialize();
         });
@@ -207,13 +227,12 @@ describe('If draftsOnly is not specified', () => {
                 requester: nonPrivilegedUserToken,
                 query: { draftsOnly: false },
             });
-            const query = {};
-            expect(spy).toBeCalledWith(query, nonPrivilegedUser.id);
+            expect(spy).toBeCalledWith(nonPrivilegedQuery, nonPrivilegedUser.id);
             });
         });
     describe('and the requester is not the author and is a privileged user', () => {
         describe('and the user has a privilege of reviewer@nccp', () => {
-            class MockUserGatewayFour implements UserGateway {
+            class MockUserGatewayReviewer implements UserGateway {
                 getUser(username: string): Promise<User> {
                     return Promise.resolve(reviewer);
                 }
@@ -222,7 +241,7 @@ describe('If draftsOnly is not specified', () => {
                 LearningObjectSearch.destroy();
                 LearningObjectSearch.providers = [
                     ...MOCK_PROVIDERS,
-                    { provide: UserGateway, useClass: MockUserGatewayFour },
+                    { provide: UserGateway, useClass: MockUserGatewayReviewer },
                   ];
                 LearningObjectSearch.initialize();
             });
@@ -234,13 +253,7 @@ describe('If draftsOnly is not specified', () => {
                     requester: reviewerUserToken,
                     query: { draftsOnly: false, status: LearningObjectState.RELEASED },
                 });
-                const query = {
-                    status: LearningObjectState.RELEASED,
-                };
-                const collectionAccess = {
-                    nccp: ['released'],
-                };
-                expect(spy).toBeCalledWith(query, reviewer.id, collectionAccess );
+                expect(spy).toBeCalledWith(isCuratorOrReviewerQuery, reviewer.id, collectionAccessDenied );
                 });
             it('should return Learning Objects that belong to the author that were submitted to the reviewer`s collection', async () => {
                 const mockUserLearningObjectDatastore = LearningObjectSearch.resolveDependency(UserLearningObjectDatastore);
@@ -250,17 +263,11 @@ describe('If draftsOnly is not specified', () => {
                     requester: reviewerUserToken,
                     query: { draftsOnly: false },
                 });
-                const query = {
-                    status: LearningObjectState.RELEASED,
-                };
-                const collectionAccess = {
-                    nccp: ['waiting', 'review', 'proofing', 'released'],
-                };
-                expect(spy).toBeCalledWith(query, reviewer.id, collectionAccess);
+                expect(spy).toBeCalledWith(isCuratorOrReviewerQuery, reviewer.id, collectionAccess);
                 });
             });
         describe('and the user has a privilege of curator@nccp', () => {
-            class MockUserGatewayFive implements UserGateway {
+            class MockUserGatewayCurator implements UserGateway {
                 getUser(username: string): Promise<User> {
                     return Promise.resolve(curator);
                 }
@@ -269,7 +276,7 @@ describe('If draftsOnly is not specified', () => {
                 LearningObjectSearch.destroy();
                 LearningObjectSearch.providers = [
                     ...MOCK_PROVIDERS,
-                    { provide: UserGateway, useClass: MockUserGatewayFive },
+                    { provide: UserGateway, useClass: MockUserGatewayCurator },
                   ];
                 LearningObjectSearch.initialize();
             });
@@ -281,13 +288,7 @@ describe('If draftsOnly is not specified', () => {
                     requester: curatorUserToken,
                     query: { draftsOnly: false, status: LearningObjectState.RELEASED },
                 });
-                const query = {
-                    status: LearningObjectState.RELEASED,
-                };
-                const collectionAccess = {
-                    nccp: ['released'],
-                };
-                expect(spy).toBeCalledWith(query, curator.id, collectionAccess);
+                expect(spy).toBeCalledWith(isCuratorOrReviewerQuery, curator.id, collectionAccessDenied);
             });
             it('should return Learning Objects that belong to the author that were submitted to the curator`s collection', async () => {
                 const mockUserLearningObjectDatastore = LearningObjectSearch.resolveDependency(UserLearningObjectDatastore);
@@ -297,17 +298,11 @@ describe('If draftsOnly is not specified', () => {
                     requester: curatorUserToken,
                     query: { draftsOnly: false },
                 });
-                const query = {
-                    status: LearningObjectState.RELEASED,
-                };
-                const collectionAccess = {
-                    nccp: ['waiting', 'review', 'proofing', 'released'],
-                };
-                expect(spy).toBeCalledWith(query, curator.id, collectionAccess);
+                expect(spy).toBeCalledWith(isCuratorOrReviewerQuery, curator.id, collectionAccess);
             });
         });
         describe('and the user has a privilege of editor', () => {
-            class MockUserGatewaySix implements UserGateway {
+            class MockUserGatewayEditor implements UserGateway {
                 getUser(username: string): Promise<User> {
                     return Promise.resolve(editor);
                 }
@@ -316,7 +311,7 @@ describe('If draftsOnly is not specified', () => {
                 LearningObjectSearch.destroy();
                 LearningObjectSearch.providers = [
                     ...MOCK_PROVIDERS,
-                    { provide: UserGateway, useClass: MockUserGatewaySix },
+                    { provide: UserGateway, useClass: MockUserGatewayEditor },
                   ];
                 LearningObjectSearch.initialize();
             });
@@ -328,10 +323,7 @@ describe('If draftsOnly is not specified', () => {
                     requester: editorUserToken,
                     query: { draftsOnly: false, status: LearningObjectState.RELEASED },
                 });
-                const query = {
-                    status: LearningObjectState.RELEASED,
-                };
-                expect(spy).toBeCalledWith(query, editor.id, undefined);
+                expect(spy).toBeCalledWith(isAdminOrEditorSearchReleasedQuery, editor.id, undefined);
             });
             it('should return Learning Objects that belong to the author that were submitted to any collection', async () => {
                 const mockUserLearningObjectDatastore = LearningObjectSearch.resolveDependency(UserLearningObjectDatastore);
@@ -341,26 +333,15 @@ describe('If draftsOnly is not specified', () => {
                     requester: editorUserToken,
                     query: { draftsOnly: false },
                 });
-                const query = {
-                    status: [
-                        ...LearningObjectState.IN_REVIEW,
-                        ...LearningObjectState.RELEASED,
-                    ],
-                };
-                expect(spy).toBeCalledWith(query, editor.id, undefined);
+                expect(spy).toBeCalledWith(isAdminOrEditorQuery, editor.id, undefined);
             });
         });
         describe('and the user has a privilege of admin', () => {
-            class MockUserGatewaySix implements UserGateway {
-                getUser(username: string): Promise<User> {
-                    return Promise.resolve(admin);
-                }
-            }
             beforeAll(() => {
                 LearningObjectSearch.destroy();
                 LearningObjectSearch.providers = [
                     ...MOCK_PROVIDERS,
-                    { provide: UserGateway, useClass: MockUserGatewaySix },
+                    { provide: UserGateway, useClass: MockUserGatewayAdmin },
                   ];
                 LearningObjectSearch.initialize();
             });
@@ -372,10 +353,7 @@ describe('If draftsOnly is not specified', () => {
                     requester: adminUserToken,
                     query: { draftsOnly: false, status: LearningObjectState.RELEASED },
                 });
-                const query = {
-                    status: LearningObjectState.RELEASED,
-                };
-                expect(spy).toBeCalledWith(query, admin.id, undefined);
+                expect(spy).toBeCalledWith(isAdminOrEditorSearchReleasedQuery, admin.id, undefined);
             });
             it('should return Learning Objects that belong to the author that were submitted to any collection', async () => {
                 const mockUserLearningObjectDatastore = LearningObjectSearch.resolveDependency(UserLearningObjectDatastore);
@@ -385,13 +363,7 @@ describe('If draftsOnly is not specified', () => {
                     requester: adminUserToken,
                     query: { draftsOnly: false },
                 });
-                const query = {
-                    status: [
-                        ...LearningObjectState.IN_REVIEW,
-                        ...LearningObjectState.RELEASED,
-                    ],
-                };
-                expect(spy).toBeCalledWith(query, admin.id, undefined);
+                expect(spy).toBeCalledWith(isAdminOrEditorQuery, admin.id, undefined);
             });
         });
    });
