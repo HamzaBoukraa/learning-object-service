@@ -97,7 +97,23 @@ export function initializePublic({
       res.status(code).json({ message });
     }
   };
-
+  const getMaterials = async (req: Request, res: Response) => {
+    try {
+      const requester: UserToken = req.user;
+      const id: string = req.params.id;
+      const filter: MaterialsFilter = req.query.status;
+      const materials = await LearningObjectInteractor.getMaterials({
+        dataStore,
+        id,
+        requester,
+        filter,
+      });
+      res.status(200).send(materials);
+    } catch (e) {
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({ message });
+    }
+  };
   const getLearningObjectChildrenSummaries = async (req: Request, res: Response) => {
     try {
       const learningObjectId = req.params.id;
@@ -113,7 +129,6 @@ export function initializePublic({
       res.status(code).json({ message });
     }
   };
-
   /**
    * @deprecated This route will be deprecated because of its non-RESTFul route structure
    * Please update to using `/users/:username/learning-objects` route.
@@ -142,6 +157,13 @@ export function initializePublic({
     '/users/:username/learning-objects/:learningObjectId',
     getLearningObjectById,
   );
+  router.get('/users/:username/learning-objects/:id/materials', getMaterials);
+
+  /**
+   * @deprecated This route will be deprecated because of its non RESTful route structure
+   * Please update to using `/users/:username/learning-objects/:learningObjectId/materials`
+   */
+  router.get('/learning-objects/:id/materials/all', getMaterials);
 
   /**
    * @deprecated This route will be deprecated because of its non RESTful route structure
@@ -197,23 +219,6 @@ export function initializePrivate({
         requester,
       });
       res.status(200).send(learningObject.toPlainObject());
-    } catch (e) {
-      const { code, message } = mapErrorToResponseData(e);
-      res.status(code).json({ message });
-    }
-  };
-  const getMaterials = async (req: Request, res: Response) => {
-    try {
-      const requester: UserToken = req.user;
-      const id: string = req.params.id;
-      const filter: MaterialsFilter = req.query.status;
-      const materials = await LearningObjectInteractor.getMaterials({
-        dataStore,
-        id,
-        requester,
-        filter,
-      });
-      res.status(200).send(materials);
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
       res.status(code).json({ message });
@@ -284,7 +289,5 @@ export function initializePrivate({
     '/learning-objects/:learningObjectName',
     deleteLearningObjectByName,
   );
-  router.get('/users/:username/learning-objects/:id/materials', getMaterials);
-  router.get('/learning-objects/:id/materials/all', getMaterials);
   initializeRevisionRoutes({ router, dataStore, library });
 }
