@@ -4,6 +4,7 @@ import {
     FileMetadataGateway,
 } from '../../interfaces';
 import { FileManagerModule } from '../../FileManagerModule';
+import { HierarchyGateway } from '../../gateways/HierarchyGateway/ModuleHierarchyGateway';
 
 export namespace Drivers {
     export const fileManager = () =>
@@ -15,4 +16,6 @@ export namespace Gateways {
         FileManagerModule.resolveDependency(LearningObjectGateway);
     export const fileMetadataGateway = () =>
         FileManagerModule.resolveDependency(FileMetadataGateway);
+    export const hierarchyGateway = () =>
+        FileManagerModule.resolveDependency(HierarchyGateway);
 }
