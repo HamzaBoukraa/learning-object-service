@@ -5,6 +5,7 @@ import { requesterIsAdminOrEditor, requesterIsAuthor } from '../../shared/Author
 import { LearningObject, HierarchicalLearningObject } from '../../shared/entity';
 import { Writable, Stream } from 'stream';
 import { bundleLearningObject } from '../../LearningObjects/Publishing/Bundler/Interactor';
+import { getFileStream } from './Interactor';
 
 export type DownloadBundleParams = {
   requester: UserToken,
@@ -34,14 +35,32 @@ async function downloadWorkingCopy(params: DownloadBundleParams): Promise<Stream
     );
   }
   const hierarchy = await Gateways.hierarchyGateway().buildHierarchicalLearningObject(learningObject, requester);
+
   // FIXME: Change use of bundler - can be a shared driver
-  return bundleLearningObject({ learningObject: hierarchy }); // TODO: Mock in tests via doMock
+  return bundleLearningObject({ learningObject: hierarchy });
 }
 
 async function downloadReleasedCopy(params: DownloadBundleParams): Promise<Stream> {
   const { requester, learningObjectAuthorUsername, learningObjectId } = params;
   const learningObject = await getLearningObject(params);
-  return new Stream();
+
+  // TODO: Everything below needs tests
+  const bundleStream = await getFileStream({
+    authorUsername: learningObjectAuthorUsername,
+    learningObjectId,
+    learningObjectRevisionId: learningObject.revision,
+    path: 'bundle.zip',
+  });
+
+  // if bundle does not exist, create bundle
+  // TODO: catch error thrown and check for NotFound error
+  if (!bundleStream) {
+    const hierarchy = await Gateways.hierarchyGateway().buildHierarchicalLearningObject(learningObject, requester);
+
+    // FIXME: Change use of bundler - can be a shared driver
+    return bundleLearningObject({ learningObject: hierarchy });
+  }
+  return bundleStream;
 }
 
 function authorizeWorkingCopyDownloadRequest(requester: UserToken, learningObject: LearningObject): boolean {

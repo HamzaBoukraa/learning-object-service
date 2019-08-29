@@ -1,5 +1,5 @@
 import { LearningObject } from '../../../shared/entity';
-import { UserToken, LearningObjectSummary, AuthorSummary, LearningObjectChildSummary } from '../../../shared/types';
+import { UserToken, AuthorSummary, LearningObjectChildSummary } from '../../../shared/types';
 import { LearningObjectAdapter } from '../../adapters/LearningObjectAdapter';
 import { MockDataStore } from '../../../tests/mock-drivers/MockDataStore';
 import { MockLibraryDriver } from '../../../tests/mock-drivers/MockLibraryDriver';
