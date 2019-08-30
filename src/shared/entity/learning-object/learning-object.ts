@@ -11,6 +11,16 @@ import { LearningObjectSummary, LearningObjectChildSummary } from '../../types';
 const MIN_NAME_LENGTH = 3;
 const MAX_NAME_LENGTH = 170;
 
+type LearningObjectResourceUris = {
+  outcomes?: string;
+  children?: string;
+  materials?: string;
+  metrics?: string;
+  parents?: string;
+  ratings?: string;
+  [key: string]: string;
+};
+
 /**
  * A class to represent a learning object.
  * @class
@@ -404,10 +414,9 @@ export class LearningObject {
   /**
    * Store's URI's to additional pieces of the Learning Object to be fetched asynchronously
    *
-   * @type {{ [key: string]: string }}
    * @memberof LearningObject
    */
-  resourceUris?: { [key: string]: string };
+  resourceUris?: LearningObjectResourceUris;
 
   /**
    * Map deprecated status values to new LearningObject.Status values
