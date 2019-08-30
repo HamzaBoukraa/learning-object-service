@@ -259,9 +259,9 @@ export async function getLearningObjectByName({
 
     const resourceUriHost = process.env.GATEWAY_API;
 
-    learningObject.resourceUris.children = `${resourceUriHost}/learning-objects/${learningObject.id}/children/summmary`;
-    learningObject.resourceUris.materials = `${resourceUriHost}/users/:username/learning-objects/${learningObject.id}/materials`;
-    learningObject.resourceUris.metrics = `${resourceUriHost}/learning-objects/${learningObject.id}/metrics`;
+    learningObject.resourceUris.children = `${resourceUriHost}/users/${learningObject.author.username}/learning-objects/${learningObject.id}/children`;
+    learningObject.resourceUris.materials = `${resourceUriHost}/users/${learningObject.author.username}/learning-objects/${learningObject.id}/materials`;
+    learningObject.resourceUris.metrics = `${resourceUriHost}/users/${learningObject.author.username}/learning-objects/${learningObject.id}/metrics`;
     learningObject.resourceUris.parents = `${resourceUriHost}/learning-objects/${learningObject.id}/parents`;
     learningObject.resourceUris.ratings = `${resourceUriHost}/learning-objects/${learningObject.id}/ratings`;
 
