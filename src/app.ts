@@ -55,7 +55,6 @@ switch (process.env.NODE_ENV) {
 const library: LibraryCommunicator = new LibraryDriver();
 let dataStore: DataStore;
 const publisher = new ElasticsearchSubmissionPublisher();
-let userServiceGateway: UserServiceGateway;
 
 /**
  * Starts the application by
