@@ -56,7 +56,6 @@ import { LearningObjectsModule } from './LearningObjectsModule';
 import { LearningObjectSubmissionAdapter } from '../LearningObjectSubmission/adapters/LearningObjectSubmissionAdapter';
 import { UserGateway } from './interfaces/UserGateway';
 import { validateUpdates } from '../shared/entity/learning-object/validators';
-import { LIBRARY_ROUTES as LibraryRoutes } from '../shared/routes';
 
 namespace Drivers {
   export const readMeBuilder = () =>
