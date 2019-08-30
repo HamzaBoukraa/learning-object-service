@@ -4,6 +4,7 @@ import { LEARNING_OBJECT_ROUTES } from '../../shared/routes';
 import { mapErrorToResponseData } from '../../shared/errors';
 import { fileNotFound } from '../assets/filenotfound';
 import { DownloadFilter, Requester } from '../typings';
+import { downloadBundle } from '../interactors/downloadBundle';
 
 export function buildRouter(): Router {
   const router = Router();
@@ -14,6 +15,10 @@ export function buildRouter(): Router {
   router.get(
     '/users/:username/learning-objects/:loId/materials/files/:fileId/download',
     download,
+  );
+  router.get(
+    '/users/:username/learning-objects/:learningObjectName/bundle',
+    getLearningObjectBundle,
   );
   return router;
 }
@@ -46,6 +51,21 @@ async function download(req: Request, res: Response) {
       const { code, message } = mapErrorToResponseData(e);
       res.status(code).json({ message });
     }
+  }
+}
+
+async function getLearningObjectBundle(req: Request, res: Response) {
+  try {
+    const stream = await downloadBundle({
+      requester: req.user,
+      learningObjectAuthorUsername: req.params.username,
+      learningObjectId: req.params.learningObjectName,
+      revision: req.query.revision,
+    });
+    stream.pipe(res);
+  } catch (error) {
+    const { code, message } = mapErrorToResponseData(e);
+    res.status(code).json({ message });
   }
 }
 

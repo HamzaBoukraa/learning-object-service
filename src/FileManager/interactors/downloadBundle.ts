@@ -6,7 +6,7 @@ import {
   requesterIsAuthor,
 } from '../../shared/AuthorizationManager';
 import { LearningObject } from '../../shared/entity';
-import { Stream } from 'stream';
+import { Stream, Writable } from 'stream';
 import { bundleLearningObject } from '../../LearningObjects/Publishing/Bundler/Interactor';
 
 export type DownloadBundleParams = {
