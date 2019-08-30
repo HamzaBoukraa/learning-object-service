@@ -251,19 +251,7 @@ export async function getLearningObjectByName({
       });
     }
 
-    // attach additional properties
-    if (!learningObject.resourceUris) {
-      learningObject.resourceUris = {};
-    }
-
-    const resourceUriHost = process.env.GATEWAY_API;
-
-    learningObject.resourceUris.outcomes = `${resourceUriHost}/users/${learningObject.author.username}/learning-objects/${learningObject.id}/children`;
-    learningObject.resourceUris.children = `${resourceUriHost}/users/${learningObject.author.username}/learning-objects/${learningObject.id}/children`;
-    learningObject.resourceUris.materials = `${resourceUriHost}/users/${learningObject.author.username}/learning-objects/${learningObject.id}/materials`;
-    learningObject.resourceUris.metrics = `${resourceUriHost}/users/${learningObject.author.username}/learning-objects/${learningObject.id}/metrics`;
-    learningObject.resourceUris.parents = `${resourceUriHost}/learning-objects/${learningObject.id}/parents`;
-    learningObject.resourceUris.ratings = `${resourceUriHost}/learning-objects/${learningObject.id}/ratings`;
+    learningObject.attachResourceUris(process.env.GATEWAY_API);
 
     return learningObject;
   } catch (e) {
@@ -1087,6 +1075,9 @@ export async function getLearningObjectById({
       reportError(e);
       return { saves: 0, downloads: 0 };
     });
+
+    learningObject.attachResourceUris(process.env.GATEWAY_API);
+
     return learningObject;
   } catch (e) {
     handleError(e);
@@ -1152,6 +1143,8 @@ export async function getLearningObjectSummaryById({
       authorUsername: learningObject.author.username,
       released: loadingReleased,
     });
+
+    learningObject.attachResourceUris(process.env.GATEWAY_API);
 
     return mapLearningObjectToSummary(learningObject);
   } catch (e) {

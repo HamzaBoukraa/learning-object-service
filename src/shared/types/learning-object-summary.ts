@@ -1,3 +1,5 @@
+import { LearningObjectResourceUris } from "../entity/learning-object/learning-object";
+
 /**
  * An interface representation of the AuthorSummary type
  *
@@ -67,6 +69,11 @@ export interface LearningObjectChildSummary {
    * The stage within the review pipeline that the Learning Object exists
    */
   status: string;
+
+  /**
+   * Optional URIs that point to other pieces of the Learning Object (such as children and materials)
+   */
+  resourceUris?: LearningObjectResourceUris;
 }
 /**
  * An interface representation of the full learning object summary with the revision information included.
