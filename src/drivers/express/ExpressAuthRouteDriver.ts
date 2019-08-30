@@ -71,7 +71,7 @@ export class ExpressAuthRouteDriver {
       library: this.library,
     });
 
-    LearningOutcomeRouteHandler.initialize({
+    LearningOutcomeRouteHandler.initializePrivate({
       router,
       dataStore: this.dataStore,
     });
@@ -104,6 +104,7 @@ export class ExpressAuthRouteDriver {
       try {
         const id = req.params.id;
         await updateReadme({
+          requester: req.user,
           id,
           dataStore: this.dataStore,
         });

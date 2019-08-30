@@ -572,6 +572,14 @@ export class LearningObject {
     };
     return object;
   }
+
+  public toSummary(): LearningObjectSummary {
+    // FIXME: This is gross and wrong
+    const summary = { ...this.toPlainObject() };
+    delete summary.outcomes;
+    delete summary.materials;
+    return summary as LearningObjectSummary;
+  }
 }
 
 export namespace LearningObject {

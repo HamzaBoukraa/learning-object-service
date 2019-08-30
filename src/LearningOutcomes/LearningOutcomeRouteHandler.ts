@@ -3,17 +3,51 @@ import { Request, Response, Router } from 'express';
 import { LearningOutcomeUpdate } from './types';
 import { UserToken } from '../shared/types';
 import { mapErrorToResponseData } from '../shared/errors';
+import { ModuleLearningObjectGateway, LearningObjectGateway } from './gateways/ModuleLearningObjectGateway';
+import { LearningOutcomeDatastore } from './datastores/LearningOutcomeDataStore';
 
 /**
- * Initializes an express router with endpoints to Create, Update, and Delete
+ * Returns a new instance of ModuleLearningObjectGateway
+ *
+ * @returns { LearningObjectGateway }
+ */
+function getLearningObjectGateway(): LearningObjectGateway {
+  return new ModuleLearningObjectGateway();
+}
+
+export function initializePublic({
+  router,
+  dataStore,
+}: {
+  router: Router,
+  dataStore: LearningOutcomeDatastore,
+}) {
+  const getLearningObjectsOutcomes = async (req: Request, res: Response) => {
+    try {
+      const source = req.params.id;
+      const requester = req.user;
+
+      const outcomes = await LearningOutcomeInteractor.getAllLearningOutcomes({ dataStore, requester, source, learningObjectGateway: getLearningObjectGateway() });
+      res.status(200).json(outcomes);
+    } catch (e) {
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({message});
+    }
+  };
+
+  router.get('/users/:username/learning-objects/:id/outcomes', getLearningObjectsOutcomes);
+}
+
+/**
+ * Initializes an express router with authenticated endpoints to Create, Update, and Delete
  * a Learning Outcome.
  */
-export function initialize({
+export function initializePrivate({
   router,
   dataStore,
 }: {
   router: Router;
-  dataStore: LearningOutcomeInteractor.LearningOutcomeDatastore;
+  dataStore: LearningOutcomeDatastore;
 }) {
   const addLearningOutcome = async (req: Request, res: Response) => {
     try {
