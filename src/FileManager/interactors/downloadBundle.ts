@@ -1,20 +1,24 @@
 import { UserToken, AccessGroup } from '../../shared/types';
-import { Gateways } from './shared/dependencies';
+import { Gateways, Drivers } from './shared/dependencies';
 import { ResourceErrorReason, ResourceError } from '../../shared/errors';
-import { requesterIsAdminOrEditor, requesterIsAuthor } from '../../shared/AuthorizationManager';
-import { LearningObject, HierarchicalLearningObject } from '../../shared/entity';
-import { Writable, Stream } from 'stream';
+import {
+  requesterIsAdminOrEditor,
+  requesterIsAuthor,
+} from '../../shared/AuthorizationManager';
+import { LearningObject } from '../../shared/entity';
+import { Stream } from 'stream';
 import { bundleLearningObject } from '../../LearningObjects/Publishing/Bundler/Interactor';
-import { getFileStream } from './Interactor';
 
 export type DownloadBundleParams = {
-  requester: UserToken,
-  learningObjectAuthorUsername: string,
-  learningObjectId: string,
-  revision: boolean,
+  requester: UserToken;
+  learningObjectAuthorUsername: string;
+  learningObjectId: string;
+  revision: boolean;
 };
 
-export async function downloadBundle(params: DownloadBundleParams): Promise<Stream> {
+export async function downloadBundle(
+  params: DownloadBundleParams,
+): Promise<Stream> {
   const { revision } = params;
   // is it a revision or not
   if (revision) {
@@ -24,52 +28,82 @@ export async function downloadBundle(params: DownloadBundleParams): Promise<Stre
   }
 }
 
-async function downloadWorkingCopy(params: DownloadBundleParams): Promise<Stream> {
+async function downloadWorkingCopy(
+  params: DownloadBundleParams,
+): Promise<Stream> {
   const { requester, learningObjectAuthorUsername, learningObjectId } = params;
   const learningObject = await getLearningObject(params, true);
-  const hasAccess = authorizeWorkingCopyDownloadRequest(requester, learningObject);
+  const hasAccess = authorizeWorkingCopyDownloadRequest(
+    requester,
+    learningObject,
+  );
   if (!hasAccess) {
     throw new ResourceError(
       `User ${requester.username} does not have access to download the requested Learning Object`,
       ResourceErrorReason.FORBIDDEN,
     );
   }
-  const hierarchy = await Gateways.hierarchyGateway().buildHierarchicalLearningObject(learningObject, requester);
-
-  // FIXME: Change use of bundler - can be a shared driver
-  return bundleLearningObject({ learningObject: hierarchy });
+  return createBundleStream(learningObject, requester);
 }
 
-async function downloadReleasedCopy(params: DownloadBundleParams): Promise<Stream> {
+async function downloadReleasedCopy(
+  params: DownloadBundleParams,
+): Promise<Stream> {
   const { requester, learningObjectAuthorUsername, learningObjectId } = params;
   const learningObject = await getLearningObject(params);
 
   // TODO: Everything below needs tests
-  const bundleStream = await getFileStream({
+  const fileExists = await Drivers.fileManager().hasAccess({
     authorUsername: learningObjectAuthorUsername,
     learningObjectId,
     learningObjectRevisionId: learningObject.revision,
     path: 'bundle.zip',
   });
-
-  // if bundle does not exist, create bundle
-  // TODO: catch error thrown and check for NotFound error
-  if (!bundleStream) {
-    const hierarchy = await Gateways.hierarchyGateway().buildHierarchicalLearningObject(learningObject, requester);
-
-    // FIXME: Change use of bundler - can be a shared driver
-    return bundleLearningObject({ learningObject: hierarchy });
+  if (fileExists) {
+    return await Drivers.fileManager().streamFile({
+      authorUsername: learningObjectAuthorUsername,
+      learningObjectId,
+      learningObjectRevisionId: learningObject.revision,
+      path: 'bundle.zip',
+    });
+  } else {
+    // if bundle does not exist, create bundle
+    // TODO: Perhaps we should also generate the file if it does not exist
+    // TODO: catch error thrown and check for NotFound error
+    return await createBundleStream(learningObject, requester);
   }
-  return bundleStream;
 }
 
-function authorizeWorkingCopyDownloadRequest(requester: UserToken, learningObject: LearningObject): boolean {
-  return requesterIsAdminOrEditor(requester)
-    || hasCollectionAccess(requester, learningObject)
-    || requesterIsAuthor({ authorUsername: learningObject.author.username, requester });
+async function createBundleStream(
+  learningObject: LearningObject,
+  requester: UserToken,
+) {
+  const hierarchy = await Gateways.hierarchyGateway().buildHierarchicalLearningObject(
+    learningObject,
+    requester,
+  );
+  // FIXME: Change use of bundler - can be a shared driver
+  return bundleLearningObject({ learningObject: hierarchy });
 }
 
-function hasCollectionAccess(requester: UserToken, learningObject: LearningObject): boolean {
+function authorizeWorkingCopyDownloadRequest(
+  requester: UserToken,
+  learningObject: LearningObject,
+): boolean {
+  return (
+    requesterIsAdminOrEditor(requester) ||
+    hasCollectionAccess(requester, learningObject) ||
+    requesterIsAuthor({
+      authorUsername: learningObject.author.username,
+      requester,
+    })
+  );
+}
+
+function hasCollectionAccess(
+  requester: UserToken,
+  learningObject: LearningObject,
+): boolean {
   return (
     requester.accessGroups.indexOf(
       `${AccessGroup.REVIEWER}@${learningObject.collection}`,
@@ -80,11 +114,17 @@ function hasCollectionAccess(requester: UserToken, learningObject: LearningObjec
   );
 }
 
-async function getLearningObject(params: DownloadBundleParams, workingCopy = false) {
+async function getLearningObject(
+  params: DownloadBundleParams,
+  workingCopy = false,
+) {
   const learningObjectGateway = Gateways.learningObjectGateway();
   const { requester, learningObjectAuthorUsername, learningObjectId } = params;
   try {
-    return await Gateways.learningObjectGateway().getLearningObjectById({ learningObjectId, requester });
+    return await Gateways.learningObjectGateway().getLearningObjectById({
+      learningObjectId,
+      requester,
+    });
   } catch (e) {
     if (e.name === ResourceErrorReason.NOT_FOUND) {
       return await learningObjectGateway.getLearningObjectByName({
@@ -95,15 +135,4 @@ async function getLearningObject(params: DownloadBundleParams, workingCopy = fal
       });
     } else throw e;
   }
-}
-
-function constructDownloadBundle(writeStream: Writable, learningObject: LearningObject) {
-
-  /* const objectData = await aggregateLearningObjectDownloadData({ learningObject, requester });
-
-  Drivers.bundler().bundleData({
-    writeStream,
-    bundleData: objectData,
-    extension
-  }); */
 }
