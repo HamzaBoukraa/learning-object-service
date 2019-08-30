@@ -417,6 +417,12 @@ export class LearningObject {
    */
   resourceUris?: LearningObjectResourceUris;
 
+  /**
+   * Attach URIs of additional resources to the Learning Object
+   *
+   * @param {string} resourceUriHost the base URI of the api
+   * @memberof LearningObject
+   */
   attachResourceUris(
     resourceUriHost: string,
   ) {
