@@ -18,7 +18,6 @@ export type LearningObjectResourceUris = {
   metrics?: string;
   parents?: string;
   ratings?: string;
-  [key: string]: string;
 };
 
 /**
@@ -420,39 +419,23 @@ export class LearningObject {
 
   attachResourceUris(
     resourceUriHost: string,
-    properties?: { [P in keyof LearningObjectResourceUris]: boolean },
-    overrides?: LearningObjectResourceUris,
   ) {
     // attach additional properties
     if (!this.resourceUris) {
       this.resourceUris = {};
     }
 
-    if (!properties || properties.outcomes) {
-      this.resourceUris.outcomes = overrides && overrides.outcomes ? overrides.outcomes : `${resourceUriHost}/users/${this.author.username}/learning-objects/${this.id}/outcomes`;
-    }
+    this.resourceUris.outcomes = `${resourceUriHost}/users/${this.author.username}/learning-objects/${this.id}/outcomes`;
 
-    if (!properties || properties.children) {
-      this.resourceUris.children = overrides && overrides.children ? overrides.children : `${resourceUriHost}/users/${this.author.username}/learning-objects/${this.id}/children`;
-    }
+    this.resourceUris.children = `${resourceUriHost}/users/${this.author.username}/learning-objects/${this.id}/children`;
 
-    if (!properties || properties.materials) {
-      this.resourceUris.materials = overrides && overrides.materials ?
-        overrides.materials :
-        `${resourceUriHost}/users/${this.author.username}/learning-objects/${this.id}/materials`;
-    }
+    this.resourceUris.materials = `${resourceUriHost}/users/${this.author.username}/learning-objects/${this.id}/materials`;
 
-    if (!properties || properties.metrics) {
-      this.resourceUris.metrics = overrides && overrides.metrics ? overrides.metrics : `${resourceUriHost}/users/${this.author.username}/learning-objects/${this.id}/metrics`;
-    }
+    this.resourceUris.metrics = `${resourceUriHost}/users/${this.author.username}/learning-objects/${this.id}/metrics`;
 
-    if (!properties || properties.parents) {
-      this.resourceUris.parents = overrides && overrides.parents ? overrides.parents : `${resourceUriHost}/learning-objects/${this.id}/parents`;
-    }
+    this.resourceUris.parents = `${resourceUriHost}/learning-objects/${this.id}/parents`;
 
-    if (!properties || properties.ratings) {
-      this.resourceUris.ratings = overrides && overrides.ratings ? overrides.ratings : `${resourceUriHost}/learning-objects/${this.id}/ratings`;
-    }
+    this.resourceUris.ratings = `${resourceUriHost}/learning-objects/${this.id}/ratings`;
   }
 
   /**
