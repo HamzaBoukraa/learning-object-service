@@ -62,7 +62,7 @@ describe('When buildHierarchicalLearningObject is called', () => {
       const expected = {
           ...fullLearningObjectStub,
           children: [ fullLearningObjectStub ],
-      }
+      };
       expect(hierarchy).toEqual(expected);
     });
   });
