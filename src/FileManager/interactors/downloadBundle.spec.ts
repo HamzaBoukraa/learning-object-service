@@ -31,6 +31,7 @@ const LearningObjectStub = {
         username: '',
     },
 } as LearningObject;
+
 class LearningObjectGatewayStub implements LearningObjectGateway {
     getWorkingLearningObjectSummary(params: {
         requester: UserToken;
