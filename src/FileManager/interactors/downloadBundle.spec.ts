@@ -75,8 +75,6 @@ function initializeServiceModuleFixtures() {
         { provide: LearningObjectGateway, useClass: LearningObjectGatewayStub },
         { provide: HierarchyGateway, useClass: HierarchyGatewayStub },
     ];
-    // BundlerModule.providers = [];
-    // BundlerModule.initialize();
     FileManagerModule.initialize();
 }
 
@@ -228,7 +226,7 @@ describe('When downloadBundle is called for a Working Copy', () => {
     });
     describe('and the requester does not have download privilege', () => {
         describe('because the requester does not have any access groups and is not the Learning Object author', () => {
-            it('should thrown a forbidden error', async () => {
+            it('should throw a forbidden error', async () => {
                 const learningObjectGateway = Gateways.learningObjectGateway();
                 learningObjectGateway.getLearningObjectById = () =>
                     Promise.resolve(LearningObjectStub);
