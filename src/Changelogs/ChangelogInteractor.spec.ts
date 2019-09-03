@@ -2,21 +2,32 @@ import { DataStore } from '../shared/interfaces/DataStore';
 import { MockDataStore } from '../tests/mock-drivers/MockDataStore';
 import { StubModuleLearningObjectGateway } from './testing/StubModuleLearningObjectGateway';
 
-import {
-  getRecentChangelog,
-  createChangelog,
-  getChangelogs,
-} from './ChangelogInteractor';
-
 import { Stubs } from '../tests/stubs';
-
 const dataStore: DataStore = new MockDataStore();
 const learningObjectGateway = new StubModuleLearningObjectGateway();
 const stubs = new Stubs();
 
+let ChangelogInteractor: any;
+
+beforeAll(async () => {
+  jest.mock('../shared/gateways/user-service/UserServiceGateway');
+  ChangelogInteractor = await import('./ChangelogInteractor');
+});
+
+jest.doMock('../shared/gateways/user-service/UserServiceGateway', () => ({
+  __esModule: true,
+  UserServiceGateway: {
+    getInstance: () => ({
+      findUser: jest
+      .fn()
+      .mockResolvedValue(stubs.user),
+    }),
+  },
+}));
+
 describe('getRecentChangelog', () => {
   it('should get latest change log for a learning object (admin)', async () => {
-    return expect(getRecentChangelog({
+    return expect(ChangelogInteractor.getRecentChangelog({
         dataStore,
         learningObjectId: stubs.learningObject.id,
         userId: stubs.learningObject.author.id,
@@ -26,7 +37,7 @@ describe('getRecentChangelog', () => {
   });
 
   it('should get latest change log for a learning object (editor)', async () => {
-    return expect(getRecentChangelog({
+    return expect(ChangelogInteractor.getRecentChangelog({
         dataStore,
         learningObjectId: stubs.learningObject.id,
         userId: stubs.learningObject.author.id,
@@ -36,7 +47,7 @@ describe('getRecentChangelog', () => {
   });
 
   it('should get latest change log for a learning object (author)', async () => {
-    return expect(getRecentChangelog({
+    return expect(ChangelogInteractor.getRecentChangelog({
         dataStore,
         learningObjectId: stubs.learningObject.id,
         userId: stubs.learningObject.author.id,
@@ -48,7 +59,7 @@ describe('getRecentChangelog', () => {
 
 describe('createChangelog', () => {
     it('should create a new change log (admin)', async () => {
-      return expect(createChangelog({
+      return expect(ChangelogInteractor.createChangelog({
           dataStore,
           learningObjectId: stubs.learningObject.id,
           user: {...stubs.userToken, accessGroups: ['admin']},
@@ -59,7 +70,7 @@ describe('createChangelog', () => {
     });
 
     it('should create a new change log (editor)', async () => {
-      return expect(createChangelog({
+      return expect(ChangelogInteractor.createChangelog({
           dataStore,
           learningObjectId: stubs.learningObject.id,
           user: {...stubs.userToken, accessGroups: ['editor']},
@@ -70,7 +81,7 @@ describe('createChangelog', () => {
     });
 
     it('should create a new change log (author)', async () => {
-      return expect(createChangelog({
+      return expect(ChangelogInteractor.createChangelog({
           dataStore,
           learningObjectId: stubs.learningObject.id,
           user: {...stubs.userToken, accessGroups: ['']},
@@ -85,7 +96,7 @@ describe('getChangelogs', () => {
   describe('When I request change logs for a Learning Object that is released and does not have any revisions', () => {
     describe('and I ask for all change logs', () => {
       it('should return all change logs for the specified learning object', async () => {
-        return expect(getChangelogs({
+        return expect(ChangelogInteractor.getChangelogs({
           learningObjectGateway,
           dataStore,
           learningObjectId: stubs.learningObject.id,
@@ -97,7 +108,7 @@ describe('getChangelogs', () => {
     });
     describe('and I ask for the most recent change log', () => {
       it('should return only the most recent change log for the specified Learning Object', async () => {
-        return expect(getChangelogs({
+        return expect(ChangelogInteractor.getChangelogs({
           learningObjectGateway,
           dataStore,
           learningObjectId: stubs.learningObject.id,
@@ -114,7 +125,7 @@ describe('getChangelogs', () => {
     describe('and I am an admin', () => {
       describe('and I ask for all change logs', () => {
         it('should return all change logs for the specified Learning Object', async () => {
-          return expect(getChangelogs({
+          return expect(ChangelogInteractor.getChangelogs({
             learningObjectGateway,
             dataStore,
             learningObjectId: stubs.learningObject.id,
@@ -126,7 +137,7 @@ describe('getChangelogs', () => {
       });
       describe('and I ask for the most recent change log', () => {
         it('should return only the most recent change log for the specified Learning Object', async () => {
-          return expect(getChangelogs({
+          return expect(ChangelogInteractor.getChangelogs({
             learningObjectGateway,
             dataStore,
             learningObjectId: stubs.learningObject.id,
@@ -141,7 +152,7 @@ describe('getChangelogs', () => {
     describe('and I am an editor', () => {
       describe('and I ask for all change logs', () => {
         it('should return all change logs for the specified Learning Object', async () => {
-          return expect(getChangelogs({
+          return expect(ChangelogInteractor.getChangelogs({
             learningObjectGateway,
             dataStore,
             learningObjectId: stubs.learningObject.id,
@@ -153,7 +164,7 @@ describe('getChangelogs', () => {
       });
       describe('and I ask for the most recent change log', () => {
         it('should return only the most recent change log for the specified Learning Object', async () => {
-          return expect(getChangelogs({
+          return expect(ChangelogInteractor.getChangelogs({
             learningObjectGateway,
             dataStore,
             learningObjectId: stubs.learningObject.id,
@@ -168,7 +179,7 @@ describe('getChangelogs', () => {
     describe('and I am the Learning object author', () => {
       describe('and I ask for all change logs', () => {
         it('should return all change logs for the specified Learning Object', async () => {
-          return expect(getChangelogs({
+          return expect(ChangelogInteractor.getChangelogs({
             learningObjectGateway,
             dataStore,
             learningObjectId: stubs.learningObject.id,
@@ -180,7 +191,7 @@ describe('getChangelogs', () => {
       });
       describe('and I ask for the most recent change log', () => {
         it('should return only the most recent change log for the specified Learning Object', async () => {
-          return expect(getChangelogs({
+          return expect(ChangelogInteractor.getChangelogs({
             learningObjectGateway,
             dataStore,
             learningObjectId: stubs.learningObject.id,
@@ -196,7 +207,7 @@ describe('getChangelogs', () => {
   describe('When I request change logs for a Learning Object that has revisions, but I ask for change logs relevant to the released copy', () => {
     describe('and I ask for all change logs', () => {
       it('should return all change logs that are relevant to the released copy for the specified learning object', async () => {
-        return expect(getChangelogs({
+        return expect(ChangelogInteractor.getChangelogs({
           learningObjectGateway,
           dataStore,
           learningObjectId: stubs.learningObject.id,
@@ -209,7 +220,7 @@ describe('getChangelogs', () => {
     });
     describe('and I ask for the most recent change log', () => {
       it('should return only the most recent change log that is relevant to the released copy for the specified Learning Object', async () => {
-        return expect(getChangelogs({
+        return expect(ChangelogInteractor.getChangelogs({
           learningObjectGateway,
           dataStore,
           learningObjectId: stubs.learningObject.id,
@@ -226,7 +237,7 @@ describe('getChangelogs', () => {
     describe('and I am an admin', () => {
       describe('and I ask for all change logs', () => {
         it('should return all change logs for the specified Learning Object', async () => {
-          return expect(getChangelogs({
+          return expect(ChangelogInteractor.getChangelogs({
             learningObjectGateway,
             dataStore,
             learningObjectId: stubs.learningObject.id,
@@ -238,7 +249,7 @@ describe('getChangelogs', () => {
       });
       describe('and I ask for the most recent change log', () => {
         it('should return only the most recent change log for the specified Learning Object', async () => {
-          return expect(getChangelogs({
+          return expect(ChangelogInteractor.getChangelogs({
             learningObjectGateway,
             dataStore,
             learningObjectId: stubs.learningObject.id,
@@ -253,7 +264,7 @@ describe('getChangelogs', () => {
     describe('and I am an editor', () => {
       describe('and I ask for all change logs', () => {
         it('should return all change logs for the specified Learning Object', async () => {
-          return expect(getChangelogs({
+          return expect(ChangelogInteractor.getChangelogs({
             learningObjectGateway,
             dataStore,
             learningObjectId: stubs.learningObject.id,
@@ -265,7 +276,7 @@ describe('getChangelogs', () => {
       });
       describe('and I ask for the most recent change log', () => {
         it('should return only the most recent change log for the specified Learning Object', async () => {
-          return expect(getChangelogs({
+          return expect(ChangelogInteractor.getChangelogs({
             learningObjectGateway,
             dataStore,
             learningObjectId: stubs.learningObject.id,
@@ -280,7 +291,7 @@ describe('getChangelogs', () => {
     describe('and I am the Learning Object author', () => {
       describe('and I ask for all change logs', () => {
         it('should return all change logs for the specified Learning Object', async () => {
-          return expect(getChangelogs({
+          return expect(ChangelogInteractor.getChangelogs({
             learningObjectGateway,
             dataStore,
             learningObjectId: stubs.learningObject.id,
@@ -296,7 +307,7 @@ describe('getChangelogs', () => {
       });
       describe('and I ask for the most recent change log', () => {
         it('should return only the most recent change log for the specified Learning Object', async () => {
-          return expect(getChangelogs({
+          return expect(ChangelogInteractor.getChangelogs({
             learningObjectGateway,
             dataStore,
             learningObjectId: stubs.learningObject.id,
