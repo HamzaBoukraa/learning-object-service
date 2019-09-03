@@ -57,6 +57,8 @@ import { LearningObjectSubmissionAdapter } from '../LearningObjectSubmission/ada
 import { UserGateway } from './interfaces/UserGateway';
 import { validateUpdates } from '../shared/entity/learning-object/validators';
 
+const GATEWAY_API = process.env.GATEWAY_API;
+
 namespace Drivers {
   export const readMeBuilder = () =>
     LearningObjectsModule.resolveDependency(ReadMeBuilder);
@@ -250,6 +252,8 @@ export async function getLearningObjectByName({
         userToken,
       });
     }
+
+    learningObject.attachResourceUris(GATEWAY_API);
 
     return learningObject;
   } catch (e) {
@@ -1073,6 +1077,9 @@ export async function getLearningObjectById({
       reportError(e);
       return { saves: 0, downloads: 0 };
     });
+
+    learningObject.attachResourceUris(GATEWAY_API);
+
     return learningObject;
   } catch (e) {
     handleError(e);
@@ -1138,6 +1145,8 @@ export async function getLearningObjectSummaryById({
       authorUsername: learningObject.author.username,
       released: loadingReleased,
     });
+
+    learningObject.attachResourceUris(GATEWAY_API);
 
     return mapLearningObjectToSummary(learningObject);
   } catch (e) {
