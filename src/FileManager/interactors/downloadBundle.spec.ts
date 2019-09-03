@@ -8,7 +8,7 @@ import { ResourceErrorReason, ResourceError } from '../../shared/errors';
 import { Gateways } from './shared/dependencies';
 import { Stream } from 'stream';
 import { HierarchyGateway } from '../gateways/HierarchyGateway/ModuleHierarchyGateway';
-import { BundlerModule } from '../../LearningObjects/Publishing/Bundler/BundlerModule';
+import FileManagerModuleErrorMessages from './shared/errors';
 
 const requesterStub: UserToken = {
     username: 'test-username',
@@ -234,7 +234,7 @@ describe('When downloadBundle is called for a Working Copy', () => {
                 const promise = downloadBundle(downloadBundleParamStub);
 
                 await expect(promise).rejects.toThrowError(
-                    'User test-username does not have access to download the requested Learning Object',
+                    FileManagerModuleErrorMessages.forbiddenLearningObjectDownload('test-username'),
                 );
             });
         });
@@ -253,7 +253,7 @@ describe('When downloadBundle is called for a Working Copy', () => {
                 const promise = downloadBundle(curatorRequestParams);
 
                 await expect(promise).rejects.toThrowError(
-                    'User test-username does not have access to download the requested Learning Object',
+                    FileManagerModuleErrorMessages.forbiddenLearningObjectDownload('test-username'),
                 );
             });
         });
@@ -272,7 +272,7 @@ describe('When downloadBundle is called for a Working Copy', () => {
                 const promise = downloadBundle(reviewerRequestParams);
 
                 await expect(promise).rejects.toThrowError(
-                    'User test-username does not have access to download the requested Learning Object',
+                    FileManagerModuleErrorMessages.forbiddenLearningObjectDownload('test-username'),
                 );
             });
         });

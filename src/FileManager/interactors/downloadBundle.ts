@@ -6,8 +6,9 @@ import {
   requesterIsAuthor,
 } from '../../shared/AuthorizationManager';
 import { LearningObject } from '../../shared/entity';
-import { Stream, Writable } from 'stream';
+import { Stream } from 'stream';
 import { bundleLearningObject } from '../../LearningObjects/Publishing/Bundler/Interactor';
+import FileManagerModuleErrorMessages from './shared/errors';
 
 export type DownloadBundleParams = {
   requester: UserToken;
@@ -39,7 +40,7 @@ async function downloadWorkingCopy(
   );
   if (!hasAccess) {
     throw new ResourceError(
-      `User ${requester.username} does not have access to download the requested Learning Object`,
+      FileManagerModuleErrorMessages.forbiddenLearningObjectDownload(requester.username),
       ResourceErrorReason.FORBIDDEN,
     );
   }
