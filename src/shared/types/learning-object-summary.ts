@@ -1,4 +1,4 @@
-import { LearningObjectResourceUris } from "../entity/learning-object/learning-object";
+import { LearningObjectResourceUris } from '../entity/learning-object/learning-object';
 
 /**
  * An interface representation of the AuthorSummary type
