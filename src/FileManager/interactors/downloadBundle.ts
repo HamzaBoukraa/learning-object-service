@@ -9,6 +9,7 @@ import { LearningObject } from '../../shared/entity';
 import { Stream } from 'stream';
 import { bundleLearningObject } from '../../LearningObjects/Publishing/Bundler/Interactor';
 import FileManagerModuleErrorMessages from './shared/errors';
+import { uploadFile } from './Interactor';
 
 export type DownloadBundleParams = {
   requester: UserToken;
@@ -53,7 +54,6 @@ async function downloadReleasedCopy(
   const { requester, learningObjectAuthorUsername, learningObjectId } = params;
   const learningObject = await getLearningObject(params);
 
-  // TODO: Everything below needs tests
   const fileExists = await Drivers.fileManager().hasAccess({
     authorUsername: learningObjectAuthorUsername,
     learningObjectId,
@@ -69,9 +69,18 @@ async function downloadReleasedCopy(
     });
   } else {
     // if bundle does not exist, create bundle
-    // TODO: Perhaps we should also generate the file if it does not exist
-    // TODO: catch error thrown and check for NotFound error
-    return await createBundleStream(learningObject, requester);
+    const bundle = await createBundleStream(learningObject, requester);
+    await uploadFile({
+      authorUsername: learningObject.author.username,
+      learningObjectId: learningObject.id,
+      learningObjectRevisionId: learningObject.revision,
+      file: {
+        path: 'bundle.zip',
+        data: bundle,
+      },
+    });
+    // FIXME: catch error thrown and check for NotFound error
+    return bundle;
   }
 }
 

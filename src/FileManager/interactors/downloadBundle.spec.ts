@@ -1,4 +1,4 @@
-import { UserToken, LearningObjectSummary } from '../../shared/types';
+import { UserToken, LearningObjectSummary, FileUpload } from '../../shared/types';
 import { FileManagerModule } from '../FileManagerModule';
 import { LearningObjectGateway } from '../interfaces';
 import { LearningObjectFilter } from '../../LearningObjects/typings';
@@ -86,6 +86,23 @@ jest.mock('../../LearningObjects/Publishing/Bundler/Interactor', () => ({
         learningObject: HierarchicalLearningObject,
     }) => {
         return new Stream();
+    },
+}));
+
+jest.mock('./Interactor', () => ({
+    uploadFile: ({
+        authorUsername,
+        learningObjectId,
+        learningObjectRevisionId,
+        file,
+      }: {
+        authorUsername: string;
+        learningObjectId: string;
+        learningObjectRevisionId: number;
+        file: FileUpload;
+      }): Promise<void> => {
+        console.log('Stub update file');
+        return;
     },
 }));
 

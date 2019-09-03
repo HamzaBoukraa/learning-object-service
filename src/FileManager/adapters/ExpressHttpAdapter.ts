@@ -16,6 +16,8 @@ export function buildRouter(): Router {
     '/users/:username/learning-objects/:loId/materials/files/:fileId/download',
     download,
   );
+
+  // FIXME: change learningObjectName to learningObjectId when client is updated
   router.get(
     '/users/:username/learning-objects/:learningObjectName/bundle',
     getLearningObjectBundle,
