@@ -1,8 +1,8 @@
 import { DataStore } from '../shared/interfaces/DataStore';
 import { MockDataStore } from '../tests/mock-drivers/MockDataStore';
 import { StubModuleLearningObjectGateway } from './testing/StubModuleLearningObjectGateway';
-
 import { Stubs } from '../tests/stubs';
+
 const dataStore: DataStore = new MockDataStore();
 const learningObjectGateway = new StubModuleLearningObjectGateway();
 const stubs = new Stubs();
