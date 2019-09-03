@@ -917,14 +917,7 @@ export async function updateLearningObject({
     }
 
     // if updates include a name change and the object has been submitted, update the README
-    if (
-      updates.name &&
-      [
-        LearningObject.Status.WAITING,
-        LearningObject.Status.REVIEW,
-        LearningObject.Status.PROOFING,
-        LearningObject.Status.RELEASED,
-      ].includes(learningObject.status)) {
+    if (updates.name && LearningObjectState.IN_REVIEW.includes(learningObject.status)) {
       await updateReadme({
         dataStore,
         requester,
