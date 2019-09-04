@@ -5,13 +5,20 @@ import {
 import { UserToken } from '../../../shared/types';
 import { LearningObjectAdapter } from '../../adapters/LearningObjectAdapter';
 
-// TODO: Move to Hierarchy Module and write tests
+/**
+ * buildHierarchicalLearningObject takes a Learning Object and
+ * uses it to generate a HierarchicalLearningObject.
+ * The function iterates over the children array for the given
+ * Learning Object and generates a full Learning Object
+ * for each child. This function recurses for every child
+ * until no exist.
+ * @param { LearningObject }learningObject
+ * @param { UserToken }requester
+ */
 export async function buildHierarchicalLearningObject(
   learningObject: LearningObject,
   requester: UserToken,
 ): Promise<HierarchicalLearningObject> {
-  // 1. Fetch full children from summaries of children
-  // 2. If the full children have children (grandchildren)
   const hierarchyBuilderPromise = learningObject.children.map(async child => {
     const fullChild = await LearningObjectAdapter.getInstance().getLearningObjectById(
       { id: child.id, requester },

@@ -18,6 +18,12 @@ export type DownloadBundleParams = {
   revision: boolean;
 };
 
+/**
+ * downloadBundle acts as a wrapper function for downloads.
+ * If the revision flag is set set, downloadWorkingCopy is invoked.
+ * Otherwise, downloadReleasedCopy is called.
+ * @param { DownloadBundleParams } params
+ */
 export async function downloadBundle(
   params: DownloadBundleParams,
 ): Promise<Stream> {
@@ -30,6 +36,13 @@ export async function downloadBundle(
   }
 }
 
+/**
+ * downloadWorkingCopy gets the requested Learning Object from the
+ * database and uses it to authorize the download request.
+ * If the requester does not have access, a forbidden error is thrown.
+ * Otherwise, the createBundleStream function is invoked.
+ * @param { DownloadBundleParams } params
+ */
 async function downloadWorkingCopy(
   params: DownloadBundleParams,
 ): Promise<Stream> {
@@ -48,6 +61,15 @@ async function downloadWorkingCopy(
   return createBundleStream(learningObject, requester);
 }
 
+/**
+ * downloadReleasedCopy fetches the requested Learning Object.
+ * Released Learning Object downloads do not need to be authorized.
+ * The Learning Object is used to check if the requested bundle.zip file exists.
+ * If the bundle does exists, the file is streamed to the client.
+ * Otherwise, the bundle.zip file is created and stored. The generated bundle
+ * is then streamed to the client.
+ * @param { DownloadBundleParams } params
+ */
 async function downloadReleasedCopy(
   params: DownloadBundleParams,
 ): Promise<Stream> {
@@ -68,7 +90,6 @@ async function downloadReleasedCopy(
       path: 'bundle.zip',
     });
   } else {
-    // if bundle does not exist, create bundle
     const bundle = await createBundleStream(learningObject, requester);
     await uploadFile({
       authorUsername: learningObject.author.username,
@@ -84,6 +105,13 @@ async function downloadReleasedCopy(
   }
 }
 
+/**
+ * createBundleStream uses the given requester and Learning Object
+ * to build a HierarchicalLearningObject. This object is then used to
+ * create a stream.
+ * @param { LearningObject } learningObject
+ * @param { UserToken } requester
+ */
 async function createBundleStream(
   learningObject: LearningObject,
   requester: UserToken,
@@ -96,6 +124,14 @@ async function createBundleStream(
   return bundleLearningObject({ learningObject: hierarchy });
 }
 
+/**
+ * authorizeWorkingCopyDownloadRequest returns true is the requester
+ * is an admin, editor, curator, reviewer, or Learning Object author.
+ * Curators and reviewers must be
+ * members of the correct collection.
+ * @param { LearningObject } learningObject
+ * @param { UserToken } requester
+ */
 function authorizeWorkingCopyDownloadRequest(
   requester: UserToken,
   learningObject: LearningObject,
@@ -110,6 +146,12 @@ function authorizeWorkingCopyDownloadRequest(
   );
 }
 
+/**
+ * hasCollectionAccess checks to see if curators
+ * and reviewers are members of the correct collection
+ * @param { LearningObject } learningObject
+ * @param { UserToken } requester
+ */
 function hasCollectionAccess(
   requester: UserToken,
   learningObject: LearningObject,
@@ -124,6 +166,14 @@ function hasCollectionAccess(
   );
 }
 
+/**
+ * getLearningObject returns the requested Learning Object.
+ * To maintain backwards compatibility, this function accepts
+ * a Learning Object Id or a Learning Object Name.
+ *
+ * @param { DownloadBundleParams } params
+ * @param { boolean } workingCopy
+ */
 async function getLearningObject(
   params: DownloadBundleParams,
   workingCopy = false,
