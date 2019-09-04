@@ -7,6 +7,7 @@ import { LearningOutcome } from '../learning-outcome/learning-outcome';
 import { LEARNING_OBJECT_ERRORS } from './error-messages';
 import { EntityError } from '../errors/entity-error';
 import { LearningObjectSummary, LearningObjectChildSummary } from '../../types';
+import * as uuid from 'uuid/v4';
 
 const MIN_NAME_LENGTH = 3;
 const MAX_NAME_LENGTH = 170;
@@ -36,6 +37,40 @@ export class LearningObject {
       throw new EntityError(LEARNING_OBJECT_ERRORS.ID_SET, 'id');
     }
   }
+
+  private _cuid?: string;
+
+  /**
+   * A CLARK Universal Identifier.
+   *
+   * The CUID property maintains the relationship between released Learning Objects and their working copies. Since each are separate documents, they mmust
+   * have a unique _id property that can be used as a foreign key, but can share a CUID.
+   *
+   * @private
+   * @type {string}
+   * @memberof LearningObject
+   */
+  get cuid(): string {
+    return this._cuid;
+  }
+
+  /**
+   * Set the CUID property. Will throw an instance of EntityError if the CUID property is already set.
+   *
+   * @memberof LearningObject
+   */
+  set cuid(cuid: string) {
+    if (!this._cuid) {
+      this._cuid = cuid;
+    } else {
+      throw new EntityError(LEARNING_OBJECT_ERRORS.CUID_SET, 'cuid');
+    }
+  }
+
+  generateCUID(): void {
+    this.cuid = uuid();
+  }
+
   private _author: User;
   /**
    * @property {User} author (immutable)

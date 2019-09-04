@@ -2430,6 +2430,7 @@ export class MongoDriver implements DataStore {
 
     const doc: LearningObjectDocument = {
       _id: object.id || new ObjectID().toHexString(),
+      cuid: object.cuid,
       authorID: authorID,
       name: object.name,
       date: object.date,
@@ -2470,6 +2471,7 @@ export class MongoDriver implements DataStore {
 
     const doc: ReleasedLearningObjectDocument = {
       _id: object.id,
+      cuid: object.cuid,
       authorID: object.author.id,
       name: object.name,
       date: object.date,

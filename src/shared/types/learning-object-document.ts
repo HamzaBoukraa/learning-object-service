@@ -3,6 +3,8 @@
  */
 export interface LearningObjectDocument {
   _id: string;
+  // TODO make property non-optional when database is back-filled with CUIDs
+  cuid?: string;
   authorID: string;
   name: string;
   description: string;
@@ -24,6 +26,8 @@ export interface ReleasedLearningObjectDocument extends LearningObjectDocument {
 
 export interface ReleasedLearningObjectDocument {
   _id: string;
+  // TODO make property non-optional when database is back-filled with CUIDs
+  cuid?: string;
   authorID: string;
   name: string;
   description: string;
