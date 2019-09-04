@@ -529,6 +529,7 @@ export class LearningObject {
   constructor(object?: Partial<LearningObject>) {
     // @ts-ignore Id will be undefined on creation
     this._id = undefined;
+    this._cuid = undefined;
     this._author = new User();
     this._name = '';
     this._description = '';
@@ -565,6 +566,11 @@ export class LearningObject {
     if (object.id) {
       this.id = object.id;
     }
+
+    if (object.cuid) {
+      this.cuid = object.cuid;
+    }
+
     if (object.author) {
       this._author = new User(object.author);
     }
@@ -619,6 +625,7 @@ export class LearningObject {
   public toPlainObject(): Partial<LearningObject> {
     const object: Partial<LearningObject> = {
       id: this.id,
+      cuid: this.cuid,
       author: this.author.toPlainObject() as User,
       name: this.name,
       description: this.description,

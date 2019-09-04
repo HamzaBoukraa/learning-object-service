@@ -1662,6 +1662,7 @@ export class MongoDriver implements DataStore {
         {
           $group: {
             _id: '$_id',
+            cuid: { $first: '$cuid' },
             orderedFiles: {
               $push: '$materials.files',
             },
@@ -2619,6 +2620,7 @@ export class MongoDriver implements DataStore {
     }
     learningObject = new LearningObject({
       id: record._id,
+      cuid: record.cuid,
       author,
       name: record.name,
       date: record.date,
@@ -2634,6 +2636,7 @@ export class MongoDriver implements DataStore {
       children,
       revision: record.revision,
     });
+
     return learningObject;
   }
 
@@ -2685,6 +2688,7 @@ export class MongoDriver implements DataStore {
     }
     learningObject = new LearningObject({
       id: record._id,
+      cuid: record.cuid,
       author,
       name: record.name,
       date: record.date,
