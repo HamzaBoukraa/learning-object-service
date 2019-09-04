@@ -58,11 +58,15 @@ async function download(req: Request, res: Response) {
 
 async function getLearningObjectBundle(req: Request, res: Response) {
   try {
+    let revision = false;
+    if (req.query.revision === '') {
+      revision = true;
+    }
     const stream = await downloadBundle({
       requester: req.user,
       learningObjectAuthorUsername: req.params.username,
       learningObjectId: req.params.learningObjectName,
-      revision: req.query.revision,
+      revision,
     });
     stream.pipe(res);
   } catch (e) {
