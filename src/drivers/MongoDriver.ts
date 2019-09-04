@@ -21,7 +21,7 @@ import {
   CollectionAccessMap,
   LearningObjectChildSummary,
 } from '../shared/types';
-import { LearningOutcomeMongoDatastore } from '../LearningOutcomes/LearningOutcomeMongoDatastore';
+import { LearningOutcomeMongoDatastore } from '../LearningOutcomes/datastores/LearningOutcomeMongoDatastore';
 import {
   LearningOutcomeInsert,
   LearningOutcomeUpdate,

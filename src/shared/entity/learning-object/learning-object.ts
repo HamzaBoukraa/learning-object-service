@@ -11,6 +11,15 @@ import { LearningObjectSummary, LearningObjectChildSummary } from '../../types';
 const MIN_NAME_LENGTH = 3;
 const MAX_NAME_LENGTH = 170;
 
+export type LearningObjectResourceUris = {
+  outcomes?: string;
+  children?: string;
+  materials?: string;
+  metrics?: string;
+  parents?: string;
+  ratings?: string;
+};
+
 /**
  * A class to represent a learning object.
  * @class
@@ -402,6 +411,40 @@ export class LearningObject {
   }
 
   /**
+   * Store's URI's to additional pieces of the Learning Object to be fetched asynchronously
+   *
+   * @memberof LearningObject
+   */
+  resourceUris?: LearningObjectResourceUris;
+
+  /**
+   * Attach URIs of additional resources to the Learning Object
+   *
+   * @param {string} resourceUriHost the base URI of the api
+   * @memberof LearningObject
+   */
+  attachResourceUris(
+    resourceUriHost: string,
+  ) {
+    // attach additional properties
+    if (!this.resourceUris) {
+      this.resourceUris = {};
+    }
+
+    this.resourceUris.outcomes = `${resourceUriHost}/users/${this.author.username}/learning-objects/${this.id}/outcomes`;
+
+    this.resourceUris.children = `${resourceUriHost}/users/${this.author.username}/learning-objects/${this.id}/children`;
+
+    this.resourceUris.materials = `${resourceUriHost}/users/${this.author.username}/learning-objects/${this.id}/materials`;
+
+    this.resourceUris.metrics = `${resourceUriHost}/users/${this.author.username}/learning-objects/${this.id}/metrics`;
+
+    this.resourceUris.parents = `${resourceUriHost}/learning-objects/${this.id}/parents`;
+
+    this.resourceUris.ratings = `${resourceUriHost}/learning-objects/${this.id}/ratings`;
+  }
+
+  /**
    * Map deprecated status values to new LearningObject.Status values
    *
    * @private
@@ -560,8 +603,17 @@ export class LearningObject {
       metrics: this.metrics,
       hasRevision: this.hasRevision,
       revision: this.revision,
+      resourceUris: this.resourceUris,
     };
     return object;
+  }
+
+  public toSummary(): LearningObjectSummary {
+    // FIXME: This is gross and wrong
+    const summary = { ...this.toPlainObject() };
+    delete summary.outcomes;
+    delete summary.materials;
+    return summary as LearningObjectSummary;
   }
 }
 

@@ -15,6 +15,7 @@ import {
   handleError,
   ResourceError,
   ResourceErrorReason,
+  ServiceError,
 } from '../shared/errors';
 import { reportError } from '../shared/SentryConnector';
 import { LearningObject, User } from '../shared/entity';
@@ -55,6 +56,8 @@ import { LearningObjectsModule } from './LearningObjectsModule';
 import { LearningObjectSubmissionAdapter } from '../LearningObjectSubmission/adapters/LearningObjectSubmissionAdapter';
 import { UserGateway } from './interfaces/UserGateway';
 import { validateUpdates } from '../shared/entity/learning-object/validators';
+
+const GATEWAY_API = process.env.GATEWAY_API;
 
 namespace Drivers {
   export const readMeBuilder = () =>
@@ -249,6 +252,8 @@ export async function getLearningObjectByName({
         userToken,
       });
     }
+
+    learningObject.attachResourceUris(GATEWAY_API);
 
     return learningObject;
   } catch (e) {
@@ -901,10 +906,16 @@ export async function updateLearningObject({
         username: authorUsername,
       });
     }
+
     const learningObject = await dataStore.fetchLearningObject({
       id,
       full: false,
     });
+
+    if (!learningObject) {
+      throw new ResourceError(`No Learning Object with id ${id} exists.`, ResourceErrorReason.BAD_REQUEST);
+    }
+
     const isInReview = LearningObjectState.IN_REVIEW.includes(
       learningObject.status,
     );
@@ -915,6 +926,16 @@ export async function updateLearningObject({
         learningObject.id
       }.`,
     });
+
+    // if updates include a name change and the object has been submitted, update the README
+    if (updates.name && isInReview) {
+      await updateReadme({
+        dataStore,
+        requester,
+        object: learningObject,
+      });
+    }
+
     const cleanUpdates = sanitizeUpdates(updates);
     validateUpdates(cleanUpdates);
 
@@ -1072,6 +1093,9 @@ export async function getLearningObjectById({
       reportError(e);
       return { saves: 0, downloads: 0 };
     });
+
+    learningObject.attachResourceUris(GATEWAY_API);
+
     return learningObject;
   } catch (e) {
     handleError(e);
@@ -1137,6 +1161,8 @@ export async function getLearningObjectSummaryById({
       authorUsername: learningObject.author.username,
       released: loadingReleased,
     });
+
+    learningObject.attachResourceUris(GATEWAY_API);
 
     return mapLearningObjectToSummary(learningObject);
   } catch (e) {
@@ -1259,34 +1285,57 @@ async function loadReleasedChildObjects({
 /**
  * Fetches a learning objects children by ID
  *
+ * Authorization is performed by first requesting the source object with a call to getLearningObjectsById()
+ *
  * @export
  * @param {DataStore} dataStore
  * @param {string} id the learning object's id
+ *
+ * @returns { Promise<LearningObject[]> }
+ *
+ * @throws { ResourceError }
  */
-export async function getLearningObjectChildrenById(
+export async function getLearningObjectChildrenSummariesById(
   dataStore: DataStore,
+  requester: UserToken,
+  libraryDriver: LibraryCommunicator,
   objectId: string,
-) {
-  // Retrieve the ids of the children in the order in which they were set by user
+): Promise<LearningObjectSummary[]> {
+  try {
+    // handle authorization by attempting to retrieve and read the source object
+    await getLearningObjectById({ dataStore, library: libraryDriver, id: objectId, requester });
+  } catch (error) {
+    if (error instanceof ResourceError) {
+      if (error.name === ResourceErrorReason.NOT_FOUND) {
+        throw new ResourceError(
+          `Children for the Learning Object with id ${objectId} cannot be found because no Learning Object with id ${objectId} exists.`, ResourceErrorReason.NOT_FOUND,
+        );
+      }
+    } else {
+      throw error;
+    }
+  }
+
+  // retrieve the ids of the children in the order in which they were set by user
   const childrenIDs = await dataStore.findChildObjectIds({
     parentId: objectId,
   });
 
   const childrenOrder = await dataStore.loadChildObjects({
     id: objectId,
-    full: true,
     status: LearningObjectState.ALL,
   });
   // array to return the children in correct order
-  const children: LearningObject[] = [];
+  const children: LearningObjectSummary[] = [];
 
   // fill children array with correct order of children
   let cIDs = 0;
   let c = 0;
 
+  // order the children payload to the same order as the array of child ids stored in `childrenIDs`
   while (c < childrenOrder.length) {
     if (childrenIDs[cIDs] === childrenOrder[c].id) {
-      children.push(childrenOrder[c]);
+      children.push(childrenOrder[c].toSummary());
       cIDs++;
       c = 0;
     } else {
