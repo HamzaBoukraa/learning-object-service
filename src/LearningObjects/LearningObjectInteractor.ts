@@ -911,10 +911,16 @@ export async function updateLearningObject({
         username: authorUsername,
       });
     }
+
     const learningObject = await dataStore.fetchLearningObject({
       id,
       full: false,
     });
+
+    if (!learningObject) {
+      throw new ResourceError(`No Learning Object with id ${id} exists.`, ResourceErrorReason.BAD_REQUEST);
+    }
+
     const isInReview = LearningObjectState.IN_REVIEW.includes(
       learningObject.status,
     );
@@ -925,6 +931,16 @@ export async function updateLearningObject({
         learningObject.id
       }.`,
     });
+
+    // if updates include a name change and the object has been submitted, update the README
+    if (updates.name && isInReview) {
+      await updateReadme({
+        dataStore,
+        requester,
+        object: learningObject,
+      });
+    }
+
     const cleanUpdates = sanitizeUpdates(updates);
     validateUpdates(cleanUpdates);
 

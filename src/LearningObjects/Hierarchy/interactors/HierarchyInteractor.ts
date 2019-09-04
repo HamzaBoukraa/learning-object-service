@@ -1,5 +1,5 @@
-import { DataStore, ParentLearningObjectQuery } from '../../shared/interfaces/DataStore';
-import { UserToken, LearningObjectState, LearningObjectSummary } from '../../shared/types';
+import { DataStore, ParentLearningObjectQuery } from '../../../shared/interfaces/DataStore';
+import { UserToken, LearningObjectState, LearningObjectSummary } from '../../../shared/types';
 
 /**
  * Fetches the parents of a Learning Object.
@@ -114,3 +114,4 @@ function identifyCollectionAccess(accessGroups: string[]): string[] {
   }
   return collections;
 }
+
