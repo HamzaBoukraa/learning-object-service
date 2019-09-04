@@ -70,15 +70,15 @@ async function downloadReleasedCopy(
   } else {
     // if bundle does not exist, create bundle
     const bundle = await createBundleStream(learningObject, requester);
-    // await uploadFile({
-    //   authorUsername: learningObject.author.username,
-    //   learningObjectId: learningObject.id,
-    //   learningObjectRevisionId: learningObject.revision,
-    //   file: {
-    //     path: 'bundle.zip',
-    //     data: bundle,
-    //   },
-    // });
+    await uploadFile({
+      authorUsername: learningObject.author.username,
+      learningObjectId: learningObject.id,
+      learningObjectRevisionId: learningObject.revision,
+      file: {
+        path: 'bundle.zip',
+        data: bundle,
+      },
+    });
     // FIXME: catch error thrown and check for NotFound error
     return bundle;
   }
