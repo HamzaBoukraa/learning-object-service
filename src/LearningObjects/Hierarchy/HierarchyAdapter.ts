@@ -1,7 +1,8 @@
 import { DataStore } from '../../shared/interfaces/DataStore';
-import { isTopLevelLearningObject } from './HierarchyInteractor';
+import { isTopLevelLearningObject } from './interactors/HierarchyInteractor';
 import { UserToken } from '../../shared/types';
-import { LearningObject } from '../../shared/entity';
+import { LearningObject, HierarchicalLearningObject } from '../../shared/entity';
+import { buildHierarchicalLearningObject } from './interactors/buildHierarchicalLearningObject';
 
 export class HierarchyAdapter {
 
@@ -45,5 +46,9 @@ export class HierarchyAdapter {
             dataStore: this.dataStore,
             learningObjectID: params.learningObjectID,
         });
+    }
+
+    async buildHierarchicalLearningObject(learningObject: LearningObject, requester: UserToken): Promise<HierarchicalLearningObject> {
+        return await buildHierarchicalLearningObject(learningObject, requester);
     }
 }

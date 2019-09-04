@@ -1,4 +1,6 @@
 import { UserToken, LearningObjectSummary } from '../../shared/types';
+import { LearningObjectFilter } from '../../LearningObjects/typings';
+import { LearningObject } from '../../shared/entity';
 
 export abstract class LearningObjectGateway {
   /**
@@ -37,4 +39,17 @@ export abstract class LearningObjectGateway {
     requester: UserToken;
     id: string;
   }): Promise<LearningObjectSummary>;
+
+  abstract getLearningObjectById(params: {
+    learningObjectId: string,
+    requester?: UserToken,
+    filter?: LearningObjectFilter,
+  }): Promise<LearningObject>;
+
+  abstract getLearningObjectByName(params: {
+    username: string,
+    learningObjectName: string,
+    requester: UserToken,
+    revision: boolean,
+  }): Promise<LearningObject>;
 }

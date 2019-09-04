@@ -3,7 +3,6 @@ import { LearningObject, BundleData, BundleExtension, HierarchicalLearningObject
 import { BundlerModule } from './BundlerModule';
 import { Bundler, LicenseRetriever, FileGateway } from './interfaces';
 import { handleError } from '../../../shared/errors';
-import { LearningObjectSummary, LearningObjectChildSummary } from '../../../shared/types';
 
 /**
  * Encapsulates Drivers used within this interactor in a namespace
