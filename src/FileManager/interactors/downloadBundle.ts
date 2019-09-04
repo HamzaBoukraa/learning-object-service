@@ -56,29 +56,29 @@ async function downloadReleasedCopy(
 
   const fileExists = await Drivers.fileManager().hasAccess({
     authorUsername: learningObjectAuthorUsername,
-    learningObjectId,
+    learningObjectId: learningObject.id,
     learningObjectRevisionId: learningObject.revision,
     path: 'bundle.zip',
   });
   if (fileExists) {
     return await Drivers.fileManager().streamFile({
       authorUsername: learningObjectAuthorUsername,
-      learningObjectId,
+      learningObjectId: learningObject.id,
       learningObjectRevisionId: learningObject.revision,
       path: 'bundle.zip',
     });
   } else {
     // if bundle does not exist, create bundle
     const bundle = await createBundleStream(learningObject, requester);
-    await uploadFile({
-      authorUsername: learningObject.author.username,
-      learningObjectId: learningObject.id,
-      learningObjectRevisionId: learningObject.revision,
-      file: {
-        path: 'bundle.zip',
-        data: bundle,
-      },
-    });
+    // await uploadFile({
+    //   authorUsername: learningObject.author.username,
+    //   learningObjectId: learningObject.id,
+    //   learningObjectRevisionId: learningObject.revision,
+    //   file: {
+    //     path: 'bundle.zip',
+    //     data: bundle,
+    //   },
+    // });
     // FIXME: catch error thrown and check for NotFound error
     return bundle;
   }
