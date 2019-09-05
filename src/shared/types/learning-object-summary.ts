@@ -36,6 +36,12 @@ export interface LearningObjectChildSummary {
    * Unique identifier of the Learning Object
    */
   id: string;
+
+  /**
+   * Clark Universal Identifier
+   */
+  cuid?: string;
+
   /**
    * Summary information of the user who authored the Learning Object
    */

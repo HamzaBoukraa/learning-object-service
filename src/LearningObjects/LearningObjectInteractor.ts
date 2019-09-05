@@ -857,13 +857,18 @@ export async function addLearningObject({
       username: authorUsername,
       name: object.name,
     });
+
     const authorID = await dataStore.findUser(authorUsername);
     const author = await dataStore.fetchUser(authorID);
     const objectInsert = new LearningObject({
       ...object,
       author,
     });
+
+    objectInsert.generateCUID();
+
     objectInsert.revision = 0;
+
     const learningObjectID = await dataStore.insertLearningObject(objectInsert);
     objectInsert.id = learningObjectID;
     return objectInsert;
