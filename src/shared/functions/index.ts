@@ -119,6 +119,7 @@ export function mapLearningObjectToSummary(
 ): LearningObjectSummary {
   return {
     id: object.id,
+    cuid: object.cuid,
     author: mapAuthorToSummary(object.author),
     children: object.children || [],
     collection: object.collection,
@@ -132,6 +133,7 @@ export function mapLearningObjectToSummary(
     name: object.name,
     revision: object.revision,
     status: object.status,
+    resourceUris: object.resourceUris,
   };
 }
 
@@ -147,6 +149,7 @@ export function mapChildLearningObjectToSummary(
 ): LearningObjectChildSummary {
   return {
     id: object.id,
+    cuid: object.id,
     author: mapAuthorToSummary(object.author),
     collection: object.collection,
     contributors: object.contributors

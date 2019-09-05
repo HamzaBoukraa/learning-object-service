@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { DataStore } from '../../shared/interfaces/DataStore';
 import { LearningObjectInteractor } from '../../interactors/interactors';
-import { fetchParents } from './HierarchyInteractor';
+import { fetchParents } from './interactors/HierarchyInteractor';
 import { mapErrorToResponseData } from '../../shared/errors';
 import { LearningObject } from '../../shared/entity';
 

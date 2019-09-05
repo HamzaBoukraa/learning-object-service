@@ -57,6 +57,8 @@ import { LearningObjectSubmissionAdapter } from '../LearningObjectSubmission/ada
 import { UserGateway } from './interfaces/UserGateway';
 import { validateUpdates } from '../shared/entity/learning-object/validators';
 
+const GATEWAY_API = process.env.GATEWAY_API;
+
 namespace Drivers {
   export const readMeBuilder = () =>
     LearningObjectsModule.resolveDependency(ReadMeBuilder);
@@ -250,6 +252,8 @@ export async function getLearningObjectByName({
         userToken,
       });
     }
+
+    learningObject.attachResourceUris(GATEWAY_API);
 
     return learningObject;
   } catch (e) {
@@ -853,13 +857,18 @@ export async function addLearningObject({
       username: authorUsername,
       name: object.name,
     });
+
     const authorID = await dataStore.findUser(authorUsername);
     const author = await dataStore.fetchUser(authorID);
     const objectInsert = new LearningObject({
       ...object,
       author,
     });
+
+    objectInsert.generateCUID();
+
     objectInsert.revision = 0;
+
     const learningObjectID = await dataStore.insertLearningObject(objectInsert);
     objectInsert.id = learningObjectID;
     return objectInsert;
@@ -902,10 +911,16 @@ export async function updateLearningObject({
         username: authorUsername,
       });
     }
+
     const learningObject = await dataStore.fetchLearningObject({
       id,
       full: false,
     });
+
+    if (!learningObject) {
+      throw new ResourceError(`No Learning Object with id ${id} exists.`, ResourceErrorReason.BAD_REQUEST);
+    }
+
     const isInReview = LearningObjectState.IN_REVIEW.includes(
       learningObject.status,
     );
@@ -916,6 +931,16 @@ export async function updateLearningObject({
         learningObject.id
       }.`,
     });
+
+    // if updates include a name change and the object has been submitted, update the README
+    if (updates.name && isInReview) {
+      await updateReadme({
+        dataStore,
+        requester,
+        object: learningObject,
+      });
+    }
+
     const cleanUpdates = sanitizeUpdates(updates);
     validateUpdates(cleanUpdates);
 
@@ -1073,6 +1098,9 @@ export async function getLearningObjectById({
       reportError(e);
       return { saves: 0, downloads: 0 };
     });
+
+    learningObject.attachResourceUris(GATEWAY_API);
+
     return learningObject;
   } catch (e) {
     handleError(e);
@@ -1138,6 +1166,8 @@ export async function getLearningObjectSummaryById({
       authorUsername: learningObject.author.username,
       released: loadingReleased,
     });
+
+    learningObject.attachResourceUris(GATEWAY_API);
 
     return mapLearningObjectToSummary(learningObject);
   } catch (e) {

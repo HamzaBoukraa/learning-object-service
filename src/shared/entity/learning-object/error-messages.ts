@@ -29,10 +29,11 @@ export const LEARNING_OBJECT_ERRORS = {
   INVALID_MATERIAL: 'Material must be defined.',
   INVALID_METRICS: 'Metrics must be defined.',
   INVALID_COLLECTION: 'Collection must be defined.',
-  ID_SET: 'Id has already been set and cannot be modified.'
+  ID_SET: 'Id has already been set and cannot be modified.',
+  CUID_SET: 'CUID has already been set and cannot be modified.',
 };
 
 export const SUBMITTABLE_LEARNING_OBJECT_ERRORS = {
   INVALID_DESCRIPTION: 'Description must not be an empty string.',
-  INVALID_OUTCOMES: 'Outcomes must contain at least one valid outcome.'
+  INVALID_OUTCOMES: 'Outcomes must contain at least one valid outcome.',
 };

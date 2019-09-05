@@ -1,25 +1,8 @@
-import { FileManagerModule } from './FileManagerModule';
 import { Readable } from 'stream';
-import { FileUpload, DownloadFilter, Requester, AccessGroup } from './typings';
-import { ResourceError, ResourceErrorReason } from '../shared/errors';
-import {
-  FileManager,
-  LearningObjectGateway,
-  FileMetadataGateway,
-} from './interfaces';
-import { LearningObjectSummary } from '../shared/types';
-
-namespace Drivers {
-  export const fileManager = () =>
-    FileManagerModule.resolveDependency(FileManager);
-}
-
-namespace Gateways {
-  export const learningObjectGateway = () =>
-    FileManagerModule.resolveDependency(LearningObjectGateway);
-  export const fileMetadataGateway = () =>
-    FileManagerModule.resolveDependency(FileMetadataGateway);
-}
+import { FileUpload, DownloadFilter, Requester, AccessGroup } from '../typings';
+import { ResourceError, ResourceErrorReason } from '../../shared/errors';
+import { LearningObjectSummary } from '../../shared/types';
+import { Drivers, Gateways } from './shared/dependencies';
 
 /**
  * FIXME:
