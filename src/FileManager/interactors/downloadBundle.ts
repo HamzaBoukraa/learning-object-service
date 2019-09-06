@@ -82,14 +82,8 @@ async function downloadReleasedCopy(
     learningObjectRevisionId: learningObject.revision,
     path: 'bundle.zip',
   });
-  if (fileExists) {
-    return await Drivers.fileManager().streamFile({
-      authorUsername: learningObjectAuthorUsername,
-      learningObjectId: learningObject.id,
-      learningObjectRevisionId: learningObject.revision,
-      path: 'bundle.zip',
-    });
-  } else {
+
+  if (!fileExists) {
     const bundle = await createBundleStream(learningObject, requester);
     await uploadFile({
       authorUsername: learningObject.author.username,
@@ -100,9 +94,14 @@ async function downloadReleasedCopy(
         data: bundle,
       },
     });
-    // FIXME: catch error thrown and check for NotFound error
-    return bundle;
   }
+
+  return await Drivers.fileManager().streamFile({
+    authorUsername: learningObjectAuthorUsername,
+    learningObjectId: learningObject.id,
+    learningObjectRevisionId: learningObject.revision,
+    path: 'bundle.zip',
+  });
 }
 
 /**
