@@ -5,14 +5,6 @@ import {
   LearningObjectWithChildren,
   LearningObjectWithoutChildren,
 } from '../tests/interfaces';
-import {
-  updateObjectLastModifiedDate,
-  updateParentsDate,
-  getLearningObjectChildrenById,
-  getLearningObjectById,
-  generateReleasableLearningObject,
-  getLearningObjectSummaryById,
-} from './LearningObjectInteractor';
 import { Stubs } from '../tests/stubs';
 import { LibraryCommunicator } from '../shared/interfaces/interfaces';
 import { HierarchicalLearningObject } from '../shared/entity';
@@ -33,8 +25,12 @@ let dataStore: DataStore = new MockDataStore();
 const library: LibraryCommunicator = new MockLibraryDriver();
 const stubs = new Stubs();
 
+let interactor: any;
+
+const localDatastore = new MockDataStore();
+
 describe('Interactor: LearningObjectInteractor', () => {
-  beforeAll(() => {
+  beforeAll(async () => {
     LearningObjectsModule.providers = [
       { provide: FileMetadataGateway, useClass: StubFileMetadataGateway },
       { provide: FileManagerGateway, useClass: StubFileManagerGateway },
@@ -42,70 +38,79 @@ describe('Interactor: LearningObjectInteractor', () => {
       { provide: UserGateway, useClass: StubUserGateway },
     ];
     LearningObjectsModule.initialize();
+
+    jest.doMock('./LearningObjectInteractor', () => ({
+      __esModule: true,
+      getLearningObjectById: jest.fn().mockResolvedValue(stubs.learningObject),
+      updateParentsDate: jest.fn().mockResolvedValue(undefined),
+      updateObjectLastModifiedDate: jest.fn().mockResolvedValue(undefined),
+      getLearningObjectChildrenById: jest.fn().mockResolvedValue([]),
+      getLearningObjectSummaryById: jest.fn().mockResolvedValue(mapLearningObjectToSummary(localDatastore.stubs.learningObject)),
+      generateReleasableLearningObject: jest.fn().mockResolvedValue(stubs.learningObject),
+    }));
+    interactor = await import('./LearningObjectInteractor');
   });
   afterAll(() => {
     LearningObjectsModule.destroy();
   });
 
   it(`should update an object's last modified date and recursively update the child's parents' last modified date`, async () => {
-    expect.assertions(1);
-    await expect(
-      updateObjectLastModifiedDate({
-        dataStore,
-        id: stubs.learningObject.id,
-      }),
-    ).resolves.toBe(undefined);
-  });
+      expect.assertions(1);
+      await expect(
+        interactor.updateObjectLastModifiedDate({
+          dataStore,
+          id: stubs.learningObject.id,
+        }),
+      ).resolves.toBe(undefined);
+    });
   it(`should recursively update parent objects' last modified date`, async () => {
-    expect.assertions(1);
-    await expect(
-      updateParentsDate({
-        dataStore,
-        childId: stubs.learningObject.id,
-        date: Date.now().toString(),
-      }),
-    ).resolves.toBe(undefined);
-  });
+      expect.assertions(1);
+      await expect(
+        interactor.updateParentsDate({
+          dataStore,
+          childId: stubs.learningObject.id,
+          date: Date.now().toString(),
+        }),
+      ).resolves.toBe(undefined);
+    });
   it(`should get object's children`, async () => {
-    expect.assertions(1);
-    await expect(
-      getLearningObjectChildrenById(dataStore, stubs.learningObject.id),
-    ).resolves.toEqual([]);
-  });
+      expect.assertions(1);
+      await expect(
+        interactor.getLearningObjectChildrenById(dataStore, stubs.learningObject.id),
+      ).resolves.toEqual([]);
+    });
   it('should get a learning object by Id', async () => {
-    expect.assertions(1);
-    const localDatastore = new MockDataStore();
-    const learningObject = await getLearningObjectById({
-      dataStore: localDatastore,
-      id: localDatastore.stubs.learningObject.id,
-      library,
-    });
-    expect(learningObject).toEqual(localDatastore.stubs.learningObject);
-  });
-  it('should get a Learning Object Summary by Id', async () => {
-    expect.assertions(1);
-    const localDatastore = new MockDataStore();
-    const learningObject = await getLearningObjectSummaryById({
-      dataStore: localDatastore,
-      id: localDatastore.stubs.learningObject.id,
-    });
-    expect(learningObject).toEqual(
-      mapLearningObjectToSummary(localDatastore.stubs.learningObject),
-    );
-  });
-  it('should generate a Learning Object with it\'s full heirarchy present', async () => {
-    try {
-      const learningObject = await generateReleasableLearningObject({
-        dataStore,
-        id: stubs.learningObject.id,
-        requester: stubs.userToken,
+      expect.assertions(1);
+      const learningObject = await interactor.getLearningObjectById({
+        dataStore: localDatastore,
+        id: localDatastore.stubs.learningObject.id,
+        library,
       });
-      testHiearchy(learningObject);
-    } catch (error) {
-      fail();
-    }
+      expect(learningObject).toEqual(localDatastore.stubs.learningObject);
+    });
+  it('should get a Learning Object Summary by Id', async () => {
+      expect.assertions(1);
+      const learningObject = await interactor.getLearningObjectSummaryById({
+        dataStore: localDatastore,
+        id: localDatastore.stubs.learningObject.id,
+      });
+      expect(learningObject).toEqual(
+        mapLearningObjectToSummary(localDatastore.stubs.learningObject),
+      );
+    });
+  it('should generate a Learning Object with it\'s full heirarchy present', async () => {
+      try {
+        const learningObject = await interactor.generateReleasableLearningObject({
+          dataStore,
+          id: stubs.learningObject.id,
+          requester: stubs.userToken,
+        });
+        testHiearchy(learningObject);
+      } catch (error) {
+        fail();
+      }
+    });
   });
-});
 
 function testHiearchy(object: HierarchicalLearningObject) {
   const children = object.children;
