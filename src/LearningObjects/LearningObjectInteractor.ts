@@ -917,7 +917,10 @@ export async function updateLearningObject({
     });
 
     if (!learningObject) {
-      throw new ResourceError(`No Learning Object with id ${id} exists.`, ResourceErrorReason.BAD_REQUEST);
+      throw new ResourceError(
+        `No Learning Object with id ${id} exists.`,
+        ResourceErrorReason.BAD_REQUEST,
+      );
     }
 
     const isInReview = LearningObjectState.IN_REVIEW.includes(
@@ -926,9 +929,7 @@ export async function updateLearningObject({
     authorizeWriteAccess({
       learningObject,
       requester,
-      message: `Invalid access. Cannot update Learning Object ${
-        learningObject.id
-      }.`,
+      message: `Invalid access. Cannot update Learning Object ${learningObject.id}.`,
     });
 
     // if updates include a name change and the object has been submitted, update the README
@@ -1240,7 +1241,6 @@ async function loadWorkingParentsReleasedChildObjects({
 }): Promise<HierarchicalLearningObject[]> {
   let children = await dataStore.loadWorkingParentsReleasedChildObjects({
     id: parentId,
-    full: true,
   });
 
   return Promise.all(
@@ -1307,12 +1307,18 @@ export async function getLearningObjectChildrenSummariesById(
 ): Promise<LearningObjectSummary[]> {
   try {
     // handle authorization by attempting to retrieve and read the source object
-    await getLearningObjectById({ dataStore, library: libraryDriver, id: objectId, requester });
+    await getLearningObjectById({
+      dataStore,
+      library: libraryDriver,
+      id: objectId,
+      requester,
+    });
   } catch (error) {
     if (error instanceof ResourceError) {
       if (error.name === ResourceErrorReason.NOT_FOUND) {
         throw new ResourceError(
-          `Children for the Learning Object with id ${objectId} cannot be found because no Learning Object with id ${objectId} exists.`, ResourceErrorReason.NOT_FOUND,
+          `Children for the Learning Object with id ${objectId} cannot be found because no Learning Object with id ${objectId} exists.`,
+          ResourceErrorReason.NOT_FOUND,
         );
       }
     } else {
@@ -1339,7 +1345,7 @@ export async function getLearningObjectChildrenSummariesById(
   // order the children payload to the same order as the array of child ids stored in `childrenIDs`
   while (c < childrenOrder.length) {
     if (childrenIDs[cIDs] === childrenOrder[c].id) {
-      children.push(childrenOrder[c].toSummary());
+      children.push(childrenOrder[c]);
       cIDs++;
       c = 0;
     } else {
@@ -1393,9 +1399,7 @@ export async function deleteLearningObject({
       .catch(e => {
         reportError(
           new Error(
-            `Problem deleting changelogs for Learning Object${
-              learningObject.id
-            }: ${e}`,
+            `Problem deleting changelogs for Learning Object${learningObject.id}: ${e}`,
           ),
         );
       });
@@ -1428,9 +1432,7 @@ export async function deleteLearningObjectByName({
     const authorId = await dataStore.findUser(user.username);
     if (!authorId) {
       throw new ResourceError(
-        `Unable to delete Learning Object ${learningObjectName}. No user ${
-          user.username
-        } with Learning Object ${learningObjectName} found.`,
+        `Unable to delete Learning Object ${learningObjectName}. No user ${user.username} with Learning Object ${learningObjectName} found.`,
         ResourceErrorReason.NOT_FOUND,
       );
     }
@@ -1487,7 +1489,7 @@ export async function deleteLearningObjectByName({
  */
 export async function updateReadme(params: {
   dataStore: DataStore;
-  requester: UserToken,
+  requester: UserToken;
   object?: LearningObject;
   id?: string;
 }): Promise<void> {
@@ -1657,9 +1659,7 @@ export async function createLearningObjectRevision(params: {
 
   if (!releasedCopy) {
     throw new ResourceError(
-      `Cannot create a revision of Learning Object: ${
-        params.learningObjectId
-      } since it is not released.`,
+      `Cannot create a revision of Learning Object: ${params.learningObjectId} since it is not released.`,
       ResourceErrorReason.BAD_REQUEST,
     );
   }
@@ -1671,11 +1671,7 @@ export async function createLearningObjectRevision(params: {
     })
   ) {
     throw new ResourceError(
-      `Cannot create a revision. Requester ${
-        params.requester.username
-      } must be the author of Learning Object with id ${
-        params.learningObjectId
-      }`,
+      `Cannot create a revision. Requester ${params.requester.username} must be the author of Learning Object with id ${params.learningObjectId}`,
       ResourceErrorReason.INVALID_ACCESS,
     );
   }
@@ -1764,9 +1760,7 @@ async function validateRequest(params: {
 
   if (learningObject.author.username !== params.username) {
     throw new ResourceError(
-      `User ${params.username} does not own a Learning Object with id ${
-        params.learningObjectId
-      }`,
+      `User ${params.username} does not own a Learning Object with id ${params.learningObjectId}`,
       ResourceErrorReason.NOT_FOUND,
     );
   }

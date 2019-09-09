@@ -139,6 +139,11 @@ export class MongoDriver implements DataStore {
     );
   }
 
+  private filterDuplicateObjects(
+    learningObjectCUID: string,
+    resultSet: LearningObjectSummary[],
+  ) {}
+
   /**
    * Checks if Learning Object in released collection has a copy in the objects collection that has a status of not released
    *
@@ -146,10 +151,12 @@ export class MongoDriver implements DataStore {
    * @returns {Promise<boolean>}
    * @memberof MongoDriver
    */
-  async learningObjectHasRevision(learningObjectId: string): Promise<boolean> {
+  async learningObjectHasRevision(
+    learningObjectCUID: string,
+  ): Promise<boolean> {
     const revision = this.db.collection(COLLECTIONS.LEARNING_OBJECTS).findOne(
       {
-        _id: learningObjectId,
+        CUID: learningObjectCUID,
         status: { $ne: LearningObject.Status.RELEASED },
       },
       {
@@ -186,6 +193,10 @@ export class MongoDriver implements DataStore {
     const authorID = await this.findUserId(username);
 
     let orConditions: QueryCondition[] = [];
+    /**
+     * if no collection restrictions, by default query for released objects and if the user is
+     * privileged, by default query for released objects and in review in their respective collection.
+     * */
     if (collectionRestrictions) {
       const conditions: QueryCondition[] = this.buildCollectionQueryConditions(
         collectionRestrictions,
@@ -359,11 +370,11 @@ export class MongoDriver implements DataStore {
     author?: User;
   }): Promise<LearningObjectSummary> {
     const doc = await this.db
-        .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
       .findOne({ _id: id, revision });
     if (doc) {
-        return this.generateLearningObjectSummary(doc);
-      }
+      return this.generateLearningObjectSummary(doc);
+    }
     return null;
   }
 
@@ -2381,7 +2392,6 @@ export class MongoDriver implements DataStore {
       ...(record as any),
       author,
       contributors,
-      children,
       id: record._id,
     });
   }

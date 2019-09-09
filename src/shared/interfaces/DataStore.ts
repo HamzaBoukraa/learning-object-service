@@ -44,12 +44,10 @@ export interface DataStore
     learningObjectId: string;
   }): Promise<ChangeLogDocument>;
   fetchRecentChangelogBeforeDate(params: {
-    learningObjectId: string,
-    date: string,
+    learningObjectId: string;
+    date: string;
   }): Promise<ChangeLogDocument>;
-  deleteChangelog(params: {
-    learningObjectId: string,
-  }): Promise<void>;
+  deleteChangelog(params: { learningObjectId: string }): Promise<void>;
   /*
    * READ Operations
    */

@@ -1,5 +1,9 @@
 import { LearningObject, User } from '../entity';
-import { LearningObjectSummary, AuthorSummary, LearningObjectChildSummary } from '../types';
+import {
+  LearningObjectSummary,
+  AuthorSummary,
+  LearningObjectChildSummary,
+} from '../types';
 
 /**
  * Formats text properly for usage in DataStore
@@ -121,7 +125,6 @@ export function mapLearningObjectToSummary(
     id: object.id,
     cuid: object.cuid,
     author: mapAuthorToSummary(object.author),
-    children: object.children || [],
     collection: object.collection,
     contributors: object.contributors
       ? object.contributors.map(mapAuthorToSummary)
