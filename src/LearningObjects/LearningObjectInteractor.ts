@@ -1203,10 +1203,10 @@ async function loadChildrenSummaries({
 }): Promise<LearningObjectChildSummary[]> {
   let children: LearningObjectChildSummary[];
   if (released) {
-    children = (await dataStore.loadReleasedChildObjects({
+    children = await dataStore.loadReleasedChildObjects({
       id: learningObjectId,
       full: false,
-    })).map(mapChildLearningObjectToSummary);
+    });
   } else {
     const childrenStatus = requesterIsAuthor({
       requester,
@@ -1214,11 +1214,11 @@ async function loadChildrenSummaries({
     })
       ? LearningObjectState.ALL
       : [...LearningObjectState.IN_REVIEW, ...LearningObjectState.RELEASED];
-    children = (await dataStore.loadChildObjects({
+    children = await dataStore.loadChildObjects({
       id: learningObjectId,
       full: false,
       status: childrenStatus,
-    })).map(mapChildLearningObjectToSummary);
+    });
   }
   return children;
 }

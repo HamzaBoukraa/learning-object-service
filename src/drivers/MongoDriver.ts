@@ -2362,15 +2362,6 @@ export class MongoDriver implements DataStore {
     );
     const [author, contributors] = await Promise.all([author$, contributors$]);
 
-    let children: LearningObjectChildSummary[] = [];
-    if (record.children) {
-      children = (await this.loadChildObjects({
-        id: record._id,
-        full: false,
-        status: [],
-      })).map(mapChildLearningObjectToSummary);
-    }
-
     return mapLearningObjectToSummary({
       ...(record as any),
       author,
@@ -2387,6 +2378,7 @@ export class MongoDriver implements DataStore {
    * @param {LearningObjectDocument} record [Learning Object data]
    * @returns {Promise<LearningObjectSummary>}
    * @memberof MongoDriver
+   * @deprecated
    */
   private async generateReleasedLearningObjectSummary(
     record: LearningObjectDocument,
@@ -2402,10 +2394,10 @@ export class MongoDriver implements DataStore {
     }
     let children: LearningObjectChildSummary[] = [];
     if (record.children) {
-      children = (await this.loadReleasedChildObjects({
+      children = await this.loadReleasedChildObjects({
         id: record._id,
         full: false,
-      })).map(mapChildLearningObjectToSummary);
+      });
     }
 
     return mapLearningObjectToSummary({
