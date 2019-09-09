@@ -418,89 +418,6 @@ export class MongoDriver implements DataStore {
       .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
       .replaceOne({ _id: object.id }, doc, { upsert: true });
   }
-  /**
-   * Performs search on objects and released-objects collection based on query and or conditions
-   *
-   * @param {LearningObjectQuery} params
-   * @returns {Promise<{
-   *     total: number;
-   *     objects: LearningObject[];
-   *   }>}
-   * @memberof MongoDriver
-   */
-  async searchAllObjects(
-    params: LearningObjectQuery,
-  ): Promise<{
-    total: number;
-    objects: LearningObject[];
-  }> {
-    const {
-      name,
-      author,
-      collection,
-      length,
-      level,
-      standardOutcomeIDs,
-      guidelines,
-      text,
-      conditions,
-      orderBy,
-      sortType,
-      page,
-      limit,
-      status,
-    } = params;
-
-    const orConditions: any[] = conditions
-      ? this.buildQueryConditions(conditions)
-      : [];
-
-    // Query for users
-    const authors = await this.matchUsers(author, text);
-    // Query by LearningOutcomes' mappings
-    const learningObjectIds: string[] = await this.matchLearningObjectsByGuidelines(
-      {
-        guidelineIds: standardOutcomeIDs,
-        guidelineSources: guidelines,
-      },
-    );
-
-    const searchQuery = this.buildSearchQuery({
-      name,
-      authors,
-      collection,
-      length,
-      level,
-      text,
-      learningObjectIds,
-      status,
-    });
-
-    const pipeline = this.buildAllObjectsPipeline({
-      searchQuery,
-      orConditions,
-      hasText: !!text,
-      page,
-      limit,
-      orderBy,
-      sortType,
-    });
-
-    const resultSet = await this.db
-      .collection(COLLECTIONS.LEARNING_OBJECTS)
-      .aggregate<{
-        objects: LearningObjectDocument[];
-        total: [{ total: number }];
-      }>(pipeline)
-      .toArray();
-    const results = resultSet[0];
-    const objectDocs = results.objects;
-    const objects: LearningObject[] = await this.bulkGenerateLearningObjects(
-      objectDocs,
-    );
-    const total = results.total[0] ? results.total[0].total : 0;
-    return { total, objects };
-  }
 
   /**
    * Constructs aggregation pipeline for searching all objects with pagination and sorting By matching learning obejcts based on
@@ -548,82 +465,12 @@ export class MongoDriver implements DataStore {
     if (orConditions && orConditions.length) {
       matcher.$or = matcher.$or || [];
       matcher.$or.push(...orConditions);
+      matcher.$or.push({
+        status: { $in: status },
+      });
     }
 
     const match = { $match: { ...matcher } };
-    // Unwind the modified array to the root level at the end of every stage.
-    const unWindArrayToRoot = [
-      { $unwind: '$objects' },
-      {
-        $replaceRoot: { newRoot: '$objects' },
-      },
-    ];
-    // perform a lookup on the Released collection by ID and assign two variables 'Object_id' and 'object_status' that will be used in this stage
-    const joinCollections = {
-      $lookup: {
-        from: COLLECTIONS.RELEASED_LEARNING_OBJECTS,
-        let: { object_id: '$_id', object_status: '$status' },
-        pipeline: [
-          {
-            // match Released objects to working objects ID.
-            $match: {
-              $expr: { $and: [{ $eq: ['$_id', '$$object_id'] }] },
-            },
-          },
-          {
-            // add the hasRevision Field to learning objects, set false if the working copy is released, true otherwise.
-            $addFields: {
-              hasRevision: {
-                $cond: [
-                  {
-                    $ne: ['$$object_status', LearningObject.Status.RELEASED],
-                  },
-                  true,
-                  false,
-                ],
-              },
-            },
-          },
-        ],
-        // store all released objects under a 'released' array.
-        as: 'released',
-      },
-    };
-
-    // create a large filtered collection of learning objects with duplicates.
-    const createSuperSet = [
-      { $unwind: { path: '$released', preserveNullAndEmptyArrays: true } },
-      {
-        // group released objects and with their working copy if one exists.
-        $group: {
-          _id: 1,
-          objects: { $push: '$$ROOT' },
-          released: { $push: '$released' },
-        },
-      },
-      {
-        // combine objects and released arrays and store under 'objects[]'.
-        $project: {
-          objects: { $concatArrays: ['$objects', '$released'] },
-        },
-      },
-      ...unWindArrayToRoot,
-    ];
-
-    let statusFilterMatch: [
-      { $match: { $or: [{ status: { $in: string[] } }] } }
-    ] = [] as any;
-    if (status) {
-      statusFilterMatch[0] = {
-        $match: {
-          $or: [
-            {
-              status: { $in: status },
-            },
-          ],
-        },
-      };
-    }
 
     // filter and remove duplicates after grouping the objects by ID.
     const removeDuplicates = [
@@ -680,9 +527,6 @@ export class MongoDriver implements DataStore {
 
     const pipeline = [
       match,
-      joinCollections,
-      ...createSuperSet,
-      ...statusFilterMatch,
       ...removeDuplicates,
       ...sort,
       {
