@@ -180,7 +180,7 @@ export interface DataStore
     id: string;
     full?: boolean;
     status: string[];
-  }): Promise<LearningObject[]>;
+  }): Promise<LearningObjectSummary[]>;
 
   /**
    * Loads released child Learning Objects for a working parent Learning Object
@@ -192,12 +192,11 @@ export interface DataStore
    */
   loadWorkingParentsReleasedChildObjects(params: {
     id: string;
-    full?: boolean;
-  }): Promise<LearningObject[]>;
+  }): Promise<LearningObjectSummary[]>;
   loadReleasedChildObjects(params: {
     id: string;
     full?: boolean;
-  }): Promise<LearningObject[]>;
+  }): Promise<LearningObjectSummary[]>;
   checkLearningObjectExistence(params: {
     learningObjectId: string;
     userId: string;

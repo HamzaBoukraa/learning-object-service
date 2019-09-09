@@ -223,9 +223,7 @@ export class MongoDriver implements DataStore {
       .toArray();
     const learningObjects: LearningObjectSummary[] = await Promise.all(
       resultSet[0].objects.map(learningObject => {
-        return learningObject.status === LearningObject.Status.RELEASED
-          ? this.generateReleasedLearningObjectSummary(learningObject)
-          : this.generateLearningObjectSummary(learningObject);
+        return this.generateLearningObjectSummary(learningObject);
       }),
     );
 
@@ -871,7 +869,7 @@ export class MongoDriver implements DataStore {
     full?: boolean;
     status: string[];
     collection?: string;
-  }): Promise<LearningObject[]> {
+  }): Promise<LearningObjectSummary[]> {
     const { id, full, status, collection } = params;
     const matchQuery: { [index: string]: any } = {
       $match: { _id: id },
@@ -917,7 +915,7 @@ export class MongoDriver implements DataStore {
       .toArray();
     if (docs[0]) {
       const objects = docs[0].objects;
-      return this.bulkGenerateLearningObjects(objects, full);
+      return this.bulkGenerateLearningObjectSummaries(objects);
     }
     return [];
   }
@@ -935,7 +933,7 @@ export class MongoDriver implements DataStore {
   async loadReleasedChildObjects(params: {
     id: string;
     full?: boolean;
-  }): Promise<LearningObject[]> {
+  }): Promise<LearningObjectSummary[]> {
     return this.loadChildObjects({
       ...params,
       collection: COLLECTIONS.RELEASED_LEARNING_OBJECTS,
@@ -960,8 +958,7 @@ export class MongoDriver implements DataStore {
     full,
   }: {
     id: string;
-    full?: boolean;
-  }): Promise<LearningObject[]> {
+  }): Promise<LearningObjectSummary[]> {
     const docs = await this.db
       .collection<{ objects: LearningObjectDocument[] }>(
         COLLECTIONS.LEARNING_OBJECTS,
