@@ -712,7 +712,6 @@ export async function getLearningObjectRevision({
       id: learningObjectId,
       revision: revisionId,
       author,
-      summary,
     });
     if (!learningObject) {
       throw new ResourceError(

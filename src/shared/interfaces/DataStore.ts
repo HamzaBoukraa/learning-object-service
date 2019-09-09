@@ -96,9 +96,8 @@ export interface DataStore
   fetchLearningObjectRevision(params: {
     id: string;
     revision: number;
-    author?: User,
-    summary?: boolean,
-  }): Promise<LearningObject | LearningObjectSummary>;
+    author?: User;
+  }): Promise<LearningObjectSummary>;
   getUserObjects(username: string): Promise<string[]>;
   findLearningObject(params: {
     authorId: string;

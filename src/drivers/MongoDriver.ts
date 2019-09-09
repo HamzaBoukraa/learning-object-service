@@ -352,26 +352,17 @@ export class MongoDriver implements DataStore {
     id,
     revision,
     author,
-    summary,
   }: {
     id: string;
     revision: number;
     author?: User;
-    summary?: boolean;
-  }): Promise<LearningObject | LearningObjectSummary> {
-    const doc =
-      (await this.db
-        .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
-        .findOne({ _id: id, revision })) ||
-      (await this.db
+  }): Promise<LearningObjectSummary> {
+    const doc = await this.db
         .collection(COLLECTIONS.LEARNING_OBJECTS)
-        .findOne({ _id: id, revision }));
+      .findOne({ _id: id, revision });
     if (doc) {
-      if (summary) {
         return this.generateLearningObjectSummary(doc);
       }
-      return this.generateLearningObject(author, doc);
-    }
     return null;
   }
 
