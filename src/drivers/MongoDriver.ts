@@ -113,10 +113,13 @@ export class MongoDriver implements DataStore {
     query: ReleasedUserLearningObjectSearchQuery,
     username: string,
   ): Promise<LearningObjectSummary[]> {
+    //TODO: UPDATE INTERACTOR LOGIC TO ALLOW QUERIES FOR RELEASED LEARNING OBJECTS IN THE OBJECTS COLLECTION..
+    //side-note: we may end up pointing released logic to elastic search as we're already doing for normal released search. check types and current driver logic.
     const { text } = query;
     const authorID = await this.findUserId(username);
     const searchQuery: { [index: string]: any } = {
       authorID,
+      status: LearningObject.Status.RELEASED,
     };
     if (text) {
       searchQuery.$or = searchQuery.$or || [];
@@ -126,12 +129,12 @@ export class MongoDriver implements DataStore {
       );
     }
     const resultSet = await this.db
-      .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
-      .find<LearningObjectDocument>(searchQuery)
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .find<ReleasedLearningObjectDocument>(searchQuery)
       .toArray();
     return Promise.all(
       resultSet.map(async learningObject =>
-        this.generateReleasedLearningObjectSummary(learningObject),
+        this.generateLearningObjectSummary(learningObject),
       ),
     );
   }
