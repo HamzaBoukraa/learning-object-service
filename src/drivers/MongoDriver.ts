@@ -799,32 +799,37 @@ export class MongoDriver implements DataStore {
    */
   async loadWorkingParentsReleasedChildObjects({
     id,
-    full,
   }: {
     id: string;
   }): Promise<LearningObjectSummary[]> {
+    // TODO: add type for resued learning object queries.
+    const findChildren = {
+      $graphLookup: {
+        from: COLLECTIONS.LEARNING_OBJECTS,
+        startWith: '$children',
+        connectFromField: 'children',
+        connectToField: '_id',
+        as: 'objects',
+        maxDepth: 0,
+        restrictSearchWithMatch: { status: LearningObject.Status.RELEASED },
+      },
+    };
     const docs = await this.db
       .collection<{ objects: LearningObjectDocument[] }>(
         COLLECTIONS.LEARNING_OBJECTS,
       )
       .aggregate([
-        { $match: { _id: id } },
         {
-          // grab the released children of learning objects
-          $lookup: {
-            from: COLLECTIONS.RELEASED_LEARNING_OBJECTS,
-            localField: 'children',
-            foreignField: '_id',
-            as: 'objects',
-          },
+          $match: { _id: id, status: { $ne: LearningObject.Status.RELEASED } },
         },
+        findChildren,
         // only return children.
         { $project: { _id: 0, objects: '$objects' } },
       ])
       .toArray();
     if (docs[0]) {
       const objects = docs[0].objects;
-      return this.bulkGenerateLearningObjects(objects, full);
+      return this.bulkGenerateLearningObjectSummaries(objects);
     }
     return [];
   }
@@ -1615,6 +1620,7 @@ export class MongoDriver implements DataStore {
    * @param {LearningObjectDocument[]} docs
    * @returns {Promise<LearningObject[]>}
    * @memberof MongoDriver
+   * @deprecated
    */
   private async bulkGenerateLearningObjects(
     docs: LearningObjectDocument[],
@@ -1623,12 +1629,21 @@ export class MongoDriver implements DataStore {
     return await Promise.all(
       docs.map(async doc => {
         const author = await this.fetchUser(doc.authorID);
-        const learningObject = await this.generateLearningObject(
-          author,
-          doc,
-          full,
-        );
+        const learningObject = await this.generateLearningObject(author, doc);
         return learningObject;
+      }),
+    );
+  }
+
+  private async bulkGenerateLearningObjectSummaries(
+    docs: LearningObjectDocument[],
+  ): Promise<LearningObjectSummary[]> {
+    return await Promise.all(
+      docs.map(async doc => {
+        const learningObjectSummary: LearningObjectSummary = await this.generateLearningObjectSummary(
+          doc,
+        );
+        return learningObjectSummary;
       }),
     );
   }
