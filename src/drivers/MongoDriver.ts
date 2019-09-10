@@ -19,7 +19,6 @@ import {
   ReleasedUserLearningObjectSearchQuery,
   UserLearningObjectSearchQuery,
   CollectionAccessMap,
-  LearningObjectChildSummary,
 } from '../shared/types';
 import { LearningOutcomeMongoDatastore } from '../LearningOutcomes/datastores/LearningOutcomeMongoDatastore';
 import {
@@ -41,10 +40,7 @@ import {
 import { reportError } from '../shared/SentryConnector';
 import { LearningObject, LearningOutcome, User } from '../shared/entity';
 import { MongoConnector } from '../shared/Mongo/MongoConnector';
-import {
-  mapLearningObjectToSummary,
-  mapChildLearningObjectToSummary,
-} from '../shared/functions';
+import { mapLearningObjectToSummary } from '../shared/functions';
 import {
   ReleasedLearningObjectDocument,
   OutcomeDocument,
@@ -113,8 +109,6 @@ export class MongoDriver implements DataStore {
     query: ReleasedUserLearningObjectSearchQuery,
     username: string,
   ): Promise<LearningObjectSummary[]> {
-    //TODO: UPDATE INTERACTOR LOGIC TO ALLOW QUERIES FOR RELEASED LEARNING OBJECTS IN THE OBJECTS COLLECTION..
-    //side-note: we may end up pointing released logic to elastic search as we're already doing for normal released search. check types and current driver logic.
     const { text } = query;
     const authorID = await this.findUserId(username);
     const searchQuery: { [index: string]: any } = {
@@ -128,9 +122,11 @@ export class MongoDriver implements DataStore {
         { name: RegExp(sanitizeRegex(text), 'gi') },
       );
     }
+
+    const pipeline = this.buildAllObjectsPipeline(searchQuery);
     const resultSet = await this.db
       .collection(COLLECTIONS.LEARNING_OBJECTS)
-      .find<ReleasedLearningObjectDocument>(searchQuery)
+      .aggregate<ReleasedLearningObjectDocument>(pipeline)
       .toArray();
     return Promise.all(
       resultSet.map(async learningObject =>
@@ -193,10 +189,7 @@ export class MongoDriver implements DataStore {
     const authorID = await this.findUserId(username);
 
     let orConditions: QueryCondition[] = [];
-    /**
-     * if no collection restrictions, by default query for released objects and if the user is
-     * privileged, by default query for released objects and in review in their respective collection.
-     * */
+
     if (collectionRestrictions) {
       const conditions: QueryCondition[] = this.buildCollectionQueryConditions(
         collectionRestrictions,
@@ -2417,19 +2410,11 @@ export class MongoDriver implements DataStore {
     if (hasRevision == null) {
       hasRevision = await this.learningObjectHasRevision(record._id);
     }
-    let children: LearningObjectChildSummary[] = [];
-    if (record.children) {
-      children = await this.loadReleasedChildObjects({
-        id: record._id,
-        full: false,
-      });
-    }
-
+    //TODO: fetch or create resource uri for children.
     return mapLearningObjectToSummary({
       ...(record as any),
       author,
       contributors,
-      children,
       hasRevision,
       id: record._id,
     });

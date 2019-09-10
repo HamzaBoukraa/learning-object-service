@@ -441,23 +441,6 @@ export class LearningObjectInteractor {
         } else {
           status = this.getAuthAdminEditorStatuses(status);
         }
-
-        response = await dataStore.searchAllObjects({
-          name,
-          author,
-          collection,
-          length,
-          level,
-          guidelines,
-          standardOutcomeIDs,
-          text,
-          status,
-          conditions,
-          orderBy,
-          sortType,
-          page,
-          limit,
-        });
       } else {
         response = await dataStore.searchReleasedObjects({
           name,

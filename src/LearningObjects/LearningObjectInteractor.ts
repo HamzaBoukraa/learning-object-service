@@ -9,7 +9,6 @@ import {
   UserLearningObjectSearchQuery,
   UserToken,
   VALID_LEARNING_OBJECT_UPDATES,
-  LearningObjectChildSummary,
 } from '../shared/types';
 import {
   handleError,
@@ -45,7 +44,6 @@ import {
   toArray,
   sanitizeObject,
   toBoolean,
-  mapChildLearningObjectToSummary,
 } from '../shared/functions';
 import {
   FileMetadataGateway,
