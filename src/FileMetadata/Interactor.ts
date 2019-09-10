@@ -708,11 +708,6 @@ function validateFileMeta(file: FileMetadata) {
     invalidInput.message = 'File metadata must contain a file name.';
     throw invalidInput;
   }
-  if (!Validators.valueIsNumber(file.size)) {
-    invalidInput.message =
-      'File metadata must have a defined file size greater than zero.';
-    throw invalidInput;
-  }
 }
 
 namespace Validators {
