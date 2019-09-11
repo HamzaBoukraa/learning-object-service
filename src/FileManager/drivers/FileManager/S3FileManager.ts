@@ -208,7 +208,7 @@ export class S3FileManager implements FileManager {
       .on('error', (err: AWSError) => {
         // TimeoutError will be thrown if the client cancels the download
         if (err.code !== 'TimeoutError') {
-          reportError(err);
+          reportError({...err, message: path } as Error);
         }
       });
     return stream;
