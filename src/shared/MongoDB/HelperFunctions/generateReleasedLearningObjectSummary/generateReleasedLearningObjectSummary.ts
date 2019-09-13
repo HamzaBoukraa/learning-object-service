@@ -1,7 +1,7 @@
 import { LearningObjectDocument, LearningObjectSummary, LearningObjectChildSummary } from '../../../types';
 import { mapChildLearningObjectToSummary, mapLearningObjectToSummary } from '../../../functions';
 import { UserServiceGateway } from '../../../gateways/user-service/UserServiceGateway';
-import { loadReleasedChildObjects, learningObjectHasRevision } from '..';
+import mongoHelperFunctions from '..';
 /**
  * Converts LearningObjectDocument to LearningObjectSummary
  *
@@ -20,11 +20,11 @@ export async function generateReleasedLearningObjectSummary(
   const [author, contributors] = await Promise.all([author$, contributors$]);
   let hasRevision = record.hasRevision;
   if (hasRevision == null) {
-    hasRevision = await learningObjectHasRevision(record._id);
+    hasRevision = await mongoHelperFunctions.learningObjectHasRevision(record._id);
   }
   let children: LearningObjectChildSummary[] = [];
   if (record.children) {
-    children = (await loadReleasedChildObjects({
+    children = (await mongoHelperFunctions.loadReleasedChildObjects({
       id: record._id,
       full: false,
     })).map(mapChildLearningObjectToSummary);

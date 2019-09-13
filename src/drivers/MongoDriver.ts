@@ -33,16 +33,7 @@ import { reportError } from '../shared/SentryConnector';
 import { LearningObject, LearningOutcome, User } from '../shared/entity';
 import { MongoConnector } from '../shared/MongoDB/MongoConnector';
 import { LearningObjectUpdates } from '../shared/types/learning-object-updates';
-import {
-  bulkGenerateLearningObjects,
-  generateLearningObject,
-  documentReleasedLearningObject,
-  documentLearningObject,
-  generateReleasedLearningObject,
-  calculateDocumentsToSkip,
-  validatePageNumber,
-  generateLearningObjectSummary,
-} from '../shared/MongoDB/HelperFunctions';
+import mongoHelperFunctions from '../shared/MongoDB/HelperFunctions';
 import { sanitizeRegex } from '../shared/functions';
 
 export enum COLLECTIONS {
@@ -214,9 +205,9 @@ export class MongoDriver implements DataStore {
         .findOne({ _id: id, revision }));
     if (doc) {
       if (summary) {
-        return generateLearningObjectSummary(doc);
+        return mongoHelperFunctions.generateLearningObjectSummary(doc);
       }
-      return generateLearningObject(author, doc);
+      return mongoHelperFunctions.generateLearningObject(author, doc);
     }
     return null;
   }
@@ -267,7 +258,7 @@ export class MongoDriver implements DataStore {
    * @memberof MongoDriver
    */
   async addToReleased(object: LearningObject): Promise<void> {
-    const doc = await documentReleasedLearningObject(object);
+    const doc = await mongoHelperFunctions.documentReleasedLearningObject(object);
     await this.db
       .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
       .replaceOne({ _id: object.id }, doc, { upsert: true });
@@ -397,7 +388,7 @@ export class MongoDriver implements DataStore {
       .toArray();
     if (docs[0]) {
       const objects = docs[0].objects;
-      return bulkGenerateLearningObjects(objects, full);
+      return mongoHelperFunctions.bulkGenerateLearningObjects(objects, full);
     }
     return [];
   }
@@ -455,7 +446,7 @@ export class MongoDriver implements DataStore {
    */
   async insertLearningObject(object: LearningObject): Promise<string> {
     try {
-      const doc = await documentLearningObject(object);
+      const doc = await mongoHelperFunctions.documentLearningObject(object);
       // insert object into the database
       await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).insertOne(doc);
       return doc._id;
@@ -672,7 +663,7 @@ export class MongoDriver implements DataStore {
       ])
       .toArray();
 
-    return bulkGenerateLearningObjects(parents);
+    return mongoHelperFunctions.bulkGenerateLearningObjects(parents);
   }
 
   async loadChildObjects(params: {
@@ -725,7 +716,7 @@ export class MongoDriver implements DataStore {
       .toArray();
     if (docs[0]) {
       const objects = docs[0].objects;
-      return bulkGenerateLearningObjects(objects, full);
+      return mongoHelperFunctions.bulkGenerateLearningObjects(objects, full);
     }
     return [];
   }
@@ -751,7 +742,7 @@ export class MongoDriver implements DataStore {
       .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
       .find<LearningObjectDocument>(mongoQuery)
       .toArray();
-    return await bulkGenerateLearningObjects(parentDocs, full);
+    return await mongoHelperFunctions.bulkGenerateLearningObjects(parentDocs, full);
   }
 
   ///////////////////////////////////////////////////////////////////
@@ -1005,7 +996,7 @@ export class MongoDriver implements DataStore {
       .findOne({ _id: id });
     if (doc) {
       const author = await UserServiceGateway.getInstance().queryUserById(doc.authorID);
-      return generateLearningObject(author, doc, full);
+      return mongoHelperFunctions.generateLearningObject(author, doc, full);
     }
     return null;
   }
@@ -1092,7 +1083,7 @@ export class MongoDriver implements DataStore {
       object.materials.files = object.orderedFiles;
       delete object.orderedFiles;
       const author = await UserServiceGateway.getInstance().queryUserById(object.authorID);
-      return generateReleasedLearningObject(author, object, params.full);
+      return mongoHelperFunctions.generateReleasedLearningObject(author, object, params.full);
     }
     return null;
   }
@@ -1206,7 +1197,7 @@ export class MongoDriver implements DataStore {
 
       const docs = await objectCursor.toArray();
 
-      const learningObjects: LearningObject[] = await bulkGenerateLearningObjects(
+      const learningObjects: LearningObject[] = await mongoHelperFunctions.bulkGenerateLearningObjects(
         docs,
         params.full,
       );
@@ -1224,8 +1215,8 @@ export class MongoDriver implements DataStore {
     filters: Filters,
   ): Cursor<T> {
     let { page, limit, orderBy, sortType } = filters;
-    page = validatePageNumber(filters.page);
-    const skip = calculateDocumentsToSkip({ page, limit });
+    page = mongoHelperFunctions.validatePageNumber(filters.page);
+    const skip = mongoHelperFunctions.calculateDocumentsToSkip({ page, limit });
 
     // Paginate
     if (skip != null && limit) {
