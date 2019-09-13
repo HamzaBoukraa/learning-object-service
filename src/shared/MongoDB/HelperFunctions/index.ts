@@ -11,7 +11,7 @@ import { loadChildObjects } from './loadChildObjects/loadChildObjects';
 import { loadReleasedChildObjects } from './loadReleasedChildObjects/loadReleasedChildObjects';
 import { learningObjectHasRevision } from './learningObjectHasRevision/learningObjectHasRevision';
 
-export {
+export default {
     bulkGenerateLearningObjects,
     calculateDocumentsToSkip,
     documentLearningObject,

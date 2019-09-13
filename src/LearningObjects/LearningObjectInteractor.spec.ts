@@ -39,20 +39,14 @@ describe('Interactor: LearningObjectInteractor', () => {
     ];
     LearningObjectsModule.initialize();
 
-    jest.doMock('./LearningObjectInteractor', () => ({
-      __esModule: true,
-      getLearningObjectById: jest.fn().mockResolvedValue(stubs.learningObject),
-      updateParentsDate: jest.fn().mockResolvedValue(undefined),
-      updateObjectLastModifiedDate: jest.fn().mockResolvedValue(undefined),
-      getLearningObjectChildrenById: jest.fn().mockResolvedValue([]),
-      getLearningObjectSummaryById: jest.fn().mockResolvedValue(mapLearningObjectToSummary(localDatastore.stubs.learningObject)),
-      generateReleasableLearningObject: jest.fn().mockResolvedValue(stubs.learningObject),
-    }));
     interactor = await import('./LearningObjectInteractor');
   });
   afterAll(() => {
     LearningObjectsModule.destroy();
   });
+
+  // tslint:disable-next-line: no-require-imports
+  const index = require.requireActual('./LearningObjectInteractor');
 
   it(`should update an object's last modified date and recursively update the child's parents' last modified date`, async () => {
       expect.assertions(1);
@@ -80,13 +74,14 @@ describe('Interactor: LearningObjectInteractor', () => {
       ).resolves.toEqual([]);
     });
   it('should get a learning object by Id', async () => {
-      expect.assertions(1);
-      const learningObject = await interactor.getLearningObjectById({
+    index.loadChildrenSummaries = jest.fn().mockResolvedValue([stubs.learningObject]);
+    expect.assertions(1);
+    const learningObject = await index.getLearningObjectById({
         dataStore: localDatastore,
         id: localDatastore.stubs.learningObject.id,
         library,
       });
-      expect(learningObject).toEqual(localDatastore.stubs.learningObject);
+    expect(learningObject).toEqual(localDatastore.stubs.learningObject);
     });
   it('should get a Learning Object Summary by Id', async () => {
       expect.assertions(1);

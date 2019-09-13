@@ -1,7 +1,7 @@
 import { LearningObjectDocument, LearningObjectSummary, LearningObjectChildSummary } from '../../../types';
 import { mapLearningObjectToSummary, mapChildLearningObjectToSummary } from '../../../functions';
 import { UserServiceGateway } from '../../../gateways/user-service/UserServiceGateway';
-import { loadChildObjects } from '..';
+import mongoHelperFunctions from '..';
 
 /**
  * Converts LearningObjectDocument to LearningObjectSummary
@@ -22,7 +22,7 @@ export async function generateLearningObjectSummary(
 
   let children: LearningObjectChildSummary[] = [];
   if (record.children) {
-    children = (await loadChildObjects({
+    children = (await mongoHelperFunctions.loadChildObjects({
       id: record._id,
       full: false,
       status: [],

@@ -1,6 +1,6 @@
 import { LearningObject } from '../../../entity';
 import { COLLECTIONS } from '../../../../drivers/MongoDriver';
-import { loadChildObjects } from '..';
+import mongoHelperFunctions from '..';
 
 /**
  * Loads released child objects
@@ -16,7 +16,7 @@ export async function loadReleasedChildObjects(params: {
      id: string;
      full?: boolean;
 }): Promise<LearningObject[]> {
-     return loadChildObjects({
+     return mongoHelperFunctions.loadChildObjects({
        ...params,
        collection: COLLECTIONS.RELEASED_LEARNING_OBJECTS,
        status: [LearningObject.Status.RELEASED],

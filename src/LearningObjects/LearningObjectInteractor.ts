@@ -45,8 +45,7 @@ import { LearningObjectSubmissionAdapter } from '../LearningObjectSubmission/ada
 import { UserGateway } from './interfaces/UserGateway';
 import { validateUpdates } from '../shared/entity/learning-object/validators';
 import { UserServiceGateway } from '../shared/gateways/user-service/UserServiceGateway';
-import { loadChildObjects } from '../shared/MongoDB/HelperFunctions';
-import * as DatastoreHelperFunctions from '../shared/MongoDB/HelperFunctions';
+import mongoHelperFunctions from '../shared/MongoDB/HelperFunctions';
 
 namespace Drivers {
   export const readMeBuilder = () =>
@@ -920,7 +919,7 @@ export async function getLearningObjectById({
       throw learningObjectNotFound;
     }
 
-    learningObject.children = await loadChildrenSummaries({
+    learningObject.children = await exports.loadChildrenSummaries({
       dataStore,
       requester,
       learningObjectId: learningObject.id,
@@ -993,7 +992,7 @@ export async function getLearningObjectSummaryById({
       throw learningObjectNotFound;
     }
 
-    learningObject.children = await loadChildrenSummaries({
+    learningObject.children = await exports.loadChildrenSummaries({
       dataStore,
       requester,
       learningObjectId: learningObject.id,
@@ -1021,11 +1020,10 @@ export async function getLearningObjectSummaryById({
  *
  * @returns {Promise<LearningObjectChildSummary[]>}
  */
-async function loadChildrenSummaries({
+export async function loadChildrenSummaries({
   learningObjectId,
   authorUsername,
   released,
-  dataStore,
   requester,
 }: {
   learningObjectId: string;
@@ -1036,7 +1034,7 @@ async function loadChildrenSummaries({
 }): Promise<LearningObjectChildSummary[]> {
   let children: LearningObjectChildSummary[];
   if (released) {
-      children = (await DatastoreHelperFunctions.loadReleasedChildObjects({
+      children = (await mongoHelperFunctions.loadReleasedChildObjects({
       id: learningObjectId,
       full: false,
     })).map(mapChildLearningObjectToSummary);
@@ -1047,7 +1045,7 @@ async function loadChildrenSummaries({
     })
       ? LearningObjectState.ALL
       : [...LearningObjectState.IN_REVIEW, ...LearningObjectState.RELEASED];
-    children = (await loadChildObjects({
+    children = (await mongoHelperFunctions.loadChildObjects({
       id: learningObjectId,
       full: false,
       status: childrenStatus,
@@ -1100,7 +1098,7 @@ async function loadReleasedChildObjects({
 }: {
   parentId: string;
 }): Promise<HierarchicalLearningObject[]> {
-  let children = (await DatastoreHelperFunctions.loadReleasedChildObjects({
+  let children = (await mongoHelperFunctions.loadReleasedChildObjects({
     id: parentId,
     full: true,
   })) as HierarchicalLearningObject[];
@@ -1132,7 +1130,7 @@ export async function getLearningObjectChildrenById(
     parentId: objectId,
   });
 
-  const childrenOrder = await loadChildObjects({
+  const childrenOrder = await mongoHelperFunctions.loadChildObjects({
     id: objectId,
     full: true,
     status: LearningObjectState.ALL,

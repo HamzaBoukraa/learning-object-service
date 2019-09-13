@@ -1,7 +1,7 @@
 import { LearningObjectDocument } from '../../../types';
 import { LearningObject } from '../../../entity';
 import { UserServiceGateway } from '../../../gateways/user-service/UserServiceGateway';
-import { generateLearningObject } from '..';
+import mongoHelperFunctions from '..';
 
   /**
    * Converts array of LearningObjectDocuments to Learning Objects
@@ -18,7 +18,7 @@ export async function bulkGenerateLearningObjects(
     return await Promise.all(
       docs.map(async doc => {
         const author = await UserServiceGateway.getInstance().queryUserById(doc.authorID);
-        const learningObject = await generateLearningObject(
+        const learningObject = await mongoHelperFunctions.generateLearningObject(
           author,
           doc,
           full,

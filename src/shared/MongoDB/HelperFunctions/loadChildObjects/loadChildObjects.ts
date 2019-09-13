@@ -1,6 +1,6 @@
 import { LearningObject } from '../../../entity';
 import { COLLECTIONS } from '../../../../drivers/MongoDriver';
-import { bulkGenerateLearningObjects } from '..';
+import  mongoHelperFunctions from '..';
 import { LearningObjectDocument } from '../../../types';
 import { MongoConnector } from '../../MongoConnector';
 
@@ -63,7 +63,8 @@ export async function loadChildObjects(params: {
       .toArray();
     if (docs[0]) {
       const objects = docs[0].objects;
-      return bulkGenerateLearningObjects(objects, full);
+
+      return mongoHelperFunctions.bulkGenerateLearningObjects(objects, full);
     }
     return [];
 }
