@@ -80,7 +80,7 @@ async function downloadReleasedCopy(
     authorUsername: learningObjectAuthorUsername,
     learningObjectId: learningObject.id,
     learningObjectRevisionId: learningObject.revision,
-    path: 'bundle.zip',
+    path: `${learningObject.cuid}.zip`,
   });
 
   if (!fileExists) {
@@ -90,7 +90,7 @@ async function downloadReleasedCopy(
       learningObjectId: learningObject.id,
       learningObjectRevisionId: learningObject.revision,
       file: {
-        path: 'bundle.zip',
+        path: `${learningObject.cuid}.zip`,
         data: bundle,
       },
     });
@@ -100,7 +100,7 @@ async function downloadReleasedCopy(
     authorUsername: learningObjectAuthorUsername,
     learningObjectId: learningObject.id,
     learningObjectRevisionId: learningObject.revision,
-    path: 'bundle.zip',
+    path: `${learningObject.cuid}.zip`,
   });
 }
 
