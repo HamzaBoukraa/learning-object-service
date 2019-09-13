@@ -83,16 +83,30 @@ describe('LearningObjectRouteHandler', () => {
       dataStore,
       library: LibraryDriver,
     });
+    jest.mock('../../shared/gateways/user-service/UserServiceGateway');
+    jest.doMock('../LearningObjectInteractor', () => ({
+      __esModule: true,
+      getLearningObjectById: jest.fn().mockResolvedValue(stubs.learningObject),
+    }));
   });
 
   afterAll(() => {
     LearningObjectsModule.destroy();
   });
 
-  describe('GET /learning-objects/:learningObjectId', () => {
+  // jest.mock('../../shared/MongoDB/HelperFunctions/loadChildObjects/loadChildObjects', () => ({
+  //     loadReleasedChildObjects: async(params: {
+  //     id: string;
+  //     full?: boolean;
+  //   }): Promise<LearningObject[]> => {
+  //     return await [stubs.learningObject];
+  //   },
+  // }));
+
+  describe('GET /users/:username/learning-objects/:learningObjectId', () => {
     it('should return a learning object based on the id', done => {
       request
-        .get(`/learning-objects/${stubs.learningObject.id}`)
+        .get(`/users/${stubs.user.username}/learning-objects/${stubs.learningObject.id}`)
         .expect(200)
         .then(res => {
           expect(res.text).toContain(`${stubs.learningObject.id}`);
@@ -188,7 +202,7 @@ describe('LearningObjectRouteHandler', () => {
           done();
         });
     });
-  });
+   });
   afterAll(() => {
     BundlerModule.destroy();
     return dataStore.disconnect();
