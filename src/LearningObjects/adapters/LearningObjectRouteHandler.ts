@@ -27,25 +27,6 @@ export function initializePublic({
   dataStore: DataStore;
   library: LibraryCommunicator;
 }) {
-  const searchUserLearningObjects = async (req: Request, res: Response) => {
-    try {
-      const requester: UserToken = req.user;
-      const authorUsername: string = req.params.username;
-      const query: UserLearningObjectQuery = req.query;
-      const learningObjects = await LearningObjectInteractor.searchUsersObjects(
-        {
-          dataStore,
-          authorUsername,
-          requester,
-          query,
-        },
-      );
-      res.status(200).send(learningObjects);
-    } catch (e) {
-      const { code, message } = mapErrorToResponseData(e);
-      res.status(code).json({ message });
-    }
-  };
   const getLearningObjectByName = async (req: Request, res: Response) => {
     try {
       const requester: UserToken = req.user;
@@ -130,29 +111,20 @@ export function initializePublic({
     }
   };
   /**
-   * @deprecated This route will be deprecated because of its non-RESTFul route structure
-   * Please update to using `/users/:username/learning-objects` route.
-   */
-  router.get(
-    '/learning-objects/:username/learning-objects',
-    searchUserLearningObjects,
-  );
-  router.get('/users/:username/learning-objects', searchUserLearningObjects);
-  /**
-   * @deprecated This route will be deprecated because of its non RESTful route structure
-   * Please update to using `/users/:username/learning-objects/:learningObjectId` route.
-   * if requesting a Learning Object by name
-   */
-  router.get(
-    '/learning-objects/:username/:learningObjectName',
-    getLearningObjectByName,
-  );
-  /**
    * @deprecated This route will be deprecated because of its non RESTful route structure
    * Please update to using `/users/:username/learning-objects/:learningObjectId`
    * if requesting a Learning Object by id
    */
   router.get('/learning-objects/:learningObjectId', getLearningObjectById);
+  /**
+   * @deprecated This route will be deprecated because of its non RESTful route structure
+   * Please update to using `/users/:username/learning-objects/:learningObjectId` route.
+   * if requesting a Learning Object by name.
+   */
+  router.get(
+    '/learning-objects/:username/:learningObjectName',
+    getLearningObjectByName,
+  );
   router.get(
     '/users/:username/learning-objects/:learningObjectId',
     getLearningObjectById,

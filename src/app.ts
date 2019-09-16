@@ -6,7 +6,7 @@ import { reportError } from './shared/SentryConnector';
 import { MongoDriver, ExpressDriver } from './drivers/drivers';
 import { LibraryCommunicator, DataStore } from './shared/interfaces/interfaces';
 import { LibraryDriver } from './drivers/LibraryDriver';
-import { MongoConnector } from './shared/Mongo/MongoConnector';
+import { MongoConnector } from './shared/MongoDB/MongoConnector';
 import { LearningObjectAdapter } from './LearningObjects/adapters/LearningObjectAdapter';
 import { LearningObjectSearch } from './LearningObjectSearch';
 import { HierarchyAdapter } from './LearningObjects/Hierarchy/HierarchyAdapter';
@@ -16,6 +16,7 @@ import { FileManagerModule } from './FileManager/FileManagerModule';
 import { LearningObjectsModule } from './LearningObjects/LearningObjectsModule';
 import { LearningObjectSubmissionAdapter } from './LearningObjectSubmission/adapters/LearningObjectSubmissionAdapter';
 import { ElasticsearchSubmissionPublisher } from './LearningObjectSubmission/ElasticsearchSubmissionPublisher';
+import { UserServiceGateway } from './shared/gateways/user-service/UserServiceGateway';
 import { FileAccessIdentitiesAdapter } from './FileAccessIdentities/adapters/FileAccessIdentitiesAdapter/FileAccessIdentitiesAdapter';
 import { FileAccessIdentities } from './FileAccessIdentities';
 
@@ -92,6 +93,7 @@ function initModules() {
   FileManagerModule.initialize();
   BundlerModule.initialize();
   FileMetadataModule.initialize();
+  UserServiceGateway.build();
   FileAccessIdentities.initialize();
   FileAccessIdentitiesAdapter.open();
 }

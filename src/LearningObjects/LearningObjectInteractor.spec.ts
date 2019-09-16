@@ -5,14 +5,6 @@ import {
   LearningObjectWithChildren,
   LearningObjectWithoutChildren,
 } from '../tests/interfaces';
-import {
-  updateObjectLastModifiedDate,
-  updateParentsDate,
-  getLearningObjectChildrenSummariesById,
-  getLearningObjectById,
-  generateReleasableLearningObject,
-  getLearningObjectSummaryById,
-} from './LearningObjectInteractor';
 import { Stubs } from '../tests/stubs';
 import { LibraryCommunicator } from '../shared/interfaces/interfaces';
 import { HierarchicalLearningObject } from '../shared/entity';
@@ -33,8 +25,12 @@ let dataStore: DataStore = new MockDataStore();
 const library: LibraryCommunicator = new MockLibraryDriver();
 const stubs = new Stubs();
 
+let interactor: any;
+
+const localDatastore = new MockDataStore();
+
 describe('Interactor: LearningObjectInteractor', () => {
-  beforeAll(() => {
+  beforeAll(async () => {
     LearningObjectsModule.providers = [
       { provide: FileMetadataGateway, useClass: StubFileMetadataGateway },
       { provide: FileManagerGateway, useClass: StubFileManagerGateway },
@@ -42,15 +38,20 @@ describe('Interactor: LearningObjectInteractor', () => {
       { provide: UserGateway, useClass: StubUserGateway },
     ];
     LearningObjectsModule.initialize();
+
+    interactor = await import('./LearningObjectInteractor');
   });
   afterAll(() => {
     LearningObjectsModule.destroy();
   });
 
+  // tslint:disable-next-line: no-require-imports
+  const index = require.requireActual('./LearningObjectInteractor');
+
   it(`should update an object's last modified date and recursively update the child's parents' last modified date`, async () => {
     expect.assertions(1);
     await expect(
-      updateObjectLastModifiedDate({
+      interactor.updateObjectLastModifiedDate({
         dataStore,
         id: stubs.learningObject.id,
       }),
@@ -59,23 +60,19 @@ describe('Interactor: LearningObjectInteractor', () => {
   it(`should recursively update parent objects' last modified date`, async () => {
     expect.assertions(1);
     await expect(
-      updateParentsDate({
+      interactor.updateParentsDate({
         dataStore,
         childId: stubs.learningObject.id,
         date: Date.now().toString(),
       }),
     ).resolves.toBe(undefined);
   });
-  it(`should get object's children`, async () => {
-    expect.assertions(1);
-    await expect(
-      getLearningObjectChildrenSummariesById(dataStore, stubs.userToken, new MockLibraryDriver(), stubs.learningObject.id),
-    ).resolves.toEqual([]);
-  });
   it('should get a learning object by Id', async () => {
+    index.loadChildrenSummaries = jest
+      .fn()
+      .mockResolvedValue([stubs.learningObject]);
     expect.assertions(1);
-    const localDatastore = new MockDataStore();
-    const learningObject = await getLearningObjectById({
+    const learningObject = await index.getLearningObjectById({
       dataStore: localDatastore,
       id: localDatastore.stubs.learningObject.id,
       library,
@@ -84,8 +81,7 @@ describe('Interactor: LearningObjectInteractor', () => {
   });
   it('should get a Learning Object Summary by Id', async () => {
     expect.assertions(1);
-    const localDatastore = new MockDataStore();
-    const learningObject = await getLearningObjectSummaryById({
+    const learningObject = await interactor.getLearningObjectSummaryById({
       dataStore: localDatastore,
       id: localDatastore.stubs.learningObject.id,
     });
@@ -93,9 +89,10 @@ describe('Interactor: LearningObjectInteractor', () => {
       mapLearningObjectToSummary(localDatastore.stubs.learningObject),
     );
   });
-  it('should generate a Learning Object with it\'s full heirarchy present', async () => {
+  // tslint:disable-next-line: quotemark
+  it("should generate a Learning Object with it's full heirarchy present", async () => {
     try {
-      const learningObject = await generateReleasableLearningObject({
+      const learningObject = await interactor.generateReleasableLearningObject({
         dataStore,
         id: stubs.learningObject.id,
         requester: stubs.userToken,

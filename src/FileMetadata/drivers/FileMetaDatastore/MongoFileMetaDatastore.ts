@@ -5,7 +5,7 @@ import {
   FileMetadataUpdate,
 } from '../../typings';
 import { Db, ObjectId } from 'mongodb';
-import { MongoConnector } from '../../../shared/Mongo/MongoConnector';
+import { MongoConnector } from '../../../shared/MongoDB/MongoConnector';
 
 const FILES_DB = process.env.FILE_DB_NAME;
 

@@ -1,12 +1,9 @@
 import { DataStore } from '../shared/interfaces/DataStore';
 import { LibraryCommunicator } from '../shared/interfaces/interfaces';
 import {
-  CollectionAccessMap,
   LearningObjectMetadataUpdates,
   LearningObjectState,
   LearningObjectSummary,
-  UserLearningObjectQuery,
-  UserLearningObjectSearchQuery,
   UserToken,
   VALID_LEARNING_OBJECT_UPDATES,
 } from '../shared/types';
@@ -22,14 +19,10 @@ import {
   authorizeReadAccess,
   authorizeRequest,
   authorizeWriteAccess,
-  getAccessGroupCollections,
-  getAuthorizedStatuses,
   requesterIsEditor,
-  getCollectionAccessMap,
   hasReadAccessByCollection,
   requesterIsAdminOrEditor,
   requesterIsAuthor,
-  requesterIsPrivileged,
 } from '../shared/AuthorizationManager';
 import {
   LearningObjectFilter,
@@ -40,10 +33,6 @@ import * as PublishingService from './Publishing';
 import {
   mapLearningObjectToSummary,
   sanitizeLearningObjectName,
-  sanitizeText,
-  toArray,
-  sanitizeObject,
-  toBoolean,
 } from '../shared/functions';
 import {
   FileMetadataGateway,
@@ -54,6 +43,8 @@ import { LearningObjectsModule } from './LearningObjectsModule';
 import { LearningObjectSubmissionAdapter } from '../LearningObjectSubmission/adapters/LearningObjectSubmissionAdapter';
 import { UserGateway } from './interfaces/UserGateway';
 import { validateUpdates } from '../shared/entity/learning-object/validators';
+import { UserServiceGateway } from '../shared/gateways/user-service/UserServiceGateway';
+import * as mongoHelperFunctions from '../shared/MongoDB/HelperFunctions';
 
 const GATEWAY_API = process.env.GATEWAY_API;
 
@@ -68,139 +59,6 @@ namespace Gateways {
     LearningObjectsModule.resolveDependency(FileMetadataGateway);
   export const user = () =>
     LearningObjectsModule.resolveDependency(UserGateway);
-}
-
-/**
- * Performs a search on the specified user's Learning Objects.
- *
- * *** NOTES ***
- * If the specified user cannot be found, a NotFound ResourceError is thrown.
- * Only the author and privileged users are allowed to view Learning Object drafts.
- * "Drafts" are defined as 'not released' Learning Objects that have never been released or have a `revision` id of `0`, so
- * if the `draftsOnly` filter is specified, the `status` filter must not have a value of `released`.
- * Only authors can see drafts that are not submitted for review; `unreleased` || `rejected`.
- * Admins and editors can see all Learning Objects submitted for review.
- * Reviewers and curators can only see Learning Objects submitted for review to their collection.
- *
- *
- * @async
- *
- * @returns {LearningObjectSummary[]} the user's learning objects found by the query
- * @param params.dataStore
- * @param params.authorUsername
- * @param params.requester
- * @param params.query
- */
-export async function searchUsersObjects({
-  dataStore,
-  authorUsername,
-  requester,
-  query,
-}: {
-  dataStore: DataStore;
-  authorUsername: string;
-  requester: UserToken;
-  query?: UserLearningObjectQuery;
-}): Promise<LearningObjectSummary[]> {
-  try {
-    let { text, draftsOnly, status } = formatUserLearningObjectQuery(query);
-    if (!(await dataStore.findUserId(authorUsername))) {
-      throw new ResourceError(
-        `Cannot load Learning Objects for user ${authorUsername}. User ${authorUsername} does not exist.`,
-        ResourceErrorReason.NOT_FOUND,
-      );
-    }
-    const isAuthor = requesterIsAuthor({ requester, authorUsername });
-    const isPrivileged = requesterIsPrivileged(requester);
-    const searchQuery: UserLearningObjectSearchQuery = {
-      text,
-      status,
-    };
-
-    if (draftsOnly) {
-      if (!isAuthor && !isPrivileged) {
-        throw new ResourceError(
-          `Invalid access. You are not authorized to view ${authorUsername}'s drafts.`,
-          ResourceErrorReason.INVALID_ACCESS,
-        );
-      }
-
-      if (!searchQuery.status) {
-        if (isAuthor) {
-          searchQuery.status = [
-            ...LearningObjectState.UNRELEASED,
-            ...LearningObjectState.IN_REVIEW,
-          ];
-        } else {
-          searchQuery.status = [...LearningObjectState.IN_REVIEW];
-        }
-      }
-
-      if (searchQuery.status.includes(LearningObject.Status.RELEASED)) {
-        throw new ResourceError(
-          'Illegal query arguments. Cannot specify both draftsOnly and released status filters.',
-          ResourceErrorReason.BAD_REQUEST,
-        );
-      }
-
-      searchQuery.revision = 0;
-    }
-
-    if (!isAuthor && !isPrivileged) {
-      return await dataStore.searchReleasedUserObjects(
-        searchQuery,
-        authorUsername,
-      );
-    }
-
-    let collectionAccessMap: CollectionAccessMap;
-
-    if (!isAuthor) {
-      searchQuery.status = getAuthorizedStatuses(searchQuery.status);
-      if (!requesterIsAdminOrEditor(requester)) {
-        const privilegedCollections = getAccessGroupCollections(requester);
-        collectionAccessMap = getCollectionAccessMap(
-          [],
-          privilegedCollections,
-          searchQuery.status,
-        );
-        searchQuery.status = searchQuery.status.includes(
-          LearningObject.Status.RELEASED,
-        )
-          ? LearningObjectState.RELEASED
-          : null;
-      }
-    } else {
-      searchQuery.status = searchQuery.status
-        ? searchQuery.status
-        : [...LearningObjectState.ALL];
-    }
-
-    return await dataStore.searchAllUserObjects(
-      searchQuery,
-      authorUsername,
-      collectionAccessMap,
-    );
-  } catch (e) {
-    handleError(e);
-  }
-}
-/**
- * Formats search query to verify params are the appropriate types
- *
- * @private
- * @static
- * @param {UserLearningObjectQuery} query
- * @returns {UserLearningObjectQuery}
- */
-function formatUserLearningObjectQuery(
-  query: UserLearningObjectQuery,
-): UserLearningObjectQuery {
-  const formattedQuery = { ...query };
-  formattedQuery.text = sanitizeText(formattedQuery.text) || null;
-  formattedQuery.status = toArray(formattedQuery.status);
-  formattedQuery.draftsOnly = toBoolean(formattedQuery.draftsOnly);
-  return sanitizeObject({ object: formattedQuery }, false);
 }
 
 /**
@@ -326,7 +184,7 @@ async function findAuthorIdByUsername(params: {
   username: string;
 }): Promise<string> {
   const { dataStore, username } = params;
-  const authorId = await dataStore.findUser(username);
+  const authorId = await UserServiceGateway.getInstance().findUser(username);
   if (!authorId) {
     throw new ResourceError(
       `No user with username ${username} exists`,
@@ -858,9 +716,12 @@ export async function addLearningObject({
       username: authorUsername,
       name: object.name,
     });
-
-    const authorID = await dataStore.findUser(authorUsername);
-    const author = await dataStore.fetchUser(authorID);
+    const authorID = await UserServiceGateway.getInstance().findUser(
+      authorUsername,
+    );
+    const author = await UserServiceGateway.getInstance().queryUserById(
+      authorID,
+    );
     const objectInsert = new LearningObject({
       ...object,
       author,
@@ -1192,13 +1053,11 @@ async function loadWorkingParentsReleasedChildObjects({
  * @returns
  */
 async function loadReleasedChildObjects({
-  dataStore,
   parentId,
 }: {
-  dataStore: DataStore;
   parentId: string;
 }): Promise<HierarchicalLearningObject[]> {
-  let children = (await dataStore.loadReleasedChildObjects({
+  let children = (await mongoHelperFunctions.loadReleasedChildObjects({
     id: parentId,
     full: true,
   })) as HierarchicalLearningObject[];
@@ -1206,7 +1065,6 @@ async function loadReleasedChildObjects({
   children = await Promise.all(
     children.map(async child => {
       child.children = await loadReleasedChildObjects({
-        dataStore,
         parentId: child.id,
       });
       return child;
@@ -1260,7 +1118,7 @@ export async function getLearningObjectChildrenSummariesById(
     parentId: objectId,
   });
 
-  const childrenOrder = await dataStore.loadChildObjects({
+  const childrenOrder = await mongoHelperFunctions.loadChildObjects({
     id: objectId,
     status: LearningObjectState.ALL,
   });
@@ -1358,7 +1216,9 @@ export async function deleteLearningObjectByName({
   user: UserToken;
 }): Promise<void> {
   try {
-    const authorId = await dataStore.findUser(user.username);
+    const authorId = await UserServiceGateway.getInstance().findUser(
+      user.username,
+    );
     if (!authorId) {
       throw new ResourceError(
         `Unable to delete Learning Object ${learningObjectName}. No user ${user.username} with Learning Object ${learningObjectName} found.`,
@@ -1715,7 +1575,7 @@ async function checkNameExists({
   name: string;
   id?: string;
 }) {
-  const authorId = await dataStore.findUser(username);
+  const authorId = await UserServiceGateway.getInstance().findUser(username);
   const existing = await dataStore.findLearningObject({ authorId, name });
   if (existing && id !== existing) {
     throw new ResourceError(

@@ -1,25 +1,25 @@
-import { LearningObjectSearch as Module } from '.';
+import { LearningObjectSearch as Module } from '../..';
 import {
   LearningObjectSearchResult,
   Requester,
   LearningObjectSearchQuery,
   CollectionAccessMap,
   LearningObjectState,
-} from './typings';
+} from '../../typings';
 import {
   sanitizeText,
   toArray,
   toNumber,
   sanitizeObject,
-} from '../shared/functions';
+} from '../../../shared/functions';
 import {
   requesterIsPrivileged,
   requesterIsAdminOrEditor,
   getAuthorizedStatuses,
-} from '../shared/AuthorizationManager';
-import { LearningObjectDatastore } from './interfaces';
-import { getAccessGroupCollections } from '../shared/AuthorizationManager';
-import { handleError } from '../shared/errors';
+} from '../../../shared/AuthorizationManager';
+import { LearningObjectDatastore } from '../../interfaces';
+import { getAccessGroupCollections } from '../../../shared/AuthorizationManager';
+import { handleError } from '../../../shared/errors';
 
 namespace Drivers {
   export const datastore = () =>
