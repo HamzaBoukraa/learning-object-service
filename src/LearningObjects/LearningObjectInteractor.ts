@@ -932,15 +932,6 @@ export async function updateLearningObject({
       }.`,
     });
 
-    // if updates include a name change and the object has been submitted, update the README
-    if (updates.name && isInReview) {
-      await updateReadme({
-        dataStore,
-        requester,
-        object: learningObject,
-      });
-    }
-
     const cleanUpdates = sanitizeUpdates(updates);
     validateUpdates(cleanUpdates);
 
@@ -950,6 +941,15 @@ export async function updateLearningObject({
       id,
       updates: cleanUpdates,
     });
+
+    // if updates include a name change and the object has been submitted, update the README
+    if (updates.name && isInReview) {
+      await updateReadme({
+        dataStore,
+        requester,
+        id: learningObject.id,
+      });
+    }
 
     if (isInReview) {
       LearningObjectSubmissionAdapter.getInstance().applySubmissionUpdates({
