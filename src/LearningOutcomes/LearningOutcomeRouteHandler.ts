@@ -28,7 +28,7 @@ export function initializePublic({
       const requester = req.user;
 
       const outcomes = await LearningOutcomeInteractor.getAllLearningOutcomes({ dataStore, requester, source, learningObjectGateway: getLearningObjectGateway() });
-      res.status(200).json(outcomes);
+      res.status(200).json(outcomes.map(o => o.toPlainObject()));
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
       res.status(code).json({message});
