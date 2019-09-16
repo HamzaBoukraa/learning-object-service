@@ -417,10 +417,10 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
   fetchRecentSubmission(learningObjectId: string): Promise<Submission> {
     return Promise.resolve(this.stubs.submission);
   }
-  hasSubmission(
+  hasSubmission(params: {
     learningObjectId: string,
     collection: string,
-  ): Promise<boolean> {
+  }): Promise<boolean> {
     return Promise.resolve(true);
   }
   unsubmitLearningObject(id: string): Promise<void> {

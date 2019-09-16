@@ -8,7 +8,7 @@ import {
   deleteFile,
   deleteFolder,
   getFileStream,
-} from './Interactor';
+} from './interactors/Interactor';
 import {
   FileManager,
   LearningObjectGateway,
@@ -19,6 +19,7 @@ import {
   ModuleLearningObjectGateway,
   ModuleFileMetadataGateway,
 } from './gateways';
+import { ModuleHierarchyGateway, HierarchyGateway } from './gateways/HierarchyGateway/ModuleHierarchyGateway';
 
 /**
  * Module responsible for handling file operations
@@ -33,6 +34,7 @@ import {
     { provide: FileManager, useClass: S3FileManager },
     { provide: LearningObjectGateway, useClass: ModuleLearningObjectGateway },
     { provide: FileMetadataGateway, useClass: ModuleFileMetadataGateway },
+    { provide: HierarchyGateway, useClass: ModuleHierarchyGateway },
   ],
 })
 export class FileManagerModule extends ExpressServiceModule {

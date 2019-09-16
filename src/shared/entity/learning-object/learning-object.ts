@@ -7,9 +7,19 @@ import { LearningOutcome } from '../learning-outcome/learning-outcome';
 import { LEARNING_OBJECT_ERRORS } from './error-messages';
 import { EntityError } from '../errors/entity-error';
 import { LearningObjectSummary, LearningObjectChildSummary } from '../../types';
+import * as uuid from 'uuid/v4';
 
 const MIN_NAME_LENGTH = 3;
 const MAX_NAME_LENGTH = 170;
+
+export type LearningObjectResourceUris = {
+  outcomes?: string;
+  children?: string;
+  materials?: string;
+  metrics?: string;
+  parents?: string;
+  ratings?: string;
+};
 
 /**
  * A class to represent a learning object.
@@ -27,6 +37,40 @@ export class LearningObject {
       throw new EntityError(LEARNING_OBJECT_ERRORS.ID_SET, 'id');
     }
   }
+
+  private _cuid?: string;
+
+  /**
+   * A CLARK Universal Identifier.
+   *
+   * The CUID property maintains the relationship between released Learning Objects and their working copies. Since each are separate documents, they mmust
+   * have a unique _id property that can be used as a foreign key, but can share a CUID.
+   *
+   * @private
+   * @type {string}
+   * @memberof LearningObject
+   */
+  get cuid(): string {
+    return this._cuid;
+  }
+
+  /**
+   * Set the CUID property. Will throw an instance of EntityError if the CUID property is already set.
+   *
+   * @memberof LearningObject
+   */
+  set cuid(cuid: string) {
+    if (!this._cuid) {
+      this._cuid = cuid;
+    } else {
+      throw new EntityError(LEARNING_OBJECT_ERRORS.CUID_SET, 'cuid');
+    }
+  }
+
+  generateCUID(): void {
+    this.cuid = uuid();
+  }
+
   private _author: User;
   /**
    * @property {User} author (immutable)
@@ -402,6 +446,40 @@ export class LearningObject {
   }
 
   /**
+   * Store's URI's to additional pieces of the Learning Object to be fetched asynchronously
+   *
+   * @memberof LearningObject
+   */
+  resourceUris?: LearningObjectResourceUris;
+
+  /**
+   * Attach URIs of additional resources to the Learning Object
+   *
+   * @param {string} resourceUriHost the base URI of the api
+   * @memberof LearningObject
+   */
+  attachResourceUris(
+    resourceUriHost: string,
+  ) {
+    // attach additional properties
+    if (!this.resourceUris) {
+      this.resourceUris = {};
+    }
+
+    this.resourceUris.outcomes = `${resourceUriHost}/users/${this.author.username}/learning-objects/${this.id}/outcomes`;
+
+    this.resourceUris.children = `${resourceUriHost}/users/${this.author.username}/learning-objects/${this.id}/children`;
+
+    this.resourceUris.materials = `${resourceUriHost}/users/${this.author.username}/learning-objects/${this.id}/materials`;
+
+    this.resourceUris.metrics = `${resourceUriHost}/users/${this.author.username}/learning-objects/${this.id}/metrics`;
+
+    this.resourceUris.parents = `${resourceUriHost}/learning-objects/${this.id}/parents`;
+
+    this.resourceUris.ratings = `${resourceUriHost}/learning-objects/${this.id}/ratings`;
+  }
+
+  /**
    * Map deprecated status values to new LearningObject.Status values
    *
    * @private
@@ -451,6 +529,7 @@ export class LearningObject {
   constructor(object?: Partial<LearningObject>) {
     // @ts-ignore Id will be undefined on creation
     this._id = undefined;
+    this._cuid = undefined;
     this._author = new User();
     this._name = '';
     this._description = '';
@@ -487,6 +566,11 @@ export class LearningObject {
     if (object.id) {
       this.id = object.id;
     }
+
+    if (object.cuid) {
+      this.cuid = object.cuid;
+    }
+
     if (object.author) {
       this._author = new User(object.author);
     }
@@ -541,6 +625,7 @@ export class LearningObject {
   public toPlainObject(): Partial<LearningObject> {
     const object: Partial<LearningObject> = {
       id: this.id,
+      cuid: this.cuid,
       author: this.author.toPlainObject() as User,
       name: this.name,
       description: this.description,
@@ -560,8 +645,17 @@ export class LearningObject {
       metrics: this.metrics,
       hasRevision: this.hasRevision,
       revision: this.revision,
+      resourceUris: this.resourceUris,
     };
     return object;
+  }
+
+  public toSummary(): LearningObjectSummary {
+    // FIXME: This is gross and wrong
+    const summary = { ...this.toPlainObject() };
+    delete summary.outcomes;
+    delete summary.materials;
+    return summary as LearningObjectSummary;
   }
 }
 

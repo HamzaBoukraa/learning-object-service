@@ -3,7 +3,7 @@ import {
   CollectionAccessMap,
   ReleasedUserLearningObjectSearchQuery,
 } from '../types';
-import { LearningOutcomeDatastore } from '../../LearningOutcomes/LearningOutcomeInteractor';
+import { LearningOutcomeDatastore } from '../../LearningOutcomes/datastores/LearningOutcomeDataStore';
 import { LearningObjectStatDatastore } from '../../LearningObjectStats/LearningObjectStatsInteractor';
 import { CollectionDataStore } from '../../Collections/CollectionDataStore';
 import { ChangeLogDocument } from '../types/changelog';

@@ -1,6 +1,6 @@
 {
   "name": "learning-object-service",
-  "version": "3.9.0",
+  "version": "3.17.2",
   "description": "Learning Object Microservice.",
   "main": "app.ts",
   "scripts": {
@@ -8,11 +8,13 @@
     "serve": "node -r ts-node/register ./src/app.ts",
     "serve:debug": "node --inspect=5858 -r ts-node/register ./src/app.ts",
     "build": "node_modules/.bin/gulp tsc",
-    "test": "node_modules/.bin/jest --verbose --coverage --detectOpenHandles",
+    "test": "node_modules/.bin/jest",
     "gulp-tsc": "node_modules/.bin/gulp start",
     "pack": "npm run build && cp ./package.json ./dist && cp -r ./.ebextensions ./dist && cd ./dist && zip -r ../dist.zip  ./* & cd ..",
     "zip": "cp ./package.json ./dist && cp -r ./.ebextensions ./dist && cd ./dist && zip -r ../dist.zip  ./* & cd ..",
-    "deploy": "eb deploy LearningObject-Service-Production --profile clark --label Learning-Object-Service-v$(node -p \"require('./package.json').version\")"
+    "deploy": "eb deploy LearningObject-Service-Production --profile clark --label Learning-Object-Service-v$(node -p \"require('./package.json').version\")",
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
   },
   "repository": {
     "type": "git",
@@ -29,6 +31,7 @@
     "@elastic/elasticsearch": "^6.8.0",
     "@sentry/node": "^4.6.6",
     "@types/archiver": "^3.0.0",
+    "@types/uuid": "^3.4.5",
     "archiver": "^3.0.0",
     "aws-sdk": "^2.211.0",
     "cookie-parser": "^1.4.3",
@@ -45,8 +48,10 @@
     "node-service-module": "^1.1.0",
     "pdfkit": "^0.9.0",
     "request-promise": "^4.2.2",
+    "snyk": "^1.189.0",
     "stopword": "^0.1.10",
-    "striptags": "^3.1.1"
+    "striptags": "^3.1.1",
+    "uuid": "^3.3.3"
   },
   "devDependencies": {
     "@types/bcrypt": "^2.0.0",
@@ -81,5 +86,6 @@
   "prettier": {
     "singleQuote": true,
     "trailingComma": "all"
-  }
+  },
+  "snyk": true
 }

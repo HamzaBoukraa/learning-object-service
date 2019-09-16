@@ -25,6 +25,7 @@ import {
   ServiceError,
   ServiceErrorReason,
 } from '../../../../../shared/errors';
+import { reportError } from '../../../../../shared/SentryConnector';
 
 const ELASTICSEARCH_DOMAIN = process.env.ELASTICSEARCH_DOMAIN;
 const LEARNING_OBJECT_INDEX = 'learning-objects';
@@ -355,22 +356,25 @@ export class ElasticSearchLearningObjectDatastore
     page: number;
   }): void {
     query.size = limit;
-    query.from = this.formatFromValue(page);
+    query.from = this.formatFromValue(page, limit);
   }
 
   /**
    * Ensures the `from` value is valid by setting a default of `0` if the passed value is undefined or less than `0`
    *
    * @private
-   * @param {number} value [From value to be formatted]
+   * @param {number} page [From value to be formatted]
+   * @param {number} limit [search document limit, used to multiply from value]
    * @returns {number}
    * @memberof ElasticSearchLearningObjectDatastore
    */
-  private formatFromValue(value: number): number {
+  private formatFromValue(page: number, limit: number): number {
     let formattedPage = 0;
-    if (value != null) {
-      formattedPage = value < 0 ? 0 : value - 1;
+    if (page != null) {
+      formattedPage = page <= 0 ? 0 : page - 1;
+      formattedPage = formattedPage * limit;
     }
+
     return formattedPage;
   }
 
@@ -537,7 +541,7 @@ export class ElasticSearchLearningObjectDatastore
               objects_bucket_sort: {
                 bucket_sort: {
                   size: limit,
-                  from: this.formatFromValue(page) * limit,
+                  from: this.formatFromValue(page, limit),
                 },
               },
               score: {
@@ -672,11 +676,13 @@ export class ElasticSearchLearningObjectDatastore
             ResourceErrorReason.NOT_FOUND,
           );
         case 500:
+          reportError(e);
           throw new ServiceError(ServiceErrorReason.INTERNAL);
         default:
           break;
       }
     }
+    reportError(e);
     throw new ServiceError(ServiceErrorReason.INTERNAL);
   }
 }

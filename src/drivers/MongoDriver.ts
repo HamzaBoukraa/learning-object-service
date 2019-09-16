@@ -12,7 +12,7 @@ import {
   LearningObjectSummary,
 } from '../shared/types';
 import { UserServiceGateway } from '../shared/gateways/user-service/UserServiceGateway';
-import { LearningOutcomeMongoDatastore } from '../LearningOutcomes/LearningOutcomeMongoDatastore';
+import { LearningOutcomeMongoDatastore } from '../LearningOutcomes/datastores/LearningOutcomeMongoDatastore';
 import {
   LearningOutcomeInsert,
   LearningOutcomeUpdate,
@@ -1043,6 +1043,7 @@ export class MongoDriver implements DataStore {
         {
           $group: {
             _id: '$_id',
+            cuid: { $first: '$cuid' },
             orderedFiles: {
               $push: '$materials.files',
             },

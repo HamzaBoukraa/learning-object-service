@@ -12,6 +12,7 @@ import {
 } from '../../shared/errors';
 import { LearningObject } from '../../shared/entity';
 import { initializePublic as initializePublicHierarchyRoutes } from '../../LearningObjects/Hierarchy/HierarchyRouteHandler';
+import * as LearningOutcomeRouteHandler from '../../LearningOutcomes/LearningOutcomeRouteHandler';
 
 // This refers to the package.json that is generated in the dist. See /gulpfile.js for reference.
 // tslint:disable-next-line:no-require-imports
@@ -71,6 +72,8 @@ export class ExpressRouteDriver {
     initializePublicHierarchyRoutes({ router, dataStore: this.dataStore });
 
     initializeCollectionRouter({ router, dataStore: this.dataStore });
+
+    LearningOutcomeRouteHandler.initializePublic({ router, dataStore: this.dataStore });
 
     /**
      * @deprecated

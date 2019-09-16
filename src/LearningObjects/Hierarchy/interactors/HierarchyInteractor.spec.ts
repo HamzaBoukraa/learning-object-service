@@ -1,8 +1,8 @@
 import { isTopLevelLearningObject, fetchParents } from './HierarchyInteractor';
-import { Stubs } from '../../tests/stubs';
-import { DataStore } from '../../shared/interfaces/DataStore';
-import { MockDataStore } from '../../tests/mock-drivers/MockDataStore';
-import { UserToken } from '../../shared/types';
+import { Stubs } from '../../../tests/stubs';
+import { DataStore } from '../../../shared/interfaces/DataStore';
+import { MockDataStore } from '../../../tests/mock-drivers/MockDataStore';
+import { UserToken } from '../../../shared/types';
 
 const dataStore: DataStore = new MockDataStore();
 const stubs = new Stubs();

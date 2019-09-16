@@ -4,10 +4,7 @@ import * as express from 'express';
 import { reportError } from './shared/SentryConnector';
 
 import { MongoDriver, ExpressDriver } from './drivers/drivers';
-import {
-  LibraryCommunicator,
-  DataStore,
-} from './shared/interfaces/interfaces';
+import { LibraryCommunicator, DataStore } from './shared/interfaces/interfaces';
 import { LibraryDriver } from './drivers/LibraryDriver';
 import { MongoConnector } from './shared/MongoDB/MongoConnector';
 import { LearningObjectAdapter } from './LearningObjects/adapters/LearningObjectAdapter';
@@ -20,6 +17,8 @@ import { LearningObjectsModule } from './LearningObjects/LearningObjectsModule';
 import { LearningObjectSubmissionAdapter } from './LearningObjectSubmission/adapters/LearningObjectSubmissionAdapter';
 import { ElasticsearchSubmissionPublisher } from './LearningObjectSubmission/ElasticsearchSubmissionPublisher';
 import { UserServiceGateway } from './shared/gateways/user-service/UserServiceGateway';
+import { FileAccessIdentitiesAdapter } from './FileAccessIdentities/adapters/FileAccessIdentitiesAdapter/FileAccessIdentitiesAdapter';
+import { FileAccessIdentities } from './FileAccessIdentities';
 
 // ----------------------------------------------------------------------------------
 // Initializations
@@ -95,6 +94,8 @@ function initModules() {
   BundlerModule.initialize();
   FileMetadataModule.initialize();
   UserServiceGateway.build();
+  FileAccessIdentities.initialize();
+  FileAccessIdentitiesAdapter.open();
 }
 
 /**
@@ -104,9 +105,7 @@ function initModules() {
  */
 function startHttpServer(app: express.Express): void {
   const server = http.createServer(app);
-  server.keepAliveTimeout = KEEP_ALIVE_TIMEOUT
-    ? parseInt(KEEP_ALIVE_TIMEOUT, 10)
-    : server.keepAliveTimeout;
+  server.keepAliveTimeout = parseInt(process.env.KEEP_ALIVE_TIMEOUT, 10);
   server.listen(HTTP_SERVER_PORT, () =>
     console.log(
       `Learning Object Service running on http://localhost:${HTTP_SERVER_PORT}`,

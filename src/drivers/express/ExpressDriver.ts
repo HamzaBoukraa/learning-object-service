@@ -24,6 +24,7 @@ import {
 import { LearningObjectSearch } from '../../LearningObjectSearch';
 import { FileMetadataModule } from '../../FileMetadata/FileMetadataModule';
 import { FileManagerModule } from '../../FileManager/FileManagerModule';
+import { FileAccessIdentities } from '../../FileAccessIdentities';
 
 export class ExpressDriver {
   static app = express();
@@ -62,7 +63,8 @@ export class ExpressDriver {
     // These sentry handlers must come first
     this.app.use(sentryRequestHandler);
     this.app.use(sentryErrorHandler);
-    this.app.use(logger('dev'));
+    const logType = process.env.NODE_ENV === 'production' ? 'common' : 'dev';
+    this.app.use(logger(logType));
     this.app.use(
       bodyParser.urlencoded({
         extended: true,
@@ -91,6 +93,7 @@ export class ExpressDriver {
         this.library,
       ),
     );
+    this.app.use(FileAccessIdentities.expressRouter);
   }
 
   /**

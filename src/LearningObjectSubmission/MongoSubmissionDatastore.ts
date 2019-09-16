@@ -92,12 +92,20 @@ export class MongoSubmissionDatastore implements SubmissionDataStore {
    * The projection and limit of 1 are here to ensure the query executes quickly.
    * @inheritdoc
    */
-  public async hasSubmission(learningObjectId: string, collection: string) {
-    const submission = this.db.collection(COLLECTIONS.SUBMISSIONS)
-      .find({ _id: learningObjectId }, { projection: { _id: 1 }})
+  async hasSubmission(params: {
+    learningObjectId: string,
+    collection: string,
+  }): Promise<boolean> {
+    const submissions = await this.db.collection(COLLECTIONS.SUBMISSIONS)
+      .find(
+        {
+          learningObjectId: params.learningObjectId,
+          collection: params.collection,
+        },
+        { projection: { _id: 1 }})
       .limit(1)
-      .toArray()[0];
-    return submission !== undefined;
+      .toArray();
+    return submissions[0] !== undefined;
   }
 
   // TODO: Should this be an external helper?
