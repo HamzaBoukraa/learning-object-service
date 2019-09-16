@@ -1,7 +1,14 @@
-import { LearningObjectDocument, LearningObjectSummary, LearningObjectChildSummary } from '../../../types';
-import { mapChildLearningObjectToSummary, mapLearningObjectToSummary } from '../../../functions';
+import {
+  LearningObjectDocument,
+  LearningObjectSummary,
+  LearningObjectChildSummary,
+} from '../../../types';
+import {
+  mapChildLearningObjectToSummary,
+  mapLearningObjectToSummary,
+} from '../../../functions';
 import { UserServiceGateway } from '../../../gateways/user-service/UserServiceGateway';
-import mongoHelperFunctions from '..';
+import * as mongoHelperFunctions from '..';
 /**
  * Converts LearningObjectDocument to LearningObjectSummary
  *
@@ -13,14 +20,20 @@ import mongoHelperFunctions from '..';
 export async function generateReleasedLearningObjectSummary(
   record: LearningObjectDocument,
 ): Promise<LearningObjectSummary> {
-  const author$ = UserServiceGateway.getInstance().queryUserById(record.authorID);
+  const author$ = UserServiceGateway.getInstance().queryUserById(
+    record.authorID,
+  );
   const contributors$ = Promise.all(
-    record.contributors.map(id => UserServiceGateway.getInstance().queryUserById(id)),
+    record.contributors.map(id =>
+      UserServiceGateway.getInstance().queryUserById(id),
+    ),
   );
   const [author, contributors] = await Promise.all([author$, contributors$]);
   let hasRevision = record.hasRevision;
   if (hasRevision == null) {
-    hasRevision = await mongoHelperFunctions.learningObjectHasRevision(record._id);
+    hasRevision = await mongoHelperFunctions.learningObjectHasRevision(
+      record._id,
+    );
   }
   let children: LearningObjectChildSummary[] = [];
   if (record.children) {

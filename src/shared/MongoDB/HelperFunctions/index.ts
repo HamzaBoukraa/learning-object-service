@@ -11,17 +11,17 @@ import { loadChildObjects } from './loadChildObjects/loadChildObjects';
 import { loadReleasedChildObjects } from './loadReleasedChildObjects/loadReleasedChildObjects';
 import { learningObjectHasRevision } from './learningObjectHasRevision/learningObjectHasRevision';
 
-export default {
-    bulkGenerateLearningObjects,
-    calculateDocumentsToSkip,
-    documentLearningObject,
-    documentReleasedLearningObject,
-    generateLearningObject,
-    generateLearningObjectSummary,
-    generateReleasedLearningObject,
-    generateReleasedLearningObjectSummary,
-    learningObjectHasRevision,
-    loadChildObjects,
-    loadReleasedChildObjects,
-    validatePageNumber,
- };
+export {
+  bulkGenerateLearningObjects,
+  calculateDocumentsToSkip,
+  documentLearningObject,
+  documentReleasedLearningObject,
+  generateLearningObject,
+  generateLearningObjectSummary,
+  generateReleasedLearningObject,
+  generateReleasedLearningObjectSummary,
+  learningObjectHasRevision,
+  loadChildObjects,
+  loadReleasedChildObjects,
+  validatePageNumber,
+};

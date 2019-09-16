@@ -1,7 +1,14 @@
-import { LearningObjectDocument, LearningObjectSummary, LearningObjectChildSummary } from '../../../types';
-import { mapLearningObjectToSummary, mapChildLearningObjectToSummary } from '../../../functions';
+import {
+  LearningObjectDocument,
+  LearningObjectSummary,
+  LearningObjectChildSummary,
+} from '../../../types';
+import {
+  mapLearningObjectToSummary,
+  mapChildLearningObjectToSummary,
+} from '../../../functions';
 import { UserServiceGateway } from '../../../gateways/user-service/UserServiceGateway';
-import mongoHelperFunctions from '..';
+import * as mongoHelperFunctions from '../';
 
 /**
  * Converts LearningObjectDocument to LearningObjectSummary
@@ -14,9 +21,13 @@ import mongoHelperFunctions from '..';
 export async function generateLearningObjectSummary(
   record: LearningObjectDocument,
 ): Promise<LearningObjectSummary> {
-  const author$ = UserServiceGateway.getInstance().queryUserById(record.authorID);
+  const author$ = UserServiceGateway.getInstance().queryUserById(
+    record.authorID,
+  );
   const contributors$ = Promise.all(
-    record.contributors.map(id => UserServiceGateway.getInstance().queryUserById(id)),
+    record.contributors.map(id =>
+      UserServiceGateway.getInstance().queryUserById(id),
+    ),
   );
   const [author, contributors] = await Promise.all([author$, contributors$]);
 

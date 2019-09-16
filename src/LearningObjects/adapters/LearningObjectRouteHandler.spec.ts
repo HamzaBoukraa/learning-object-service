@@ -29,6 +29,7 @@ import { StubReadMeBuilder } from '../drivers/ReadMeBuilder/StubReadMeBuilder';
 import { LearningObjectSubmissionAdapter } from '../../LearningObjectSubmission/adapters/LearningObjectSubmissionAdapter';
 import { StubSubmissionPublisher } from '../../LearningObjectSubmission/StubSubmissionPublisher';
 import { LearningObjectAdapter } from './LearningObjectAdapter';
+import * as routeHandler from './LearningObjectRouteHandler';
 
 const app = express();
 const router = express.Router();
@@ -83,30 +84,17 @@ describe('LearningObjectRouteHandler', () => {
       dataStore,
       library: LibraryDriver,
     });
-    jest.mock('../../shared/gateways/user-service/UserServiceGateway');
-    jest.doMock('../LearningObjectInteractor', () => ({
-      __esModule: true,
-      getLearningObjectById: jest.fn().mockResolvedValue(stubs.learningObject),
-    }));
   });
 
   afterAll(() => {
     LearningObjectsModule.destroy();
   });
-
-  // jest.mock('../../shared/MongoDB/HelperFunctions/loadChildObjects/loadChildObjects', () => ({
-  //     loadReleasedChildObjects: async(params: {
-  //     id: string;
-  //     full?: boolean;
-  //   }): Promise<LearningObject[]> => {
-  //     return await [stubs.learningObject];
-  //   },
-  // }));
-
   describe('GET /users/:username/learning-objects/:learningObjectId', () => {
     it('should return a learning object based on the id', done => {
       request
-        .get(`/users/${stubs.user.username}/learning-objects/${stubs.learningObject.id}`)
+        .get(
+          `/users/${stubs.user.username}/learning-objects/${stubs.learningObject.id}`,
+        )
         .expect(200)
         .then(res => {
           expect(res.text).toContain(`${stubs.learningObject.id}`);
@@ -114,7 +102,7 @@ describe('LearningObjectRouteHandler', () => {
         });
     });
   });
-  describe(`GET /learning-objects/:someobjID/materials/all`, () => {
+  describe(`GET /learning-objects/:id/materials/all`, () => {
     it('should return the materials for the specified learning object', done => {
       request
         .get(`/learning-objects/${stubs.learningObject.id}/materials/all`)
@@ -138,7 +126,7 @@ describe('LearningObjectRouteHandler', () => {
           done();
         });
     });
-    describe('when the payload contains status set to \'released\'', () => {
+    describe("when the payload contains status set to 'released'", () => {
       describe('and the requester is an admin', () => {
         it('should update the requested Learning Object and return a status of 204', done => {
           stubs.learningObject.status = LearningObject.Status.PROOFING;
@@ -202,7 +190,7 @@ describe('LearningObjectRouteHandler', () => {
           done();
         });
     });
-   });
+  });
   afterAll(() => {
     BundlerModule.destroy();
     return dataStore.disconnect();

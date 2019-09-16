@@ -33,7 +33,7 @@ import { reportError } from '../shared/SentryConnector';
 import { LearningObject, LearningOutcome, User } from '../shared/entity';
 import { MongoConnector } from '../shared/MongoDB/MongoConnector';
 import { LearningObjectUpdates } from '../shared/types/learning-object-updates';
-import mongoHelperFunctions from '../shared/MongoDB/HelperFunctions';
+import * as mongoHelperFunctions from '../shared/MongoDB/HelperFunctions';
 import { sanitizeRegex } from '../shared/functions';
 
 export enum COLLECTIONS {
@@ -258,7 +258,9 @@ export class MongoDriver implements DataStore {
    * @memberof MongoDriver
    */
   async addToReleased(object: LearningObject): Promise<void> {
-    const doc = await mongoHelperFunctions.documentReleasedLearningObject(object);
+    const doc = await mongoHelperFunctions.documentReleasedLearningObject(
+      object,
+    );
     await this.db
       .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
       .replaceOne({ _id: object.id }, doc, { upsert: true });
@@ -721,7 +723,6 @@ export class MongoDriver implements DataStore {
     return [];
   }
 
-
   /**
    * Fetches Parents of requested Learning Object from released collection
    *
@@ -742,7 +743,10 @@ export class MongoDriver implements DataStore {
       .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
       .find<LearningObjectDocument>(mongoQuery)
       .toArray();
-    return await mongoHelperFunctions.bulkGenerateLearningObjects(parentDocs, full);
+    return await mongoHelperFunctions.bulkGenerateLearningObjects(
+      parentDocs,
+      full,
+    );
   }
 
   ///////////////////////////////////////////////////////////////////
@@ -995,7 +999,9 @@ export class MongoDriver implements DataStore {
       .collection(COLLECTIONS.LEARNING_OBJECTS)
       .findOne({ _id: id });
     if (doc) {
-      const author = await UserServiceGateway.getInstance().queryUserById(doc.authorID);
+      const author = await UserServiceGateway.getInstance().queryUserById(
+        doc.authorID,
+      );
       return mongoHelperFunctions.generateLearningObject(author, doc, full);
     }
     return null;
@@ -1082,8 +1088,14 @@ export class MongoDriver implements DataStore {
       const object = results[0];
       object.materials.files = object.orderedFiles;
       delete object.orderedFiles;
-      const author = await UserServiceGateway.getInstance().queryUserById(object.authorID);
-      return mongoHelperFunctions.generateReleasedLearningObject(author, object, params.full);
+      const author = await UserServiceGateway.getInstance().queryUserById(
+        object.authorID,
+      );
+      return mongoHelperFunctions.generateReleasedLearningObject(
+        author,
+        object,
+        params.full,
+      );
     }
     return null;
   }
@@ -1164,7 +1176,7 @@ export class MongoDriver implements DataStore {
     text?: string;
   }): Promise<LearningObject[]> {
     try {
-      const query: any =  {
+      const query: any = {
         _id: { $in: params.ids },
       };
 
@@ -1336,5 +1348,4 @@ export class MongoDriver implements DataStore {
       changelogText: params.changelogText,
     });
   }
-
 }

@@ -45,7 +45,7 @@ import { LearningObjectSubmissionAdapter } from '../LearningObjectSubmission/ada
 import { UserGateway } from './interfaces/UserGateway';
 import { validateUpdates } from '../shared/entity/learning-object/validators';
 import { UserServiceGateway } from '../shared/gateways/user-service/UserServiceGateway';
-import mongoHelperFunctions from '../shared/MongoDB/HelperFunctions';
+import * as mongoHelperFunctions from '../shared/MongoDB/HelperFunctions';
 
 namespace Drivers {
   export const readMeBuilder = () =>
@@ -714,8 +714,12 @@ export async function addLearningObject({
       username: authorUsername,
       name: object.name,
     });
-    const authorID = await UserServiceGateway.getInstance().findUser(authorUsername);
-    const author = await UserServiceGateway.getInstance().queryUserById(authorID);
+    const authorID = await UserServiceGateway.getInstance().findUser(
+      authorUsername,
+    );
+    const author = await UserServiceGateway.getInstance().queryUserById(
+      authorID,
+    );
     const objectInsert = new LearningObject({
       ...object,
       author,
@@ -773,9 +777,7 @@ export async function updateLearningObject({
     authorizeWriteAccess({
       learningObject,
       requester,
-      message: `Invalid access. Cannot update Learning Object ${
-        learningObject.id
-      }.`,
+      message: `Invalid access. Cannot update Learning Object ${learningObject.id}.`,
     });
     const cleanUpdates = sanitizeUpdates(updates);
     validateUpdates(cleanUpdates);
@@ -1034,7 +1036,7 @@ export async function loadChildrenSummaries({
 }): Promise<LearningObjectChildSummary[]> {
   let children: LearningObjectChildSummary[];
   if (released) {
-      children = (await mongoHelperFunctions.loadReleasedChildObjects({
+    children = (await mongoHelperFunctions.loadReleasedChildObjects({
       id: learningObjectId,
       full: false,
     })).map(mapChildLearningObjectToSummary);
@@ -1198,9 +1200,7 @@ export async function deleteLearningObject({
       .catch(e => {
         reportError(
           new Error(
-            `Problem deleting changelogs for Learning Object${
-              learningObject.id
-            }: ${e}`,
+            `Problem deleting changelogs for Learning Object${learningObject.id}: ${e}`,
           ),
         );
       });
@@ -1230,12 +1230,12 @@ export async function deleteLearningObjectByName({
   user: UserToken;
 }): Promise<void> {
   try {
-    const authorId = await UserServiceGateway.getInstance().findUser(user.username);
+    const authorId = await UserServiceGateway.getInstance().findUser(
+      user.username,
+    );
     if (!authorId) {
       throw new ResourceError(
-        `Unable to delete Learning Object ${learningObjectName}. No user ${
-          user.username
-        } with Learning Object ${learningObjectName} found.`,
+        `Unable to delete Learning Object ${learningObjectName}. No user ${user.username} with Learning Object ${learningObjectName} found.`,
         ResourceErrorReason.NOT_FOUND,
       );
     }
@@ -1452,9 +1452,7 @@ export async function createLearningObjectRevision(params: {
 
   if (!releasedCopy) {
     throw new ResourceError(
-      `Cannot create a revision of Learning Object: ${
-        params.learningObjectId
-      } since it is not released.`,
+      `Cannot create a revision of Learning Object: ${params.learningObjectId} since it is not released.`,
       ResourceErrorReason.BAD_REQUEST,
     );
   }
@@ -1466,11 +1464,7 @@ export async function createLearningObjectRevision(params: {
     })
   ) {
     throw new ResourceError(
-      `Cannot create a revision. Requester ${
-        params.requester.username
-      } must be the author of Learning Object with id ${
-        params.learningObjectId
-      }`,
+      `Cannot create a revision. Requester ${params.requester.username} must be the author of Learning Object with id ${params.learningObjectId}`,
       ResourceErrorReason.INVALID_ACCESS,
     );
   }
@@ -1559,9 +1553,7 @@ async function validateRequest(params: {
 
   if (learningObject.author.username !== params.username) {
     throw new ResourceError(
-      `User ${params.username} does not own a Learning Object with id ${
-        params.learningObjectId
-      }`,
+      `User ${params.username} does not own a Learning Object with id ${params.learningObjectId}`,
       ResourceErrorReason.NOT_FOUND,
     );
   }
