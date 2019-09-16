@@ -122,11 +122,9 @@ export class MongoDriver implements DataStore {
         { name: RegExp(sanitizeRegex(text), 'gi') },
       );
     }
-
-    const pipeline = this.buildAllObjectsPipeline(searchQuery);
     const resultSet = await this.db
       .collection(COLLECTIONS.LEARNING_OBJECTS)
-      .aggregate<ReleasedLearningObjectDocument>(pipeline)
+      .find<ReleasedLearningObjectDocument>(searchQuery)
       .toArray();
     return Promise.all(
       resultSet.map(async learningObject =>
@@ -417,10 +415,11 @@ export class MongoDriver implements DataStore {
    * @memberof MongoDriver
    */
   async addToReleased(object: LearningObject): Promise<void> {
+    //TODO: make sure that the cuid of the object is being used when making this update
     const doc = await this.documentReleasedLearningObject(object);
     await this.db
-      .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
-      .replaceOne({ _id: object.id }, doc, { upsert: true });
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .replaceOne({ cuid: object.cuid }, doc, { upsert: true });
   }
 
   /**
@@ -466,9 +465,13 @@ export class MongoDriver implements DataStore {
     sortType?: 1 | -1;
   }): any[] {
     let matcher: any = { ...searchQuery };
+    matcher.$or = matcher.$or || [];
     if (orConditions && orConditions.length) {
-      matcher.$or = matcher.$or || [];
       matcher.$or.push(...orConditions);
+      matcher.$or.push({
+        status: { $in: status },
+      });
+    } else {
       matcher.$or.push({
         status: { $in: status },
       });
@@ -1083,29 +1086,7 @@ export class MongoDriver implements DataStore {
 
     const parents = await this.db
       .collection(COLLECTIONS.LEARNING_OBJECTS)
-      .aggregate([
-        { $match: matchQuery },
-        {
-          $lookup: {
-            from: 'released-objects',
-            localField: '_id',
-            foreignField: '_id',
-            as: 'releasedCopy',
-          },
-        },
-        {
-          $project: {
-            returnable: {
-              $cond: {
-                if: { $gt: [{ $size: '$releasedCopy' }, 0] },
-                then: { $arrayElemAt: ['$releasedCopy', 0] },
-                else: '$$ROOT',
-              },
-            },
-          },
-        },
-        { $replaceRoot: { newRoot: '$returnable' } },
-      ])
+      .find(matchQuery)
       .toArray();
 
     return this.bulkGenerateLearningObjects(parents);
@@ -1125,10 +1106,13 @@ export class MongoDriver implements DataStore {
     full: boolean;
   }): Promise<LearningObject[]> {
     const { query, full } = params;
-    const mongoQuery = { children: query.id, status: 'released' };
+    const mongoQuery = {
+      children: query.id,
+      status: LearningObject.Status.RELEASED,
+    };
 
     const parentDocs = await this.db
-      .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
       .find<LearningObjectDocument>(mongoQuery)
       .toArray();
     return await this.bulkGenerateLearningObjects(parentDocs, full);
@@ -1489,11 +1473,14 @@ export class MongoDriver implements DataStore {
     full?: boolean;
   }): Promise<LearningObject> {
     const results = await this.db
-      .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
       .aggregate([
         {
-          // match learning object by params.id
-          $match: { _id: params.id },
+          // match learning object by params.id and released status's initially
+          $match: {
+            _id: params.id,
+            status: { $eq: LearningObject.Status.RELEASED },
+          },
         },
         {
           $unwind: {
@@ -1525,17 +1512,18 @@ export class MongoDriver implements DataStore {
             revision: { $first: '$revision' },
           },
         },
-        // perform a lookup and store the working copy of the object under the "Copy" array.
+        // perform a lookup and store the working copy of the object under the "workingCopy" array.
         {
-          $lookup: {
+          $graphLookup: {
             from: 'objects',
-            localField: '_id',
-            foreignField: '_id',
-            as: 'copy',
+            startWith: '$cuid',
+            connectFromField: 'cuid',
+            connectToField: 'cuid',
+            as: 'workingCopy',
           },
         },
         // unwind copy from array to object so we can check certain fields.
-        { $unwind: { path: '$copy', preserveNullAndEmptyArrays: true } },
+        { $unwind: { path: '$workingCopy', preserveNullAndEmptyArrays: true } },
         // if the copys' status differs from the released objects status, then the object has a revision.
         // so we add a the field 'hasRevision' with a true value
         {
@@ -1545,7 +1533,7 @@ export class MongoDriver implements DataStore {
             },
           },
         },
-        { $project: { copy: 0 } },
+        { $project: { workingCopy: 0 } },
       ])
       .toArray();
     if (results && results[0]) {

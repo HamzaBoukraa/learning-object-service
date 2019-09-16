@@ -170,6 +170,10 @@ export async function searchUsersObjects({
           ? LearningObjectState.RELEASED
           : null;
       }
+    } else {
+      searchQuery.status = searchQuery.status
+        ? searchQuery.status
+        : [...LearningObjectState.ALL];
     }
 
     return await dataStore.searchAllUserObjects(
@@ -1081,22 +1085,6 @@ export async function getLearningObjectById({
       throw learningObjectNotFound;
     }
 
-    learningObject.children = await loadChildrenSummaries({
-      dataStore,
-      requester,
-      learningObjectId: learningObject.id,
-      authorUsername: learningObject.author.username,
-      released: loadingReleased,
-    });
-
-    learningObject.metrics = await loadMetrics({
-      library,
-      id: learningObject.id,
-    }).catch(e => {
-      reportError(e);
-      return { saves: 0, downloads: 0 };
-    });
-
     learningObject.attachResourceUris(GATEWAY_API);
 
     return learningObject;
@@ -1157,69 +1145,12 @@ export async function getLearningObjectSummaryById({
       throw learningObjectNotFound;
     }
 
-    learningObject.children = await loadChildrenSummaries({
-      dataStore,
-      requester,
-      learningObjectId: learningObject.id,
-      authorUsername: learningObject.author.username,
-      released: loadingReleased,
-    });
-
     learningObject.attachResourceUris(GATEWAY_API);
 
     return mapLearningObjectToSummary(learningObject);
   } catch (e) {
     handleError(e);
   }
-}
-
-/**
- * @private
- *
- * Loads the summaries for a Learning Object's first level of children
- *
- * If released children are requested, only released children are returned
- * Otherwise children are returned based on authorization level:
- * Author: all children statuses
- * Admin/Editor/Curator/Reviewer: released + in review
- *
- * If requester is not author or privileged the `released` param should be true
- *
- * @returns {Promise<LearningObjectChildSummary[]>}
- */
-async function loadChildrenSummaries({
-  learningObjectId,
-  authorUsername,
-  released,
-  dataStore,
-  requester,
-}: {
-  learningObjectId: string;
-  authorUsername: string;
-  released: boolean;
-  dataStore: DataStore;
-  requester: UserToken;
-}): Promise<LearningObjectChildSummary[]> {
-  let children: LearningObjectChildSummary[];
-  if (released) {
-    children = await dataStore.loadReleasedChildObjects({
-      id: learningObjectId,
-      full: false,
-    });
-  } else {
-    const childrenStatus = requesterIsAuthor({
-      requester,
-      authorUsername: authorUsername,
-    })
-      ? LearningObjectState.ALL
-      : [...LearningObjectState.IN_REVIEW, ...LearningObjectState.RELEASED];
-    children = await dataStore.loadChildObjects({
-      id: learningObjectId,
-      full: false,
-      status: childrenStatus,
-    });
-  }
-  return children;
 }
 
 /**

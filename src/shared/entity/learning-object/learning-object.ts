@@ -332,7 +332,7 @@ export class LearningObject {
     }
   }
 
-  children: string[] = [];
+  children: LearningObjectSummary[] = [];
 
   /**
    * Removes the object's i-th child.
@@ -340,7 +340,7 @@ export class LearningObject {
    *
    * @returns {LearningObjectChildSummary} the child object which was removed
    */
-  removeChild(index: number): string {
+  removeChild(index: number): LearningObjectSummary {
     return this.children.splice(index, 1)[0];
   }
 
