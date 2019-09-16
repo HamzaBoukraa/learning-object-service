@@ -1,8 +1,8 @@
 import { User, LearningObject, LearningOutcome } from '../../../entity';
 import { ReleasedLearningObjectDocument } from '../../../types/learning-object-document';
-import { LearningOutcomeMongoDatastore } from '../../../../LearningOutcomes/LearningOutcomeMongoDatastore';
 import { MongoConnector } from '../../MongoConnector';
 import { UserServiceGateway } from '../../../gateways/user-service/UserServiceGateway';
+import { LearningOutcomeMongoDatastore } from '../../../../LearningOutcomes/datastores/LearningOutcomeMongoDatastore';
 
 /**
  * Generates released Learning Object from Document
@@ -31,7 +31,9 @@ export async function generateReleasedLearningObject(
     contributors = await Promise.all(
       // TODO: Store contibutors as an array of usernames so that
       // we can fetch users from user service.
-      record.contributors.map(userId => UserServiceGateway.getInstance().queryUserById(userId)),
+      record.contributors.map(userId =>
+        UserServiceGateway.getInstance().queryUserById(userId),
+      ),
     );
   }
   if (full) {
@@ -39,11 +41,9 @@ export async function generateReleasedLearningObject(
     for (let i = 0; i < record.outcomes.length; i++) {
       // FIXME: Direct access to a module's datastore couples the
       // module to this service.
-      const mappings = await LEARNING_OUTCOME_DATASTORE.getAllStandardOutcomes(
-        {
-          ids: record.outcomes[i].mappings,
-        },
-      );
+      const mappings = await LEARNING_OUTCOME_DATASTORE.getAllStandardOutcomes({
+        ids: record.outcomes[i].mappings,
+      });
       outcomes.push(
         new LearningOutcome({
           ...record.outcomes[i],

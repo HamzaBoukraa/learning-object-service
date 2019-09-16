@@ -1,8 +1,8 @@
 import { User, LearningObject, LearningOutcome } from '../../../entity';
 import { LearningObjectDocument } from '../../../types';
 import { UserServiceGateway } from '../../../gateways/user-service/UserServiceGateway';
-import { LearningOutcomeMongoDatastore } from '../../../../LearningOutcomes/LearningOutcomeMongoDatastore';
 import { MongoConnector } from '../../MongoConnector';
+import { LearningOutcomeMongoDatastore } from '../../../../LearningOutcomes/datastores/LearningOutcomeMongoDatastore';
 
 /**
  * Generates Learning Object from Document
@@ -31,7 +31,9 @@ export async function generateLearningObject(
   // Load Contributors
   if (record.contributors && record.contributors.length) {
     contributors = await Promise.all(
-      record.contributors.map(userId => UserServiceGateway.getInstance().queryUserById(userId)),
+      record.contributors.map(userId =>
+        UserServiceGateway.getInstance().queryUserById(userId),
+      ),
     );
   }
   // If full object requested, load up non-summary properties

@@ -67,15 +67,6 @@ describe('Interactor: LearningObjectInteractor', () => {
       }),
     ).resolves.toBe(undefined);
   });
-  it(`should get object's children`, async () => {
-    expect.assertions(1);
-    await expect(
-      interactor.getLearningObjectChildrenById(
-        dataStore,
-        stubs.learningObject.id,
-      ),
-    ).resolves.toEqual([]);
-  });
   it('should get a learning object by Id', async () => {
     index.loadChildrenSummaries = jest
       .fn()

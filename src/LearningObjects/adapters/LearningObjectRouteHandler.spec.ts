@@ -89,19 +89,7 @@ describe('LearningObjectRouteHandler', () => {
   afterAll(() => {
     LearningObjectsModule.destroy();
   });
-  describe('GET /users/:username/learning-objects/:learningObjectId', () => {
-    it('should return a learning object based on the id', done => {
-      request
-        .get(
-          `/users/${stubs.user.username}/learning-objects/${stubs.learningObject.id}`,
-        )
-        .expect(200)
-        .then(res => {
-          expect(res.text).toContain(`${stubs.learningObject.id}`);
-          done();
-        });
-    });
-  });
+
   describe(`GET /learning-objects/:id/materials/all`, () => {
     it('should return the materials for the specified learning object', done => {
       request
@@ -116,16 +104,6 @@ describe('LearningObjectRouteHandler', () => {
   describe(`PATCH /learning-objects/:id`, () => {
     stubs.learningObject.status = LearningObject.Status.UNRELEASED;
     const userToken = generateToken({ ...stubs.userToken, accessGroups: null });
-    it('should update the requested learning object and return a status of 204', done => {
-      request
-        .patch(`/learning-objects/${stubs.learningObject.id}`)
-        .set('Authorization', `Bearer ${userToken}`)
-        .send({ learningObject: { name: 'Java stuff' } })
-        .expect(204)
-        .then(res => {
-          done();
-        });
-    });
     describe("when the payload contains status set to 'released'", () => {
       describe('and the requester is an admin', () => {
         it('should update the requested Learning Object and return a status of 204', done => {
@@ -168,29 +146,7 @@ describe('LearningObjectRouteHandler', () => {
       // TODO: Add case for non-editor/admin trying to update the status to released
     });
   });
-  describe('GET /learning-objects/:id/children/summary', () => {
-    it('should return the children of the parent object.', done => {
-      request
-        .get(`/learning-objects/${stubs.learningObject.id}/children/summary`)
-        .expect(200)
-        .then(res => {
-          expect(res).toBeDefined();
-          done();
-        });
-    });
-  });
-  describe('DELETE /learning-objects/:learningObjectName', () => {
-    it('should delete a learning object from the database and return a 200 status', done => {
-      stubs.learningObject.status = LearningObject.Status.UNRELEASED;
-      request
-        .delete(`/learning-objects/${stubs.learningObject.name}`)
-        .set('Authorization', `Bearer ${token}`)
-        .expect(204)
-        .then(() => {
-          done();
-        });
-    });
-  });
+
   afterAll(() => {
     BundlerModule.destroy();
     return dataStore.disconnect();

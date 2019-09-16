@@ -1,12 +1,12 @@
 import { Db } from 'mongodb';
-import { MongoConnector } from '../../../shared/Mongo/MongoConnector';
 import { FileAccessIdentityDatastore } from '../../shared/abstract-classes/FileAccessIdentityDatastore';
 import { ResourceError, ResourceErrorReason } from '../../../shared/errors';
+import { MongoConnector } from '../../../shared/MongoDB/MongoConnector';
 
 const DB = process.env.CLARK_DB_NAME;
 
 export class MongoDBFileAccessIdentityDatastore
-implements FileAccessIdentityDatastore {
+  implements FileAccessIdentityDatastore {
   private db: Db;
   constructor() {
     this.db = MongoConnector.client().db(DB);
@@ -31,12 +31,9 @@ implements FileAccessIdentityDatastore {
       .find({ username }, { projection: { fileAccessId: 1 } })
       .limit(1)
       .toArray();
-    return fileAccessInfo[0] ?
-      fileAccessInfo[0].fileAccessId
-      : new ResourceError(
-        'not found',
-        ResourceErrorReason.NOT_FOUND,
-      );
+    return fileAccessInfo[0]
+      ? fileAccessInfo[0].fileAccessId
+      : new ResourceError('not found', ResourceErrorReason.NOT_FOUND);
   }
 
   async updateFileAccessIdentity({
