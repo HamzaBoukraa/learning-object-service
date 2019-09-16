@@ -104,6 +104,8 @@ describe('LearningObjectRouteHandler', () => {
   describe(`PATCH /learning-objects/:id`, () => {
     stubs.learningObject.status = LearningObject.Status.UNRELEASED;
     const userToken = generateToken({ ...stubs.userToken, accessGroups: null });
+
+    // tslint:disable-next-line: quotemark
     describe("when the payload contains status set to 'released'", () => {
       describe('and the requester is an admin', () => {
         it('should update the requested Learning Object and return a status of 204', done => {

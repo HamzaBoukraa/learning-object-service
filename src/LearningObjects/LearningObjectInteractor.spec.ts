@@ -89,6 +89,7 @@ describe('Interactor: LearningObjectInteractor', () => {
       mapLearningObjectToSummary(localDatastore.stubs.learningObject),
     );
   });
+  // tslint:disable-next-line: quotemark
   it("should generate a Learning Object with it's full heirarchy present", async () => {
     try {
       const learningObject = await interactor.generateReleasableLearningObject({
