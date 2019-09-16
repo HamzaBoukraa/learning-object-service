@@ -47,6 +47,7 @@ import { UserGateway } from './interfaces/UserGateway';
 import { validateUpdates } from '../shared/entity/learning-object/validators';
 import { UserServiceGateway } from '../shared/gateways/user-service/UserServiceGateway';
 import * as mongoHelperFunctions from '../shared/MongoDB/HelperFunctions';
+import { loadChildrenSummaries } from './Revisions/interactors/loadChildrenSummaries';
 
 const GATEWAY_API = process.env.GATEWAY_API;
 
@@ -949,8 +950,7 @@ export async function getLearningObjectById({
       throw learningObjectNotFound;
     }
 
-    learningObject.children = await exports.loadChildrenSummaries({
-      dataStore,
+    learningObject.children = await loadChildrenSummaries({
       requester,
       learningObjectId: learningObject.id,
       authorUsername: learningObject.author.username,
@@ -1025,8 +1025,7 @@ export async function getLearningObjectSummaryById({
       throw learningObjectNotFound;
     }
 
-    learningObject.children = await exports.loadChildrenSummaries({
-      dataStore,
+    learningObject.children = await loadChildrenSummaries({
       requester,
       learningObjectId: learningObject.id,
       authorUsername: learningObject.author.username,
@@ -1039,54 +1038,6 @@ export async function getLearningObjectSummaryById({
   } catch (e) {
     handleError(e);
   }
-}
-
-/**
- * @private
- *
- * Loads the summaries for a Learning Object's first level of children
- *
- * If released children are requested, only released children are returned
- * Otherwise children are returned based on authorization level:
- * Author: all children statuses
- * Admin/Editor/Curator/Reviewer: released + in review
- *
- * If requester is not author or privileged the `released` param should be true
- *
- * @returns {Promise<LearningObjectChildSummary[]>}
- */
-export async function loadChildrenSummaries({
-  learningObjectId,
-  authorUsername,
-  released,
-  requester,
-}: {
-  learningObjectId: string;
-  authorUsername: string;
-  released: boolean;
-  dataStore: DataStore;
-  requester: UserToken;
-}): Promise<LearningObjectChildSummary[]> {
-  let children: LearningObjectChildSummary[];
-  if (released) {
-    children = (await mongoHelperFunctions.loadReleasedChildObjects({
-      id: learningObjectId,
-      full: false,
-    })).map(mapChildLearningObjectToSummary);
-  } else {
-    const childrenStatus = requesterIsAuthor({
-      requester,
-      authorUsername: authorUsername,
-    })
-      ? LearningObjectState.ALL
-      : [...LearningObjectState.IN_REVIEW, ...LearningObjectState.RELEASED];
-    children = (await mongoHelperFunctions.loadChildObjects({
-      id: learningObjectId,
-      full: false,
-      status: childrenStatus,
-    })).map(mapChildLearningObjectToSummary);
-  }
-  return children;
 }
 
 /**
