@@ -253,7 +253,7 @@ export class MongoDriver implements DataStore {
       object,
     );
     await this.db
-      .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
       .replaceOne({ _id: object.id }, doc, { upsert: true });
   }
 
@@ -883,18 +883,19 @@ export class MongoDriver implements DataStore {
   async findLearningObject(params: {
     authorId: string;
     name: string;
-    collection?: COLLECTIONS.RELEASED_LEARNING_OBJECTS;
+    status?: LearningObject.Status.RELEASED;
   }): Promise<string> {
-    const { authorId, name, collection } = params;
+    const { authorId, name, status } = params;
+    const query: { [x: string]: any } = {
+      authorID: authorId,
+      name,
+    };
+    if (status) {
+      query.status = status;
+    }
     const doc = await this.db
-      .collection(collection || COLLECTIONS.LEARNING_OBJECTS)
-      .findOne<LearningObjectDocument>(
-        {
-          authorID: authorId,
-          name,
-        },
-        { projection: { _id: 1 } },
-      );
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .findOne<LearningObjectDocument>(query, { projection: { _id: 1 } });
     if (doc) {
       return doc._id;
     }
@@ -917,7 +918,7 @@ export class MongoDriver implements DataStore {
   }): Promise<string> {
     return this.findLearningObject({
       ...params,
-      collection: COLLECTIONS.RELEASED_LEARNING_OBJECTS,
+      status: LearningObject.Status.RELEASED,
     });
   }
 
@@ -955,7 +956,6 @@ export class MongoDriver implements DataStore {
    * Fetch the learning object document associated with the given id.
    * FIXME:clean this query up after files collection is created
    *
-   * The query fetches the specified released learning object and sorts the files by date (newest first)
    * If the query fails, the function throws a 404 Resource Error.
    * @async
    *
@@ -985,7 +985,6 @@ export class MongoDriver implements DataStore {
   /**
    * Fetches released object through aggregation pipeline by performing a match based on the object id, finding the duplicate object in the
    * working collection, then checking the status of the duplicate to determine whether or not to set hasRevision to true or false.
-   * FIXME x 1000: clean this query up after files collection is created
    *
    * The query fetches the specified released learning object and sorts the files by date (newest first)
    * If the query fails, the function throws a 404 Resource Error.
@@ -1008,36 +1007,6 @@ export class MongoDriver implements DataStore {
           $match: {
             _id: params.id,
             status: { $eq: LearningObject.Status.RELEASED },
-          },
-        },
-        {
-          $unwind: {
-            path: '$materials.files',
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        { $sort: { 'materials.files.date': -1 } },
-        { $addFields: { orderedFiles: '' } },
-        {
-          $group: {
-            _id: '$_id',
-            cuid: { $first: '$cuid' },
-            orderedFiles: {
-              $push: '$materials.files',
-            },
-            authorID: { $first: '$authorID' },
-            name: { $first: '$name' },
-            date: { $first: '$date' },
-            length: { $first: '$length' },
-            levels: { $first: '$levels' },
-            goals: { $first: '$goals' },
-            outcomes: { $first: '$outcomes' },
-            materials: { $first: '$materials' },
-            contributors: { $first: '$contributors' },
-            collection: { $first: '$collection' },
-            status: { $first: '$status' },
-            description: { $first: '$description' },
-            revision: { $first: '$revision' },
           },
         },
         // perform a lookup and store the working copy of the object under the "workingCopy" array.

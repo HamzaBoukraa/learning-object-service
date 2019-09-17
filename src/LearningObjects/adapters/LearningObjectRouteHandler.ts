@@ -48,7 +48,7 @@ export function initializePublic({
     }
   };
   /**
-   * Retrieve a learning object by a specified ID
+   * Retrieve a learning object summary by a specified ID
    * @param {Request} req
    * @param {Response} res
    */
@@ -58,20 +58,10 @@ export function initializePublic({
       const filter: LearningObjectFilter = req.query.status;
       const summary: boolean = toBoolean(req.query.summary);
       const id: string = req.params.learningObjectId;
-      let learningObject: Partial<LearningObject> | LearningObjectSummary;
-      if (summary) {
-        learningObject = await LearningObjectInteractor.getLearningObjectSummaryById(
+      const learningObject = await LearningObjectInteractor.getLearningObjectSummaryById(
           { dataStore, id, requester, filter },
         );
-      } else {
-        learningObject = (await LearningObjectInteractor.getLearningObjectById({
-          dataStore,
-          library,
-          id,
-          requester,
-          filter,
-        })).toPlainObject();
-      }
+
       res.status(200).send(learningObject);
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
@@ -95,7 +85,10 @@ export function initializePublic({
       res.status(code).json({ message });
     }
   };
-  const getLearningObjectChildrenSummaries = async (req: Request, res: Response) => {
+  const getLearningObjectChildrenSummaries = async (
+    req: Request,
+    res: Response,
+  ) => {
     try {
       const learningObjectId = req.params.id;
       const children = await LearningObjectInteractor.getLearningObjectChildrenSummariesById(
