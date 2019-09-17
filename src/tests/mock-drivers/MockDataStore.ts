@@ -215,18 +215,6 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
     return this.stubChangelogDataStore.fetchRecentChangelogBeforeDate(params);
   }
 
-  searchAllObjects(
-    params: LearningObjectQuery,
-  ): Promise<{
-    total: number;
-    objects: LearningObject[];
-  }> {
-    return Promise.resolve({
-      objects: [this.stubs.learningObject as any],
-      total: 1,
-    });
-  }
-
   updateMultipleLearningObjects(params: {
     ids: string[];
     updates: LearningObjectUpdates;
@@ -240,7 +228,7 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
   findChildObjectIds(params: { parentId: string }): Promise<string[]> {
     return Promise.resolve([]);
   }
-  fetchUser(id: string): Promise<User> {
+  queryUserById(id: string): Promise<User> {
     return Promise.resolve(this.stubs.user);
   }
 
@@ -387,15 +375,6 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
     orderBy?: string;
     sortType?: number;
   }): Promise<{ objects: any[]; total: number }> {
-    return Promise.resolve({
-      objects: [new LearningObject(this.stubs.learningObject as any)],
-      total: 1,
-    });
-  }
-
-  searchReleasedObjects(
-    params: ReleasedLearningObjectQuery,
-  ): Promise<{ objects: any[]; total: number }> {
     return Promise.resolve({
       objects: [new LearningObject(this.stubs.learningObject as any)],
       total: 1,

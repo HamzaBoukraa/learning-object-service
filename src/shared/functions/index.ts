@@ -1,5 +1,8 @@
 import { LearningObject, User } from '../entity';
 import { LearningObjectSummary, AuthorSummary, LearningObjectChildSummary } from '../types';
+import { isEmail } from './isEmail/isEmail';
+import { sanitizeRegex } from './sanitizeRegex/sanitizeRegex';
+export { isEmail, sanitizeRegex };
 
 /**
  * Formats text properly for usage in DataStore

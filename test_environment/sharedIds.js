@@ -12,6 +12,7 @@ const IDS = {
     },
     AUTHOR: {
         Bob: 'mock_author_id',
+        User_Search: 'user_search_id', 
     },
     PRIVILEGED_USER: {
         admin: 'mock_admin_id',
@@ -22,6 +23,14 @@ const IDS = {
     OUTCOME: {
         NICE: 'NICE_OUTCOME',
         EXPLAIN: 'EXPLAIN_OUTCOME',
+    },
+    USER_SEARCH: {
+        UNRELEASED: 'user_search_unreleased',
+        WAITING: 'user_search_waiting',
+        WAITING_C5: 'user_search_waiting_c5',
+        REVIEW: 'user_search_review',
+        PROOFING: 'user_search_proofing',
+        RELEASED: 'user_search_released',
     }
 
 }
