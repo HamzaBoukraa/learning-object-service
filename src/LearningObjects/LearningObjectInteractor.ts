@@ -976,7 +976,6 @@ export async function getLearningObjectSummaryById({
   id: string;
   requester?: UserToken;
   filter?: LearningObjectFilter;
-  summary?: boolean;
 }): Promise<LearningObjectSummary> {
   try {
     let learningObject: Partial<LearningObject>;
@@ -1380,7 +1379,12 @@ export async function getMaterials({
         workingFiles$,
       ]);
     } else {
-      materials = await dataStore.fetchReleasedMaterials(id);
+      materials = await dataStore.getLearningObjectMaterials({ id });
+      const releasedFiles = Gateways.fileMetadata().getAllFileMetadata({
+        requester,
+        learningObjectId: id,
+        filter: LearningObject.Status.RELEASED,
+      });
     }
 
     if (!materials) {

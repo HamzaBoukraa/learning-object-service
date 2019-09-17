@@ -59,8 +59,8 @@ export function initializePublic({
       const summary: boolean = toBoolean(req.query.summary);
       const id: string = req.params.learningObjectId;
       const learningObject = await LearningObjectInteractor.getLearningObjectSummaryById(
-          { dataStore, id, requester, filter },
-        );
+        { dataStore, id, requester, filter },
+      );
 
       res.status(200).send(learningObject);
     } catch (e) {
