@@ -128,43 +128,6 @@ export interface DataStore
   fetchLearningObjectStatus(id: string): Promise<string>;
   fetchLearningObjectCollection(id: string): Promise<string>;
   fetchLearningObjectAuthorUsername(id: string): Promise<string>;
-  searchReleasedObjects(
-    params: ReleasedLearningObjectQuery,
-  ): Promise<{ objects: LearningObject[]; total: number }>;
-  searchAllObjects(
-    params: LearningObjectQuery,
-  ): Promise<{
-    total: number;
-    objects: LearningObject[];
-  }>;
-
-  /**
-   * Search for the specified user's released objects.
-   *
-   * @param {ReleasedUserLearningObjectSearchQuery} query Object containing query parameters to apply to search
-   * @param {String} username  username of an author in CLARK
-   *
-   * @returns {Promise<LearningObjectSummary[]>}
-   */
-  searchReleasedUserObjects(
-    query: ReleasedUserLearningObjectSearchQuery,
-    username: string,
-  ): Promise<LearningObjectSummary[]>;
-
-  /**
-   * Search for the specified user's released or working objects depending on requested status's
-   *
-   * @param  {LearningObjectQuery} query query containing status and text for field searching.
-   * @param username username of an author in CLARK.
-   * @param collectionRestrictions Object mapping accessible collections and statuses
-   *
-   * @returns {Promise<LearningObjectSummary[]>}
-   */
-  searchAllUserObjects(
-    query: LearningObjectQuery,
-    username: string,
-    collectionRestrictions?: CollectionAccessMap,
-  ): Promise<LearningObjectSummary[]>;
 
   fetchParentObjects(params: {
     query: ParentLearningObjectQuery;
@@ -177,11 +140,6 @@ export interface DataStore
   findParentObjectIds(params: { childId: string }): Promise<string[]>;
   findParentObjectId(params: { childId: string }): Promise<string>;
   findChildObjectIds(params: { parentId: string }): Promise<string[]>;
-  loadChildObjects(params: {
-    id: string;
-    full?: boolean;
-    status: string[];
-  }): Promise<LearningObject[]>;
 
   /**
    * Loads released child Learning Objects for a working parent Learning Object
@@ -195,10 +153,6 @@ export interface DataStore
     id: string;
     full?: boolean;
   }): Promise<LearningObject[]>;
-  loadReleasedChildObjects(params: {
-    id: string;
-    full?: boolean;
-  }): Promise<LearningObject[]>;
   checkLearningObjectExistence(params: {
     learningObjectId: string;
     userId: string;
@@ -209,16 +163,6 @@ export interface DataStore
   }): Promise<LearningObject.Material>;
 
   // Users
-  /**
-   *
-   * lookup a user by their username or email
-   * @param {string} username
-   * @returns {Promise<string>}
-   * @memberof DataStore
-   */
-  findUserId(username: string): Promise<string>;
-  findUser(username: string): Promise<string>;
-  fetchUser(id: string): Promise<User>;
   peek<T>(params: {
     query: { [index: string]: string };
     fields: { [index: string]: 0 | 1 };

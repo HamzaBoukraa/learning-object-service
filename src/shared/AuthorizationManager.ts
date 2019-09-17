@@ -9,6 +9,7 @@ import {
 import { DataStore } from './interfaces/DataStore';
 import { ResourceError, ResourceErrorReason } from './errors';
 import { LearningObject } from './entity';
+import { UserServiceGateway } from './gateways/user-service/UserServiceGateway';
 
 const PRIVILEGED_GROUPS = [
   AccessGroup.ADMIN,
@@ -138,7 +139,7 @@ async function userIsOwner(params: {
   user: UserToken;
   objectId: string;
 }) {
-  const userId = await params.dataStore.findUser(params.user.username);
+  const userId = await UserServiceGateway.getInstance().findUser(params.user.username);
   const object = await params.dataStore.peek<{
     authorID: string;
   }>({
