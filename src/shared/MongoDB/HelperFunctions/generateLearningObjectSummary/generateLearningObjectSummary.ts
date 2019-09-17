@@ -1,12 +1,5 @@
-import {
-  LearningObjectDocument,
-  LearningObjectSummary,
-  LearningObjectChildSummary,
-} from '../../../types';
-import {
-  mapLearningObjectToSummary,
-  mapChildLearningObjectToSummary,
-} from '../../../functions';
+import { LearningObjectDocument, LearningObjectSummary } from '../../../types';
+import { mapLearningObjectToSummary } from '../../../functions';
 import { UserServiceGateway } from '../../../gateways/user-service/UserServiceGateway';
 import * as mongoHelperFunctions from '../';
 
@@ -31,20 +24,10 @@ export async function generateLearningObjectSummary(
   );
   const [author, contributors] = await Promise.all([author$, contributors$]);
 
-  let children: LearningObjectChildSummary[] = [];
-  if (record.children) {
-    children = (await mongoHelperFunctions.loadChildObjects({
-      id: record._id,
-      full: false,
-      status: [],
-    })).map(mapChildLearningObjectToSummary);
-  }
-
   return mapLearningObjectToSummary({
     ...(record as any),
     author,
     contributors,
-    children,
     id: record._id,
   });
 }
