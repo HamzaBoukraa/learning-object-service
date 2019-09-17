@@ -1,6 +1,7 @@
 import { ObjectID } from 'mongodb';
 import { LearningObjectDocument } from '../../../types';
 import { LearningObject } from '../../../entity';
+import { UserServiceGateway } from '../../../gateways/user-service/UserServiceGateway';
 
 /**
  * Converts Learning Object to Document
@@ -15,12 +16,12 @@ import { LearningObject } from '../../../entity';
 export async function documentLearningObject(
   object: LearningObject,
 ): Promise<LearningObjectDocument> {
-  const authorID = await this.findUser(object.author.username);
+  const authorID = await UserServiceGateway.getInstance().findUser(object.author.username);
   let contributorIds: string[] = [];
 
   if (object.contributors && object.contributors.length) {
     contributorIds = await Promise.all(
-      object.contributors.map(user => this.findUser(user.username)),
+      object.contributors.map(user => UserServiceGateway.getInstance().findUser(user.username)),
     );
   }
 
