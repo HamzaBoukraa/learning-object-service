@@ -799,15 +799,6 @@ export async function updateLearningObject({
       message: `Invalid access. Cannot update Learning Object ${learningObject.id}.`,
     });
 
-    // if updates include a name change and the object has been submitted, update the README
-    if (updates.name && isInReview) {
-      await updateReadme({
-        dataStore,
-        requester,
-        object: learningObject,
-      });
-    }
-
     const cleanUpdates = sanitizeUpdates(updates);
     validateUpdates(cleanUpdates);
 
@@ -817,6 +808,15 @@ export async function updateLearningObject({
       id,
       updates: cleanUpdates,
     });
+
+    // if updates include a name change and the object has been submitted, update the README
+    if (updates.name && isInReview) {
+      await updateReadme({
+        dataStore,
+        requester,
+        id: learningObject.id,
+      });
+    }
 
     if (isInReview) {
       LearningObjectSubmissionAdapter.getInstance().applySubmissionUpdates({
