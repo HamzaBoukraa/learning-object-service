@@ -368,7 +368,6 @@ export class LearningObjectInteractor {
   }: {
     dataStore: DataStore;
     ids: string[];
-    full?: boolean;
   }): Promise<LearningObject[]> {
     try {
       let learningObjects = await dataStore.fetchMultipleObjects({
