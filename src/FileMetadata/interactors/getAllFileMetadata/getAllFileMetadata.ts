@@ -13,10 +13,11 @@ import {
 import { validateRequestParams } from '../shared/validateRequestParams/validateRequestParams';
 import { authorizeReadAccess } from '../../../shared/AuthorizationManager';
 import * as Validators from '../shared/validators';
-import { Gateways } from '../shared/resolvedDependencies';
-import { ResourceErrorReason, ResourceError } from '../../../shared/errors';
-import { getFilePreviewURL } from '../shared/getFilePreviewURL/getFilePreviewURL';
+import { Gateways, Drivers } from '../shared/resolvedDependencies';
+import { ResourceErrorReason, ResourceError, handleError } from '../../../shared/errors';
+import { getFilePreviewURL } from '../getFilePreviewURL/getFilePreviewURL';
 import { LearningObject } from '../../../shared/entity';
+import { transformFileMetadataToLearningObjectFile } from '../shared/transformFileMetadataToLearningObjectFile/transformFileMetadataToLearningObjectFile';
 
 /**
  * Retrieves all file metadata that belongs to a Learning Object
@@ -51,55 +52,32 @@ export async function getAllFileMetadata({
           },
         ],
       });
-      const learningObject = await Gateways.learningObjectGateway().getActiveLearningObjectSummary(
-        {
-          requester,
-          id: learningObjectId,
-        },
-      );
-  
-      authorizeReadAccess({ learningObject, requester });
-      // if (!filter || filter === 'released') {
-      //   const releasedObject: LearningObjectSummary = await Gateways.learningObjectGateway().getReleasedLearningObjectSummary(
-      //     learningObjectId,
-      //   );
-      //   releasedFiles$ = Gateways.learningObjectGateway()
-      //     .getReleasedFiles(learningObjectId)
-      //     .then(files => files.map(appendFilePreviewUrls(releasedObject)));
-      //   if (filter === 'released') return releasedFiles$;
-      // }
-      // const learningObject: LearningObjectSummary = await Gateways.learningObjectGateway().getWorkingLearningObjectSummary(
-      //   { requester, id: learningObjectId },
-      // );
-  
-      // try {
-      //   authorizeReadAccess({ learningObject, requester });
-      // } catch (e) {
-      //   if (filter === 'unreleased') throw e;
-      //   return releasedFiles$;
-      // }
-  
-      // const workingFiles$ = Drivers.datastore()
-      //   .fetchAllFileMeta(learningObjectId)
-      //   .then(files =>
-      //     files.map(file =>
-      //       transformFileMetaToLearningObjectFile({
-      //         authorUsername: learningObject.author.username,
-      //         learningObjectId: learningObject.id,
-      //         file,
-      //       }),
-      //     ),
-      //   );
-  
-      // if (filter === 'unreleased') return workingFiles$;
-  
-      // return Promise.all([
-      //   releasedFiles$.catch(handleReleasedFilesNotFound),
-      //   workingFiles$,
-      // ]).then(([releasedFiles, workingFiles]) => [
-      //   ...releasedFiles,
-      //   ...workingFiles,
-      // ]);
+      let learningObject: LearningObjectSummary;
+
+      learningObject = await Gateways.learningObjectGateway().getReleasedLearningObjectSummary(learningObjectId);
+      if (!learningObject) {
+        learningObject = await Gateways.learningObjectGateway().getWorkingLearningObjectSummary({ requester, id: learningObjectId});
+        if (!learningObject) {
+          throw new ResourceError(
+            'Specified Learning Object does not exist',
+            ResourceErrorReason.NOT_FOUND,
+          );
+        }
+      }
+
+      const files$ = Drivers.datastore()
+        .fetchAllFileMeta(learningObjectId)
+        .then(files =>
+          files.map(file =>
+            transformFileMetadataToLearningObjectFile({
+              authorUsername: learningObject.author.username,
+              learningObjectId: learningObject.id,
+              file,
+            }),
+          ),
+        );
+
+      return await files$;
     } catch (e) {
       handleError(e);
     }

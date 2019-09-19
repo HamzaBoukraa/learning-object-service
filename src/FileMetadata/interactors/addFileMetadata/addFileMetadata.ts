@@ -7,7 +7,7 @@ import {
     FileMetadataDocument,
 } from '../../typings';
 import { Drivers, Gateways } from '../shared/resolvedDependencies';
-import { getFilePreviewURL } from '../shared/getFilePreviewURL/getFilePreviewURL';
+import { getFilePreviewURL } from '../getFilePreviewURL/getFilePreviewURL';
 import { authorizeWriteAccess } from '../../../shared/AuthorizationManager';
 import { toNumber, sanitizeObject } from '../../../shared/functions';
 import * as mime from 'mime-types';
@@ -26,7 +26,7 @@ const DEFAULT_MIME_TYPE = 'application/octet-stream';
  *
  * @returns {Promise<string[]>}
  */
-export async function addFileMeta({
+export async function addFileMetadata({
     requester,
     learningObjectId,
     files,
@@ -35,43 +35,43 @@ export async function addFileMeta({
     learningObjectId: string;
     files: FileMetadata[];
   }): Promise<LearningObjectFile[]> {
-    try {
-      validateRequestParams({
-        operation: 'Add file metadata',
-        values: [
-          {
-            value: learningObjectId,
-            validator: Validators.stringHasContent,
-            propertyName: 'Learning Object id',
-          },
-          {
-            value: files,
-            validator: Validators.valueDefined,
-            propertyName: 'File metadata',
-          },
-        ],
-      });
-      const learningObject: LearningObjectSummary = await Gateways.learningObjectGateway().getWorkingLearningObjectSummary(
-        { requester, id: learningObjectId },
-      );
+  try {
+    validateRequestParams({
+      operation: 'Add file metadata',
+      values: [
+        {
+          value: learningObjectId,
+          validator: Validators.stringHasContent,
+          propertyName: 'Learning Object id',
+        },
+        {
+          value: files,
+          validator: Validators.valueDefined,
+          propertyName: 'File metadata',
+        },
+      ],
+    });
+    const learningObject: LearningObjectSummary = await Gateways.learningObjectGateway().getWorkingLearningObjectSummary(
+      { requester, id: learningObjectId },
+    );
 
-      authorizeWriteAccess({ learningObject, requester });
+    authorizeWriteAccess({ learningObject, requester });
 
-      const inserts: FileMetadataInsert[] = generateFileMetadataInserts(
-        files,
-        learningObject,
-      );
+    const inserts: FileMetadataInsert[] = generateFileMetadataInserts(
+      files,
+      learningObject,
+    );
 
-      const insertedFiles = await Promise.all(
-        inserts.map(handleFileMetadataInsert(learningObject)),
-      );
-      Gateways.learningObjectGateway().updateObjectLastModifiedDate(
-        learningObjectId,
-      );
-      return insertedFiles;
-    } catch (e) {
-      handleError(e);
-    }
+    const insertedFiles = await Promise.all(
+      inserts.map(handleFileMetadataInsert(learningObject)),
+    );
+    Gateways.learningObjectGateway().updateObjectLastModifiedDate(
+      learningObjectId,
+    );
+    return insertedFiles;
+  } catch (e) {
+    handleError(e);
+  }
 }
 
 /**
@@ -107,19 +107,19 @@ function generateFileMetadataInserts(
  * @param {FileMetadata} file [The file metadata to be validated]
  */
 function validateFileMeta(file: FileMetadata) {
-    const invalidInput = new ResourceError(
-        '',
-        ResourceErrorReason.BAD_REQUEST,
-    );
-    if (!Validators.stringHasContent(file.ETag)) {
-      invalidInput.message = 'File metadata must contain a valid ETag.';
-      throw invalidInput;
-    }
-    if (!Validators.stringHasContent(file.name)) {
-      invalidInput.message = 'File metadata must contain a file name.';
-      throw invalidInput;
-    }
+  const invalidInput = new ResourceError(
+      '',
+      ResourceErrorReason.BAD_REQUEST,
+  );
+  if (!Validators.stringHasContent(file.ETag)) {
+    invalidInput.message = 'File metadata must contain a valid ETag.';
+    throw invalidInput;
   }
+  if (!Validators.stringHasContent(file.name)) {
+    invalidInput.message = 'File metadata must contain a file name.';
+    throw invalidInput;
+  }
+}
 
 /**
  * Handles the insertion of FileMetadata
@@ -134,33 +134,33 @@ function validateFileMeta(file: FileMetadata) {
 function handleFileMetadataInsert(
     learningObject: LearningObjectSummary,
   ): (value: FileMetadataInsert) => Promise<LearningObjectFile> {
-    return async insert => {
-      const existingFile = await Drivers.datastore().findFileMetadata({
-        learningObjectId: learningObject.id,
-        fullPath: insert.fullPath,
+  return async insert => {
+    const existingFile = await Drivers.datastore().findFileMetadata({
+      learningObjectId: learningObject.id,
+      fullPath: insert.fullPath,
+    });
+    if (existingFile) {
+      delete insert.createdDate;
+      await Drivers.datastore().updateFileMeta({
+        id: existingFile.id,
+        updates: insert,
       });
-      if (existingFile) {
-        delete insert.createdDate;
-        await Drivers.datastore().updateFileMeta({
-          id: existingFile.id,
-          updates: insert,
-        });
-        return transformFileMetaToLearningObjectFile({
+      return transformFileMetaToLearningObjectFile({
+        authorUsername: learningObject.author.username,
+        learningObjectId: learningObject.id,
+        file: { ...existingFile, ...insert },
+      });
+    }
+    return Drivers.datastore()
+      .insertFileMeta(insert)
+      .then(insertedFile =>
+        transformFileMetaToLearningObjectFile({
           authorUsername: learningObject.author.username,
           learningObjectId: learningObject.id,
-          file: { ...existingFile, ...insert },
-        });
-      }
-      return Drivers.datastore()
-        .insertFileMeta(insert)
-        .then(insertedFile =>
-          transformFileMetaToLearningObjectFile({
-            authorUsername: learningObject.author.username,
-            learningObjectId: learningObject.id,
-            file: insertedFile,
-          }),
-        );
-    };
+          file: insertedFile,
+        }),
+      );
+  };
 }
 
 // 100 MB in bytes; File size is in bytes
@@ -186,22 +186,22 @@ function generateFileMetaInsert(
     file: FileMetadata,
     learningObject: LearningObjectSummary,
   ): FileMetadataInsert {
-    file.size = toNumber(file.size);
-    const extension = file.name.split('.').pop();
-    return {
-      createdDate: Date.now().toString(),
-      description: file.description || '',
-      ETag: file.ETag,
-      extension: `${extension ? '.' + extension : ''}`,
-      fullPath: file.fullPath || file.name,
-      lastUpdatedDate: Date.now().toString(),
-      learningObjectId: learningObject.id,
-      mimeType: file.mimeType || mime.lookup(extension) || DEFAULT_MIME_TYPE,
-      name: file.name,
-      packageable: isPackageable(file.size),
-      size: file.size,
-      storageRevision: learningObject.revision,
-    };
+  file.size = toNumber(file.size);
+  const extension = file.name.split('.').pop();
+  return {
+    createdDate: Date.now().toString(),
+    description: file.description || '',
+    ETag: file.ETag,
+    extension: `${extension ? '.' + extension : ''}`,
+    fullPath: file.fullPath || file.name,
+    lastUpdatedDate: Date.now().toString(),
+    learningObjectId: learningObject.id,
+    mimeType: file.mimeType || mime.lookup(extension) || DEFAULT_MIME_TYPE,
+    name: file.name,
+    packageable: isPackageable(file.size),
+    size: file.size,
+    storageRevision: learningObject.revision,
+  };
 }
 
 /**
@@ -221,23 +221,23 @@ function transformFileMetaToLearningObjectFile({
     learningObjectId: string;
     file: FileMetadataDocument;
   }): LearningObjectFile {
-    return {
-      id: file.id,
-      name: file.name,
-      fileType: file.mimeType,
+  return {
+    id: file.id,
+    name: file.name,
+    fileType: file.mimeType,
+    extension: file.extension,
+    previewUrl: getFilePreviewURL({
+      authorUsername,
+      learningObjectId,
+      fileId: file.id,
       extension: file.extension,
-      previewUrl: getFilePreviewURL({
-        authorUsername,
-        learningObjectId,
-        fileId: file.id,
-        extension: file.extension,
-        unreleased: true,
-      }),
-      date: file.lastUpdatedDate,
-      fullPath: file.fullPath,
-      size: file.size,
-      description: file.description,
-      packageable: file.packageable,
-      storageRevision: file.storageRevision,
-    };
+      unreleased: true,
+    }),
+    date: file.lastUpdatedDate,
+    fullPath: file.fullPath,
+    size: file.size,
+    description: file.description,
+    packageable: file.packageable,
+    storageRevision: file.storageRevision,
+  };
 }

@@ -3,7 +3,7 @@ import {
     MICROSOFT_EXTENSIONS,
     FILE_API_URI,
     MICROSOFT_PREVIEW_URL,
-} from '../constants';
+} from '../shared/constants';
 
 /**
  * Returns preview url for file based on extension
