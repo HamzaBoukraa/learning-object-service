@@ -1,26 +1,31 @@
 import {
-    UserToken,
-    UserLearningObjectQuery,
-    LearningObjectSummary,
-    UserLearningObjectSearchQuery,
-    LearningObjectState,
-    CollectionAccessMap,
+  UserToken,
+  UserLearningObjectQuery,
+  LearningObjectSummary,
+  UserLearningObjectSearchQuery,
+  LearningObjectState,
+  CollectionAccessMap,
 } from '../../../shared/types';
 import {
-    ResourceError,
-    ResourceErrorReason,
-    handleError,
+  ResourceError,
+  ResourceErrorReason,
+  handleError,
 } from '../../../shared/errors';
 import {
-    requesterIsAuthor,
-    requesterIsPrivileged,
-    getAuthorizedStatuses,
-    requesterIsAdminOrEditor,
-    getAccessGroupCollections,
-    getCollectionAccessMap,
+  requesterIsAuthor,
+  requesterIsPrivileged,
+  getAuthorizedStatuses,
+  requesterIsAdminOrEditor,
+  getAccessGroupCollections,
+  getCollectionAccessMap,
 } from '../../../shared/AuthorizationManager';
 import { LearningObject } from '../../../shared/entity';
-import { sanitizeText, sanitizeObject, toArray, toBoolean } from '../../../shared/functions';
+import {
+  sanitizeText,
+  sanitizeObject,
+  toArray,
+  toBoolean,
+} from '../../../shared/functions';
 import { LearningObjectSearch } from '../..';
 import { UserLearningObjectDatastore } from '../../interfaces/UserLearningObjectDatastore';
 import { UserGateway } from '../../interfaces/UserGateway';
@@ -54,95 +59,96 @@ namespace Gateways {
  * @param params.query
  */
 export async function searchUsersObjects({
-    authorUsername,
-    requester,
-    query,
-  }: {
-    authorUsername: string;
-    requester: UserToken;
-    query?: UserLearningObjectQuery;
-  }): Promise<LearningObjectSummary[]> {
-    try {
-      let { text, draftsOnly, status } = formatUserLearningObjectQuery(query);
-      const isAuthor = requesterIsAuthor({ requester, authorUsername });
-      const isPrivileged = requesterIsPrivileged(requester);
-      const searchQuery: UserLearningObjectSearchQuery = {
-        text,
-        status,
-      };
+  authorUsername,
+  requester,
+  query,
+}: {
+  authorUsername: string;
+  requester: UserToken;
+  query?: UserLearningObjectQuery;
+}): Promise<LearningObjectSummary[]> {
+  try {
+    let { text, draftsOnly, status } = formatUserLearningObjectQuery(query);
+    const isAuthor = requesterIsAuthor({ requester, authorUsername });
+    const isPrivileged = requesterIsPrivileged(requester);
+    const searchQuery: UserLearningObjectSearchQuery = {
+      text,
+      status,
+    };
 
-      if (draftsOnly) {
-        if (!isAuthor && !isPrivileged) {
-          throw new ResourceError(
-            `Invalid access. You are not authorized to view ${authorUsername}'s drafts.`,
-            ResourceErrorReason.INVALID_ACCESS,
-          );
-        }
-
-        if (!searchQuery.status) {
-          if (isAuthor) {
-            searchQuery.status = [
-              ...LearningObjectState.UNRELEASED,
-              ...LearningObjectState.IN_REVIEW,
-            ];
-          } else {
-            searchQuery.status = [...LearningObjectState.IN_REVIEW];
-          }
-        }
-
-        if (searchQuery.status.includes(LearningObject.Status.RELEASED)) {
-          throw new ResourceError(
-            'Illegal query arguments. Cannot specify both draftsOnly and released status filters.',
-            ResourceErrorReason.BAD_REQUEST,
-          );
-        }
-
-        searchQuery.revision = 0;
-      }
-
-      const user = await Gateways.userGateway().getUser(authorUsername);
-      if (!user) {
-        throw new ResourceError(
-          `Cannot load Learning Objects for user ${authorUsername}. User ${authorUsername} does not exist.`,
-          ResourceErrorReason.NOT_FOUND,
-        );
-      }
-
+    if (draftsOnly) {
       if (!isAuthor && !isPrivileged) {
-        return await Gateways.userLearningObjectDatastore().searchReleasedUserObjects(
-          searchQuery,
-          user.id,
+        throw new ResourceError(
+          `Invalid access. You are not authorized to view ${authorUsername}'s drafts.`,
+          ResourceErrorReason.INVALID_ACCESS,
         );
       }
 
-      let collectionAccessMap: CollectionAccessMap;
-
-      if (!isAuthor) {
-        searchQuery.status = getAuthorizedStatuses(searchQuery.status);
-        if (!requesterIsAdminOrEditor(requester)) {
-          const privilegedCollections = getAccessGroupCollections(requester);
-          collectionAccessMap = getCollectionAccessMap(
-            [],
-            privilegedCollections,
-            searchQuery.status,
-          );
-          searchQuery.status = searchQuery.status.includes(
-            LearningObject.Status.RELEASED,
-          )
-            ? LearningObjectState.RELEASED
-            : null;
+      if (!searchQuery.status) {
+        if (isAuthor) {
+          searchQuery.status = [
+            ...LearningObjectState.UNRELEASED,
+            ...LearningObjectState.IN_REVIEW,
+          ];
+        } else {
+          searchQuery.status = [...LearningObjectState.IN_REVIEW];
         }
       }
 
-      return await Gateways.userLearningObjectDatastore().searchAllUserObjects(
+      if (searchQuery.status.includes(LearningObject.Status.RELEASED)) {
+        throw new ResourceError(
+          'Illegal query arguments. Cannot specify both draftsOnly and released status filters.',
+          ResourceErrorReason.BAD_REQUEST,
+        );
+      }
+
+      searchQuery.revision = 0;
+    }
+
+    const user = await Gateways.userGateway().getUser(authorUsername);
+    if (!user) {
+      throw new ResourceError(
+        `Cannot load Learning Objects for user ${authorUsername}. User ${authorUsername} does not exist.`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+
+    if (!isAuthor && !isPrivileged) {
+      return await Gateways.userLearningObjectDatastore().searchReleasedUserObjects(
         searchQuery,
         user.id,
-        collectionAccessMap,
       );
-    } catch (e) {
-      handleError(e);
     }
+
+    let collectionAccessMap: CollectionAccessMap;
+
+    if (!isAuthor) {
+      searchQuery.status = getAuthorizedStatuses(searchQuery.status);
+      if (!requesterIsAdminOrEditor(requester)) {
+        console.log(searchQuery.status);
+        const privilegedCollections = getAccessGroupCollections(requester);
+        collectionAccessMap = getCollectionAccessMap(
+          [],
+          privilegedCollections,
+          searchQuery.status,
+        );
+        searchQuery.status = searchQuery.status.includes(
+          LearningObject.Status.RELEASED,
+        )
+          ? LearningObjectState.RELEASED
+          : null;
+      }
+    }
+
+    return await Gateways.userLearningObjectDatastore().searchAllUserObjects(
+      searchQuery,
+      user.id,
+      collectionAccessMap,
+    );
+  } catch (e) {
+    handleError(e);
   }
+}
 
 /**
  * Formats search query to verify params are the appropriate types
@@ -153,11 +159,11 @@ export async function searchUsersObjects({
  * @returns {UserLearningObjectQuery}
  */
 function formatUserLearningObjectQuery(
-    query: UserLearningObjectQuery,
-  ): UserLearningObjectQuery {
-    const formattedQuery = { ...query };
-    formattedQuery.text = sanitizeText(formattedQuery.text) || null;
-    formattedQuery.status = toArray(formattedQuery.status);
-    formattedQuery.draftsOnly = toBoolean(formattedQuery.draftsOnly);
-    return sanitizeObject({ object: formattedQuery }, false);
-  }
+  query: UserLearningObjectQuery,
+): UserLearningObjectQuery {
+  const formattedQuery = { ...query };
+  formattedQuery.text = sanitizeText(formattedQuery.text) || null;
+  formattedQuery.status = toArray(formattedQuery.status);
+  formattedQuery.draftsOnly = toBoolean(formattedQuery.draftsOnly);
+  return sanitizeObject({ object: formattedQuery }, false);
+}

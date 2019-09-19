@@ -27,6 +27,7 @@ import { sanitizeObject, toNumber } from '../shared/functions';
 import { reportError } from '../shared/SentryConnector';
 import * as mime from 'mime-types';
 import { LearningObject } from '../shared/entity';
+import { validateRequestParams } from './shared/validateRequestParams/validateRequestParams';
 
 const DEFAULT_MIME_TYPE = 'application/octet-stream';
 const MICROSOFT_PREVIEW_URL = process.env.MICROSOFT_PREVIEW_URL;
@@ -42,92 +43,6 @@ namespace Gateways {
     FileMetadataModule.resolveDependency(LearningObjectGateway);
   export const fileManager = () =>
     FileMetadataModule.resolveDependency(FileManagerGateway);
-}
-
-/**
- * Retrieves file metadata by id
- *
- * Allows file metadata to be filtered by released and unreleased
- *
- * If not filter specified attempts to retrieve released and unreleased file metadata; If not authorized to read unreleased only released is returned
- * If released is specified will only return released
- * If unreleased is specified will only return unreleased if authorized. If not authorized, an Invalid Access ResourceError is thrown
- *
- * @export
- * @param {Requester} requester [Information about the requester]
- * @param {string} learningObjectId [Id of the LearningObject the file meta belongs to]
- * @param {string} id [Id of the file meta to retrieve]
- *
- * @returns {Promise<LearningObjectFile>}
- */
-export async function getFileMetadata({
-  requester,
-  learningObjectId,
-  id,
-  filter,
-}: {
-  requester: Requester;
-  learningObjectId: string;
-  id: string;
-  filter?: FileMetadataFilter;
-}): Promise<LearningObjectFile> {
-  try {
-    validateRequestParams({
-      operation: 'Get file metadata',
-      values: [
-        {
-          value: learningObjectId,
-          validator: Validators.stringHasContent,
-          propertyName: 'Learning Object id',
-        },
-        {
-          value: id,
-          validator: Validators.stringHasContent,
-          propertyName: 'File metadata id',
-        },
-      ],
-    });
-
-    if (filter === 'unreleased') {
-      const learningObject: LearningObjectSummary = await Gateways.learningObjectGateway().getWorkingLearningObjectSummary(
-        { requester, id: learningObjectId },
-      );
-
-      authorizeReadAccess({ learningObject, requester });
-
-      const file = await Drivers.datastore().fetchFileMeta(id);
-      if (!file) {
-        throw new ResourceError(
-          `Unable to get file metadata for file ${id}. File does not exist.`,
-          ResourceErrorReason.NOT_FOUND,
-        );
-      }
-      return transformFileMetaToLearningObjectFile({
-        authorUsername: learningObject.author.username,
-        learningObjectId: learningObject.author.id,
-        file,
-      });
-    }
-    const releasedObject: LearningObjectSummary = await Gateways.learningObjectGateway().getReleasedLearningObjectSummary(
-      learningObjectId,
-    );
-    return Gateways.learningObjectGateway()
-      .getReleasedFile({
-        id: learningObjectId,
-        fileId: id,
-      })
-      .then(file => {
-        file.previewUrl = getFilePreviewUrl({
-          authorUsername: releasedObject.author.username,
-          learningObjectId: releasedObject.id,
-          fileId: file.id,
-          extension: file.extension,
-        });
-        return file;
-      });
-  } catch (e) {
-    handleError(e);
-  }
 }
 
 /**
@@ -165,48 +80,55 @@ export async function getAllFileMetadata({
         },
       ],
     });
-    let releasedFiles$: Promise<LearningObjectFile[]>;
-    if (!filter || filter === 'released') {
-      const releasedObject: LearningObjectSummary = await Gateways.learningObjectGateway().getReleasedLearningObjectSummary(
-        learningObjectId,
-      );
-      releasedFiles$ = Gateways.learningObjectGateway()
-        .getReleasedFiles(learningObjectId)
-        .then(files => files.map(appendFilePreviewUrls(releasedObject)));
-      if (filter === 'released') return releasedFiles$;
-    }
-    const learningObject: LearningObjectSummary = await Gateways.learningObjectGateway().getWorkingLearningObjectSummary(
-      { requester, id: learningObjectId },
+    const learningObject = await Gateways.learningObjectGateway().getActiveLearningObjectSummary(
+      {
+        requester,
+        id: learningObjectId,
+      },
     );
 
-    try {
-      authorizeReadAccess({ learningObject, requester });
-    } catch (e) {
-      if (filter === 'unreleased') throw e;
-      return releasedFiles$;
-    }
+    authorizeReadAccess({ learningObject, requester });
+    // if (!filter || filter === 'released') {
+    //   const releasedObject: LearningObjectSummary = await Gateways.learningObjectGateway().getReleasedLearningObjectSummary(
+    //     learningObjectId,
+    //   );
+    //   releasedFiles$ = Gateways.learningObjectGateway()
+    //     .getReleasedFiles(learningObjectId)
+    //     .then(files => files.map(appendFilePreviewUrls(releasedObject)));
+    //   if (filter === 'released') return releasedFiles$;
+    // }
+    // const learningObject: LearningObjectSummary = await Gateways.learningObjectGateway().getWorkingLearningObjectSummary(
+    //   { requester, id: learningObjectId },
+    // );
 
-    const workingFiles$ = Drivers.datastore()
-      .fetchAllFileMeta(learningObjectId)
-      .then(files =>
-        files.map(file =>
-          transformFileMetaToLearningObjectFile({
-            authorUsername: learningObject.author.username,
-            learningObjectId: learningObject.id,
-            file,
-          }),
-        ),
-      );
+    // try {
+    //   authorizeReadAccess({ learningObject, requester });
+    // } catch (e) {
+    //   if (filter === 'unreleased') throw e;
+    //   return releasedFiles$;
+    // }
 
-    if (filter === 'unreleased') return workingFiles$;
+    // const workingFiles$ = Drivers.datastore()
+    //   .fetchAllFileMeta(learningObjectId)
+    //   .then(files =>
+    //     files.map(file =>
+    //       transformFileMetaToLearningObjectFile({
+    //         authorUsername: learningObject.author.username,
+    //         learningObjectId: learningObject.id,
+    //         file,
+    //       }),
+    //     ),
+    //   );
 
-    return Promise.all([
-      releasedFiles$.catch(handleReleasedFilesNotFound),
-      workingFiles$,
-    ]).then(([releasedFiles, workingFiles]) => [
-      ...releasedFiles,
-      ...workingFiles,
-    ]);
+    // if (filter === 'unreleased') return workingFiles$;
+
+    // return Promise.all([
+    //   releasedFiles$.catch(handleReleasedFilesNotFound),
+    //   workingFiles$,
+    // ]).then(([releasedFiles, workingFiles]) => [
+    //   ...releasedFiles,
+    //   ...workingFiles,
+    // ]);
   } catch (e) {
     handleError(e);
   }
@@ -646,33 +568,6 @@ function transformFileMetaToLearningObjectFile({
 }
 
 /**
- * Validates parameters using passed validators. If validator returns false, errors are generated.
- *
- * @param {string} operation [The operation being performed. Used to generate error message.]
- * @param {{ value: any; validator: any; propertyName: string }} values [The values to validate]
- * @returns {(void | never)}
- */
-function validateRequestParams({
-  operation,
-  values,
-}: {
-  operation: string;
-  values: { value: any; validator: any; propertyName: string }[];
-}): void | never {
-  let hasErrors = false;
-  let errMsg = `Cannot ${operation}.`;
-  values.forEach(val => {
-    if (!val.validator(val.value)) {
-      hasErrors = true;
-      errMsg += ` ${val.value} is not a valid value for ${val.propertyName}.`;
-    }
-  });
-  if (hasErrors) {
-    throw new ResourceError(errMsg, ResourceErrorReason.BAD_REQUEST);
-  }
-}
-
-/**
  * Sanitizes updates by trimming strings and only returning fields that can be updated by user inputs
  *
  * @param {FileMetadataUpdate} updates [The updates to be sanitized]
@@ -707,48 +602,6 @@ function validateFileMeta(file: FileMetadata) {
   if (!Validators.stringHasContent(file.name)) {
     invalidInput.message = 'File metadata must contain a file name.';
     throw invalidInput;
-  }
-}
-
-namespace Validators {
-  /**
-   * Checks if value is defined
-   *
-   * @export
-   * @param {*} val [The value to be validated]
-   * @returns {boolean}
-   */
-  export function valueDefined(val: any): boolean {
-    return val != null;
-  }
-
-  /**
-   * Checks if string value contains characters and is not a string of empty spaces
-   *
-   * @export
-   * @param {string} val [The value to be validated]
-   * @returns {boolean}
-   */
-  export function stringHasContent(val: string): boolean {
-    if (val == null) {
-      return false;
-    }
-    val = val.trim();
-    if (!val || val === 'null' || val === 'undefined') {
-      return false;
-    }
-    return true;
-  }
-
-  /**
-   * Checks if value is a number
-   *
-   * @export
-   * @param {number} val [The value to be validated]
-   * @returns {boolean}
-   */
-  export function valueIsNumber(val: number): boolean {
-    return valueDefined(val) && !isNaN(+val);
   }
 }
 

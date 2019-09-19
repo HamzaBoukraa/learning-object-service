@@ -2,6 +2,7 @@ import { LearningObjectDocument, LearningObjectSummary } from '../../../types';
 import { mapLearningObjectToSummary } from '../../../functions';
 import { UserServiceGateway } from '../../../gateways/user-service/UserServiceGateway';
 import * as mongoHelperFunctions from '../';
+import { LearningObject } from '../../../entity';
 
 /**
  * Converts LearningObjectDocument to LearningObjectSummary

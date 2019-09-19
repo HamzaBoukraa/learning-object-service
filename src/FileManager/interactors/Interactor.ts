@@ -188,7 +188,7 @@ export async function downloadSingleFile({
       .getFileMetadata({
         requester: serviceToken as Requester,
         learningObjectId: learningObjectId,
-        id: fileId,
+        fileId,
         filter: 'released',
       })
       .catch(bypassFileNotFoundError(filter !== 'released'));
@@ -199,7 +199,7 @@ export async function downloadSingleFile({
     fileMetaData = await Gateways.fileMetadataGateway().getFileMetadata({
       requester: serviceToken as Requester,
       learningObjectId: learningObjectId,
-      id: fileId,
+      fileId,
       filter: 'unreleased',
     });
   }

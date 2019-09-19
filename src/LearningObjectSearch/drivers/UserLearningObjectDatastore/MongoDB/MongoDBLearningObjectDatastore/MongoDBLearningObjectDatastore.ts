@@ -108,7 +108,7 @@ export class MongoDBLearningObjectDatastore
       status,
       hasText: !!text,
     });
-
+    console.log(pipeline[0].$match.$or);
     const resultSet = await this.db
       .collection(COLLECTIONS.LEARNING_OBJECTS)
       .aggregate<{
@@ -169,12 +169,16 @@ export class MongoDBLearningObjectDatastore
     orderBy?: string;
     sortType?: 1 | -1;
   }): any[] {
+    console.log(status);
     let matcher: any = { ...searchQuery };
     if (orConditions && orConditions.length) {
       matcher.$or = matcher.$or || [];
       matcher.$or.push(...orConditions);
+      // tslint:disable-next-line: no-unused-expression
+      status ? matcher.$or.push({ status: { $in: status } }) : null;
+    } else {
+      matcher.status = { $in: status };
     }
-
     const match = { $match: { ...matcher } };
 
     // filter and remove duplicates after grouping the objects by ID.

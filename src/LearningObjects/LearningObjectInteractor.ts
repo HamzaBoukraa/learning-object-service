@@ -913,13 +913,8 @@ export async function getLearningObjectById({
     if (!filter || filter === 'released') {
       learningObject = await dataStore.fetchReleasedLearningObject({
         id,
-        full: true,
+        full: false,
       });
-      if (learningObject) {
-        learningObject.materials.files.map(
-          appendFilePreviewUrls(learningObject),
-        );
-      }
     }
     if ((!learningObject && filter !== 'released') || filter === 'unreleased') {
       let files: LearningObject.Material.File[] = [];
@@ -978,7 +973,7 @@ export async function getLearningObjectSummaryById({
   filter?: LearningObjectFilter;
 }): Promise<LearningObjectSummary> {
   try {
-    let learningObject: Partial<LearningObject>;
+    let learningObject: LearningObject;
     let loadingReleased = true;
     const learningObjectNotFound = new ResourceError(
       `No Learning Object ${id} exists.`,
@@ -991,22 +986,21 @@ export async function getLearningObjectSummaryById({
       });
     }
     if ((!learningObject && filter !== 'released') || filter === 'unreleased') {
-      const learningObjectSummary = await dataStore.fetchLearningObject({
+      learningObject = await dataStore.fetchLearningObject({
         id,
         full: false,
       });
-      if (!learningObjectSummary) {
-        throw learningObjectNotFound;
-      }
-      authorizeReadAccess({ requester, learningObject: learningObjectSummary });
+      authorizeReadAccess({
+        requester,
+        learningObject,
+      });
       loadingReleased = false;
     }
-    if (!learningObject) {
+    if (learningObject) {
+      learningObject.attachResourceUris(GATEWAY_API);
+    } else {
       throw learningObjectNotFound;
     }
-
-    learningObject.attachResourceUris(GATEWAY_API);
-
     return mapLearningObjectToSummary(learningObject);
   } catch (e) {
     handleError(e);
@@ -1093,9 +1087,8 @@ export async function getLearningObjectChildrenSummariesById(
 ): Promise<LearningObjectSummary[]> {
   try {
     // handle authorization by attempting to retrieve and read the source object
-    await getLearningObjectById({
+    await getLearningObjectSummaryById({
       dataStore,
-      library: libraryDriver,
       id: objectId,
       requester,
     });
@@ -1352,56 +1345,44 @@ export async function getMaterials({
   dataStore,
   id,
   requester,
-  filter,
 }: {
   dataStore: DataStore;
   id: string;
   requester: UserToken;
-  filter?: MaterialsFilter;
 }) {
   try {
     let materials: LearningObject.Material;
-    let workingFiles: LearningObject.Material.File[];
+    let files: LearningObject.Material.File[];
     const learningObject = await dataStore.fetchLearningObject({
       id,
       full: false,
     });
-    if (filter === 'unreleased') {
-      authorizeReadAccess({ learningObject, requester });
-      const materials$ = dataStore.getLearningObjectMaterials({ id });
-      const workingFiles$ = Gateways.fileMetadata().getAllFileMetadata({
-        requester,
-        learningObjectId: id,
-        filter: 'unreleased',
-      });
-      [materials, workingFiles] = await Promise.all([
-        materials$,
-        workingFiles$,
-      ]);
-    } else {
-      materials = await dataStore.getLearningObjectMaterials({ id });
-      const releasedFiles = Gateways.fileMetadata().getAllFileMetadata({
-        requester,
-        learningObjectId: id,
-        filter: LearningObject.Status.RELEASED,
-      });
+    if (!learningObject) {
+      throw new ResourceError(
+        `Learning Object with id ${id} not Found`,
+        ResourceErrorReason.NOT_FOUND,
+      );
     }
-
+    authorizeReadAccess({ learningObject, requester });
+    const materials$ = dataStore.getLearningObjectMaterials({ id });
+    const files$ = Gateways.fileMetadata().getAllFileMetadata({
+      requester,
+      learningObjectId: id,
+    });
+    [materials, files] = await Promise.all([materials$, files$]);
     if (!materials) {
       throw new ResourceError(
         `No materials exists for Learning Object ${id}.`,
         ResourceErrorReason.NOT_FOUND,
       );
     }
-
-    if (workingFiles) {
-      materials.files = workingFiles;
+    if (files) {
+      materials.files = files;
     } else {
       materials.files = materials.files.map(
         appendFilePreviewUrls(learningObject),
       );
     }
-
     return materials;
   } catch (e) {
     handleError(e);

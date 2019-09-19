@@ -97,7 +97,7 @@ export class MongoDriver implements DataStore {
    */
   async fetchReleasedMaterials(id: string): Promise<LearningObject.Material> {
     const doc = await this.db
-      .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
       .findOne({ _id: id }, { projection: { _id: 0, materials: 1 } });
     if (doc) {
       return doc.materials;
@@ -956,6 +956,7 @@ export class MongoDriver implements DataStore {
    * Fetch the learning object document associated with the given id.
    * FIXME:clean this query up after files collection is created
    *
+   *
    * If the query fails, the function throws a 404 Resource Error.
    * @async
    *
@@ -999,6 +1000,7 @@ export class MongoDriver implements DataStore {
     id: string;
     full?: boolean;
   }): Promise<LearningObject> {
+    // TODO: create a query to pull learning object files from file db
     const results = await this.db
       .collection(COLLECTIONS.LEARNING_OBJECTS)
       .aggregate([

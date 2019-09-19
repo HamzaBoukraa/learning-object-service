@@ -120,6 +120,7 @@ export function toBoolean(value: any): boolean {
 export function mapLearningObjectToSummary(
   object: Partial<LearningObject>,
 ): LearningObjectSummary {
+  console.log('learning object', object);
   return {
     id: object.id,
     cuid: object.cuid,

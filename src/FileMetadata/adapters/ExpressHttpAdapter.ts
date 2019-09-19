@@ -91,7 +91,7 @@ async function getFile(req: Request, res: Response) {
       requester,
       learningObjectId,
       filter,
-      id: fileId,
+      fileId,
     });
     res.send(file);
   } catch (e) {
