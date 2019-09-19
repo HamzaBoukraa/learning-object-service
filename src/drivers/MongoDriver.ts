@@ -953,36 +953,6 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Fetch the learning object document associated with the given id.
-   * FIXME:clean this query up after files collection is created
-   *
-   * If the query fails, the function throws a 404 Resource Error.
-   * @async
-   *
-   * @param id database id
-   *
-   * @returns {LearningObjectRecord}
-   */
-  async fetchLearningObject({
-    id,
-    full,
-  }: {
-    id: string;
-    full?: boolean;
-  }): Promise<LearningObject> {
-    const doc = await this.db
-      .collection(COLLECTIONS.LEARNING_OBJECTS)
-      .findOne({ _id: id });
-    if (doc) {
-      const author = await UserServiceGateway.getInstance().queryUserById(
-        doc.authorID,
-      );
-      return mongoHelperFunctions.generateLearningObject(author, doc, full);
-    }
-    return null;
-  }
-
-  /**
    * Fetches released object through aggregation pipeline by performing a match based on the object id, finding the duplicate object in the
    * working collection, then checking the status of the duplicate to determine whether or not to set hasRevision to true or false.
    *

@@ -2,17 +2,14 @@ import { Request, Response, Router } from 'express';
 import { mapErrorToResponseData } from '../../shared/errors';
 import { DataStore } from '../../shared/interfaces/DataStore';
 import { LibraryCommunicator } from '../../shared/interfaces/interfaces';
-import {
-  UserLearningObjectQuery,
-  UserToken,
-  LearningObjectSummary,
-} from '../../shared/types';
-import * as LearningObjectInteractor from '../LearningObjectInteractor';
+import { UserToken } from '../../shared/types';
+import * as LearningObjectInteractor from '../interactors/LearningObjectInteractor';
 import { LearningObject } from '../../shared/entity';
 import { LearningObjectFilter, MaterialsFilter } from '../typings';
 import { initializePrivate as initializeRevisionRoutes } from '../Revisions/RevisionRouteHandler';
 import { toBoolean } from '../../shared/functions';
 import { LibraryDriver } from '../../drivers/LibraryDriver';
+import { transferLearningObjectOwnership } from '../interactors/transferLearningObjectAuthorship';
 
 /**
  * Initializes an express router with endpoints for public Retrieving
@@ -174,15 +171,32 @@ export function initializePrivate({
 }) {
   const addLearningObject = async (req: Request, res: Response) => {
     try {
+      let transferExisting = false;
+      let learningObject: LearningObject;
       const requester: UserToken = req.user;
       const authorUsername: string = req.params.username || req.user.username;
       const object: Partial<LearningObject> = req.body.object;
-      const learningObject = await LearningObjectInteractor.addLearningObject({
-        dataStore,
-        object,
-        authorUsername,
-        requester,
-      });
+
+      if (req.query.transferExisting === '') {
+        transferExisting = true;
+      }
+
+      if (transferExisting) {
+        const transferLearningObjectAuthorshipParams = {
+          learningObject: object,
+          requester,
+        };
+
+        learningObject = await transferLearningObjectOwnership(transferLearningObjectAuthorshipParams);
+      } else {
+        learningObject = await LearningObjectInteractor.addLearningObject({
+          dataStore,
+          object,
+          authorUsername,
+          requester,
+        });
+      }
+
       res.status(200).send(learningObject.toPlainObject());
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);

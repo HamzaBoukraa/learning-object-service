@@ -1,6 +1,6 @@
 import { DataStore } from '../../../shared/interfaces/DataStore';
 import { LearningObjectSummary, UserToken } from '../../../shared/types';
-import { getReleasedLearningObjectSummary } from '../../LearningObjectInteractor';
+import { getReleasedLearningObjectSummary } from '../../interactors/LearningObjectInteractor';
 import { ResourceError, ResourceErrorReason } from '../../../shared/errors';
 import {
   requesterIsAdminOrEditor,

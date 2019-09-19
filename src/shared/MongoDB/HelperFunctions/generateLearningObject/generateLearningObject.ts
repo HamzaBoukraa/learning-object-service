@@ -9,57 +9,56 @@ import { LearningOutcomeMongoDatastore } from '../../../../LearningOutcomes/data
  *
  * @private
  * @param {User} author
- * @param {LearningObjectDocument} record
+ * @param {LearningObjectDocument} document
  * @param {boolean} [full]
  * @returns {Promise<LearningObject>}
  * @memberof MongoDriver
  */
-export async function generateLearningObject(
-  author: User,
-  record: LearningObjectDocument,
-  full?: boolean,
+export async function generateInternalLearningObjectFromDocument(
+  document: LearningObjectDocument,
 ): Promise<LearningObject> {
-  const LEARNING_OUTCOME_DATASTORE = new LearningOutcomeMongoDatastore(
-    MongoConnector.client().db('onion'),
-  );
-  // Logic for loading any learning object
-  let learningObject: LearningObject;
-  let materials: LearningObject.Material;
-  let contributors: User[] = [];
-  let outcomes: LearningOutcome[] = [];
+
   let children: LearningObject[] = [];
-  // Load Contributors
-  if (record.contributors && record.contributors.length) {
-    contributors = await Promise.all(
-      record.contributors.map(userId =>
-        UserServiceGateway.getInstance().queryUserById(userId),
-      ),
-    );
-  }
-  // If full object requested, load up non-summary properties
-  if (full) {
-    // Logic for loading 'full' learning objects
-    materials = <LearningObject.Material>record.materials;
-    outcomes = await LEARNING_OUTCOME_DATASTORE.getAllLearningOutcomes({
-      source: record._id,
-    });
-  }
-  learningObject = new LearningObject({
-    id: record._id,
+  const materials = <LearningObject.Material>document.materials;
+  const author = await loadAuthor(document.authorID);
+  const contributors = await loadContributors(document);
+  const outcomes = await loadOutcomes(document._id);
+
+  const learningObject = new LearningObject({
+    id: document._id,
     author,
-    name: record.name,
-    date: record.date,
-    length: record.length as LearningObject.Length,
-    levels: record.levels as LearningObject.Level[],
-    collection: record.collection,
-    status: record.status as LearningObject.Status,
-    description: record.description,
+    name: document.name,
+    date: document.date,
+    length: document.length as LearningObject.Length,
+    levels: document.levels as LearningObject.Level[],
+    collection: document.collection,
+    status: document.status as LearningObject.Status,
+    description: document.description,
     materials,
     contributors,
     outcomes,
-    hasRevision: record.hasRevision,
+    hasRevision: document.hasRevision,
     children,
-    revision: record.revision,
+    revision: document.revision,
   });
   return learningObject;
+}
+
+async function loadOutcomes(learningObjectID: string): Promise<LearningOutcome[]> {
+  const LEARNING_OUTCOME_DATASTORE = new LearningOutcomeMongoDatastore(MongoConnector.client().db('onion'));
+  return await LEARNING_OUTCOME_DATASTORE.getAllLearningOutcomes({
+    source: learningObjectID,
+  });
+}
+
+async function loadAuthor(authorID: string): Promise<User> {
+  return await UserServiceGateway.getInstance().queryUserById(authorID);
+}
+
+async function loadContributors(document: LearningObjectDocument): Promise<User[]> {
+  return await Promise.all(
+    document.contributors.map(userId =>
+      UserServiceGateway.getInstance().queryUserById(userId),
+    ),
+  );
 }

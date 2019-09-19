@@ -1,25 +1,25 @@
-import { DataStore } from '../shared/interfaces/DataStore';
-import { MockDataStore } from '../tests/mock-drivers/MockDataStore';
-import { MockLibraryDriver } from '../tests/mock-drivers/MockLibraryDriver';
+import { DataStore } from '../../shared/interfaces/DataStore';
+import { MockDataStore } from '../../tests/mock-drivers/MockDataStore';
+import { MockLibraryDriver } from '../../tests/mock-drivers/MockLibraryDriver';
 import {
   LearningObjectWithChildren,
   LearningObjectWithoutChildren,
-} from '../tests/interfaces';
-import { Stubs } from '../tests/stubs';
-import { LibraryCommunicator } from '../shared/interfaces/interfaces';
-import { HierarchicalLearningObject } from '../shared/entity';
-import { LearningObjectsModule } from './LearningObjectsModule';
+} from '../../tests/interfaces';
+import { Stubs } from '../../tests/stubs';
+import { LibraryCommunicator } from '../../shared/interfaces/interfaces';
+import { HierarchicalLearningObject } from '../../shared/entity';
+import { LearningObjectsModule } from '../LearningObjectsModule';
 import {
   FileMetadataGateway,
   FileManagerGateway,
   ReadMeBuilder,
-} from './interfaces';
-import { UserGateway } from './interfaces/UserGateway';
-import { StubFileMetadataGateway } from './gateways/FileMetadataGateway/StubFileMetadataGateway';
-import { StubFileManagerGateway } from './gateways/FileManagerGateway/StubFileManagerGateway';
-import { StubUserGateway } from './gateways/UserGateway/StubUserGateway';
-import { StubReadMeBuilder } from './drivers/ReadMeBuilder/StubReadMeBuilder';
-import { mapLearningObjectToSummary } from '../shared/functions';
+} from '../interfaces';
+import { UserGateway } from '../interfaces/UserGateway';
+import { StubFileMetadataGateway } from '../gateways/FileMetadataGateway/StubFileMetadataGateway';
+import { StubFileManagerGateway } from '../gateways/FileManagerGateway/StubFileManagerGateway';
+import { StubUserGateway } from '../gateways/UserGateway/StubUserGateway';
+import { StubReadMeBuilder } from '../drivers/ReadMeBuilder/StubReadMeBuilder';
+import { mapLearningObjectToSummary } from '../../shared/functions';
 
 let dataStore: DataStore = new MockDataStore();
 const library: LibraryCommunicator = new MockLibraryDriver();

@@ -1,20 +1,20 @@
-import { DataStore } from '../shared/interfaces/DataStore';
-import { LibraryCommunicator } from '../shared/interfaces/interfaces';
+import { DataStore } from '../../shared/interfaces/DataStore';
+import { LibraryCommunicator } from '../../shared/interfaces/interfaces';
 import {
   LearningObjectMetadataUpdates,
   LearningObjectState,
   LearningObjectSummary,
   UserToken,
   VALID_LEARNING_OBJECT_UPDATES,
-} from '../shared/types';
+} from '../../shared/types';
 import {
   handleError,
   ResourceError,
   ResourceErrorReason,
   ServiceError,
-} from '../shared/errors';
-import { reportError } from '../shared/SentryConnector';
-import { LearningObject, User } from '../shared/entity';
+} from '../../shared/errors';
+import { reportError } from '../../shared/SentryConnector';
+import { LearningObject, User } from '../../shared/entity';
 import {
   authorizeReadAccess,
   authorizeRequest,
@@ -23,28 +23,28 @@ import {
   hasReadAccessByCollection,
   requesterIsAdminOrEditor,
   requesterIsAuthor,
-} from '../shared/AuthorizationManager';
+} from '../../shared/AuthorizationManager';
 import {
   LearningObjectFilter,
   MaterialsFilter,
   HierarchicalLearningObject,
-} from './typings';
-import * as PublishingService from './Publishing';
+} from '../typings';
+import * as PublishingService from '../Publishing';
 import {
   mapLearningObjectToSummary,
   sanitizeLearningObjectName,
-} from '../shared/functions';
+} from '../../shared/functions';
 import {
   FileMetadataGateway,
   FileManagerGateway,
   ReadMeBuilder,
-} from './interfaces';
-import { LearningObjectsModule } from './LearningObjectsModule';
-import { LearningObjectSubmissionAdapter } from '../LearningObjectSubmission/adapters/LearningObjectSubmissionAdapter';
-import { UserGateway } from './interfaces/UserGateway';
-import { validateUpdates } from '../shared/entity/learning-object/validators';
-import { UserServiceGateway } from '../shared/gateways/user-service/UserServiceGateway';
-import * as mongoHelperFunctions from '../shared/MongoDB/HelperFunctions';
+} from '../interfaces';
+import { LearningObjectsModule } from '../LearningObjectsModule';
+import { LearningObjectSubmissionAdapter } from '../../LearningObjectSubmission/adapters/LearningObjectSubmissionAdapter';
+import { UserGateway } from '../interfaces/UserGateway';
+import { validateUpdates } from '../../shared/entity/learning-object/validators';
+import { UserServiceGateway } from '../../shared/gateways/user-service/UserServiceGateway';
+import * as mongoHelperFunctions from '../../shared/MongoDB/HelperFunctions';
 
 const GATEWAY_API = process.env.GATEWAY_API;
 

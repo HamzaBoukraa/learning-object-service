@@ -12,7 +12,7 @@ import {
   updateObjectLastModifiedDate,
   updateReadme,
   getLearningObjectByName,
-} from '../LearningObjectInteractor';
+} from '../interactors/LearningObjectInteractor';
 import { LearningObjectSummary, UserToken } from '../../shared/types';
 import { LearningObjectFilter } from '../typings';
 

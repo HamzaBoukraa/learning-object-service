@@ -4,7 +4,7 @@ import {
   DataStore,
   LibraryCommunicator,
 } from '../../shared/interfaces/interfaces';
-import { updateReadme } from '../../LearningObjects/LearningObjectInteractor';
+import { updateReadme } from '../../LearningObjects/interactors/LearningObjectInteractor';
 import * as LearningObjectRouteHandler from '../../LearningObjects/adapters/LearningObjectRouteHandler';
 import * as LearningOutcomeRouteHandler from '../../LearningOutcomes/LearningOutcomeRouteHandler';
 import * as SubmissionRouteDriver from '../../LearningObjectSubmission';
