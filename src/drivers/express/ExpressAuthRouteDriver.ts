@@ -205,21 +205,5 @@ export class ExpressAuthRouteDriver {
         res.status(code).json({ message });
       }
     });
-
-    // TODO: Need to validate token and that it is coming from cart service
-    router.get('/cart/learning-objects/:ids/full', async (req, res) => {
-      try {
-        const ids: string[] = req.params.ids.split(',');
-        const objects = await LearningObjectInteractor.fetchObjectsByIDs({
-          dataStore: this.dataStore,
-          ids,
-          full: true,
-        });
-        res.status(200).send(objects.map(obj => obj.toPlainObject()));
-      } catch (e) {
-        const { code, message } = mapErrorToResponseData(e);
-        res.status(code).json({ message });
-      }
-    });
   }
 }
