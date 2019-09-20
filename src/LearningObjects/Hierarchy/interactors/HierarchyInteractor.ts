@@ -7,6 +7,10 @@ import {
   LearningObjectState,
   LearningObjectSummary,
 } from '../../../shared/types';
+import { mapLearningObjectToSummary } from '../../../shared/functions';
+import { LearningObject } from '../../../shared/entity';
+
+const GATEWAY_API = process.env.GATEWAY_API;
 
 /**
  * Fetches the parents of a Learning Object.
@@ -27,6 +31,7 @@ export async function fetchParents(params: {
   let hasFullAccess = false;
   let collectionsWithAccess: string[] = [];
   let requestedByAuthor = false;
+  let learningObjects: LearningObject[];
   const author = await dataStore.fetchLearningObjectAuthorUsername(
     learningObjectID,
   );
@@ -44,12 +49,17 @@ export async function fetchParents(params: {
     !hasFullAccess &&
     collectionsWithAccess.length < 1
   ) {
-    return await dataStore.fetchReleasedParentObjects({
+    learningObjects = await dataStore.fetchReleasedParentObjects({
       query: { id: learningObjectID },
       full: false,
     });
+    const releasedObjects = learningObjects.map(objects => {
+      objects.attachResourceUris(GATEWAY_API);
+      return mapLearningObjectToSummary(objects);
+    });
+    return releasedObjects;
   } else {
-    return await params.dataStore.fetchParentObjects({
+    learningObjects = await params.dataStore.fetchParentObjects({
       query: buildQuery(
         learningObjectID,
         requestedByAuthor,
@@ -58,6 +68,11 @@ export async function fetchParents(params: {
       ),
       full: false,
     });
+    const workingObjects = learningObjects.map(objects => {
+      objects.attachResourceUris(GATEWAY_API);
+      return mapLearningObjectToSummary(objects);
+    });
+    return workingObjects;
   }
 }
 
