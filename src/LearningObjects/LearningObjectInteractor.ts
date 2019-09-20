@@ -975,6 +975,36 @@ async function loadWorkingParentsReleasedChildObjects({
 }
 
 /**
+ *
+ * @param {string} id the Learning Object's id
+ * @param {DataStore} dataStore
+ * @param {UserToken} requester [Information about the user making the delete request]
+ */
+export async function getLearningObjectSummary({
+  id,
+  dataStore,
+  requester,
+}: {
+  id: string;
+  dataStore: DataStore;
+  requester: UserToken;
+}): Promise<LearningObjectSummary> {
+  const learningObject = await dataStore.fetchLearningObject({ id });
+  const learningObjectNotFound = new ResourceError(
+    `No Learning Object ${id} exists.`,
+    ResourceErrorReason.NOT_FOUND,
+  );
+  if (!learningObject) {
+    throw learningObjectNotFound;
+  }
+  if (learningObject.status !== LearningObject.Status.RELEASED) {
+    authorizeReadAccess({ learningObject, requester });
+  }
+
+  return mapLearningObjectToSummary(learningObject);
+}
+
+/**
  * Recursively loads all levels of full released child Learning Objects for a released parent Learning Object
  *
  * @param {DataStore} dataStore [The datastore to fetch children from]
@@ -1051,6 +1081,8 @@ export async function getLearningObjectChildrenSummariesById(
     id: objectId,
     status: LearningObjectState.ALL,
   });
+
+  // FIXME: simplify this step if possible
   // array to return the children in correct order
   const children: LearningObjectSummary[] = [];
 
@@ -1061,7 +1093,8 @@ export async function getLearningObjectChildrenSummariesById(
   // order the children payload to the same order as the array of child ids stored in `childrenIDs`
   while (c < childrenOrder.length) {
     if (childrenIDs[cIDs] === childrenOrder[c].id) {
-      children.push(childrenOrder[c]);
+      childrenOrder[c].attachResourceUris(GATEWAY_API);
+      children.push(mapLearningObjectToSummary(childrenOrder[c]));
       cIDs++;
       c = 0;
     } else {
