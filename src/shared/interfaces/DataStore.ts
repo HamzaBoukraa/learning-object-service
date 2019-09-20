@@ -100,6 +100,7 @@ export interface DataStore
   findLearningObject(params: {
     authorId: string;
     name: string;
+    status?: string;
   }): Promise<string>;
   findReleasedLearningObject(params: {
     authorId: string;

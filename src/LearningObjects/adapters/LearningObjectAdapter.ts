@@ -10,6 +10,7 @@ import {
   updateObjectLastModifiedDate,
   updateReadme,
   getLearningObjectByName,
+  getLearningObjectSummary,
 } from '../LearningObjectInteractor';
 import { LearningObjectSummary, UserToken } from '../../shared/types';
 import { LearningObjectFilter } from '../typings';
@@ -46,26 +47,6 @@ export class LearningObjectAdapter {
     return updateObjectLastModifiedDate({ dataStore: this.dataStore, id });
   }
 
-  /**
-   * Retrieves a summary of the working copy Learning Object
-   *
-   * @param {UserToken} requester [Object containing information about the requester]
-   * @param {string} id [Id of the Learning Object]
-   * @returns {Promise<LearningObjectSummary>}
-   */
-  async getWorkingLearningObjectSummary({
-    requester,
-    id,
-  }: {
-    requester: UserToken;
-    id: string;
-  }): Promise<LearningObjectSummary> {
-    return getWorkingLearningObjectSummary({
-      dataStore: this.dataStore,
-      requester,
-      id,
-    });
-  }
   /**
    * Retrieves a summary of the working copy Learning Object
    *
@@ -117,6 +98,15 @@ export class LearningObjectAdapter {
     return getLearningObjectById({
       dataStore: this.dataStore,
       library: this.library,
+      ...params,
+    });
+  }
+  async getLearningObjectSummary(params: {
+    id: string;
+    requester: UserToken;
+  }): Promise<LearningObjectSummary> {
+    return getLearningObjectSummary({
+      dataStore: this.dataStore,
       ...params,
     });
   }

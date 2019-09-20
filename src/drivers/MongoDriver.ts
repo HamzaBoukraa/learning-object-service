@@ -883,7 +883,7 @@ export class MongoDriver implements DataStore {
   async findLearningObject(params: {
     authorId: string;
     name: string;
-    status?: LearningObject.Status.RELEASED;
+    status?: string;
   }): Promise<string> {
     const { authorId, name, status } = params;
     const query: { [x: string]: any } = {

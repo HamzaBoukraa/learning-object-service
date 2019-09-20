@@ -21,19 +21,15 @@ export class ModuleLearningObjectGateway extends LearningObjectGateway {
   }
 
   /**
-   * @inheritdoc
    *
-   * Proxies `getWorkingLearningObjectSummary` request to LearningObjectAdapter
-   *
-   * @memberof ModuleLearningObjectGateway
+   * @param learningObjectId The mongo Id of a learning object in the database
    */
-  getWorkingLearningObjectSummary(params: {
-    requester: Requester;
+  getLearningObjectSummary(params: {
     id: string;
+    requester: Requester;
   }): Promise<LearningObjectSummary> {
-    return this.adapter.getWorkingLearningObjectSummary(params);
+    return this.adapter.getLearningObjectSummary(params);
   }
-
   /**
    * @inheritdoc
    *
