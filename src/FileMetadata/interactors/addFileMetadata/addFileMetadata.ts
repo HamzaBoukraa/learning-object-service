@@ -1,10 +1,10 @@
 import {
-    Requester,
-    FileMetadata,
-    LearningObjectFile,
-    LearningObjectSummary,
-    FileMetadataInsert,
-    FileMetadataDocument,
+  Requester,
+  FileMetadata,
+  LearningObjectFile,
+  LearningObjectSummary,
+  FileMetadataInsert,
+  FileMetadataDocument,
 } from '../../typings';
 import { Drivers, Gateways } from '../shared/resolvedDependencies';
 import { getFilePreviewURL } from '../getFilePreviewURL/getFilePreviewURL';
@@ -13,7 +13,11 @@ import { toNumber, sanitizeObject } from '../../../shared/functions';
 import * as mime from 'mime-types';
 import { validateRequestParams } from '../shared/validateRequestParams/validateRequestParams';
 import * as Validators from '../shared/validators';
-import { handleError, ResourceError, ResourceErrorReason } from '../../../shared/errors';
+import {
+  handleError,
+  ResourceError,
+  ResourceErrorReason,
+} from '../../../shared/errors';
 const DEFAULT_MIME_TYPE = 'application/octet-stream';
 
 /**
@@ -27,14 +31,14 @@ const DEFAULT_MIME_TYPE = 'application/octet-stream';
  * @returns {Promise<string[]>}
  */
 export async function addFileMetadata({
-    requester,
-    learningObjectId,
-    files,
-  }: {
-    requester: Requester;
-    learningObjectId: string;
-    files: FileMetadata[];
-  }): Promise<LearningObjectFile[]> {
+  requester,
+  learningObjectId,
+  files,
+}: {
+  requester: Requester;
+  learningObjectId: string;
+  files: FileMetadata[];
+}): Promise<LearningObjectFile[]> {
   try {
     validateRequestParams({
       operation: 'Add file metadata',
@@ -51,7 +55,7 @@ export async function addFileMetadata({
         },
       ],
     });
-    const learningObject: LearningObjectSummary = await Gateways.learningObjectGateway().getWorkingLearningObjectSummary(
+    const learningObject: LearningObjectSummary = await Gateways.learningObjectGateway().getLearningObjectSummary(
       { requester, id: learningObjectId },
     );
 
@@ -85,20 +89,20 @@ export async function addFileMetadata({
  * @returns {FileMetadataInsert[]}
  */
 function generateFileMetadataInserts(
-    files: FileMetadata[],
-    learningObject: LearningObjectSummary,
-  ): FileMetadataInsert[] {
-    const inserts: FileMetadataInsert[] = [];
-    for (const file of files) {
-      const cleanFile = sanitizeObject({ object: file }, false);
-      validateFileMeta(cleanFile);
-      const newInsert: FileMetadataInsert = generateFileMetaInsert(
-        cleanFile,
-        learningObject,
-      );
-      inserts.push(newInsert);
-    }
-    return inserts;
+  files: FileMetadata[],
+  learningObject: LearningObjectSummary,
+): FileMetadataInsert[] {
+  const inserts: FileMetadataInsert[] = [];
+  for (const file of files) {
+    const cleanFile = sanitizeObject({ object: file }, false);
+    validateFileMeta(cleanFile);
+    const newInsert: FileMetadataInsert = generateFileMetaInsert(
+      cleanFile,
+      learningObject,
+    );
+    inserts.push(newInsert);
+  }
+  return inserts;
 }
 
 /**
@@ -107,10 +111,7 @@ function generateFileMetadataInserts(
  * @param {FileMetadata} file [The file metadata to be validated]
  */
 function validateFileMeta(file: FileMetadata) {
-  const invalidInput = new ResourceError(
-      '',
-      ResourceErrorReason.BAD_REQUEST,
-  );
+  const invalidInput = new ResourceError('', ResourceErrorReason.BAD_REQUEST);
   if (!Validators.stringHasContent(file.ETag)) {
     invalidInput.message = 'File metadata must contain a valid ETag.';
     throw invalidInput;
@@ -132,8 +133,8 @@ function validateFileMeta(file: FileMetadata) {
  * @returns {(value: FileMetadataInsert) => Promise<LearningObjectFile>}
  */
 function handleFileMetadataInsert(
-    learningObject: LearningObjectSummary,
-  ): (value: FileMetadataInsert) => Promise<LearningObjectFile> {
+  learningObject: LearningObjectSummary,
+): (value: FileMetadataInsert) => Promise<LearningObjectFile> {
   return async insert => {
     const existingFile = await Drivers.datastore().findFileMetadata({
       learningObjectId: learningObject.id,
@@ -183,9 +184,9 @@ function isPackageable(size: number) {
  * @returns {FileMetadataInsert}
  */
 function generateFileMetaInsert(
-    file: FileMetadata,
-    learningObject: LearningObjectSummary,
-  ): FileMetadataInsert {
+  file: FileMetadata,
+  learningObject: LearningObjectSummary,
+): FileMetadataInsert {
   file.size = toNumber(file.size);
   const extension = file.name.split('.').pop();
   return {
@@ -213,14 +214,14 @@ function generateFileMetaInsert(
  * @returns {LearningObjectFile}
  */
 function transformFileMetaToLearningObjectFile({
-    authorUsername,
-    learningObjectId,
-    file,
-  }: {
-    authorUsername: string;
-    learningObjectId: string;
-    file: FileMetadataDocument;
-  }): LearningObjectFile {
+  authorUsername,
+  learningObjectId,
+  file,
+}: {
+  authorUsername: string;
+  learningObjectId: string;
+  file: FileMetadataDocument;
+}): LearningObjectFile {
   return {
     id: file.id,
     name: file.name,

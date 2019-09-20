@@ -18,40 +18,40 @@ import { handleError } from '../../../shared/errors';
  * @returns {Promise<void>}
  */
 export async function deleteAllFileMetadata({
-    requester,
-    learningObjectId,
-  }: {
-    requester: Requester;
-    learningObjectId: string;
-  }): Promise<void> {
-    try {
-      validateRequestParams({
-        operation: 'Delete all file metadata',
-        values: [
-          {
-            value: learningObjectId,
-            validator: Validators.stringHasContent,
-            propertyName: 'Learning Object id',
-          },
-        ],
-      });
+  requester,
+  learningObjectId,
+}: {
+  requester: Requester;
+  learningObjectId: string;
+}): Promise<void> {
+  try {
+    validateRequestParams({
+      operation: 'Delete all file metadata',
+      values: [
+        {
+          value: learningObjectId,
+          validator: Validators.stringHasContent,
+          propertyName: 'Learning Object id',
+        },
+      ],
+    });
 
-      const learningObject: LearningObjectSummary = await Gateways.learningObjectGateway().getWorkingLearningObjectSummary(
-        { requester, id: learningObjectId },
-      );
+    const learningObject: LearningObjectSummary = await Gateways.learningObjectGateway().getLearningObjectSummary(
+      { requester, id: learningObjectId },
+    );
 
-      authorizeWriteAccess({ learningObject, requester });
+    authorizeWriteAccess({ learningObject, requester });
 
-      await Drivers.datastore().deleteAllFileMetadata(learningObjectId);
-      Gateways.fileManager()
-        .deleteFolder({
-          authorUsername: learningObject.author.username,
-          learningObjectId: learningObject.id,
-          learningObjectRevisionId: learningObject.revision,
-          path: '/',
-        })
-        .catch(reportError);
-    } catch (e) {
-      handleError(e);
-    }
+    await Drivers.datastore().deleteAllFileMetadata(learningObjectId);
+    Gateways.fileManager()
+      .deleteFolder({
+        authorUsername: learningObject.author.username,
+        learningObjectId: learningObject.id,
+        learningObjectRevisionId: learningObject.revision,
+        path: '/',
+      })
+      .catch(reportError);
+  } catch (e) {
+    handleError(e);
+  }
 }

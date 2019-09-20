@@ -1,20 +1,24 @@
 import {
-    Requester,
-    FileMetadataFilter,
-    LearningObjectFile,
-    LearningObjectSummary,
+  Requester,
+  FileMetadataFilter,
+  LearningObjectFile,
+  LearningObjectSummary,
 } from '../../typings';
 import {
-    MICROSOFT_EXTENSIONS,
-    CAN_PREVIEW,
-    FILE_API_URI,
-    MICROSOFT_PREVIEW_URL,
+  MICROSOFT_EXTENSIONS,
+  CAN_PREVIEW,
+  FILE_API_URI,
+  MICROSOFT_PREVIEW_URL,
 } from '../shared/constants';
 import { validateRequestParams } from '../shared/validateRequestParams/validateRequestParams';
 import { authorizeReadAccess } from '../../../shared/AuthorizationManager';
 import * as Validators from '../shared/validators';
 import { Gateways, Drivers } from '../shared/resolvedDependencies';
-import { ResourceErrorReason, ResourceError, handleError } from '../../../shared/errors';
+import {
+  ResourceErrorReason,
+  ResourceError,
+  handleError,
+} from '../../../shared/errors';
 import { getFilePreviewURL } from '../getFilePreviewURL/getFilePreviewURL';
 import { LearningObject } from '../../../shared/entity';
 import { transformFileMetadataToLearningObjectFile } from '../shared/transformFileMetadataToLearningObjectFile/transformFileMetadataToLearningObjectFile';
@@ -35,53 +39,46 @@ import { transformFileMetadataToLearningObjectFile } from '../shared/transformFi
  * @returns {Promise<LearningObjectFile[]>}
  */
 export async function getAllFileMetadata({
-    requester,
-    learningObjectId,
-  }: {
-    requester: Requester;
-    learningObjectId: string;
-  }): Promise<LearningObjectFile[]> {
-    try {
-      validateRequestParams({
-        operation: 'Get all file metadata',
-        values: [
-          {
-            value: learningObjectId,
-            validator: Validators.stringHasContent,
-            propertyName: 'Learning Object id',
-          },
-        ],
-      });
-      let learningObject: LearningObjectSummary;
+  requester,
+  learningObjectId,
+}: {
+  requester: Requester;
+  learningObjectId: string;
+}): Promise<LearningObjectFile[]> {
+  try {
+    validateRequestParams({
+      operation: 'Get all file metadata',
+      values: [
+        {
+          value: learningObjectId,
+          validator: Validators.stringHasContent,
+          propertyName: 'Learning Object id',
+        },
+      ],
+    });
+    let learningObject: LearningObjectSummary;
 
-      learningObject = await Gateways.learningObjectGateway().getReleasedLearningObjectSummary(learningObjectId);
-      if (!learningObject) {
-        learningObject = await Gateways.learningObjectGateway().getWorkingLearningObjectSummary({ requester, id: learningObjectId});
-        if (!learningObject) {
-          throw new ResourceError(
-            'Specified Learning Object does not exist',
-            ResourceErrorReason.NOT_FOUND,
-          );
-        }
-      }
+    learningObject = await Gateways.learningObjectGateway().getLearningObjectSummary(
+      { id: learningObjectId, requester },
+    );
 
-      const files$ = Drivers.datastore()
-        .fetchAllFileMeta(learningObjectId)
-        .then(files =>
-          files.map(file =>
-            transformFileMetadataToLearningObjectFile({
-              authorUsername: learningObject.author.username,
-              learningObjectId: learningObject.id,
-              file,
-            }),
-          ),
-        );
+    const files$ = Drivers.datastore()
+      .fetchAllFileMeta(learningObjectId)
+      .then(files =>
+        files.map(file =>
+          transformFileMetadataToLearningObjectFile({
+            authorUsername: learningObject.author.username,
+            learningObjectId: learningObject.id,
+            file,
+          }),
+        ),
+      );
 
-      return await files$;
-    } catch (e) {
-      handleError(e);
-    }
+    return await files$;
+  } catch (e) {
+    handleError(e);
   }
+}
 
 /**
  * Appends file preview urls to files
@@ -124,8 +121,8 @@ function appendFilePreviewUrls(
  * @returns {(any[] | never)}
  */
 function handleReleasedFilesNotFound(e: Error): any[] | never {
-    if (e instanceof ResourceError && e.name === ResourceErrorReason.NOT_FOUND) {
-      return [];
-    }
-    throw e;
+  if (e instanceof ResourceError && e.name === ResourceErrorReason.NOT_FOUND) {
+    return [];
+  }
+  throw e;
 }

@@ -60,14 +60,12 @@ export async function getFileMetadata({
         },
       ],
     });
-    const learningObject = await Gateways.learningObjectGateway().getActiveLearningObjectSummary(
+    const learningObject = await Gateways.learningObjectGateway().getLearningObjectSummary(
       {
         requester,
         id: learningObjectId,
       },
     );
-
-    authorizeReadAccess({ learningObject, requester });
 
     const file = await Drivers.datastore().fetchFileMeta(fileId);
     if (!file) {

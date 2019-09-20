@@ -125,7 +125,6 @@ export async function searchUsersObjects({
     if (!isAuthor) {
       searchQuery.status = getAuthorizedStatuses(searchQuery.status);
       if (!requesterIsAdminOrEditor(requester)) {
-        console.log(searchQuery.status);
         const privilegedCollections = getAccessGroupCollections(requester);
         collectionAccessMap = getCollectionAccessMap(
           [],

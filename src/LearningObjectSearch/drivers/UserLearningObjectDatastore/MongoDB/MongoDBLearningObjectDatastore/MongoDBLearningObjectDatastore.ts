@@ -169,7 +169,6 @@ export class MongoDBLearningObjectDatastore
     orderBy?: string;
     sortType?: 1 | -1;
   }): any[] {
-    console.log(status);
     let matcher: any = { ...searchQuery };
     if (orConditions && orConditions.length) {
       matcher.$or = matcher.$or || [];

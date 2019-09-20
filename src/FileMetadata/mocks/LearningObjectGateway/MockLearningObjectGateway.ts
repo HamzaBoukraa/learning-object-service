@@ -7,14 +7,16 @@ import {
 import { Stubs } from '../../../tests/stubs';
 
 export class MockLearningObjectGateway implements LearningObjectGateway {
-  private stubs = new Stubs();
-  getWorkingLearningObjectSummary(params: {
-    requester: Requester;
-    id: string;
-  }): Promise<LearningObjectSummary> {
-    return Promise.resolve(this.stubs.learningObject);
+  getReleasedLearningObjectSummary(id: string): Promise<LearningObjectSummary> {
+    throw new Error('Method not implemented.');
   }
-
+  getLearningObjectSummary(params: {
+    id: string;
+    requester: Requester;
+  }): Promise<LearningObjectSummary> {
+    throw new Error('Method not implemented.');
+  }
+  private stubs = new Stubs();
   updateObjectLastModifiedDate(id: string): Promise<void> {
     return Promise.resolve();
   }
