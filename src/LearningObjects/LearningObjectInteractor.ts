@@ -975,10 +975,12 @@ async function loadWorkingParentsReleasedChildObjects({
 }
 
 /**
- *
+ * Fetches a learning object from the objects collection and performs read access authorization
+ * for internal use.
  * @param {string} id the Learning Object's id
  * @param {DataStore} dataStore
  * @param {UserToken} requester [Information about the user making the delete request]
+ *
  */
 export async function getLearningObjectSummary({
   id,
