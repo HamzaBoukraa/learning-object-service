@@ -20,7 +20,7 @@ import { StubFileManagerGateway } from './gateways/FileManagerGateway/StubFileMa
 import { StubUserGateway } from './gateways/UserGateway/StubUserGateway';
 import { StubReadMeBuilder } from './drivers/ReadMeBuilder/StubReadMeBuilder';
 import { mapLearningObjectToSummary } from '../shared/functions';
-
+import { UserToken } from '../shared/types';
 let dataStore: DataStore = new MockDataStore();
 const library: LibraryCommunicator = new MockLibraryDriver();
 const stubs = new Stubs();

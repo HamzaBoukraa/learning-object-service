@@ -93,7 +93,7 @@ async function createPublishingArtifacts(
     learningObjectId: releasableObject.id,
     learningObjectRevisionId: releasableObject.revision,
     file: {
-      path: 'bundle.zip',
+      path: `${releasableObject.cuid}.zip`,
       data: bundle,
     },
   });

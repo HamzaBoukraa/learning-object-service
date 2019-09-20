@@ -715,7 +715,7 @@ export class MongoDriver implements DataStore {
     const mongoQuery = { children: query.id, status: 'released' };
 
     const parentDocs = await this.db
-      .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
       .find<LearningObjectDocument>(mongoQuery)
       .toArray();
     return await mongoHelperFunctions.bulkGenerateLearningObjects(

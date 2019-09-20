@@ -158,11 +158,11 @@ export async function searchUsersObjects({
  * @returns {UserLearningObjectQuery}
  */
 function formatUserLearningObjectQuery(
-  query: UserLearningObjectQuery,
-): UserLearningObjectQuery {
-  const formattedQuery = { ...query };
-  formattedQuery.text = sanitizeText(formattedQuery.text) || null;
-  formattedQuery.status = toArray(formattedQuery.status);
-  formattedQuery.draftsOnly = toBoolean(formattedQuery.draftsOnly);
-  return sanitizeObject({ object: formattedQuery }, false);
-}
+    query: UserLearningObjectQuery,
+  ): UserLearningObjectQuery {
+    const formattedQuery = { ...query };
+    formattedQuery.text = sanitizeText(formattedQuery.text) || null;
+    formattedQuery.status = toArray(formattedQuery.status);
+    formattedQuery.draftsOnly = toBoolean(formattedQuery.draftsOnly);
+    return sanitizeObject({ object: formattedQuery }, false);
+  }

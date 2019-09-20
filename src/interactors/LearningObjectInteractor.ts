@@ -49,6 +49,7 @@ namespace Gateways {
     LearningObjectsModule.resolveDependency(FileMetadataGateway);
 }
 
+
 export class LearningObjectInteractor {
   /**
    * Finds author's id by username.
@@ -609,9 +610,7 @@ export class LearningObjectInteractor {
     const { dataStore, children, username, parentName, userToken } = params;
 
     try {
-      const authorId = await UserServiceGateway.getInstance().findUser(
-        username,
-      );
+      const authorId = await UserServiceGateway.getInstance().findUser(username);
       const parentID = await dataStore.findLearningObject({
         authorId,
         name: parentName,
@@ -661,9 +660,7 @@ export class LearningObjectInteractor {
   }) {
     const { dataStore, childId, username, parentName, userToken } = params;
     try {
-      const authorId = await UserServiceGateway.getInstance().findUser(
-        username,
-      );
+      const authorId = await UserServiceGateway.getInstance().findUser(username);
       const parentID = await dataStore.findLearningObject({
         authorId,
         name: parentName,
