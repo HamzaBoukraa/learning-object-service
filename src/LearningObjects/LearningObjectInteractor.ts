@@ -806,7 +806,6 @@ export async function generateReleasableLearningObject({
     Gateways.fileMetadata().getAllFileMetadata({
       requester,
       learningObjectId: id,
-      filter: 'unreleased',
     }),
   ]);
   const releasableObject = new LearningObject({
@@ -870,7 +869,6 @@ export async function getLearningObjectById({
         Gateways.fileMetadata().getAllFileMetadata({
           requester,
           learningObjectId: id,
-          filter: 'unreleased',
         }),
       ]);
       learningObject.materials.files = files;
@@ -1223,7 +1221,6 @@ export async function updateReadme(params: {
         Gateways.fileMetadata().getAllFileMetadata({
           requester: params.requester,
           learningObjectId: id,
-          filter: 'unreleased',
         }),
       ]);
       object.materials.files = files;

@@ -77,7 +77,6 @@ export function initializePublic({
         dataStore,
         id,
         requester,
-        filter,
       });
       res.status(200).send(materials);
     } catch (e) {
