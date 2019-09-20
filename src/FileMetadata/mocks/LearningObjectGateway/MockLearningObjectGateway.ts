@@ -14,15 +14,7 @@ export class MockLearningObjectGateway implements LearningObjectGateway {
   }): Promise<LearningObjectSummary> {
     return Promise.resolve(this.stubs.learningObject);
   }
-  getReleasedFile(params: {
-    id: string;
-    fileId: string;
-  }): Promise<LearningObjectFile> {
-    return Promise.resolve(this.stubs.learningObjectFile);
-  }
-  getReleasedFiles(id: string): Promise<LearningObjectFile[]> {
-    return Promise.resolve([this.stubs.learningObjectFile]);
-  }
+
   updateObjectLastModifiedDate(id: string): Promise<void> {
     return Promise.resolve();
   }

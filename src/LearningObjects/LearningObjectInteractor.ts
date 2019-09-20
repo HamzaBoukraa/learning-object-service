@@ -308,67 +308,6 @@ async function getReleasedLearningObjectIdByAuthorAndName(params: {
 }
 
 /**
- * Retrieves released file metadata by id
- *
- * @export
- * @param {DataStore} dataStore [Driver for datastore]
- * @param {string} id [Id of the Learning Object]
- * @param {string} fileId [Id of the file]
- * @returns {Promise<LearningObject.Material.File>}
- */
-export async function getReleasedFile({
-  dataStore,
-  id,
-  fileId,
-}: {
-  dataStore: DataStore;
-  id: string;
-  fileId: string;
-}): Promise<LearningObject.Material.File> {
-  try {
-    const file = await dataStore.fetchReleasedFile({ id, fileId });
-    if (!file) {
-      throw new ResourceError(
-        `Requested file ${fileId} for Learning Object ${id} cannot be found.`,
-        ResourceErrorReason.NOT_FOUND,
-      );
-    }
-    return file;
-  } catch (e) {
-    handleError(e);
-  }
-}
-
-/**
- * Retrieves all released file metadata for a Learning Object
- *
- * @export
- * @param {DataStore} dataStore [Driver for datastore]
- * @param {string} id [Id of the Learning Object]
- * @returns {Promise<LearningObject.Material.File[]>}
- */
-export async function getReleasedFiles({
-  dataStore,
-  id,
-}: {
-  dataStore: DataStore;
-  id: string;
-}): Promise<LearningObject.Material.File[]> {
-  try {
-    const files = await dataStore.fetchReleasedFiles(id);
-    if (!files) {
-      throw new ResourceError(
-        `No files found for Learning Object ${id}.`,
-        ResourceErrorReason.NOT_FOUND,
-      );
-    }
-    return files;
-  } catch (e) {
-    handleError(e);
-  }
-}
-
-/**
  * Retrieves a summary of the working copy Learning Object
  *
  * The working copy can only be returned if

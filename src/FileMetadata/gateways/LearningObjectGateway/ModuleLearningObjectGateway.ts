@@ -37,29 +37,6 @@ export class ModuleLearningObjectGateway extends LearningObjectGateway {
   /**
    * @inheritdoc
    *
-   * Proxies `getReleasedFile` request to LearningObjectAdapter
-   *
-   * @memberof ModuleLearningObjectGateway
-   */
-  getReleasedFile(params: {
-    id: string;
-    fileId: string;
-  }): Promise<LearningObjectFile> {
-    return this.adapter.getReleasedFile(params);
-  }
-  /**
-   * @inheritdoc
-   *
-   * Proxies `getReleasedFiles` request to LearningObjectAdapter
-   *
-   * @memberof ModuleLearningObjectGateway
-   */
-  getReleasedFiles(id: string): Promise<LearningObjectFile[]> {
-    return this.adapter.getReleasedFiles(id);
-  }
-  /**
-   * @inheritdoc
-   *
    * Proxies `updateObjectLastModifiedDate` request to LearningObjectAdapter
    *
    * @param {string} id

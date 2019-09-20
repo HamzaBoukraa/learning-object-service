@@ -4,8 +4,6 @@ import { LibraryCommunicator } from '../../shared/interfaces/interfaces';
 import {
   getActiveLearningObjectSummary,
   getLearningObjectById,
-  getReleasedFile,
-  getReleasedFiles,
   getReleasedLearningObjectSummary,
   getWorkingLearningObjectSummary,
   updateLearningObject,
@@ -26,10 +24,7 @@ export class LearningObjectAdapter {
     private dataStore: DataStore,
     private library: LibraryCommunicator,
   ) {}
-  static open(
-    dataStore: DataStore,
-    library: LibraryCommunicator,
-  ) {
+  static open(dataStore: DataStore, library: LibraryCommunicator) {
     LearningObjectAdapter._instance = new LearningObjectAdapter(
       dataStore,
       library,
@@ -50,40 +45,7 @@ export class LearningObjectAdapter {
   async updateObjectLastModifiedDate(id: string): Promise<void> {
     return updateObjectLastModifiedDate({ dataStore: this.dataStore, id });
   }
-  /**
-   * Retrieves released file metadata by id
-   *
-   * @export
-   * @param {string} id [Id of the Learning Object]
-   * @param {string} fileId [Id of the file]
-   * @returns {Promise<LearningObject.Material.File>}
-   */
-  async getReleasedFile({
-    id,
-    fileId,
-  }: {
-    id: string;
-    fileId: string;
-  }): Promise<LearningObject.Material.File> {
-    return getReleasedFile({
-      dataStore: this.dataStore,
-      id,
-      fileId,
-    });
-  }
-  /**
-   * Retrieves all released file metadata for a Learning Object
-   *
-   * @export
-   * @param {string} id [Id of the Learning Object]
-   * @returns {Promise<LearningObject.Material.File>}
-   */
-  async getReleasedFiles(id: string): Promise<LearningObject.Material.File[]> {
-    return getReleasedFiles({
-      dataStore: this.dataStore,
-      id,
-    });
-  }
+
   /**
    * Retrieves a summary of the working copy Learning Object
    *
@@ -212,10 +174,10 @@ export class LearningObjectAdapter {
 
   // FIXME: Remove once downloads use id instead of Learning Object name in the URL
   async getLearningObjectByName(params: {
-    username: string,
-    learningObjectName: string,
-    userToken: UserToken,
-    revision: boolean,
+    username: string;
+    learningObjectName: string;
+    userToken: UserToken;
+    revision: boolean;
   }): Promise<LearningObject> {
     return getLearningObjectByName({
       dataStore: this.dataStore,
