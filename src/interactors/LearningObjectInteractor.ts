@@ -1,7 +1,11 @@
 // @ts-ignore
 import * as stopword from 'stopword';
 import { reportError } from '../shared/SentryConnector';
-import { sanitizeObject, sanitizeText } from '../shared/functions';
+import {
+  sanitizeObject,
+  sanitizeText,
+  mapLearningObjectToSummary,
+} from '../shared/functions';
 import {
   LearningObjectQuery,
   QueryCondition,
@@ -19,6 +23,7 @@ import {
   ServiceToken,
   LearningObjectState,
   CollectionAccessMap,
+  LearningObjectSummary,
 } from '../shared/types';
 import {
   getAccessGroupCollections,
@@ -368,7 +373,7 @@ export class LearningObjectInteractor {
   }: {
     dataStore: DataStore;
     ids: string[];
-  }): Promise<LearningObject[]> {
+  }): Promise<LearningObjectSummary[]> {
     try {
       let learningObjects = await dataStore.fetchMultipleObjects({
         ids,
@@ -378,7 +383,10 @@ export class LearningObjectInteractor {
           ...LearningObjectState.RELEASED,
         ],
       });
-      return learningObjects;
+      const learningObjectSummaries = learningObjects.map(learningObject => {
+        return mapLearningObjectToSummary(learningObject);
+      });
+      return learningObjectSummaries;
     } catch (e) {
       handleError(e);
     }

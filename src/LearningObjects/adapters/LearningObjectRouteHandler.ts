@@ -11,7 +11,7 @@ import * as LearningObjectInteractor from '../LearningObjectInteractor';
 import { LearningObject } from '../../shared/entity';
 import { LearningObjectFilter, MaterialsFilter } from '../typings';
 import { initializePrivate as initializeRevisionRoutes } from '../Revisions/RevisionRouteHandler';
-import { toBoolean } from '../../shared/functions';
+import { toBoolean, mapLearningObjectToSummary } from '../../shared/functions';
 import { LibraryDriver } from '../../drivers/LibraryDriver';
 
 /**
@@ -41,7 +41,7 @@ export function initializePublic({
         learningObjectName,
         revision,
       });
-      res.status(200).send(object.toPlainObject());
+      res.status(200).send(mapLearningObjectToSummary(object));
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
       res.status(code).json({ message });

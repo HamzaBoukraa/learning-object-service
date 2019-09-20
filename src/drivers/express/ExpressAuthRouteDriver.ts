@@ -49,9 +49,7 @@ export class ExpressAuthRouteDriver {
         // but still have Sentry realize that an error was thrown.
         try {
           throw new Error(
-            `${
-              req.user.username
-            } was retrieved from the token. Should be lowercase`,
+            `${req.user.username} was retrieved from the token. Should be lowercase`,
           );
         } catch (e) {
           reportError(e);
@@ -199,7 +197,7 @@ export class ExpressAuthRouteDriver {
           dataStore: this.dataStore,
           ids,
         });
-        res.status(200).send(objects.map(obj => obj.toPlainObject()));
+        res.status(200).send(objects);
       } catch (e) {
         const { code, message } = mapErrorToResponseData(e);
         res.status(code).json({ message });
