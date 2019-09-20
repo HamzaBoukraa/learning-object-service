@@ -1,13 +1,7 @@
-import {
-  Requester,
-  LearningObjectFile,
-} from '../../typings';
-import {
-  authorizeReadAccess,
-} from '../../../shared/AuthorizationManager';
+import { Requester, LearningObjectFile } from '../../typings';
+import { authorizeReadAccess } from '../../../shared/AuthorizationManager';
 import { handleError } from '../../../FileAccessIdentities/adapters/ExpressHTTPAdapter/handlers/shared';
 import { ResourceError, ResourceErrorReason } from '../../../shared/errors';
-import { id } from 'pdfkit/js/reference';
 import { FileMetadataModule } from '../../FileMetadataModule';
 import { FileMetaDatastore, FileManagerGateway } from '../../interfaces';
 import { LearningObjectGateway } from '../../../FileManager/interfaces';
@@ -78,7 +72,7 @@ export async function getFileMetadata({
     const file = await Drivers.datastore().fetchFileMeta(fileId);
     if (!file) {
       throw new ResourceError(
-        `Unable to get file metadata for file ${id}. File does not exist.`,
+        `Unable to get file metadata for file ${learningObjectId}. File does not exist.`,
         ResourceErrorReason.NOT_FOUND,
       );
     }
