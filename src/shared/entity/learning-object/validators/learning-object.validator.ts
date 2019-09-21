@@ -7,8 +7,8 @@ import { LearningOutcome } from '../../learning-outcome/learning-outcome';
 import { User } from '../../user/user';
 import {
   LearningObjectMetadataUpdates,
+  LearningObjectChildSummary,
   AuthorSummary,
-  LearningObjectSummary,
 } from '../../../types';
 import { ResourceError, ResourceErrorReason } from '../../../errors';
 
@@ -59,6 +59,23 @@ export function validateUpdates(object: LearningObjectMetadataUpdates) {
   }
 }
 
+function validateChildSummary(child: LearningObjectChildSummary) {
+  if (!child) {
+    throw new ResourceError(
+      LEARNING_OBJECT_ERRORS.INVALID_CHILDREN,
+      ResourceErrorReason.BAD_REQUEST,
+    );
+  } else {
+    validateCollection(child.collection);
+    if (child.contributors) {
+      validateContributors(child.contributors);
+    }
+    validateDescription(child.description);
+    validateLength(child.length);
+    validateName(child.name);
+    validateStatus(child.status);
+  }
+}
 /**
  * Validates object is a submittable Learning Object
  *
@@ -80,14 +97,16 @@ export function validateSubmittableLearningObject(
  * @param {LearningObject[]} children
  * @returns {(void | never)}
  */
-function validateChildren(children: LearningObjectSummary[]): void | never {
+function validateChildren(
+  children: LearningObjectChildSummary[],
+): void | never {
   if (!children) {
     throw new ResourceError(
       LEARNING_OBJECT_ERRORS.INVALID_CHILDREN,
       ResourceErrorReason.BAD_REQUEST,
     );
   }
-  children.forEach(validateLearningObject);
+  children.forEach(validateChildSummary);
 }
 
 /**

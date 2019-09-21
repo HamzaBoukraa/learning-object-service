@@ -171,12 +171,11 @@ export async function downloadSingleFile({
   let learningObject, fileMetaData;
   // To maintain existing functionality, service token is elevated to author to fetch unreleased file meta
   serviceToken.username = author;
-  learningObject = await Gateways.learningObjectGateway().getLearningObjectSummary(
-    {
-      id: learningObjectId,
-      requester: serviceToken as Requester,
-    },
-  );
+  learningObject = await getLearningObjectSummary({
+    learningObjectId,
+    requester: serviceToken as Requester,
+    filter,
+  });
 
   if (!learningObject) {
     throw new Error(
@@ -184,11 +183,26 @@ export async function downloadSingleFile({
     );
   }
 
-  fileMetaData = await Gateways.fileMetadataGateway().getFileMetadata({
-    requester: serviceToken as Requester,
-    learningObjectId: learningObjectId,
-    fileId,
-  });
+  if (!filter || filter === 'released') {
+    fileMetaData = await Gateways.fileMetadataGateway()
+      .getFileMetadata({
+        requester: serviceToken as Requester,
+        learningObjectId: learningObjectId,
+        id: fileId,
+        filter: 'released',
+      })
+      .catch(bypassFileNotFoundError(filter !== 'released'));
+  }
+
+  if ((!fileMetaData && fileId !== 'released') || filter === 'unreleased') {
+    // Collect unreleased file metadata from FileMetadata module
+    fileMetaData = await Gateways.fileMetadataGateway().getFileMetadata({
+      requester: serviceToken as Requester,
+      learningObjectId: learningObjectId,
+      id: fileId,
+      filter: 'unreleased',
+    });
+  }
 
   if (!fileMetaData) {
     return Promise.reject({
@@ -215,6 +229,46 @@ export async function downloadSingleFile({
     return { mimeType, stream, filename: fileMetaData.name };
   } else {
     throw { message: 'File not found', object: { name: learningObject.name } };
+  }
+}
+
+/**
+ * Gets Learning Object summary based on specified download filter
+ *
+ * If `released` is specified returns released Learning Object summary
+ * If `unreleased` is specifed returns working Learning Object summary
+ * Otherwise, the active Learning Object summary is returned
+ *
+ * @param {*} { requester: Requester, learningObjectId: string, filter: DownloadFilter }
+ * @returns {Promise<LearningObjectSummary>}
+ */
+function getLearningObjectSummary({
+  requester,
+  learningObjectId,
+  filter,
+}: {
+  requester: Requester;
+  learningObjectId: string;
+  filter: DownloadFilter;
+}): Promise<LearningObjectSummary> {
+  switch (filter) {
+    case 'released':
+      // Get released summary
+      return Gateways.learningObjectGateway().getReleasedLearningObjectSummary(
+        learningObjectId,
+      );
+    case 'unreleased':
+      // Get unreleased summary
+      return Gateways.learningObjectGateway().getWorkingLearningObjectSummary({
+        id: learningObjectId,
+        requester,
+      });
+    default:
+      // Get active summary
+      return Gateways.learningObjectGateway().getActiveLearningObjectSummary({
+        id: learningObjectId,
+        requester,
+      });
   }
 }
 

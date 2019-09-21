@@ -3,10 +3,30 @@ import { LearningObjectFilter } from '../../LearningObjects/typings';
 import { LearningObject } from '../../shared/entity';
 
 export abstract class LearningObjectGateway {
-  abstract getLearningObjectSummary(params: {
-    id: string;
+  /**
+   * Retrieves a summary of the working copy Learning Object
+   *
+   * @param {UserToken} requester [Object containing information about the requester]
+   * @param {string} id [Id of the Learning Object]
+   * @memberof LearningObjectGateway
+   * @returns {Promise<LearningObjectSummary>}
+   */
+  abstract getWorkingLearningObjectSummary(params: {
     requester: UserToken;
+    id: string;
   }): Promise<LearningObjectSummary>;
+
+  /**
+   * Retrieves a summary of the released copy Learning Object
+   *
+   * @param {string} id [Id of the Learning Object]
+   * @memberof LearningObjectGateway
+   * @returns {Promise<LearningObjectSummary>}
+   */
+  abstract getReleasedLearningObjectSummary(
+    id: string,
+  ): Promise<LearningObjectSummary>;
+
   /**
    * Retrieves a summary of the active copy Learning Object
    *
@@ -21,15 +41,15 @@ export abstract class LearningObjectGateway {
   }): Promise<LearningObjectSummary>;
 
   abstract getLearningObjectById(params: {
-    learningObjectId: string;
-    requester?: UserToken;
-    filter?: LearningObjectFilter;
+    learningObjectId: string,
+    requester?: UserToken,
+    filter?: LearningObjectFilter,
   }): Promise<LearningObject>;
 
   abstract getLearningObjectByName(params: {
-    username: string;
-    learningObjectName: string;
-    requester: UserToken;
-    revision: boolean;
+    username: string,
+    learningObjectName: string,
+    requester: UserToken,
+    revision: boolean,
   }): Promise<LearningObject>;
 }

@@ -4,13 +4,14 @@ import { LibraryCommunicator } from '../../shared/interfaces/interfaces';
 import {
   getActiveLearningObjectSummary,
   getLearningObjectById,
+  getReleasedFile,
+  getReleasedFiles,
   getReleasedLearningObjectSummary,
   getWorkingLearningObjectSummary,
   updateLearningObject,
   updateObjectLastModifiedDate,
   updateReadme,
   getLearningObjectByName,
-  getLearningObjectSummary,
 } from '../LearningObjectInteractor';
 import { LearningObjectSummary, UserToken } from '../../shared/types';
 import { LearningObjectFilter } from '../typings';
@@ -25,7 +26,10 @@ export class LearningObjectAdapter {
     private dataStore: DataStore,
     private library: LibraryCommunicator,
   ) {}
-  static open(dataStore: DataStore, library: LibraryCommunicator) {
+  static open(
+    dataStore: DataStore,
+    library: LibraryCommunicator,
+  ) {
     LearningObjectAdapter._instance = new LearningObjectAdapter(
       dataStore,
       library,
@@ -46,7 +50,60 @@ export class LearningObjectAdapter {
   async updateObjectLastModifiedDate(id: string): Promise<void> {
     return updateObjectLastModifiedDate({ dataStore: this.dataStore, id });
   }
-
+  /**
+   * Retrieves released file metadata by id
+   *
+   * @export
+   * @param {string} id [Id of the Learning Object]
+   * @param {string} fileId [Id of the file]
+   * @returns {Promise<LearningObject.Material.File>}
+   */
+  async getReleasedFile({
+    id,
+    fileId,
+  }: {
+    id: string;
+    fileId: string;
+  }): Promise<LearningObject.Material.File> {
+    return getReleasedFile({
+      dataStore: this.dataStore,
+      id,
+      fileId,
+    });
+  }
+  /**
+   * Retrieves all released file metadata for a Learning Object
+   *
+   * @export
+   * @param {string} id [Id of the Learning Object]
+   * @returns {Promise<LearningObject.Material.File>}
+   */
+  async getReleasedFiles(id: string): Promise<LearningObject.Material.File[]> {
+    return getReleasedFiles({
+      dataStore: this.dataStore,
+      id,
+    });
+  }
+  /**
+   * Retrieves a summary of the working copy Learning Object
+   *
+   * @param {UserToken} requester [Object containing information about the requester]
+   * @param {string} id [Id of the Learning Object]
+   * @returns {Promise<LearningObjectSummary>}
+   */
+  async getWorkingLearningObjectSummary({
+    requester,
+    id,
+  }: {
+    requester: UserToken;
+    id: string;
+  }): Promise<LearningObjectSummary> {
+    return getWorkingLearningObjectSummary({
+      dataStore: this.dataStore,
+      requester,
+      id,
+    });
+  }
   /**
    * Retrieves a summary of the working copy Learning Object
    *
@@ -98,15 +155,6 @@ export class LearningObjectAdapter {
     return getLearningObjectById({
       dataStore: this.dataStore,
       library: this.library,
-      ...params,
-    });
-  }
-  async getLearningObjectSummary(params: {
-    id: string;
-    requester: UserToken;
-  }): Promise<LearningObjectSummary> {
-    return getLearningObjectSummary({
-      dataStore: this.dataStore,
       ...params,
     });
   }
@@ -164,10 +212,10 @@ export class LearningObjectAdapter {
 
   // FIXME: Remove once downloads use id instead of Learning Object name in the URL
   async getLearningObjectByName(params: {
-    username: string;
-    learningObjectName: string;
-    userToken: UserToken;
-    revision: boolean;
+    username: string,
+    learningObjectName: string,
+    userToken: UserToken,
+    revision: boolean,
   }): Promise<LearningObject> {
     return getLearningObjectByName({
       dataStore: this.dataStore,

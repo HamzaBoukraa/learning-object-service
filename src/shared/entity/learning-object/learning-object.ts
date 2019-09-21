@@ -6,7 +6,7 @@ import { User } from '../user/user';
 import { LearningOutcome } from '../learning-outcome/learning-outcome';
 import { LEARNING_OBJECT_ERRORS } from './error-messages';
 import { EntityError } from '../errors/entity-error';
-import { LearningObjectSummary } from '../../types';
+import { LearningObjectSummary, LearningObjectChildSummary } from '../../types';
 import * as uuid from 'uuid/v4';
 
 const MIN_NAME_LENGTH = 3;
@@ -332,7 +332,7 @@ export class LearningObject {
     }
   }
 
-  children: LearningObjectSummary[] = [];
+  children: LearningObjectChildSummary[] = [];
 
   /**
    * Removes the object's i-th child.
@@ -340,7 +340,7 @@ export class LearningObject {
    *
    * @returns {LearningObjectChildSummary} the child object which was removed
    */
-  removeChild(index: number): LearningObjectSummary {
+  removeChild(index: number): LearningObjectChildSummary {
     return this.children.splice(index, 1)[0];
   }
 
@@ -458,7 +458,9 @@ export class LearningObject {
    * @param {string} resourceUriHost the base URI of the api
    * @memberof LearningObject
    */
-  attachResourceUris(resourceUriHost: string) {
+  attachResourceUris(
+    resourceUriHost: string,
+  ) {
     // attach additional properties
     if (!this.resourceUris) {
       this.resourceUris = {};

@@ -26,12 +26,12 @@ export interface AuthorSummary {
 }
 
 /**
- * An interface representation of the full learning object summary with the revision information included.
+ * An interface representation of the LearningObjectSummary type
  *
- * @exports
- * @interface LearningObjectSummary
+ * @export
+ * @interface LearningObjectChildSummary
  */
-export interface LearningObjectSummary {
+export interface LearningObjectChildSummary {
   /**
    * Unique identifier of the Learning Object
    */
@@ -80,6 +80,14 @@ export interface LearningObjectSummary {
    * Optional URIs that point to other pieces of the Learning Object (such as children and materials)
    */
   resourceUris?: LearningObjectResourceUris;
+}
+/**
+ * An interface representation of the full learning object summary with the revision information included.
+ *
+ * @exports
+ * @interface LearningObjectSummary
+ */
+export interface LearningObjectSummary extends LearningObjectChildSummary {
   /**
    * Flag indicating whether or not a Learning Object has a working copy with dissimilar properties
    */
@@ -91,4 +99,6 @@ export interface LearningObjectSummary {
   /**
    * Summary of Learning Objects that exist in this Learning Object's hierarchy
    */
+  children: LearningObjectChildSummary [];
 }
+

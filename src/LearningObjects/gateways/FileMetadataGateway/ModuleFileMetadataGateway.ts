@@ -33,6 +33,7 @@ export class ModuleFileMetadataGateway implements FileMetadataGateway {
   getAllFileMetadata(params: {
     requester: UserToken;
     learningObjectId: string;
+    filter: FileMetadataFilter;
   }): Promise<LearningObject.Material.File[]> {
     return FileMetadataModule.getAllFileMetadata(params);
   }

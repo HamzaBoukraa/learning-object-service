@@ -6,6 +6,7 @@ import {
   LearningObjectSummary,
   UserToken,
   VALID_LEARNING_OBJECT_UPDATES,
+  LearningObjectChildSummary,
 } from '../shared/types';
 import {
   handleError,
@@ -33,6 +34,7 @@ import * as PublishingService from './Publishing';
 import {
   mapLearningObjectToSummary,
   sanitizeLearningObjectName,
+  mapChildLearningObjectToSummary,
 } from '../shared/functions';
 import {
   FileMetadataGateway,
@@ -45,6 +47,7 @@ import { UserGateway } from './interfaces/UserGateway';
 import { validateUpdates } from '../shared/entity/learning-object/validators';
 import { UserServiceGateway } from '../shared/gateways/user-service/UserServiceGateway';
 import * as mongoHelperFunctions from '../shared/MongoDB/HelperFunctions';
+import { loadChildrenSummaries } from './Revisions/interactors/loadChildrenSummaries';
 
 const GATEWAY_API = process.env.GATEWAY_API;
 
@@ -308,6 +311,67 @@ async function getReleasedLearningObjectIdByAuthorAndName(params: {
 }
 
 /**
+ * Retrieves released file metadata by id
+ *
+ * @export
+ * @param {DataStore} dataStore [Driver for datastore]
+ * @param {string} id [Id of the Learning Object]
+ * @param {string} fileId [Id of the file]
+ * @returns {Promise<LearningObject.Material.File>}
+ */
+export async function getReleasedFile({
+  dataStore,
+  id,
+  fileId,
+}: {
+  dataStore: DataStore;
+  id: string;
+  fileId: string;
+}): Promise<LearningObject.Material.File> {
+  try {
+    const file = await dataStore.fetchReleasedFile({ id, fileId });
+    if (!file) {
+      throw new ResourceError(
+        `Requested file ${fileId} for Learning Object ${id} cannot be found.`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+    return file;
+  } catch (e) {
+    handleError(e);
+  }
+}
+
+/**
+ * Retrieves all released file metadata for a Learning Object
+ *
+ * @export
+ * @param {DataStore} dataStore [Driver for datastore]
+ * @param {string} id [Id of the Learning Object]
+ * @returns {Promise<LearningObject.Material.File[]>}
+ */
+export async function getReleasedFiles({
+  dataStore,
+  id,
+}: {
+  dataStore: DataStore;
+  id: string;
+}): Promise<LearningObject.Material.File[]> {
+  try {
+    const files = await dataStore.fetchReleasedFiles(id);
+    if (!files) {
+      throw new ResourceError(
+        `No files found for Learning Object ${id}.`,
+        ResourceErrorReason.NOT_FOUND,
+      );
+    }
+    return files;
+  } catch (e) {
+    handleError(e);
+  }
+}
+
+/**
  * Retrieves a summary of the working copy Learning Object
  *
  * The working copy can only be returned if
@@ -511,6 +575,7 @@ export async function getLearningObjectRevision({
       id: learningObjectId,
       revision: revisionId,
       author,
+      summary,
     });
     if (!learningObject) {
       throw new ResourceError(
@@ -806,6 +871,7 @@ export async function generateReleasableLearningObject({
     Gateways.fileMetadata().getAllFileMetadata({
       requester,
       learningObjectId: id,
+      filter: 'unreleased',
     }),
   ]);
   const releasableObject = new LearningObject({
@@ -851,8 +917,13 @@ export async function getLearningObjectById({
     if (!filter || filter === 'released') {
       learningObject = await dataStore.fetchReleasedLearningObject({
         id,
-        full: false,
+        full: true,
       });
+      if (learningObject) {
+        learningObject.materials.files.map(
+          appendFilePreviewUrls(learningObject),
+        );
+      }
     }
     if ((!learningObject && filter !== 'released') || filter === 'unreleased') {
       let files: LearningObject.Material.File[] = [];
@@ -869,6 +940,7 @@ export async function getLearningObjectById({
         Gateways.fileMetadata().getAllFileMetadata({
           requester,
           learningObjectId: id,
+          filter: 'unreleased',
         }),
       ]);
       learningObject.materials.files = files;
@@ -877,6 +949,21 @@ export async function getLearningObjectById({
     if (!learningObject) {
       throw learningObjectNotFound;
     }
+
+    learningObject.children = await loadChildrenSummaries({
+      requester,
+      learningObjectId: learningObject.id,
+      authorUsername: learningObject.author.username,
+      released: loadingReleased,
+    });
+
+    learningObject.metrics = await loadMetrics({
+      library,
+      id: learningObject.id,
+    }).catch(e => {
+      reportError(e);
+      return { saves: 0, downloads: 0 };
+    });
 
     learningObject.attachResourceUris(GATEWAY_API);
 
@@ -908,9 +995,10 @@ export async function getLearningObjectSummaryById({
   id: string;
   requester?: UserToken;
   filter?: LearningObjectFilter;
+  summary?: boolean;
 }): Promise<LearningObjectSummary> {
   try {
-    let learningObject: LearningObject;
+    let learningObject: Partial<LearningObject>;
     let loadingReleased = true;
     const learningObjectNotFound = new ResourceError(
       `No Learning Object ${id} exists.`,
@@ -923,21 +1011,29 @@ export async function getLearningObjectSummaryById({
       });
     }
     if ((!learningObject && filter !== 'released') || filter === 'unreleased') {
-      learningObject = await dataStore.fetchLearningObject({
+      const learningObjectSummary = await dataStore.fetchLearningObject({
         id,
         full: false,
       });
-      authorizeReadAccess({
-        requester,
-        learningObject,
-      });
+      if (!learningObjectSummary) {
+        throw learningObjectNotFound;
+      }
+      authorizeReadAccess({ requester, learningObject: learningObjectSummary });
       loadingReleased = false;
     }
-    if (learningObject) {
-      learningObject.attachResourceUris(GATEWAY_API);
-    } else {
+    if (!learningObject) {
       throw learningObjectNotFound;
     }
+
+    learningObject.children = await loadChildrenSummaries({
+      requester,
+      learningObjectId: learningObject.id,
+      authorUsername: learningObject.author.username,
+      released: loadingReleased,
+    });
+
+    learningObject.attachResourceUris(GATEWAY_API);
+
     return mapLearningObjectToSummary(learningObject);
   } catch (e) {
     handleError(e);
@@ -961,6 +1057,7 @@ async function loadWorkingParentsReleasedChildObjects({
 }): Promise<HierarchicalLearningObject[]> {
   let children = await dataStore.loadWorkingParentsReleasedChildObjects({
     id: parentId,
+    full: true,
   });
 
   return Promise.all(
@@ -972,38 +1069,6 @@ async function loadWorkingParentsReleasedChildObjects({
       return child;
     }),
   );
-}
-
-/**
- * Fetches a learning object from the objects collection and performs read access authorization
- * for internal use.
- * @param {string} id the Learning Object's id
- * @param {DataStore} dataStore
- * @param {UserToken} requester [Information about the user making the delete request]
- *
- */
-export async function getLearningObjectSummary({
-  id,
-  dataStore,
-  requester,
-}: {
-  id: string;
-  dataStore: DataStore;
-  requester: UserToken;
-}): Promise<LearningObjectSummary> {
-  const learningObject = await dataStore.fetchLearningObject({ id });
-  const learningObjectNotFound = new ResourceError(
-    `No Learning Object ${id} exists.`,
-    ResourceErrorReason.NOT_FOUND,
-  );
-  if (!learningObject) {
-    throw learningObjectNotFound;
-  }
-  if (learningObject.status !== LearningObject.Status.RELEASED) {
-    authorizeReadAccess({ learningObject, requester });
-  }
-
-  return mapLearningObjectToSummary(learningObject);
 }
 
 /**
@@ -1056,8 +1121,9 @@ export async function getLearningObjectChildrenSummariesById(
 ): Promise<LearningObjectSummary[]> {
   try {
     // handle authorization by attempting to retrieve and read the source object
-    await getLearningObjectSummaryById({
+    await getLearningObjectById({
       dataStore,
+      library: libraryDriver,
       id: objectId,
       requester,
     });
@@ -1083,8 +1149,6 @@ export async function getLearningObjectChildrenSummariesById(
     id: objectId,
     status: LearningObjectState.ALL,
   });
-
-  // FIXME: simplify this step if possible
   // array to return the children in correct order
   const children: LearningObjectSummary[] = [];
 
@@ -1095,8 +1159,7 @@ export async function getLearningObjectChildrenSummariesById(
   // order the children payload to the same order as the array of child ids stored in `childrenIDs`
   while (c < childrenOrder.length) {
     if (childrenIDs[cIDs] === childrenOrder[c].id) {
-      childrenOrder[c].attachResourceUris(GATEWAY_API);
-      children.push(mapLearningObjectToSummary(childrenOrder[c]));
+      children.push(childrenOrder[c].toSummary());
       cIDs++;
       c = 0;
     } else {
@@ -1256,6 +1319,7 @@ export async function updateReadme(params: {
         Gateways.fileMetadata().getAllFileMetadata({
           requester: params.requester,
           learningObjectId: id,
+          filter: 'unreleased',
         }),
       ]);
       object.materials.files = files;
@@ -1316,44 +1380,51 @@ export async function getMaterials({
   dataStore,
   id,
   requester,
+  filter,
 }: {
   dataStore: DataStore;
   id: string;
   requester: UserToken;
+  filter?: MaterialsFilter;
 }) {
   try {
     let materials: LearningObject.Material;
-    let files: LearningObject.Material.File[];
+    let workingFiles: LearningObject.Material.File[];
     const learningObject = await dataStore.fetchLearningObject({
       id,
       full: false,
     });
-    if (!learningObject) {
-      throw new ResourceError(
-        `Learning Object with id ${id} not Found`,
-        ResourceErrorReason.NOT_FOUND,
-      );
+    if (filter === 'unreleased') {
+      authorizeReadAccess({ learningObject, requester });
+      const materials$ = dataStore.getLearningObjectMaterials({ id });
+      const workingFiles$ = Gateways.fileMetadata().getAllFileMetadata({
+        requester,
+        learningObjectId: id,
+        filter: 'unreleased',
+      });
+      [materials, workingFiles] = await Promise.all([
+        materials$,
+        workingFiles$,
+      ]);
+    } else {
+      materials = await dataStore.fetchReleasedMaterials(id);
     }
-    authorizeReadAccess({ learningObject, requester });
-    const materials$ = dataStore.getLearningObjectMaterials({ id });
-    const files$ = Gateways.fileMetadata().getAllFileMetadata({
-      requester,
-      learningObjectId: id,
-    });
-    [materials, files] = await Promise.all([materials$, files$]);
+
     if (!materials) {
       throw new ResourceError(
         `No materials exists for Learning Object ${id}.`,
         ResourceErrorReason.NOT_FOUND,
       );
     }
-    if (files) {
-      materials.files = files;
+
+    if (workingFiles) {
+      materials.files = workingFiles;
     } else {
       materials.files = materials.files.map(
         appendFilePreviewUrls(learningObject),
       );
     }
+
     return materials;
   } catch (e) {
     handleError(e);

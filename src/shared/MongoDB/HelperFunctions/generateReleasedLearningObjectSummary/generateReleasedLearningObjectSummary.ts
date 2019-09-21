@@ -1,5 +1,12 @@
-import { LearningObjectDocument, LearningObjectSummary } from '../../../types';
-import { mapLearningObjectToSummary } from '../../../functions';
+import {
+  LearningObjectDocument,
+  LearningObjectSummary,
+  LearningObjectChildSummary,
+} from '../../../types';
+import {
+  mapChildLearningObjectToSummary,
+  mapLearningObjectToSummary,
+} from '../../../functions';
 import { UserServiceGateway } from '../../../gateways/user-service/UserServiceGateway';
 import * as mongoHelperFunctions from '..';
 /**
@@ -25,13 +32,22 @@ export async function generateReleasedLearningObjectSummary(
   let hasRevision = record.hasRevision;
   if (hasRevision == null) {
     hasRevision = await mongoHelperFunctions.learningObjectHasRevision(
-      record.cuid,
+      record._id,
     );
   }
+  let children: LearningObjectChildSummary[] = [];
+  if (record.children) {
+    children = (await mongoHelperFunctions.loadReleasedChildObjects({
+      id: record._id,
+      full: false,
+    })).map(mapChildLearningObjectToSummary);
+  }
+
   return mapLearningObjectToSummary({
     ...(record as any),
     author,
     contributors,
+    children,
     hasRevision,
     id: record._id,
   });

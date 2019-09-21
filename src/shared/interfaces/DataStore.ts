@@ -44,10 +44,12 @@ export interface DataStore
     learningObjectId: string;
   }): Promise<ChangeLogDocument>;
   fetchRecentChangelogBeforeDate(params: {
-    learningObjectId: string;
-    date: string;
+    learningObjectId: string,
+    date: string,
   }): Promise<ChangeLogDocument>;
-  deleteChangelog(params: { learningObjectId: string }): Promise<void>;
+  deleteChangelog(params: {
+    learningObjectId: string,
+  }): Promise<void>;
   /*
    * READ Operations
    */
@@ -94,13 +96,13 @@ export interface DataStore
   fetchLearningObjectRevision(params: {
     id: string;
     revision: number;
-    author?: User;
-  }): Promise<LearningObjectSummary>;
+    author?: User,
+    summary?: boolean,
+  }): Promise<LearningObject | LearningObjectSummary>;
   getUserObjects(username: string): Promise<string[]>;
   findLearningObject(params: {
     authorId: string;
     name: string;
-    status?: string;
   }): Promise<string>;
   findReleasedLearningObject(params: {
     authorId: string;
@@ -150,7 +152,7 @@ export interface DataStore
   loadWorkingParentsReleasedChildObjects(params: {
     id: string;
     full?: boolean;
-  }): Promise<LearningObjectSummary[]>;
+  }): Promise<LearningObject[]>;
   checkLearningObjectExistence(params: {
     learningObjectId: string;
     userId: string;
