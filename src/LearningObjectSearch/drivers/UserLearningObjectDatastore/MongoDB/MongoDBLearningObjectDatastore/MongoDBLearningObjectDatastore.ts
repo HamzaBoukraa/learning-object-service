@@ -16,8 +16,13 @@ import {
   generateReleasedLearningObjectSummary,
   calculateDocumentsToSkip,
   validatePageNumber,
+  generateLearningObject,
+  generateReleasedLearningObject,
   generateLearningObjectSummary,
+  bulkGenerateLearningObjects,
 } from '../../../../../shared/MongoDB/HelperFunctions';
+import { UserServiceGateway } from '../../../../../shared/gateways/user-service/UserServiceGateway';
+
 import { ReleasedLearningObjectDocument } from '../../../../../shared/types/learning-object-document';
 
 export class MongoDBLearningObjectDatastore
@@ -36,7 +41,7 @@ export class MongoDBLearningObjectDatastore
   async searchReleasedUserObjects(
     query: ReleasedUserLearningObjectSearchQuery,
     authorID: string,
-  ): Promise<LearningObjectSummary[]> {
+  ): Promise<LearningObject[]> {
     const { text } = query;
     const searchQuery: { [index: string]: any } = {
       authorID,
@@ -49,13 +54,16 @@ export class MongoDBLearningObjectDatastore
         { name: RegExp(sanitizeRegex(text), 'gi') },
       );
     }
+    const author = await UserServiceGateway.getInstance().queryUserById(
+      authorID,
+    );
     const resultSet = await this.db
       .collection(COLLECTIONS.LEARNING_OBJECTS)
       .find<ReleasedLearningObjectDocument>(searchQuery)
       .toArray();
     return Promise.all(
       resultSet.map(async learningObject =>
-        generateReleasedLearningObjectSummary(learningObject),
+        generateReleasedLearningObject(author, learningObject),
       ),
     );
   }
@@ -77,7 +85,7 @@ export class MongoDBLearningObjectDatastore
     query: UserLearningObjectSearchQuery,
     authorID: string,
     collectionRestrictions?: CollectionAccessMap,
-  ): Promise<LearningObjectSummary[]> {
+  ): Promise<LearningObject[]> {
     const { revision, status, text } = query;
 
     let orConditions: QueryCondition[] = [];
@@ -116,11 +124,17 @@ export class MongoDBLearningObjectDatastore
         total: [{ total: number }];
       }>(pipeline)
       .toArray();
-    const learningObjects: LearningObjectSummary[] = await Promise.all(
+    const author = await UserServiceGateway.getInstance().queryUserById(
+      authorID,
+    );
+    const learningObjects: LearningObject[] = await Promise.all(
       resultSet[0].objects.map(learningObject => {
         return learningObject.status === LearningObject.Status.RELEASED
-          ? generateReleasedLearningObjectSummary(learningObject)
-          : generateLearningObjectSummary(learningObject);
+          ? generateReleasedLearningObject(
+              author,
+              learningObject as ReleasedLearningObjectDocument,
+            )
+          : generateLearningObject(author, learningObject);
       }),
     );
 

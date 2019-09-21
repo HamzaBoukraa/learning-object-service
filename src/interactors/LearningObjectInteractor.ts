@@ -48,7 +48,7 @@ namespace Gateways {
   export const fileMetadata = () =>
     LearningObjectsModule.resolveDependency(FileMetadataGateway);
 }
-
+const GATEWAY_API = process.env.GATEWAY_API;
 
 export class LearningObjectInteractor {
   /**
@@ -385,6 +385,7 @@ export class LearningObjectInteractor {
         ],
       });
       const learningObjectSummaries = learningObjects.map(learningObject => {
+        learningObject.attachResourceUris(GATEWAY_API);
         return mapLearningObjectToSummary(learningObject);
       });
       return learningObjectSummaries;
@@ -610,7 +611,9 @@ export class LearningObjectInteractor {
     const { dataStore, children, username, parentName, userToken } = params;
 
     try {
-      const authorId = await UserServiceGateway.getInstance().findUser(username);
+      const authorId = await UserServiceGateway.getInstance().findUser(
+        username,
+      );
       const parentID = await dataStore.findLearningObject({
         authorId,
         name: parentName,
@@ -660,7 +663,9 @@ export class LearningObjectInteractor {
   }) {
     const { dataStore, childId, username, parentName, userToken } = params;
     try {
-      const authorId = await UserServiceGateway.getInstance().findUser(username);
+      const authorId = await UserServiceGateway.getInstance().findUser(
+        username,
+      );
       const parentID = await dataStore.findLearningObject({
         authorId,
         name: parentName,

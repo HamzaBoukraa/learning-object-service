@@ -25,6 +25,7 @@ import {
   sanitizeObject,
   toArray,
   toBoolean,
+  mapLearningObjectToSummary,
 } from '../../../shared/functions';
 import { LearningObjectSearch } from '../..';
 import { UserLearningObjectDatastore } from '../../interfaces/UserLearningObjectDatastore';
@@ -37,6 +38,7 @@ namespace Gateways {
   export const userLearningObjectDatastore = () =>
     LearningObjectSearch.resolveDependency(UserLearningObjectDatastore);
 }
+const GATEWAY_API = process.env.GATEWAY_API;
 
 /**
  * Performs a search on the specified user's Learning Objects.
@@ -75,7 +77,7 @@ export async function searchUsersObjects({
       text,
       status,
     };
-
+    let learningObjects: LearningObject[];
     if (draftsOnly) {
       if (!isAuthor && !isPrivileged) {
         throw new ResourceError(
@@ -114,10 +116,15 @@ export async function searchUsersObjects({
     }
 
     if (!isAuthor && !isPrivileged) {
-      return await Gateways.userLearningObjectDatastore().searchReleasedUserObjects(
+      learningObjects = await Gateways.userLearningObjectDatastore().searchReleasedUserObjects(
         searchQuery,
         user.id,
       );
+      const releasedLearningObjectSummaries = learningObjects.map(objects => {
+        objects.attachResourceUris(GATEWAY_API);
+        return mapLearningObjectToSummary(objects);
+      });
+      return releasedLearningObjectSummaries;
     }
 
     let collectionAccessMap: CollectionAccessMap;
@@ -139,11 +146,16 @@ export async function searchUsersObjects({
       }
     }
 
-    return await Gateways.userLearningObjectDatastore().searchAllUserObjects(
+    learningObjects = await Gateways.userLearningObjectDatastore().searchAllUserObjects(
       searchQuery,
       user.id,
       collectionAccessMap,
     );
+    const learningObjectSummaries = learningObjects.map(objects => {
+      objects.attachResourceUris(GATEWAY_API);
+      return mapLearningObjectToSummary(objects);
+    });
+    return learningObjectSummaries;
   } catch (e) {
     handleError(e);
   }
@@ -158,11 +170,11 @@ export async function searchUsersObjects({
  * @returns {UserLearningObjectQuery}
  */
 function formatUserLearningObjectQuery(
-    query: UserLearningObjectQuery,
-  ): UserLearningObjectQuery {
-    const formattedQuery = { ...query };
-    formattedQuery.text = sanitizeText(formattedQuery.text) || null;
-    formattedQuery.status = toArray(formattedQuery.status);
-    formattedQuery.draftsOnly = toBoolean(formattedQuery.draftsOnly);
-    return sanitizeObject({ object: formattedQuery }, false);
-  }
+  query: UserLearningObjectQuery,
+): UserLearningObjectQuery {
+  const formattedQuery = { ...query };
+  formattedQuery.text = sanitizeText(formattedQuery.text) || null;
+  formattedQuery.status = toArray(formattedQuery.status);
+  formattedQuery.draftsOnly = toBoolean(formattedQuery.draftsOnly);
+  return sanitizeObject({ object: formattedQuery }, false);
+}
