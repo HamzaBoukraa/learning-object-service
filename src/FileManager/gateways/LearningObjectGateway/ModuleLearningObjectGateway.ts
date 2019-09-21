@@ -11,27 +11,11 @@ export class ModuleLearningObjectGateway implements LearningObjectGateway {
   /**
    * @inheritdoc
    *
-   * Proxies `getWorkingLearningObjectSummary` request to LearningObjectAdapter
-   *
-   * @memberof ModuleLearningObjectGateway
-   */
-  getWorkingLearningObjectSummary(params: {
-    requester: Requester;
-    id: string;
-  }): Promise<LearningObjectSummary> {
-    return this.adapter.getWorkingLearningObjectSummary(params);
-  }
-
-  /**
-   * @inheritdoc
-   *
    * Proxies `getReleasedLearningObjectSummary` request to LearningObjectAdapter
    *
    * @memberof ModuleLearningObjectGateway
    */
-  getReleasedLearningObjectSummary(
-    id: string,
-  ): Promise<LearningObjectSummary> {
+  getReleasedLearningObjectSummary(id: string): Promise<LearningObjectSummary> {
     return this.adapter.getReleasedLearningObjectSummary(id);
   }
 
@@ -49,11 +33,18 @@ export class ModuleLearningObjectGateway implements LearningObjectGateway {
     return this.adapter.getActiveLearningObjectSummary(params);
   }
 
+  getLearningObjectSummary(params: {
+    id: string;
+    requester: UserToken;
+  }): Promise<LearningObjectSummary> {
+    return this.adapter.getLearningObjectSummary(params);
+  }
+
   getLearningObjectByName(params: {
-    username: string,
-    learningObjectName: string,
-    requester: UserToken,
-    revision: boolean,
+    username: string;
+    learningObjectName: string;
+    requester: UserToken;
+    revision: boolean;
   }): Promise<LearningObject> {
     return this.adapter.getLearningObjectByName({
       username: params.username,
@@ -64,9 +55,9 @@ export class ModuleLearningObjectGateway implements LearningObjectGateway {
   }
 
   getLearningObjectById(params: {
-    learningObjectId: string,
-    requester?: UserToken,
-    filter?: LearningObjectFilter,
+    learningObjectId: string;
+    requester?: UserToken;
+    filter?: LearningObjectFilter;
   }): Promise<LearningObject> {
     return this.adapter.getLearningObjectById({
       id: params.learningObjectId,

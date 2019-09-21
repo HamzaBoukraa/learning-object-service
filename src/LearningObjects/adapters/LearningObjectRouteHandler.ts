@@ -11,7 +11,7 @@ import * as LearningObjectInteractor from '../LearningObjectInteractor';
 import { LearningObject } from '../../shared/entity';
 import { LearningObjectFilter, MaterialsFilter } from '../typings';
 import { initializePrivate as initializeRevisionRoutes } from '../Revisions/RevisionRouteHandler';
-import { toBoolean } from '../../shared/functions';
+import { toBoolean, mapLearningObjectToSummary } from '../../shared/functions';
 import { LibraryDriver } from '../../drivers/LibraryDriver';
 
 /**
@@ -41,14 +41,14 @@ export function initializePublic({
         learningObjectName,
         revision,
       });
-      res.status(200).send(object.toPlainObject());
+      res.status(200).send(mapLearningObjectToSummary(object));
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
       res.status(code).json({ message });
     }
   };
   /**
-   * Retrieve a learning object by a specified ID
+   * Retrieve a learning object summary by a specified ID
    * @param {Request} req
    * @param {Response} res
    */
@@ -58,20 +58,10 @@ export function initializePublic({
       const filter: LearningObjectFilter = req.query.status;
       const summary: boolean = toBoolean(req.query.summary);
       const id: string = req.params.learningObjectId;
-      let learningObject: Partial<LearningObject> | LearningObjectSummary;
-      if (summary) {
-        learningObject = await LearningObjectInteractor.getLearningObjectSummaryById(
-          { dataStore, id, requester, filter },
-        );
-      } else {
-        learningObject = (await LearningObjectInteractor.getLearningObjectById({
-          dataStore,
-          library,
-          id,
-          requester,
-          filter,
-        })).toPlainObject();
-      }
+      const learningObject = await LearningObjectInteractor.getLearningObjectSummaryById(
+        { dataStore, id, requester, filter },
+      );
+
       res.status(200).send(learningObject);
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
@@ -87,7 +77,6 @@ export function initializePublic({
         dataStore,
         id,
         requester,
-        filter,
       });
       res.status(200).send(materials);
     } catch (e) {
@@ -95,7 +84,10 @@ export function initializePublic({
       res.status(code).json({ message });
     }
   };
-  const getLearningObjectChildrenSummaries = async (req: Request, res: Response) => {
+  const getLearningObjectChildrenSummaries = async (
+    req: Request,
+    res: Response,
+  ) => {
     try {
       const learningObjectId = req.params.id;
       const children = await LearningObjectInteractor.getLearningObjectChildrenSummariesById(
