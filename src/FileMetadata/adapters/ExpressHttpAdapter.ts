@@ -1,5 +1,4 @@
 import { Router, Request, Response } from 'express';
-import * as Interactor from '../Interactor';
 import {
   Requester,
   FileMetadataFilter,
@@ -7,6 +6,13 @@ import {
   FileMetadataUpdate,
 } from '../typings';
 import { mapErrorToResponseData } from '../../shared/errors';
+import {
+  getAllFileMetadata,
+  addFileMetadata,
+  getFileMetadata,
+  updateFileMetadata,
+  deleteFileMeta,
+} from '../interactors';
 
 /**
  * Builds the Express Router for this module
@@ -39,10 +45,9 @@ async function getAllFiles(req: Request, res: Response) {
     const requester: Requester = req.user;
     const filter: FileMetadataFilter = req.query.status;
     const learningObjectId: string = req.params.loId;
-    const files = await Interactor.getAllFileMetadata({
+    const files = await getAllFileMetadata({
       requester,
       learningObjectId,
-      filter,
     });
     res.send({ files });
   } catch (e) {
@@ -62,7 +67,7 @@ async function addFiles(req: Request, res: Response) {
     const requester: Requester = req.user;
     const learningObjectId: string = req.params.loId;
     const files: FileMetadata[] = mapToFileMeta(req.body.fileMeta);
-    const fileMetadata = await Interactor.addFileMeta({
+    const fileMetadata = await addFileMetadata({
       requester,
       learningObjectId,
       files,
@@ -87,11 +92,10 @@ async function getFile(req: Request, res: Response) {
     const learningObjectId: string = req.params.loId;
     const fileId: string = req.params.fileId;
 
-    const file = await Interactor.getFileMetadata({
+    const file = await getFileMetadata({
       requester,
       learningObjectId,
-      filter,
-      id: fileId,
+      fileId,
     });
     res.send(file);
   } catch (e) {
@@ -112,7 +116,7 @@ async function updateFile(req: Request, res: Response) {
     const learningObjectId: string = req.params.loId;
     const fileId: string = req.params.fileId;
     const updates: FileMetadataUpdate = req.body;
-    await Interactor.updateFileMeta({
+    await updateFileMetadata({
       id: fileId,
       requester,
       learningObjectId,
@@ -136,7 +140,7 @@ async function deleteFile(req: Request, res: Response) {
     const requester: Requester = req.user;
     const learningObjectId: string = req.params.loId;
     const fileId: string = req.params.fileId;
-    await Interactor.deleteFileMeta({
+    await deleteFileMeta({
       id: fileId,
       requester,
       learningObjectId,

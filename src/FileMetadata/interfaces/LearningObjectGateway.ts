@@ -15,39 +15,15 @@ export abstract class LearningObjectGateway {
   abstract getReleasedLearningObjectSummary(
     id: string,
   ): Promise<LearningObjectSummary>;
-  /**
-   * Retrieves a summary of the working copy Learning Object
-   *
-   * @param {Requester} requester [Object containing information about the requester]
-   * @param {string} id [Id of the Learning Object]
-   * @memberof LearningObjectGateway
-   * @returns {Promise<LearningObjectSummary>}
-   */
-  abstract getWorkingLearningObjectSummary(params: {
-    requester: Requester;
-    id: string;
-  }): Promise<LearningObjectSummary>;
-  /**
-   * Retrieves released Learning Object file metadata by id
-   *
-   * @param {string} id [Id of the Learning Object]
-   * @param {string} fileId [Id of the file]
-   * @memberof LearningObjectGateway
-   * @returns {Promise<LearningObjectFile>}
-   */
-  abstract getReleasedFile(params: {
-    id: string;
-    fileId: string;
-  }): Promise<LearningObjectFile>;
-  /**
-   * Retrieves all released Learning Object file metadata
-   *
-   * @param {string} id [Id of the Learning Object]
-   * @memberof LearningObjectGateway
-   * @returns {Promise<LearningObjectFile[]>}
-   */
-  abstract getReleasedFiles(id: string): Promise<LearningObjectFile[]>;
 
+  /**
+   *
+   * @param learningObjectId The mongo Id of a learning object in the database
+   */
+  abstract getLearningObjectSummary(params: {
+    id: string;
+    requester: Requester;
+  }): Promise<LearningObjectSummary>;
   /**
    * Sends request to update Learning Object's last modified date
    *

@@ -3,7 +3,10 @@ import { LearningObjectSummary, UserToken } from '../../shared/types';
 import { ResourceError, ResourceErrorReason } from '../../shared/errors';
 
 export interface LearningObjectGateway {
-  getLearningObject(learningObjectId: string, requester: UserToken): Promise<LearningObjectSummary>;
+  getLearningObject(
+    learningObjectId: string,
+    requester: UserToken,
+  ): Promise<LearningObjectSummary>;
 }
 
 export class ModuleLearningObjectGateway implements LearningObjectGateway {
@@ -24,19 +27,17 @@ export class ModuleLearningObjectGateway implements LearningObjectGateway {
    * @returns {Promise<LearningObjectSummary>}
    * @memberof ModuleLearningObjectGateway
    */
-  async getLearningObject(learningObjectId: string, requester: UserToken): Promise<LearningObjectSummary> {
+  async getLearningObject(
+    learningObjectId: string,
+    requester: UserToken,
+  ): Promise<LearningObjectSummary> {
     try {
-      let learningObject: LearningObjectSummary = await this.adapter.getReleasedLearningObjectSummary(learningObjectId);
+      let learningObject: LearningObjectSummary = await this.adapter.getLearningObjectSummary(
+        { id: learningObjectId, requester },
+      );
       return learningObject;
     } catch (error) {
-      if (error instanceof ResourceError && error.name === ResourceErrorReason.NOT_FOUND) {
-        // handle the not found error and check for a working-copy
-        return await this.adapter.getWorkingLearningObjectSummary({ id: learningObjectId, requester });
-      } else {
-        throw error;
-      }
+      throw error;
     }
   }
-
 }
-

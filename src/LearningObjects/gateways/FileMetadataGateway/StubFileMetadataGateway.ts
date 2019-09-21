@@ -15,7 +15,6 @@ export class StubFileMetadataGateway implements FileMetadataGateway {
   getAllFileMetadata(params: {
     requester: UserToken;
     learningObjectId: string;
-    filter: FileMetadataFilter;
   }): Promise<LearningObject.Material.File[]> {
     return Promise.resolve([]);
   }

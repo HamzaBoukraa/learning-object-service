@@ -32,7 +32,6 @@ export abstract class FileMetadataGateway {
   abstract getAllFileMetadata(params: {
     requester: UserToken;
     learningObjectId: string;
-    filter: FileMetadataFilter;
   }): Promise<LearningObject.Material.File[]>;
 
   /**

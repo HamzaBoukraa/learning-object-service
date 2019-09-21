@@ -21,41 +21,14 @@ export class ModuleLearningObjectGateway extends LearningObjectGateway {
   }
 
   /**
-   * @inheritdoc
    *
-   * Proxies `getWorkingLearningObjectSummary` request to LearningObjectAdapter
-   *
-   * @memberof ModuleLearningObjectGateway
+   * @param learningObjectId The mongo Id of a learning object in the database
    */
-  getWorkingLearningObjectSummary(params: {
+  getLearningObjectSummary(params: {
+    id: string;
     requester: Requester;
-    id: string;
   }): Promise<LearningObjectSummary> {
-    return this.adapter.getWorkingLearningObjectSummary(params);
-  }
-
-  /**
-   * @inheritdoc
-   *
-   * Proxies `getReleasedFile` request to LearningObjectAdapter
-   *
-   * @memberof ModuleLearningObjectGateway
-   */
-  getReleasedFile(params: {
-    id: string;
-    fileId: string;
-  }): Promise<LearningObjectFile> {
-    return this.adapter.getReleasedFile(params);
-  }
-  /**
-   * @inheritdoc
-   *
-   * Proxies `getReleasedFiles` request to LearningObjectAdapter
-   *
-   * @memberof ModuleLearningObjectGateway
-   */
-  getReleasedFiles(id: string): Promise<LearningObjectFile[]> {
-    return this.adapter.getReleasedFiles(id);
+    return this.adapter.getLearningObjectSummary(params);
   }
   /**
    * @inheritdoc
