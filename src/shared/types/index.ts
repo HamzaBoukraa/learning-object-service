@@ -16,7 +16,6 @@ import { ServiceToken } from './service-token';
 import {
   LearningObjectSummary,
   AuthorSummary,
-  LearningObjectChildSummary,
 } from './learning-object-summary';
 import { AccessGroup } from './access-groups';
 import {
@@ -43,7 +42,6 @@ export {
   LearningOutcomeDocument,
   StandardOutcomeDocument,
   LearningObjectSummary,
-  LearningObjectChildSummary,
   AuthorSummary,
   AccessGroup,
   UserLearningObjectQuery,

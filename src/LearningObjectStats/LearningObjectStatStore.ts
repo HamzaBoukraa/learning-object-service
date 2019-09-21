@@ -27,7 +27,10 @@ export class LearningObjectStatStore implements LearningObjectStatDatastore {
    */
   async fetchStats(params: { query: any }): Promise<LearningObjectStats> {
     const releasedCount$ = this.db
-      .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .find({
+        status: LearningObject.Status.RELEASED,
+      })
       .count();
 
     // Perform aggregation on Learning Objects collection to get length distribution, total number of objects, and number of released objects

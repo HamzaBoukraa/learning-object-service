@@ -1,29 +1,27 @@
-import {
-    LearningObject,
-    LearningOutcome,
-} from '../../entity';
+import { LearningObject, LearningOutcome } from '../../entity';
 
 export interface LearningObjectSearchDocument {
-    author: {
-      name: string,
-      username: string,
-      email: string,
-      organization: string,
-    };
-    collection: string;
-    contributors: {
-      name: string,
-      username: string,
-      email: string,
-      organization: string,
-    }[];
-    date: string;
-    description: string;
-    id: string;
-    length: string;
-    levels: string[];
+  author: {
     name: string;
-    outcomes: LearningOutcome[];
-    revision: number;
-    status: LearningObject.Status;
+    username: string;
+    email: string;
+    organization: string;
+  };
+  collection: string;
+  contributors: {
+    name: string;
+    username: string;
+    email: string;
+    organization: string;
+  }[];
+  date: string;
+  description: string;
+  cuid: string;
+  id: string;
+  length: string;
+  levels: string[];
+  name: string;
+  outcomes: LearningOutcome[];
+  revision: number;
+  status: LearningObject.Status;
 }

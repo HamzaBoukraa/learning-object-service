@@ -1,5 +1,16 @@
-import { DataStore, ParentLearningObjectQuery } from '../../../shared/interfaces/DataStore';
-import { UserToken, LearningObjectState, LearningObjectSummary } from '../../../shared/types';
+import {
+  DataStore,
+  ParentLearningObjectQuery,
+} from '../../../shared/interfaces/DataStore';
+import {
+  UserToken,
+  LearningObjectState,
+  LearningObjectSummary,
+} from '../../../shared/types';
+import { mapLearningObjectToSummary } from '../../../shared/functions';
+import { LearningObject } from '../../../shared/entity';
+
+const GATEWAY_API = process.env.GATEWAY_API;
 
 /**
  * Fetches the parents of a Learning Object.
@@ -20,24 +31,48 @@ export async function fetchParents(params: {
   let hasFullAccess = false;
   let collectionsWithAccess: string[] = [];
   let requestedByAuthor = false;
-  const author = await dataStore.fetchLearningObjectAuthorUsername(learningObjectID);
+  let learningObjects: LearningObject[];
+  const author = await dataStore.fetchLearningObjectAuthorUsername(
+    learningObjectID,
+  );
 
   if (userToken) {
     hasFullAccess = hasFullReviewStageAccess(userToken.accessGroups || []);
-    collectionsWithAccess = identifyCollectionAccess(userToken.accessGroups || []);
+    collectionsWithAccess = identifyCollectionAccess(
+      userToken.accessGroups || [],
+    );
     requestedByAuthor = userToken.username === author;
   }
 
-  if (!requestedByAuthor && !hasFullAccess && collectionsWithAccess.length < 1) {
-    return await dataStore.fetchReleasedParentObjects({
+  if (
+    !requestedByAuthor &&
+    !hasFullAccess &&
+    collectionsWithAccess.length < 1
+  ) {
+    learningObjects = await dataStore.fetchReleasedParentObjects({
       query: { id: learningObjectID },
       full: false,
     });
+    const releasedObjects = learningObjects.map(objects => {
+      objects.attachResourceUris(GATEWAY_API);
+      return mapLearningObjectToSummary(objects);
+    });
+    return releasedObjects;
   } else {
-    return await params.dataStore.fetchParentObjects({
-      query: buildQuery(learningObjectID, requestedByAuthor, hasFullAccess, collectionsWithAccess),
+    learningObjects = await params.dataStore.fetchParentObjects({
+      query: buildQuery(
+        learningObjectID,
+        requestedByAuthor,
+        hasFullAccess,
+        collectionsWithAccess,
+      ),
       full: false,
     });
+    const workingObjects = learningObjects.map(objects => {
+      objects.attachResourceUris(GATEWAY_API);
+      return mapLearningObjectToSummary(objects);
+    });
+    return workingObjects;
   }
 }
 
@@ -68,18 +103,29 @@ export async function isTopLevelLearningObject(params: {
  * Learning Objects in.
  * @returns {ParentLearningObjectQuery} the query to pass to the DataStore.
  */
-function buildQuery(learningObjectID: string, requestedByAuthor: boolean, hasFullAccess: boolean, collectionsWithAccess: string[]) {
+function buildQuery(
+  learningObjectID: string,
+  requestedByAuthor: boolean,
+  hasFullAccess: boolean,
+  collectionsWithAccess: string[],
+) {
   const query: ParentLearningObjectQuery = {
     id: learningObjectID,
   };
   // IF they are the author THEN return all parent objects
   if (requestedByAuthor) {
     query.status = LearningObjectState.ALL;
-  // IF they have review stage access THEN return parent objects in review and released
+    // IF they have review stage access THEN return parent objects in review and released
   } else if (hasFullAccess) {
-    query.status = [...LearningObjectState.IN_REVIEW, ...LearningObjectState.RELEASED];
+    query.status = [
+      ...LearningObjectState.IN_REVIEW,
+      ...LearningObjectState.RELEASED,
+    ];
   } else if (collectionsWithAccess.length > 0) {
-    query.status = [...LearningObjectState.IN_REVIEW, ...LearningObjectState.RELEASED];
+    query.status = [
+      ...LearningObjectState.IN_REVIEW,
+      ...LearningObjectState.RELEASED,
+    ];
     query.collections = collectionsWithAccess;
   }
   return query;
@@ -106,7 +152,9 @@ function hasFullReviewStageAccess(accessGroups: string[]): boolean {
  * @returns {string[]} the collections a user has privileged access to.
  */
 function identifyCollectionAccess(accessGroups: string[]): string[] {
-  const collectionAccessGroups = accessGroups.filter(role => role.includes('@'));
+  const collectionAccessGroups = accessGroups.filter(role =>
+    role.includes('@'),
+  );
   const collections = [];
   for (const group of collectionAccessGroups) {
     const access = group.split('@');
@@ -114,4 +162,3 @@ function identifyCollectionAccess(accessGroups: string[]): string[] {
   }
   return collections;
 }
-

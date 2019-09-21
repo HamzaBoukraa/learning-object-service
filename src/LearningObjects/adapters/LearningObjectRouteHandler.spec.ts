@@ -92,8 +92,13 @@ describe('LearningObjectRouteHandler', () => {
 
   describe(`GET /learning-objects/:id/materials/all`, () => {
     it('should return the materials for the specified learning object', done => {
+      const adminToken = generateToken({
+        ...stubs.userToken,
+        accessGroups: ['admin'],
+      });
       request
         .get(`/learning-objects/${stubs.learningObject.id}/materials/all`)
+        .set('Authorization', `Bearer ${adminToken}`)
         .expect(200)
         .then(res => {
           expect(res.text).toContain('url');

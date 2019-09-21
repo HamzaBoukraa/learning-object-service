@@ -12,8 +12,8 @@ import {
   deleteAllFileMetadata,
   getFileMetadata,
   getAllFileMetadata,
-  getFilePreviewUrl,
-} from './Interactor';
+  getFilePreviewURL,
+} from './interactors';
 import { ExpressHttpAdapter } from './adapters';
 import {
   ModuleLearningObjectGateway,
@@ -48,7 +48,7 @@ export class FileMetadataModule extends ExpressServiceModule {
     unreleased?: boolean;
     file: LearningObjectFile;
   }) =>
-    getFilePreviewUrl({
+    getFilePreviewURL({
       authorUsername,
       learningObjectId,
       unreleased,
