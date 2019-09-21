@@ -2,9 +2,9 @@ import { LearningObject } from '../../../shared/entity';
 import {
   UserToken,
   AuthorSummary,
-  LearningObjectSummary,
+  LearningObjectChildSummary,
 } from '../../../shared/types';
-const learningObjectSummaryStub: LearningObjectSummary = {
+const learningObjectChildSummaryStub: LearningObjectChildSummary = {
   id: 'test_id',
   author: {
     id: 'test_author-id',
@@ -18,8 +18,6 @@ const learningObjectSummaryStub: LearningObjectSummary = {
   description: 'test_description',
   length: 'test_length',
   name: 'test_name',
-  hasRevision: false,
-  revision: 0,
   status: 'test_status',
 };
 
@@ -57,13 +55,13 @@ describe('When buildHierarchicalLearningObject is called', () => {
       const hierarchy = await buildHierarchicalLearningObject(
         {
           ...fullLearningObjectStub,
-          children: [learningObjectSummaryStub],
+          children: [learningObjectChildSummaryStub],
         } as LearningObject,
         requesterStub,
       );
       const expected = {
-        ...fullLearningObjectStub,
-        children: [fullLearningObjectStub],
+          ...fullLearningObjectStub,
+          children: [ fullLearningObjectStub ],
       };
       expect(hierarchy).toEqual(expected);
     });

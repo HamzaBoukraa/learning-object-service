@@ -1,11 +1,7 @@
 // @ts-ignore
 import * as stopword from 'stopword';
 import { reportError } from '../shared/SentryConnector';
-import {
-  sanitizeObject,
-  sanitizeText,
-  mapLearningObjectToSummary,
-} from '../shared/functions';
+import { sanitizeObject, sanitizeText } from '../shared/functions';
 import {
   LearningObjectQuery,
   QueryCondition,
@@ -23,7 +19,6 @@ import {
   ServiceToken,
   LearningObjectState,
   CollectionAccessMap,
-  LearningObjectSummary,
 } from '../shared/types';
 import {
   getAccessGroupCollections,
@@ -48,7 +43,7 @@ namespace Gateways {
   export const fileMetadata = () =>
     LearningObjectsModule.resolveDependency(FileMetadataGateway);
 }
-const GATEWAY_API = process.env.GATEWAY_API;
+
 
 export class LearningObjectInteractor {
   /**
@@ -374,7 +369,8 @@ export class LearningObjectInteractor {
   }: {
     dataStore: DataStore;
     ids: string[];
-  }): Promise<LearningObjectSummary[]> {
+    full?: boolean;
+  }): Promise<LearningObject[]> {
     try {
       let learningObjects = await dataStore.fetchMultipleObjects({
         ids,
@@ -384,11 +380,7 @@ export class LearningObjectInteractor {
           ...LearningObjectState.RELEASED,
         ],
       });
-      const learningObjectSummaries = learningObjects.map(learningObject => {
-        learningObject.attachResourceUris(GATEWAY_API);
-        return mapLearningObjectToSummary(learningObject);
-      });
-      return learningObjectSummaries;
+      return learningObjects;
     } catch (e) {
       handleError(e);
     }
@@ -611,9 +603,7 @@ export class LearningObjectInteractor {
     const { dataStore, children, username, parentName, userToken } = params;
 
     try {
-      const authorId = await UserServiceGateway.getInstance().findUser(
-        username,
-      );
+      const authorId = await UserServiceGateway.getInstance().findUser(username);
       const parentID = await dataStore.findLearningObject({
         authorId,
         name: parentName,
@@ -663,9 +653,7 @@ export class LearningObjectInteractor {
   }) {
     const { dataStore, childId, username, parentName, userToken } = params;
     try {
-      const authorId = await UserServiceGateway.getInstance().findUser(
-        username,
-      );
+      const authorId = await UserServiceGateway.getInstance().findUser(username);
       const parentID = await dataStore.findLearningObject({
         authorId,
         name: parentName,

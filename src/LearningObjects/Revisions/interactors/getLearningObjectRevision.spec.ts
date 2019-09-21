@@ -14,17 +14,29 @@ beforeAll(() => {
   ];
   LearningObjectsModule.initialize();
 });
+describe('Given a summary param of false', () => {
+  it('Should return a revision of type LearningObject', async () => {
+    await expect(getLearningObjectRevision({
+      dataStore,
+      requester: stubs.userToken,
+      learningObjectId: stubs.learningObject.id,
+      revisionId: 1,
+      username: stubs.user.username,
+      summary: false,
+    }))
+      .resolves.toHaveProperty('materials');
+  });
+});
 describe('Given a summary param of true', () => {
   it('Should return a revision of type LearningObjectSummary', async () => {
-    await expect(
-      getLearningObjectRevision({
-        dataStore,
-        requester: stubs.userToken,
-        learningObjectId: stubs.learningObject.id,
-        revisionId: 1,
-        username: stubs.user.username,
-        summary: true,
-      }),
-    ).resolves.not.toHaveProperty('materials');
+    await expect(getLearningObjectRevision({
+      dataStore,
+      requester: stubs.userToken,
+      learningObjectId: stubs.learningObject.id,
+      revisionId: 1,
+      username: stubs.user.username,
+      summary: true,
+    }))
+      .resolves.not.toHaveProperty('materials');
   });
 });

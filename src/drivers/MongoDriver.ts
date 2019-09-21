@@ -97,7 +97,7 @@ export class MongoDriver implements DataStore {
    */
   async fetchReleasedMaterials(id: string): Promise<LearningObject.Material> {
     const doc = await this.db
-      .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
       .findOne({ _id: id }, { projection: { _id: 0, materials: 1 } });
     if (doc) {
       return doc.materials;
@@ -189,16 +189,25 @@ export class MongoDriver implements DataStore {
     id,
     revision,
     author,
+    summary,
   }: {
     id: string;
     revision: number;
     author?: User;
-  }): Promise<LearningObjectSummary> {
-    const doc = await this.db
-      .collection(COLLECTIONS.LEARNING_OBJECTS)
-      .findOne({ _id: id, revision });
+    summary?: boolean;
+  }): Promise<LearningObject | LearningObjectSummary> {
+    const doc =
+      (await this.db
+        .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
+        .findOne({ _id: id, revision })) ||
+      (await this.db
+        .collection(COLLECTIONS.LEARNING_OBJECTS)
+        .findOne({ _id: id, revision }));
     if (doc) {
-      return mongoHelperFunctions.generateLearningObjectSummary(doc);
+      if (summary) {
+        return mongoHelperFunctions.generateLearningObjectSummary(doc);
+      }
+      return mongoHelperFunctions.generateLearningObject(author, doc);
     }
     return null;
   }
@@ -253,7 +262,7 @@ export class MongoDriver implements DataStore {
       object,
     );
     await this.db
-      .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
       .replaceOne({ _id: object.id }, doc, { upsert: true });
   }
 
@@ -359,28 +368,22 @@ export class MongoDriver implements DataStore {
   }: {
     id: string;
     full?: boolean;
-  }): Promise<LearningObjectSummary[]> {
-    // TODO: add type for resued learning object queries.
-    const findChildren = {
-      $graphLookup: {
-        from: COLLECTIONS.LEARNING_OBJECTS,
-        startWith: '$children',
-        connectFromField: 'children',
-        connectToField: '_id',
-        as: 'objects',
-        maxDepth: 0,
-        restrictSearchWithMatch: { status: LearningObject.Status.RELEASED },
-      },
-    };
+  }): Promise<LearningObject[]> {
     const docs = await this.db
       .collection<{ objects: LearningObjectDocument[] }>(
         COLLECTIONS.LEARNING_OBJECTS,
       )
       .aggregate([
+        { $match: { _id: id } },
         {
-          $match: { _id: id, status: { $ne: LearningObject.Status.RELEASED } },
+          // grab the released children of learning objects
+          $lookup: {
+            from: COLLECTIONS.RELEASED_LEARNING_OBJECTS,
+            localField: 'children',
+            foreignField: '_id',
+            as: 'objects',
+          },
         },
-        findChildren,
         // only return children.
         { $project: { _id: 0, objects: '$objects' } },
       ])
@@ -637,7 +640,29 @@ export class MongoDriver implements DataStore {
 
     const parents = await this.db
       .collection(COLLECTIONS.LEARNING_OBJECTS)
-      .find(matchQuery)
+      .aggregate([
+        { $match: matchQuery },
+        {
+          $lookup: {
+            from: 'released-objects',
+            localField: '_id',
+            foreignField: '_id',
+            as: 'releasedCopy',
+          },
+        },
+        {
+          $project: {
+            returnable: {
+              $cond: {
+                if: { $gt: [{ $size: '$releasedCopy' }, 0] },
+                then: { $arrayElemAt: ['$releasedCopy', 0] },
+                else: '$$ROOT',
+              },
+            },
+          },
+        },
+        { $replaceRoot: { newRoot: '$returnable' } },
+      ])
       .toArray();
 
     return mongoHelperFunctions.bulkGenerateLearningObjects(parents);
@@ -883,19 +908,18 @@ export class MongoDriver implements DataStore {
   async findLearningObject(params: {
     authorId: string;
     name: string;
-    status?: string;
+    collection?: COLLECTIONS.RELEASED_LEARNING_OBJECTS;
   }): Promise<string> {
-    const { authorId, name, status } = params;
-    const query: { [x: string]: any } = {
-      authorID: authorId,
-      name,
-    };
-    if (status) {
-      query.status = status;
-    }
+    const { authorId, name, collection } = params;
     const doc = await this.db
-      .collection(COLLECTIONS.LEARNING_OBJECTS)
-      .findOne<LearningObjectDocument>(query, { projection: { _id: 1 } });
+      .collection(collection || COLLECTIONS.LEARNING_OBJECTS)
+      .findOne<LearningObjectDocument>(
+        {
+          authorID: authorId,
+          name,
+        },
+        { projection: { _id: 1 } },
+      );
     if (doc) {
       return doc._id;
     }
@@ -918,7 +942,7 @@ export class MongoDriver implements DataStore {
   }): Promise<string> {
     return this.findLearningObject({
       ...params,
-      status: LearningObject.Status.RELEASED,
+      collection: COLLECTIONS.RELEASED_LEARNING_OBJECTS,
     });
   }
 
@@ -956,7 +980,7 @@ export class MongoDriver implements DataStore {
    * Fetch the learning object document associated with the given id.
    * FIXME:clean this query up after files collection is created
    *
-   *
+   * The query fetches the specified released learning object and sorts the files by date (newest first)
    * If the query fails, the function throws a 404 Resource Error.
    * @async
    *
@@ -986,6 +1010,7 @@ export class MongoDriver implements DataStore {
   /**
    * Fetches released object through aggregation pipeline by performing a match based on the object id, finding the duplicate object in the
    * working collection, then checking the status of the duplicate to determine whether or not to set hasRevision to true or false.
+   * FIXME x 1000: clean this query up after files collection is created
    *
    * The query fetches the specified released learning object and sorts the files by date (newest first)
    * If the query fails, the function throws a 404 Resource Error.
@@ -1000,29 +1025,54 @@ export class MongoDriver implements DataStore {
     id: string;
     full?: boolean;
   }): Promise<LearningObject> {
-    // TODO: create a query to pull learning object files from file db
     const results = await this.db
-      .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
       .aggregate([
         {
-          // match learning object by params.id and released status's initially
-          $match: {
-            _id: params.id,
-            status: { $eq: LearningObject.Status.RELEASED },
+          // match learning object by params.id
+          $match: { _id: params.id },
+        },
+        {
+          $unwind: {
+            path: '$materials.files',
+            preserveNullAndEmptyArrays: true,
           },
         },
-        // perform a lookup and store the working copy of the object under the "workingCopy" array.
+        { $sort: { 'materials.files.date': -1 } },
+        { $addFields: { orderedFiles: '' } },
         {
-          $graphLookup: {
+          $group: {
+            _id: '$_id',
+            cuid: { $first: '$cuid' },
+            orderedFiles: {
+              $push: '$materials.files',
+            },
+            authorID: { $first: '$authorID' },
+            name: { $first: '$name' },
+            date: { $first: '$date' },
+            length: { $first: '$length' },
+            levels: { $first: '$levels' },
+            goals: { $first: '$goals' },
+            outcomes: { $first: '$outcomes' },
+            materials: { $first: '$materials' },
+            contributors: { $first: '$contributors' },
+            collection: { $first: '$collection' },
+            status: { $first: '$status' },
+            description: { $first: '$description' },
+            revision: { $first: '$revision' },
+          },
+        },
+        // perform a lookup and store the working copy of the object under the "Copy" array.
+        {
+          $lookup: {
             from: 'objects',
-            startWith: '$cuid',
-            connectFromField: 'cuid',
-            connectToField: 'cuid',
-            as: 'workingCopy',
+            localField: '_id',
+            foreignField: '_id',
+            as: 'copy',
           },
         },
         // unwind copy from array to object so we can check certain fields.
-        { $unwind: { path: '$workingCopy', preserveNullAndEmptyArrays: true } },
+        { $unwind: { path: '$copy', preserveNullAndEmptyArrays: true } },
         // if the copys' status differs from the released objects status, then the object has a revision.
         // so we add a the field 'hasRevision' with a true value
         {
@@ -1032,7 +1082,7 @@ export class MongoDriver implements DataStore {
             },
           },
         },
-        { $project: { workingCopy: 0 } },
+        { $project: { copy: 0 } },
       ])
       .toArray();
     if (results && results[0]) {

@@ -17,7 +17,7 @@ export class ModuleFileMetadataGateway implements FileMetadataGateway {
   getFileMetadata(params: {
     requester: Requester;
     learningObjectId: string;
-    fileId: string;
+    id: string;
     filter: FileMetadataFilter;
   }): Promise<LearningObject.Material.File> {
     return FileMetadataModule.getFileMetadata(params);

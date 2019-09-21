@@ -29,14 +29,12 @@ export async function generateLearningObject(
   let outcomes: LearningOutcome[] = [];
   let children: LearningObject[] = [];
   // Load Contributors
-  if (record.contributors) {
-    if (record.contributors.length) {
-      contributors = await Promise.all(
-        record.contributors.map(userId =>
-          UserServiceGateway.getInstance().queryUserById(userId),
-        ),
-      );
-    }
+  if (record.contributors && record.contributors.length) {
+    contributors = await Promise.all(
+      record.contributors.map(userId =>
+        UserServiceGateway.getInstance().queryUserById(userId),
+      ),
+    );
   }
   // If full object requested, load up non-summary properties
   if (full) {
@@ -51,7 +49,6 @@ export async function generateLearningObject(
     author,
     name: record.name,
     date: record.date,
-    cuid: record.cuid,
     length: record.length as LearningObject.Length,
     levels: record.levels as LearningObject.Level[],
     collection: record.collection,

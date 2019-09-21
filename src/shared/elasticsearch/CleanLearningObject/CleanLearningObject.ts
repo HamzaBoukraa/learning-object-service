@@ -8,11 +8,9 @@ import { LearningObjectSearchDocument } from '../types/LearningObjectSearchDocum
  * are loaded to their correct values (no foreign key IDs)
  */
 export function cleanLearningObjectSearchDocument(
-  learningObject: LearningObject,
+    learningObject: LearningObject,
 ): LearningObjectSearchDocument {
-  const learningObjectSearchDocument = formatLearningObjectSearchDocument(
-    learningObject,
-  );
+  const learningObjectSearchDocument = formatLearningObjectSearchDocument(learningObject);
   return learningObjectSearchDocument;
 }
 
@@ -35,7 +33,6 @@ function formatLearningObjectSearchDocument(
     })),
     date: learningObject.date,
     description: learningObject.description,
-    cuid: learningObject.cuid,
     id: learningObject.id,
     length: learningObject.length,
     levels: learningObject.levels,

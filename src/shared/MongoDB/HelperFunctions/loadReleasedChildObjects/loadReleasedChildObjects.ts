@@ -18,6 +18,7 @@ export async function loadReleasedChildObjects(params: {
 }): Promise<LearningObject[]> {
   return mongoHelperFunctions.loadChildObjects({
     ...params,
+    collection: COLLECTIONS.RELEASED_LEARNING_OBJECTS,
     status: [LearningObject.Status.RELEASED],
   });
 }

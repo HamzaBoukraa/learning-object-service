@@ -1,22 +1,9 @@
 import { DataStore } from '../../../shared/interfaces/DataStore';
-import {
-  LearningObjectState,
-  LearningObjectSummary,
-  UserToken,
-} from '../../../shared/types';
+import { LearningObjectState, LearningObjectSummary, UserToken } from '../../../shared/types';
 import { LearningObject, User } from '../../../shared/entity';
-import {
-  handleError,
-  ResourceError,
-  ResourceErrorReason,
-} from '../../../shared/errors';
+import { handleError, ResourceError, ResourceErrorReason } from '../../../shared/errors';
 import { validateRequest } from './tasks/validateRequest';
-import {
-  authorizeRequest,
-  hasReadAccessByCollection,
-  requesterIsAdminOrEditor,
-  requesterIsAuthor,
-} from '../../../shared/AuthorizationManager';
+import { authorizeRequest, hasReadAccessByCollection, requesterIsAdminOrEditor, requesterIsAuthor } from '../../../shared/AuthorizationManager';
 import { LearningObjectsModule } from '../../LearningObjectsModule';
 import { UserGateway } from '../../interfaces/UserGateway';
 
@@ -55,7 +42,7 @@ export async function getLearningObjectRevision({
   learningObjectId: string;
   revisionId: number;
   username: string;
-  summary?: boolean;
+  summary?: boolean,
 }): Promise<LearningObject | LearningObjectSummary> {
   try {
     if (revisionId === 0) {
@@ -80,6 +67,7 @@ export async function getLearningObjectRevision({
       id: learningObjectId,
       revision: revisionId,
       author,
+      summary,
     });
     if (!learningObject) {
       throw new ResourceError(
@@ -88,8 +76,7 @@ export async function getLearningObjectRevision({
       );
     }
 
-    const releasedAccess =
-      learningObject.status === LearningObject.Status.RELEASED;
+    const releasedAccess = learningObject.status === LearningObject.Status.RELEASED;
     const authorAccess = requesterIsAuthor({
       requester,
       authorUsername: learningObject.author.username,

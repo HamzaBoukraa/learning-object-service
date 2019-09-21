@@ -39,7 +39,6 @@ export async function documentLearningObject(
     status: object.status,
     children: object.children.map(obj => obj.id),
     revision: object.revision,
-    cuid: object.cuid,
   };
 
   return doc;

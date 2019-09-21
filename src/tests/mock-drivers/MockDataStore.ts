@@ -44,7 +44,7 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
   loadWorkingParentsReleasedChildObjects(params: {
     id: string;
     full?: boolean;
-  }): Promise<LearningObjectSummary[]> {
+  }): Promise<LearningObject[]> {
     if (params.id !== this.stubs.learningObjectChild.id) {
       return Promise.resolve([this.stubs.learningObjectChild]);
     }
@@ -89,10 +89,16 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
   fetchLearningObjectRevision(params: {
     id: string;
     revision: number;
-    author?: User;
-  }): Promise<LearningObjectSummary> {
+    author?: User,
+    summary?: boolean,
+  }): Promise<LearningObject | LearningObjectSummary> {
+    if (params.summary) {
+      return Promise.resolve(
+        mapLearningObjectToSummary(this.stubs.learningObject),
+      );
+    }
     return Promise.resolve(
-      mapLearningObjectToSummary(this.stubs.learningObject),
+      this.stubs.learningObject,
     );
   }
 
@@ -183,14 +189,16 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
     }
   }
 
-  deleteChangelog(params: { learningObjectId: string }): Promise<void> {
+  deleteChangelog(params: {
+    learningObjectId: string,
+  }): Promise<void> {
     return this.stubChangelogDataStore.deleteChangelog(params);
   }
 
   fetchAllChangelogs(params: {
     learningObjectId: string;
   }): Promise<ChangeLogDocument[]> {
-    return this.stubChangelogDataStore.fetchAllChangelogs(params);
+   return this.stubChangelogDataStore.fetchAllChangelogs(params);
   }
 
   fetchChangelogsBeforeDate(params: {
@@ -410,8 +418,8 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
     return Promise.resolve(this.stubs.submission);
   }
   hasSubmission(params: {
-    learningObjectId: string;
-    collection: string;
+    learningObjectId: string,
+    collection: string,
   }): Promise<boolean> {
     return Promise.resolve(true);
   }

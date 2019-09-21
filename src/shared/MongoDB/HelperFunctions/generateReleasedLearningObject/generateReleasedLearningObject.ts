@@ -55,7 +55,6 @@ export async function generateReleasedLearningObject(
   }
   learningObject = new LearningObject({
     id: record._id,
-    cuid: record.cuid,
     author,
     name: record.name,
     date: record.date,

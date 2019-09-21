@@ -18,6 +18,7 @@ export abstract class FileMetadataGateway {
   abstract getFileMetadata(params: {
     requester: Requester;
     learningObjectId: string;
-    fileId: string;
+    id: string;
+    filter: FileMetadataFilter;
   }): Promise<LearningObjectFile>;
 }

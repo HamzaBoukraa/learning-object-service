@@ -2,144 +2,127 @@ import { Db } from 'mongodb';
 import { UserLearningObjectDatastore } from '../../../../interfaces/UserLearningObjectDatastore';
 import { MongoConnector } from '../../../../../shared/MongoDB/MongoConnector';
 import {
-  ReleasedUserLearningObjectSearchQuery,
-  LearningObjectSummary,
-  UserLearningObjectSearchQuery,
-  CollectionAccessMap,
-  LearningObjectDocument,
+    ReleasedUserLearningObjectSearchQuery,
+    LearningObjectSummary,
+    UserLearningObjectSearchQuery,
+    CollectionAccessMap,
+    LearningObjectDocument,
 } from '../../../../../shared/types';
 import { QueryCondition } from '../../../../../shared/interfaces/DataStore';
 import { COLLECTIONS } from '../../../../../drivers/MongoDriver';
 import { LearningObject } from '../../../../../shared/entity';
 import { sanitizeRegex } from '../../../../../shared/functions/sanitizeRegex/sanitizeRegex';
 import {
-  generateReleasedLearningObjectSummary,
-  calculateDocumentsToSkip,
-  validatePageNumber,
-  generateLearningObject,
-  generateReleasedLearningObject,
-  generateLearningObjectSummary,
-  bulkGenerateLearningObjects,
+    generateReleasedLearningObjectSummary,
+    calculateDocumentsToSkip,
+    validatePageNumber,
+    generateLearningObjectSummary,
 } from '../../../../../shared/MongoDB/HelperFunctions';
-import { UserServiceGateway } from '../../../../../shared/gateways/user-service/UserServiceGateway';
 
-import { ReleasedLearningObjectDocument } from '../../../../../shared/types/learning-object-document';
-
-export class MongoDBLearningObjectDatastore
-  implements UserLearningObjectDatastore {
-  private db: Db;
-  constructor() {
-    this.db = MongoConnector.client().db('onion');
-  }
-
-  /**
-   * @inheritdoc
-   *
-   * @param {LearningObjectQuery} query query containing  for field searching
-   * @param {string} username username of an author in CLARK
-   */
-  async searchReleasedUserObjects(
-    query: ReleasedUserLearningObjectSearchQuery,
-    authorID: string,
-  ): Promise<LearningObject[]> {
-    const { text } = query;
-    const searchQuery: { [index: string]: any } = {
-      authorID,
-      status: LearningObject.Status.RELEASED,
-    };
-    if (text) {
-      searchQuery.$or = searchQuery.$or || [];
-      searchQuery.$or.push(
-        { $text: { $search: text } },
-        { name: RegExp(sanitizeRegex(text), 'gi') },
-      );
-    }
-    const author = await UserServiceGateway.getInstance().queryUserById(
-      authorID,
-    );
-    const resultSet = await this.db
-      .collection(COLLECTIONS.LEARNING_OBJECTS)
-      .find<ReleasedLearningObjectDocument>(searchQuery)
-      .toArray();
-    return Promise.all(
-      resultSet.map(async learningObject =>
-        generateReleasedLearningObject(author, learningObject),
-      ),
-    );
-  }
-
-  /**
-   * Performs aggregation to join the users objects from the released and working collection before
-   * searching and filtering based on collectionRescticions, text or explicitly defined statuses. If collectionRestrictions are
-   * Defined, orConditions with statuses are built and the actual status filter will not be used or applied. This only occurs for reviewers
-   * and curators. Text searches are are not affected by collection restructions or the 'orConditions'.
-   *
-   * @param {UserLearningObjectSearchQuery} query query containing status and text for field searching
-   * @param {string} username username of an author in CLARK
-   * @param {QueryCondition} conditions Array containing a reviewer or curators requested collections.
-   *
-   * @returns {LearningObjectSummary[]}
-   * @memberof MongoDriver
-   */
-  async searchAllUserObjects(
-    query: UserLearningObjectSearchQuery,
-    authorID: string,
-    collectionRestrictions?: CollectionAccessMap,
-  ): Promise<LearningObject[]> {
-    const { revision, status, text } = query;
-
-    let orConditions: QueryCondition[] = [];
-    if (collectionRestrictions) {
-      const conditions: QueryCondition[] = this.buildCollectionQueryConditions(
-        collectionRestrictions,
-      );
-      orConditions = this.buildQueryConditions(conditions);
+export class MongoDBLearningObjectDatastore implements UserLearningObjectDatastore {
+    private db: Db;
+    constructor() {
+        this.db = MongoConnector.client().db('onion');
     }
 
-    const searchQuery: { [index: string]: any } = {
-      authorID,
-    };
-    if (revision != null) {
-      searchQuery.revision = revision;
-    }
-    if (text) {
-      searchQuery.$or = searchQuery.$or || [];
-      searchQuery.$or.push(
-        { $text: { $search: text } },
-        { name: RegExp(sanitizeRegex(text), 'gi') },
-      );
+    /**
+     * @inheritdoc
+     *
+     * @param {LearningObjectQuery} query query containing  for field searching
+     * @param {string} username username of an author in CLARK
+     */
+    async searchReleasedUserObjects(
+        query: ReleasedUserLearningObjectSearchQuery,
+        authorID: string,
+    ): Promise<LearningObjectSummary[]> {
+        const { text } = query;
+        const searchQuery: { [index: string]: any } = {
+            authorID,
+        };
+        if (text) {
+            searchQuery.$or = searchQuery.$or || [];
+            searchQuery.$or.push(
+            { $text: { $search: text } },
+            { name: RegExp(sanitizeRegex(text), 'gi') },
+            );
+        }
+        const resultSet = await this.db
+            .collection(COLLECTIONS.RELEASED_LEARNING_OBJECTS)
+            .find<LearningObjectDocument>(searchQuery)
+            .toArray();
+        return Promise.all(
+            resultSet.map(async learningObject =>
+            generateReleasedLearningObjectSummary(learningObject),
+            ),
+        );
     }
 
-    const pipeline = this.buildAllObjectsPipeline({
-      searchQuery,
-      orConditions,
-      status,
-      hasText: !!text,
-    });
-    console.log(pipeline[0].$match.$or);
-    const resultSet = await this.db
-      .collection(COLLECTIONS.LEARNING_OBJECTS)
-      .aggregate<{
-        objects: LearningObjectDocument[];
-        total: [{ total: number }];
-      }>(pipeline)
-      .toArray();
-    const author = await UserServiceGateway.getInstance().queryUserById(
-      authorID,
-    );
-    const learningObjects: LearningObject[] = await Promise.all(
-      resultSet[0].objects.map(learningObject => {
-        return learningObject.status === LearningObject.Status.RELEASED
-          ? generateReleasedLearningObject(
-              author,
-              learningObject as ReleasedLearningObjectDocument,
-            )
-          : generateLearningObject(author, learningObject);
-      }),
-    );
+    /**
+     * Performs aggregation to join the users objects from the released and working collection before
+     * searching and filtering based on collectionRescticions, text or explicitly defined statuses. If collectionRestrictions are
+     * Defined, orConditions with statuses are built and the actual status filter will not be used or applied. This only occurs for reviewers
+     * and curators. Text searches are are not affected by collection restructions or the 'orConditions'.
+     *
+     * @param {UserLearningObjectSearchQuery} query query containing status and text for field searching
+     * @param {string} username username of an author in CLARK
+     * @param {QueryCondition} conditions Array containing a reviewer or curators requested collections.
+     *
+     * @returns {LearningObjectSummary[]}
+     * @memberof MongoDriver
+     */
+    async searchAllUserObjects(
+        query: UserLearningObjectSearchQuery,
+        authorID: string,
+        collectionRestrictions?: CollectionAccessMap,
+    ): Promise<LearningObjectSummary[]> {
+        const { revision, status, text } = query;
 
-    return learningObjects;
-  }
+        let orConditions: QueryCondition[] = [];
+        if (collectionRestrictions) {
+          const conditions: QueryCondition[] = this.buildCollectionQueryConditions(
+            collectionRestrictions,
+          );
+          orConditions = this.buildQueryConditions(conditions);
+        }
+
+        const searchQuery: { [index: string]: any } = {
+        authorID,
+        };
+        if (revision != null) {
+          searchQuery.revision = revision;
+        }
+        if (text) {
+          searchQuery.$or = searchQuery.$or || [];
+          searchQuery.$or.push(
+            { $text: { $search: text } },
+            { name: RegExp(sanitizeRegex(text), 'gi') },
+          );
+        }
+
+        const pipeline = this.buildAllObjectsPipeline({
+        searchQuery,
+        orConditions,
+        status,
+        hasText: !!text,
+        });
+
+        const resultSet = await this.db
+        .collection(COLLECTIONS.LEARNING_OBJECTS)
+        .aggregate<{
+            objects: LearningObjectDocument[];
+            total: [{ total: number }];
+        }>(pipeline)
+        .toArray();
+        const learningObjects: LearningObjectSummary[] = await Promise.all(
+        resultSet[0].objects.map(learningObject => {
+            return learningObject.status === LearningObject.Status.RELEASED
+            ? generateReleasedLearningObjectSummary(learningObject)
+            : generateLearningObjectSummary(learningObject);
+        }),
+        );
+
+        return learningObjects;
+    }
 
   /**
    * Constructs aggregation pipeline for searching all objects with pagination and sorting By matching learning obejcts based on
@@ -187,12 +170,82 @@ export class MongoDBLearningObjectDatastore
     if (orConditions && orConditions.length) {
       matcher.$or = matcher.$or || [];
       matcher.$or.push(...orConditions);
-      // tslint:disable-next-line: no-unused-expression
-      status ? matcher.$or.push({ status: { $in: status } }) : null;
-    } else {
-      matcher.status = { $in: status };
     }
+
     const match = { $match: { ...matcher } };
+    // Unwind the modified array to the root level at the end of every stage.
+    const unWindArrayToRoot = [
+      { $unwind: '$objects' },
+      {
+        $replaceRoot: { newRoot: '$objects' },
+      },
+    ];
+    // perform a lookup on the Released collection by ID and assign two variables 'Object_id' and 'object_status' that will be used in this stage
+    const joinCollections = {
+      $lookup: {
+        from: COLLECTIONS.RELEASED_LEARNING_OBJECTS,
+        let: { object_id: '$_id', object_status: '$status' },
+        pipeline: [
+          {
+            // match Released objects to working objects ID.
+            $match: {
+              $expr: { $and: [{ $eq: ['$_id', '$$object_id'] }] },
+            },
+          },
+          {
+            // add the hasRevision Field to learning objects, set false if the working copy is released, true otherwise.
+            $addFields: {
+              hasRevision: {
+                $cond: [
+                  {
+                    $ne: ['$$object_status', LearningObject.Status.RELEASED],
+                  },
+                  true,
+                  false,
+                ],
+              },
+            },
+          },
+        ],
+        // store all released objects under a 'released' array.
+        as: 'released',
+      },
+    };
+
+    // create a large filtered collection of learning objects with duplicates.
+    const createSuperSet = [
+      { $unwind: { path: '$released', preserveNullAndEmptyArrays: true } },
+      {
+        // group released objects and with their working copy if one exists.
+        $group: {
+          _id: 1,
+          objects: { $push: '$$ROOT' },
+          released: { $push: '$released' },
+        },
+      },
+      {
+        // combine objects and released arrays and store under 'objects[]'.
+        $project: {
+          objects: { $concatArrays: ['$objects', '$released'] },
+        },
+      },
+      ...unWindArrayToRoot,
+    ];
+
+    let statusFilterMatch: [
+      { $match: { $or: [{ status: { $in: string[] } }] } }
+    ] = [] as any;
+    if (status) {
+      statusFilterMatch[0] = {
+        $match: {
+          $or: [
+            {
+              status: { $in: status },
+            },
+          ],
+        },
+      };
+    }
 
     // filter and remove duplicates after grouping the objects by ID.
     const removeDuplicates = [
@@ -249,6 +302,9 @@ export class MongoDBLearningObjectDatastore
 
     const pipeline = [
       match,
+      joinCollections,
+      ...createSuperSet,
+      ...statusFilterMatch,
       ...removeDuplicates,
       ...sort,
       {
@@ -280,38 +336,38 @@ export class MongoDBLearningObjectDatastore
    * @returns {{ sort: any[]; paginate: any[] }}
    * @memberof MongoDriver
    */
-  private buildAggregationFilters(params: {
-    page?: number;
-    limit?: number;
-    hasText?: boolean;
-    orderBy?: string;
-    sortType?: number;
-  }): { sort: [{ $sort: { [index: string]: any } }]; paginate: any[] } {
-    let { page, limit, hasText, orderBy, sortType } = params;
-    let paginate: {
-      [index: string]: number;
-    }[] = [{ $skip: 0 }];
-    page = validatePageNumber(page);
-    const skip = calculateDocumentsToSkip({ page, limit });
-    // Paginate
-    if (skip != null && limit) {
-      paginate = [{ $skip: skip }, { $limit: limit }];
-    } else if (skip == null && limit) {
-      paginate = [{ $limit: limit }];
-    }
-    // @ts-ignore Sort must be initialized to modify
-    const sort: [{ $sort: { [index: string]: any } }] = [];
-    if (hasText) {
-      sort[0] = { $sort: { score: { $meta: 'textScore' } } };
-    }
-    // Apply orderBy
-    if (orderBy) {
-      const orderBySorter = {};
-      orderBySorter[orderBy] = sortType ? sortType : 1;
-      sort[0] = { $sort: orderBySorter };
-    }
-    return { sort, paginate };
-  }
+   private buildAggregationFilters(params: {
+     page?: number;
+     limit?: number;
+     hasText?: boolean;
+     orderBy?: string;
+     sortType?: number;
+   }): { sort: [{ $sort: { [index: string]: any } }]; paginate: any[] } {
+     let { page, limit, hasText, orderBy, sortType } = params;
+     let paginate: {
+       [index: string]: number;
+     }[] = [{ $skip: 0 }];
+     page = validatePageNumber(page);
+     const skip = calculateDocumentsToSkip({ page, limit });
+     // Paginate
+     if (skip != null && limit) {
+       paginate = [{ $skip: skip }, { $limit: limit }];
+     } else if (skip == null && limit) {
+       paginate = [{ $limit: limit }];
+     }
+     // @ts-ignore Sort must be initialized to modify
+     const sort: [{ $sort: { [index: string]: any } }] = [];
+     if (hasText) {
+       sort[0] = { $sort: { score: { $meta: 'textScore' } } };
+     }
+     // Apply orderBy
+     if (orderBy) {
+       const orderBySorter = {};
+       orderBySorter[orderBy] = sortType ? sortType : 1;
+       sort[0] = { $sort: orderBySorter };
+     }
+     return { sort, paginate };
+   }
 
   /**
    * Converts QueryConditions to valid Mongo conditional syntax
@@ -360,4 +416,5 @@ export class MongoDBLearningObjectDatastore
     }
     return conditions;
   }
+
 }
