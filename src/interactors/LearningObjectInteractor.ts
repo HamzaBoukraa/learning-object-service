@@ -1,7 +1,11 @@
 // @ts-ignore
 import * as stopword from 'stopword';
 import { reportError } from '../shared/SentryConnector';
-import { sanitizeObject, sanitizeText } from '../shared/functions';
+import {
+  sanitizeObject,
+  sanitizeText,
+  mapLearningObjectToSummary,
+} from '../shared/functions';
 import {
   LearningObjectQuery,
   QueryCondition,
@@ -19,6 +23,7 @@ import {
   ServiceToken,
   LearningObjectState,
   CollectionAccessMap,
+  LearningObjectSummary,
 } from '../shared/types';
 import {
   getAccessGroupCollections,
@@ -37,11 +42,13 @@ import {
 import { LearningObject } from '../shared/entity';
 import { LearningObjectsModule } from '../LearningObjects/LearningObjectsModule';
 import { FileMetadataGateway } from '../LearningObjects/interfaces';
+import { UserServiceGateway } from '../shared/gateways/user-service/UserServiceGateway';
 
 namespace Gateways {
   export const fileMetadata = () =>
     LearningObjectsModule.resolveDependency(FileMetadataGateway);
 }
+const GATEWAY_API = process.env.GATEWAY_API;
 
 export class LearningObjectInteractor {
   /**
@@ -60,8 +67,8 @@ export class LearningObjectInteractor {
     dataStore: DataStore;
     username: string;
   }): Promise<string> {
-    const { dataStore, username } = params;
-    const authorId = await dataStore.findUser(username);
+    const { username } = params;
+    const authorId = await UserServiceGateway.getInstance().findUser(username);
     if (!authorId) {
       throw new ResourceError(
         `No user with username ${username} exists`,
@@ -367,8 +374,7 @@ export class LearningObjectInteractor {
   }: {
     dataStore: DataStore;
     ids: string[];
-    full?: boolean;
-  }): Promise<LearningObject[]> {
+  }): Promise<LearningObjectSummary[]> {
     try {
       let learningObjects = await dataStore.fetchMultipleObjects({
         ids,
@@ -378,7 +384,11 @@ export class LearningObjectInteractor {
           ...LearningObjectState.RELEASED,
         ],
       });
-      return learningObjects;
+      const learningObjectSummaries = learningObjects.map(learningObject => {
+        learningObject.attachResourceUris(GATEWAY_API);
+        return mapLearningObjectToSummary(learningObject);
+      });
+      return learningObjectSummaries;
     } catch (e) {
       handleError(e);
     }
@@ -441,38 +451,6 @@ export class LearningObjectInteractor {
         } else {
           status = this.getAuthAdminEditorStatuses(status);
         }
-
-        response = await dataStore.searchAllObjects({
-          name,
-          author,
-          collection,
-          length,
-          level,
-          guidelines,
-          standardOutcomeIDs,
-          text,
-          status,
-          conditions,
-          orderBy,
-          sortType,
-          page,
-          limit,
-        });
-      } else {
-        response = await dataStore.searchReleasedObjects({
-          name,
-          author,
-          collection,
-          length,
-          level,
-          guidelines,
-          standardOutcomeIDs,
-          text,
-          orderBy,
-          sortType,
-          page,
-          limit,
-        });
       }
       return { total: response.total, objects: response.objects };
     } catch (e) {
@@ -633,7 +611,9 @@ export class LearningObjectInteractor {
     const { dataStore, children, username, parentName, userToken } = params;
 
     try {
-      const authorId = await dataStore.findUser(username);
+      const authorId = await UserServiceGateway.getInstance().findUser(
+        username,
+      );
       const parentID = await dataStore.findLearningObject({
         authorId,
         name: parentName,
@@ -683,7 +663,9 @@ export class LearningObjectInteractor {
   }) {
     const { dataStore, childId, username, parentName, userToken } = params;
     try {
-      const authorId = await dataStore.findUser(username);
+      const authorId = await UserServiceGateway.getInstance().findUser(
+        username,
+      );
       const parentID = await dataStore.findLearningObject({
         authorId,
         name: parentName,

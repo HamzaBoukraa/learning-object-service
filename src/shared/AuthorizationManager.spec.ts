@@ -1,22 +1,15 @@
 import { UserToken, AccessGroup, LearningObjectSummary } from './types';
-import {
-  hasLearningObjectWriteAccess,
-  requesterIsAuthor,
-  requesterIsAdmin,
-  requesterIsAdminOrEditor,
-  hasReadAccessByCollection,
-  authorizeRequest,
-  authorizeReadAccess,
-  authorizeWriteAccess,
-  requesterIsPrivileged,
-  requesterIsVerified,
-} from './AuthorizationManager';
 import { ResourceError } from './errors';
 import { LearningObject } from './entity';
 
-jest.mock('../drivers/MongoDriver');
+let AuthorizationManager: any;
 
 describe('AuthorizationManager', () => {
+  beforeAll(async () => {
+    jest.mock('../shared/gateways/user-service/UserServiceGateway');
+    jest.mock('../drivers/MongoDriver');
+    AuthorizationManager = await import('./AuthorizationManager');
+  });
   describe('#hasLearningObjectWriteAccess', () => {
     let user: UserToken = {
       username: '',
@@ -26,23 +19,24 @@ describe('AuthorizationManager', () => {
       emailVerified: true,
       accessGroups: [],
     };
-    it('should return true for a user with an accessGroup of admin', () => {
+
+    it('should return true for a user with an accessGroup of admin', async () => {
       user.accessGroups.push('admin');
-      hasLearningObjectWriteAccess(user, null, 'someid');
+      await expect(AuthorizationManager.hasLearningObjectWriteAccess(user, null, 'someid')).resolves.toBeTruthy();
     });
-    it('should return true for a user with an accessGroup of editor', () => {
+    it('should return true for a user with an accessGroup of editor', async () => {
       user.accessGroups.push('editor');
-      hasLearningObjectWriteAccess(user, null, 'someid');
+      await expect(AuthorizationManager.hasLearningObjectWriteAccess(user, null, 'someid')).resolves.toBeTruthy();
     });
-    it('should return true for a user with an accessGroup of lead at a collection', () => {
+    it('should return true for a user with an accessGroup of lead at a collection', async () => {
       const collection = 'collectionName';
       user.accessGroups.push(`lead@${collection}`);
-      hasLearningObjectWriteAccess(user, null, 'someid');
+      await expect(AuthorizationManager.hasLearningObjectWriteAccess(user, null, 'someid')).toBeTruthy();
     });
-    it('should return true for a user with an accessGroup of curator at a collection', () => {
+    it('should return true for a user with an accessGroup of curator at a collection', async () => {
       const collection = 'collectionName';
       user.accessGroups.push(`curator@${collection}`);
-      hasLearningObjectWriteAccess(user, null, 'someid');
+      await expect(AuthorizationManager.hasLearningObjectWriteAccess(user, null, 'someid')).resolves.toBeTruthy();
     });
   });
 
@@ -56,16 +50,16 @@ describe('AuthorizationManager', () => {
       email: '',
       organization: '',
     };
-    it('should return true when the requester\'s email is verified', () => {
+    it("should return true when the requester's email is verified", () => {
       requester.emailVerified = true;
-      expect(requesterIsVerified(requester)).toBe(true);
+      expect(AuthorizationManager.requesterIsVerified(requester)).toBe(true);
     });
-    it('should return false when the requester\'s email is not verified', () => {
+    it("should return false when the requester's email is not verified", () => {
       requester.emailVerified = false;
-      expect(requesterIsVerified(requester)).toBe(false);
+      expect(AuthorizationManager.requesterIsVerified(requester)).toBe(false);
     });
     it('should return false (when the requester is undefined', () => {
-      expect(requesterIsVerified(undefined)).toBe(false);
+      expect(AuthorizationManager.requesterIsVerified(undefined)).toBe(false);
     });
   });
 
@@ -81,7 +75,7 @@ describe('AuthorizationManager', () => {
     };
     it('should return true when the username of the requester matches', () => {
       expect(
-        requesterIsAuthor({
+        AuthorizationManager.requesterIsAuthor({
           authorUsername: requester.username,
           requester,
         }),
@@ -89,7 +83,7 @@ describe('AuthorizationManager', () => {
     });
     it('should return false when the username of the requester does not match', () => {
       expect(
-        requesterIsAuthor({
+        AuthorizationManager.requesterIsAuthor({
           authorUsername: 'not requester',
           requester,
         }),
@@ -97,7 +91,7 @@ describe('AuthorizationManager', () => {
     });
     it('should return false when the requester is undefined', () => {
       expect(
-        requesterIsAuthor({
+        AuthorizationManager.requesterIsAuthor({
           authorUsername: 'not requester',
           requester: undefined,
         }),
@@ -117,19 +111,19 @@ describe('AuthorizationManager', () => {
     };
     it('should return true when accessGroups contain only the admin privilege', () => {
       requester.accessGroups = ['admin'];
-      expect(requesterIsPrivileged(requester)).toBe(true);
+      expect(AuthorizationManager.requesterIsPrivileged(requester)).toBe(true);
     });
     it('should return true when accessGroups contain only the editor privilege', () => {
       requester.accessGroups = ['editor'];
-      expect(requesterIsPrivileged(requester)).toBe(true);
+      expect(AuthorizationManager.requesterIsPrivileged(requester)).toBe(true);
     });
     it('should return true when accessGroups contain only the curator@collection privilege', () => {
       requester.accessGroups = ['curator@collection'];
-      expect(requesterIsPrivileged(requester)).toBe(true);
+      expect(AuthorizationManager.requesterIsPrivileged(requester)).toBe(true);
     });
     it('should return true when accessGroups contain only the reviewer@collection privilege', () => {
       requester.accessGroups = ['reviewer@collection'];
-      expect(requesterIsPrivileged(requester)).toBe(true);
+      expect(AuthorizationManager.requesterIsPrivileged(requester)).toBe(true);
     });
     it('should return true when accessGroups contain all privileges', () => {
       requester.accessGroups = [
@@ -138,18 +132,18 @@ describe('AuthorizationManager', () => {
         'curator@collection',
         'reviewer@collection',
       ];
-      expect(requesterIsPrivileged(requester)).toBe(true);
+      expect(AuthorizationManager.requesterIsPrivileged(requester)).toBe(true);
     });
     it('should return false when accessGroups contain no privileges', () => {
       requester.accessGroups = [];
-      expect(requesterIsPrivileged(requester)).toBe(false);
+      expect(AuthorizationManager.requesterIsPrivileged(requester)).toBe(false);
     });
     it('should return false when requester data is undefined', () => {
-      expect(requesterIsPrivileged(undefined)).toBe(false);
+      expect(AuthorizationManager.requesterIsPrivileged(undefined)).toBe(false);
     });
     it('should return false when accessGroups are undefined', () => {
       expect(
-        requesterIsPrivileged({ ...requester, accessGroups: undefined }),
+        AuthorizationManager.requesterIsPrivileged({ ...requester, accessGroups: undefined }),
       ).toBe(false);
     });
   });
@@ -166,7 +160,7 @@ describe('AuthorizationManager', () => {
     };
     it('should return true when accessGroups contain only the admin privilege', () => {
       requester.accessGroups = ['admin'];
-      expect(requesterIsAdmin(requester)).toBe(true);
+      expect(AuthorizationManager.requesterIsAdmin(requester)).toBe(true);
     });
     it('should return true (when accessGroups contain all privileges', () => {
       requester.accessGroups = [
@@ -175,23 +169,23 @@ describe('AuthorizationManager', () => {
         'curator@collection',
         'reviewer@collection',
       ];
-      expect(requesterIsAdmin(requester)).toBe(true);
+      expect(AuthorizationManager.requesterIsAdmin(requester)).toBe(true);
     });
     it('should return false when accessGroups contain no privileges', () => {
       requester.accessGroups = [];
-      expect(requesterIsAdmin(requester)).toBe(false);
+      expect(AuthorizationManager.requesterIsAdmin(requester)).toBe(false);
     });
     it('should return false when accessGroups contain the editor privilege', () => {
       requester.accessGroups = ['editor'];
-      expect(requesterIsAdmin(requester)).toBe(false);
+      expect(AuthorizationManager.requesterIsAdmin(requester)).toBe(false);
     });
     it('should return false when accessGroups contain the curator@collection privilege', () => {
       requester.accessGroups = ['curator@collection'];
-      expect(requesterIsAdmin(requester)).toBe(false);
+      expect(AuthorizationManager.requesterIsAdmin(requester)).toBe(false);
     });
     it('should return false when accessGroups contain the reviewer@collection privilege', () => {
       requester.accessGroups = ['reviewer@collection'];
-      expect(requesterIsAdmin(requester)).toBe(false);
+      expect(AuthorizationManager.requesterIsAdmin(requester)).toBe(false);
     });
     it('should return false when accessGroups contain all privileges except admin', () => {
       requester.accessGroups = [
@@ -199,13 +193,13 @@ describe('AuthorizationManager', () => {
         'curator@collection',
         'reviewer@collection',
       ];
-      expect(requesterIsAdmin(requester)).toBe(false);
+      expect(AuthorizationManager.requesterIsAdmin(requester)).toBe(false);
     });
     it('should return false when requester is undefined', () => {
-      expect(requesterIsAdmin(undefined)).toBe(false);
+      expect(AuthorizationManager.requesterIsAdmin(undefined)).toBe(false);
     });
     it('should return false when accessGroups is undefined', () => {
-      expect(requesterIsAdmin(undefined)).toBe(false);
+      expect(AuthorizationManager.requesterIsAdmin(undefined)).toBe(false);
     });
   });
 
@@ -221,11 +215,11 @@ describe('AuthorizationManager', () => {
     };
     it('should return true when accessGroups contain only the admin privilege', () => {
       requester.accessGroups = ['admin'];
-      expect(requesterIsAdminOrEditor(requester)).toBe(true);
+      expect(AuthorizationManager.requesterIsAdminOrEditor(requester)).toBe(true);
     });
     it('should return true when accessGroups contain the editor privilege', () => {
       requester.accessGroups = ['editor'];
-      expect(requesterIsAdminOrEditor(requester)).toBe(true);
+      expect(AuthorizationManager.requesterIsAdminOrEditor(requester)).toBe(true);
     });
     it('should return true (when accessGroups contain all privileges', () => {
       requester.accessGroups = [
@@ -234,29 +228,29 @@ describe('AuthorizationManager', () => {
         'curator@collection',
         'reviewer@collection',
       ];
-      expect(requesterIsAdminOrEditor(requester)).toBe(true);
+      expect(AuthorizationManager.requesterIsAdminOrEditor(requester)).toBe(true);
     });
     it('should return false when accessGroups contain no privileges', () => {
       requester.accessGroups = [];
-      expect(requesterIsAdminOrEditor(requester)).toBe(false);
+      expect(AuthorizationManager.requesterIsAdminOrEditor(requester)).toBe(false);
     });
     it('should return false when accessGroups contain the curator@collection privilege', () => {
       requester.accessGroups = ['curator@collection'];
-      expect(requesterIsAdminOrEditor(requester)).toBe(false);
+      expect(AuthorizationManager.requesterIsAdminOrEditor(requester)).toBe(false);
     });
     it('should return false when accessGroups contain the reviewer@collection privilege', () => {
       requester.accessGroups = ['reviewer@collection'];
-      expect(requesterIsAdminOrEditor(requester)).toBe(false);
+      expect(AuthorizationManager.requesterIsAdminOrEditor(requester)).toBe(false);
     });
     it('should return false when accessGroups contain all privileges except admin and editor', () => {
       requester.accessGroups = ['curator@collection', 'reviewer@collection'];
-      expect(requesterIsAdminOrEditor(requester)).toBe(false);
+      expect(AuthorizationManager.requesterIsAdminOrEditor(requester)).toBe(false);
     });
     it('should return false when requester is undefined', () => {
-      expect(requesterIsAdminOrEditor(undefined)).toBe(false);
+      expect(AuthorizationManager.requesterIsAdminOrEditor(undefined)).toBe(false);
     });
     it('should return false when accessGroups is undefined', () => {
-      expect(requesterIsAdminOrEditor(undefined)).toBe(false);
+      expect(AuthorizationManager.requesterIsAdminOrEditor(undefined)).toBe(false);
     });
   });
 
@@ -273,25 +267,25 @@ describe('AuthorizationManager', () => {
     it('should return true when accessGroups contain only the admin privilege', () => {
       requester.accessGroups = ['admin'];
       expect(
-        hasReadAccessByCollection({ requester, collection: 'collection' }),
+        AuthorizationManager.hasReadAccessByCollection({ requester, collection: 'collection' }),
       ).toBe(true);
     });
     it('should return true when accessGroups contain the editor privilege', () => {
       requester.accessGroups = ['editor'];
       expect(
-        hasReadAccessByCollection({ requester, collection: 'collection' }),
+        AuthorizationManager.hasReadAccessByCollection({ requester, collection: 'collection' }),
       ).toBe(true);
     });
     it('should return true when accessGroups contain the curator@collection privilege', () => {
       requester.accessGroups = ['curator@collection'];
       expect(
-        hasReadAccessByCollection({ requester, collection: 'collection' }),
+        AuthorizationManager.hasReadAccessByCollection({ requester, collection: 'collection' }),
       ).toBe(true);
     });
     it('should return true when accessGroups contain the reviewer@collection privilege', () => {
       requester.accessGroups = ['reviewer@collection'];
       expect(
-        hasReadAccessByCollection({ requester, collection: 'collection' }),
+        AuthorizationManager.hasReadAccessByCollection({ requester, collection: 'collection' }),
       ).toBe(true);
     });
     it('should return true (when accessGroups contain all privileges', () => {
@@ -302,24 +296,24 @@ describe('AuthorizationManager', () => {
         'reviewer@collection',
       ];
       expect(
-        hasReadAccessByCollection({ requester, collection: 'collection' }),
+        AuthorizationManager.hasReadAccessByCollection({ requester, collection: 'collection' }),
       ).toBe(true);
     });
     it('should return false when accessGroups contain no privileges', () => {
       requester.accessGroups = [];
       expect(
-        hasReadAccessByCollection({ requester, collection: 'collection' }),
+        AuthorizationManager.hasReadAccessByCollection({ requester, collection: 'collection' }),
       ).toBe(false);
     });
     it('should return false (Not admin, editor, or accessGroups @collection )', () => {
       requester.accessGroups = ['curator@someOtherCollection'];
       expect(
-        hasReadAccessByCollection({ requester, collection: 'collection' }),
+        AuthorizationManager.hasReadAccessByCollection({ requester, collection: 'collection' }),
       ).toBe(false);
     });
     it('should return false when requester is undefined', () => {
       expect(
-        hasReadAccessByCollection({
+        AuthorizationManager.hasReadAccessByCollection({
           requester: undefined,
           collection: 'collection',
         }),
@@ -327,7 +321,7 @@ describe('AuthorizationManager', () => {
     });
     it('should return false when accessGroups is undefined', () => {
       expect(
-        hasReadAccessByCollection({
+        AuthorizationManager.hasReadAccessByCollection({
           requester: { ...requester, accessGroups: undefined },
           collection: 'collection',
         }),
@@ -336,17 +330,17 @@ describe('AuthorizationManager', () => {
   });
   describe('authorizeRequest', () => {
     it('should return void', () => {
-      expect(authorizeRequest([true])).toBeUndefined();
+      expect(AuthorizationManager.authorizeRequest([true])).toBeUndefined();
     });
     it('should throw ResourceError when false is the only value in the array', () => {
       try {
-        authorizeRequest([false]);
+        AuthorizationManager.authorizeRequest([false]);
       } catch (e) {
         expect(e).toBeInstanceOf(ResourceError);
       }
     });
     it('should throw ResourceError when true and false exists in the array', () => {
-      expect(authorizeRequest([false, true])).toBeUndefined();
+      expect(AuthorizationManager.authorizeRequest([false, true])).toBeUndefined();
     });
   });
 
@@ -360,7 +354,6 @@ describe('AuthorizationManager', () => {
         organization: 'My Org',
       },
       collection: 'special-collection',
-      children: [],
       contributors: [],
       date: Date.now().toString(),
       description: '',
@@ -385,7 +378,7 @@ describe('AuthorizationManager', () => {
       describe('and the requester is a visitor', () => {
         it('should allow read access and not throw an error', () => {
           expect(
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             }),
@@ -396,7 +389,7 @@ describe('AuthorizationManager', () => {
         requester.username = summary.author.username;
         it('should allow read access and not throw an error', () => {
           expect(
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             }),
@@ -409,7 +402,7 @@ describe('AuthorizationManager', () => {
         ];
         it('should allow read access and not throw an error', () => {
           expect(
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             }),
@@ -422,7 +415,7 @@ describe('AuthorizationManager', () => {
         ];
         it('should allow read access and not throw an error', () => {
           expect(
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             }),
@@ -433,7 +426,7 @@ describe('AuthorizationManager', () => {
         requester.accessGroups = [AccessGroup.EDITOR];
         it('should allow read access and not throw an error', () => {
           expect(
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             }),
@@ -444,7 +437,7 @@ describe('AuthorizationManager', () => {
         requester.accessGroups = [AccessGroup.ADMIN];
         it('should allow read access and not throw an error', () => {
           expect(
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             }),
@@ -458,7 +451,7 @@ describe('AuthorizationManager', () => {
       describe('and the requester is a visitor', () => {
         it('should not allow read access and throw an error', () => {
           try {
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             });
@@ -471,7 +464,7 @@ describe('AuthorizationManager', () => {
         requester.username = summary.author.username;
         it('should allow read access and not throw an error', () => {
           expect(
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             }),
@@ -484,7 +477,7 @@ describe('AuthorizationManager', () => {
         ];
         it('should allow read access and not throw an error', () => {
           expect(
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             }),
@@ -497,7 +490,7 @@ describe('AuthorizationManager', () => {
         ];
         it('should allow read access and not throw an error', () => {
           expect(
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             }),
@@ -508,7 +501,7 @@ describe('AuthorizationManager', () => {
         requester.accessGroups = [AccessGroup.EDITOR];
         it('should allow read access and not throw an error', () => {
           expect(
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             }),
@@ -519,7 +512,7 @@ describe('AuthorizationManager', () => {
         requester.accessGroups = [AccessGroup.ADMIN];
         it('should allow read access and not throw an error', () => {
           expect(
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             }),
@@ -533,7 +526,7 @@ describe('AuthorizationManager', () => {
       describe('and the requester is a visitor', () => {
         it('should not allow read access and throw an error', () => {
           try {
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             });
@@ -546,7 +539,7 @@ describe('AuthorizationManager', () => {
         requester.username = summary.author.username;
         it('should allow read access and not throw an error', () => {
           expect(
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             }),
@@ -559,7 +552,7 @@ describe('AuthorizationManager', () => {
         ];
         it('should allow read access and not throw an error', () => {
           expect(
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             }),
@@ -572,7 +565,7 @@ describe('AuthorizationManager', () => {
         ];
         it('should allow read access and not throw an error', () => {
           expect(
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             }),
@@ -583,7 +576,7 @@ describe('AuthorizationManager', () => {
         requester.accessGroups = [AccessGroup.EDITOR];
         it('should allow read access and not throw an error', () => {
           expect(
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             }),
@@ -594,7 +587,7 @@ describe('AuthorizationManager', () => {
         requester.accessGroups = [AccessGroup.ADMIN];
         it('should allow read access and not throw an error', () => {
           expect(
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             }),
@@ -608,7 +601,7 @@ describe('AuthorizationManager', () => {
       describe('and the requester is a visitor', () => {
         it('should not allow read access and throw an error', () => {
           try {
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             });
@@ -621,7 +614,7 @@ describe('AuthorizationManager', () => {
         requester.username = summary.author.username;
         it('should allow read access and not throw an error', () => {
           expect(
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             }),
@@ -634,7 +627,7 @@ describe('AuthorizationManager', () => {
         ];
         it('should allow read access and not throw an error', () => {
           expect(
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             }),
@@ -647,7 +640,7 @@ describe('AuthorizationManager', () => {
         ];
         it('should allow read access and not throw an error', () => {
           expect(
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             }),
@@ -658,7 +651,7 @@ describe('AuthorizationManager', () => {
         requester.accessGroups = [AccessGroup.EDITOR];
         it('should allow read access and not throw an error', () => {
           expect(
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             }),
@@ -669,7 +662,7 @@ describe('AuthorizationManager', () => {
         requester.accessGroups = [AccessGroup.ADMIN];
         it('should allow read access and not throw an error', () => {
           expect(
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             }),
@@ -683,7 +676,7 @@ describe('AuthorizationManager', () => {
       describe('and the requester is a visitor', () => {
         it('should not allow read access and throw an error', () => {
           try {
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             });
@@ -696,7 +689,7 @@ describe('AuthorizationManager', () => {
         requester.username = summary.author.username;
         it('should allow read access and not throw an error', () => {
           expect(
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             }),
@@ -709,7 +702,7 @@ describe('AuthorizationManager', () => {
         ];
         it('should not allow read access and throw an error', () => {
           try {
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             });
@@ -724,7 +717,7 @@ describe('AuthorizationManager', () => {
         ];
         it('should not allow read access and throw an error', () => {
           try {
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             });
@@ -737,7 +730,7 @@ describe('AuthorizationManager', () => {
         requester.accessGroups = [AccessGroup.EDITOR];
         it('should not allow read access and throw an error', () => {
           try {
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             });
@@ -750,7 +743,7 @@ describe('AuthorizationManager', () => {
         requester.accessGroups = [AccessGroup.ADMIN];
         it('should not allow read access and throw an error', () => {
           try {
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             });
@@ -766,7 +759,7 @@ describe('AuthorizationManager', () => {
       describe('and the requester is a visitor', () => {
         it('should not allow read access and throw an error', () => {
           try {
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             });
@@ -779,7 +772,7 @@ describe('AuthorizationManager', () => {
         requester.username = summary.author.username;
         it('should allow read access and not throw an error', () => {
           expect(
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             }),
@@ -792,7 +785,7 @@ describe('AuthorizationManager', () => {
         ];
         it('should not allow read access and throw an error', () => {
           try {
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             });
@@ -807,7 +800,7 @@ describe('AuthorizationManager', () => {
         ];
         it('should not allow read access and throw an error', () => {
           try {
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             });
@@ -820,7 +813,7 @@ describe('AuthorizationManager', () => {
         requester.accessGroups = [AccessGroup.EDITOR];
         it('should not allow read access and throw an error', () => {
           try {
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             });
@@ -833,7 +826,7 @@ describe('AuthorizationManager', () => {
         requester.accessGroups = [AccessGroup.ADMIN];
         it('should not allow read access and throw an error', () => {
           try {
-            authorizeReadAccess({
+            AuthorizationManager.authorizeReadAccess({
               learningObject: summary,
               requester,
             });
@@ -856,7 +849,6 @@ describe('AuthorizationManager', () => {
       },
       collection: 'special-collection',
       contributors: [],
-      children: [],
       date: Date.now().toString(),
       description: '',
       length: 'nanomodule',
@@ -880,7 +872,7 @@ describe('AuthorizationManager', () => {
       describe('and the requester is a visitor', () => {
         it('should not allow write access and throw an error', () => {
           try {
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             });
@@ -893,7 +885,7 @@ describe('AuthorizationManager', () => {
         requester.username = summary.author.username;
         it('should not allow write access and throw an error', () => {
           try {
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             });
@@ -908,7 +900,7 @@ describe('AuthorizationManager', () => {
         ];
         it('should not allow write access and throw an error', () => {
           try {
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             });
@@ -923,7 +915,7 @@ describe('AuthorizationManager', () => {
         ];
         it('should not allow write access and throw an error', () => {
           try {
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             });
@@ -936,7 +928,7 @@ describe('AuthorizationManager', () => {
         requester.accessGroups = [AccessGroup.EDITOR];
         it('should not allow write access and throw an error', () => {
           try {
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             });
@@ -949,7 +941,7 @@ describe('AuthorizationManager', () => {
         requester.accessGroups = [AccessGroup.ADMIN];
         it('should not allow write access and throw an error', () => {
           try {
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             });
@@ -965,7 +957,7 @@ describe('AuthorizationManager', () => {
       describe('and the requester is a visitor', () => {
         it('should not allow write access and throw an error', () => {
           try {
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             });
@@ -978,7 +970,7 @@ describe('AuthorizationManager', () => {
         requester.username = summary.author.username;
         it('should not allow write access and throw an error', () => {
           try {
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             });
@@ -993,7 +985,7 @@ describe('AuthorizationManager', () => {
         ];
         it('should not allow write access and throw an error', () => {
           try {
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             });
@@ -1008,7 +1000,7 @@ describe('AuthorizationManager', () => {
         ];
         it('should not allow write access and throw an error', () => {
           try {
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             });
@@ -1021,7 +1013,7 @@ describe('AuthorizationManager', () => {
         requester.accessGroups = [AccessGroup.EDITOR];
         it('should allow write access and not throw an error', () => {
           expect(
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             }),
@@ -1032,7 +1024,7 @@ describe('AuthorizationManager', () => {
         requester.accessGroups = [AccessGroup.ADMIN];
         it('should allow write access and not throw an error', () => {
           expect(
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             }),
@@ -1045,7 +1037,7 @@ describe('AuthorizationManager', () => {
       describe('and the requester is a visitor', () => {
         it('should not allow write access and throw an error', () => {
           try {
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             });
@@ -1058,7 +1050,7 @@ describe('AuthorizationManager', () => {
         requester.username = summary.author.username;
         it('should not allow write access and throw an error', () => {
           try {
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             });
@@ -1073,7 +1065,7 @@ describe('AuthorizationManager', () => {
         ];
         it('should not allow write access and throw an error', () => {
           try {
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             });
@@ -1088,7 +1080,7 @@ describe('AuthorizationManager', () => {
         ];
         it('should not allow write access and throw an error', () => {
           try {
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             });
@@ -1101,7 +1093,7 @@ describe('AuthorizationManager', () => {
         requester.accessGroups = [AccessGroup.EDITOR];
         it('should allow write access and not throw an error', () => {
           expect(
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             }),
@@ -1112,7 +1104,7 @@ describe('AuthorizationManager', () => {
         requester.accessGroups = [AccessGroup.ADMIN];
         it('should allow write access and not throw an error', () => {
           expect(
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             }),
@@ -1126,7 +1118,7 @@ describe('AuthorizationManager', () => {
       describe('and the requester is a visitor', () => {
         it('should not allow write access and throw an error', () => {
           try {
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             });
@@ -1139,7 +1131,7 @@ describe('AuthorizationManager', () => {
         requester.username = summary.author.username;
         it('should allow write access and not throw an error', () => {
           expect(
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             }),
@@ -1152,7 +1144,7 @@ describe('AuthorizationManager', () => {
         ];
         it('should not allow write access and throw an error', () => {
           try {
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             });
@@ -1167,7 +1159,7 @@ describe('AuthorizationManager', () => {
         ];
         it('should not allow write access and throw an error', () => {
           try {
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             });
@@ -1180,7 +1172,7 @@ describe('AuthorizationManager', () => {
         requester.accessGroups = [AccessGroup.EDITOR];
         it('should allow write access and not throw an error', () => {
           expect(
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             }),
@@ -1191,7 +1183,7 @@ describe('AuthorizationManager', () => {
         requester.accessGroups = [AccessGroup.ADMIN];
         it('should allow write access and not throw an error', () => {
           expect(
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             }),
@@ -1205,7 +1197,7 @@ describe('AuthorizationManager', () => {
       describe('and the requester is a visitor', () => {
         it('should not allow write access and throw an error', () => {
           try {
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             });
@@ -1218,7 +1210,7 @@ describe('AuthorizationManager', () => {
         requester.username = summary.author.username;
         it('should allow write access and not throw an error', () => {
           expect(
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             }),
@@ -1231,7 +1223,7 @@ describe('AuthorizationManager', () => {
         ];
         it('should not allow write access and throw an error', () => {
           try {
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             });
@@ -1246,7 +1238,7 @@ describe('AuthorizationManager', () => {
         ];
         it('should not allow write access and throw an error', () => {
           try {
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             });
@@ -1259,7 +1251,7 @@ describe('AuthorizationManager', () => {
         requester.accessGroups = [AccessGroup.EDITOR];
         it('should allow write access and not throw an error', () => {
           expect(
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             }),
@@ -1270,7 +1262,7 @@ describe('AuthorizationManager', () => {
         requester.accessGroups = [AccessGroup.ADMIN];
         it('should allow write access and not throw an error', () => {
           expect(
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             }),
@@ -1284,7 +1276,7 @@ describe('AuthorizationManager', () => {
       describe('and the requester is a visitor', () => {
         it('should not allow write access and throw an error', () => {
           try {
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             });
@@ -1297,7 +1289,7 @@ describe('AuthorizationManager', () => {
         requester.username = summary.author.username;
         it('should allow write access and not throw an error', () => {
           expect(
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             }),
@@ -1310,7 +1302,7 @@ describe('AuthorizationManager', () => {
         ];
         it('should not allow write access and throw an error', () => {
           try {
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             });
@@ -1325,7 +1317,7 @@ describe('AuthorizationManager', () => {
         ];
         it('should not allow write access and throw an error', () => {
           try {
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             });
@@ -1338,7 +1330,7 @@ describe('AuthorizationManager', () => {
         requester.accessGroups = [AccessGroup.EDITOR];
         it('should allow write access and not throw an error', () => {
           expect(
-            authorizeWriteAccess({
+            AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             }),
@@ -1349,7 +1341,7 @@ describe('AuthorizationManager', () => {
         requester.accessGroups = [AccessGroup.ADMIN];
         it('should allow write access and not throw an error', () => {
           expect(
-            authorizeWriteAccess({
+             AuthorizationManager.authorizeWriteAccess({
               learningObject: summary,
               requester,
             }),

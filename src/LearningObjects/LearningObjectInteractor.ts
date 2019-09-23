@@ -1,15 +1,11 @@
 import { DataStore } from '../shared/interfaces/DataStore';
 import { LibraryCommunicator } from '../shared/interfaces/interfaces';
 import {
-  CollectionAccessMap,
   LearningObjectMetadataUpdates,
   LearningObjectState,
   LearningObjectSummary,
-  UserLearningObjectQuery,
-  UserLearningObjectSearchQuery,
   UserToken,
   VALID_LEARNING_OBJECT_UPDATES,
-  LearningObjectChildSummary,
 } from '../shared/types';
 import {
   handleError,
@@ -23,14 +19,10 @@ import {
   authorizeReadAccess,
   authorizeRequest,
   authorizeWriteAccess,
-  getAccessGroupCollections,
-  getAuthorizedStatuses,
   requesterIsEditor,
-  getCollectionAccessMap,
   hasReadAccessByCollection,
   requesterIsAdminOrEditor,
   requesterIsAuthor,
-  requesterIsPrivileged,
 } from '../shared/AuthorizationManager';
 import {
   LearningObjectFilter,
@@ -41,11 +33,6 @@ import * as PublishingService from './Publishing';
 import {
   mapLearningObjectToSummary,
   sanitizeLearningObjectName,
-  sanitizeText,
-  toArray,
-  sanitizeObject,
-  toBoolean,
-  mapChildLearningObjectToSummary,
 } from '../shared/functions';
 import {
   FileMetadataGateway,
@@ -56,6 +43,8 @@ import { LearningObjectsModule } from './LearningObjectsModule';
 import { LearningObjectSubmissionAdapter } from '../LearningObjectSubmission/adapters/LearningObjectSubmissionAdapter';
 import { UserGateway } from './interfaces/UserGateway';
 import { validateUpdates } from '../shared/entity/learning-object/validators';
+import { UserServiceGateway } from '../shared/gateways/user-service/UserServiceGateway';
+import * as mongoHelperFunctions from '../shared/MongoDB/HelperFunctions';
 
 const GATEWAY_API = process.env.GATEWAY_API;
 
@@ -70,135 +59,6 @@ namespace Gateways {
     LearningObjectsModule.resolveDependency(FileMetadataGateway);
   export const user = () =>
     LearningObjectsModule.resolveDependency(UserGateway);
-}
-
-/**
- * Performs a search on the specified user's Learning Objects.
- *
- * *** NOTES ***
- * If the specified user cannot be found, a NotFound ResourceError is thrown.
- * Only the author and privileged users are allowed to view Learning Object drafts.
- * "Drafts" are defined as 'not released' Learning Objects that have never been released or have a `revision` id of `0`, so
- * if the `draftsOnly` filter is specified, the `status` filter must not have a value of `released`.
- * Only authors can see drafts that are not submitted for review; `unreleased` || `rejected`.
- * Admins and editors can see all Learning Objects submitted for review.
- * Reviewers and curators can only see Learning Objects submitted for review to their collection.
- *
- *
- * @async
- *
- * @returns {LearningObjectSummary[]} the user's learning objects found by the query
- * @param params.dataStore
- * @param params.authorUsername
- * @param params.requester
- * @param params.query
- */
-export async function searchUsersObjects({
-  dataStore,
-  authorUsername,
-  requester,
-  query,
-}: {
-  dataStore: DataStore;
-  authorUsername: string;
-  requester: UserToken;
-  query?: UserLearningObjectQuery;
-}): Promise<LearningObjectSummary[]> {
-  try {
-    let { text, draftsOnly, status } = formatUserLearningObjectQuery(query);
-    if (!(await dataStore.findUserId(authorUsername))) {
-      throw new ResourceError(
-        `Cannot load Learning Objects for user ${authorUsername}. User ${authorUsername} does not exist.`,
-        ResourceErrorReason.NOT_FOUND,
-      );
-    }
-    const isAuthor = requesterIsAuthor({ requester, authorUsername });
-    const isPrivileged = requesterIsPrivileged(requester);
-    const searchQuery: UserLearningObjectSearchQuery = {
-      text,
-      status,
-    };
-
-    if (draftsOnly) {
-      if (!isAuthor && !isPrivileged) {
-        throw new ResourceError(
-          `Invalid access. You are not authorized to view ${authorUsername}'s drafts.`,
-          ResourceErrorReason.INVALID_ACCESS,
-        );
-      }
-
-      if (!searchQuery.status) {
-        if (isAuthor) {
-          searchQuery.status = [
-            ...LearningObjectState.UNRELEASED,
-            ...LearningObjectState.IN_REVIEW,
-          ];
-        } else {
-          searchQuery.status = [...LearningObjectState.IN_REVIEW];
-        }
-      }
-
-      if (searchQuery.status.includes(LearningObject.Status.RELEASED)) {
-        throw new ResourceError(
-          'Illegal query arguments. Cannot specify both draftsOnly and released status filters.',
-          ResourceErrorReason.BAD_REQUEST,
-        );
-      }
-
-      searchQuery.revision = 0;
-    }
-
-    if (!isAuthor && !isPrivileged) {
-      return await dataStore.searchReleasedUserObjects(
-        searchQuery,
-        authorUsername,
-      );
-    }
-
-    let collectionAccessMap: CollectionAccessMap;
-
-    if (!isAuthor) {
-      searchQuery.status = getAuthorizedStatuses(searchQuery.status);
-      if (!requesterIsAdminOrEditor(requester)) {
-        const privilegedCollections = getAccessGroupCollections(requester);
-        collectionAccessMap = getCollectionAccessMap(
-          [],
-          privilegedCollections,
-          searchQuery.status,
-        );
-        searchQuery.status = searchQuery.status.includes(
-          LearningObject.Status.RELEASED,
-        )
-          ? LearningObjectState.RELEASED
-          : null;
-      }
-    }
-
-    return await dataStore.searchAllUserObjects(
-      searchQuery,
-      authorUsername,
-      collectionAccessMap,
-    );
-  } catch (e) {
-    handleError(e);
-  }
-}
-/**
- * Formats search query to verify params are the appropriate types
- *
- * @private
- * @static
- * @param {UserLearningObjectQuery} query
- * @returns {UserLearningObjectQuery}
- */
-function formatUserLearningObjectQuery(
-  query: UserLearningObjectQuery,
-): UserLearningObjectQuery {
-  const formattedQuery = { ...query };
-  formattedQuery.text = sanitizeText(formattedQuery.text) || null;
-  formattedQuery.status = toArray(formattedQuery.status);
-  formattedQuery.draftsOnly = toBoolean(formattedQuery.draftsOnly);
-  return sanitizeObject({ object: formattedQuery }, false);
 }
 
 /**
@@ -324,7 +184,7 @@ async function findAuthorIdByUsername(params: {
   username: string;
 }): Promise<string> {
   const { dataStore, username } = params;
-  const authorId = await dataStore.findUser(username);
+  const authorId = await UserServiceGateway.getInstance().findUser(username);
   if (!authorId) {
     throw new ResourceError(
       `No user with username ${username} exists`,
@@ -445,67 +305,6 @@ async function getReleasedLearningObjectIdByAuthorAndName(params: {
     );
   }
   return learningObjectId;
-}
-
-/**
- * Retrieves released file metadata by id
- *
- * @export
- * @param {DataStore} dataStore [Driver for datastore]
- * @param {string} id [Id of the Learning Object]
- * @param {string} fileId [Id of the file]
- * @returns {Promise<LearningObject.Material.File>}
- */
-export async function getReleasedFile({
-  dataStore,
-  id,
-  fileId,
-}: {
-  dataStore: DataStore;
-  id: string;
-  fileId: string;
-}): Promise<LearningObject.Material.File> {
-  try {
-    const file = await dataStore.fetchReleasedFile({ id, fileId });
-    if (!file) {
-      throw new ResourceError(
-        `Requested file ${fileId} for Learning Object ${id} cannot be found.`,
-        ResourceErrorReason.NOT_FOUND,
-      );
-    }
-    return file;
-  } catch (e) {
-    handleError(e);
-  }
-}
-
-/**
- * Retrieves all released file metadata for a Learning Object
- *
- * @export
- * @param {DataStore} dataStore [Driver for datastore]
- * @param {string} id [Id of the Learning Object]
- * @returns {Promise<LearningObject.Material.File[]>}
- */
-export async function getReleasedFiles({
-  dataStore,
-  id,
-}: {
-  dataStore: DataStore;
-  id: string;
-}): Promise<LearningObject.Material.File[]> {
-  try {
-    const files = await dataStore.fetchReleasedFiles(id);
-    if (!files) {
-      throw new ResourceError(
-        `No files found for Learning Object ${id}.`,
-        ResourceErrorReason.NOT_FOUND,
-      );
-    }
-    return files;
-  } catch (e) {
-    handleError(e);
-  }
 }
 
 /**
@@ -712,7 +511,6 @@ export async function getLearningObjectRevision({
       id: learningObjectId,
       revision: revisionId,
       author,
-      summary,
     });
     if (!learningObject) {
       throw new ResourceError(
@@ -857,9 +655,12 @@ export async function addLearningObject({
       username: authorUsername,
       name: object.name,
     });
-
-    const authorID = await dataStore.findUser(authorUsername);
-    const author = await dataStore.fetchUser(authorID);
+    const authorID = await UserServiceGateway.getInstance().findUser(
+      authorUsername,
+    );
+    const author = await UserServiceGateway.getInstance().queryUserById(
+      authorID,
+    );
     const objectInsert = new LearningObject({
       ...object,
       author,
@@ -918,7 +719,10 @@ export async function updateLearningObject({
     });
 
     if (!learningObject) {
-      throw new ResourceError(`No Learning Object with id ${id} exists.`, ResourceErrorReason.BAD_REQUEST);
+      throw new ResourceError(
+        `No Learning Object with id ${id} exists.`,
+        ResourceErrorReason.BAD_REQUEST,
+      );
     }
 
     const isInReview = LearningObjectState.IN_REVIEW.includes(
@@ -927,9 +731,7 @@ export async function updateLearningObject({
     authorizeWriteAccess({
       learningObject,
       requester,
-      message: `Invalid access. Cannot update Learning Object ${
-        learningObject.id
-      }.`,
+      message: `Invalid access. Cannot update Learning Object ${learningObject.id}.`,
     });
 
     const cleanUpdates = sanitizeUpdates(updates);
@@ -1004,7 +806,6 @@ export async function generateReleasableLearningObject({
     Gateways.fileMetadata().getAllFileMetadata({
       requester,
       learningObjectId: id,
-      filter: 'unreleased',
     }),
   ]);
   const releasableObject = new LearningObject({
@@ -1050,13 +851,8 @@ export async function getLearningObjectById({
     if (!filter || filter === 'released') {
       learningObject = await dataStore.fetchReleasedLearningObject({
         id,
-        full: true,
+        full: false,
       });
-      if (learningObject) {
-        learningObject.materials.files.map(
-          appendFilePreviewUrls(learningObject),
-        );
-      }
     }
     if ((!learningObject && filter !== 'released') || filter === 'unreleased') {
       let files: LearningObject.Material.File[] = [];
@@ -1073,7 +869,6 @@ export async function getLearningObjectById({
         Gateways.fileMetadata().getAllFileMetadata({
           requester,
           learningObjectId: id,
-          filter: 'unreleased',
         }),
       ]);
       learningObject.materials.files = files;
@@ -1082,22 +877,6 @@ export async function getLearningObjectById({
     if (!learningObject) {
       throw learningObjectNotFound;
     }
-
-    learningObject.children = await loadChildrenSummaries({
-      dataStore,
-      requester,
-      learningObjectId: learningObject.id,
-      authorUsername: learningObject.author.username,
-      released: loadingReleased,
-    });
-
-    learningObject.metrics = await loadMetrics({
-      library,
-      id: learningObject.id,
-    }).catch(e => {
-      reportError(e);
-      return { saves: 0, downloads: 0 };
-    });
 
     learningObject.attachResourceUris(GATEWAY_API);
 
@@ -1129,10 +908,9 @@ export async function getLearningObjectSummaryById({
   id: string;
   requester?: UserToken;
   filter?: LearningObjectFilter;
-  summary?: boolean;
 }): Promise<LearningObjectSummary> {
   try {
-    let learningObject: Partial<LearningObject>;
+    let learningObject: LearningObject;
     let loadingReleased = true;
     const learningObjectNotFound = new ResourceError(
       `No Learning Object ${id} exists.`,
@@ -1145,83 +923,25 @@ export async function getLearningObjectSummaryById({
       });
     }
     if ((!learningObject && filter !== 'released') || filter === 'unreleased') {
-      const learningObjectSummary = await dataStore.fetchLearningObject({
+      learningObject = await dataStore.fetchLearningObject({
         id,
         full: false,
       });
-      if (!learningObjectSummary) {
-        throw learningObjectNotFound;
-      }
-      authorizeReadAccess({ requester, learningObject: learningObjectSummary });
+      authorizeReadAccess({
+        requester,
+        learningObject,
+      });
       loadingReleased = false;
     }
-    if (!learningObject) {
+    if (learningObject) {
+      learningObject.attachResourceUris(GATEWAY_API);
+    } else {
       throw learningObjectNotFound;
     }
-
-    learningObject.children = await loadChildrenSummaries({
-      dataStore,
-      requester,
-      learningObjectId: learningObject.id,
-      authorUsername: learningObject.author.username,
-      released: loadingReleased,
-    });
-
-    learningObject.attachResourceUris(GATEWAY_API);
-
     return mapLearningObjectToSummary(learningObject);
   } catch (e) {
     handleError(e);
   }
-}
-
-/**
- * @private
- *
- * Loads the summaries for a Learning Object's first level of children
- *
- * If released children are requested, only released children are returned
- * Otherwise children are returned based on authorization level:
- * Author: all children statuses
- * Admin/Editor/Curator/Reviewer: released + in review
- *
- * If requester is not author or privileged the `released` param should be true
- *
- * @returns {Promise<LearningObjectChildSummary[]>}
- */
-async function loadChildrenSummaries({
-  learningObjectId,
-  authorUsername,
-  released,
-  dataStore,
-  requester,
-}: {
-  learningObjectId: string;
-  authorUsername: string;
-  released: boolean;
-  dataStore: DataStore;
-  requester: UserToken;
-}): Promise<LearningObjectChildSummary[]> {
-  let children: LearningObjectChildSummary[];
-  if (released) {
-    children = (await dataStore.loadReleasedChildObjects({
-      id: learningObjectId,
-      full: false,
-    })).map(mapChildLearningObjectToSummary);
-  } else {
-    const childrenStatus = requesterIsAuthor({
-      requester,
-      authorUsername: authorUsername,
-    })
-      ? LearningObjectState.ALL
-      : [...LearningObjectState.IN_REVIEW, ...LearningObjectState.RELEASED];
-    children = (await dataStore.loadChildObjects({
-      id: learningObjectId,
-      full: false,
-      status: childrenStatus,
-    })).map(mapChildLearningObjectToSummary);
-  }
-  return children;
 }
 
 /**
@@ -1241,7 +961,6 @@ async function loadWorkingParentsReleasedChildObjects({
 }): Promise<HierarchicalLearningObject[]> {
   let children = await dataStore.loadWorkingParentsReleasedChildObjects({
     id: parentId,
-    full: true,
   });
 
   return Promise.all(
@@ -1256,6 +975,38 @@ async function loadWorkingParentsReleasedChildObjects({
 }
 
 /**
+ * Fetches a learning object from the objects collection and performs read access authorization
+ * for internal use.
+ * @param {string} id the Learning Object's id
+ * @param {DataStore} dataStore
+ * @param {UserToken} requester [Information about the user making the delete request]
+ *
+ */
+export async function getLearningObjectSummary({
+  id,
+  dataStore,
+  requester,
+}: {
+  id: string;
+  dataStore: DataStore;
+  requester: UserToken;
+}): Promise<LearningObjectSummary> {
+  const learningObject = await dataStore.fetchLearningObject({ id });
+  const learningObjectNotFound = new ResourceError(
+    `No Learning Object ${id} exists.`,
+    ResourceErrorReason.NOT_FOUND,
+  );
+  if (!learningObject) {
+    throw learningObjectNotFound;
+  }
+  if (learningObject.status !== LearningObject.Status.RELEASED) {
+    authorizeReadAccess({ learningObject, requester });
+  }
+
+  return mapLearningObjectToSummary(learningObject);
+}
+
+/**
  * Recursively loads all levels of full released child Learning Objects for a released parent Learning Object
  *
  * @param {DataStore} dataStore [The datastore to fetch children from]
@@ -1264,13 +1015,11 @@ async function loadWorkingParentsReleasedChildObjects({
  * @returns
  */
 async function loadReleasedChildObjects({
-  dataStore,
   parentId,
 }: {
-  dataStore: DataStore;
   parentId: string;
 }): Promise<HierarchicalLearningObject[]> {
-  let children = (await dataStore.loadReleasedChildObjects({
+  let children = (await mongoHelperFunctions.loadReleasedChildObjects({
     id: parentId,
     full: true,
   })) as HierarchicalLearningObject[];
@@ -1278,7 +1027,6 @@ async function loadReleasedChildObjects({
   children = await Promise.all(
     children.map(async child => {
       child.children = await loadReleasedChildObjects({
-        dataStore,
         parentId: child.id,
       });
       return child;
@@ -1308,12 +1056,17 @@ export async function getLearningObjectChildrenSummariesById(
 ): Promise<LearningObjectSummary[]> {
   try {
     // handle authorization by attempting to retrieve and read the source object
-    await getLearningObjectById({ dataStore, library: libraryDriver, id: objectId, requester });
+    await getLearningObjectSummaryById({
+      dataStore,
+      id: objectId,
+      requester,
+    });
   } catch (error) {
     if (error instanceof ResourceError) {
       if (error.name === ResourceErrorReason.NOT_FOUND) {
         throw new ResourceError(
-          `Children for the Learning Object with id ${objectId} cannot be found because no Learning Object with id ${objectId} exists.`, ResourceErrorReason.NOT_FOUND,
+          `Children for the Learning Object with id ${objectId} cannot be found because no Learning Object with id ${objectId} exists.`,
+          ResourceErrorReason.NOT_FOUND,
         );
       }
     } else {
@@ -1326,10 +1079,12 @@ export async function getLearningObjectChildrenSummariesById(
     parentId: objectId,
   });
 
-  const childrenOrder = await dataStore.loadChildObjects({
+  const childrenOrder = await mongoHelperFunctions.loadChildObjects({
     id: objectId,
     status: LearningObjectState.ALL,
   });
+
+  // FIXME: simplify this step if possible
   // array to return the children in correct order
   const children: LearningObjectSummary[] = [];
 
@@ -1340,7 +1095,8 @@ export async function getLearningObjectChildrenSummariesById(
   // order the children payload to the same order as the array of child ids stored in `childrenIDs`
   while (c < childrenOrder.length) {
     if (childrenIDs[cIDs] === childrenOrder[c].id) {
-      children.push(childrenOrder[c].toSummary());
+      childrenOrder[c].attachResourceUris(GATEWAY_API);
+      children.push(mapLearningObjectToSummary(childrenOrder[c]));
       cIDs++;
       c = 0;
     } else {
@@ -1394,9 +1150,7 @@ export async function deleteLearningObject({
       .catch(e => {
         reportError(
           new Error(
-            `Problem deleting changelogs for Learning Object${
-              learningObject.id
-            }: ${e}`,
+            `Problem deleting changelogs for Learning Object${learningObject.id}: ${e}`,
           ),
         );
       });
@@ -1426,12 +1180,12 @@ export async function deleteLearningObjectByName({
   user: UserToken;
 }): Promise<void> {
   try {
-    const authorId = await dataStore.findUser(user.username);
+    const authorId = await UserServiceGateway.getInstance().findUser(
+      user.username,
+    );
     if (!authorId) {
       throw new ResourceError(
-        `Unable to delete Learning Object ${learningObjectName}. No user ${
-          user.username
-        } with Learning Object ${learningObjectName} found.`,
+        `Unable to delete Learning Object ${learningObjectName}. No user ${user.username} with Learning Object ${learningObjectName} found.`,
         ResourceErrorReason.NOT_FOUND,
       );
     }
@@ -1488,7 +1242,7 @@ export async function deleteLearningObjectByName({
  */
 export async function updateReadme(params: {
   dataStore: DataStore;
-  requester: UserToken,
+  requester: UserToken;
   object?: LearningObject;
   id?: string;
 }): Promise<void> {
@@ -1502,7 +1256,6 @@ export async function updateReadme(params: {
         Gateways.fileMetadata().getAllFileMetadata({
           requester: params.requester,
           learningObjectId: id,
-          filter: 'unreleased',
         }),
       ]);
       object.materials.files = files;
@@ -1563,51 +1316,44 @@ export async function getMaterials({
   dataStore,
   id,
   requester,
-  filter,
 }: {
   dataStore: DataStore;
   id: string;
   requester: UserToken;
-  filter?: MaterialsFilter;
 }) {
   try {
     let materials: LearningObject.Material;
-    let workingFiles: LearningObject.Material.File[];
+    let files: LearningObject.Material.File[];
     const learningObject = await dataStore.fetchLearningObject({
       id,
       full: false,
     });
-    if (filter === 'unreleased') {
-      authorizeReadAccess({ learningObject, requester });
-      const materials$ = dataStore.getLearningObjectMaterials({ id });
-      const workingFiles$ = Gateways.fileMetadata().getAllFileMetadata({
-        requester,
-        learningObjectId: id,
-        filter: 'unreleased',
-      });
-      [materials, workingFiles] = await Promise.all([
-        materials$,
-        workingFiles$,
-      ]);
-    } else {
-      materials = await dataStore.fetchReleasedMaterials(id);
+    if (!learningObject) {
+      throw new ResourceError(
+        `Learning Object with id ${id} not Found`,
+        ResourceErrorReason.NOT_FOUND,
+      );
     }
-
+    authorizeReadAccess({ learningObject, requester });
+    const materials$ = dataStore.getLearningObjectMaterials({ id });
+    const files$ = Gateways.fileMetadata().getAllFileMetadata({
+      requester,
+      learningObjectId: id,
+    });
+    [materials, files] = await Promise.all([materials$, files$]);
     if (!materials) {
       throw new ResourceError(
         `No materials exists for Learning Object ${id}.`,
         ResourceErrorReason.NOT_FOUND,
       );
     }
-
-    if (workingFiles) {
-      materials.files = workingFiles;
+    if (files) {
+      materials.files = files;
     } else {
       materials.files = materials.files.map(
         appendFilePreviewUrls(learningObject),
       );
     }
-
     return materials;
   } catch (e) {
     handleError(e);
@@ -1658,9 +1404,7 @@ export async function createLearningObjectRevision(params: {
 
   if (!releasedCopy) {
     throw new ResourceError(
-      `Cannot create a revision of Learning Object: ${
-        params.learningObjectId
-      } since it is not released.`,
+      `Cannot create a revision of Learning Object: ${params.learningObjectId} since it is not released.`,
       ResourceErrorReason.BAD_REQUEST,
     );
   }
@@ -1672,11 +1416,7 @@ export async function createLearningObjectRevision(params: {
     })
   ) {
     throw new ResourceError(
-      `Cannot create a revision. Requester ${
-        params.requester.username
-      } must be the author of Learning Object with id ${
-        params.learningObjectId
-      }`,
+      `Cannot create a revision. Requester ${params.requester.username} must be the author of Learning Object with id ${params.learningObjectId}`,
       ResourceErrorReason.INVALID_ACCESS,
     );
   }
@@ -1765,9 +1505,7 @@ async function validateRequest(params: {
 
   if (learningObject.author.username !== params.username) {
     throw new ResourceError(
-      `User ${params.username} does not own a Learning Object with id ${
-        params.learningObjectId
-      }`,
+      `User ${params.username} does not own a Learning Object with id ${params.learningObjectId}`,
       ResourceErrorReason.NOT_FOUND,
     );
   }
@@ -1793,7 +1531,7 @@ async function checkNameExists({
   name: string;
   id?: string;
 }) {
-  const authorId = await dataStore.findUser(username);
+  const authorId = await UserServiceGateway.getInstance().findUser(username);
   const existing = await dataStore.findLearningObject({ authorId, name });
   if (existing && id !== existing) {
     throw new ResourceError(

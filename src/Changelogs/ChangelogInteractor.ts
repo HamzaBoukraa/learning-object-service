@@ -7,6 +7,7 @@ import * as md5 from 'md5';
 import { LearningObject } from '../shared/entity';
 import { LearningObjectGateway } from './LearningObjectGateway';
 import { toBoolean } from '../shared/functions';
+import { UserServiceGateway } from '../shared/gateways/user-service/UserServiceGateway';
 
 /**
  * Instruct the data store to create a new log in the change logs collection
@@ -32,7 +33,7 @@ export async function createChangelog(params: {
     user: params.user,
   });
   const author = {
-    userId: await params.dataStore.findUser(params.user.username),
+    userId: await UserServiceGateway.getInstance().findUser(params.user.username),
     name: params.user.name,
     role,
     profileImage: generateProfileImageUrl({

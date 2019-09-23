@@ -5,7 +5,7 @@ import {UserDocument} from '../shared/types';
 import {LearningObject, User} from '../shared/entity';
 import {Submission} from './types/Submission';
 import {SubmissionDataStore} from './SubmissionDatastore';
-import {MongoConnector} from '../shared/Mongo/MongoConnector';
+import {MongoConnector} from '../shared/MongoDB/MongoConnector';
 
 export class MongoSubmissionDatastore implements SubmissionDataStore {
   db: Db;
@@ -115,7 +115,7 @@ export class MongoSubmissionDatastore implements SubmissionDataStore {
    * @param username of the user to be fetched
    * @returns the full user entity
    */
-  async fetchUser(username: string): Promise<User> {
+  async queryUserById(username: string): Promise<User> {
     const doc = await this.fetchUserDocument(username);
     return ObjectMapper.generateUser(doc);
   }

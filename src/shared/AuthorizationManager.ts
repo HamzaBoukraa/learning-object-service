@@ -9,6 +9,7 @@ import {
 import { DataStore } from './interfaces/DataStore';
 import { ResourceError, ResourceErrorReason } from './errors';
 import { LearningObject } from './entity';
+import { UserServiceGateway } from './gateways/user-service/UserServiceGateway';
 
 const PRIVILEGED_GROUPS = [
   AccessGroup.ADMIN,
@@ -138,7 +139,9 @@ async function userIsOwner(params: {
   user: UserToken;
   objectId: string;
 }) {
-  const userId = await params.dataStore.findUser(params.user.username);
+  const userId = await UserServiceGateway.getInstance().findUser(
+    params.user.username,
+  );
   const object = await params.dataStore.peek<{
     authorID: string;
   }>({
@@ -340,7 +343,7 @@ export function authorizeReadAccess({
   requester,
   message,
 }: {
-  learningObject: LearningObjectSummary;
+  learningObject: LearningObjectSummary | LearningObject;
   requester: UserToken;
   message?: string;
 }) {
@@ -395,7 +398,9 @@ export function authorizeWriteAccess({
     authorUsername: learningObject.author.username,
     requester,
   });
-  const authorAccess = isAuthor && (isUnreleased || learningObject.status === LearningObject.Status.WAITING);
+  const authorAccess =
+    isAuthor &&
+    (isUnreleased || learningObject.status === LearningObject.Status.WAITING);
   const isReleased = learningObject.status === LearningObject.Status.RELEASED;
   const isAdminOrEditor = requesterIsAdminOrEditor(requester);
   const adminEditorAccess = isAdminOrEditor && !isUnreleased && !isReleased;

@@ -25,6 +25,7 @@ let SEED_DATA = require('../../test_environment/data');
  * entity methods are also available.
  */
 export class Stubs {
+    private _searchUserObjectsUserToken: UserToken;
     private _learningObject: LearningObject;
     private _learningObjectChild: LearningObject;
     private _collection: Collection;
@@ -64,6 +65,14 @@ export class Stubs {
             email: this.user.email,
             organization:  this.user.organization,
             emailVerified: this.user.emailVerified,
+            accessGroups: [],
+        };
+        this._searchUserObjectsUserToken = {
+            username: SEED_DATA.SEARCH_USER_AUTHOR.username,
+            name: SEED_DATA.SEARCH_USER_AUTHOR.name,
+            email: SEED_DATA.SEARCH_USER_AUTHOR.email,
+            organization: SEED_DATA.SEARCH_USER_AUTHOR.organization,
+            emailVerified: SEED_DATA.SEARCH_USER_AUTHOR.emailVerified,
             accessGroups: [],
         };
         this._submission = {
@@ -178,6 +187,10 @@ export class Stubs {
 
     set metrics(metrics: { saves: number, downloads: number}) {
         this._metrics = metrics;
+    }
+
+    get searchUserObjectsUserToken() {
+        return this._searchUserObjectsUserToken;
     }
   /**
    * Generates Learning Object from untyped js module object

@@ -6,7 +6,7 @@ import { User } from '../user/user';
 import { LearningOutcome } from '../learning-outcome/learning-outcome';
 import { LEARNING_OBJECT_ERRORS } from './error-messages';
 import { EntityError } from '../errors/entity-error';
-import { LearningObjectSummary, LearningObjectChildSummary } from '../../types';
+import { LearningObjectSummary } from '../../types';
 import * as uuid from 'uuid/v4';
 
 const MIN_NAME_LENGTH = 3;
@@ -332,7 +332,7 @@ export class LearningObject {
     }
   }
 
-  children: LearningObjectChildSummary[] = [];
+  children: LearningObjectSummary[] = [];
 
   /**
    * Removes the object's i-th child.
@@ -340,7 +340,7 @@ export class LearningObject {
    *
    * @returns {LearningObjectChildSummary} the child object which was removed
    */
-  removeChild(index: number): LearningObjectChildSummary {
+  removeChild(index: number): LearningObjectSummary {
     return this.children.splice(index, 1)[0];
   }
 
@@ -458,9 +458,7 @@ export class LearningObject {
    * @param {string} resourceUriHost the base URI of the api
    * @memberof LearningObject
    */
-  attachResourceUris(
-    resourceUriHost: string,
-  ) {
+  attachResourceUris(resourceUriHost: string) {
     // attach additional properties
     if (!this.resourceUris) {
       this.resourceUris = {};
@@ -470,7 +468,8 @@ export class LearningObject {
 
     this.resourceUris.children = `${resourceUriHost}/users/${this.author.username}/learning-objects/${this.id}/children`;
 
-    this.resourceUris.materials = `${resourceUriHost}/users/${this.author.username}/learning-objects/${this.id}/materials`;
+    // tslint:disable-next-line: max-line-length
+    this.resourceUris.materials = `${resourceUriHost}/users/${this.author.username}/learning-objects/${this.id}/materials?status=${this.status !== LearningObject.Status.RELEASED ? LearningObject.Status.UNRELEASED : ''}`;
 
     this.resourceUris.metrics = `${resourceUriHost}/users/${this.author.username}/learning-objects/${this.id}/metrics`;
 

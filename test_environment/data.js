@@ -2,6 +2,327 @@
 const IDS = require('./sharedIds');
 
 const SEED_OBJECTS = {
+
+    USER_SEARCH_LEARNING_OBJECT_RELEASED: {
+        _id: IDS.USER_SEARCH.RELEASED,
+        authorID: IDS.AUTHOR.User_Search,
+        date: "1520530093085",
+        goals: [
+            {
+                text: "Random text goal"
+            },
+            {
+                text: "Random text goal 2"
+            }
+        ],
+        outcomes: [],
+        published: true,
+        name: "Learn Unit Testing",
+        length: "nanomodule",
+        materials:
+        {
+            files: [],
+            urls: [
+                {
+                    title: "An Awesome File",
+                    url: "http://cis1.towson.edu/~cyber4all/modules/nanomodules/Buffer_Overflow-CS0_C++.html"
+                },
+                {
+                    title: "Another Awesome File",
+                    url: "https://youtu.be/MH_RD1jh0AE"
+                },
+                {
+                    title: "Yeet",
+                    url: "https://youtu.be/u47q-qX52JI"
+                }
+            ],
+            notes: "",
+            folderDescriptions: [],
+            pdf:
+            {
+                name: "0ReadMeFirst - Buffer Overflow - CS0 - C++.pdf",
+                url: "https://neutrino-file-uploads.s3.us-east-2.amazonaws.com/skaza/5aa0013becba9a264dcd8030/0ReadMeFirst%20-%20Buffer%20Overflow%20-%20CS0%20-%20C%2B%2B.pdf"
+            }
+        },
+        children: [],
+        levels: ["undergraduate"],
+        contributors: [],
+        collection: "secinj",
+        lock:
+        {
+            date: "1538061211867",
+            restrictions: []
+        },
+        status: "released"
+    },
+
+    USER_SEARCH_LEARNING_OBJECT_UNRELEASED: {
+        _id: IDS.USER_SEARCH.UNRELEASED,
+        authorID: IDS.AUTHOR.User_Search,
+        date: "1520530093085",
+        goals: [
+            {
+                text: "Random text goal"
+            },
+            {
+                text: "Random text goal 2"
+            }
+        ],
+        outcomes: [],
+        published: true,
+        name: "Learn Unit Testing",
+        length: "nanomodule",
+        materials:
+        {
+            files: [],
+            urls: [
+                {
+                    title: "An Awesome File",
+                    url: "http://cis1.towson.edu/~cyber4all/modules/nanomodules/Buffer_Overflow-CS0_C++.html"
+                },
+                {
+                    title: "Another Awesome File",
+                    url: "https://youtu.be/MH_RD1jh0AE"
+                },
+                {
+                    title: "Yeet",
+                    url: "https://youtu.be/u47q-qX52JI"
+                }
+            ],
+            notes: "",
+            folderDescriptions: [],
+            pdf:
+            {
+                name: "0ReadMeFirst - Buffer Overflow - CS0 - C++.pdf",
+                url: "https://neutrino-file-uploads.s3.us-east-2.amazonaws.com/skaza/5aa0013becba9a264dcd8030/0ReadMeFirst%20-%20Buffer%20Overflow%20-%20CS0%20-%20C%2B%2B.pdf"
+            }
+        },
+        children: [],
+        levels: ["undergraduate"],
+        contributors: [],
+        collection: "secinj",
+        lock:
+        {
+            date: "1538061211867",
+            restrictions: []
+        },
+        status: "unreleased"
+    },
+
+    USER_SEARCH_LEARNING_OBJECT_WAITING: {
+        _id: IDS.USER_SEARCH.WAITING,
+        authorID: IDS.AUTHOR.User_Search,
+        date: "1520530093085",
+        goals: [
+            {
+                text: "Random text goal"
+            },
+            {
+                text: "Random text goal 2"
+            }
+        ],
+        outcomes: [],
+        published: true,
+        name: "Learn Unit Testing",
+        length: "nanomodule",
+        materials:
+        {
+            files: [],
+            urls: [
+                {
+                    title: "An Awesome File",
+                    url: "http://cis1.towson.edu/~cyber4all/modules/nanomodules/Buffer_Overflow-CS0_C++.html"
+                },
+                {
+                    title: "Another Awesome File",
+                    url: "https://youtu.be/MH_RD1jh0AE"
+                },
+                {
+                    title: "Yeet",
+                    url: "https://youtu.be/u47q-qX52JI"
+                }
+            ],
+            notes: "",
+            folderDescriptions: [],
+            pdf:
+            {
+                name: "0ReadMeFirst - Buffer Overflow - CS0 - C++.pdf",
+                url: "https://neutrino-file-uploads.s3.us-east-2.amazonaws.com/skaza/5aa0013becba9a264dcd8030/0ReadMeFirst%20-%20Buffer%20Overflow%20-%20CS0%20-%20C%2B%2B.pdf"
+            }
+        },
+        children: [],
+        levels: ["undergraduate"],
+        contributors: [],
+        collection: "secinj",
+        lock:
+        {
+            date: "1538061211867",
+            restrictions: []
+        },
+        status: "waiting"
+    },
+
+
+    USER_SEARCH_LEARNING_OBJECT_WAITING_C5: {
+        _id: IDS.USER_SEARCH.WAITING_C5,
+        authorID: IDS.AUTHOR.User_Search,
+        date: "1520530093085",
+        goals: [
+            {
+                text: "Random text goal"
+            },
+            {
+                text: "Random text goal 2"
+            }
+        ],
+        outcomes: [],
+        published: true,
+        name: "Learn Unit Testing",
+        length: "nanomodule",
+        materials:
+        {
+            files: [],
+            urls: [
+                {
+                    title: "An Awesome File",
+                    url: "http://cis1.towson.edu/~cyber4all/modules/nanomodules/Buffer_Overflow-CS0_C++.html"
+                },
+                {
+                    title: "Another Awesome File",
+                    url: "https://youtu.be/MH_RD1jh0AE"
+                },
+                {
+                    title: "Yeet",
+                    url: "https://youtu.be/u47q-qX52JI"
+                }
+            ],
+            notes: "",
+            folderDescriptions: [],
+            pdf:
+            {
+                name: "0ReadMeFirst - Buffer Overflow - CS0 - C++.pdf",
+                url: "https://neutrino-file-uploads.s3.us-east-2.amazonaws.com/skaza/5aa0013becba9a264dcd8030/0ReadMeFirst%20-%20Buffer%20Overflow%20-%20CS0%20-%20C%2B%2B.pdf"
+            }
+        },
+        children: [],
+        levels: ["undergraduate"],
+        contributors: [],
+        collection: "c5",
+        lock:
+        {
+            date: "1538061211867",
+            restrictions: []
+        },
+        status: "waiting"
+    },
+
+
+    USER_SEARCH_LEARNING_OBJECT_REVIEW: {
+        _id: IDS.USER_SEARCH.REVIEW,
+        authorID: IDS.AUTHOR.User_Search,
+        date: "1520530093085",
+        goals: [
+            {
+                text: "Random text goal"
+            },
+            {
+                text: "Random text goal 2"
+            }
+        ],
+        outcomes: [],
+        published: true,
+        name: "Learn Unit Testing",
+        length: "nanomodule",
+        materials:
+        {
+            files: [],
+            urls: [
+                {
+                    title: "An Awesome File",
+                    url: "http://cis1.towson.edu/~cyber4all/modules/nanomodules/Buffer_Overflow-CS0_C++.html"
+                },
+                {
+                    title: "Another Awesome File",
+                    url: "https://youtu.be/MH_RD1jh0AE"
+                },
+                {
+                    title: "Yeet",
+                    url: "https://youtu.be/u47q-qX52JI"
+                }
+            ],
+            notes: "",
+            folderDescriptions: [],
+            pdf:
+            {
+                name: "0ReadMeFirst - Buffer Overflow - CS0 - C++.pdf",
+                url: "https://neutrino-file-uploads.s3.us-east-2.amazonaws.com/skaza/5aa0013becba9a264dcd8030/0ReadMeFirst%20-%20Buffer%20Overflow%20-%20CS0%20-%20C%2B%2B.pdf"
+            }
+        },
+        children: [],
+        levels: ["undergraduate"],
+        contributors: [],
+        collection: "secinj",
+        lock:
+        {
+            date: "1538061211867",
+            restrictions: []
+        },
+        status: "review"
+    },
+
+    USER_SEARCH_LEARNING_OBJECT_PROOFING: {
+        _id: IDS.USER_SEARCH.PROOFING,
+        authorID: IDS.AUTHOR.User_Search,
+        date: "1520530093085",
+        goals: [
+            {
+                text: "Random text goal"
+            },
+            {
+                text: "Random text goal 2"
+            }
+        ],
+        outcomes: [],
+        published: true,
+        name: "Learn Unit Testing",
+        length: "nanomodule",
+        materials:
+        {
+            files: [],
+            urls: [
+                {
+                    title: "An Awesome File",
+                    url: "http://cis1.towson.edu/~cyber4all/modules/nanomodules/Buffer_Overflow-CS0_C++.html"
+                },
+                {
+                    title: "Another Awesome File",
+                    url: "https://youtu.be/MH_RD1jh0AE"
+                },
+                {
+                    title: "Yeet",
+                    url: "https://youtu.be/u47q-qX52JI"
+                }
+            ],
+            notes: "",
+            folderDescriptions: [],
+            pdf:
+            {
+                name: "0ReadMeFirst - Buffer Overflow - CS0 - C++.pdf",
+                url: "https://neutrino-file-uploads.s3.us-east-2.amazonaws.com/skaza/5aa0013becba9a264dcd8030/0ReadMeFirst%20-%20Buffer%20Overflow%20-%20CS0%20-%20C%2B%2B.pdf"
+            }
+        },
+        children: [],
+        levels: ["undergraduate"],
+        contributors: [],
+        collection: "secinj",
+        lock:
+        {
+            date: "1538061211867",
+            restrictions: []
+        },
+        status: "proofing"
+    },
+
     LEARNING_OBJECT_RELEASED_1: {
         _id: IDS.PARENT.released_1,
         authorID: IDS.AUTHOR.Bob,
@@ -216,6 +537,18 @@ const SEED_OBJECTS = {
         collection: 'nccp',
         _id: IDS.CHILD.released_1,
         status: 'released',
+    },
+    SEARCH_USER_AUTHOR: {
+        _id: IDS.AUTHOR.User_Search,
+        username: "Nick",
+        name: "Uncle Nick",
+        email: "unitTest2@gmail.com",
+        organization: "Towson University",
+        password: '$2b$10$Xo4wAJimokUp8Yha4c9boeiFufdf/UnxEuhbGHNuFrgqkHp.96P5a', //hash of 'password',
+        objects: [],
+        bio: "random text random text random text random text random text random text random text random text random text random text",
+        createdAt: "1534558693394",
+        emailVerified: true,
     },
     AUTHOR_MOCK: {
         _id: IDS.AUTHOR.Bob,

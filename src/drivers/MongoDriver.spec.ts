@@ -9,16 +9,6 @@ describe('MongoDriver', () => {
     driver = await MongoDriver.build(global['__MONGO_URI__']);
   });
 
-  describe('searchAllObjects', () => {
-    it('The function should return an object with total and objects', async () => {
-      expect.assertions(1);
-      const result = await driver.searchAllObjects({
-        collection: [stubs.collection.name],
-      });
-      expect(result).toBeDefined();
-    });
-  });
-
   describe('updateMultipleLearningObjects', () => {
     it('The function should return void', async () => {
       expect.assertions(1);
