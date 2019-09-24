@@ -77,6 +77,7 @@ export async function searchUsersObjects({
       text,
       status,
     };
+
     let learningObjects: LearningObject[];
     if (draftsOnly) {
       if (!isAuthor && !isPrivileged) {
@@ -143,6 +144,10 @@ export async function searchUsersObjects({
         )
           ? LearningObjectState.RELEASED
           : null;
+      }
+    } else {
+      if (!searchQuery.status) {
+        searchQuery.status = LearningObjectState.ALL;
       }
     }
 
