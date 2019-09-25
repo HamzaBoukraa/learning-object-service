@@ -525,7 +525,7 @@ export class LearningObject {
    * @param {Partial<LearningObject>} [object]
    * @memberof LearningObject
    */
-  constructor(object?: Partial<LearningObject>) {
+  constructor(object?: Partial<LearningObject> | any) {
     // @ts-ignore Id will be undefined on creation
     this._id = undefined;
     this._cuid = undefined;
@@ -561,7 +561,7 @@ export class LearningObject {
    * @param {Partial<LearningObject>} object
    * @memberof LearningObject
    */
-  private copyObject(object: Partial<LearningObject>): void {
+  private copyObject(object: Partial<LearningObject> | any): void {
     if (object.id) {
       this.id = object.id;
     }
