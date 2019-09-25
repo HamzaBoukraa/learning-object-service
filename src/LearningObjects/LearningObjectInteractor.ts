@@ -797,7 +797,7 @@ export async function generateReleasableLearningObject({
   id: string;
   requester: UserToken;
 }): Promise<HierarchicalLearningObject> {
-  const [object, children, files] = await Promise.all([
+  const [object, children] = await Promise.all([
     dataStore.fetchLearningObject({ id, full: true }),
     loadWorkingParentsReleasedChildObjects({
       dataStore,
@@ -812,7 +812,6 @@ export async function generateReleasableLearningObject({
     ...object.toPlainObject(),
   }) as HierarchicalLearningObject;
   releasableObject.children = children;
-  releasableObject.materials.files = files;
   return releasableObject;
 }
 
