@@ -116,7 +116,7 @@ export class MongoDBLearningObjectDatastore
       status,
       hasText: !!text,
     });
-    console.log(pipeline[0].$match.$or);
+
     const resultSet = await this.db
       .collection(COLLECTIONS.LEARNING_OBJECTS)
       .aggregate<{
@@ -189,7 +189,7 @@ export class MongoDBLearningObjectDatastore
       matcher.$or.push(...orConditions);
       // tslint:disable-next-line: no-unused-expression
       status ? matcher.$or.push({ status: { $in: status } }) : null;
-    } else {
+    } else if (status) {
       matcher.status = { $in: status };
     }
     const match = { $match: { ...matcher } };
