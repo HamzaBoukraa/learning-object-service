@@ -34,7 +34,7 @@ import { LearningObject, LearningOutcome, User } from '../shared/entity';
 import { MongoConnector } from '../shared/MongoDB/MongoConnector';
 import { LearningObjectUpdates } from '../shared/types/learning-object-updates';
 import * as mongoHelperFunctions from '../shared/MongoDB/HelperFunctions';
-import { sanitizeRegex } from '../shared/functions';
+import { sanitizeRegex, mapLearningObjectToSummary } from '../shared/functions';
 
 export enum COLLECTIONS {
   USERS = 'users',
@@ -981,6 +981,35 @@ export class MongoDriver implements DataStore {
       return mongoHelperFunctions.generateLearningObject(author, doc, full);
     }
     return null;
+  }
+
+  /**
+   * Fetch a all version of a Learning Object by CUID, or a single version of the Learning Object with the optional version parameter
+   *
+   * @param {string} cuid the CLARK universal identifier of the Learning Object
+   * @param {number} [version] a number representing the desired version of the Learning Object
+   * @returns {Promise<LearningObjectSummary[]>}
+   * @memberof MongoDriver
+   */
+  async fetchLearningObjectByCuid(cuid: string, version?: number): Promise<LearningObjectSummary[]> {
+    const query: { cuid: string, revision?: number } = { cuid };
+
+    let notFoundError = `No Learning Object found for CUID '${cuid}'`;
+
+    if (version !== undefined) {
+      query.revision = version;
+      notFoundError += ` with version ${version}`;
+    }
+
+    const objects: LearningObjectDocument[] = await this.db.collection('objects').find(query).toArray();
+
+    if (!objects || !objects.length) {
+      throw new ResourceError(notFoundError, ResourceErrorReason.NOT_FOUND);
+    }
+
+    const author = await UserServiceGateway.getInstance().queryUserById(objects[0].authorID);
+
+    return Promise.all(objects.map(async o => mapLearningObjectToSummary(await mongoHelperFunctions.generateLearningObject(author, o))));
   }
 
   /**
