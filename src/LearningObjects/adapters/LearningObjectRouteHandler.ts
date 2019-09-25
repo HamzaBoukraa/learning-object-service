@@ -125,7 +125,7 @@ export function initializePublic({
     }
   };
 
-  router.get('/users/:username/learning-objects/:cuid', getLearningObjectByCuid)
+  router.get('/users/:username/learning-objects/:cuid', getLearningObjectByCuid);
 
   /**
    * @deprecated This route will be deprecated because of its non RESTful route structure
