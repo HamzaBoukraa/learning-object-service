@@ -802,11 +802,7 @@ export async function generateReleasableLearningObject({
     loadWorkingParentsReleasedChildObjects({
       dataStore,
       parentId: id,
-    }),
-    Gateways.fileMetadata().getAllFileMetadata({
-      requester,
-      learningObjectId: id,
-    }),
+    })
   ]);
   const releasableObject = new LearningObject({
     ...object.toPlainObject(),
