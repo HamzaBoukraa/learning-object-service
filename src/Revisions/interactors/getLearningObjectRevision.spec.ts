@@ -1,10 +1,10 @@
 import { getLearningObjectRevision } from './getLearningObjectRevision';
-import { DataStore } from '../../../shared/interfaces/DataStore';
-import { MockDataStore } from '../../../tests/mock-drivers/MockDataStore';
-import { Stubs } from '../../../tests/stubs';
-import { LearningObjectsModule } from '../../LearningObjectsModule';
-import { StubUserGateway } from '../../gateways/UserGateway/StubUserGateway';
-import { UserGateway } from '../../interfaces/UserGateway';
+import { DataStore } from '../../shared/interfaces/DataStore';
+import { MockDataStore } from '../../tests/mock-drivers/MockDataStore';
+import { Stubs } from '../../tests/stubs';
+import { LearningObjectsModule } from '../../LearningObjects/LearningObjectsModule';
+import { StubUserGateway } from '../../LearningObjects/gateways/UserGateway/StubUserGateway';
+import { UserGateway } from '../../LearningObjects/interfaces/UserGateway';
 
 const dataStore: DataStore = new MockDataStore();
 const stubs = new Stubs();
