@@ -1,6 +1,7 @@
 import { LearningObject } from '../../../entity';
 import { LearningObjectDocument } from '../../../types';
 import { ReleasedLearningObjectDocument } from '../../../types/learning-object-document';
+import { UserServiceGateway } from '../../../gateways/user-service/UserServiceGateway';
 
 /**
  * Converts Released Learning Object to Document
@@ -15,17 +16,18 @@ import { ReleasedLearningObjectDocument } from '../../../types/learning-object-d
 export async function documentReleasedLearningObject(
   object: LearningObject,
 ): Promise<LearningObjectDocument> {
+  const authorID = await UserServiceGateway.getInstance().findUser(object.author.username);
   let contributorIds: string[] = [];
 
   if (object.contributors && object.contributors.length) {
     contributorIds = await Promise.all(
-      object.contributors.map(user => this.findUser(user.username)),
+      object.contributors.map(user => UserServiceGateway.getInstance().findUser(user.username)),
     );
   }
 
   const doc: ReleasedLearningObjectDocument = {
     _id: object.id,
-    authorID: object.author.id,
+    authorID: authorID,
     name: object.name,
     date: object.date,
     length: object.length,
