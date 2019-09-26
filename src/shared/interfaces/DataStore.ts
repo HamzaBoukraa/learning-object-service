@@ -183,6 +183,8 @@ export interface DataStore
   deleteChild(parentId: string, childId: string): Promise<void>;
   addToCollection(learningObjectId: string, collection: string): Promise<void>;
 
+  fetchLearningObjectByCuid(cuid: string, version?: number): Promise<LearningObjectSummary[]>;
+
   /*
    * DELETE Operations
    */

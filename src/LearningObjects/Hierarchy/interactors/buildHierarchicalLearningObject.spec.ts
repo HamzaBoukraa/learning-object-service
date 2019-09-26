@@ -17,6 +17,7 @@ const learningObjectSummaryStub: LearningObjectSummary = {
   date: 'test_date',
   description: 'test_description',
   length: 'test_length',
+  levels: ['test'],
   name: 'test_name',
   hasRevision: false,
   revision: 0,

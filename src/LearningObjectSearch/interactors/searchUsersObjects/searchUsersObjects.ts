@@ -10,6 +10,7 @@ import {
   ResourceError,
   ResourceErrorReason,
   handleError,
+  mapErrorToResponseData,
 } from '../../../shared/errors';
 import {
   requesterIsAuthor,
@@ -77,6 +78,7 @@ export async function searchUsersObjects({
       text,
       status,
     };
+
     let learningObjects: LearningObject[];
     if (draftsOnly) {
       if (!isAuthor && !isPrivileged) {
@@ -107,12 +109,22 @@ export async function searchUsersObjects({
       searchQuery.revision = 0;
     }
 
-    const user = await Gateways.userGateway().getUser(authorUsername);
+    const userNotFoundError = `Cannot load Learning Objects for user ${authorUsername}. User ${authorUsername} does not exist.`;
+
+    let user;
+
+    try {
+      user = await Gateways.userGateway().getUser(authorUsername);
+    } catch (error) {
+      if (error.statusCode === 404) {
+        throw new ResourceError(userNotFoundError, ResourceErrorReason.NOT_FOUND);
+      } else {
+        throw error;
+      }
+    }
+
     if (!user) {
-      throw new ResourceError(
-        `Cannot load Learning Objects for user ${authorUsername}. User ${authorUsername} does not exist.`,
-        ResourceErrorReason.NOT_FOUND,
-      );
+      throw new ResourceError(userNotFoundError, ResourceErrorReason.NOT_FOUND);
     }
 
     if (!isAuthor && !isPrivileged) {
@@ -143,6 +155,10 @@ export async function searchUsersObjects({
         )
           ? LearningObjectState.RELEASED
           : null;
+      }
+    } else {
+      if (!searchQuery.status) {
+        searchQuery.status = LearningObjectState.ALL;
       }
     }
 
