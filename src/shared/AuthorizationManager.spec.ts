@@ -50,11 +50,11 @@ describe('AuthorizationManager', () => {
       email: '',
       organization: '',
     };
-    it("should return true when the requester's email is verified", () => {
+    it('should return true when the requester\'s email is verified', () => {
       requester.emailVerified = true;
       expect(AuthorizationManager.requesterIsVerified(requester)).toBe(true);
     });
-    it("should return false when the requester's email is not verified", () => {
+    it('should return false when the requester\'s email is not verified', () => {
       requester.emailVerified = false;
       expect(AuthorizationManager.requesterIsVerified(requester)).toBe(false);
     });
