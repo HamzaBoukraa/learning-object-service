@@ -64,5 +64,8 @@ export async function generateLearningObject(
     children,
     revision: record.revision,
   });
+
+  learningObject.attachResourceUris(process.env.GATEWAY_API);
+
   return learningObject;
 }
