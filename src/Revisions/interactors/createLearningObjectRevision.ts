@@ -1,12 +1,12 @@
-import { DataStore } from '../../../shared/interfaces/DataStore';
-import { LearningObjectSummary, UserToken } from '../../../shared/types';
-import { getReleasedLearningObjectSummary } from '../../LearningObjectInteractor';
-import { ResourceError, ResourceErrorReason } from '../../../shared/errors';
+import { DataStore } from '../../shared/interfaces/DataStore';
+import { LearningObjectSummary, UserToken } from '../../shared/types';
+import { getReleasedLearningObjectSummary } from '../../LearningObjects/LearningObjectInteractor';
+import { ResourceError, ResourceErrorReason } from '../../shared/errors';
 import {
   requesterIsAdminOrEditor,
   requesterIsAuthor,
-} from '../../../shared/AuthorizationManager';
-import { LearningObject } from '../../../shared/entity';
+} from '../../shared/AuthorizationManager';
+import { LearningObject } from '../../shared/entity';
 import { validateRequest } from './tasks/validateRequest';
 import { getLearningObjectRevision } from './getLearningObjectRevision';
 

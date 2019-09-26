@@ -1,24 +1,24 @@
-import { DataStore } from '../../../shared/interfaces/DataStore';
+import { DataStore } from '../../shared/interfaces/DataStore';
 import {
   LearningObjectState,
   LearningObjectSummary,
   UserToken,
-} from '../../../shared/types';
-import { LearningObject, User } from '../../../shared/entity';
+} from '../../shared/types';
+import { LearningObject, User } from '../../shared/entity';
 import {
   handleError,
   ResourceError,
   ResourceErrorReason,
-} from '../../../shared/errors';
+} from '../../shared/errors';
 import { validateRequest } from './tasks/validateRequest';
 import {
   authorizeRequest,
   hasReadAccessByCollection,
   requesterIsAdminOrEditor,
   requesterIsAuthor,
-} from '../../../shared/AuthorizationManager';
-import { LearningObjectsModule } from '../../LearningObjectsModule';
-import { UserGateway } from '../../interfaces/UserGateway';
+} from '../../shared/AuthorizationManager';
+import { LearningObjectsModule } from '../../LearningObjects/LearningObjectsModule';
+import { UserGateway } from '../../LearningObjects/interfaces/UserGateway';
 
 namespace Gateways {
   export const user = () =>

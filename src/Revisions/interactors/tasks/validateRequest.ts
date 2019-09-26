@@ -1,5 +1,5 @@
-import { DataStore } from '../../../../shared/interfaces/DataStore';
-import { ResourceError, ResourceErrorReason } from '../../../../shared/errors';
+import { DataStore } from '../../../shared/interfaces/DataStore';
+import { ResourceError, ResourceErrorReason } from '../../../shared/errors';
 
 /**
  * validateRequest tries to find a Learning Object

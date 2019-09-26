@@ -1,10 +1,10 @@
 import { Request, Response, Router } from 'express';
-import { mapErrorToResponseData } from '../../shared/errors';
-import { DataStore } from '../../shared/interfaces/DataStore';
-import { LibraryCommunicator } from '../../shared/interfaces/interfaces';
-import { LearningObjectSummary } from '../../shared/types';
-import { LearningObject } from '../../shared/entity';
-import { toBoolean } from '../../shared/functions';
+import { mapErrorToResponseData } from '../shared/errors';
+import { DataStore } from '../shared/interfaces/DataStore';
+import { LibraryCommunicator } from '../shared/interfaces/interfaces';
+import { LearningObjectSummary } from '../shared/types';
+import { LearningObject } from '../shared/entity';
+import { toBoolean } from '../shared/functions';
 import * as RevisionInteractor from './interactors';
 
 /**

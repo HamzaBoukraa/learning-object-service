@@ -10,7 +10,7 @@ import {
 import * as LearningObjectInteractor from '../LearningObjectInteractor';
 import { LearningObject } from '../../shared/entity';
 import { LearningObjectFilter, MaterialsFilter } from '../typings';
-import { initializePrivate as initializeRevisionRoutes } from '../Revisions/RevisionRouteHandler';
+import { initializePrivate as initializeRevisionRoutes } from '../../Revisions/RevisionRouteHandler';
 import { toBoolean, mapLearningObjectToSummary } from '../../shared/functions';
 import { LibraryDriver } from '../../drivers/LibraryDriver';
 

@@ -1,9 +1,9 @@
-import { ResourceError, ResourceErrorReason } from '../../../shared/errors';
-import { DataStore } from '../../../shared/interfaces/DataStore';
-import { MockDataStore } from '../../../tests/mock-drivers/MockDataStore';
-import { Stubs } from '../../../tests/stubs';
+import { ResourceError, ResourceErrorReason } from '../../shared/errors';
+import { DataStore } from '../../shared/interfaces/DataStore';
+import { MockDataStore } from '../../tests/mock-drivers/MockDataStore';
+import { Stubs } from '../../tests/stubs';
 import { ERROR_MESSAGES } from './createLearningObjectRevision';
-import { LearningObject } from '../../../shared/entity';
+import { LearningObject } from '../../shared/entity';
 
 describe('createLearningObjectRevison', () => {
   const dataStore: DataStore = new MockDataStore();
