@@ -88,7 +88,6 @@ export interface LearningObjectSummary {
    * The version number of the Learning Object
    */
   revision: number;
-  /**
-   * Summary of Learning Objects that exist in this Learning Object's hierarchy
-   */
+
+  levels: string[];
 }

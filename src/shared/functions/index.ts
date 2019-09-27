@@ -132,6 +132,7 @@ export function mapLearningObjectToSummary(
     description: object.description,
     hasRevision: object.hasRevision || false,
     length: object.length,
+    levels: object.levels,
     name: object.name,
     revision: object.revision,
     status: object.status,
