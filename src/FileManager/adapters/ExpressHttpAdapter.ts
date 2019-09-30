@@ -4,7 +4,7 @@ import { LEARNING_OBJECT_ROUTES } from '../../shared/routes';
 import { mapErrorToResponseData } from '../../shared/errors';
 import { fileNotFound } from '../assets/filenotfound';
 import { DownloadFilter, Requester } from '../typings';
-import { downloadBundle } from '../interactors/downloadBundle';
+import { downloadBundle } from '../interactors/downloadBundle/downloadBundle';
 
 export function buildRouter(): Router {
   const router = Router();

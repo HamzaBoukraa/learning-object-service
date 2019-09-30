@@ -744,10 +744,6 @@ export class MongoDriver implements DataStore {
       .updateOne({ _id: params.id }, { $set: params.updates });
   }
 
-  //////////////////////////////////////////
-  // DELETIONS - will cascade to children //
-  //////////////////////////////////////////
-
   /**
    * Remove a learning object (and its outcomes) from the database.
    * @async
@@ -991,7 +987,7 @@ export class MongoDriver implements DataStore {
    * @returns {Promise<LearningObjectSummary[]>}
    * @memberof MongoDriver
    */
-  async fetchLearningObjectByCuid(cuid: string, version?: number): Promise<LearningObjectSummary[]> {
+  async fetchLearningObjectByCuid(cuid: string, version?: number): Promise<LearningObject[]> {
     const query: { cuid: string, revision?: number } = { cuid };
 
     let notFoundError = `No Learning Object found for CUID '${cuid}'`;
@@ -1009,7 +1005,7 @@ export class MongoDriver implements DataStore {
 
     const author = await UserServiceGateway.getInstance().queryUserById(objects[0].authorID);
 
-    return Promise.all(objects.map(async o => mapLearningObjectToSummary(await mongoHelperFunctions.generateLearningObject(author, o))));
+    return Promise.all(objects.map(async o => await mongoHelperFunctions.generateLearningObject(author, o)));
   }
 
   /**

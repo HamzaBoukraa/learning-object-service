@@ -42,7 +42,7 @@ export async function getFileStream({
   return Drivers.fileManager().streamFile({
     authorUsername,
     learningObjectId,
-    learningObjectRevisionId,
+    learningObjectVersion: learningObjectRevisionId,
     path,
   });
 }
@@ -72,7 +72,7 @@ export async function uploadFile({
   await Drivers.fileManager().upload({
     authorUsername,
     learningObjectId,
-    learningObjectRevisionId,
+    learningObjectVersion: learningObjectRevisionId,
     file,
   });
 }
@@ -102,7 +102,7 @@ export async function deleteFile({
   await Drivers.fileManager().delete({
     authorUsername,
     learningObjectId,
-    learningObjectRevisionId,
+    learningObjectVersion: learningObjectRevisionId,
     path,
   });
 }
@@ -131,7 +131,7 @@ export async function deleteFolder({
   await Drivers.fileManager().deleteFolder({
     authorUsername,
     learningObjectId,
-    learningObjectRevisionId,
+    learningObjectVersion: learningObjectRevisionId,
     path,
   });
 }
@@ -202,14 +202,14 @@ export async function downloadSingleFile({
     await Drivers.fileManager().hasAccess({
       authorUsername: author,
       learningObjectId,
-      learningObjectRevisionId: fileMetaData.storageRevision,
+      learningObjectVersion: fileMetaData.storageRevision,
       path: fileMetaData.fullPath || fileMetaData.name,
     })
   ) {
     const stream = await Drivers.fileManager().streamFile({
       authorUsername: author,
       learningObjectId,
-      learningObjectRevisionId: fileMetaData.storageRevision,
+      learningObjectVersion: fileMetaData.storageRevision,
       path: fileMetaData.fullPath || fileMetaData.name,
     });
     return { mimeType, stream, filename: fileMetaData.name };

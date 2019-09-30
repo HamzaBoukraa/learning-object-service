@@ -2,10 +2,12 @@ import { Request, Response, Router } from 'express';
 import { mapErrorToResponseData } from '../shared/errors';
 import { DataStore } from '../shared/interfaces/DataStore';
 import { LibraryCommunicator } from '../shared/interfaces/interfaces';
-import { LearningObjectSummary } from '../shared/types';
+import { LearningObjectSummary, UserToken } from '../shared/types';
 import { LearningObject } from '../shared/entity';
 import { toBoolean } from '../shared/functions';
 import * as RevisionInteractor from './interactors';
+import { RevisionsMongoDriver } from './RevisionsMongoDriver';
+import { RevisionsDataStore } from './RevisionsDataStore';
 
 /**
  * Initializes an Express router for the Revision resource.
@@ -14,18 +16,13 @@ import * as RevisionInteractor from './interactors';
  * @param library the Gateway to the Library Service
  * @returns
  */
-export function initializePrivate({
-  router,
-  dataStore,
-  library,
-}: {
-  router: Router;
-  dataStore: DataStore;
-  library: LibraryCommunicator;
-}) {
+export function initializePrivate({ router }: { router: Router }) {
+  const revisionsDataStore = new RevisionsMongoDriver();
+
   const createRevision = async (req: Request, res: Response) => {
     try {
-      const params = { ...req.params, dataStore, requester: req.user };
+      const params: { username: string, cuid: string, dataStore: RevisionsDataStore, requester: UserToken } = { ...req.params, dataStore: revisionsDataStore, requester: req.user };
+
       const newRevisionId = await RevisionInteractor.createLearningObjectRevision(params);
       res.status(200).json({revision: newRevisionId});
     } catch (e) {
@@ -34,27 +31,5 @@ export function initializePrivate({
     }
   };
 
-  const getRevision = async (req: Request, res: Response) => {
-    try {
-      const params = {
-        ...req.params,
-        revisionId: parseInt(req.params.revisionId, 10),
-        dataStore,
-        library,
-        requester: req.user,
-        summary: toBoolean(req.query.summary),
-      };
-      let learningObjectRevision: LearningObject | LearningObjectSummary | Partial<LearningObject>;
-      learningObjectRevision = await RevisionInteractor.getLearningObjectRevision(params);
-      if (learningObjectRevision instanceof LearningObject) {
-        learningObjectRevision = learningObjectRevision.toPlainObject();
-      }
-      res.status(200).json(learningObjectRevision);
-    } catch (e) {
-      const { code, message } = mapErrorToResponseData(e);
-      res.status(code).json({ message });
-    }
-  };
-  router.post('/users/:username/learning-objects/:learningObjectId/revisions', createRevision);
-  router.get('/users/:username/learning-objects/:learningObjectId/revisions/:revisionId', getRevision);
+  router.post('/users/:username/learning-objects/:cuid/versions', createRevision);
 }

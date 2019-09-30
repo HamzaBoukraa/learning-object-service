@@ -1,15 +1,15 @@
-import { UserToken, AccessGroup } from '../../shared/types';
-import { Gateways, Drivers } from './shared/dependencies';
-import { ResourceErrorReason, ResourceError } from '../../shared/errors';
+import { UserToken, AccessGroup } from '../../../shared/types';
+import { Gateways, Drivers } from '../shared/dependencies';
+import { ResourceErrorReason, ResourceError } from '../../../shared/errors';
 import {
   requesterIsAdminOrEditor,
   requesterIsAuthor,
-} from '../../shared/AuthorizationManager';
-import { LearningObject } from '../../shared/entity';
+} from '../../../shared/AuthorizationManager';
+import { LearningObject } from '../../../shared/entity';
 import { Stream } from 'stream';
-import { bundleLearningObject } from '../../LearningObjects/Publishing/Bundler/Interactor';
-import FileManagerModuleErrorMessages from './shared/errors';
-import { uploadFile } from './Interactor';
+import { bundleLearningObject } from '../../../LearningObjects/Publishing/Bundler/Interactor';
+import FileManagerModuleErrorMessages from '../shared/errors';
+import { uploadFile } from '../Interactor';
 
 export type DownloadBundleParams = {
   requester: UserToken;
@@ -79,7 +79,7 @@ async function downloadReleasedCopy(
   const fileExists = await Drivers.fileManager().hasAccess({
     authorUsername: learningObjectAuthorUsername,
     learningObjectId: learningObject.id,
-    learningObjectRevisionId: learningObject.revision,
+    learningObjectVersion: learningObject.revision,
     path: `${learningObject.cuid}.zip`,
   });
 
@@ -99,7 +99,7 @@ async function downloadReleasedCopy(
   return await Drivers.fileManager().streamFile({
     authorUsername: learningObjectAuthorUsername,
     learningObjectId: learningObject.id,
-    learningObjectRevisionId: learningObject.revision,
+    learningObjectVersion: learningObject.revision,
     path: `${learningObject.cuid}.zip`,
   });
 }

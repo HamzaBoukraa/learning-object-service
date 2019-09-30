@@ -11,6 +11,7 @@ import {
   updateReadme,
   getLearningObjectByName,
   getLearningObjectSummary,
+  getLearningObjectByCuid
 } from '../LearningObjectInteractor';
 import { LearningObjectSummary, UserToken } from '../../shared/types';
 import { LearningObjectFilter } from '../typings';
@@ -45,6 +46,10 @@ export class LearningObjectAdapter {
    */
   async updateObjectLastModifiedDate(id: string): Promise<void> {
     return updateObjectLastModifiedDate({ dataStore: this.dataStore, id });
+  }
+
+  async getLearningObjectByCuid(cuid: string, authorUsername: string, requester: UserToken, version?: number): Promise<LearningObject[]> {
+    return await getLearningObjectByCuid({ dataStore: this.dataStore, cuid, authorUsername, requester, version  });
   }
 
   /**
@@ -159,6 +164,7 @@ export class LearningObjectAdapter {
       authorUsername: params.authorUsername,
       updates: params.updates,
       dataStore: this.dataStore,
+      library: this.library,
     });
   }
 

@@ -1,4 +1,3 @@
-import { DataStore } from '../../shared/interfaces/DataStore';
 import {
   LearningObjectState,
   LearningObjectSummary,
@@ -10,7 +9,6 @@ import {
   ResourceError,
   ResourceErrorReason,
 } from '../../shared/errors';
-import { validateRequest } from './tasks/validateRequest';
 import {
   authorizeRequest,
   hasReadAccessByCollection,
@@ -19,6 +17,7 @@ import {
 } from '../../shared/AuthorizationManager';
 import { LearningObjectsModule } from '../../LearningObjects/LearningObjectsModule';
 import { UserGateway } from '../../LearningObjects/interfaces/UserGateway';
+import { RevisionsDataStore } from '../RevisionsDataStore';
 
 namespace Gateways {
   export const user = () =>
@@ -50,7 +49,7 @@ export async function getLearningObjectRevision({
   username,
   summary,
 }: {
-  dataStore: DataStore;
+  dataStore: RevisionsDataStore;
   requester: UserToken;
   learningObjectId: string;
   revisionId: number;
@@ -64,11 +63,6 @@ export async function getLearningObjectRevision({
         ResourceErrorReason.NOT_FOUND,
       );
     }
-    await validateRequest({
-      username: username,
-      learningObjectId: learningObjectId,
-      dataStore: dataStore,
-    });
 
     let learningObject: LearningObject | LearningObjectSummary;
     let author: User;
@@ -76,11 +70,9 @@ export async function getLearningObjectRevision({
     if (!summary) {
       author = await Gateways.user().getUser(username);
     }
-    learningObject = await dataStore.fetchLearningObjectRevision({
-      id: learningObjectId,
-      revision: revisionId,
-      author,
-    });
+
+    // TODO fetch learning object from LearningObjects module
+
     if (!learningObject) {
       throw new ResourceError(
         `Cannot find revision ${revisionId} of Learning Object ${learningObjectId}.`,
@@ -88,29 +80,33 @@ export async function getLearningObjectRevision({
       );
     }
 
-    const releasedAccess =
-      learningObject.status === LearningObject.Status.RELEASED;
+    const releasedAccess = learningObject.status === LearningObject.Status.RELEASED;
+
     const authorAccess = requesterIsAuthor({
       requester,
       authorUsername: learningObject.author.username,
     });
+
     const isUnreleased = LearningObjectState.UNRELEASED.includes(
       learningObject.status as LearningObject.Status,
     );
+
     const reviewerCuratorAccess =
       !isUnreleased &&
       hasReadAccessByCollection({
         requester,
         collection: learningObject.collection,
       });
-    const adminEditorAccess =
-      !isUnreleased && requesterIsAdminOrEditor(requester);
+
+    const adminEditorAccess = !isUnreleased && requesterIsAdminOrEditor(requester);
+
     authorizeRequest([
       releasedAccess,
       authorAccess,
       reviewerCuratorAccess,
       adminEditorAccess,
     ]);
+
     return learningObject;
   } catch (e) {
     handleError(e);
