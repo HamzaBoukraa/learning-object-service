@@ -102,6 +102,31 @@ export function initializePublic({
       res.status(code).json({ message });
     }
   };
+
+  const getLearningObjectByCuid = async (req: Request, res: Response, next: any) => {
+    try {
+      const cuid = req.params.cuid;
+      const requester = req.user;
+      const authorUsername = req.params.username;
+      const version = req.query.version;
+
+      if (cuid.indexOf('-') === -1) {
+        // this isn't a CUID, fall through to learning object :id
+        next();
+        return;
+      }
+
+      const results = await LearningObjectInteractor.getLearningObjectByCuid({ dataStore, requester, authorUsername, cuid, version });
+
+      res.json(results);
+    } catch (e) {
+      const { code, message } = mapErrorToResponseData(e);
+      res.status(code).json({ message });
+    }
+  };
+
+  router.get('/users/:username/learning-objects/:cuid', getLearningObjectByCuid);
+
   /**
    * @deprecated This route will be deprecated because of its non RESTful route structure
    * Please update to using `/users/:username/learning-objects/:learningObjectId`

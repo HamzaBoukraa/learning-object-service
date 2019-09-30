@@ -122,6 +122,43 @@ export async function getLearningObjectByName({
 }
 
 /**
+ * Retrieve a Learning Object by CUID
+ *
+ * This function returns all versions of the Learning Object that the requester is authorized to read.
+ *
+ * @export
+ * @param {{
+ *   dataStore: DataStore,
+ *   requester: UserToken,
+ *   authorUsername: string,
+ *   cuid: string,
+ *   version?: number,
+ * }}
+ * @returns
+ */
+export async function getLearningObjectByCuid({
+  dataStore,
+  requester,
+  cuid,
+  version,
+}: {
+  dataStore: DataStore,
+  requester: UserToken,
+  authorUsername: string,
+  cuid: string,
+  version?: number,
+}) {
+  const objects = await dataStore.fetchLearningObjectByCuid(cuid, version);
+  const payload = objects.filter(object => {
+    // this function will throw a ResourceError if requester isn't authorized
+    authorizeReadAccess({ learningObject: object, requester });
+    return true;
+  });
+
+  return payload;
+}
+
+/**
  * Loads working copy of a Learning Object by author's username and Learning Object's name
  *
  * @private
@@ -797,22 +834,17 @@ export async function generateReleasableLearningObject({
   id: string;
   requester: UserToken;
 }): Promise<HierarchicalLearningObject> {
-  const [object, children, files] = await Promise.all([
+  const [object, children] = await Promise.all([
     dataStore.fetchLearningObject({ id, full: true }),
     loadWorkingParentsReleasedChildObjects({
       dataStore,
       parentId: id,
-    }),
-    Gateways.fileMetadata().getAllFileMetadata({
-      requester,
-      learningObjectId: id,
-    }),
+    })
   ]);
   const releasableObject = new LearningObject({
     ...object.toPlainObject(),
   }) as HierarchicalLearningObject;
   releasableObject.children = children;
-  releasableObject.materials.files = files;
   return releasableObject;
 }
 
@@ -1444,10 +1476,10 @@ export async function createLearningObjectRevision(params: {
 function appendFilePreviewUrls(
   learningObject: LearningObject,
 ): (
-  value: LearningObject.Material.File,
-  index: number,
-  array: LearningObject.Material.File[],
-) => LearningObject.Material.File {
+    value: LearningObject.Material.File,
+    index: number,
+    array: LearningObject.Material.File[],
+  ) => LearningObject.Material.File {
   return file => {
     file.previewUrl = Gateways.fileMetadata().getFilePreviewUrl({
       authorUsername: learningObject.author.username,
