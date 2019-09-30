@@ -54,7 +54,9 @@ async function downloadWorkingCopy(
   );
   if (!hasAccess) {
     throw new ResourceError(
-      FileManagerModuleErrorMessages.forbiddenLearningObjectDownload(requester.username),
+      FileManagerModuleErrorMessages.forbiddenLearningObjectDownload(
+        requester.username,
+      ),
       ResourceErrorReason.FORBIDDEN,
     );
   }
@@ -78,7 +80,7 @@ async function downloadReleasedCopy(
 
   const fileExists = await Drivers.fileManager().hasAccess({
     authorUsername: learningObjectAuthorUsername,
-    learningObjectId: learningObject.id,
+    learningObjectCUID: learningObject.cuid,
     learningObjectRevisionId: learningObject.revision,
     path: `${learningObject.cuid}.zip`,
   });
@@ -87,7 +89,7 @@ async function downloadReleasedCopy(
     const bundle = await createBundleStream(learningObject, requester);
     await uploadFile({
       authorUsername: learningObject.author.username,
-      learningObjectId: learningObject.id,
+      learningObjectCUID: learningObject.cuid,
       learningObjectRevisionId: learningObject.revision,
       file: {
         path: `${learningObject.cuid}.zip`,
@@ -98,7 +100,7 @@ async function downloadReleasedCopy(
 
   return await Drivers.fileManager().streamFile({
     authorUsername: learningObjectAuthorUsername,
-    learningObjectId: learningObject.id,
+    learningObjectCUID: learningObject.cuid,
     learningObjectRevisionId: learningObject.revision,
     path: `${learningObject.cuid}.zip`,
   });

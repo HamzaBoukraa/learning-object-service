@@ -142,11 +142,11 @@ export async function getLearningObjectByCuid({
   cuid,
   version,
 }: {
-  dataStore: DataStore,
-  requester: UserToken,
-  authorUsername: string,
-  cuid: string,
-  version?: number,
+  dataStore: DataStore;
+  requester: UserToken;
+  authorUsername: string;
+  cuid: string;
+  version?: number;
 }) {
   const objects = await dataStore.fetchLearningObjectByCuid(cuid, version);
   const payload = objects.filter(object => {
@@ -839,7 +839,7 @@ export async function generateReleasableLearningObject({
     loadWorkingParentsReleasedChildObjects({
       dataStore,
       parentId: id,
-    })
+    }),
   ]);
   const releasableObject = new LearningObject({
     ...object.toPlainObject(),
@@ -1306,7 +1306,7 @@ export async function updateReadme(params: {
 
     await Gateways.fileManager().uploadFile({
       authorUsername: object.author.username,
-      learningObjectId: object.id,
+      learningObjectCUID: object.cuid,
       learningObjectRevisionId: object.revision,
       file: { data: pdfFile, path: newPdfName },
     });
@@ -1314,7 +1314,7 @@ export async function updateReadme(params: {
       Gateways.fileManager()
         .deleteFile({
           authorUsername: object.author.username,
-          learningObjectId: object.id,
+          learningObjectCUID: object.cuid,
           learningObjectRevisionId: object.revision,
           path: oldPDF.name,
         })
@@ -1476,10 +1476,10 @@ export async function createLearningObjectRevision(params: {
 function appendFilePreviewUrls(
   learningObject: LearningObject,
 ): (
-    value: LearningObject.Material.File,
-    index: number,
-    array: LearningObject.Material.File[],
-  ) => LearningObject.Material.File {
+  value: LearningObject.Material.File,
+  index: number,
+  array: LearningObject.Material.File[],
+) => LearningObject.Material.File {
   return file => {
     file.previewUrl = Gateways.fileMetadata().getFilePreviewUrl({
       authorUsername: learningObject.author.username,

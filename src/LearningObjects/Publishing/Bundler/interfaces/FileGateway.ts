@@ -15,7 +15,7 @@ export abstract class FileGateway implements Partial<FileManagerModule> {
    */
   abstract getFileStream(params: {
     authorUsername: string;
-    learningObjectId: string;
+    learningObjectCUID: string;
     learningObjectRevisionId: number;
     path: string;
   }): Promise<Readable>;

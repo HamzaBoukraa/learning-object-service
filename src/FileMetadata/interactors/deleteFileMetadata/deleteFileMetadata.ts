@@ -66,7 +66,7 @@ export async function deleteFileMeta({
     Gateways.fileManager()
       .deleteFile({
         authorUsername: learningObject.author.username,
-        learningObjectId: learningObject.id,
+        learningObjectCUID: learningObject.cuid,
         learningObjectRevisionId: learningObject.revision,
         path: fileMeta.fullPath,
       })

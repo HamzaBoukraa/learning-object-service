@@ -15,7 +15,7 @@ export abstract class FileManager {
    */
   abstract upload(params: {
     authorUsername: string;
-    learningObjectId: string;
+    learningObjectCUID: string;
     learningObjectRevisionId: number;
     file: FileUpload;
   }): Promise<void>;
@@ -33,7 +33,7 @@ export abstract class FileManager {
    */
   abstract delete(params: {
     authorUsername: string;
-    learningObjectId: string;
+    learningObjectCUID: string;
     learningObjectRevisionId: number;
     path: string;
   }): Promise<void>;
@@ -51,7 +51,7 @@ export abstract class FileManager {
    */
   abstract deleteFolder(params: {
     authorUsername: string;
-    learningObjectId: string;
+    learningObjectCUID: string;
     learningObjectRevisionId: number;
     path: string;
   }): Promise<void>;
@@ -69,7 +69,7 @@ export abstract class FileManager {
    */
   abstract streamFile(params: {
     authorUsername: string;
-    learningObjectId: string;
+    learningObjectCUID: string;
     learningObjectRevisionId: number;
     path: string;
   }): Promise<Readable>;
@@ -88,7 +88,7 @@ export abstract class FileManager {
    */
   abstract hasAccess(params: {
     authorUsername: string;
-    learningObjectId: string;
+    learningObjectCUID: string;
     learningObjectRevisionId: number;
     path: string;
   }): Promise<boolean>;

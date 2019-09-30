@@ -1,4 +1,7 @@
-import { LearningObject, HierarchicalLearningObject } from '../../shared/entity';
+import {
+  LearningObject,
+  HierarchicalLearningObject,
+} from '../../shared/entity';
 import { ResourceError, ResourceErrorReason } from '../../shared/errors';
 import { UserToken } from '../../shared/types';
 import { ReleaseEmailGateway } from './ReleaseEmails/release-email-gateway';
@@ -52,17 +55,20 @@ export async function releaseLearningObject({
   releaseEmailGateway: ReleaseEmailGateway;
   learningObjectSubmissionGateway: LearningObjectSubmissionGateway;
 }): Promise<void> {
-    if (!requesterIsAdminOrEditor(userToken)) {
-        throw new ResourceError(`${userToken.username} does not have access to release this Learning Object`, ResourceErrorReason.INVALID_ACCESS);
-    }
-    await createPublishingArtifacts(releasableObject).catch(reportError);
-    await dataStore.addToReleased(releasableObject);
-    await learningObjectSubmissionGateway.deleteSubmission({
-      learningObjectId: releasableObject.id,
-      authorUsername,
-      user: userToken,
-    });
-    await sendEmail(releasableObject, userToken, releaseEmailGateway);
+  if (!requesterIsAdminOrEditor(userToken)) {
+    throw new ResourceError(
+      `${userToken.username} does not have access to release this Learning Object`,
+      ResourceErrorReason.INVALID_ACCESS,
+    );
+  }
+  await createPublishingArtifacts(releasableObject).catch(reportError);
+  await dataStore.addToReleased(releasableObject);
+  await learningObjectSubmissionGateway.deleteSubmission({
+    learningObjectId: releasableObject.id,
+    authorUsername,
+    user: userToken,
+  });
+  await sendEmail(releasableObject, userToken, releaseEmailGateway);
 }
 
 /**
@@ -78,7 +84,7 @@ async function createPublishingArtifacts(
 ) {
   Gateways.fileManager().uploadFile({
     authorUsername: releasableObject.author.username,
-    learningObjectId: releasableObject.id,
+    learningObjectCUID: releasableObject.cuid,
     learningObjectRevisionId: releasableObject.revision,
     file: {
       path: 'meta.json',
@@ -90,7 +96,7 @@ async function createPublishingArtifacts(
   });
   await Gateways.fileManager().uploadFile({
     authorUsername: releasableObject.author.username,
-    learningObjectId: releasableObject.id,
+    learningObjectCUID: releasableObject.cuid,
     learningObjectRevisionId: releasableObject.revision,
     file: {
       path: `${releasableObject.cuid}.zip`,
