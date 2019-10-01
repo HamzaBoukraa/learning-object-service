@@ -60,17 +60,17 @@ export async function createLearningObjectRevision(params: {
     );
   }
 
-  const newRevisionId = releasedCopy.revision + 1;
+  const version = releasedCopy.version + 1;
 
   await determineRevisionType({
     dataStore,
-    newRevisionId,
+    version,
     learningObjectId,
     requester,
     releasedCopy,
   });
 
-  return newRevisionId;
+  return version;
 }
 
 /**
@@ -78,13 +78,13 @@ export async function createLearningObjectRevision(params: {
  * the revision should be placed in control of the Author or Editorial Team.
  * @param params.releasedCopy the summary information of the released Learning Object
  * @param params.learningObjectId the unique identifier of the Learning Object being revised
- * @param params.newRevisionId new revision id to be created
+ * @param params.version new version id to be created
  * @param params.dataStore the storage gateway for Learning Objects
  * @param params.requester identifiers for the user making the request
  */
 async function determineRevisionType(params: {
   releasedCopy: LearningObjectSummary;
-  newRevisionId: number;
+  version: number;
   learningObjectId: string;
   dataStore: DataStore;
   requester: UserToken;
@@ -112,7 +112,7 @@ async function determineRevisionType(params: {
  * Working Copy.
  *
  * @param params.revisionStatus the status to start the revision at
- * @param params.newRevisionId new revision id to be created
+ * @param params.version new version id to be created
  * @param params.releasedCopy the summary information of the released Learning Object
  * @param params.learningObjectId the unique identifier of the Learning Object being revised
  * @param params.dataStore the storage gateway for Learning Objects
@@ -121,17 +121,17 @@ async function saveRevision(params: {
   revisionStatus:
     | LearningObject.Status.UNRELEASED
     | LearningObject.Status.PROOFING;
-  newRevisionId: number;
+  version: number;
   releasedCopy: LearningObjectSummary;
   learningObjectId: string;
   dataStore: DataStore;
 }) {
-  params.releasedCopy.revision++;
+  params.releasedCopy.version++;
 
   await params.dataStore.editLearningObject({
     id: params.learningObjectId,
     updates: {
-      revision: params.releasedCopy.revision,
+      version: params.releasedCopy.version,
       status: params.revisionStatus,
     },
   });
@@ -144,20 +144,20 @@ async function saveRevision(params: {
  *
  * @param params.releasedCopy the summary information of the released Learning Object
  * @param params.learningObjectId the unique identifier of the Learning Object being revised
- * @param params.newRevisionId new revision id to be created
+ * @param params.version new version to be created
  * @param params.dataStore the storage gateway for Learning Objects
  * @param params.requester identifiers for the user making the request
  */
 async function createRevision({
   releasedCopy,
   learningObjectId,
-  newRevisionId,
+  version,
   dataStore,
   requester,
 }: {
   releasedCopy: LearningObjectSummary;
   learningObjectId: string;
-  newRevisionId: number;
+  version: number;
   dataStore: DataStore;
   requester: UserToken;
 }) {
@@ -166,14 +166,14 @@ async function createRevision({
       dataStore,
       requester,
       learningObjectId,
-      revisionId: newRevisionId,
+      version: version,
       username: releasedCopy.author.username,
       summary: true,
     });
   } catch (e) {
     return await saveRevision({
       dataStore,
-      newRevisionId,
+      version,
       learningObjectId,
       revisionStatus: LearningObject.Status.UNRELEASED,
       releasedCopy,
@@ -189,20 +189,20 @@ async function createRevision({
  *
  * @param params.releasedCopy the summary information of the released Learning Object
  * @param params.learningObjectId the unique identifier of the Learning Object being revised
- * @param params.newRevisionId new revision id to be created
+ * @param params.version new version to be created
  * @param params.dataStore the storage gateway for Learning Objects
  * @param params.requester identifiers for the user making the request
  */
 async function createRevisionInProofing({
   releasedCopy,
   learningObjectId,
-  newRevisionId,
+  version,
   dataStore,
   requester,
 }: {
   releasedCopy: LearningObjectSummary;
   learningObjectId: string;
-  newRevisionId: number;
+  version: number;
   dataStore: DataStore;
   requester: UserToken;
 }) {
@@ -211,7 +211,7 @@ async function createRevisionInProofing({
       dataStore,
       requester,
       learningObjectId,
-      revisionId: newRevisionId,
+      version: version,
       username: releasedCopy.author.username,
       summary: true,
     });
@@ -231,7 +231,7 @@ async function createRevisionInProofing({
       await saveRevision({
         dataStore: dataStore,
         learningObjectId: learningObjectId,
-        newRevisionId,
+        version,
         revisionStatus: LearningObject.Status.PROOFING,
         releasedCopy: releasedCopy,
       });
