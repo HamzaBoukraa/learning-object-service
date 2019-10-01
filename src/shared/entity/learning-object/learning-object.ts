@@ -423,14 +423,22 @@ export class LearningObject {
     }
   }
   /**
-   * @property {boolean} hasRevision
-   * An optional field on a learning object, denoting whether or not the object
-   * has a working copy with a different status in the working collection.
+   * @property {boolean} revisionUri
+   * An optional field on a learning object, which provides the URI for the learning objects
+   * active revision
    */
-  private _hasRevision?: boolean;
+  private _revisionURI?: string;
 
-  get hasRevision(): boolean {
-    return this._hasRevision;
+  get revisionUri(): string {
+    return this._revisionURI;
+  }
+
+  /**
+   * Attach the revisionUri
+   * @param revisionUri
+   */
+  attachRevisionUri(resourceUri: string) {
+    this._revisionURI = `${resourceUri}/users/${this.author.username}/learning-objects/${this.cuid}/versions/${this.version}`;
   }
 
   private _version!: number;
@@ -604,8 +612,8 @@ export class LearningObject {
         this.addContributor(contributor),
       );
     }
-    if (object.hasRevision === true) {
-      this._hasRevision = object.hasRevision;
+    if (object.revisionUri !== null) {
+      this._revisionURI = object.revisionUri;
     }
     if (object.version != null) {
       this.version = object.version;
@@ -642,7 +650,7 @@ export class LearningObject {
       collection: this.collection,
       status: this.status,
       metrics: this.metrics,
-      hasRevision: this.hasRevision,
+      revisionUri: this.revisionUri,
       version: this.version,
       resourceUris: this.resourceUris,
     };

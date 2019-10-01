@@ -19,7 +19,7 @@ const learningObjectSummaryStub: LearningObjectSummary = {
   length: 'test_length',
   levels: ['test'],
   name: 'test_name',
-  hasRevision: false,
+  revisionUri: 'test_uri',
   version: 0,
   status: 'test_status',
 };

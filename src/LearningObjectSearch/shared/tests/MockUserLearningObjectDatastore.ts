@@ -6,7 +6,6 @@ import {
   CollectionAccessMap,
 } from '../../../shared/types';
 import { Stubs } from '../../../tests/stubs';
-import { mapLearningObjectToSummary } from '../../../shared/functions';
 import { LearningObject } from '../../typings';
 
 export class MockUserLearningObjectDatastore

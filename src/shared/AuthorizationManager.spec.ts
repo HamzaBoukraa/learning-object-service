@@ -362,7 +362,7 @@ describe('AuthorizationManager', () => {
       name: 'My LO',
       version: 0,
       status: LearningObject.Status.RELEASED,
-      hasRevision: false,
+      revisionUri: 'test_URI',
     };
     const requester = {
       name: '',
@@ -857,7 +857,7 @@ describe('AuthorizationManager', () => {
       name: 'My LO',
       version: 0,
       status: LearningObject.Status.RELEASED,
-      hasRevision: false,
+      revisionUri: 'test_URI',
     };
     const requester = {
       name: '',

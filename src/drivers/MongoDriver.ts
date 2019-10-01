@@ -1014,7 +1014,7 @@ export class MongoDriver implements DataStore {
 
   /**
    * Fetches released object through aggregation pipeline by performing a match based on the object id, finding the duplicate object in the
-   * working collection, then checking the status of the duplicate to determine whether or not to set hasRevision to true or false.
+   * working collection, then checking the status of the duplicate to determine whether or not to set revision to the uri of the revision.
    *
    * The query fetches the specified released learning object and sorts the files by date (newest first)
    * If the query fails, the function throws a 404 Resource Error.
@@ -1053,10 +1053,10 @@ export class MongoDriver implements DataStore {
         // unwind copy from array to object so we can check certain fields.
         { $unwind: { path: '$workingCopy', preserveNullAndEmptyArrays: true } },
         // if the copys' status differs from the released objects status, then the object has a revision.
-        // so we add a the field 'hasRevision' with a true value
+        // so we add a the field 'revision' with the uri
         {
           $addFields: {
-            hasRevision: {
+            revision: {
               $cond: [{ $ne: ['$copy.status', 'released'] }, true, false],
             },
           },

@@ -22,9 +22,9 @@ export async function generateReleasedLearningObjectSummary(
     ),
   );
   const [author, contributors] = await Promise.all([author$, contributors$]);
-  let hasRevision = record.hasRevision;
-  if (hasRevision == null) {
-    hasRevision = await mongoHelperFunctions.learningObjectHasRevision(
+  let revisionUri = record.revisionUri;
+  if (revisionUri == null) {
+    revisionUri = await mongoHelperFunctions.learningObjectHasRevision(
       record.cuid,
     );
   }
@@ -32,7 +32,7 @@ export async function generateReleasedLearningObjectSummary(
     ...(record as any),
     author,
     contributors,
-    hasRevision,
+    revisionUri,
     id: record._id,
   });
 }
