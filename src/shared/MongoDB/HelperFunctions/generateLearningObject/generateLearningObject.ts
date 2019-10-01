@@ -62,7 +62,7 @@ export async function generateLearningObject(
     outcomes,
     hasRevision: record.hasRevision,
     children,
-    revision: record.revision,
+    version: record.version,
   });
 
   learningObject.attachResourceUris(process.env.GATEWAY_API);

@@ -8,7 +8,7 @@ export abstract class FileGateway implements Partial<FileManagerModule> {
    * @abstract
    * @param {string} authorUsername [The username of the Learning Object's author]
    * @param {string} learningObjectId [The id of the Learning Object]
-   * @param {number} learningObjectRevisionId [The revision id of the Learning Object]
+   * @param {number} version [The version id of the Learning Object]
    * @param {string} path [The path of the file including name and extension]
    * @returns {Promise<Readable>}
    * @memberof FileGateway
@@ -16,7 +16,7 @@ export abstract class FileGateway implements Partial<FileManagerModule> {
   abstract getFileStream(params: {
     authorUsername: string;
     learningObjectId: string;
-    learningObjectRevisionId: number;
+    version: number;
     path: string;
   }): Promise<Readable>;
 }

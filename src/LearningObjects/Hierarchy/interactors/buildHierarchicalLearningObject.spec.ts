@@ -20,7 +20,7 @@ const learningObjectSummaryStub: LearningObjectSummary = {
   levels: ['test'],
   name: 'test_name',
   hasRevision: false,
-  revision: 0,
+  version: 0,
   status: 'test_status',
 };
 

@@ -69,7 +69,7 @@ export async function generateReleasedLearningObject(
     outcomes: outcomes,
     hasRevision: record.hasRevision,
     children,
-    revision: record.revision,
+    version: record.version,
   });
   return learningObject;
 }

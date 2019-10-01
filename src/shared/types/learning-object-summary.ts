@@ -26,7 +26,7 @@ export interface AuthorSummary {
 }
 
 /**
- * An interface representation of the full learning object summary with the revision information included.
+ * An interface representation of the full learning object summary with the version information included.
  *
  * @exports
  * @interface LearningObjectSummary
@@ -87,7 +87,7 @@ export interface LearningObjectSummary {
   /**
    * The version number of the Learning Object
    */
-  revision: number;
+  version: number;
 
   levels: string[];
 }

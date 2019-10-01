@@ -23,7 +23,7 @@ const serviceToken: Partial<Requester> = {
  * @export
  * @param {string} authorUsername [The Learning Object's author's username]
  * @param {string} learningObjectId [The id of the Learning Object to upload file to]
- * @param {number} learningObjectRevisionId [The revision id of the Learning Object]
+ * @param {number} version [The version id of the Learning Object]
  * @param {string} path [The path of the file to stream]
  *
  * @returns {Promise<void>}
@@ -31,18 +31,18 @@ const serviceToken: Partial<Requester> = {
 export async function getFileStream({
   authorUsername,
   learningObjectId,
-  learningObjectRevisionId,
+  version,
   path,
 }: {
   authorUsername: string;
   learningObjectId: string;
-  learningObjectRevisionId: number;
+  version: number;
   path: string;
 }): Promise<Readable> {
   return Drivers.fileManager().streamFile({
     authorUsername,
     learningObjectId,
-    learningObjectRevisionId,
+    version,
     path,
   });
 }
@@ -53,7 +53,7 @@ export async function getFileStream({
  * @export
  * @param {string} authorUsername [The Learning Object's author's username]
  * @param {string} learningObjectId [The id of the Learning Object to upload file to]
- * @param {number} learningObjectRevisionId [The revision id of the Learning Object]
+ * @param {number} version [The version id of the Learning Object]
  * @param {FileUpload} file [Object containing file data and the path the file should be uploaded to]
  *
  * @returns {Promise<void>}
@@ -61,18 +61,18 @@ export async function getFileStream({
 export async function uploadFile({
   authorUsername,
   learningObjectId,
-  learningObjectRevisionId,
+  version,
   file,
 }: {
   authorUsername: string;
   learningObjectId: string;
-  learningObjectRevisionId: number;
+  version: number;
   file: FileUpload;
 }): Promise<void> {
   await Drivers.fileManager().upload({
     authorUsername,
     learningObjectId,
-    learningObjectRevisionId,
+    version,
     file,
   });
 }
@@ -83,7 +83,7 @@ export async function uploadFile({
  * @export
  * @param {string} authorUsername [The Learning Object's author's username]
  * @param {string} learningObjectId [The id of the Learning Object to upload file to]
- * @param {number} learningObjectRevisionId [The revision id of the Learning Object]
+ * @param {number} version [The version id of the Learning Object]
  * @param {string} path [The path of the file to delete]
  *
  * @returns {Promise<void>}
@@ -91,18 +91,18 @@ export async function uploadFile({
 export async function deleteFile({
   authorUsername,
   learningObjectId,
-  learningObjectRevisionId,
+  version,
   path,
 }: {
   authorUsername: string;
   learningObjectId: string;
-  learningObjectRevisionId: number;
+  version: number;
   path: string;
 }): Promise<void> {
   await Drivers.fileManager().delete({
     authorUsername,
     learningObjectId,
-    learningObjectRevisionId,
+    version,
     path,
   });
 }
@@ -113,25 +113,25 @@ export async function deleteFile({
  * @export
  * @param {string} authorUsername [The Learning Object's author's username]
  * @param {string} learningObjectId [The id of the Learning Object to upload file to]
- * @param {number} learningObjectRevisionId [The revision id of the Learning Object]
+ * @param {number} version [The version id of the Learning Object]
  * @param {string} path [The path of the folder to delete]
  * @returns {Promise<void>}
  */
 export async function deleteFolder({
   authorUsername,
   learningObjectId,
-  learningObjectRevisionId,
+  version,
   path,
 }: {
   authorUsername: string;
   learningObjectId: string;
-  learningObjectRevisionId: number;
+  version: number;
   path: string;
 }): Promise<void> {
   await Drivers.fileManager().deleteFolder({
     authorUsername,
     learningObjectId,
-    learningObjectRevisionId,
+    version,
     path,
   });
 }
@@ -202,14 +202,14 @@ export async function downloadSingleFile({
     await Drivers.fileManager().hasAccess({
       authorUsername: author,
       learningObjectId,
-      learningObjectRevisionId: fileMetaData.storageRevision,
+      version: fileMetaData.storageRevision,
       path: fileMetaData.fullPath || fileMetaData.name,
     })
   ) {
     const stream = await Drivers.fileManager().streamFile({
       authorUsername: author,
       learningObjectId,
-      learningObjectRevisionId: fileMetaData.storageRevision,
+      version: fileMetaData.storageRevision,
       path: fileMetaData.fullPath || fileMetaData.name,
     });
     return { mimeType, stream, filename: fileMetaData.name };

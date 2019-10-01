@@ -16,7 +16,7 @@ export class MockFileMetaDatastore implements FileMetaDatastore {
       this.stubs.learningObjectFile.description || 'some description',
     lastUpdatedDate: Date.now().toString(),
     learningObjectId: this.stubs.learningObject.id,
-    storageRevision: this.stubs.learningObject.revision,
+    storageRevision: this.stubs.learningObject.version,
     mimeType: this.stubs.learningObjectFile.fileType,
     ETag: 'somerandomstring',
     packageable: true,

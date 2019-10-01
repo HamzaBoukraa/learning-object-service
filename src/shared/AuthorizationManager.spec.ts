@@ -360,7 +360,7 @@ describe('AuthorizationManager', () => {
       length: 'nanomodule',
       levels: ['undergraduate'],
       name: 'My LO',
-      revision: 0,
+      version: 0,
       status: LearningObject.Status.RELEASED,
       hasRevision: false,
     };
@@ -855,7 +855,7 @@ describe('AuthorizationManager', () => {
       length: 'nanomodule',
       levels: ['undergraduate'],
       name: 'My LO',
-      revision: 0,
+      version: 0,
       status: LearningObject.Status.RELEASED,
       hasRevision: false,
     };

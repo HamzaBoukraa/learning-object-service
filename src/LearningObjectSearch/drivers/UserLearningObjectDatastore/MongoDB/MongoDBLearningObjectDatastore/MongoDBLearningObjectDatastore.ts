@@ -86,7 +86,7 @@ export class MongoDBLearningObjectDatastore
     authorID: string,
     collectionRestrictions?: CollectionAccessMap,
   ): Promise<LearningObject[]> {
-    const { revision, status, text } = query;
+    const { version, status, text } = query;
 
     let orConditions: QueryCondition[] = [];
     if (collectionRestrictions) {
@@ -99,8 +99,8 @@ export class MongoDBLearningObjectDatastore
     const searchQuery: { [index: string]: any } = {
       authorID,
     };
-    if (revision != null) {
-      searchQuery.revision = revision;
+    if (version != null) {
+      searchQuery.version = version;
     }
     if (text) {
       searchQuery.$or = searchQuery.$or || [];

@@ -172,14 +172,14 @@ export class MongoDriver implements DataStore {
   /**
    * @inheritdoc
    *
-   * Searches both collections for Learning Object matching the specified id and revision number
+   * Searches both collections for Learning Object matching the specified id and version number
    *
    * *** Example ***
-   * `id`='exampleId', `revision`=1
-   * If revision 1 of Learning Object exampleId was released, it's latest version will be stored in the released objects collection
-   * If revision 1 is still be drafted or is in review, it will only exist in the working objects collection
+   * `id`='exampleId', `version`=1
+   * If version 1 of Learning Object exampleId was released, it's latest version will be stored in the released objects collection
+   * If version 1 is still be drafted or is in review, it will only exist in the working objects collection
    * @param {string} id [Id of the Learning Object]
-   * @param {number} revision [Revision number of the Learning Object]
+   * @param {number} version [Version number of the Learning Object]
    * @param {User} author [User object of Learning Object author]
    * @param {boolean} summary [Boolean indicating whether or not to return a LearningObject or LearningObjectSummary]
    * @returns {Promise<LearningObject | LearningObjectSummary>}
@@ -187,16 +187,16 @@ export class MongoDriver implements DataStore {
    */
   async fetchLearningObjectRevision({
     id,
-    revision,
+    version,
     author,
   }: {
     id: string;
-    revision: number;
+    version: number;
     author?: User;
   }): Promise<LearningObjectSummary> {
     const doc = await this.db
       .collection(COLLECTIONS.LEARNING_OBJECTS)
-      .findOne({ _id: id, revision });
+      .findOne({ _id: id, version });
     if (doc) {
       return mongoHelperFunctions.generateLearningObjectSummary(doc);
     }
@@ -992,12 +992,12 @@ export class MongoDriver implements DataStore {
    * @memberof MongoDriver
    */
   async fetchLearningObjectByCuid(cuid: string, version?: number): Promise<LearningObjectSummary[]> {
-    const query: { cuid: string, revision?: number } = { cuid };
+    const query: { cuid: string, version?: number } = { cuid };
 
     let notFoundError = `No Learning Object found for CUID '${cuid}'`;
 
     if (version !== undefined) {
-      query.revision = version;
+      query.version = version;
       notFoundError += ` with version ${version}`;
     }
 

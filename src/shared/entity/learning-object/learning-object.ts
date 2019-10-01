@@ -433,16 +433,16 @@ export class LearningObject {
     return this._hasRevision;
   }
 
-  private _revision!: number;
+  private _version!: number;
   /**
-   * @property {string} revision The version number of the Learning Object
+   * @property {string} version The version number of the Learning Object
    *
    */
-  get revision(): number {
-    return this._revision;
+  get version(): number {
+    return this._version;
   }
-  set revision(revision: number) {
-    this._revision = revision;
+  set version(version: number) {
+    this._version = version;
   }
 
   /**
@@ -547,7 +547,7 @@ export class LearningObject {
     this._collection = '';
     this._status = LearningObject.Status.UNRELEASED;
     this._metrics = { saves: 0, downloads: 0 };
-    this._revision = 0;
+    this._version = 0;
     if (object) {
       this.copyObject(object);
     }
@@ -607,8 +607,8 @@ export class LearningObject {
     if (object.hasRevision === true) {
       this._hasRevision = object.hasRevision;
     }
-    if (object.revision != null) {
-      this.revision = object.revision;
+    if (object.version != null) {
+      this.version = object.version;
     }
     this.collection = <string>object.collection || this.collection;
     this.status = <LearningObject.Status>object.status || this.status;
@@ -643,7 +643,7 @@ export class LearningObject {
       status: this.status,
       metrics: this.metrics,
       hasRevision: this.hasRevision,
-      revision: this.revision,
+      version: this.version,
       resourceUris: this.resourceUris,
     };
     return object;

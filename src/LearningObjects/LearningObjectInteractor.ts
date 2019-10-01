@@ -494,7 +494,7 @@ export async function getActiveLearningObjectSummary({
 }
 
 /**
- * Retrieves Learning Object revision by id and revision number
+ * Retrieves Learning Object revision by id and version number
  *
  * The working copy can only be returned if
  * The requester is the author
@@ -505,7 +505,7 @@ export async function getActiveLearningObjectSummary({
  * @param {DataStore} dataStore [Driver for datastore]
  * @param {UserToken} requester [Object containing information about the requester]
  * @param {string} learningObjectId [Id of the Learning Object]
- * @param {number} revisionId [Revision number of the Learning Object]
+ * @param {number} version [Version number of the Learning Object]
  * @param {string} username [Username of the Learning Object author]
  * @param {boolean} summary [Boolean indicating whether or not to return a LearningObject or LearningObjectSummary]
  * @returns {Promise<LearningObject | LearningObjectSummary>}
@@ -514,21 +514,21 @@ export async function getLearningObjectRevision({
   dataStore,
   requester,
   learningObjectId,
-  revisionId,
+  version,
   username,
   summary,
 }: {
   dataStore: DataStore;
   requester: UserToken;
   learningObjectId: string;
-  revisionId: number;
+  version: number;
   username: string;
   summary?: boolean;
 }): Promise<LearningObject | LearningObjectSummary> {
   try {
-    if (revisionId === 0) {
+    if (version === 0) {
       throw new ResourceError(
-        `Cannot find revision ${revisionId} for Learning Object ${learningObjectId}`,
+        `Cannot find revision ${version} for Learning Object ${learningObjectId}`,
         ResourceErrorReason.NOT_FOUND,
       );
     }
@@ -546,12 +546,12 @@ export async function getLearningObjectRevision({
     }
     learningObject = await dataStore.fetchLearningObjectRevision({
       id: learningObjectId,
-      revision: revisionId,
+      version: version,
       author,
     });
     if (!learningObject) {
       throw new ResourceError(
-        `Cannot find revision ${revisionId} of Learning Object ${learningObjectId}.`,
+        `Cannot find revision ${version} of Learning Object ${learningObjectId}.`,
         ResourceErrorReason.NOT_FOUND,
       );
     }
@@ -705,7 +705,7 @@ export async function addLearningObject({
 
     objectInsert.generateCUID();
 
-    objectInsert.revision = 0;
+    objectInsert.version = 0;
 
     const learningObjectID = await dataStore.insertLearningObject(objectInsert);
     objectInsert.id = learningObjectID;
@@ -1307,7 +1307,7 @@ export async function updateReadme(params: {
     await Gateways.fileManager().uploadFile({
       authorUsername: object.author.username,
       learningObjectId: object.id,
-      learningObjectRevisionId: object.revision,
+      version: object.version,
       file: { data: pdfFile, path: newPdfName },
     });
     if (oldPDF && oldPDF.name !== newPdfName) {
@@ -1315,7 +1315,7 @@ export async function updateReadme(params: {
         .deleteFile({
           authorUsername: object.author.username,
           learningObjectId: object.id,
-          learningObjectRevisionId: object.revision,
+          version: object.version,
           path: oldPDF.name,
         })
         .catch(reportError);
@@ -1453,12 +1453,12 @@ export async function createLearningObjectRevision(params: {
     );
   }
 
-  releasedCopy.revision++;
+  releasedCopy.version++;
 
   await params.dataStore.editLearningObject({
     id: params.learningObjectId,
     updates: {
-      revision: releasedCopy.revision,
+      version: releasedCopy.version,
       status: LearningObject.Status.UNRELEASED,
     },
   });

@@ -106,7 +106,7 @@ const admin = new User({
 });
 
 const isAuthorDraftsOnlyQuery = {
-    revision: 0,
+    version: 0,
     status: [
         ...LearningObjectState.UNRELEASED,
         ...LearningObjectState.IN_REVIEW,
@@ -114,7 +114,7 @@ const isAuthorDraftsOnlyQuery = {
 };
 
 const isPrivilegedDraftsOnlyQuery = {
-    revision: 0,
+    version: 0,
     status: LearningObjectState.IN_REVIEW,
 };
 
