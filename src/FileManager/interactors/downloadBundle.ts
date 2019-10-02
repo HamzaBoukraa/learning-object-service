@@ -12,7 +12,7 @@ import FileManagerModuleErrorMessages from './shared/errors';
 import { uploadFile } from './Interactor';
 
 export type DownloadBundleParams = {
-  learningObject: LearningObjectSummary;
+  learningObject: LearningObject;
   requester: UserToken;
 };
 
@@ -72,7 +72,7 @@ async function downloadReleasedCopy(
   const { requester, learningObject } = params;
 
   const fileExists = await Drivers.fileManager().hasAccess({
-    authorUsername: learningObjectAuthorUsername,
+    authorUsername: learningObject.author.username,
     learningObjectId: learningObject.id,
     learningObjectRevisionId: learningObject.revision,
     path: `${learningObject.cuid}.zip`,
@@ -92,7 +92,7 @@ async function downloadReleasedCopy(
   }
 
   return await Drivers.fileManager().streamFile({
-    authorUsername: learningObjectAuthorUsername,
+    authorUsername: learningObject.author.username,
     learningObjectId: learningObject.id,
     learningObjectRevisionId: learningObject.revision,
     path: `${learningObject.cuid}.zip`,
@@ -160,33 +160,4 @@ function hasCollectionAccess(
   );
 }
 
-/**
- * getLearningObject returns the requested Learning Object.
- * To maintain backwards compatibility, this function accepts
- * a Learning Object Id or a Learning Object Name.
- *
- * @param { DownloadBundleParams } params
- * @param { boolean } workingCopy
- */
-async function getLearningObject(
-  params: DownloadBundleParams,
-  workingCopy = false,
-) {
-  const learningObjectGateway = Gateways.learningObjectGateway();
-  const { requester, learningObjectAuthorUsername, learningObjectId, cuid, version } = params;
-  try {
-    return await Gateways.learningObjectGateway().getLearningObjectById({
-      learningObjectId,
-      requester,
-    });
-  } catch (e) {
-    if (e.name === ResourceErrorReason.NOT_FOUND) {
-      return await learningObjectGateway.getLearningObjectByCuidAndVersion({
-        username: learningObjectAuthorUsername,
-        cuid,
-        version,
-        requester,
-      });
-    } else throw e;
-  }
-}
+

@@ -21,8 +21,8 @@ export function buildRouter(): Router {
   );
 
   router.get(
-    '/users/:username/learning-objects/:cuid/version/:version/bundle',
-    getLearningObjectBundle
+    '/users/:username/learning-objects/:cuid/versions/:version/bundle',
+    getLearningObjectBundle,
   );
 
   return router;
@@ -64,7 +64,7 @@ async function getLearningObjectBundle(req: Request, res: Response) {
     const { username, cuid, version } = req.params;
     const requester: UserToken = req.user;
 
-    const learningObjects = await Gateways.learningObjectGateway().getLearningObjectByCuid({ username, cuid, version, requester });
+    const learningObjects = await Gateways.learningObjectGateway().getInternalLearningObjectByCuid({ username, cuid, version, requester });
     const stream = await downloadBundle({ learningObject: learningObjects[0], requester });
 
     res.header('Content-Disposition', `attachment; filename="${learningObjects[0].name}.zip"`);

@@ -7,7 +7,7 @@ import * as LearningObjectInteractor from '../LearningObjectInteractor';
 import { LearningObject } from '../../shared/entity';
 import { LearningObjectFilter, MaterialsFilter } from '../typings';
 import { initializePrivate as initializeRevisionRoutes } from '../Revisions/RevisionRouteHandler';
-import { toBoolean, mapLearningObjectToSummary } from '../../shared/functions';
+import { toBoolean } from '../../shared/functions';
 import { LibraryDriver } from '../../drivers/LibraryDriver';
 
 /**
@@ -23,28 +23,6 @@ export function initializePublic({
   dataStore: DataStore;
   library: LibraryCommunicator;
 }) {
-  const getLearningObjectByCuidVersion = async (req: Request, res: Response) => {
-    try {
-      const requester: UserToken = req.user;
-      const authorUsername: string = req.params.username;
-      const cuid = req.params.cuid;
-      const version = req.params.version;
-      const revision: boolean = req.query.revision;
-      const object = await LearningObjectInteractor.getLearningObjectByCuidVersion({
-        dataStore,
-        library,
-        userToken: requester,
-        username: authorUsername,
-        cuid,
-        version,
-        revision,
-      });
-      res.status(200).send(mapLearningObjectToSummary(object));
-    } catch (e) {
-      const { code, message } = mapErrorToResponseData(e);
-      res.status(code).json({ message });
-    }
-  };
   /**
    * Retrieve a learning object summary by a specified ID
    * @param {Request} req
@@ -136,10 +114,6 @@ export function initializePublic({
    * Please update to using `/users/:username/learning-objects/:learningObjectId` route.
    * if requesting a Learning Object by name.
    */
-  router.get(
-    '/learning-objects/:username/learning-objects/:cuid/versions/:version',
-    getLearningObjectByCuidVersion,
-  );
   router.get(
     '/users/:username/learning-objects/:learningObjectId',
     getLearningObjectById,

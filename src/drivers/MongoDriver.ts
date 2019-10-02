@@ -1021,6 +1021,15 @@ export class MongoDriver implements DataStore {
     return null;
   }
 
+  async fetchLearningObjectByCuid(cuid: string, version?: number): Promise<LearningObjectSummary[]> {
+    const objects = await this.queryLearningObjectByCuid(cuid, version);
+    return objects.map(o => mapLearningObjectToSummary(o));
+  }
+
+  async fetchInternalLearningObjectByCuid(cuid: string, version?: number): Promise<LearningObject[]> {
+    return await this.queryLearningObjectByCuid(cuid, version);
+  }
+
   /**
    * Fetch a all version of a Learning Object by CUID, or a single version of the Learning Object with the optional version parameter
    *
@@ -1029,7 +1038,7 @@ export class MongoDriver implements DataStore {
    * @returns {Promise<LearningObjectSummary[]>}
    * @memberof MongoDriver
    */
-  async fetchLearningObjectByCuid(cuid: string, version?: number): Promise<LearningObjectSummary[]> {
+  private async queryLearningObjectByCuid(cuid: string, version?: number): Promise<LearningObject[]> {
     const query: { cuid: string, revision?: number } = { cuid, revision: version };
 
     let notFoundError = `No Learning Object found for CUID '${cuid}'`;
@@ -1047,7 +1056,7 @@ export class MongoDriver implements DataStore {
 
     const author = await UserServiceGateway.getInstance().queryUserById(objects[0].authorID);
 
-    return Promise.all(objects.map(async o => mapLearningObjectToSummary(await mongoHelperFunctions.generateLearningObject(author, o))));
+    return Promise.all(objects.map(async o => await mongoHelperFunctions.generateLearningObject(author, o)));
   }
 
   /**

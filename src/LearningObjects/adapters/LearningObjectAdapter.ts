@@ -11,6 +11,7 @@ import {
   updateReadme,
   getLearningObjectByCuid,
   getLearningObjectSummary,
+  getInternalLearningObjectByCuid,
 } from '../LearningObjectInteractor';
 import { LearningObjectSummary, UserToken } from '../../shared/types';
 import { LearningObjectFilter } from '../typings';
@@ -162,7 +163,6 @@ export class LearningObjectAdapter {
     });
   }
 
-  // FIXME: Remove once downloads use id instead of Learning Object name in the URL
   async getLearningObjectByCuid(params: {
     username: string;
     cuid: string;
@@ -170,6 +170,21 @@ export class LearningObjectAdapter {
     userToken: UserToken;
   }): Promise<LearningObjectSummary[]> {
     return getLearningObjectByCuid({
+      dataStore: this.dataStore,
+      authorUsername: params.username,
+      cuid: params.cuid,
+      version: params.version,
+      requester: params.userToken,
+    });
+  }
+
+  async getInternalLearningObjectByCuid(params: {
+    username: string;
+    cuid: string;
+    version: number;
+    userToken: UserToken;
+  }): Promise<LearningObject[]> {
+    return getInternalLearningObjectByCuid({
       dataStore: this.dataStore,
       authorUsername: params.username,
       cuid: params.cuid,

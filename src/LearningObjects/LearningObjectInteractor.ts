@@ -99,6 +99,43 @@ export async function getLearningObjectByCuid({
   return payload;
 }
 
+/**
+ * Retrieve a Learning Object by CUID
+ *
+ * This function returns all versions of the Learning Object that the requester is authorized to read.
+ *
+ * @export
+ * @param {{
+ *   dataStore: DataStore,
+ *   requester: UserToken,
+ *   authorUsername: string,
+ *   cuid: string,
+ *   version?: number,
+ * }}
+ * @returns
+ */
+export async function getInternalLearningObjectByCuid({
+  dataStore,
+  requester,
+  cuid,
+  version,
+}: {
+  dataStore: DataStore,
+  requester: UserToken,
+  authorUsername: string,
+  cuid: string,
+  version?: number,
+}) {
+  const objects = await dataStore.fetchInternalLearningObjectByCuid(cuid, version);
+  const payload = objects.filter(object => {
+    // this function will throw a ResourceError if requester isn't authorized
+    authorizeReadAccess({ learningObject: object, requester });
+    return true;
+  });
+
+  return payload;
+}
+
 
 /**
  * Finds author's id by username.
@@ -126,121 +163,6 @@ async function findAuthorIdByUsername(params: {
   }
 
   return authorId;
-}
-
-/**
- * Finds Learning Object's id by cuid, version, and authorID.
- * If id is not found a ResourceError is thrown
- *
- * @private
- * @param {{
- *     dataStore: DataStore;
- *     cuid: string; [Learning Object's cuid]
- *     version: number; [learning object's version]
- *     authorId: string [Learning Object's author's id]
- *     authorUsername: string [Learning Object's author's username]
- *   }} params
- * @returns {Promise<string>}
- * @memberof LearningObjectInteractor
- */
-async function getLearningObjectIdByAuthorAndCuidVersion(params: {
-  dataStore: DataStore;
-  cuid: string;
-  version: number;
-  authorId: string;
-  authorUsername: string;
-}): Promise<string> {
-  const { dataStore, cuid, version, authorId, authorUsername } = params;
-  const learningObjectId = await dataStore.findLearningObject({
-    authorId,
-    cuid,
-    version
-  });
-  if (!learningObjectId) {
-    throw new ResourceError(
-      `No Learning Object with name ${name} by ${authorUsername} exists`,
-      ResourceErrorReason.NOT_FOUND,
-    );
-  }
-  return learningObjectId;
-}
-
-/**
- * Loads released Learning Object by author's id and Learning Object's cuid
- *
- * @private
- * @static
- * @param {{
- *     dataStore: DataStore;
- *     authorId: string;
- *     authorUsername: string;
- *     learningObjectName: string;
- *   }} params
- * @returns
- * @memberof LearningObjectInteractor
- */
-async function loadReleasedLearningObjectByAuthorAndCuid({
-  dataStore,
-  library,
-  authorUsername,
-  cuid
-}: {
-  dataStore: DataStore;
-  library: LibraryCommunicator;
-  authorUsername: string;
-  cuid: string;
-}) {
-  const authorId = await findAuthorIdByUsername({
-    dataStore,
-    username: authorUsername,
-  });
-  const learningObjectID = await getReleasedLearningObjectIdByAuthorAndCuid({
-    dataStore,
-    authorId,
-    authorUsername,
-    cuid
-  });
-  return getLearningObjectById({
-    dataStore,
-    library,
-    id: learningObjectID,
-    requester: null,
-    filter: 'released',
-  });
-}
-
-/**
- * Finds released Learning Object's id by cuid and authorID.
- * If id is not found a ResourceError is thrown
- *
- * @private
- * @param {{
- *     dataStore: DataStore;
- *     name: string; [Learning Object's name]
- *     authorId: string [Learning Object's author's id]
- *     authorUsername: string [Learning Object's author's username]
- *   }} params
- * @returns {Promise<string>}
- * @memberof LearningObjectInteractor
- */
-async function getReleasedLearningObjectIdByAuthorAndCuid(params: {
-  dataStore: DataStore;
-  cuid: string;
-  authorId: string;
-  authorUsername: string;
-}): Promise<string> {
-  const { dataStore, cuid, authorId, authorUsername } = params;
-  const learningObjectId = await dataStore.findReleasedLearningObject({
-    authorId,
-    cuid
-  });
-  if (!learningObjectId) {
-    throw new ResourceError(
-      `No released Learning Object with name ${name} by ${authorUsername} exists`,
-      ResourceErrorReason.NOT_FOUND,
-    );
-  }
-  return learningObjectId;
 }
 
 /**
