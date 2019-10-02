@@ -834,22 +834,17 @@ export async function generateReleasableLearningObject({
   id: string;
   requester: UserToken;
 }): Promise<HierarchicalLearningObject> {
-  const [object, children, files] = await Promise.all([
+  const [object, children] = await Promise.all([
     dataStore.fetchLearningObject({ id, full: true }),
     loadWorkingParentsReleasedChildObjects({
       dataStore,
       parentId: id,
-    }),
-    Gateways.fileMetadata().getAllFileMetadata({
-      requester,
-      learningObjectId: id,
-    }),
+    })
   ]);
   const releasableObject = new LearningObject({
     ...object.toPlainObject(),
   }) as HierarchicalLearningObject;
   releasableObject.children = children;
-  releasableObject.materials.files = files;
   return releasableObject;
 }
 
