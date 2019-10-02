@@ -26,9 +26,10 @@ export abstract class LearningObjectGateway {
     filter?: LearningObjectFilter;
   }): Promise<LearningObject>;
 
-  abstract getLearningObjectByName(params: {
+  abstract getLearningObjectByCuidVersion(params: {
     username: string;
-    learningObjectName: string;
+    cuid: string;
+    version: number;
     requester: UserToken;
     revision: boolean;
   }): Promise<LearningObject>;

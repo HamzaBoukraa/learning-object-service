@@ -99,12 +99,18 @@ export interface DataStore
   getUserObjects(username: string): Promise<string[]>;
   findLearningObject(params: {
     authorId: string;
-    name: string;
+    cuid: string;
+    version?: number;
     status?: string;
+  }): Promise<string>;
+  findLearningObjectByName(params: {
+    authorId: String;
+    name: string;
+    version?: number;
   }): Promise<string>;
   findReleasedLearningObject(params: {
     authorId: string;
-    name: string;
+    cuid: string;
   }): Promise<string>;
   fetchLearningObject(params: {
     id: string;

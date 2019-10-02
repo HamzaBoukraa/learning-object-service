@@ -14,6 +14,8 @@ import { uploadFile } from './Interactor';
 export type DownloadBundleParams = {
   requester: UserToken;
   learningObjectAuthorUsername: string;
+  cuid: string;
+  version: number;
   learningObjectId: string;
   revision: boolean;
 };
@@ -178,7 +180,7 @@ async function getLearningObject(
   workingCopy = false,
 ) {
   const learningObjectGateway = Gateways.learningObjectGateway();
-  const { requester, learningObjectAuthorUsername, learningObjectId } = params;
+  const { requester, learningObjectAuthorUsername, learningObjectId, cuid, version } = params;
   try {
     return await Gateways.learningObjectGateway().getLearningObjectById({
       learningObjectId,
@@ -186,9 +188,10 @@ async function getLearningObject(
     });
   } catch (e) {
     if (e.name === ResourceErrorReason.NOT_FOUND) {
-      return await learningObjectGateway.getLearningObjectByName({
+      return await learningObjectGateway.getLearningObjectByCuidVersion({
         username: learningObjectAuthorUsername,
-        learningObjectName: learningObjectId,
+        cuid,
+        version,
         requester,
         revision: workingCopy,
       });

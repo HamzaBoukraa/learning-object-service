@@ -62,41 +62,44 @@ namespace Gateways {
 }
 
 /**
- * Load a full learning object by name
+ * Load a full learning object by cuid and version
  * @async
  *
  *
  * @param dataStore [The datastore to fetch the Learning Object from]
  * @param library [The library communicator used to fetch metrics about the Learning Object]
  * @param username [The username of the Learning Object's author]
- * @param learningObjectName [The name of the Learning Object]
+ * @param cuid [The cuid of the Learning Object]
+ * @param version [The version of the learning object]
  * @param userToken [Information about the requester of the Learning Object]
  *
  * @returns {LearningObject}
  */
-export async function getLearningObjectByName({
+export async function getLearningObjectByCuidVersion({
   dataStore,
   library,
   username,
-  learningObjectName,
+  cuid,
+  version,
   userToken,
   revision,
 }: {
   dataStore: DataStore;
   library: LibraryCommunicator;
   username: string;
-  learningObjectName: string;
+  cuid: string;
+  version: number;
   userToken: UserToken;
   revision?: boolean;
 }): Promise<LearningObject> {
   try {
     let learningObject: LearningObject;
     if (!revision) {
-      learningObject = await loadReleasedLearningObjectByAuthorAndName({
+      learningObject = await loadReleasedLearningObjectByAuthorAndCuid({
         dataStore,
         library,
         authorUsername: username,
-        learningObjectName,
+        cuid
       }).catch(error =>
         bypassNotFoundResourceError({
           error,
@@ -104,11 +107,12 @@ export async function getLearningObjectByName({
       );
     }
     if (revision || !learningObject) {
-      learningObject = await loadLearningObjectByNameByAuthorAndName({
+      learningObject = await loadLearningObjectByAuthorAndCuidVersion({
         dataStore,
         library,
         authorUsername: username,
-        learningObjectName,
+        cuid,
+        version,
         userToken,
       });
     }
@@ -159,7 +163,7 @@ export async function getLearningObjectByCuid({
 }
 
 /**
- * Loads working copy of a Learning Object by author's username and Learning Object's name
+ * Loads working copy of a Learning Object by author's username and Learning Object's cuid and version
  *
  * @private
  * @static
@@ -172,28 +176,31 @@ export async function getLearningObjectByCuid({
  * @returns
  * @memberof LearningObjectInteractor
  */
-async function loadLearningObjectByNameByAuthorAndName({
+async function loadLearningObjectByAuthorAndCuidVersion({
   dataStore,
   library,
   authorUsername,
-  learningObjectName,
+  cuid,
+  version,
   userToken,
 }: {
   dataStore: DataStore;
   library: LibraryCommunicator;
   authorUsername: string;
-  learningObjectName: string;
+  cuid: string;
+  version: number;
   userToken: UserToken;
 }) {
   const authorId = await findAuthorIdByUsername({
     dataStore,
     username: authorUsername,
   });
-  const learningObjectID = await getLearningObjectIdByAuthorAndName({
+  const learningObjectID = await getLearningObjectIdByAuthorAndCuidVersion({
     dataStore,
     authorId,
     authorUsername,
-    name: learningObjectName,
+    cuid,
+    version
   });
   return getLearningObjectById({
     dataStore,
@@ -233,29 +240,32 @@ async function findAuthorIdByUsername(params: {
 }
 
 /**
- * Finds Learning Object's id by name and authorID.
+ * Finds Learning Object's id by cuid, version, and authorID.
  * If id is not found a ResourceError is thrown
  *
  * @private
  * @param {{
  *     dataStore: DataStore;
- *     name: string; [Learning Object's name]
+ *     cuid: string; [Learning Object's cuid]
+ *     version: number; [learning object's version]
  *     authorId: string [Learning Object's author's id]
  *     authorUsername: string [Learning Object's author's username]
  *   }} params
  * @returns {Promise<string>}
  * @memberof LearningObjectInteractor
  */
-async function getLearningObjectIdByAuthorAndName(params: {
+async function getLearningObjectIdByAuthorAndCuidVersion(params: {
   dataStore: DataStore;
-  name: string;
+  cuid: string;
+  version: number;
   authorId: string;
   authorUsername: string;
 }): Promise<string> {
-  const { dataStore, name, authorId, authorUsername } = params;
+  const { dataStore, cuid, version, authorId, authorUsername } = params;
   const learningObjectId = await dataStore.findLearningObject({
     authorId,
-    name,
+    cuid,
+    version
   });
   if (!learningObjectId) {
     throw new ResourceError(
@@ -267,7 +277,7 @@ async function getLearningObjectIdByAuthorAndName(params: {
 }
 
 /**
- * Loads released Learning Object by author's id and Learning Object's name
+ * Loads released Learning Object by author's id and Learning Object's cuid
  *
  * @private
  * @static
@@ -280,26 +290,26 @@ async function getLearningObjectIdByAuthorAndName(params: {
  * @returns
  * @memberof LearningObjectInteractor
  */
-async function loadReleasedLearningObjectByAuthorAndName({
+async function loadReleasedLearningObjectByAuthorAndCuid({
   dataStore,
   library,
   authorUsername,
-  learningObjectName,
+  cuid
 }: {
   dataStore: DataStore;
   library: LibraryCommunicator;
   authorUsername: string;
-  learningObjectName: string;
+  cuid: string;
 }) {
   const authorId = await findAuthorIdByUsername({
     dataStore,
     username: authorUsername,
   });
-  const learningObjectID = await getReleasedLearningObjectIdByAuthorAndName({
+  const learningObjectID = await getReleasedLearningObjectIdByAuthorAndCuid({
     dataStore,
     authorId,
     authorUsername,
-    name: learningObjectName,
+    cuid
   });
   return getLearningObjectById({
     dataStore,
@@ -311,7 +321,7 @@ async function loadReleasedLearningObjectByAuthorAndName({
 }
 
 /**
- * Finds released Learning Object's id by name and authorID.
+ * Finds released Learning Object's id by cuid and authorID.
  * If id is not found a ResourceError is thrown
  *
  * @private
@@ -324,16 +334,16 @@ async function loadReleasedLearningObjectByAuthorAndName({
  * @returns {Promise<string>}
  * @memberof LearningObjectInteractor
  */
-async function getReleasedLearningObjectIdByAuthorAndName(params: {
+async function getReleasedLearningObjectIdByAuthorAndCuid(params: {
   dataStore: DataStore;
-  name: string;
+  cuid: string;
   authorId: string;
   authorUsername: string;
 }): Promise<string> {
-  const { dataStore, name, authorId, authorUsername } = params;
+  const { dataStore, cuid, authorId, authorUsername } = params;
   const learningObjectId = await dataStore.findReleasedLearningObject({
     authorId,
-    name,
+    cuid
   });
   if (!learningObjectId) {
     throw new ResourceError(
@@ -1196,7 +1206,7 @@ export async function deleteLearningObject({
   }
 }
 /**
- * Deletes a Learning Object and all associated resources by name
+ * Deletes a Learning Object and all associated resources by cuid and version
  *
  * @export
  * @param {DataStore} datastore [The datastore to delete the Learning Object from]
@@ -1205,14 +1215,16 @@ export async function deleteLearningObject({
  * @param {string} id [The id of the Learning Object to be deleted]
  * @returns {Promise<void>}
  */
-export async function deleteLearningObjectByName({
+export async function deleteLearningObjectByCuidVersion({
   dataStore,
-  learningObjectName,
+  cuid,
+  version,
   library,
   user,
 }: {
   dataStore: DataStore;
-  learningObjectName: string;
+  cuid: string;
+  version: number;
   library: LibraryCommunicator;
   user: UserToken;
 }): Promise<void> {
@@ -1222,17 +1234,18 @@ export async function deleteLearningObjectByName({
     );
     if (!authorId) {
       throw new ResourceError(
-        `Unable to delete Learning Object ${learningObjectName}. No user ${user.username} with Learning Object ${learningObjectName} found.`,
+        `Unable to delete Learning Object ${cuid}. No user ${user.username} with Learning Object ${cuid} version ${version} found.`,
         ResourceErrorReason.NOT_FOUND,
       );
     }
     const objectId = await dataStore.findLearningObject({
       authorId,
-      name: learningObjectName,
+      cuid,
+      version
     });
     if (!objectId) {
       throw new ResourceError(
-        `Unable to delete Learning Object ${learningObjectName}. No Learning Object ${learningObjectName} exists.`,
+        `Unable to delete Learning Object ${cuid}. No Learning Object ${cuid} version ${version} exists.`,
         ResourceErrorReason.NOT_FOUND,
       );
     }
@@ -1555,6 +1568,7 @@ async function validateRequest(params: {
  * @param {string} username [The Learning Object's author's username]
  * @param {string} name [The name of the Learning Object]
  * @param {string} id [The id of the Learning Object. If passed, the existing Learning Object found must match this value]
+ * @param {string} version [The version of the learning object, if passed, the existing learning object found must amtch the version]
  *
  */
 async function checkNameExists({
@@ -1562,14 +1576,16 @@ async function checkNameExists({
   username,
   name,
   id,
+  version
 }: {
   dataStore: DataStore;
   username: string;
   name: string;
   id?: string;
+  version?: number;
 }) {
   const authorId = await UserServiceGateway.getInstance().findUser(username);
-  const existing = await dataStore.findLearningObject({ authorId, name });
+  const existing = await dataStore.findLearningObjectByName({ authorId, name, version });
   if (existing && id !== existing) {
     throw new ResourceError(
       `A Learning Object with name '${name}' already exists. Learning Objects you author must have unique names.`,

@@ -27,18 +27,20 @@ export function initializePublic({
   dataStore: DataStore;
   library: LibraryCommunicator;
 }) {
-  const getLearningObjectByName = async (req: Request, res: Response) => {
+  const getLearningObjectByCuidVersion = async (req: Request, res: Response) => {
     try {
       const requester: UserToken = req.user;
       const authorUsername: string = req.params.username;
-      const learningObjectName: string = req.params.learningObjectName;
+      const cuid = req.params.cuid;
+      const version = req.params.version;
       const revision: boolean = req.query.revision;
-      const object = await LearningObjectInteractor.getLearningObjectByName({
+      const object = await LearningObjectInteractor.getLearningObjectByCuidVersion({
         dataStore,
         library,
         userToken: requester,
         username: authorUsername,
-        learningObjectName,
+        cuid,
+        version,
         revision,
       });
       res.status(200).send(mapLearningObjectToSummary(object));
@@ -139,8 +141,8 @@ export function initializePublic({
    * if requesting a Learning Object by name.
    */
   router.get(
-    '/learning-objects/:username/:learningObjectName',
-    getLearningObjectByName,
+    '/learning-objects/:username/learning-objects/:cuid/versions/:version',
+    getLearningObjectByCuidVersion,
   );
   router.get(
     '/users/:username/learning-objects/:learningObjectId',
@@ -236,10 +238,12 @@ export function initializePrivate({
   const deleteLearningObjectByName = async (req: Request, res: Response) => {
     try {
       const user: UserToken = req.user;
-      const learningObjectName = req.params.learningObjectName;
-      await LearningObjectInteractor.deleteLearningObjectByName({
+      const cuid = req.params.cuid;
+      const version = req.params.version;
+      await LearningObjectInteractor.deleteLearningObjectByCuidVersion({
         dataStore,
-        learningObjectName,
+        cuid,
+        version,
         library,
         user,
       });

@@ -9,7 +9,7 @@ import {
   updateLearningObject,
   updateObjectLastModifiedDate,
   updateReadme,
-  getLearningObjectByName,
+  getLearningObjectByCuidVersion,
   getLearningObjectSummary,
 } from '../LearningObjectInteractor';
 import { LearningObjectSummary, UserToken } from '../../shared/types';
@@ -165,15 +165,17 @@ export class LearningObjectAdapter {
   // FIXME: Remove once downloads use id instead of Learning Object name in the URL
   async getLearningObjectByName(params: {
     username: string;
-    learningObjectName: string;
+    cuid: string;
+    version: number;
     userToken: UserToken;
     revision: boolean;
   }): Promise<LearningObject> {
-    return getLearningObjectByName({
+    return getLearningObjectByCuidVersion({
       dataStore: this.dataStore,
       library: this.library,
       username: params.username,
-      learningObjectName: params.learningObjectName,
+      cuid: params.cuid,
+      version: params.version,
       userToken: params.userToken,
       revision: params.revision,
     });

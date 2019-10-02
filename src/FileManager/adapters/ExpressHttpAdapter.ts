@@ -22,6 +22,12 @@ export function buildRouter(): Router {
     '/users/:username/learning-objects/:learningObjectName/bundle',
     getLearningObjectBundle,
   );
+
+  router.get(
+    '/users/:username/learning-objects/:cuid/versions/:version/bundle',
+    getLearningObjectBundle
+  );
+
   return router;
 }
 
@@ -63,6 +69,8 @@ async function getLearningObjectBundle(req: Request, res: Response) {
       revision = true;
     }
     const stream = await downloadBundle({
+      cuid: req.params.cuid,
+      version: req.params.version,
       requester: req.user,
       learningObjectAuthorUsername: req.params.username,
       learningObjectId: req.params.learningObjectName,
