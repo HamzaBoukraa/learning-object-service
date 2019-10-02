@@ -40,19 +40,18 @@ export class ModuleLearningObjectGateway implements LearningObjectGateway {
     return this.adapter.getLearningObjectSummary(params);
   }
 
-  getLearningObjectByCuidVersion(params: {
+  getLearningObjectByCuid(params: {
     username: string;
     cuid: string;
     version: number;
     requester: UserToken;
     revision: boolean;
-  }): Promise<LearningObject> {
-    return this.adapter.getLearningObjectByName({
+  }): Promise<LearningObjectSummary[]> {
+    return this.adapter.getLearningObjectByCuid({
       username: params.username,
       cuid: params.cuid,
       version: params.version,
       userToken: params.requester,
-      revision: params.revision,
     });
   }
 

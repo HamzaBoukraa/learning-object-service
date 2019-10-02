@@ -1,4 +1,4 @@
-import { UserToken, AccessGroup } from '../../shared/types';
+import { UserToken, AccessGroup, LearningObjectSummary } from '../../shared/types';
 import { Gateways, Drivers } from './shared/dependencies';
 import { ResourceErrorReason, ResourceError } from '../../shared/errors';
 import {
@@ -12,12 +12,8 @@ import FileManagerModuleErrorMessages from './shared/errors';
 import { uploadFile } from './Interactor';
 
 export type DownloadBundleParams = {
+  learningObject: LearningObjectSummary;
   requester: UserToken;
-  learningObjectAuthorUsername: string;
-  cuid: string;
-  version: number;
-  learningObjectId: string;
-  revision: boolean;
 };
 
 /**
@@ -29,13 +25,12 @@ export type DownloadBundleParams = {
 export async function downloadBundle(
   params: DownloadBundleParams,
 ): Promise<Stream> {
-  const { revision } = params;
-  // is it a revision or not
-  if (revision) {
+  const { status } = params.learningObject;
+
+  if (status !== LearningObject.Status.RELEASED) {
     return await downloadWorkingCopy(params);
-  } else {
-    return await downloadReleasedCopy(params);
   }
+  return await downloadReleasedCopy(params);
 }
 
 /**
@@ -48,8 +43,7 @@ export async function downloadBundle(
 async function downloadWorkingCopy(
   params: DownloadBundleParams,
 ): Promise<Stream> {
-  const { requester, learningObjectAuthorUsername, learningObjectId } = params;
-  const learningObject = await getLearningObject(params, true);
+  const { requester, learningObject } = params;
   const hasAccess = authorizeWorkingCopyDownloadRequest(
     requester,
     learningObject,
@@ -75,8 +69,7 @@ async function downloadWorkingCopy(
 async function downloadReleasedCopy(
   params: DownloadBundleParams,
 ): Promise<Stream> {
-  const { requester, learningObjectAuthorUsername, learningObjectId } = params;
-  const learningObject = await getLearningObject(params);
+  const { requester, learningObject } = params;
 
   const fileExists = await Drivers.fileManager().hasAccess({
     authorUsername: learningObjectAuthorUsername,
@@ -188,12 +181,11 @@ async function getLearningObject(
     });
   } catch (e) {
     if (e.name === ResourceErrorReason.NOT_FOUND) {
-      return await learningObjectGateway.getLearningObjectByCuidVersion({
+      return await learningObjectGateway.getLearningObjectByCuidAndVersion({
         username: learningObjectAuthorUsername,
         cuid,
         version,
         requester,
-        revision: workingCopy,
       });
     } else throw e;
   }

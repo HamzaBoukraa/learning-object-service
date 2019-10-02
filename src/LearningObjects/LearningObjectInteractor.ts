@@ -61,69 +61,6 @@ namespace Gateways {
     LearningObjectsModule.resolveDependency(UserGateway);
 }
 
-/**
- * Load a full learning object by cuid and version
- * @async
- *
- *
- * @param dataStore [The datastore to fetch the Learning Object from]
- * @param library [The library communicator used to fetch metrics about the Learning Object]
- * @param username [The username of the Learning Object's author]
- * @param cuid [The cuid of the Learning Object]
- * @param version [The version of the learning object]
- * @param userToken [Information about the requester of the Learning Object]
- *
- * @returns {LearningObject}
- */
-export async function getLearningObjectByCuidVersion({
-  dataStore,
-  library,
-  username,
-  cuid,
-  version,
-  userToken,
-  revision,
-}: {
-  dataStore: DataStore;
-  library: LibraryCommunicator;
-  username: string;
-  cuid: string;
-  version: number;
-  userToken: UserToken;
-  revision?: boolean;
-}): Promise<LearningObject> {
-  try {
-    let learningObject: LearningObject;
-    if (!revision) {
-      learningObject = await loadReleasedLearningObjectByAuthorAndCuid({
-        dataStore,
-        library,
-        authorUsername: username,
-        cuid
-      }).catch(error =>
-        bypassNotFoundResourceError({
-          error,
-        }),
-      );
-    }
-    if (revision || !learningObject) {
-      learningObject = await loadLearningObjectByAuthorAndCuidVersion({
-        dataStore,
-        library,
-        authorUsername: username,
-        cuid,
-        version,
-        userToken,
-      });
-    }
-
-    learningObject.attachResourceUris(GATEWAY_API);
-
-    return learningObject;
-  } catch (e) {
-    handleError(e);
-  }
-}
 
 /**
  * Retrieve a Learning Object by CUID
@@ -162,54 +99,6 @@ export async function getLearningObjectByCuid({
   return payload;
 }
 
-/**
- * Loads working copy of a Learning Object by author's username and Learning Object's cuid and version
- *
- * @private
- * @static
- * @param {{
- *     dataStore: DataStore;
- *     authorUsername: string;
- *     learningObjectName: string;
- *     userToken: UserToken;
- *   }} params
- * @returns
- * @memberof LearningObjectInteractor
- */
-async function loadLearningObjectByAuthorAndCuidVersion({
-  dataStore,
-  library,
-  authorUsername,
-  cuid,
-  version,
-  userToken,
-}: {
-  dataStore: DataStore;
-  library: LibraryCommunicator;
-  authorUsername: string;
-  cuid: string;
-  version: number;
-  userToken: UserToken;
-}) {
-  const authorId = await findAuthorIdByUsername({
-    dataStore,
-    username: authorUsername,
-  });
-  const learningObjectID = await getLearningObjectIdByAuthorAndCuidVersion({
-    dataStore,
-    authorId,
-    authorUsername,
-    cuid,
-    version
-  });
-  return getLearningObjectById({
-    dataStore,
-    library,
-    id: learningObjectID,
-    requester: userToken,
-    filter: 'unreleased',
-  });
-}
 
 /**
  * Finds author's id by username.
