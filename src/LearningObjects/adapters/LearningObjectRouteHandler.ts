@@ -106,7 +106,7 @@ export function initializePublic({
       const cuid = req.params.cuid;
       const requester = req.user;
       const authorUsername = req.params.username;
-      const version = req.query.version;
+      const version = parseInt(req.query.version, 10);
 
       if (cuid.indexOf('-') === -1) {
         // this isn't a CUID, fall through to learning object :id
