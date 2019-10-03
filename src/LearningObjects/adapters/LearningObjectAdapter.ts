@@ -185,7 +185,7 @@ export class LearningObjectAdapter {
   async getInternalLearningObjectByCuid(params: {
     username: string;
     cuid: string;
-    version: number;
+    version?: number;
     userToken: UserToken;
   }): Promise<LearningObject[]> {
     return getInternalLearningObjectByCuid({

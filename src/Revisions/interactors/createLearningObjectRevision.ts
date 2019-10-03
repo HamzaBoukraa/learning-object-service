@@ -46,14 +46,13 @@ export async function createLearningObjectRevision(params: {
 }): Promise<number> {
   const { dataStore, cuid, requester, username } = params;
 
-  let learningObjectsForCUID = await LearningObjectAdapter.getInstance().getLearningObjectByCuid(cuid, username, requester);
+  let learningObjectsForCUID = await LearningObjectAdapter.getInstance().getInternalLearningObjectByCuid({cuid, username, userToken: requester});
 
   if (!learningObjectsForCUID || !learningObjectsForCUID.length) {
     throw new ResourceError(ERROR_MESSAGES.REVISIONS.LEARNING_OBJECT_DOES_NOT_EXIST(params.cuid), ResourceErrorReason.NOT_FOUND);
   }
 
   if (learningObjectsForCUID.length > 1) {
-    console.log('YEET', learningObjectsForCUID)
     const errorMessage = determineRevisionExistsErrorMessage(learningObjectsForCUID);
     throw new ResourceError(errorMessage, ResourceErrorReason.BAD_REQUEST);
   }
@@ -83,7 +82,7 @@ export async function createLearningObjectRevision(params: {
     requester,
     releasedCopy: learningObject,
   });
- 
+
   return newRevisionId;
 }
 
@@ -220,7 +219,7 @@ async function createRevisionInProofing({
         currentLearningObjectVersion: releasedCopy.revision,
         newLearningObjectVersion: newRevisionId,
       });
-      await dataStore.createRevision(releasedCopy.cuid, newRevisionId, LearningObject.Status.PROOFING)
+      await dataStore.createRevision(releasedCopy.cuid, newRevisionId, LearningObject.Status.PROOFING);
       return newRevisionId;
     } else throw e;
   }
