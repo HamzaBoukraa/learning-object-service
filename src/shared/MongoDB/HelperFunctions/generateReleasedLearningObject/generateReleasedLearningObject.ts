@@ -67,7 +67,7 @@ export async function generateReleasedLearningObject(
     materials,
     contributors,
     outcomes: outcomes,
-    hasRevision: record.hasRevision,
+    revisionUri: record.revisionUri,
     children,
     version: record.version,
   });

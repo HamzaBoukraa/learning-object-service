@@ -423,16 +423,23 @@ export class LearningObject {
     }
   }
   /**
-   * @property {boolean} hasRevision
-   * An optional field on a learning object, denoting whether or not the object
-   * has a working copy with a different status in the working collection.
+   * @property {string} revisionUri
+   * An optional field on a learning object that identifies the route to retrieve
+   * it's active revision
    */
-  private _hasRevision?: boolean;
+  private _revisionUri?: string;
 
-  get hasRevision(): boolean {
-    return this._hasRevision;
+  get revisionUri(): string {
+    return this._revisionUri;
   }
 
+  attachRevisionUri() {
+    this._revisionUri = `${process.env.GATEWAY_API}/users/${this.author.username}/learning-objects/${this.cuid}/version/${this.version + 1}`
+  }
+
+  attachTest() {
+    this._revisionUri = 'blah blah blah dracula';
+  }
   private _version!: number;
   /**
    * @property {string} version The version number of the Learning Object
@@ -475,7 +482,7 @@ export class LearningObject {
 
     this.resourceUris.parents = `${resourceUriHost}/learning-objects/${this.id}/parents`;
 
-    this.resourceUris.ratings = `${resourceUriHost}/users/${this.author.username}/learning-objects/${this.cuid}/version/${this.revision}/ratings`;
+    this.resourceUris.ratings = `${resourceUriHost}/users/${this.author.username}/learning-objects/${this.cuid}/version/${this.version}/ratings`;
   }
 
   /**
@@ -604,8 +611,8 @@ export class LearningObject {
         this.addContributor(contributor),
       );
     }
-    if (object.hasRevision === true) {
-      this._hasRevision = object.hasRevision;
+    if (object.revisionUri === true) {
+      this._revisionUri = object.revisionUri;
     }
     if (object.version != null) {
       this.version = object.version;
@@ -642,7 +649,7 @@ export class LearningObject {
       collection: this.collection,
       status: this.status,
       metrics: this.metrics,
-      hasRevision: this.hasRevision,
+      revisionUri: this.revisionUri,
       version: this.version,
       resourceUris: this.resourceUris,
     };

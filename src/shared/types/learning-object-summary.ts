@@ -83,7 +83,7 @@ export interface LearningObjectSummary {
   /**
    * Flag indicating whether or not a Learning Object has a working copy with dissimilar properties
    */
-  hasRevision: boolean;
+  revisionUri: string;
   /**
    * The version number of the Learning Object
    */
