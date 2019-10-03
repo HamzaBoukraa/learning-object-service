@@ -92,7 +92,7 @@ export function initializePublic({
         return;
       }
 
-      const results = await LearningObjectInteractor.getLearningObjectByCuid({ dataStore, requester, authorUsername, cuid, version });
+      const results = await LearningObjectInteractor.getLearningObjectByCuid({ dataStore, requester, authorUsername, cuid, version: version || undefined });
 
       res.json(results);
     } catch (e) {

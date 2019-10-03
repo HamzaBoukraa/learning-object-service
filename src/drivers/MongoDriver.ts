@@ -1039,7 +1039,11 @@ export class MongoDriver implements DataStore {
    * @memberof MongoDriver
    */
   private async queryLearningObjectByCuid(cuid: string, version?: number): Promise<LearningObject[]> {
-    const query: { cuid: string, revision?: number } = { cuid, revision: version };
+    const query: { cuid: string, revision?: number } = { cuid };
+
+    if (version) {
+      query.revision = version;
+    }
 
     let notFoundError = `No Learning Object found for CUID '${cuid}'`;
 
