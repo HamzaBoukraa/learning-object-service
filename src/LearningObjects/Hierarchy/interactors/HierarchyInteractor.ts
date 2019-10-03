@@ -55,7 +55,7 @@ export async function fetchParents(params: {
     });
     const releasedObjects = learningObjects.map(objects => {
       objects.attachResourceUris(GATEWAY_API);
-      objects.attachRevisionUri(GATEWAY_API);
+      objects.attachRevisionUri();
       return mapLearningObjectToSummary(objects);
     });
     return releasedObjects;
@@ -71,7 +71,7 @@ export async function fetchParents(params: {
     });
     const workingObjects = learningObjects.map(objects => {
       objects.attachResourceUris(GATEWAY_API);
-      objects.attachRevisionUri(GATEWAY_API);
+      objects.attachRevisionUri();
       return mapLearningObjectToSummary(objects);
     });
     return workingObjects;

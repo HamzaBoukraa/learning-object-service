@@ -437,9 +437,6 @@ export class LearningObject {
     this._revisionUri = `${process.env.GATEWAY_API}/users/${this.author.username}/learning-objects/${this.cuid}/version/${this.version + 1}`
   }
 
-  attachTest() {
-    this._revisionUri = 'blah blah blah dracula';
-  }
   private _version!: number;
   /**
    * @property {string} version The version number of the Learning Object

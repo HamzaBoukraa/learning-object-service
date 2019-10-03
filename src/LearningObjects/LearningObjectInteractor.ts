@@ -114,7 +114,7 @@ export async function getLearningObjectByName({
     }
 
     learningObject.attachResourceUris(GATEWAY_API);
-    learningObject.attachRevisionUri(GATEWAY_API);
+    learningObject.attachRevisionUri();
 
     return learningObject;
   } catch (e) {
@@ -912,7 +912,7 @@ export async function getLearningObjectById({
     }
 
     learningObject.attachResourceUris(GATEWAY_API);
-    learningObject.attachRevisionUri(GATEWAY_API);
+    learningObject.attachRevisionUri();
 
     return learningObject;
   } catch (e) {
@@ -969,7 +969,7 @@ export async function getLearningObjectSummaryById({
     }
     if (learningObject) {
       learningObject.attachResourceUris(GATEWAY_API);
-      learningObject.attachRevisionUri(GATEWAY_API);
+      learningObject.attachRevisionUri();
     } else {
       throw learningObjectNotFound;
     }
@@ -1131,7 +1131,7 @@ export async function getLearningObjectChildrenSummariesById(
   while (c < childrenOrder.length) {
     if (childrenIDs[cIDs] === childrenOrder[c].id) {
       childrenOrder[c].attachResourceUris(GATEWAY_API);
-      childrenOrder[c].attachRevisionUri(GATEWAY_API);
+      childrenOrder[c].attachRevisionUri();
       children.push(mapLearningObjectToSummary(childrenOrder[c]));
       cIDs++;
       c = 0;

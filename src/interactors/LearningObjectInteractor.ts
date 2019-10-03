@@ -386,7 +386,7 @@ export class LearningObjectInteractor {
       });
       const learningObjectSummaries = learningObjects.map(learningObject => {
         learningObject.attachResourceUris(GATEWAY_API);
-        learningObject.attachRevisionUri(GATEWAY_API);
+        learningObject.attachRevisionUri();
         return mapLearningObjectToSummary(learningObject);
       });
       return learningObjectSummaries;
