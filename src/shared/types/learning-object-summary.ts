@@ -81,7 +81,7 @@ export interface LearningObjectSummary {
    */
   resourceUris?: LearningObjectResourceUris;
   /**
-   * Flag indicating whether or not a Learning Object has a working copy with dissimilar properties
+   * The URI of the active revision of the object
    */
   revisionUri: string;
   /**
