@@ -90,11 +90,24 @@ export async function getLearningObjectByCuid({
   version?: number;
 }) {
   const objects = await dataStore.fetchLearningObjectByCuid(cuid, version);
+  let unauthorized: boolean;
+
   const payload = objects.filter(object => {
     // this function will throw a ResourceError if requester isn't authorized
-    authorizeReadAccess({ learningObject: object, requester });
-    return true;
+    try {
+      authorizeReadAccess({ learningObject: object, requester });
+      return true;
+    } catch (e) {
+      unauthorized = true;
+      return false;
+    }
   });
+
+  if (!payload.length && unauthorized) {
+    throw new ResourceError(`User: ${requester.username} does not have permission to view Learning Object with CUID: \`${cuid}\``, ResourceErrorReason.FORBIDDEN);
+  } else if (!payload.length) {
+    throw new ResourceError(`No Learning Object with CUID \`${cuid}\` and version \`${version}\` exists.`, ResourceErrorReason.NOT_FOUND);
+  }
 
   return payload;
 }
@@ -127,11 +140,25 @@ export async function getInternalLearningObjectByCuid({
   version?: number,
 }) {
   const objects = await dataStore.fetchInternalLearningObjectByCuid(cuid, version);
+  let unauthorized: boolean;
+  console.count('YEET');
+
   const payload = objects.filter(object => {
     // this function will throw a ResourceError if requester isn't authorized
-    authorizeReadAccess({ learningObject: object, requester });
-    return true;
+    try {
+      authorizeReadAccess({ learningObject: object, requester });
+      return true;
+    } catch (e) {
+      unauthorized = true;
+      return false;
+    }
   });
+
+  if (!payload.length && unauthorized) {
+    throw new ResourceError(`User: ${requester.username} does not have permission to view Learning Object with CUID: \`${cuid}\``, ResourceErrorReason.FORBIDDEN);
+  } else if (!payload.length) {
+    throw new ResourceError(`No Learning Object with CUID \`${cuid}\` and version \`${version}\` exists.`, ResourceErrorReason.NOT_FOUND);
+  }
 
   return payload;
 }

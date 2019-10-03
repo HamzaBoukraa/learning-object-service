@@ -5,7 +5,6 @@ import {
   requesterIsAuthor,
 } from '../../shared/AuthorizationManager';
 import { LearningObject } from '../../shared/entity';
-import { getLearningObjectRevision } from './getLearningObjectRevision';
 import { RevisionsDataStore } from '../RevisionsDataStore';
 import { LearningObjectAdapter } from '../../LearningObjects/adapters/LearningObjectAdapter';
 import { FileManagerModule } from '../../FileManager/FileManagerModule';
@@ -145,26 +144,14 @@ async function createRevision({
   dataStore: RevisionsDataStore;
   requester: UserToken;
 }) {
-  try {
-    await getLearningObjectRevision({
-      dataStore,
-      requester,
-      learningObjectId,
-      revisionId: newRevisionId,
-      username: releasedCopy.author.username,
-      summary: true,
-    });
-  } catch (e) {
-    await FileManagerModule.duplicateRevisionFiles({
-      authorUsername: releasedCopy.author.username,
-      learningObjectCUID: releasedCopy.cuid,
-      currentLearningObjectVersion: releasedCopy.revision,
-      newLearningObjectVersion: newRevisionId,
-    });
-    await dataStore.createRevision(releasedCopy.cuid, newRevisionId);
-    return newRevisionId;
-  }
-  throw new ResourceError(ERROR_MESSAGES.REVISIONS.EXISTS, ResourceErrorReason.CONFLICT);
+  await FileManagerModule.duplicateRevisionFiles({
+    authorUsername: releasedCopy.author.username,
+    learningObjectCUID: releasedCopy.cuid,
+    currentLearningObjectVersion: releasedCopy.revision,
+    newLearningObjectVersion: newRevisionId,
+  });
+  await dataStore.createRevision(releasedCopy.cuid, newRevisionId);
+  return newRevisionId;
 }
 
 /**
@@ -191,38 +178,14 @@ async function createRevisionInProofing({
   dataStore: RevisionsDataStore;
   requester: UserToken;
 }) {
-  try {
-    const revisionSummary = await getLearningObjectRevision({
-      dataStore,
-      requester,
-      learningObjectId,
-      revisionId: newRevisionId,
-      username: releasedCopy.author.username,
-      summary: true,
-    });
-    if (revisionSummary.status === LearningObject.Status.UNRELEASED) {
-      throw new ResourceError(
-        ERROR_MESSAGES.REVISIONS.UNRELEASED_EXISTS,
-        ResourceErrorReason.FORBIDDEN,
-      );
-    } else {
-      throw new ResourceError(
-        ERROR_MESSAGES.REVISIONS.SUBMISSION_EXISTS,
-        ResourceErrorReason.FORBIDDEN,
-      );
-    }
-  } catch (e) {
-    if (e.name === ResourceErrorReason.NOT_FOUND) {
-      await FileManagerModule.duplicateRevisionFiles({
-        authorUsername: releasedCopy.author.username,
-        learningObjectCUID: releasedCopy.cuid,
-        currentLearningObjectVersion: releasedCopy.revision,
-        newLearningObjectVersion: newRevisionId,
-      });
-      await dataStore.createRevision(releasedCopy.cuid, newRevisionId, LearningObject.Status.PROOFING);
-      return newRevisionId;
-    } else throw e;
-  }
+  await FileManagerModule.duplicateRevisionFiles({
+    authorUsername: releasedCopy.author.username,
+    learningObjectCUID: releasedCopy.cuid,
+    currentLearningObjectVersion: releasedCopy.revision,
+    newLearningObjectVersion: newRevisionId,
+  });
+  await dataStore.createRevision(releasedCopy.cuid, newRevisionId, LearningObject.Status.PROOFING);
+  return newRevisionId;
 }
 
 function generateNewRevisionID(learningObject: LearningObject) {
