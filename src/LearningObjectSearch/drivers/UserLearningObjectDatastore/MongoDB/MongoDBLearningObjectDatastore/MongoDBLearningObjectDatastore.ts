@@ -13,7 +13,6 @@ import { COLLECTIONS } from '../../../../../drivers/MongoDriver';
 import { LearningObject } from '../../../../../shared/entity';
 import { sanitizeRegex } from '../../../../../shared/functions/sanitizeRegex/sanitizeRegex';
 import {
-  generateReleasedLearningObjectSummary,
   calculateDocumentsToSkip,
   validatePageNumber,
   generateLearningObject,
