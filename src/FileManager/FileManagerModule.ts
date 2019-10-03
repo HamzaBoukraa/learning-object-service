@@ -20,6 +20,7 @@ import {
   ModuleFileMetadataGateway,
 } from './gateways';
 import { ModuleHierarchyGateway, HierarchyGateway } from './gateways/HierarchyGateway/ModuleHierarchyGateway';
+import { duplicateRevisionFiles } from './interactors/duplicateRevisionFiles/duplicateRevisionFiles';
 
 /**
  * Module responsible for handling file operations
@@ -42,4 +43,5 @@ export class FileManagerModule extends ExpressServiceModule {
   static uploadFile = uploadFile;
   static deleteFile = deleteFile;
   static deleteFolder = deleteFolder;
+  static duplicateRevisionFiles = duplicateRevisionFiles;
 }

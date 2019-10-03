@@ -1,16 +1,71 @@
-import { ResourceError, ResourceErrorReason } from '../../../shared/errors';
-import { DataStore } from '../../../shared/interfaces/DataStore';
-import { MockDataStore } from '../../../tests/mock-drivers/MockDataStore';
-import { Stubs } from '../../../tests/stubs';
+import { ResourceError, ResourceErrorReason } from '../../shared/errors';
+import { DataStore } from '../../shared/interfaces/DataStore';
+import { MockDataStore } from '../../tests/mock-drivers/MockDataStore';
+import { MockRevisionsDataStore } from '../../tests/mock-drivers/MockRevisionDataStore';
+import { Stubs } from '../../tests/stubs';
 import { ERROR_MESSAGES } from './createLearningObjectRevision';
-import { LearningObject } from '../../../shared/entity';
+import { LearningObject, HierarchicalLearningObject } from '../../shared/entity';
+import { RevisionsDataStore } from '../RevisionsDataStore';
+import { LearningObjectAdapter } from '../../LearningObjects/adapters/LearningObjectAdapter';
+import { MockLibraryDriver } from '../../tests/mock-drivers/MockLibraryDriver';
+import { FileManagerModule } from '../../FileManager/FileManagerModule';
+import { HierarchyGateway } from '../../FileManager/gateways/HierarchyGateway/ModuleHierarchyGateway';
+import { LearningObjectGateway } from '../../FileMetadata/interfaces';
+import { LearningObjectFilter } from '../../LearningObjects/typings';
+import { UserToken, LearningObjectSummary } from '../../shared/types';
 
+const dataStore: DataStore = new MockDataStore();
+const LibraryDriver = new MockLibraryDriver();
+const revisionsDataStore: RevisionsDataStore = new MockRevisionsDataStore();
+const stubs = new Stubs();
+const learningObject = stubs.learningObject;
+class LearningObjectGatewayStub implements LearningObjectGateway {
+  async getReleasedLearningObjectSummary(id: string): Promise<LearningObjectSummary> {
+    return await {} as LearningObjectSummary ;
+  }
+  async getLearningObjectSummary(params: { id: string; requester: UserToken; }): Promise<LearningObjectSummary> {
+    return await {} as LearningObjectSummary ;
+  }
+  async updateObjectLastModifiedDate(id: string): Promise<void> {
+    return;
+  }
+}
+
+class HierarchyGatewayStub implements HierarchyGateway {
+  async buildHierarchicalLearningObject(
+    learningObject: LearningObject,
+    requester: UserToken,
+  ): Promise<HierarchicalLearningObject> {
+    return (await {}) as HierarchicalLearningObject;
+  }
+}
+jest.mock(
+  '../../LearningObjects/adapters/LearningObjectAdapter',
+  () => ({
+    __esModule: true,
+    LearningObjectAdapter: {
+      getInstance: () => ({
+        getLearningObjectByCuid: jest
+          .fn()
+          .mockResolvedValue([stubs.learningObject]),
+      }),
+    },
+  }),
+);
 describe('createLearningObjectRevison', () => {
-  const dataStore: DataStore = new MockDataStore();
-  const stubs = new Stubs();
-  const learningObject = stubs.learningObject;
+  beforeEach(() => {
+    jest.resetModules();
+    FileManagerModule.providers = [
+      { provide: LearningObjectGateway, useClass: LearningObjectGatewayStub },
+      { provide: HierarchyGateway, useClass: HierarchyGatewayStub },
+    ];
+    FileManagerModule.initialize();
+  });
 
-  beforeEach(() => jest.resetModules());
+  afterEach(()=>{
+
+    FileManagerModule.destroy();
+    })
 
   describe('when an Editor makes a request to create a revision', () => {
     const editor = {
@@ -34,11 +89,12 @@ describe('createLearningObjectRevison', () => {
               }),
           };
         });
+
         const t = await import('./createLearningObjectRevision');
         const createRevisionPromise = t.createLearningObjectRevision({
           username: learningObject.author.username,
-          learningObjectId: learningObject.id,
-          dataStore,
+          cuid: learningObject.cuid,
+          dataStore: revisionsDataStore,
           requester: editor,
         });
         await expect(createRevisionPromise).rejects.toEqual(
@@ -62,8 +118,8 @@ describe('createLearningObjectRevison', () => {
         const t = await import('./createLearningObjectRevision');
         const createRevisionPromise = t.createLearningObjectRevision({
           username: learningObject.author.username,
-          learningObjectId: learningObject.id,
-          dataStore,
+          cuid: learningObject.cuid,
+          dataStore: revisionsDataStore,
           requester: editor,
         });
         await expect(createRevisionPromise).rejects.toEqual(
@@ -89,8 +145,8 @@ describe('createLearningObjectRevison', () => {
         const spy = jest.spyOn(dataStore, 'editLearningObject');
         await t.createLearningObjectRevision({
           username: learningObject.author.username,
-          learningObjectId: learningObject.id,
-          dataStore,
+          cuid: learningObject.cuid,
+          dataStore: revisionsDataStore,
           requester: editor,
         });
         expect(spy).toBeCalledWith({
@@ -122,19 +178,22 @@ describe('createLearningObjectRevison', () => {
         const t = await import('./createLearningObjectRevision');
         const createRevisionPromise = t.createLearningObjectRevision({
           username: learningObject.author.username,
-          learningObjectId: learningObject.id,
-          dataStore,
+          cuid: learningObject.cuid,
+          dataStore: revisionsDataStore,
           requester: author,
         });
-        await expect(createRevisionPromise).rejects.toEqual(new ResourceError(
-          ERROR_MESSAGES.REVISIONS.EXISTS,
-          ResourceErrorReason.CONFLICT,
-        ));
+        await expect(createRevisionPromise).rejects.toEqual(
+          new ResourceError(
+            ERROR_MESSAGES.REVISIONS.EXISTS,
+            ResourceErrorReason.CONFLICT,
+          ),
+        );
       });
     });
 
     describe('and there is no revision', () => {
       it('should set the revision status to Unreleased', async () => {
+
         jest.doMock('./getLearningObjectRevision', () => {
           return {
             __esModule: true,
@@ -146,8 +205,8 @@ describe('createLearningObjectRevison', () => {
         const t = await import('./createLearningObjectRevision');
         await t.createLearningObjectRevision({
           username: learningObject.author.username,
-          learningObjectId: learningObject.id,
-          dataStore,
+          cuid: learningObject.cuid,
+          dataStore: revisionsDataStore,
           requester: author,
         });
         expect(spy).toBeCalledWith({

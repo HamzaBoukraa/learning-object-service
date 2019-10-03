@@ -12,6 +12,7 @@ import * as ChangelogRouteHandler from '../../Changelogs/ChangelogRouteDriver';
 import { reportError } from '../../shared/SentryConnector';
 import { UserToken } from '../../shared/types';
 import { mapErrorToResponseData } from '../../shared/errors';
+import * as RevisionsModule from '../../Revisions/RevisionRouteHandler';
 export class ExpressAuthRouteDriver {
   constructor(
     private dataStore: DataStore,
@@ -73,6 +74,8 @@ export class ExpressAuthRouteDriver {
       router,
       dataStore: this.dataStore,
     });
+
+    RevisionsModule.initializePrivate({ router });
 
     ChangelogRouteHandler.initialize({
       router,

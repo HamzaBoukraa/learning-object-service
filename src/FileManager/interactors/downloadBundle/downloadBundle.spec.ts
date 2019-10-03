@@ -2,21 +2,20 @@ import {
   UserToken,
   LearningObjectSummary,
   FileUpload,
-} from '../../shared/types';
-import { FileManagerModule } from '../FileManagerModule';
-import { LearningObjectGateway } from '../interfaces';
-import { LearningObjectFilter } from '../../LearningObjects/typings';
+} from '../../../shared/types';
+import { FileManagerModule } from '../../FileManagerModule';
+import { LearningObjectGateway } from '../../interfaces';
+import { LearningObjectFilter } from '../../../LearningObjects/typings';
 import {
   LearningObject,
   HierarchicalLearningObject,
-} from '../../shared/entity';
+} from '../../../shared/entity';
 import { downloadBundle, DownloadBundleParams } from './downloadBundle';
-import { ResourceErrorReason, ResourceError } from '../../shared/errors';
-import { Gateways } from './shared/dependencies';
+import { ResourceErrorReason, ResourceError } from '../../../shared/errors';
+import { Gateways } from '../shared/dependencies';
 import { Stream } from 'stream';
-import { HierarchyGateway } from '../gateways/HierarchyGateway/ModuleHierarchyGateway';
-import FileManagerModuleErrorMessages from './shared/errors';
-
+import { HierarchyGateway } from '../../gateways/HierarchyGateway/ModuleHierarchyGateway';
+import FileManagerModuleErrorMessages from '../shared/errors';
 const requesterStub: UserToken = {
   username: 'test-username',
   name: 'test-name',
@@ -86,7 +85,7 @@ function initializeServiceModuleFixtures() {
   FileManagerModule.initialize();
 }
 
-jest.mock('../../LearningObjects/Publishing/Bundler/Interactor', () => ({
+jest.mock('../../../LearningObjects/Publishing/Bundler/Interactor', () => ({
   bundleLearningObject: ({
     learningObject,
   }: {

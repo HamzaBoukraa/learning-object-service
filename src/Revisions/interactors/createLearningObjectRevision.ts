@@ -1,20 +1,20 @@
-import { DataStore } from '../../../shared/interfaces/DataStore';
-import { LearningObjectSummary, UserToken } from '../../../shared/types';
-import { getReleasedLearningObjectSummary } from '../../LearningObjectInteractor';
-import { ResourceError, ResourceErrorReason } from '../../../shared/errors';
+import { UserToken, LearningObjectState } from '../../shared/types';
+import { ResourceError, ResourceErrorReason } from '../../shared/errors';
 import {
   requesterIsAdminOrEditor,
   requesterIsAuthor,
-} from '../../../shared/AuthorizationManager';
-import { LearningObject } from '../../../shared/entity';
-import { validateRequest } from './tasks/validateRequest';
+} from '../../shared/AuthorizationManager';
+import { LearningObject } from '../../shared/entity';
 import { getLearningObjectRevision } from './getLearningObjectRevision';
+import { RevisionsDataStore } from '../RevisionsDataStore';
+import { LearningObjectAdapter } from '../../LearningObjects/adapters/LearningObjectAdapter';
+import { FileManagerModule } from '../../FileManager/FileManagerModule';
 
 export const ERROR_MESSAGES = {
   REVISIONS: {
     UNRELEASED_EXISTS: `The author has created a revision for this Learning Object but has not
     yet made a submission to a collection. Please contact the author to coordinate integrating
-    your changes with theirs`,
+    your changes with theirs.`,
     SUBMISSION_EXISTS: `This Learning Object already has a submission that is currently in the
     review stage. Please make your edits to the submission directly in order to integrate your
     changes with those that already exist.`,
@@ -22,6 +22,9 @@ export const ERROR_MESSAGES = {
     Please contact the author or an editor if you would like to propose changes.`,
     EXISTS: `This Learning Object already has a revision. Please complete or delete the current
     revision before attempting to create a new one.`,
+    LEARNING_OBJECT_DOES_NOT_EXIST: (cuid: string): string => `Cannot crate a revision of a Learning Object with cuid '${cuid}' because the Learning Object does not exist.`,
+    INCORRECT_AUTHOR: (cuid: string, username: string): string => `Learning Object: ${cuid} does not belong to ${username}`,
+    LEARNING_OBJECT_NOT_RELEASED: (cuid: string): string => `Cannot create a revision of Learning Object: ${cuid} since it is not released.`,
   },
 };
 
@@ -37,39 +40,50 @@ export const ERROR_MESSAGES = {
  */
 export async function createLearningObjectRevision(params: {
   username: string;
-  learningObjectId: string;
-  dataStore: DataStore;
+  cuid: string;
+  dataStore: RevisionsDataStore;
   requester: UserToken;
 }): Promise<number> {
-  const { dataStore, learningObjectId, requester, username } = params;
-  await validateRequest({
-    username: username,
-    learningObjectId: learningObjectId,
-    dataStore: dataStore,
-  });
+  const { dataStore, cuid, requester, username } = params;
 
-  const releasedCopy = await getReleasedLearningObjectSummary({
-    dataStore: dataStore,
-    id: learningObjectId,
-  });
+  let learningObjectsForCUID = await LearningObjectAdapter.getInstance().getLearningObjectByCuid(cuid, username, requester);
 
-  if (!releasedCopy) {
+  if (!learningObjectsForCUID || !learningObjectsForCUID.length) {
+    throw new ResourceError(ERROR_MESSAGES.REVISIONS.LEARNING_OBJECT_DOES_NOT_EXIST(params.cuid), ResourceErrorReason.NOT_FOUND);
+  }
+
+  if (learningObjectsForCUID.length > 1) {
+    console.log('YEET', learningObjectsForCUID)
+    const errorMessage = determineRevisionExistsErrorMessage(learningObjectsForCUID);
+    throw new ResourceError(errorMessage, ResourceErrorReason.BAD_REQUEST);
+  }
+
+  const learningObject = learningObjectsForCUID[0];
+
+  if (learningObject.author.username !== params.username) {
     throw new ResourceError(
-      `Cannot create a revision of Learning Object: ${learningObjectId} since it is not released.`,
+      ERROR_MESSAGES.REVISIONS.INCORRECT_AUTHOR(learningObject.cuid, params.username),
       ResourceErrorReason.BAD_REQUEST,
     );
   }
 
-  const newRevisionId = releasedCopy.revision + 1;
+  if (learningObject.status !== LearningObject.Status.RELEASED) {
+    throw new ResourceError(
+      ERROR_MESSAGES.REVISIONS.LEARNING_OBJECT_NOT_RELEASED(learningObject.cuid),
+      ResourceErrorReason.BAD_REQUEST,
+    );
+  }
+
+  const newRevisionId = generateNewRevisionID(learningObject);
 
   await determineRevisionType({
     dataStore,
     newRevisionId,
-    learningObjectId,
+    learningObjectId: learningObject.id,
     requester,
-    releasedCopy,
+    releasedCopy: learningObject,
   });
-
+ 
   return newRevisionId;
 }
 
@@ -83,10 +97,10 @@ export async function createLearningObjectRevision(params: {
  * @param params.requester identifiers for the user making the request
  */
 async function determineRevisionType(params: {
-  releasedCopy: LearningObjectSummary;
+  releasedCopy: LearningObject;
   newRevisionId: number;
   learningObjectId: string;
-  dataStore: DataStore;
+  dataStore: RevisionsDataStore;
   requester: UserToken;
 }) {
   const { releasedCopy } = params;
@@ -107,35 +121,6 @@ async function determineRevisionType(params: {
   }
 }
 
-/**
- * saveRevision handles the coordination of changes to the Learning Object's
- * Working Copy.
- *
- * @param params.revisionStatus the status to start the revision at
- * @param params.newRevisionId new revision id to be created
- * @param params.releasedCopy the summary information of the released Learning Object
- * @param params.learningObjectId the unique identifier of the Learning Object being revised
- * @param params.dataStore the storage gateway for Learning Objects
- */
-async function saveRevision(params: {
-  revisionStatus:
-    | LearningObject.Status.UNRELEASED
-    | LearningObject.Status.PROOFING;
-  newRevisionId: number;
-  releasedCopy: LearningObjectSummary;
-  learningObjectId: string;
-  dataStore: DataStore;
-}) {
-  params.releasedCopy.revision++;
-
-  await params.dataStore.editLearningObject({
-    id: params.learningObjectId,
-    updates: {
-      revision: params.releasedCopy.revision,
-      status: params.revisionStatus,
-    },
-  });
-}
 
 /**
  * createRevision creates a new revision for the Author in the case that no revision currently
@@ -144,8 +129,8 @@ async function saveRevision(params: {
  *
  * @param params.releasedCopy the summary information of the released Learning Object
  * @param params.learningObjectId the unique identifier of the Learning Object being revised
- * @param params.newRevisionId new revision id to be created
- * @param params.dataStore the storage gateway for Learning Objects
+ * @param params.newRevisionIdvision id to be created
+ * @par new ream params.dataStore the storage gateway for Learning Objects
  * @param params.requester identifiers for the user making the request
  */
 async function createRevision({
@@ -155,14 +140,14 @@ async function createRevision({
   dataStore,
   requester,
 }: {
-  releasedCopy: LearningObjectSummary;
+  releasedCopy: LearningObject;
   learningObjectId: string;
   newRevisionId: number;
-  dataStore: DataStore;
+  dataStore: RevisionsDataStore;
   requester: UserToken;
 }) {
   try {
-    const revisionSummary = await getLearningObjectRevision({
+    await getLearningObjectRevision({
       dataStore,
       requester,
       learningObjectId,
@@ -171,13 +156,14 @@ async function createRevision({
       summary: true,
     });
   } catch (e) {
-    return await saveRevision({
-      dataStore,
-      newRevisionId,
-      learningObjectId,
-      revisionStatus: LearningObject.Status.UNRELEASED,
-      releasedCopy,
+    await FileManagerModule.duplicateRevisionFiles({
+      authorUsername: releasedCopy.author.username,
+      learningObjectCUID: releasedCopy.cuid,
+      currentLearningObjectVersion: releasedCopy.revision,
+      newLearningObjectVersion: newRevisionId,
     });
+    await dataStore.createRevision(releasedCopy.cuid, newRevisionId);
+    return newRevisionId;
   }
   throw new ResourceError(ERROR_MESSAGES.REVISIONS.EXISTS, ResourceErrorReason.CONFLICT);
 }
@@ -200,10 +186,10 @@ async function createRevisionInProofing({
   dataStore,
   requester,
 }: {
-  releasedCopy: LearningObjectSummary;
+  releasedCopy: LearningObject;
   learningObjectId: string;
   newRevisionId: number;
-  dataStore: DataStore;
+  dataStore: RevisionsDataStore;
   requester: UserToken;
 }) {
   try {
@@ -228,13 +214,38 @@ async function createRevisionInProofing({
     }
   } catch (e) {
     if (e.name === ResourceErrorReason.NOT_FOUND) {
-      await saveRevision({
-        dataStore: dataStore,
-        learningObjectId: learningObjectId,
-        newRevisionId,
-        revisionStatus: LearningObject.Status.PROOFING,
-        releasedCopy: releasedCopy,
+      await FileManagerModule.duplicateRevisionFiles({
+        authorUsername: releasedCopy.author.username,
+        learningObjectCUID: releasedCopy.cuid,
+        currentLearningObjectVersion: releasedCopy.revision,
+        newLearningObjectVersion: newRevisionId,
       });
+      await dataStore.createRevision(releasedCopy.cuid, newRevisionId, LearningObject.Status.PROOFING)
+      return newRevisionId;
     } else throw e;
   }
+}
+
+function generateNewRevisionID(learningObject: LearningObject) {
+  return learningObject.revision + 1;
+}
+
+function determineRevisionExistsErrorMessage(learningObjectsForCUID: LearningObject[]): string {
+  // retrieve the Learning Object that is NOT yet released
+  const notYetReleased: LearningObject = learningObjectsForCUID.filter(object => object.status !== LearningObject.Status.RELEASED)[0];
+
+  const hasUnreleased: boolean = notYetReleased.status === LearningObject.Status.UNRELEASED;
+  const hasSubmission: boolean = LearningObjectState.IN_REVIEW.includes(notYetReleased.status as LearningObject.Status);
+
+  let error: string;
+
+  if (hasUnreleased) {
+    error = ERROR_MESSAGES.REVISIONS.UNRELEASED_EXISTS;
+  } else if (hasSubmission) {
+    error = ERROR_MESSAGES.REVISIONS.SUBMISSION_EXISTS;
+  } else {
+    error = ERROR_MESSAGES.REVISIONS.EXISTS;
+  }
+
+  return error;
 }

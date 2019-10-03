@@ -728,19 +728,20 @@ export async function addLearningObject({
  */
 export async function updateLearningObject({
   dataStore,
+  library,
   requester,
   id,
   authorUsername,
   updates,
 }: {
   dataStore: DataStore;
+  library: LibraryCommunicator,
   requester: UserToken;
   id: string;
   authorUsername: string;
   updates: Partial<LearningObject>;
 }): Promise<void> {
   try {
-    const isEditor = requesterIsEditor(requester);
     if (updates.name) {
       await checkNameExists({
         id,
@@ -805,16 +806,35 @@ export async function updateLearningObject({
         id,
         requester,
       });
+
       await PublishingService.releaseLearningObject({
         authorUsername,
         userToken: requester,
         dataStore,
         releasableObject,
       });
+
+      if (releasableObject.revision) {
+        // this Learning Object must have a duplicate with a lower revision property
+        await deleteDuplicateResources(dataStore, library, releasableObject.cuid, releasableObject.revision, requester);
+
+        // @ts-ignore isRevision isn't a valid property of LearningObject and is only used in the database for indexing purposes but needs to be flipped here
+        await dataStore.editLearningObject({id, updates:  { isRevision: false } });
+      }
     }
+
   } catch (e) {
     handleError(e);
   }
+}
+
+async function deleteDuplicateResources(dataStore: DataStore, library: LibraryCommunicator, cuid: string, currentVersion: any, requester: UserToken) {
+  // delete the original Learning Object
+  const objectsForCuid = await dataStore.fetchLearningObjectByCuid(cuid);
+  const outOfDateObject: LearningObject = objectsForCuid.filter(x => x.revision !== currentVersion)[0]; // the array returned by .filter should always be of length 1
+
+  // delete the out-of-date Learning Object
+  await deleteLearningObject({ dataStore, library, id: outOfDateObject.id, requester });
 }
 
 /**

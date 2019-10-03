@@ -10,7 +10,6 @@ import {
 import * as LearningObjectInteractor from '../LearningObjectInteractor';
 import { LearningObject } from '../../shared/entity';
 import { LearningObjectFilter, MaterialsFilter } from '../typings';
-import { initializePrivate as initializeRevisionRoutes } from '../Revisions/RevisionRouteHandler';
 import { toBoolean, mapLearningObjectToSummary } from '../../shared/functions';
 import { LibraryDriver } from '../../drivers/LibraryDriver';
 
@@ -118,7 +117,7 @@ export function initializePublic({
 
       const results = await LearningObjectInteractor.getLearningObjectByCuid({ dataStore, requester, authorUsername, cuid, version });
 
-      res.json(results);
+      res.json(results.map(r => mapLearningObjectToSummary(r)));
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
       res.status(code).json({ message });
@@ -222,6 +221,7 @@ export function initializePrivate({
       const authorUsername: string = req.params.username || req.user.username;
       await LearningObjectInteractor.updateLearningObject({
         dataStore,
+        library,
         requester,
         id,
         authorUsername,
@@ -269,6 +269,9 @@ export function initializePrivate({
 
   router.route('/learning-objects').post(addLearningObject);
   router.post('/users/:username/learning-objects', addLearningObject);
+  /**
+   * @deprecated please use /users/:username/learning-objects/:id below
+   */
   router.patch('/learning-objects/:id', updateLearningObject);
   router
     .route('/users/:username/learning-objects/:id')
@@ -278,5 +281,4 @@ export function initializePrivate({
     '/learning-objects/:learningObjectName',
     deleteLearningObjectByName,
   );
-  initializeRevisionRoutes({ router, dataStore, library });
 }
