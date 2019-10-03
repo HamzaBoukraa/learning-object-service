@@ -612,7 +612,7 @@ export class LearningObject {
       );
     }
     if (object.revisionUri !== null) {
-      this._revisionURI = object.revisionUri;
+      this._revisionUri = object.revisionUri;
     }
     if (object.version != null) {
       this.version = object.version;
