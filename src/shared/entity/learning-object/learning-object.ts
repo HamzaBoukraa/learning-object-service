@@ -423,9 +423,9 @@ export class LearningObject {
     }
   }
   /**
-   * @property {string} revisionUri
-   * An optional field on a learning object that identifies the route to retrieve
-   * it's active revision
+   * @property {boolean} revisionUri
+   * An optional field on a learning object, which provides the URI for the learning objects
+   * active revision
    */
   private _revisionUri?: string;
 
@@ -611,8 +611,8 @@ export class LearningObject {
         this.addContributor(contributor),
       );
     }
-    if (object.revisionUri === true) {
-      this._revisionUri = object.revisionUri;
+    if (object.revisionUri !== null) {
+      this._revisionURI = object.revisionUri;
     }
     if (object.version != null) {
       this.version = object.version;

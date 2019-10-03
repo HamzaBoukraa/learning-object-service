@@ -142,7 +142,7 @@ export class MongoDBLearningObjectDatastore
 
   /**
    * Constructs aggregation pipeline for searching all objects with pagination and sorting By matching learning obejcts based on
-   * queries provided, then joining the working and released collection together, adding the hasRevision flag to released learning object based on
+   * queries provided, then joining the working and released collection together, adding the revisionUri to released learning object based on
    * the status of the working object, removing duplicates then returns a filtered and sorted superset of working and released learning objects.
    *
    * Status filter match stage is applied after initial match stage and creation of the super set in order to avoid filtering out
@@ -203,7 +203,7 @@ export class MongoDBLearningObjectDatastore
       },
       {
         // If the objects array has one learning object, project it,
-        // otherwise filter and project the object that contains a 'hasRevision' field.
+        // otherwise filter and project the object that contains a 'revisionUri' field.
         $project: {
           objects: {
             $cond: [
@@ -217,8 +217,8 @@ export class MongoDBLearningObjectDatastore
                       as: 'object',
                       cond: {
                         $or: [
-                          { $eq: ['$$object.hasRevision', true] },
-                          { $eq: ['$$object.hasRevision', false] },
+                          { $eq: ['$$object.revisionUri', true] },
+                          { $eq: ['$$object.revisionUri', false] },
                         ],
                       },
                     },

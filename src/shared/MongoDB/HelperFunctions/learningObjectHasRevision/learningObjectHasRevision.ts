@@ -12,7 +12,7 @@ import { LearningObjectState } from '../../../types';
  */
 export async function learningObjectHasRevision(
   learningObjectCUID: string,
-): Promise<boolean> {
+): Promise<string> {
   const db = MongoConnector.client().db('onion');
   const revision = db
     .collection(COLLECTIONS.LEARNING_OBJECTS)
@@ -53,8 +53,10 @@ export async function learningObjectHasRevision(
       },
     ])
     .toArray();
+    console.log('revision', revision);
   if (revision) {
-    return true;
+    return 'hi';
+    // return `${process.env.GATEWAY_API}/users/${revision.author.username}/learning-objects/${revision.id}/revisions/${revision.version}`;
   }
-  return false;
+  return 'bye';
 }
