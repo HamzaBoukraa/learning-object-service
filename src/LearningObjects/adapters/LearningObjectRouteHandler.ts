@@ -2,11 +2,7 @@ import { Request, Response, Router } from 'express';
 import { mapErrorToResponseData } from '../../shared/errors';
 import { DataStore } from '../../shared/interfaces/DataStore';
 import { LibraryCommunicator } from '../../shared/interfaces/interfaces';
-import {
-  UserLearningObjectQuery,
-  UserToken,
-  LearningObjectSummary,
-} from '../../shared/types';
+import { UserToken } from '../../shared/types';
 import * as LearningObjectInteractor from '../LearningObjectInteractor';
 import { LearningObject } from '../../shared/entity';
 import { LearningObjectFilter, MaterialsFilter } from '../typings';
@@ -26,26 +22,6 @@ export function initializePublic({
   dataStore: DataStore;
   library: LibraryCommunicator;
 }) {
-  const getLearningObjectByName = async (req: Request, res: Response) => {
-    try {
-      const requester: UserToken = req.user;
-      const authorUsername: string = req.params.username;
-      const learningObjectName: string = req.params.learningObjectName;
-      const revision: boolean = req.query.revision;
-      const object = await LearningObjectInteractor.getLearningObjectByName({
-        dataStore,
-        library,
-        userToken: requester,
-        username: authorUsername,
-        learningObjectName,
-        revision,
-      });
-      res.status(200).send(mapLearningObjectToSummary(object));
-    } catch (e) {
-      const { code, message } = mapErrorToResponseData(e);
-      res.status(code).json({ message });
-    }
-  };
   /**
    * Retrieve a learning object summary by a specified ID
    * @param {Request} req
@@ -115,7 +91,7 @@ export function initializePublic({
         return;
       }
 
-      const results = await LearningObjectInteractor.getLearningObjectByCuid({ dataStore, requester, authorUsername, cuid, version });
+      const results = await LearningObjectInteractor.getLearningObjectByCuid({ dataStore, requester, authorUsername, cuid, version: version || undefined });
 
       res.json(results.map(r => mapLearningObjectToSummary(r)));
     } catch (e) {
@@ -137,10 +113,6 @@ export function initializePublic({
    * Please update to using `/users/:username/learning-objects/:learningObjectId` route.
    * if requesting a Learning Object by name.
    */
-  router.get(
-    '/learning-objects/:username/:learningObjectName',
-    getLearningObjectByName,
-  );
   router.get(
     '/users/:username/learning-objects/:learningObjectId',
     getLearningObjectById,
@@ -236,10 +208,12 @@ export function initializePrivate({
   const deleteLearningObjectByName = async (req: Request, res: Response) => {
     try {
       const user: UserToken = req.user;
-      const learningObjectName = req.params.learningObjectName;
-      await LearningObjectInteractor.deleteLearningObjectByName({
+      const cuid = req.params.cuid;
+      const version = req.params.version;
+      await LearningObjectInteractor.deleteLearningObjectByCuidVersion({
         dataStore,
-        learningObjectName,
+        cuid,
+        version,
         library,
         user,
       });

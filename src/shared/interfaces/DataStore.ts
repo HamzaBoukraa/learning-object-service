@@ -99,12 +99,18 @@ export interface DataStore
   getUserObjects(username: string): Promise<string[]>;
   findLearningObject(params: {
     authorId: string;
-    name: string;
+    cuid: string;
+    version?: number;
     status?: string;
+  }): Promise<string>;
+  findLearningObjectByName(params: {
+    authorId: String;
+    name: string;
+    version?: number;
   }): Promise<string>;
   findReleasedLearningObject(params: {
     authorId: string;
-    name: string;
+    cuid: string;
   }): Promise<string>;
   fetchLearningObject(params: {
     id: string;
@@ -183,7 +189,8 @@ export interface DataStore
   deleteChild(parentId: string, childId: string): Promise<void>;
   addToCollection(learningObjectId: string, collection: string): Promise<void>;
 
-  fetchLearningObjectByCuid(cuid: string, version?: number): Promise<LearningObject[]>;
+  fetchLearningObjectByCuid(cuid: string, version?: number): Promise<LearningObjectSummary[]>;
+  fetchInternalLearningObjectByCuid(cuid: string, version?: number): Promise<LearningObject[]>;
 
   /*
    * DELETE Operations

@@ -864,30 +864,68 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Look up a learning object by its author and name.
+   * Look up a learning object by its author and cuid.
    * By default it will perform this query on the objects collection.
    * If collection param is passed then it will perform the query on specified collection
    *
    * @param {{
    *     authorId: string; [Id of the author]
-   *     name: string; [name of the Learning Object]
-   *     collection?: string; [DB collection to perform query on;]
+   *     cuid: string; [cuid of the learning object]
+   *     version?: number; [version of the learning object]
+   *     status?: string; [status of the learning object]
    *   }} params
    * @returns {Promise<string>}
    * @memberof MongoDriver
    */
   async findLearningObject(params: {
     authorId: string;
-    name: string;
+    cuid: string;
+    version?: number;
     status?: string;
   }): Promise<string> {
-    const { authorId, name, status } = params;
+    const { authorId, cuid, version, status } = params;
+    const query: { [x: string]: any } = {
+      authorID: authorId,
+      cuid,
+    };
+    if (status) {
+      query.status = status;
+    }
+    if (version) {
+      query.version = version;
+    }
+    const doc = await this.db
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .findOne<LearningObjectDocument>(query, { projection: { _id: 1 } });
+    if (doc) {
+      return doc._id;
+    }
+    return null;
+  }
+
+  /**
+   * Look up a learning object by its author and name.
+   * 
+   * @param {{
+   *   authorId: string; [id of the author]
+   *   cuid: string; [cuid of the learning object]
+   *   version?: number; [version of the learning object]
+   * }} params
+   * @returns {Promise<string>}
+   * @memberof MongoDriver
+   */
+  async findLearningObjectByName(params: {
+    authorId: String;
+    name: string;
+    version?: number;
+  }): Promise<string> {
+    const { authorId, name, version } = params;
     const query: { [x: string]: any } = {
       authorID: authorId,
       name,
     };
-    if (status) {
-      query.status = status;
+    if (version) {
+      query.version = version;
     }
     const doc = await this.db
       .collection(COLLECTIONS.LEARNING_OBJECTS)
@@ -903,14 +941,14 @@ export class MongoDriver implements DataStore {
    *
    * @param {{
    *     authorId: string; [Id of the author]
-   *     name: string; [name of the Learning Object]
+   *     cuid: string; [cuid of the Learning Object]
    *   }} params
    * @returns {Promise<string>}
    * @memberof MongoDriver
    */
   async findReleasedLearningObject(params: {
     authorId: string;
-    name: string;
+    cuid: string;
   }): Promise<string> {
     return this.findLearningObject({
       ...params,
@@ -979,6 +1017,15 @@ export class MongoDriver implements DataStore {
     return null;
   }
 
+  async fetchLearningObjectByCuid(cuid: string, version?: number): Promise<LearningObjectSummary[]> {
+    const objects = await this.queryLearningObjectByCuid(cuid, version);
+    return objects.map(o => mapLearningObjectToSummary(o));
+  }
+
+  async fetchInternalLearningObjectByCuid(cuid: string, version?: number): Promise<LearningObject[]> {
+    return await this.queryLearningObjectByCuid(cuid, version);
+  }
+
   /**
    * Fetch a all version of a Learning Object by CUID, or a single version of the Learning Object with the optional version parameter
    *
@@ -987,11 +1034,12 @@ export class MongoDriver implements DataStore {
    * @returns {Promise<LearningObjectSummary[]>}
    * @memberof MongoDriver
    */
-  async fetchLearningObjectByCuid(
-    cuid: string,
-    version?: number,
-  ): Promise<LearningObject[]> {
-    const query: { cuid: string; revision?: number } = { cuid };
+  private async queryLearningObjectByCuid(cuid: string, version?: number): Promise<LearningObject[]> {
+    const query: { cuid: string, revision?: number } = { cuid };
+
+    if (version) {
+      query.revision = version;
+    }
 
     let notFoundError = `No Learning Object found for CUID '${cuid}'`;
 
