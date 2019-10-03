@@ -16,6 +16,7 @@ import { Gateways } from '../shared/dependencies';
 import { Stream } from 'stream';
 import { HierarchyGateway } from '../../gateways/HierarchyGateway/ModuleHierarchyGateway';
 import FileManagerModuleErrorMessages from '../shared/errors';
+import { Stubs } from '../../../tests/stubs';
 const requesterStub: UserToken = {
   username: 'test-username',
   name: 'test-name',
@@ -24,12 +25,10 @@ const requesterStub: UserToken = {
   emailVerified: true,
   accessGroups: [],
 };
-
+const stubs = new Stubs();
 const downloadBundleParamStub: DownloadBundleParams = {
   requester: requesterStub,
-  learningObjectAuthorUsername: 'unittest',
-  learningObjectId: 'unittest',
-  revision: true,
+  learningObject: stubs.learningObject,
 };
 
 const LearningObjectStub = {
@@ -38,7 +37,29 @@ const LearningObjectStub = {
   },
 } as LearningObject;
 
+const LearningObjectSummaryStub = [{
+  author: {
+    username: '',
+  },
+} as LearningObjectSummary] ;
+
 class LearningObjectGatewayStub implements LearningObjectGateway {
+  getLearningObjectByCuid(params: {
+    username: string;
+    cuid: string;
+    version: number;
+    requester: UserToken;
+  }): Promise<LearningObjectSummary[]> {
+    throw new Error('Method not implemented.');
+  }
+  getInternalLearningObjectByCuid(params: {
+    username: string;
+    cuid: string;
+    version: number;
+    requester: UserToken;
+  }): Promise<LearningObject[]> {
+    throw new Error('Method not implemented.');
+  }
   getReleasedLearningObjectSummary(id: string): Promise<LearningObjectSummary> {
     throw new Error('Method not implemented.');
   }
@@ -95,7 +116,7 @@ jest.mock('../../../LearningObjects/Publishing/Bundler/Interactor', () => ({
   },
 }));
 
-jest.mock('./Interactor', () => ({
+jest.mock('../Interactor', () => ({
   uploadFile: ({
     authorUsername,
     learningObjectId,
@@ -122,7 +143,7 @@ describe('When downloadBundle is called for a Working Copy', () => {
   describe('and the requester has download privilege', () => {
     describe('and the requester provided the ID of an existing Learning Object', () => {
       const collection = 'test';
-      let spy: jest.SpyInstance<Promise<LearningObject>>;
+      let spy: jest.SpyInstance<Promise<LearningObjectSummary[]>>;
       let requestParams: DownloadBundleParams;
       let learningObjectGateway: LearningObjectGateway;
       beforeEach(() => {
@@ -135,7 +156,7 @@ describe('When downloadBundle is called for a Working Copy', () => {
             ...LearningObjectStub,
             collection,
           } as LearningObject);
-        spy = jest.spyOn(learningObjectGateway, 'getLearningObjectByName');
+        spy = jest.spyOn(learningObjectGateway, 'getLearningObjectByCuid');
         requestParams = { ...downloadBundleParamStub };
       });
       afterEach(() => {
@@ -186,15 +207,15 @@ describe('When downloadBundle is called for a Working Copy', () => {
       let requestParams: DownloadBundleParams;
       let learningObjectGateway: LearningObjectGateway;
       beforeEach(() => {
+        /**
+         * TODO: Rewrite this please...
+         */
         learningObjectGateway = Gateways.learningObjectGateway();
         learningObjectGateway.getLearningObjectById = () =>
           Promise.reject(new ResourceError('', ResourceErrorReason.NOT_FOUND));
-        learningObjectGateway.getLearningObjectByName = () =>
-          Promise.resolve({
-            ...LearningObjectStub,
-            collection,
-          } as LearningObject);
-        spy = jest.spyOn(learningObjectGateway, 'getLearningObjectByName');
+        learningObjectGateway.getLearningObjectByCuid = () =>
+          Promise.resolve(LearningObjectSummaryStub);
+        spy = jest.spyOn(learningObjectGateway, 'getLearningObjectById');
         requestParams = { ...downloadBundleParamStub };
       });
       afterEach(() => {

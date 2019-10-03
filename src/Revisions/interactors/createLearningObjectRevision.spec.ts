@@ -8,14 +8,12 @@ import { LearningObject, HierarchicalLearningObject } from '../../shared/entity'
 import { RevisionsDataStore } from '../RevisionsDataStore';
 import { LearningObjectAdapter } from '../../LearningObjects/adapters/LearningObjectAdapter';
 import { MockLibraryDriver } from '../../tests/mock-drivers/MockLibraryDriver';
-import { FileManagerModule } from '../../FileManager/FileManagerModule';
 import { HierarchyGateway } from '../../FileManager/gateways/HierarchyGateway/ModuleHierarchyGateway';
 import { LearningObjectGateway } from '../../FileMetadata/interfaces';
 import { LearningObjectFilter } from '../../LearningObjects/typings';
 import { UserToken, LearningObjectSummary } from '../../shared/types';
 
 const dataStore: DataStore = new MockDataStore();
-const LibraryDriver = new MockLibraryDriver();
 const revisionsDataStore: RevisionsDataStore = new MockRevisionsDataStore();
 const stubs = new Stubs();
 const learningObject = stubs.learningObject;
@@ -39,33 +37,27 @@ class HierarchyGatewayStub implements HierarchyGateway {
     return (await {}) as HierarchicalLearningObject;
   }
 }
-jest.mock(
-  '../../LearningObjects/adapters/LearningObjectAdapter',
-  () => ({
-    __esModule: true,
-    LearningObjectAdapter: {
-      getInstance: () => ({
-        getLearningObjectByCuid: jest
-          .fn()
-          .mockResolvedValue([stubs.learningObject]),
-      }),
-    },
-  }),
-);
+
 describe('createLearningObjectRevison', () => {
   beforeEach(() => {
     jest.resetModules();
-    FileManagerModule.providers = [
-      { provide: LearningObjectGateway, useClass: LearningObjectGatewayStub },
-      { provide: HierarchyGateway, useClass: HierarchyGatewayStub },
-    ];
-    FileManagerModule.initialize();
+    jest.mock(
+      '../../LearningObjects/adapters/LearningObjectAdapter',
+      () => ({
+        __esModule: true,
+        LearningObjectAdapter: {
+          getInstance: () => ({
+            getLearningObjectByCuid: jest
+              .fn()
+              .mockResolvedValue([stubs.learningObject]),
+            getInternalLearningObjectByCuid: jest
+              .fn()
+              .mockResolvedValue([stubs.learningObject]),
+          }),
+        },
+      }),
+    );
   });
-
-  afterEach(()=>{
-
-    FileManagerModule.destroy();
-    })
 
   describe('when an Editor makes a request to create a revision', () => {
     const editor = {
