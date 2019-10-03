@@ -134,6 +134,7 @@ export async function searchUsersObjects({
       );
       const releasedLearningObjectSummaries = learningObjects.map(objects => {
         objects.attachResourceUris(GATEWAY_API);
+        objects.attachRevisionUri();
         return mapLearningObjectToSummary(objects);
       });
       return releasedLearningObjectSummaries;
