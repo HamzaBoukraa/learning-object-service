@@ -14,7 +14,7 @@ export async function learningObjectHasRevision(
   learningObjectCUID: string,
 ): Promise<boolean> {
   const db = MongoConnector.client().db('onion');
-  const revision = db
+  const revision = await db
     .collection(COLLECTIONS.LEARNING_OBJECTS)
     .aggregate([
       {
@@ -38,7 +38,8 @@ export async function learningObjectHasRevision(
       { $unwind: { path: '$workingCopy', preserveNullAndEmptyArrays: true } },
       {
         $match: {
-          'workingCopy.status': { $in: LearningObjectState.IN_REVIEW },
+          'workingCopy.status': { $in: LearningObjectState.NOT_RELEASED },
+          'workingCopy.isRevision': true,
         },
       },
       {
@@ -53,7 +54,7 @@ export async function learningObjectHasRevision(
       },
     ])
     .toArray();
-  if (revision) {
+  if (revision.length > 0) {
     return true;
   }
   return false;

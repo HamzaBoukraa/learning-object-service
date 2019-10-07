@@ -31,6 +31,7 @@ import {
 import { LearningObjectSearch } from '../..';
 import { UserLearningObjectDatastore } from '../../interfaces/UserLearningObjectDatastore';
 import { UserGateway } from '../../interfaces/UserGateway';
+import { learningObjectHasRevision } from '../../../shared/MongoDB/HelperFunctions';
 
 namespace Gateways {
   export const userGateway = () =>
@@ -134,7 +135,11 @@ export async function searchUsersObjects({
       );
       const releasedLearningObjectSummaries = learningObjects.map(objects => {
         objects.attachResourceUris(GATEWAY_API);
-        objects.attachRevisionUri();
+        learningObjectHasRevision(objects.cuid).then(hasRevision => {
+          if (hasRevision) {
+            objects.attachRevisionUri();
+          }
+        });
         return mapLearningObjectToSummary(objects);
       });
       return releasedLearningObjectSummaries;
