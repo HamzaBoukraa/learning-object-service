@@ -136,7 +136,7 @@ async function addReadMe({
  *
  * @param {string} authorUsername [The username of the Learning Object's author]
  * @param {string} learningObjectId [The id of the Learning Object]
- * @param {number} version [The version id of the Learning Object]
+ * @param {number} version [The version of the Learning Object]
  * @param {LearningObject.Material.File[]} files [List of file data from the Learning Object to get bundled];
  * @param {string}: prefix [File path prefix (ie. fileName: 'World.txt', prefix: 'Hello' = filePath: 'Hello/World.txt')]
  * @returns {Promise<BundleData[]>}
