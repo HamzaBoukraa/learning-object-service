@@ -21,7 +21,7 @@ export const ERROR_MESSAGES = {
     Please contact the author or an editor if you would like to propose changes.`,
     EXISTS: `This Learning Object already has a revision. Please complete or delete the current
     revision before attempting to create a new one.`,
-    LEARNING_OBJECT_DOES_NOT_EXIST: (cuid: string): string => `Cannot crate a revision of a Learning Object with cuid '${cuid}' because the Learning Object does not exist.`,
+    LEARNING_OBJECT_DOES_NOT_EXIST: (cuid: string): string => `Cannot create a revision of a Learning Object with cuid '${cuid}' because the Learning Object does not exist.`,
     INCORRECT_AUTHOR: (cuid: string, username: string): string => `Learning Object: ${cuid} does not belong to ${username}`,
     LEARNING_OBJECT_NOT_RELEASED: (cuid: string): string => `Cannot create a revision of Learning Object: ${cuid} since it is not released.`,
   },
