@@ -23,7 +23,7 @@ const serviceToken: Partial<Requester> = {
  * @export
  * @param {string} authorUsername [The Learning Object's author's username]
  * @param {string} learningObjectId [The id of the Learning Object to upload file to]
- * @param {number} version [The version id of the Learning Object]
+ * @param {number} version [The version of the Learning Object]
  * @param {string} path [The path of the file to stream]
  *
  * @returns {Promise<void>}
@@ -53,7 +53,7 @@ export async function getFileStream({
  * @export
  * @param {string} authorUsername [The Learning Object's author's username]
  * @param {string} learningObjectId [The id of the Learning Object to upload file to]
- * @param {number} version [The version id of the Learning Object]
+ * @param {number} version [The version of the Learning Object]
  * @param {FileUpload} file [Object containing file data and the path the file should be uploaded to]
  *
  * @returns {Promise<void>}
@@ -83,7 +83,7 @@ export async function uploadFile({
  * @export
  * @param {string} authorUsername [The Learning Object's author's username]
  * @param {string} learningObjectId [The id of the Learning Object to upload file to]
- * @param {number} version [The version id of the Learning Object]
+ * @param {number} version [The version of the Learning Object]
  * @param {string} path [The path of the file to delete]
  *
  * @returns {Promise<void>}
