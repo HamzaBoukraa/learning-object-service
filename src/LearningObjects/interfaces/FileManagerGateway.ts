@@ -7,7 +7,7 @@ export abstract class FileManagerGateway {
    * @abstract
    * @param {string} authorUsername [The Learning Object's author's username]
    * @param {string} learningObjectId [The id of the Learning Object to upload file to]
-   * @param {number} version [The version id of the Learning Object]
+   * @param {number} version [The version of the Learning Object]
    * @param {FileUpload} file [Data specifying what to upload and the path the data should exist at]
    * @returns {Promise<void>}
    */
