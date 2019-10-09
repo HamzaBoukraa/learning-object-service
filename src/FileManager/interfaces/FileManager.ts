@@ -26,7 +26,7 @@ export abstract class FileManager {
    * @abstract
    * @param {string} authorUsername [The Learning Object's author's username]
    * @param {string} learningObjectId [The id of the Learning Object to upload file to]
-   * @param {number} version [The version id of the Learning Object]
+   * @param {number} version [The version of the Learning Object]
    * @param {string} path [The path of the file to delete]
    * @returns {Promise<void>}
    * @memberof FileManager
