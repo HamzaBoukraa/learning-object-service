@@ -45,7 +45,7 @@ import { UserGateway } from './interfaces/UserGateway';
 import { validateUpdates } from '../shared/entity/learning-object/validators';
 import { UserServiceGateway } from '../shared/gateways/user-service/UserServiceGateway';
 import * as mongoHelperFunctions from '../shared/MongoDB/HelperFunctions';
-
+import { learningObjectHasRevision } from '../shared/MongoDB/HelperFunctions/learningObjectHasRevision/learningObjectHasRevision';
 const GATEWAY_API = process.env.GATEWAY_API;
 
 namespace Drivers {

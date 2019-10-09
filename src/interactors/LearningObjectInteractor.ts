@@ -44,7 +44,6 @@ import { LearningObjectsModule } from '../LearningObjects/LearningObjectsModule'
 import { FileMetadataGateway } from '../LearningObjects/interfaces';
 import { UserServiceGateway } from '../shared/gateways/user-service/UserServiceGateway';
 import { learningObjectHasRevision } from '../shared/MongoDB/HelperFunctions';
-
 namespace Gateways {
   export const fileMetadata = () =>
     LearningObjectsModule.resolveDependency(FileMetadataGateway);
