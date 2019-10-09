@@ -43,6 +43,7 @@ import { LearningObject } from '../shared/entity';
 import { LearningObjectsModule } from '../LearningObjects/LearningObjectsModule';
 import { FileMetadataGateway } from '../LearningObjects/interfaces';
 import { UserServiceGateway } from '../shared/gateways/user-service/UserServiceGateway';
+import { learningObjectHasRevision } from '../shared/MongoDB/HelperFunctions';
 
 namespace Gateways {
   export const fileMetadata = () =>
@@ -386,7 +387,11 @@ export class LearningObjectInteractor {
       });
       const learningObjectSummaries = learningObjects.map(learningObject => {
         learningObject.attachResourceUris(GATEWAY_API);
-        learningObject.attachRevisionUri();
+        learningObjectHasRevision(learningObject.cuid).then(hasRevision => {
+          if (hasRevision) {
+            learningObject.attachRevisionUri();
+          }
+        });
         return mapLearningObjectToSummary(learningObject);
       });
       return learningObjectSummaries;
