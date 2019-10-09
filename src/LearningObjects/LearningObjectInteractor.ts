@@ -974,16 +974,17 @@ export async function getLearningObjectSummaryById({
       loadingReleased = false;
     }
     if (learningObject) {
-      learningObject.attachResourceUris(GATEWAY_API);
       const hasRevision = await mongoHelperFunctions.learningObjectHasRevision(learningObject.cuid);
       if (hasRevision) {
-        learningObject.attachRevisionUri();
+       learningObject.attachRevisionUri();
       }
+      learningObject.attachResourceUris(GATEWAY_API);
     } else {
       throw learningObjectNotFound;
     }
     return mapLearningObjectToSummary(learningObject);
   } catch (e) {
+    console.log(e);
     handleError(e);
   }
 }

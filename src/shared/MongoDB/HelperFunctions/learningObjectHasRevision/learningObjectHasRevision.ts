@@ -57,6 +57,8 @@ export async function learningObjectHasRevision(
     .toArray();
   if (revision.length > 0) {
     return true;
+  } else if (revision.length === 0) {
+    return false;
   }
-  return false;
+  throw new Error('false');
 }
