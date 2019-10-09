@@ -48,7 +48,7 @@ const GATEWAY_API = process.env.GATEWAY_API;
  * *** NOTES ***
  * If the specified user cannot be found, a NotFound ResourceError is thrown.
  * Only the author and privileged users are allowed to view Learning Object drafts.
- * "Drafts" are defined as 'not released' Learning Objects that have never been released or have a `version` id of `0`, so
+ * "Drafts" are defined as 'not released' Learning Objects that have never been released or have a `version` of `0`, so
  * if the `draftsOnly` filter is specified, the `status` filter must not have a value of `released`.
  * Only authors can see drafts that are not submitted for review; `unreleased` || `rejected`.
  * Admins and editors can see all Learning Objects submitted for review.
