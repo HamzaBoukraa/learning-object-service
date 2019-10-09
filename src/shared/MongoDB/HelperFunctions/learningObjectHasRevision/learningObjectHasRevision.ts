@@ -6,7 +6,7 @@ import { LearningObjectState } from '../../../types';
 /**
  * Checks if Learning Object in released collection has a copy in the objects collection that has a status of not released
  *
- * @param {string} version [The id of the Learning Object to check for an existing version of]
+ * @param {string} learningObjectCUID [The cuid of the Learning Object to check for an existing version of]
  * @returns {Promise<boolean>}
  * @memberof MongoDriver
  */
