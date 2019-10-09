@@ -78,7 +78,7 @@ export async function createLearningObjectRevision(params: {
  * the revision should be placed in control of the Author or Editorial Team.
  * @param params.releasedCopy the summary information of the released Learning Object
  * @param params.learningObjectId the unique identifier of the Learning Object being revised
- * @param params.version new version id to be created
+ * @param params.version new version to be created
  * @param params.dataStore the storage gateway for Learning Objects
  * @param params.requester identifiers for the user making the request
  */
