@@ -201,7 +201,7 @@ function generateFileMetaInsert(
     name: file.name,
     packageable: isPackageable(file.size),
     size: file.size,
-    storageRevision: learningObject.revision,
+    storageRevision: learningObject.version,
   };
 }
 

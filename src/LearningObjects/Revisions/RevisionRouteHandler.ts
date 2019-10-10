@@ -26,8 +26,8 @@ export function initializePrivate({
   const createRevision = async (req: Request, res: Response) => {
     try {
       const params = { ...req.params, dataStore, requester: req.user };
-      const newRevisionId = await RevisionInteractor.createLearningObjectRevision(params);
-      res.status(200).json({revision: newRevisionId});
+      const version = await RevisionInteractor.createLearningObjectRevision(params);
+      res.status(200).json({revision: version});
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
       res.status(code).json({ message });
@@ -38,7 +38,7 @@ export function initializePrivate({
     try {
       const params = {
         ...req.params,
-        revisionId: parseInt(req.params.revisionId, 10),
+        version: parseInt(req.params.version, 10),
         dataStore,
         library,
         requester: req.user,
@@ -56,5 +56,5 @@ export function initializePrivate({
     }
   };
   router.post('/users/:username/learning-objects/:learningObjectId/revisions', createRevision);
-  router.get('/users/:username/learning-objects/:learningObjectId/revisions/:revisionId', getRevision);
+  router.get('/users/:username/learning-objects/:learningObjectId/revisions/:version', getRevision);
 }

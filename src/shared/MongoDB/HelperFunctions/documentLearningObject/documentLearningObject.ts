@@ -38,7 +38,7 @@ export async function documentLearningObject(
     collection: object.collection,
     status: object.status,
     children: object.children.map(obj => obj.id),
-    revision: object.revision,
+    version: object.version,
     cuid: object.cuid,
   };
 

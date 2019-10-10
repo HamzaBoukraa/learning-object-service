@@ -18,7 +18,7 @@ export interface LearningObjectMetadataUpdates {
 }
 
 export interface LearningObjectUpdates extends LearningObjectMetadataUpdates {
-  revision?: number;
+  version?: number;
 }
 
 const LearningObjectUpdateProps: LearningObjectMetadataUpdates = {

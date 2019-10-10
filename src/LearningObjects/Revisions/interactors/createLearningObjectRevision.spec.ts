@@ -97,7 +97,7 @@ describe('createLearningObjectRevison', () => {
           id: learningObject.id,
           updates: {
             status: LearningObject.Status.PROOFING,
-            revision: learningObject.revision + 1,
+            version: learningObject.version + 1,
           },
         });
       });
@@ -154,7 +154,7 @@ describe('createLearningObjectRevison', () => {
           id: learningObject.id,
           updates: {
             status: LearningObject.Status.UNRELEASED,
-            revision: learningObject.revision + 1,
+            version: learningObject.version + 1,
           },
         });
       });
