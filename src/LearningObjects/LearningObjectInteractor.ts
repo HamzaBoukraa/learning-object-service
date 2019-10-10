@@ -740,7 +740,6 @@ export async function updateLearningObject({
   updates: Partial<LearningObject>;
 }): Promise<void> {
   try {
-    const isEditor = requesterIsEditor(requester);
     if (updates.name) {
       await checkNameExists({
         id,
@@ -834,13 +833,18 @@ export async function generateReleasableLearningObject({
   id: string;
   requester: UserToken;
 }): Promise<HierarchicalLearningObject> {
-  const [object, children] = await Promise.all([
+  const [object, children, files] = await Promise.all([
     dataStore.fetchLearningObject({ id, full: true }),
     loadWorkingParentsReleasedChildObjects({
       dataStore,
       parentId: id,
-    })
+    }),
+    Gateways.fileMetadata().getAllFileMetadata({
+      requester,
+      learningObjectId: id,
+    }),
   ]);
+  object.materials.files = files;
   const releasableObject = new LearningObject({
     ...object.toPlainObject(),
   }) as HierarchicalLearningObject;
