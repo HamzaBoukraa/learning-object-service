@@ -65,6 +65,13 @@ export async function createLearningObjectRevision(params: {
     );
   }
 
+  if (learningObject.status !== LearningObject.Status.RELEASED) {
+    throw new ResourceError(
+      ERROR_MESSAGES.REVISIONS.LEARNING_OBJECT_NOT_RELEASED(learningObject.cuid),
+      ResourceErrorReason.BAD_REQUEST,
+    );
+  }
+
   const version = generateNewRevisionID(learningObject);
 
   await determineRevisionType({
@@ -141,7 +148,7 @@ async function createRevision({
   await FileManagerModule.duplicateRevisionFiles({
     authorUsername: releasedCopy.author.username,
     learningObjectCUID: releasedCopy.cuid,
-    currentLearningObjectVersion: releasedCopy.version,
+    version: releasedCopy.version,
     newLearningObjectVersion: version,
   });
   await dataStore.createRevision(releasedCopy.cuid, version);
@@ -175,7 +182,7 @@ async function createRevisionInProofing({
   await FileManagerModule.duplicateRevisionFiles({
     authorUsername: releasedCopy.author.username,
     learningObjectCUID: releasedCopy.cuid,
-    currentLearningObjectVersion: releasedCopy.version,
+    version: releasedCopy.version,
     newLearningObjectVersion: version,
   });
   await dataStore.createRevision(releasedCopy.cuid, version, LearningObject.Status.PROOFING);
