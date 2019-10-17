@@ -14,7 +14,7 @@ export class ModuleFileGateway implements FileGateway {
   getFileStream(params: {
     authorUsername: string;
     learningObjectCUID: string;
-    learningObjectRevisionId: number;
+    version: number;
     path: string;
   }): Promise<Readable> {
     return FileManagerModule.getFileStream(params);

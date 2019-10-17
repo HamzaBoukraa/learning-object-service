@@ -16,8 +16,8 @@ export interface LearningObjectDocument {
   children: string[];
   collection: string;
   status: string;
-  hasRevision?: boolean;
-  revision: number;
+  revisionUri?: string;
+  version: number;
   isRevision?: boolean;
 }
 
@@ -41,8 +41,8 @@ export interface ReleasedLearningObjectDocument {
   collection: string;
   outcomes: OutcomeDocument[];
   status: string;
-  hasRevision?: boolean;
-  revision: number;
+  revisionUri?: string;
+  version: number;
 }
 
 export interface MaterialDocument {

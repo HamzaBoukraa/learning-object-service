@@ -215,7 +215,7 @@ export const mapping =
                             }
                         }
                     },
-                    "revision": {
+                    "version": {
                         "type": "long"
                     },
                     "status": {

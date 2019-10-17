@@ -130,11 +130,11 @@ export function mapLearningObjectToSummary(
       : [],
     date: object.date,
     description: object.description,
-    hasRevision: object.hasRevision || false,
+    revisionUri: object.revisionUri || null,
     length: object.length,
     levels: object.levels,
     name: object.name,
-    revision: object.revision,
+    version: object.version,
     status: object.status,
     resourceUris: object.resourceUris,
   };

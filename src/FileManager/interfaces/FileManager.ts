@@ -7,8 +7,8 @@ export abstract class FileManager {
    *
    * @abstract
    * @param {string} authorUsername [The Learning Object's author's username]
-   * @param {string} learningObjectId [The id of the Learning Object to upload file to]
-   * @param {number} learningObjectVersion [The version of the Learning Object]
+   * @param {string} learningObjectCUID [The id of the Learning Object to upload file to]
+   * @param {number} version [The version of the Learning Object]
    * @param {FileUpload} file [Object containing file data and the path the file should be uploaded to]
    * @returns {Promise<void>}
    * @memberof FileManager
@@ -16,7 +16,7 @@ export abstract class FileManager {
   abstract upload(params: {
     authorUsername: string;
     learningObjectCUID: string;
-    learningObjectVersion: number;
+    version: number;
     file: FileUpload;
   }): Promise<void>;
 
@@ -26,7 +26,7 @@ export abstract class FileManager {
    * @abstract
    * @param {string} authorUsername [The Learning Object's author's username]
    * @param {string} learningObjectId [The id of the Learning Object to upload file to]
-   * @param {number} learningObjectVersion [The version of the Learning Object]
+   * @param {number} version [The version of the Learning Object]
    * @param {string} path [The path of the file to delete]
    * @returns {Promise<void>}
    * @memberof FileManager
@@ -34,7 +34,7 @@ export abstract class FileManager {
   abstract delete(params: {
     authorUsername: string;
     learningObjectCUID: string;
-    learningObjectVersion: number;
+    version: number;
     path: string;
   }): Promise<void>;
 
@@ -44,7 +44,7 @@ export abstract class FileManager {
    * @abstract
    * @param {string} authorUsername [The Learning Object's author's username]
    * @param {string} learningObjectId [The id of the Learning Object to upload file to]
-   * @param {number} learningObjectVersion [The version of the Learning Object]
+   * @param {number} version [The version of the Learning Object]
    * @param {string} path [The path of the folder to delete]
    * @returns {Promise<void>}
    * @memberof FileManager
@@ -52,7 +52,7 @@ export abstract class FileManager {
   abstract deleteFolder(params: {
     authorUsername: string;
     learningObjectCUID: string;
-    learningObjectVersion: number;
+    version: number;
     path: string;
   }): Promise<void>;
 
@@ -62,7 +62,7 @@ export abstract class FileManager {
    * @abstract
    * @param {string} authorUsername [The Learning Object's author's username]
    * @param {string} learningObjectId [The id of the Learning Object to upload file to]
-   * @param {number} learningObjectVersion [The version of the Learning Object]
+   * @param {number} version [The version of the Learning Object]
    * @param {string} path [The path of the file to get stream for]
    * @returns {Promise<Readabale>}
    * @memberof FileManager
@@ -70,7 +70,7 @@ export abstract class FileManager {
   abstract streamFile(params: {
     authorUsername: string;
     learningObjectCUID: string;
-    learningObjectVersion: number;
+    version: number;
     path: string;
   }): Promise<Readable>;
 
@@ -80,7 +80,7 @@ export abstract class FileManager {
    * @abstract
    * @param {string} authorUsername [The Learning Object's author's username]
    * @param {string} learningObjectId [The id of the Learning Object to upload file to]
-   * @param {number} currentlearningObjectVersion [The version of the Learning Object]
+   * @param {number} version [The version of the Learning Object]
    * @param {string} newlearningObjectVersion [The new version of the Learning Object]
    * @returns {Promise<void>}
    * @memberof FileManager
@@ -88,7 +88,7 @@ export abstract class FileManager {
   abstract copyDirectory(params: {
     authorUsername: string;
     learningObjectCUID: string;
-    currentLearningObjectVersion: number;
+    version: number;
     newLearningObjectVersion: number;
   }): Promise<void>;
 
@@ -99,7 +99,7 @@ export abstract class FileManager {
    * @abstract
    * @param {string} authorUsername [The Learning Object's author's username]
    * @param {string} learningObjectId [The id of the Learning Object to upload file to]
-   * @param {number} learningObjectVersion [The version of the Learning Object]
+   * @param {number} version [The version of the Learning Object]
    * @param {string} path [The path of the file]
    * @returns {Promise<boolean>}
    * @memberof FileManager
@@ -107,7 +107,7 @@ export abstract class FileManager {
   abstract hasAccess(params: {
     authorUsername: string;
     learningObjectCUID: string;
-    learningObjectVersion: number;
+    version: number;
     path: string;
   }): Promise<boolean>;
 }

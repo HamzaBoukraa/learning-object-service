@@ -85,7 +85,7 @@ async function createPublishingArtifacts(
   Gateways.fileManager().uploadFile({
     authorUsername: releasableObject.author.username,
     learningObjectCUID: releasableObject.cuid,
-    learningObjectRevisionId: releasableObject.revision,
+    version: releasableObject.version,
     file: {
       path: 'meta.json',
       data: JSON.stringify(releasableObject.toPlainObject()),
@@ -97,7 +97,7 @@ async function createPublishingArtifacts(
   await Gateways.fileManager().uploadFile({
     authorUsername: releasableObject.author.username,
     learningObjectCUID: releasableObject.cuid,
-    learningObjectRevisionId: releasableObject.revision,
+    version: releasableObject.version,
     file: {
       path: `${releasableObject.cuid}.zip`,
       data: bundle,

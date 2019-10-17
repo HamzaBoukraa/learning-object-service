@@ -50,18 +50,18 @@ export class S3FileManager implements FileManager {
   async upload({
     authorUsername,
     learningObjectCUID,
-    learningObjectVersion,
+    version,
     file,
   }: {
     authorUsername: string;
     learningObjectCUID: string;
-    learningObjectVersion: number;
+    version: number;
     file: FileUpload;
   }): Promise<void> {
     const Key: string = await this.generateObjectPath({
       authorUsername,
       learningObjectCUID,
-      learningObjectVersion,
+      version,
       path: file.path,
     });
     const uploadParams = {
@@ -83,18 +83,18 @@ export class S3FileManager implements FileManager {
   async delete({
     authorUsername,
     learningObjectCUID,
-    learningObjectVersion,
+    version,
     path,
   }: {
     authorUsername: string;
     learningObjectCUID: string;
-    learningObjectVersion: number;
+    version: number;
     path: string;
   }): Promise<void> {
     const Key: string = await this.generateObjectPath({
       authorUsername,
       learningObjectCUID,
-      learningObjectVersion,
+      version,
       path,
     });
     const deleteParams = {
@@ -129,12 +129,12 @@ export class S3FileManager implements FileManager {
   async deleteFolder({
     authorUsername,
     learningObjectCUID,
-    learningObjectVersion,
+    version,
     path,
   }: {
     authorUsername: string;
     learningObjectCUID: string;
-    learningObjectVersion: number;
+    version: number;
     path: string;
   }): Promise<void> {
     if (path[path.length] !== '/') {
@@ -143,7 +143,7 @@ export class S3FileManager implements FileManager {
     const storagePath: string = (await this.generateObjectPath({
       authorUsername,
       learningObjectCUID,
-      learningObjectVersion,
+      version,
       path,
     })).replace(/\/\//gi, '/');
 
@@ -170,7 +170,7 @@ export class S3FileManager implements FileManager {
       await this.deleteFolder({
         authorUsername,
         learningObjectCUID,
-        learningObjectVersion,
+        version,
         path,
       });
   }
@@ -184,20 +184,20 @@ export class S3FileManager implements FileManager {
   async streamFile(params: {
     authorUsername: string;
     learningObjectCUID: string;
-    learningObjectVersion: number;
+    version: number;
     path: string;
   }): Promise<Readable> {
     const {
       authorUsername,
       learningObjectCUID,
-      learningObjectVersion,
+      version,
       path,
     } = params;
 
     const Key: string = await this.generateObjectPath({
       authorUsername,
       learningObjectCUID,
-      learningObjectVersion,
+      version,
       path,
     });
     const fetchParams = {
@@ -219,26 +219,25 @@ export class S3FileManager implements FileManager {
   async copyDirectory(params: {
     authorUsername: string;
     learningObjectCUID: string;
-    currentLearningObjectVersion: number;
+    version: number;
     newLearningObjectVersion: number;
   }): Promise<void> {
     const {
       authorUsername,
       learningObjectCUID,
-      currentLearningObjectVersion,
-      newLearningObjectVersion,
+      version,
     } = params;
 
     const copyFromPath = await this.generateObjectPath({
       authorUsername,
       learningObjectCUID,
-      learningObjectVersion: currentLearningObjectVersion,
+      version: version,
     });
 
     const copyToPath = await this.generateObjectPath({
       authorUsername,
       learningObjectCUID,
-      learningObjectVersion: newLearningObjectVersion,
+      version: version,
     });
 
     const files = await this.listFiles(copyFromPath);
@@ -280,18 +279,18 @@ export class S3FileManager implements FileManager {
   async hasAccess({
     authorUsername,
     learningObjectCUID,
-    learningObjectVersion,
+    version,
     path,
   }: {
     authorUsername: string;
     learningObjectCUID: string;
-    learningObjectVersion: number;
+    version: number;
     path: string;
   }): Promise<boolean> {
     const Key: string = await this.generateObjectPath({
       authorUsername,
       learningObjectCUID,
-      learningObjectVersion,
+      version,
       path,
     });
     const fetchParams = {
@@ -317,7 +316,7 @@ export class S3FileManager implements FileManager {
    * @private
    * @param {string} authorUsername [The Learning Object's author's username]
    * @param {string} learningObjectId [The id of the Learning Object to upload file to]
-   * @param {number} learningObjectVersion [The version of the Learning Object]
+   * @param {number} version [The version of the Learning Object]
    * @param {string} path [The path of the object]
    *
    * @returns {Promise<string>}
@@ -326,12 +325,12 @@ export class S3FileManager implements FileManager {
   private async generateObjectPath({
     authorUsername,
     learningObjectCUID,
-    learningObjectVersion,
+    version,
     path,
   }: {
     authorUsername: string;
     learningObjectCUID: string;
-    learningObjectVersion: number;
+    version: number;
     path?: string;
   }): Promise<string> {
     try {
@@ -340,10 +339,10 @@ export class S3FileManager implements FileManager {
       );
 
       if (path) {
-        return `${cognitoId}/${learningObjectCUID}/${learningObjectVersion}/${path}`;
+        return `${cognitoId}/${learningObjectCUID}/${version}/${path}`;
       }
 
-      return `${cognitoId}/${learningObjectCUID}/${learningObjectVersion}`;
+      return `${cognitoId}/${learningObjectCUID}/${version}`;
     } catch (err) {
       reportError(err);
     }

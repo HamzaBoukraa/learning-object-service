@@ -121,7 +121,7 @@ jest.mock('../Interactor', () => ({
   uploadFile: (_: {
     authorUsername: string;
     learningObjectId: string;
-    learningObjectRevisionId: number;
+    version: number;
     file: FileUpload;
   }): Promise<void> => {
     console.log('Stub update file');

@@ -2,7 +2,6 @@ import { documentLearningObject } from './documentLearningObject/documentLearnin
 import { documentReleasedLearningObject } from './documentReleasedLearningObject/documentReleasedLearningObject';
 import { generateLearningObject } from './generateLearningObject/generateLearningObject';
 import { generateReleasedLearningObject } from './generateReleasedLearningObject/generateReleasedLearningObject';
-import { generateReleasedLearningObjectSummary } from './generateReleasedLearningObjectSummary/generateReleasedLearningObjectSummary';
 import { calculateDocumentsToSkip } from './calculateDocumentsToSkip/calculateDocumentsToSkip';
 import { validatePageNumber } from './validatePageNumber/validatePageNumber';
 import { bulkGenerateLearningObjects } from './bulkGenerateLearningObjects/bulkGenerateLearningObjects';
@@ -19,7 +18,6 @@ export {
   generateLearningObject,
   generateLearningObjectSummary,
   generateReleasedLearningObject,
-  generateReleasedLearningObjectSummary,
   learningObjectHasRevision,
   loadChildObjects,
   loadReleasedChildObjects,

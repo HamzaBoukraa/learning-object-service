@@ -60,9 +60,9 @@ export async function generateLearningObject(
     materials,
     contributors,
     outcomes,
-    hasRevision: record.hasRevision,
+    revisionUri: record.revisionUri,
     children,
-    revision: record.revision,
+    version: record.version,
   });
 
   learningObject.attachResourceUris(process.env.GATEWAY_API);

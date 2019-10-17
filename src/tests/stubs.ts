@@ -235,7 +235,7 @@ export class Stubs {
           materials,
           contributors,
           outcomes,
-          hasRevision: record.hasRevision,
+          revisionUri: record.revisionUri,
           children,
         });
 

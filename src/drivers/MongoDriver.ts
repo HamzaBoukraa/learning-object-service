@@ -172,14 +172,14 @@ export class MongoDriver implements DataStore {
   /**
    * @inheritdoc
    *
-   * Searches both collections for Learning Object matching the specified id and revision number
+   * Searches both collections for Learning Object matching the specified id and version number
    *
    * *** Example ***
-   * `id`='exampleId', `revision`=1
-   * If revision 1 of Learning Object exampleId was released, it's latest version will be stored in the released objects collection
-   * If revision 1 is still be drafted or is in review, it will only exist in the working objects collection
+   * `id`='exampleId', `version`=1
+   * If version 1 of Learning Object exampleId was released, it's latest version will be stored in the released objects collection
+   * If version 1 is still be drafted or is in review, it will only exist in the working objects collection
    * @param {string} id [Id of the Learning Object]
-   * @param {number} revision [Revision number of the Learning Object]
+   * @param {number} version [Version number of the Learning Object]
    * @param {User} author [User object of Learning Object author]
    * @param {boolean} summary [Boolean indicating whether or not to return a LearningObject or LearningObjectSummary]
    * @returns {Promise<LearningObject | LearningObjectSummary>}
@@ -187,16 +187,16 @@ export class MongoDriver implements DataStore {
    */
   async fetchLearningObjectRevision({
     id,
-    revision,
+    version,
     author,
   }: {
     id: string;
-    revision: number;
+    version: number;
     author?: User;
   }): Promise<LearningObjectSummary> {
     const doc = await this.db
       .collection(COLLECTIONS.LEARNING_OBJECTS)
-      .findOne({ _id: id, revision });
+      .findOne({ _id: id, version });
     if (doc) {
       return mongoHelperFunctions.generateLearningObjectSummary(doc);
     }
@@ -905,7 +905,7 @@ export class MongoDriver implements DataStore {
 
   /**
    * Look up a learning object by its author and name.
-   * 
+   *
    * @param {{
    *   authorId: string; [id of the author]
    *   cuid: string; [cuid of the learning object]
@@ -1070,7 +1070,7 @@ export class MongoDriver implements DataStore {
 
   /**
    * Fetches released object through aggregation pipeline by performing a match based on the object id, finding the duplicate object in the
-   * working collection, then checking the status of the duplicate to determine whether or not to set hasRevision to true or false.
+   * working collection, then checking the status of the duplicate to determine whether or not to set revision to the uri of the revision.
    *
    * The query fetches the specified released learning object and sorts the files by date (newest first)
    * If the query fails, the function throws a 404 Resource Error.
@@ -1109,10 +1109,10 @@ export class MongoDriver implements DataStore {
         // unwind copy from array to object so we can check certain fields.
         { $unwind: { path: '$workingCopy', preserveNullAndEmptyArrays: true } },
         // if the copys' status differs from the released objects status, then the object has a revision.
-        // so we add a the field 'hasRevision' with a true value
+        // so we add a the field 'revision' with the uri
         {
           $addFields: {
-            hasRevision: {
+            revision: {
               $cond: [{ $ne: ['$copy.status', 'released'] }, true, false],
             },
           },

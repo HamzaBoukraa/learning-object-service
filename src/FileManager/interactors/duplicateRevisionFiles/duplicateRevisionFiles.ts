@@ -4,15 +4,15 @@ import { LearningObject } from '../../../shared/entity';
 export async function duplicateRevisionFiles(params: {
     authorUsername: string;
     learningObjectCUID: string;
-    currentLearningObjectVersion: number;
+    version: number;
     newLearningObjectVersion: number;
 }): Promise<void> {
-    const { authorUsername, learningObjectCUID, currentLearningObjectVersion, newLearningObjectVersion } = params;
+    const { authorUsername, learningObjectCUID, version, newLearningObjectVersion } = params;
 
     await Drivers.fileManager().copyDirectory({
         authorUsername,
         learningObjectCUID,
-        currentLearningObjectVersion,
+        version,
         newLearningObjectVersion,
     });
 }

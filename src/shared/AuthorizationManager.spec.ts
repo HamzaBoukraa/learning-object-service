@@ -360,9 +360,9 @@ describe('AuthorizationManager', () => {
       length: 'nanomodule',
       levels: ['undergraduate'],
       name: 'My LO',
-      revision: 0,
+      version: 0,
       status: LearningObject.Status.RELEASED,
-      hasRevision: false,
+      revisionUri: 'test_URI',
     };
     const requester = {
       name: '',
@@ -855,9 +855,9 @@ describe('AuthorizationManager', () => {
       length: 'nanomodule',
       levels: ['undergraduate'],
       name: 'My LO',
-      revision: 0,
+      version: 0,
       status: LearningObject.Status.RELEASED,
-      hasRevision: false,
+      revisionUri: 'test_URI',
     };
     const requester = {
       name: '',

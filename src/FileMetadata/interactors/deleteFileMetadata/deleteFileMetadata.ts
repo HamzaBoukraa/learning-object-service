@@ -67,7 +67,7 @@ export async function deleteFileMeta({
       .deleteFile({
         authorUsername: learningObject.author.username,
         learningObjectCUID: learningObject.cuid,
-        learningObjectRevisionId: learningObject.revision,
+        version: learningObject.version,
         path: fileMeta.fullPath,
       })
       .catch(reportError);
