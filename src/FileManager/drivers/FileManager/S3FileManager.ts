@@ -49,18 +49,18 @@ export class S3FileManager implements FileManager {
    */
   async upload({
     authorUsername,
-    learningObjectId,
+    learningObjectCUID,
     version,
     file,
   }: {
     authorUsername: string;
-    learningObjectId: string;
+    learningObjectCUID: string;
     version: number;
     file: FileUpload;
   }): Promise<void> {
     const Key: string = await this.generateObjectPath({
       authorUsername,
-      learningObjectId,
+      learningObjectCUID,
       version,
       path: file.path,
     });
@@ -82,18 +82,18 @@ export class S3FileManager implements FileManager {
    */
   async delete({
     authorUsername,
-    learningObjectId,
+    learningObjectCUID,
     version,
     path,
   }: {
     authorUsername: string;
-    learningObjectId: string;
+    learningObjectCUID: string;
     version: number;
     path: string;
   }): Promise<void> {
     const Key: string = await this.generateObjectPath({
       authorUsername,
-      learningObjectId,
+      learningObjectCUID,
       version,
       path,
     });
@@ -128,12 +128,12 @@ export class S3FileManager implements FileManager {
    */
   async deleteFolder({
     authorUsername,
-    learningObjectId,
+    learningObjectCUID,
     version,
     path,
   }: {
     authorUsername: string;
-    learningObjectId: string;
+    learningObjectCUID: string;
     version: number;
     path: string;
   }): Promise<void> {
@@ -142,7 +142,7 @@ export class S3FileManager implements FileManager {
     }
     const storagePath: string = (await this.generateObjectPath({
       authorUsername,
-      learningObjectId,
+      learningObjectCUID,
       version,
       path,
     })).replace(/\/\//gi, '/');
@@ -169,7 +169,7 @@ export class S3FileManager implements FileManager {
     if (listedObjects.IsTruncated)
       await this.deleteFolder({
         authorUsername,
-        learningObjectId,
+        learningObjectCUID,
         version,
         path,
       });
@@ -181,20 +181,22 @@ export class S3FileManager implements FileManager {
    * @returns {Readable}
    * @memberof S3FileManager
    */
-  async streamFile({
-    authorUsername,
-    learningObjectId,
-    version,
-    path,
-  }: {
+  async streamFile(params: {
     authorUsername: string;
-    learningObjectId: string;
+    learningObjectCUID: string;
     version: number;
     path: string;
   }): Promise<Readable> {
+    const {
+      authorUsername,
+      learningObjectCUID,
+      version,
+      path,
+    } = params;
+
     const Key: string = await this.generateObjectPath({
       authorUsername,
-      learningObjectId,
+      learningObjectCUID,
       version,
       path,
     });
@@ -208,10 +210,51 @@ export class S3FileManager implements FileManager {
       .on('error', (err: AWSError) => {
         // TimeoutError will be thrown if the client cancels the download
         if (err.code !== 'TimeoutError') {
-          reportError({...err, message: path } as Error);
+          reportError({ ...err, message: path } as Error);
         }
       });
     return stream;
+  }
+
+  async copyDirectory(params: {
+    authorUsername: string;
+    learningObjectCUID: string;
+    currentLearningObjectVersion: number;
+    newLearningObjectVersion: number;
+  }): Promise<void> {
+    const {
+      authorUsername,
+      learningObjectCUID,
+      currentLearningObjectVersion,
+      newLearningObjectVersion,
+    } = params;
+
+    const copyFromPath = await this.generateObjectPath({
+      authorUsername,
+      learningObjectCUID,
+      learningObjectVersion: currentLearningObjectVersion,
+    });
+
+    const copyToPath = await this.generateObjectPath({
+      authorUsername,
+      learningObjectCUID,
+      learningObjectVersion: newLearningObjectVersion,
+    });
+
+    const files = await this.listFiles(copyFromPath);
+
+    await Promise.all(
+      files.map((file: any) => {
+        let fileName = file.Key.split('/').pop();
+
+        return this.copyObject({
+          copyFromPath: `${S3_CONFIG.FILES_BUCKET}/${copyFromPath}/${fileName}`,
+          copyToPath: `${copyToPath}/${
+            file.Key.split('/')[file.Key.split('/').length - 1]
+          }`,
+        });
+      }),
+    );
   }
 
   /**
@@ -236,18 +279,18 @@ export class S3FileManager implements FileManager {
    */
   async hasAccess({
     authorUsername,
-    learningObjectId,
+    learningObjectCUID,
     version,
     path,
   }: {
     authorUsername: string;
-    learningObjectId: string;
+    learningObjectCUID: string;
     version: number;
     path: string;
   }): Promise<boolean> {
     const Key: string = await this.generateObjectPath({
       authorUsername,
-      learningObjectId,
+      learningObjectCUID,
       version,
       path,
     });
@@ -282,22 +325,55 @@ export class S3FileManager implements FileManager {
    */
   private async generateObjectPath({
     authorUsername,
-    learningObjectId,
+    learningObjectCUID,
     version,
     path,
   }: {
     authorUsername: string;
-    learningObjectId: string;
+    learningObjectCUID: string;
     version: number;
-    path: string;
+    path?: string;
   }): Promise<string> {
     try {
       const cognitoId: string = await FileAccessIdentitiesAdapter.getInstance().getFileAccessIdentity(
         authorUsername,
       );
-      return `${cognitoId}/${learningObjectId}/${version}/${path}`;
+
+      if (path) {
+        return `${cognitoId}/${learningObjectCUID}/${version}/${path}`;
+      }
+
+      return `${cognitoId}/${learningObjectCUID}/${version}`;
     } catch (err) {
       reportError(err);
     }
+  }
+
+  private async listFiles(path: string, files: any[] = []): Promise<any> {
+    const listParams = {
+      Bucket: S3_CONFIG.FILES_BUCKET,
+      Prefix: `${path}/`.replace(/\/\//gi, '/'),
+    };
+    const objects = await this.s3.listObjectsV2(listParams).promise();
+    if (objects.IsTruncated) {
+      return this.listFiles(path, objects.Contents);
+    }
+    files = [...files, ...objects.Contents];
+    return files;
+  }
+
+  private async copyObject({
+    copyFromPath,
+    copyToPath,
+  }: {
+    copyFromPath: string;
+    copyToPath: string;
+  }): Promise<void> {
+    const copyParams = {
+      Bucket: S3_CONFIG.FILES_BUCKET,
+      CopySource: encodeURIComponent(copyFromPath),
+      Key: copyToPath,
+    };
+    await this.s3.copyObject(copyParams).promise();
   }
 }

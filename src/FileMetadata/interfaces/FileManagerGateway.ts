@@ -11,7 +11,7 @@ export abstract class FileManagerGateway {
    */
   abstract deleteFile(params: {
     authorUsername: string;
-    learningObjectId: string;
+    learningObjectCUID: string;
     version: number;
     path: string;
   }): Promise<void>;
@@ -28,7 +28,7 @@ export abstract class FileManagerGateway {
    */
   abstract deleteFolder(params: {
     authorUsername: string;
-    learningObjectId: string;
+    learningObjectCUID: string;
     version: number;
     path: string;
   }): Promise<void>;

@@ -30,6 +30,7 @@ import { STUB_CHANGELOG_IDS } from '../../Changelogs/testing/ChangelogStubs';
 import { LearningObjectUpdates } from '../../shared/types/learning-object-updates';
 
 export class MockDataStore implements DataStore, SubmissionDataStore {
+ 
   stubs = new Stubs();
   stubChangelogDataStore = new StubChangelogDatastore();
 
@@ -95,7 +96,12 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
       mapLearningObjectToSummary(this.stubs.learningObject),
     );
   }
-
+  findLearningObjectByName(params: { authorId: String; name: string; version?: number; }): Promise<string> {
+    return Promise.resolve('');
+  }
+  fetchInternalLearningObjectByCuid(cuid: string, version?: number): Promise<LearningObject[]> {
+    return Promise.resolve({} as LearningObject[]) ;
+  }
   fetchLearningObjectAuthorUsername(id: string): Promise<string> {
     return Promise.resolve(this.stubs.learningObject.author.username);
   }
@@ -113,13 +119,15 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
   }
   findLearningObject(params: {
     authorId: string;
-    name: string;
+    cuid: string;
+    version?: number;
+    status?: string;
   }): Promise<string> {
     return Promise.resolve(this.stubs.learningObject.id);
   }
   findReleasedLearningObject(params: {
     authorId: string;
-    name: string;
+    cuid: string;
   }): Promise<string> {
     return Promise.resolve(this.stubs.learningObject.id);
   }

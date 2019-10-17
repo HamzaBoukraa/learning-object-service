@@ -18,6 +18,7 @@ export interface LearningObjectDocument {
   status: string;
   revisionUri?: string;
   version: number;
+  isRevision?: boolean;
 }
 
 export interface ReleasedLearningObjectDocument extends LearningObjectDocument {

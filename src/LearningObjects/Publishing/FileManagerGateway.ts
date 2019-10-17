@@ -14,7 +14,7 @@ export abstract class FileManagerGateway {
    */
   abstract uploadFile(params: {
     authorUsername: string;
-    learningObjectId: string;
+    learningObjectCUID: string;
     version: number;
     file: FileUpload;
   }): Promise<void>;

@@ -1,5 +1,10 @@
 import 'dotenv/config';
-import { LearningObject, BundleData, BundleExtension, HierarchicalLearningObject } from './typings';
+import {
+  LearningObject,
+  BundleData,
+  BundleExtension,
+  HierarchicalLearningObject,
+} from './typings';
 import { BundlerModule } from './BundlerModule';
 import { Bundler, LicenseRetriever, FileGateway } from './interfaces';
 import { handleError } from '../../../shared/errors';
@@ -59,14 +64,14 @@ async function buildBundleStructure({
       addCCLicense(prefix),
       addReadMe({
         authorUsername: learningObject.author.username,
-        learningObjectId: learningObject.id,
+        learningObjectCUID: learningObject.cuid,
         version: learningObject.version,
         name: learningObject.materials.pdf.name,
         prefix,
       }),
       addFiles({
         authorUsername: learningObject.author.username,
-        learningObjectId: learningObject.id,
+        learningObjectCUID: learningObject.cuid,
         version: learningObject.version,
         files: learningObject.materials.files,
         prefix,
@@ -107,13 +112,13 @@ async function addCCLicense(prefix: string = ''): Promise<BundleData> {
  */
 async function addReadMe({
   authorUsername,
-  learningObjectId,
+  learningObjectCUID,
   version,
   name,
   prefix = '',
 }: {
   authorUsername: string;
-  learningObjectId: string;
+  learningObjectCUID: string;
   version: number;
   name: string;
   prefix?: string;
@@ -123,7 +128,7 @@ async function addReadMe({
     prefix,
     data: await Gateways.fileGateway().getFileStream({
       authorUsername,
-      learningObjectId,
+      learningObjectCUID,
       version,
       path: name,
     }),
@@ -143,13 +148,13 @@ async function addReadMe({
  */
 function addFiles({
   authorUsername,
-  learningObjectId,
+  learningObjectCUID,
   version,
   files,
   prefix = '',
 }: {
   authorUsername: string;
-  learningObjectId: string;
+  learningObjectCUID: string;
   version: number;
   files: LearningObject.Material.File[];
   prefix?: string;
@@ -161,7 +166,7 @@ function addFiles({
         prefix,
         data: await Gateways.fileGateway().getFileStream({
           authorUsername,
-          learningObjectId,
+          learningObjectCUID,
           version,
           path: file.fullPath || file.name,
         }),

@@ -5,12 +5,12 @@ import {
   getActiveLearningObjectSummary,
   getLearningObjectById,
   getReleasedLearningObjectSummary,
-  getWorkingLearningObjectSummary,
   updateLearningObject,
   updateObjectLastModifiedDate,
   updateReadme,
-  getLearningObjectByName,
+  getLearningObjectByCuid,
   getLearningObjectSummary,
+  getInternalLearningObjectByCuid,
 } from '../LearningObjectInteractor';
 import { LearningObjectSummary, UserToken } from '../../shared/types';
 import { LearningObjectFilter } from '../typings';
@@ -45,6 +45,10 @@ export class LearningObjectAdapter {
    */
   async updateObjectLastModifiedDate(id: string): Promise<void> {
     return updateObjectLastModifiedDate({ dataStore: this.dataStore, id });
+  }
+
+  async getLearningObjectByCuid(cuid: string, authorUsername: string, requester: UserToken, version?: number): Promise<LearningObjectSummary[]> {
+    return await getLearningObjectByCuid({ dataStore: this.dataStore, cuid, authorUsername, requester, version  });
   }
 
   /**
@@ -159,23 +163,37 @@ export class LearningObjectAdapter {
       authorUsername: params.authorUsername,
       updates: params.updates,
       dataStore: this.dataStore,
+      library: this.library,
     });
   }
 
-  // FIXME: Remove once downloads use id instead of Learning Object name in the URL
-  async getLearningObjectByName(params: {
+  // async getLearningObjectByCuid(params: {
+  //   username: string;
+  //   cuid: string;
+  //   version: number;
+  //   userToken: UserToken;
+  // }): Promise<LearningObjectSummary[]> {
+  //   return getLearningObjectByCuid({
+  //     dataStore: this.dataStore,
+  //     authorUsername: params.username,
+  //     cuid: params.cuid,
+  //     version: params.version,
+  //     requester: params.userToken,
+  //   });
+  // }
+
+  async getInternalLearningObjectByCuid(params: {
     username: string;
-    learningObjectName: string;
+    cuid: string;
+    version?: number;
     userToken: UserToken;
-    revision: boolean;
-  }): Promise<LearningObject> {
-    return getLearningObjectByName({
+  }): Promise<LearningObject[]> {
+    return getInternalLearningObjectByCuid({
       dataStore: this.dataStore,
-      library: this.library,
-      username: params.username,
-      learningObjectName: params.learningObjectName,
-      userToken: params.userToken,
-      revision: params.revision,
+      authorUsername: params.username,
+      cuid: params.cuid,
+      version: params.version,
+      requester: params.userToken,
     });
   }
 }

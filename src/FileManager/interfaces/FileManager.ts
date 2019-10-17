@@ -7,7 +7,7 @@ export abstract class FileManager {
    *
    * @abstract
    * @param {string} authorUsername [The Learning Object's author's username]
-   * @param {string} learningObjectId [The id of the Learning Object to upload file to]
+   * @param {string} learningObjectCUID [The id of the Learning Object to upload file to]
    * @param {number} version [The version of the Learning Object]
    * @param {FileUpload} file [Object containing file data and the path the file should be uploaded to]
    * @returns {Promise<void>}
@@ -15,7 +15,7 @@ export abstract class FileManager {
    */
   abstract upload(params: {
     authorUsername: string;
-    learningObjectId: string;
+    learningObjectCUID: string;
     version: number;
     file: FileUpload;
   }): Promise<void>;
@@ -33,7 +33,7 @@ export abstract class FileManager {
    */
   abstract delete(params: {
     authorUsername: string;
-    learningObjectId: string;
+    learningObjectCUID: string;
     version: number;
     path: string;
   }): Promise<void>;
@@ -51,7 +51,7 @@ export abstract class FileManager {
    */
   abstract deleteFolder(params: {
     authorUsername: string;
-    learningObjectId: string;
+    learningObjectCUID: string;
     version: number;
     path: string;
   }): Promise<void>;
@@ -69,10 +69,28 @@ export abstract class FileManager {
    */
   abstract streamFile(params: {
     authorUsername: string;
-    learningObjectId: string;
+    learningObjectCUID: string;
     version: number;
     path: string;
   }): Promise<Readable>;
+
+  /**
+   * Copies a given Directory to a new location
+   *
+   * @abstract
+   * @param {string} authorUsername [The Learning Object's author's username]
+   * @param {string} learningObjectId [The id of the Learning Object to upload file to]
+   * @param {number} currentlearningObjectVersion [The version of the Learning Object]
+   * @param {string} newlearningObjectVersion [The new version of the Learning Object]
+   * @returns {Promise<void>}
+   * @memberof FileManager
+   */
+  abstract copyDirectory(params: {
+    authorUsername: string;
+    learningObjectCUID: string;
+    currentLearningObjectVersion: number;
+    newLearningObjectVersion: number;
+  }): Promise<void>;
 
   /**
    * Determines if the requester is authorized
@@ -88,7 +106,7 @@ export abstract class FileManager {
    */
   abstract hasAccess(params: {
     authorUsername: string;
-    learningObjectId: string;
+    learningObjectCUID: string;
     version: number;
     path: string;
   }): Promise<boolean>;

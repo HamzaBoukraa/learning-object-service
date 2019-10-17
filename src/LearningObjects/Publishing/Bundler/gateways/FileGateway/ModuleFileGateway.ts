@@ -13,7 +13,7 @@ export class ModuleFileGateway implements FileGateway {
    */
   getFileStream(params: {
     authorUsername: string;
-    learningObjectId: string;
+    learningObjectCUID: string;
     version: number;
     path: string;
   }): Promise<Readable> {

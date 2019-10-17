@@ -38,7 +38,7 @@ export class LearningObject {
     }
   }
 
-  private _cuid?: string;
+  private _cuid: string;
 
   /**
    * A CLARK Universal Identifier.

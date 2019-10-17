@@ -12,6 +12,7 @@ import * as ChangelogRouteHandler from '../../Changelogs/ChangelogRouteDriver';
 import { reportError } from '../../shared/SentryConnector';
 import { UserToken } from '../../shared/types';
 import { mapErrorToResponseData } from '../../shared/errors';
+import * as RevisionsModule from '../../Revisions/RevisionRouteHandler';
 export class ExpressAuthRouteDriver {
   constructor(
     private dataStore: DataStore,
@@ -74,6 +75,8 @@ export class ExpressAuthRouteDriver {
       dataStore: this.dataStore,
     });
 
+    RevisionsModule.initializePrivate({ router });
+
     ChangelogRouteHandler.initialize({
       router,
       dataStore: this.dataStore,
@@ -113,7 +116,7 @@ export class ExpressAuthRouteDriver {
       }
     });
     router
-      .route('/learning-objects/:username/:learningObjectName/children')
+      .route('/users/:username/learning-objects/:cuid/versions/:version/children')
       .post(async (req, res) => {
         try {
           const username = req.params.username;
@@ -122,7 +125,8 @@ export class ExpressAuthRouteDriver {
           await LearningObjectInteractor.setChildren({
             dataStore: this.dataStore,
             children: req.body.children,
-            parentName: req.params.learningObjectName,
+            cuid: req.params.cuid,
+            version: req.params.version,
             username,
             userToken: user,
           });
@@ -139,7 +143,8 @@ export class ExpressAuthRouteDriver {
           await LearningObjectInteractor.removeChild({
             dataStore: this.dataStore,
             childId: req.body.id,
-            parentName: req.params.learningObjectName,
+            cuid: req.params.cuid,
+            version: req.params.version,
             username,
             userToken: user,
           });
@@ -169,16 +174,16 @@ export class ExpressAuthRouteDriver {
     );
     // FIXME: Why is this here??
     router.get(
-      '/learning-objects/:username/:learningObjectName/id',
+      'users/:username/learning-objects/:cuid/versions/:version/id',
       async (req, res) => {
         try {
           const userToken = req.user;
           const username: string = req.params.username;
-          const learningObjectName: string = req.params.learningObjectName;
           const id = await LearningObjectInteractor.getLearningObjectId({
             dataStore: this.dataStore,
             username,
-            learningObjectName,
+            cuid: req.params.cuid,
+            version: req.params.version,
             userToken,
           });
           res.status(200).send(id);
