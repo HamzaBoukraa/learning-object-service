@@ -33,7 +33,7 @@ export class RevisionsMongoDriver implements RevisionsDataStore {
     // update the properties of the duplicate
     releasedObject._id = newId;
     releasedObject.status = revisionStatus;
-    releasedObject.revision = newRevisionId;
+    releasedObject.version = newRevisionId;
     releasedObject.isRevision = true;
 
     // we've created the new Learning Object, now let's attempt to duplicate it's external resources

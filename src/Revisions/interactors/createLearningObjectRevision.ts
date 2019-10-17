@@ -72,17 +72,17 @@ export async function createLearningObjectRevision(params: {
     );
   }
 
-  const newRevisionId = generateNewRevisionID(learningObject);
+  const version = generateNewRevisionID(learningObject);
 
   await determineRevisionType({
     dataStore,
-    newRevisionId,
+    version,
     learningObjectId: learningObject.id,
     requester,
     releasedCopy: learningObject,
   });
 
-  return newRevisionId;
+  return version;
 }
 
 /**
@@ -90,13 +90,13 @@ export async function createLearningObjectRevision(params: {
  * the revision should be placed in control of the Author or Editorial Team.
  * @param params.releasedCopy the summary information of the released Learning Object
  * @param params.learningObjectId the unique identifier of the Learning Object being revised
- * @param params.newRevisionId new revision id to be created
+ * @param params.version new version to be created
  * @param params.dataStore the storage gateway for Learning Objects
  * @param params.requester identifiers for the user making the request
  */
 async function determineRevisionType(params: {
   releasedCopy: LearningObject;
-  newRevisionId: number;
+  version: number;
   learningObjectId: string;
   dataStore: RevisionsDataStore;
   requester: UserToken;
@@ -127,31 +127,32 @@ async function determineRevisionType(params: {
  *
  * @param params.releasedCopy the summary information of the released Learning Object
  * @param params.learningObjectId the unique identifier of the Learning Object being revised
- * @param params.newRevisionIdvision id to be created
+ * @param params.version new version to be created
+ * @param params.dataStore the storage gateway for Learning Objects
  * @par new ream params.dataStore the storage gateway for Learning Objects
  * @param params.requester identifiers for the user making the request
  */
 async function createRevision({
   releasedCopy,
   learningObjectId,
-  newRevisionId,
+  version,
   dataStore,
   requester,
 }: {
   releasedCopy: LearningObject;
   learningObjectId: string;
-  newRevisionId: number;
+  version: number;
   dataStore: RevisionsDataStore;
   requester: UserToken;
 }) {
   await FileManagerModule.duplicateRevisionFiles({
     authorUsername: releasedCopy.author.username,
     learningObjectCUID: releasedCopy.cuid,
-    currentLearningObjectVersion: releasedCopy.revision,
-    newLearningObjectVersion: newRevisionId,
+    version: releasedCopy.version,
+    newLearningObjectVersion: version,
   });
-  await dataStore.createRevision(releasedCopy.cuid, newRevisionId);
-  return newRevisionId;
+  await dataStore.createRevision(releasedCopy.cuid, version);
+  return version;
 }
 
 /**
@@ -161,35 +162,35 @@ async function createRevision({
  *
  * @param params.releasedCopy the summary information of the released Learning Object
  * @param params.learningObjectId the unique identifier of the Learning Object being revised
- * @param params.newRevisionId new revision id to be created
+ * @param params.version new version to be created
  * @param params.dataStore the storage gateway for Learning Objects
  * @param params.requester identifiers for the user making the request
  */
 async function createRevisionInProofing({
   releasedCopy,
   learningObjectId,
-  newRevisionId,
+  version,
   dataStore,
   requester,
 }: {
   releasedCopy: LearningObject;
   learningObjectId: string;
-  newRevisionId: number;
+  version: number;
   dataStore: RevisionsDataStore;
   requester: UserToken;
 }) {
   await FileManagerModule.duplicateRevisionFiles({
     authorUsername: releasedCopy.author.username,
     learningObjectCUID: releasedCopy.cuid,
-    currentLearningObjectVersion: releasedCopy.revision,
-    newLearningObjectVersion: newRevisionId,
+    version: releasedCopy.version,
+    newLearningObjectVersion: version,
   });
-  await dataStore.createRevision(releasedCopy.cuid, newRevisionId, LearningObject.Status.PROOFING);
-  return newRevisionId;
+  await dataStore.createRevision(releasedCopy.cuid, version, LearningObject.Status.PROOFING);
+  return version;
 }
 
 function generateNewRevisionID(learningObject: LearningObject) {
-  return learningObject.revision + 1;
+  return learningObject.version + 1;
 }
 
 function determineRevisionExistsErrorMessage(learningObjectsForCUID: LearningObject[]): string {

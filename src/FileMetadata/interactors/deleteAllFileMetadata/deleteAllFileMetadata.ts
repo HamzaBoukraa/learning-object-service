@@ -47,7 +47,7 @@ export async function deleteAllFileMetadata({
       .deleteFolder({
         authorUsername: learningObject.author.username,
         learningObjectCUID: learningObject.cuid,
-        learningObjectRevisionId: learningObject.revision,
+        version: learningObject.version,
         path: '/',
       })
       .catch(reportError);

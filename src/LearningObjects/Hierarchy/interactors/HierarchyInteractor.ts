@@ -9,6 +9,7 @@ import {
 } from '../../../shared/types';
 import { mapLearningObjectToSummary } from '../../../shared/functions';
 import { LearningObject } from '../../../shared/entity';
+import { learningObjectHasRevision } from '../../../shared/MongoDB/HelperFunctions';
 
 const GATEWAY_API = process.env.GATEWAY_API;
 
@@ -55,6 +56,11 @@ export async function fetchParents(params: {
     });
     const releasedObjects = learningObjects.map(objects => {
       objects.attachResourceUris(GATEWAY_API);
+      learningObjectHasRevision(objects.cuid).then(revisionBoolean => {
+        if (revisionBoolean) {
+          objects.attachRevisionUri();
+        }
+      });
       return mapLearningObjectToSummary(objects);
     });
     return releasedObjects;

@@ -76,7 +76,7 @@ async function downloadReleasedCopy(
   const fileExists = await Drivers.fileManager().hasAccess({
     authorUsername: learningObject.author.username,
     learningObjectCUID: learningObject.cuid,
-    learningObjectVersion: learningObject.revision,
+    version: learningObject.version,
     path: `${learningObject.cuid}.zip`,
   });
 
@@ -85,7 +85,7 @@ async function downloadReleasedCopy(
     await uploadFile({
       authorUsername: learningObject.author.username,
       learningObjectCUID: learningObject.cuid,
-      learningObjectRevisionId: learningObject.revision,
+      version: learningObject.version,
       file: {
         path: `${learningObject.cuid}.zip`,
         data: bundle,
@@ -96,7 +96,7 @@ async function downloadReleasedCopy(
   return await Drivers.fileManager().streamFile({
     authorUsername: learningObject.author.username,
     learningObjectCUID: learningObject.cuid,
-    learningObjectVersion: learningObject.revision,
+    version: learningObject.version,
     path: `${learningObject.cuid}.zip`,
   });
 }
