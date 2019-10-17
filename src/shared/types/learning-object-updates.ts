@@ -11,6 +11,7 @@ export interface LearningObjectMetadataUpdates {
   published?: boolean;
   collection?: string;
   materials?: { [index: string]: any };
+  isRevision?: boolean;
   'materials.pdf'?: LearningObject.Material.PDF;
   'materials.notes'?: string;
   'materials.urls'?: LearningObject.Material.Url[];

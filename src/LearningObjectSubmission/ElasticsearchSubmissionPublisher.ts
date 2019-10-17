@@ -159,4 +159,32 @@ export class ElasticsearchSubmissionPublisher implements SubmissionPublisher {
       reportError(e);
     }
   }
+
+  async deletePreviousRelease(learningObjectID: string) {
+    try {
+      await this.client.deleteByQuery({
+        index: INDEX_NAME,
+        body: {
+          query: {
+            bool: {
+              must: [
+                {
+                  match: { id: learningObjectID },
+                },
+                {
+                  bool: {
+                    should: [
+                      { term: { status: LearningObject.Status.RELEASED } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        },
+      });
+    } catch (e) {
+      reportError(e);
+    }
+  }
 }
