@@ -45,13 +45,10 @@ import { UserGateway } from './interfaces/UserGateway';
 import { validateUpdates } from '../shared/entity/learning-object/validators';
 import { UserServiceGateway } from '../shared/gateways/user-service/UserServiceGateway';
 import * as mongoHelperFunctions from '../shared/MongoDB/HelperFunctions';
-<<<<<<< HEAD
 import { deleteSubmission } from '../LearningObjectSubmission/interactors/deleteSubmission';
 import { LearningObjectSubmissionGateway } from './interfaces/LearningObjectSubmissionGateway';
 
-=======
 import { learningObjectHasRevision } from '../shared/MongoDB/HelperFunctions/learningObjectHasRevision/learningObjectHasRevision';
->>>>>>> 24b69cdae67acb56ae909bf791a765eb5ff9dc24
 const GATEWAY_API = process.env.GATEWAY_API;
 
 namespace Drivers {
