@@ -53,7 +53,7 @@ describe('When buildHierarchicalLearningObject is called', () => {
   describe('and the requester provides a valid Learning Object', () => {
     it('should return a complete hierarchy Learning Object', async () => {
       const buildHierarchicalLearningObject = (await import(
-        './buildHierarchicalLearningObject'
+        './buildHierarchicalLearningObject',
       )).buildHierarchicalLearningObject;
       const hierarchy = await buildHierarchicalLearningObject(
         {
