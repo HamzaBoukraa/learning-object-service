@@ -163,7 +163,7 @@ export class ExpressAuthRouteDriver {
             dataStore: this.dataStore,
             library: this.library,
             user: req.user,
-            learningObjectNames,
+            ids: learningObjectNames,
           });
           res.sendStatus(200);
         } catch (e) {

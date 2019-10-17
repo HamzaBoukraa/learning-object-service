@@ -291,17 +291,15 @@ export class LearningObjectInteractor {
   public static async deleteMultipleLearningObjects({
     dataStore,
     library,
-    learningObjectNames,
+    ids,
     user,
   }: {
     dataStore: DataStore;
     library: LibraryCommunicator;
-    learningObjectNames: {cuid: string, version?: number}[];
+    ids: string[];
     user: UserToken;
   }): Promise<void> {
     try {
-      const ids: string[] = [];
-      learningObjectNames.forEach(val => ids.push(val.cuid));
       const hasAccess = await hasMultipleLearningObjectWriteAccesses(
         user,
         dataStore,
@@ -320,16 +318,7 @@ export class LearningObjectInteractor {
         id: string;
         parentIds: string[];
       }[] = await Promise.all(
-        learningObjectNames.map(async (name: {cuid: string, version?: number}) => {
-          const authorId = await this.findAuthorIdByUsername({
-            dataStore,
-            username: user.username,
-          });
-          const id = await dataStore.findLearningObject({
-            authorId,
-            cuid: name.cuid,
-            version: name.version
-          });
+        ids.map(async (id: string) => {
           const parentIds = await dataStore.findParentObjectIds({
             childId: id,
           });
