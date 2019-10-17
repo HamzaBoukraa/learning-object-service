@@ -120,7 +120,7 @@ describe('When createLearningObjectRevision is called', () => {
   describe('and the request is valid', () => {
     it('should return a new version id', async () => {
       await expect(createLearningObjectRevision({ cuid: '12345', username: 'someusername', dataStore: new MockRevisionsDataStore(), requester: requester }))
-        .resolves.toBe(releasedLearningObject.revision + 1);
+        .resolves.toBe(releasedLearningObject.version + 1);
     });
   });
 });
