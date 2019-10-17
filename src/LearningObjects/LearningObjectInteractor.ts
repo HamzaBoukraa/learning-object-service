@@ -92,11 +92,6 @@ export async function getLearningObjectByCuid({
   const objects = await dataStore.fetchLearningObjectByCuid(cuid, version);
   let unauthorized: boolean;
 
-    // learningObject.attachResourceUris(GATEWAY_API);
-    // const hasRevision = await mongoHelperFunctions.learningObjectHasRevision(learningObject.cuid);
-    // if (hasRevision) {
-    //   learningObject.attachRevisionUri();
-    // }
   const payload = objects.filter(object => {
     // this function will throw a ResourceError if requester isn't authorized
     try {

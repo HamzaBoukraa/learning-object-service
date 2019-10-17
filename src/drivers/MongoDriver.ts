@@ -905,7 +905,7 @@ export class MongoDriver implements DataStore {
 
   /**
    * Look up a learning object by its author and name.
-   * 
+   *
    * @param {{
    *   authorId: string; [id of the author]
    *   cuid: string; [cuid of the learning object]

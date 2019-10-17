@@ -30,7 +30,7 @@ import { STUB_CHANGELOG_IDS } from '../../Changelogs/testing/ChangelogStubs';
 import { LearningObjectUpdates } from '../../shared/types/learning-object-updates';
 
 export class MockDataStore implements DataStore, SubmissionDataStore {
- 
+
   stubs = new Stubs();
   stubChangelogDataStore = new StubChangelogDatastore();
 
