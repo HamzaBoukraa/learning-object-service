@@ -141,7 +141,6 @@ export async function getInternalLearningObjectByCuid({
 }) {
   const objects = await dataStore.fetchInternalLearningObjectByCuid(cuid, version);
   let unauthorized: boolean;
-  console.count('YEET');
 
   const payload = objects.filter(object => {
     // this function will throw a ResourceError if requester isn't authorized
