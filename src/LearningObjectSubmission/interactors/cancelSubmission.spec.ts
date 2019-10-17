@@ -15,6 +15,7 @@ const publisher: SubmissionPublisher = {
     return Promise.resolve();
   },
   publishSubmission: (submission: LearningObject) => null,
+  deletePreviousRelease: (learningObjectID: string) => null,
   updateSubmission: (params: {
     learningObjectId: string,
     updates: LearningObjectMetadataUpdates}) => null,

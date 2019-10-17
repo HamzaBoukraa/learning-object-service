@@ -3,6 +3,9 @@ import { LearningObject } from '../shared/entity';
 import { LearningObjectMetadataUpdates } from '../shared/types';
 
 export class StubSubmissionPublisher implements SubmissionPublisher {
+    deletePreviousRelease(learningObjectID: string): Promise<void> {
+        return Promise.resolve();
+    }
     /**
      * @inheritdoc
      */
