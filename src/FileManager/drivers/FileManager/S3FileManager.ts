@@ -219,26 +219,25 @@ export class S3FileManager implements FileManager {
   async copyDirectory(params: {
     authorUsername: string;
     learningObjectCUID: string;
-    currentLearningObjectVersion: number;
+    version: number;
     newLearningObjectVersion: number;
   }): Promise<void> {
     const {
       authorUsername,
       learningObjectCUID,
-      currentLearningObjectVersion,
-      newLearningObjectVersion,
+      version,
     } = params;
 
     const copyFromPath = await this.generateObjectPath({
       authorUsername,
       learningObjectCUID,
-      learningObjectVersion: currentLearningObjectVersion,
+      version: version,
     });
 
     const copyToPath = await this.generateObjectPath({
       authorUsername,
       learningObjectCUID,
-      learningObjectVersion: newLearningObjectVersion,
+      version: version,
     });
 
     const files = await this.listFiles(copyFromPath);
