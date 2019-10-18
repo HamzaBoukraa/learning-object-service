@@ -226,6 +226,7 @@ export class S3FileManager implements FileManager {
       authorUsername,
       learningObjectCUID,
       version,
+      newLearningObjectVersion,
     } = params;
 
     const copyFromPath = await this.generateObjectPath({
@@ -237,7 +238,7 @@ export class S3FileManager implements FileManager {
     const copyToPath = await this.generateObjectPath({
       authorUsername,
       learningObjectCUID,
-      version: version,
+      version: newLearningObjectVersion,
     });
 
     const files = await this.listFiles(copyFromPath);

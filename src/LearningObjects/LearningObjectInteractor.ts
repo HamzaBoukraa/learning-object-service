@@ -45,6 +45,9 @@ import { UserGateway } from './interfaces/UserGateway';
 import { validateUpdates } from '../shared/entity/learning-object/validators';
 import { UserServiceGateway } from '../shared/gateways/user-service/UserServiceGateway';
 import * as mongoHelperFunctions from '../shared/MongoDB/HelperFunctions';
+import { deleteSubmission } from '../LearningObjectSubmission/interactors/deleteSubmission';
+import { LearningObjectSubmissionGateway } from './interfaces/LearningObjectSubmissionGateway';
+
 import { learningObjectHasRevision } from '../shared/MongoDB/HelperFunctions/learningObjectHasRevision/learningObjectHasRevision';
 const GATEWAY_API = process.env.GATEWAY_API;
 
@@ -59,6 +62,8 @@ namespace Gateways {
     LearningObjectsModule.resolveDependency(FileMetadataGateway);
   export const user = () =>
     LearningObjectsModule.resolveDependency(UserGateway);
+  export const submission = () =>
+    LearningObjectsModule.resolveDependency(LearningObjectSubmissionGateway);
 }
 
 
@@ -141,7 +146,6 @@ export async function getInternalLearningObjectByCuid({
 }) {
   const objects = await dataStore.fetchInternalLearningObjectByCuid(cuid, version);
   let unauthorized: boolean;
-  console.count('YEET');
 
   const payload = objects.filter(object => {
     // this function will throw a ResourceError if requester isn't authorized
@@ -1057,6 +1061,7 @@ export async function deleteLearningObject({
       requester,
       learningObjectId: learningObject.id,
     });
+    await Gateways.submission().deletePreviousRelease({ learningObjectId: learningObject.id });
     await dataStore.deleteLearningObject(learningObject.id);
     dataStore
       .deleteChangelog({ learningObjectId: learningObject.id })
@@ -1107,7 +1112,7 @@ export async function deleteLearningObjectByCuidVersion({
     const objectId = await dataStore.findLearningObject({
       authorId,
       cuid,
-      version
+      version,
     });
     if (!objectId) {
       throw new ResourceError(
@@ -1442,7 +1447,7 @@ async function checkNameExists({
   username,
   name,
   id,
-  version
+  version,
 }: {
   dataStore: DataStore;
   username: string;
