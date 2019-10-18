@@ -1,6 +1,6 @@
-import { LearningObject } from '../../../entity';
+import { LearningObject, LearningOutcome } from '../../../entity';
 import { LearningObjectDocument } from '../../../types';
-import { ReleasedLearningObjectDocument } from '../../../types/learning-object-document';
+import { ReleasedLearningObjectDocument, OutcomeDocument } from '../../../types/learning-object-document';
 import { UserServiceGateway } from '../../../gateways/user-service/UserServiceGateway';
 
 /**
@@ -36,7 +36,7 @@ export async function documentReleasedLearningObject(
     materials: object.materials,
     contributors: contributorIds,
     collection: object.collection,
-    outcomes: object.outcomes.map(this.documentOutcome),
+    outcomes: object.outcomes.map(documentOutcome),
     status: object.status,
     children: object.children.map(obj => obj.id),
     revision: object.revision,
@@ -44,5 +44,24 @@ export async function documentReleasedLearningObject(
   };
 
   return doc;
+}
+
+/**
+ * Converts Learning Outcome into OutcomeDocument
+ *
+ * @private
+ * @param {LearningOutcome} outcome [Learning Outcome to convert to OutcomeDocument]
+ * @returns {OutcomeDocument}
+ * @memberof MongoDriver
+ */
+function documentOutcome(outcome: LearningOutcome): OutcomeDocument {
+  return {
+    id: outcome.id,
+    outcome: outcome.outcome,
+    bloom: outcome.bloom,
+    verb: outcome.verb,
+    text: outcome.text,
+    mappings: outcome.mappings.map(guideline => guideline.id),
+  };
 }
 
