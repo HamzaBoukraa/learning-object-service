@@ -3,6 +3,7 @@ import { LearningObjectDocument } from '../../../types';
 import { UserServiceGateway } from '../../../gateways/user-service/UserServiceGateway';
 import { MongoConnector } from '../../MongoConnector';
 import { LearningOutcomeMongoDatastore } from '../../../../LearningOutcomes/datastores/LearningOutcomeMongoDatastore';
+import { learningObjectHasRevision } from '../learningObjectHasRevision/learningObjectHasRevision';
 
 /**
  * Generates Learning Object from Document
@@ -65,6 +66,10 @@ export async function generateLearningObject(
     version: record.version,
   });
 
+  const hasRevision = await learningObjectHasRevision(learningObject.cuid);
+  if (hasRevision) {
+    learningObject.attachRevisionUri();
+  }
   learningObject.attachResourceUris(process.env.GATEWAY_API);
 
   return learningObject;
