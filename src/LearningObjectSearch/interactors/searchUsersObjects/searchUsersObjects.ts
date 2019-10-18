@@ -135,7 +135,7 @@ export async function searchUsersObjects({
       );
       const releasedLearningObjectSummaries = learningObjects.map(objects => {
         objects.attachResourceUris(GATEWAY_API);
-        learningObjectHasRevision(objects.cuid).then(hasRevision => {
+        learningObjectHasRevision(objects.cuid, objects.id).then(hasRevision => {
           if (hasRevision) {
             objects.attachRevisionUri();
           }

@@ -66,7 +66,7 @@ export async function generateLearningObject(
     version: record.version,
   });
 
-  const hasRevision = await learningObjectHasRevision(learningObject.cuid);
+  const hasRevision = await learningObjectHasRevision(learningObject.cuid, learningObject.id);
   if (hasRevision) {
     learningObject.attachRevisionUri();
   }

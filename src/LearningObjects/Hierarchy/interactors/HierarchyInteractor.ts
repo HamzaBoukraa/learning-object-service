@@ -56,7 +56,7 @@ export async function fetchParents(params: {
     });
     const releasedObjects = learningObjects.map(objects => {
       objects.attachResourceUris(GATEWAY_API);
-      learningObjectHasRevision(objects.cuid).then(revisionBoolean => {
+      learningObjectHasRevision(objects.cuid, objects.id).then(revisionBoolean => {
         if (revisionBoolean) {
           objects.attachRevisionUri();
         }

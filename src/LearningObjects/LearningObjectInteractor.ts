@@ -783,7 +783,7 @@ export async function getLearningObjectById({
     }
 
     learningObject.attachResourceUris(GATEWAY_API);
-    const hasRevision = await mongoHelperFunctions.learningObjectHasRevision(learningObject.cuid);
+    const hasRevision = await mongoHelperFunctions.learningObjectHasRevision(learningObject.cuid, learningObject.id);
     if (hasRevision) {
       learningObject.attachRevisionUri();
     }
@@ -842,7 +842,7 @@ export async function getLearningObjectSummaryById({
       loadingReleased = false;
     }
     if (learningObject) {
-      const hasRevision = await mongoHelperFunctions.learningObjectHasRevision(learningObject.cuid);
+      const hasRevision = await mongoHelperFunctions.learningObjectHasRevision(learningObject.cuid, learningObject.id);
       if (hasRevision) {
        learningObject.attachRevisionUri();
       }
@@ -1009,7 +1009,7 @@ export async function getLearningObjectChildrenSummariesById(
   while (c < childrenOrder.length) {
     if (childrenIDs[cIDs] === childrenOrder[c].id) {
       childrenOrder[c].attachResourceUris(GATEWAY_API);
-      const hasRevision = await mongoHelperFunctions.learningObjectHasRevision(childrenOrder[c].cuid);
+      const hasRevision = await mongoHelperFunctions.learningObjectHasRevision(childrenOrder[c].cuid, childrenOrder[c].id);
       if (hasRevision) {
         childrenOrder[c].attachRevisionUri();
       }
