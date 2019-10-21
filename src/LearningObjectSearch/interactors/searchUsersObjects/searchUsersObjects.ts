@@ -133,15 +133,18 @@ export async function searchUsersObjects({
         searchQuery,
         user.id,
       );
-      const releasedLearningObjectSummaries = learningObjects.map(objects => {
-        objects.attachResourceUris(GATEWAY_API);
-        learningObjectHasRevision(objects.cuid, objects.id).then(hasRevision => {
-          if (hasRevision) {
-            objects.attachRevisionUri();
-          }
-        });
-        return mapLearningObjectToSummary(objects);
-      });
+      const releasedLearningObjectSummaries = await Promise.all(
+        learningObjects.map(async (object) => {
+          object.attachResourceUris(GATEWAY_API);
+          await learningObjectHasRevision(object.cuid, object.id).then(hasRevision => {
+            if (hasRevision) {
+              object.attachRevisionUri();
+            }
+          });
+          return mapLearningObjectToSummary(object);
+        }),
+      );
+
       return releasedLearningObjectSummaries;
     }
 
@@ -173,10 +176,17 @@ export async function searchUsersObjects({
       user.id,
       collectionAccessMap,
     );
-    const learningObjectSummaries = learningObjects.map(objects => {
-      objects.attachResourceUris(GATEWAY_API);
-      return mapLearningObjectToSummary(objects);
-    });
+    const learningObjectSummaries = await Promise.all(
+      learningObjects.map(async object => {
+        object.attachResourceUris(GATEWAY_API);
+        await learningObjectHasRevision(object.cuid, object.id).then(hasRevision => {
+          if (hasRevision) {
+            object.attachRevisionUri();
+          }
+        });
+        return mapLearningObjectToSummary(object);
+      }),
+    );
     return learningObjectSummaries;
   } catch (e) {
     handleError(e);
