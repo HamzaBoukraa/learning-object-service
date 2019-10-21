@@ -840,6 +840,10 @@ export async function generateReleasableLearningObject({
       parentId: id,
     }),
   ]);
+  object.materials.files = await Gateways.fileMetadata().getAllFileMetadata({
+    requester,
+    learningObjectId: object.id,
+  });
   const releasableObject = new LearningObject({
     ...object.toPlainObject(),
   }) as HierarchicalLearningObject;
@@ -886,14 +890,11 @@ export async function getLearningObjectById({
       });
       if (learningObject) {
         let files: LearningObject.Material.File[] = [];
-        authorizeReadAccess({ requester, learningObject: learningObject });
-        [learningObject, files] = await Promise.all([
-          dataStore.fetchLearningObject({ id, full: true }),
-          Gateways.fileMetadata().getAllFileMetadata({
-            requester,
-            learningObjectId: id,
-          }),
-        ]);
+        authorizeReadAccess({ requester, learningObject });
+        files = await Gateways.fileMetadata().getAllFileMetadata({
+          requester,
+          learningObjectId: id,
+        });
         learningObject.materials.files = files;
       }
     }
