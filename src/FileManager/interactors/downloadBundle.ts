@@ -76,7 +76,7 @@ async function downloadReleasedCopy(
 ): Promise<Stream> {
   const { requester, learningObjectAuthorUsername, learningObjectId } = params;
   const learningObject = await getLearningObject(params);
-  await updateObjectInLibraryForDownload(requester.username, learningObject.id);
+  await updateObjectInLibraryForDownload(requester.username, learningObject);
 
   const fileExists = await Drivers.fileManager().hasAccess({
     authorUsername: learningObjectAuthorUsername,
