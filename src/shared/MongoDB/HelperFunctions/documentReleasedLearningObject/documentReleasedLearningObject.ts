@@ -1,6 +1,9 @@
 import { LearningObject, LearningOutcome } from '../../../entity';
 import { LearningObjectDocument } from '../../../types';
-import { ReleasedLearningObjectDocument, OutcomeDocument } from '../../../types/learning-object-document';
+import {
+  ReleasedLearningObjectDocument,
+  OutcomeDocument,
+} from '../../../types/learning-object-document';
 import { UserServiceGateway } from '../../../gateways/user-service/UserServiceGateway';
 
 /**
@@ -16,13 +19,22 @@ import { UserServiceGateway } from '../../../gateways/user-service/UserServiceGa
 export async function documentReleasedLearningObject(
   object: LearningObject,
 ): Promise<LearningObjectDocument> {
-  const authorID = await UserServiceGateway.getInstance().findUser(object.author.username);
+  const authorID = await UserServiceGateway.getInstance().findUser(
+    object.author.username,
+  );
   let contributorIds: string[] = [];
 
   if (object.contributors && object.contributors.length) {
     contributorIds = await Promise.all(
-      object.contributors.map(user => UserServiceGateway.getInstance().findUser(user.username)),
+      object.contributors.map(user =>
+        UserServiceGateway.getInstance().findUser(user.username),
+      ),
     );
+  }
+
+  // TODO: REFACTOR ME PLEASE.
+  if (object.materials && object.materials.files) {
+      object.materials.files = [];
   }
 
   const doc: ReleasedLearningObjectDocument = {
@@ -64,4 +76,3 @@ function documentOutcome(outcome: LearningOutcome): OutcomeDocument {
     mappings: outcome.mappings.map(guideline => guideline.id),
   };
 }
-

@@ -142,11 +142,11 @@ export async function getLearningObjectByCuid({
   cuid,
   version,
 }: {
-  dataStore: DataStore,
-  requester: UserToken,
-  authorUsername: string,
-  cuid: string,
-  version?: number,
+  dataStore: DataStore;
+  requester: UserToken;
+  authorUsername: string;
+  cuid: string;
+  version?: number;
 }) {
   const objects = await dataStore.fetchLearningObjectByCuid(cuid, version);
   const payload = objects.filter(object => {
@@ -740,7 +740,6 @@ export async function updateLearningObject({
   updates: Partial<LearningObject>;
 }): Promise<void> {
   try {
-    const isEditor = requesterIsEditor(requester);
     if (updates.name) {
       await checkNameExists({
         id,
@@ -839,8 +838,12 @@ export async function generateReleasableLearningObject({
     loadWorkingParentsReleasedChildObjects({
       dataStore,
       parentId: id,
-    })
+    }),
   ]);
+  object.materials.files = await Gateways.fileMetadata().getAllFileMetadata({
+    requester,
+    learningObjectId: object.id,
+  });
   const releasableObject = new LearningObject({
     ...object.toPlainObject(),
   }) as HierarchicalLearningObject;
@@ -885,6 +888,15 @@ export async function getLearningObjectById({
         id,
         full: false,
       });
+      if (learningObject) {
+        let files: LearningObject.Material.File[] = [];
+        authorizeReadAccess({ requester, learningObject });
+        files = await Gateways.fileMetadata().getAllFileMetadata({
+          requester,
+          learningObjectId: id,
+        });
+        learningObject.materials.files = files;
+      }
     }
     if ((!learningObject && filter !== 'released') || filter === 'unreleased') {
       let files: LearningObject.Material.File[] = [];
@@ -1476,10 +1488,10 @@ export async function createLearningObjectRevision(params: {
 function appendFilePreviewUrls(
   learningObject: LearningObject,
 ): (
-    value: LearningObject.Material.File,
-    index: number,
-    array: LearningObject.Material.File[],
-  ) => LearningObject.Material.File {
+  value: LearningObject.Material.File,
+  index: number,
+  array: LearningObject.Material.File[],
+) => LearningObject.Material.File {
   return file => {
     file.previewUrl = Gateways.fileMetadata().getFilePreviewUrl({
       authorUsername: learningObject.author.username,
