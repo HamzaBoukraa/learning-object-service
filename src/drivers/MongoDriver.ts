@@ -46,6 +46,7 @@ export enum COLLECTIONS {
   MULTIPART_STATUSES = 'multipart-upload-statuses',
   CHANGELOG = 'changelogs',
   SUBMISSIONS = 'submissions',
+  LIBRARY = 'carts',
 }
 
 export class MongoDriver implements DataStore {
@@ -1385,3 +1386,5 @@ export class MongoDriver implements DataStore {
     });
   }
 }
+
+

@@ -10,6 +10,7 @@ import { Stream } from 'stream';
 import { bundleLearningObject } from '../../../LearningObjects/Publishing/Bundler/Interactor';
 import FileManagerModuleErrorMessages from '../shared/errors';
 import { uploadFile } from '../Interactor';
+import { updateObjectInLibraryForDownload } from '../../drivers/LearningObjectDownloads/learningObjectLibraryDownload';
 
 export type DownloadBundleParams = {
   learningObject: LearningObject;
@@ -72,6 +73,7 @@ async function downloadReleasedCopy(
   params: DownloadBundleParams,
 ): Promise<Stream> {
   const { requester, learningObject } = params;
+  await updateObjectInLibraryForDownload(requester.username, learningObject);
 
   const fileExists = await Drivers.fileManager().hasAccess({
     authorUsername: learningObject.author.username,
