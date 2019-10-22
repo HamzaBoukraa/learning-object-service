@@ -7,6 +7,7 @@ import { LearningOutcome } from './learning-outcome/learning-outcome';
 import { SubmittableLearningOutcome } from './learning-outcome/submittable-learning-outcome';
 import { Collection } from './collection/collection';
 import { HierarchicalLearningObject } from './learning-object/hierarchical-learning-object';
+import { LibraryItem } from './libraryItem/libraryItem';
 
 // Exports All Interfaces
 export {
@@ -20,4 +21,5 @@ export {
   SubmittableLearningOutcome,
   StandardOutcome,
   Collection,
+  LibraryItem,
 };
