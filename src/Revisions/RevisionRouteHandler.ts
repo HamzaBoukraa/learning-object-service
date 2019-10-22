@@ -23,8 +23,8 @@ export function initializePrivate({ router }: { router: Router }) {
     try {
       const params: { username: string, cuid: string, dataStore: RevisionsDataStore, requester: UserToken } = { ...req.params, dataStore: revisionsDataStore, requester: req.user };
 
-      const newRevisionId = await RevisionInteractor.createLearningObjectRevision(params);
-      res.status(200).json({revision: newRevisionId});
+      const revisionUri = await RevisionInteractor.createLearningObjectRevision(params);
+      res.status(200).json({ revisionUri });
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
       res.status(code).json({ message });

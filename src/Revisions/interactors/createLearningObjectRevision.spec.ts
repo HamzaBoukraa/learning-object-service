@@ -61,7 +61,7 @@ describe('When createLearningObjectRevision is called', () => {
     cuid: string,
     dataStore: RevisionsDataStore,
     requester: UserToken,
-  }) => Promise<number>; // this is instantiated in the beforeAll function
+  }) => Promise<string>; // this is instantiated in the beforeAll function
 
   beforeAll(async () => {
     // import the createLearningObjectRevision after mocks are ready
@@ -118,9 +118,12 @@ describe('When createLearningObjectRevision is called', () => {
   });
 
   describe('and the request is valid', () => {
-    it('should return a new version id', async () => {
+    it('should return a revisionUri', async () => {
+      releasedLearningObject.attachRevisionUri();
+      const revisionUri = releasedLearningObject.revisionUri;
+
       await expect(createLearningObjectRevision({ cuid: '12345', username: 'someusername', dataStore: new MockRevisionsDataStore(), requester: requester }))
-        .resolves.toBe(releasedLearningObject.version + 1);
+        .resolves.toBe(revisionUri);
     });
   });
 });
