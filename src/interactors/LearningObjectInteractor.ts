@@ -384,7 +384,7 @@ export class LearningObjectInteractor {
       });
       const learningObjectSummaries = learningObjects.map(learningObject => {
         learningObject.attachResourceUris(GATEWAY_API);
-        learningObjectHasRevision(learningObject.cuid).then(hasRevision => {
+        learningObjectHasRevision(learningObject.cuid, learningObject.id).then(hasRevision => {
           if (hasRevision) {
             learningObject.attachRevisionUri();
           }
