@@ -1,6 +1,7 @@
 import { COLLECTIONS } from '../../../drivers/MongoDriver';
 import { MongoConnector } from '../../../shared/MongoDB/MongoConnector';
-import { LearningObjectSummary } from '../../../shared/types';
+import { LearningObject, LibraryItem } from '../../../shared/entity';
+
 
 /**
  * Appends the downloaded boolean to the document in the users library on download
@@ -9,23 +10,30 @@ import { LearningObjectSummary } from '../../../shared/types';
  */
 export async function updateObjectInLibraryForDownload(
     username: string,
-    learningObject: LearningObjectSummary,
+    downloadedLearningObject: LearningObject,
 ): Promise<void> {
     try {
         const db = MongoConnector.client().db('cart-service');
-        const library = await db
-        .collection(COLLECTIONS.LIBRARY)
-        .findOne({ username: username, 'contents.id': learningObject.id });
-
-        library.libraryItem = {
+        const libraryItem: LibraryItem = {
             savedOn: Date.now(),
             savedBy: username,
-            learningObject: learningObject,
+            learningObject: downloadedLearningObject,
             downloaded: true,
         };
-        db
-            .collection(COLLECTIONS.LIBRARY)
-            .findOneAndReplace({ username: username }, library);
+
+        let currentItem = await db
+        .collection(COLLECTIONS.LIBRARY)
+        .findOne({ savedBy: username, 'learningObject._id': downloadedLearningObject.id });
+
+        if (currentItem) {
+            db
+                .collection(COLLECTIONS.LIBRARY)
+                .findOneAndReplace(currentItem, libraryItem);
+        } else {
+            db
+                .collection(COLLECTIONS.LIBRARY)
+                .insertOne(libraryItem);
+        }
         return Promise.resolve();
     } catch (e) {
         throw new Error(
