@@ -42,7 +42,7 @@ export async function createLearningObjectRevision(params: {
   cuid: string;
   dataStore: RevisionsDataStore;
   requester: UserToken;
-}): Promise<number> {
+}): Promise<string> {
   const { dataStore, cuid, requester, username } = params;
 
   let learningObjectsForCUID = await LearningObjectAdapter.getInstance().getInternalLearningObjectByCuid({cuid, username, userToken: requester});
@@ -82,7 +82,9 @@ export async function createLearningObjectRevision(params: {
     releasedCopy: learningObject,
   });
 
-  return version;
+  learningObject.attachRevisionUri();
+
+  return learningObject.revisionUri;
 }
 
 /**
