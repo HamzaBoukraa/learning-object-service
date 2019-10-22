@@ -475,7 +475,7 @@ export class LearningObject {
     // tslint:disable-next-line: max-line-length
     this.resourceUris.materials = `${resourceUriHost}/users/${this.author.username}/learning-objects/${this.id}/materials?status=${this.status !== LearningObject.Status.RELEASED ? LearningObject.Status.UNRELEASED : ''}`;
 
-    this.resourceUris.metrics = `${resourceUriHost}/users/${this.author.username}/learning-objects/${this.id}/metrics`;
+    this.resourceUris.metrics = `${resourceUriHost}/users/${this.author.username}/learning-objects/${this.cuid}/metrics`;
 
     this.resourceUris.parents = `${resourceUriHost}/learning-objects/${this.id}/parents`;
 
