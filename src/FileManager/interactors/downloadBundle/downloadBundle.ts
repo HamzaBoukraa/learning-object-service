@@ -10,7 +10,7 @@ import { Stream } from 'stream';
 import { bundleLearningObject } from '../../../LearningObjects/Publishing/Bundler/Interactor';
 import FileManagerModuleErrorMessages from '../shared/errors';
 import { uploadFile } from '../Interactor';
-import { updateObjectInLibraryForDownload } from '../../drivers/LearningObjectDownloads/learningObjectLibraryDownload';
+import { updateObjectInLibraryForDownload } from '../../../shared/MongoDB/HelperFunctions/LearningObjectDownloads/learningObjectLibraryDownload';
 
 export type DownloadBundleParams = {
   learningObject: LearningObject;
