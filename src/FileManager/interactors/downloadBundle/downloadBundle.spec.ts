@@ -12,14 +12,11 @@ import {
   User,
 } from '../../../shared/entity';
 import { DownloadBundleParams } from './downloadBundle';
-import { ResourceErrorReason, ResourceError } from '../../../shared/errors';
 import { Gateways } from '../shared/dependencies';
 import { Stream, Readable } from 'stream';
 import { HierarchyGateway } from '../../gateways/HierarchyGateway/ModuleHierarchyGateway';
 import FileManagerModuleErrorMessages from '../shared/errors';
 import { Stubs } from '../../../tests/stubs';
-import { S3FileManager } from '../../drivers/FileManager/S3FileManager';
-import { jsxFragment } from '@babel/types';
 
 const requesterStub: UserToken = {
   username: 'test-username',
@@ -54,19 +51,19 @@ const LearningObjectSummaryStub = {
 
 class StubFileManager implements FileManager {
   upload(params: { authorUsername: string; learningObjectCUID: string; version: number; file: FileUpload; }): Promise<void> {
-    throw new Error("Method not implemented.");
+    throw new Error('Method not implemented.');
   }
   delete(params: { authorUsername: string; learningObjectCUID: string; version: number; path: string; }): Promise<void> {
-    throw new Error("Method not implemented.");
+    throw new Error('Method not implemented.');
   }
   deleteFolder(params: { authorUsername: string; learningObjectCUID: string; version: number; path: string; }): Promise<void> {
-    throw new Error("Method not implemented.");
+    throw new Error('Method not implemented.');
   }
   async streamFile(params: { authorUsername: string; learningObjectCUID: string; version: number; path: string; }): Promise<Readable> {
     return new Readable();
   }
   copyDirectory(params: { authorUsername: string; learningObjectCUID: string; version: number; newLearningObjectVersion: number; }): Promise<void> {
-    throw new Error("Method not implemented.");
+    throw new Error('Method not implemented.');
   }
   async hasAccess(params: { authorUsername: string; learningObjectCUID: string; version: number; path: string; }): Promise<boolean> {
     return true;
@@ -151,7 +148,7 @@ function initializeMocks() {
       serviceModule: function() {
         return;
       },
-    }
+    };
   });
   jest.mock('../../../shared/MongoDB/HelperFunctions/LearningObjectDownloads/learningObjectLibraryDownload', () => {
     return {
