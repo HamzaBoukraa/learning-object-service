@@ -116,7 +116,7 @@ export class ExpressAuthRouteDriver {
       }
     });
     router
-      .route('/users/:username/learning-objects/:cuid/versions/:version/children')
+      .route('/learning-objects/:username/:learningObjectName/children')
       .post(async (req, res) => {
         try {
           const username = req.params.username;
@@ -125,8 +125,7 @@ export class ExpressAuthRouteDriver {
           await LearningObjectInteractor.setChildren({
             dataStore: this.dataStore,
             children: req.body.children,
-            cuid: req.params.cuid,
-            version: req.params.version,
+            id: req.params.learningObjectName,
             username,
             userToken: user,
           });
@@ -143,8 +142,7 @@ export class ExpressAuthRouteDriver {
           await LearningObjectInteractor.removeChild({
             dataStore: this.dataStore,
             childId: req.body.id,
-            cuid: req.params.cuid,
-            version: req.params.version,
+            id: req.params.learningObjectName,
             username,
             userToken: user,
           });

@@ -609,32 +609,23 @@ export class LearningObjectInteractor {
   public static async setChildren(params: {
     dataStore: DataStore;
     children: string[];
-    cuid: string;
-    version: number;
+    id: string;
     username: string;
     userToken: UserToken;
   }): Promise<void> {
-    const { dataStore, children, username, cuid, version, userToken } = params;
+    const { dataStore, children, username, id, userToken } = params;
 
     try {
-      const authorId = await UserServiceGateway.getInstance().findUser(
-        username,
-      );
-      const parentID = await dataStore.findLearningObject({
-        authorId,
-        cuid,
-        version
-      });
       const hasAccess = await hasLearningObjectWriteAccess(
         userToken,
         dataStore,
-        parentID,
+        id,
       );
       if (hasAccess) {
-        await dataStore.setChildren(parentID, children);
+        await dataStore.setChildren(id, children);
         await updateObjectLastModifiedDate({
           dataStore,
-          id: parentID,
+          id,
           date: Date.now().toString(),
         });
       } else {
@@ -666,31 +657,23 @@ export class LearningObjectInteractor {
   public static async removeChild(params: {
     dataStore: DataStore;
     childId: string;
-    cuid: string;
-    version: number;
+    id: string;
     username: string;
     userToken: UserToken;
   }) {
-    const { dataStore, childId, username, cuid, version, userToken } = params;
+    const { dataStore, childId, username, id, userToken } = params;
+    
     try {
-      const authorId = await UserServiceGateway.getInstance().findUser(
-        username,
-      );
-      const parentID = await dataStore.findLearningObject({
-        authorId,
-        cuid,
-        version
-      });
       const hasAccess = await hasLearningObjectWriteAccess(
         userToken,
         dataStore,
-        parentID,
+        id,
       );
       if (hasAccess) {
-        await dataStore.deleteChild(parentID, childId);
+        await dataStore.deleteChild(id, childId);
         await updateObjectLastModifiedDate({
           dataStore,
-          id: parentID,
+          id,
           date: Date.now().toString(),
         });
       } else {
