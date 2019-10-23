@@ -138,11 +138,11 @@ export async function getInternalLearningObjectByCuid({
   cuid,
   version,
 }: {
-  dataStore: DataStore,
-  requester: UserToken,
-  authorUsername: string,
-  cuid: string,
-  version?: number,
+  dataStore: DataStore;
+  requester: UserToken;
+  authorUsername: string;
+  cuid: string;
+  version?: number;
 }) {
   const objects = await dataStore.fetchInternalLearningObjectByCuid(cuid, version);
   let unauthorized: boolean;
@@ -713,6 +713,10 @@ export async function generateReleasableLearningObject({
       parentId: id,
     }),
   ]);
+  object.materials.files = await Gateways.fileMetadata().getAllFileMetadata({
+    requester,
+    learningObjectId: object.id,
+  });
   const releasableObject = new LearningObject({
     ...object.toPlainObject(),
   }) as HierarchicalLearningObject;
@@ -757,6 +761,15 @@ export async function getLearningObjectById({
         id,
         full: false,
       });
+      if (learningObject) {
+        let files: LearningObject.Material.File[] = [];
+        authorizeReadAccess({ requester, learningObject });
+        files = await Gateways.fileMetadata().getAllFileMetadata({
+          requester,
+          learningObjectId: id,
+        });
+        learningObject.materials.files = files;
+      }
     }
     if ((!learningObject && filter !== 'released') || filter === 'unreleased') {
       let files: LearningObject.Material.File[] = [];
