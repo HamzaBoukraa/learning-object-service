@@ -1,6 +1,6 @@
-import { COLLECTIONS } from '../../../drivers/MongoDriver';
-import { MongoConnector } from '../../../shared/MongoDB/MongoConnector';
-import { LearningObject, LibraryItem } from '../../../shared/entity';
+import { COLLECTIONS } from '../../../../drivers/MongoDriver';
+import { MongoConnector } from '../../../MongoDB/MongoConnector';
+import { LearningObject, LibraryItem } from '../../../entity';
 
 
 /**
