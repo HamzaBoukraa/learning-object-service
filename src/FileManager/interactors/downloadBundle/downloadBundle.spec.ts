@@ -140,7 +140,7 @@ describe('When downloadBundle is called for a Working Copy', () => {
   describe('and the requester has download privilege', () => {
     describe('and the requester provided the ID of an existing Learning Object', () => {
       const collection = 'test';
-      let requestParams: DownloadBundleParams = { ...downloadBundleParamStub };;
+      let requestParams: DownloadBundleParams = { ...downloadBundleParamStub };
 
       it('should not invoke getLearningObjectByName when the requester is an admin', async () => {
         // ERRORS Cannot read property 'hasAccess' of undefined

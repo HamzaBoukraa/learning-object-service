@@ -5,6 +5,7 @@ import { MongoConnector } from '../../MongoConnector';
 import { LearningOutcomeMongoDatastore } from '../../../../LearningOutcomes/datastores/LearningOutcomeMongoDatastore';
 import { learningObjectHasRevision } from '../learningObjectHasRevision/learningObjectHasRevision';
 
+// TODO: Generating a full learning object should now entail generating files as well since they are an external resource
 /**
  * Generates Learning Object from Document
  *
