@@ -47,8 +47,8 @@ export class LearningObjectAdapter {
     return updateObjectLastModifiedDate({ dataStore: this.dataStore, id });
   }
 
-  async getLearningObjectByCuid(cuid: string, authorUsername: string, requester: UserToken, version?: number): Promise<LearningObjectSummary[]> {
-    return await getLearningObjectByCuid({ dataStore: this.dataStore, cuid, authorUsername, requester, version  });
+  async getLearningObjectByCuid(cuid: string, requester: UserToken, version?: number): Promise<LearningObjectSummary[]> {
+    return await getLearningObjectByCuid({ dataStore: this.dataStore, cuid, requester, version  });
   }
 
   /**

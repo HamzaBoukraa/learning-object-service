@@ -24,7 +24,7 @@ export interface DataStore
 
   // Changelog
   createChangelog(params: {
-    learningObjectId: string;
+    cuid: string;
     author: {
       userId: string;
       name: string;
@@ -34,20 +34,20 @@ export interface DataStore
     changelogText: string;
   }): Promise<void>;
   fetchChangelogsBeforeDate(params: {
-    learningObjectId: string;
+    cuid: string;
     date: string;
   }): Promise<ChangeLogDocument[]>;
   fetchAllChangelogs(params: {
-    learningObjectId: string;
+    cuid: string;
   }): Promise<ChangeLogDocument[]>;
   fetchRecentChangelog(params: {
-    learningObjectId: string;
+    cuid: string;
   }): Promise<ChangeLogDocument>;
   fetchRecentChangelogBeforeDate(params: {
-    learningObjectId: string;
+    cuid: string;
     date: string;
   }): Promise<ChangeLogDocument>;
-  deleteChangelog(params: { learningObjectId: string }): Promise<void>;
+  deleteChangelog(params: { cuid: string }): Promise<void>;
   /*
    * READ Operations
    */
@@ -158,7 +158,8 @@ export interface DataStore
     full?: boolean;
   }): Promise<LearningObjectSummary[]>;
   checkLearningObjectExistence(params: {
-    learningObjectId: string;
+    learningObjectId?: string;
+    cuid?: string;
     userId: string;
   }): Promise<LearningObject>;
 

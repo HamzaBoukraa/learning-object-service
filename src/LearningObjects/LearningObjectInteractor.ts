@@ -90,7 +90,6 @@ export async function getLearningObjectByCuid({
 }: {
   dataStore: DataStore;
   requester: UserToken;
-  authorUsername: string;
   cuid: string;
   version?: number;
 }) {
@@ -1064,7 +1063,7 @@ export async function deleteLearningObject({
     await Gateways.submission().deletePreviousRelease({ learningObjectId: learningObject.id });
     await dataStore.deleteLearningObject(learningObject.id);
     dataStore
-      .deleteChangelog({ learningObjectId: learningObject.id })
+      .deleteChangelog({ cuid: learningObject.cuid })
       .catch(e => {
         reportError(
           new Error(
@@ -1137,7 +1136,7 @@ export async function deleteLearningObjectByCuidVersion({
       learningObjectId: object.id,
     });
     await dataStore.deleteLearningObject(object.id);
-    dataStore.deleteChangelog({ learningObjectId: object.id }).catch(e => {
+    dataStore.deleteChangelog({ cuid: object.cuid }).catch(e => {
       reportError(
         new Error(
           `Problem deleting changelogs for Learning Object ${object.id}: ${e}`,

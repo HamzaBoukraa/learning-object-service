@@ -455,24 +455,24 @@ export class MongoDriver implements DataStore {
   }
 
   async fetchRecentChangelog(params: {
-    learningObjectId: string;
+    cuid: string;
   }): Promise<ChangeLogDocument> {
     return this.changelogStore.getRecentChangelog({
-      learningObjectId: params.learningObjectId,
+      cuid: params.cuid,
     });
   }
 
-  async deleteChangelog(params: { learningObjectId: string }): Promise<void> {
+  async deleteChangelog(params: { cuid: string }): Promise<void> {
     return this.changelogStore.deleteChangelog({
-      learningObjectId: params.learningObjectId,
+      cuid: params.cuid,
     });
   }
 
   async fetchAllChangelogs(params: {
-    learningObjectId: string;
+    cuid: string;
   }): Promise<ChangeLogDocument[]> {
     return await this.changelogStore.fetchAllChangelogs({
-      learningObjectId: params.learningObjectId,
+      cuid: params.cuid,
     });
   }
 
@@ -483,17 +483,17 @@ export class MongoDriver implements DataStore {
    * @param {string} date The date the changelog was created
    */
   async fetchChangelogsBeforeDate(params: {
-    learningObjectId: string;
+    cuid: string;
     date: string;
   }): Promise<ChangeLogDocument[]> {
     return await this.changelogStore.fetchChangelogsBeforeDate({
-      learningObjectId: params.learningObjectId,
+      cuid: params.cuid,
       date: params.date,
     });
   }
 
   fetchRecentChangelogBeforeDate(params: {
-    learningObjectId: string;
+    cuid: string;
     date: string;
   }): Promise<ChangeLogDocument> {
     return this.changelogStore.fetchRecentChangelogBeforeDate(params);
@@ -1144,13 +1144,25 @@ export class MongoDriver implements DataStore {
    * @returns {array}
    */
   async checkLearningObjectExistence(params: {
-    learningObjectId: string;
+    learningObjectId?: string;
     userId: string;
+    cuid?: string;
   }): Promise<LearningObject> {
-    return await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).findOne({
-      _id: params.learningObjectId,
-      authorID: params.userId,
-    });
+    const query: any = { authorID: params.userId };
+
+    if (params.learningObjectId) {
+      query.learningObjectId = params.learningObjectId;
+    }
+
+    if (params.cuid) {
+      query.cuid = params.cuid;
+    }
+
+    if (!query.learningObjectId && !query.cuid) {
+      throw new ResourceError('No Learning Object ID or CUID specified in request!', ResourceErrorReason.BAD_REQUEST);
+    }
+
+    return await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).findOne(query);
   }
 
   /**
@@ -1369,7 +1381,7 @@ export class MongoDriver implements DataStore {
   }
 
   async createChangelog(params: {
-    learningObjectId: string;
+    cuid: string;
     author: {
       userId: string;
       name: string;
@@ -1379,7 +1391,7 @@ export class MongoDriver implements DataStore {
     changelogText: string;
   }): Promise<void> {
     return this.changelogStore.createChangelog({
-      learningObjectId: params.learningObjectId,
+      cuid: params.cuid,
       author: params.author,
       changelogText: params.changelogText,
     });

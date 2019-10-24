@@ -26,18 +26,18 @@ const ROLE = {
  * @param {
  *  user UserToken
  *  dataStore DataStore
- *  learningObjectId string
+ *  cuid string
  * }
  */
 export async function hasChangelogAccess(params: {
     user: UserToken,
     dataStore: DataStore,
-    learningObjectId: string,
+    cuid: string,
 }) {
     const userId = await UserServiceGateway.getInstance().findUser(params.user.username);
     const isOwnedByAuthor = await params.dataStore.checkLearningObjectExistence({
         userId,
-        learningObjectId: params.learningObjectId,
+        cuid: params.cuid,
     });
 
     if (isOwnedByAuthor) {
