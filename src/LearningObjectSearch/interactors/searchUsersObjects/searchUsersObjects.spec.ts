@@ -151,7 +151,7 @@ class MockUserGatewayAdmin implements UserGateway {
 
 jest.mock('../../../shared/MongoDB/HelperFunctions', () => {
   return {
-    learningObjectHasRevision: (_: string, __: string) => Promise.resolve(true)
+    learningObjectHasRevision: (_: string, __: string) => Promise.resolve(true),
   };
 });
 
