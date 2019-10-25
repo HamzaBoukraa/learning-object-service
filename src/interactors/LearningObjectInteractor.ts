@@ -326,8 +326,6 @@ export class LearningObjectInteractor {
         }),
       );
       const objectIds = objectRefs.map(obj => obj.id);
-      // Remove objects from library
-      await library.cleanObjectsFromLibraries(objectIds);
       await Promise.all(
         objectRefs.map(ref =>
           Gateways.fileMetadata().deleteAllFileMetadata({

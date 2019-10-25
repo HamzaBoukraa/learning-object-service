@@ -1069,7 +1069,6 @@ export async function deleteLearningObject({
       );
     }
     authorizeWriteAccess({ learningObject, requester });
-    await library.cleanObjectsFromLibraries([learningObject.id]);
     await Gateways.fileMetadata().deleteAllFileMetadata({
       requester,
       learningObjectId: learningObject.id,
@@ -1144,7 +1143,6 @@ export async function deleteLearningObjectByCuidVersion({
       message: `Unable to delete Learning Object ${objectId}.`,
     });
 
-    await library.cleanObjectsFromLibraries([object.id]);
     await Gateways.fileMetadata().deleteAllFileMetadata({
       requester: user,
       learningObjectId: object.id,

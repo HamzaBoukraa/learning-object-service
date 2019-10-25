@@ -24,16 +24,4 @@ export class LibraryDriver implements LibraryCommunicator {
       return Promise.reject(`Problem fetching metrics. Error: ${e}`);
     }
   }
-
-  /**
-   * Removes learning object ids from all carts that reference them
-   * @param ids Array of string ids
-   */
-  public async cleanObjectsFromLibraries(ids: Array<string>): Promise<void> {
-    const options = { ...this.options };
-    options.uri = LIBRARY_ROUTES.CLEAN(ids);
-    options.method = 'PATCH';
-    options.headers.Authorization = `Bearer ${generateServiceToken()}`;
-    return request(options);
-  }
 }
