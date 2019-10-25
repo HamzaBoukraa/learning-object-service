@@ -29,7 +29,7 @@ describe('getRecentChangelog', () => {
   it('should get latest change log for a learning object (admin)', async () => {
     return expect(ChangelogInteractor.getRecentChangelog({
         dataStore,
-        learningObjectId: stubs.learningObject.id,
+        cuid: stubs.learningObject.cuid,
         userId: stubs.learningObject.author.id,
         user: {...stubs.userToken, accessGroups: ['admin']},
     }))
@@ -39,7 +39,7 @@ describe('getRecentChangelog', () => {
   it('should get latest change log for a learning object (editor)', async () => {
     return expect(ChangelogInteractor.getRecentChangelog({
         dataStore,
-        learningObjectId: stubs.learningObject.id,
+        cuid: stubs.learningObject.cuid,
         userId: stubs.learningObject.author.id,
         user: {...stubs.userToken, accessGroups: ['editor']},
     }))
@@ -49,7 +49,7 @@ describe('getRecentChangelog', () => {
   it('should get latest change log for a learning object (author)', async () => {
     return expect(ChangelogInteractor.getRecentChangelog({
         dataStore,
-        learningObjectId: stubs.learningObject.id,
+        cuid: stubs.learningObject.cuid,
         userId: stubs.learningObject.author.id,
         user: {...stubs.userToken, accessGroups: ['']},
     }))
@@ -61,7 +61,7 @@ describe('createChangelog', () => {
     it('should create a new change log (admin)', async () => {
       return expect(ChangelogInteractor.createChangelog({
           dataStore,
-          learningObjectId: stubs.learningObject.id,
+          cuid: stubs.learningObject.cuid,
           user: {...stubs.userToken, accessGroups: ['admin']},
           userId: stubs.learningObject.author.id,
           changelogText: 'Example change log text',
@@ -72,7 +72,7 @@ describe('createChangelog', () => {
     it('should create a new change log (editor)', async () => {
       return expect(ChangelogInteractor.createChangelog({
           dataStore,
-          learningObjectId: stubs.learningObject.id,
+          cuid: stubs.learningObject.cuid,
           user: {...stubs.userToken, accessGroups: ['editor']},
           userId: stubs.learningObject.author.id,
           changelogText: 'Example change log text',
@@ -83,7 +83,7 @@ describe('createChangelog', () => {
     it('should create a new change log (author)', async () => {
       return expect(ChangelogInteractor.createChangelog({
           dataStore,
-          learningObjectId: stubs.learningObject.id,
+          cuid: stubs.learningObject.cuid,
           user: {...stubs.userToken, accessGroups: ['']},
           userId: stubs.learningObject.author.id,
           changelogText: 'Example change log text',
@@ -99,7 +99,7 @@ describe('getChangelogs', () => {
         return expect(ChangelogInteractor.getChangelogs({
           learningObjectGateway,
           dataStore,
-          learningObjectId: stubs.learningObject.id,
+          cuid: stubs.learningObject.cuid,
           user: {...stubs.userToken, accessGroups: ['']},
           userId: stubs.learningObject.author.id,
         }))
@@ -111,7 +111,7 @@ describe('getChangelogs', () => {
         return expect(ChangelogInteractor.getChangelogs({
           learningObjectGateway,
           dataStore,
-          learningObjectId: stubs.learningObject.id,
+          cuid: stubs.learningObject.cuid,
           user: {...stubs.userToken, accessGroups: ['']},
           userId: stubs.learningObject.author.id,
           recent: true,
@@ -128,7 +128,7 @@ describe('getChangelogs', () => {
           return expect(ChangelogInteractor.getChangelogs({
             learningObjectGateway,
             dataStore,
-            learningObjectId: stubs.learningObject.id,
+            cuid: stubs.learningObject.cuid,
             user: {...stubs.userToken, accessGroups: ['admin']},
             userId: stubs.learningObject.author.id,
           }))
@@ -140,7 +140,7 @@ describe('getChangelogs', () => {
           return expect(ChangelogInteractor.getChangelogs({
             learningObjectGateway,
             dataStore,
-            learningObjectId: stubs.learningObject.id,
+            cuid: stubs.learningObject.cuid,
             user: {...stubs.userToken, accessGroups: ['admin']},
             userId: stubs.learningObject.author.id,
             recent: true,
@@ -155,7 +155,7 @@ describe('getChangelogs', () => {
           return expect(ChangelogInteractor.getChangelogs({
             learningObjectGateway,
             dataStore,
-            learningObjectId: stubs.learningObject.id,
+            cuid: stubs.learningObject.cuid,
             user: {...stubs.userToken, accessGroups: ['editor']},
             userId: stubs.learningObject.author.id,
           }))
@@ -167,7 +167,7 @@ describe('getChangelogs', () => {
           return expect(ChangelogInteractor.getChangelogs({
             learningObjectGateway,
             dataStore,
-            learningObjectId: stubs.learningObject.id,
+            cuid: stubs.learningObject.cuid,
             user: {...stubs.userToken, accessGroups: ['editor']},
             userId: stubs.learningObject.author.id,
             recent: true,
@@ -182,7 +182,7 @@ describe('getChangelogs', () => {
           return expect(ChangelogInteractor.getChangelogs({
             learningObjectGateway,
             dataStore,
-            learningObjectId: stubs.learningObject.id,
+            cuid: stubs.learningObject.cuid,
             user: {...stubs.userToken, accessGroups: [''], username: stubs.learningObject.author.username},
             userId: stubs.learningObject.author.id,
           }))
@@ -194,7 +194,7 @@ describe('getChangelogs', () => {
           return expect(ChangelogInteractor.getChangelogs({
             learningObjectGateway,
             dataStore,
-            learningObjectId: stubs.learningObject.id,
+            cuid: stubs.learningObject.cuid,
             user: {...stubs.userToken, accessGroups: [''], username: stubs.learningObject.author.username},
             userId: stubs.learningObject.author.id,
             recent: true,
@@ -210,7 +210,7 @@ describe('getChangelogs', () => {
         return expect(ChangelogInteractor.getChangelogs({
           learningObjectGateway,
           dataStore,
-          learningObjectId: stubs.learningObject.id,
+          cuid: stubs.learningObject.cuid,
           user: {...stubs.userToken, accessGroups: ['']},
           userId: stubs.learningObject.author.id,
           minusRevision: true,
@@ -223,7 +223,7 @@ describe('getChangelogs', () => {
         return expect(ChangelogInteractor.getChangelogs({
           learningObjectGateway,
           dataStore,
-          learningObjectId: stubs.learningObject.id,
+          cuid: stubs.learningObject.cuid,
           user: {...stubs.userToken, accessGroups: ['']},
           userId: stubs.learningObject.author.id,
           recent: true,
@@ -240,7 +240,7 @@ describe('getChangelogs', () => {
           return expect(ChangelogInteractor.getChangelogs({
             learningObjectGateway,
             dataStore,
-            learningObjectId: stubs.learningObject.id,
+            cuid: stubs.learningObject.cuid,
             user: {...stubs.userToken, accessGroups: ['admin']},
             userId: stubs.learningObject.author.id,
           }))
@@ -252,7 +252,7 @@ describe('getChangelogs', () => {
           return expect(ChangelogInteractor.getChangelogs({
             learningObjectGateway,
             dataStore,
-            learningObjectId: stubs.learningObject.id,
+            cuid: stubs.learningObject.cuid,
             user: {...stubs.userToken, accessGroups: ['admin']},
             userId: stubs.learningObject.author.id,
             recent: true,
@@ -267,7 +267,7 @@ describe('getChangelogs', () => {
           return expect(ChangelogInteractor.getChangelogs({
             learningObjectGateway,
             dataStore,
-            learningObjectId: stubs.learningObject.id,
+            cuid: stubs.learningObject.cuid,
             user: {...stubs.userToken, accessGroups: ['editor']},
             userId: stubs.learningObject.author.id,
           }))
@@ -279,7 +279,7 @@ describe('getChangelogs', () => {
           return expect(ChangelogInteractor.getChangelogs({
             learningObjectGateway,
             dataStore,
-            learningObjectId: stubs.learningObject.id,
+            cuid: stubs.learningObject.cuid,
             user: {...stubs.userToken, accessGroups: ['editor']},
             userId: stubs.learningObject.author.id,
             recent: true,
@@ -294,7 +294,7 @@ describe('getChangelogs', () => {
           return expect(ChangelogInteractor.getChangelogs({
             learningObjectGateway,
             dataStore,
-            learningObjectId: stubs.learningObject.id,
+            cuid: stubs.learningObject.cuid,
             user: {
               ...stubs.userToken,
               accessGroups: [''],
@@ -310,7 +310,7 @@ describe('getChangelogs', () => {
           return expect(ChangelogInteractor.getChangelogs({
             learningObjectGateway,
             dataStore,
-            learningObjectId: stubs.learningObject.id,
+            cuid: stubs.learningObject.cuid,
             user: {
               ...stubs.userToken,
               accessGroups: [''],

@@ -6,15 +6,25 @@ import { LearningObject } from '../../shared/entity';
 import { STUB_CHANGELOG_IDS } from './ChangelogStubs';
 
 export class StubModuleLearningObjectGateway implements LearningObjectGateway {
-    stubs = new Stubs();
+  stubs = new Stubs();
 
-    async getReleasedLearningObjectSummary(params: {
-        requester: Requester;
-        id: string;
-    }): Promise<LearningObjectSummary> {
-        return new LearningObject({
-            ...this.stubs.learningObject,
-            id: STUB_CHANGELOG_IDS.MINUS_REVISION,
-        });
-    }
+  async getReleasedLearningObjectSummary(params: {
+    requester: Requester;
+    id: string;
+  }): Promise<LearningObjectSummary> {
+    return new LearningObject({
+      ...this.stubs.learningObject,
+      id: STUB_CHANGELOG_IDS.MINUS_REVISION,
+    });
+  }
+
+  async getLearningObjectByCuid(params: {
+    requester: Requester;
+    cuid: string;
+  }): Promise<LearningObjectSummary[]> {
+    return [new LearningObject({
+      ...this.stubs.learningObject,
+      id: STUB_CHANGELOG_IDS.MINUS_REVISION,
+    })];
+  }
 }

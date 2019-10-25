@@ -325,6 +325,7 @@ const SEED_OBJECTS = {
 
     LEARNING_OBJECT_RELEASED_1: {
         _id: IDS.PARENT.released_1,
+        cuid: '91db69aa-a9c9-4235-a985-1996fd9559ce',
         authorID: IDS.AUTHOR.Bob,
         date: "1520530093085",
         goals: [

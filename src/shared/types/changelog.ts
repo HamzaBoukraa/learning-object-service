@@ -3,7 +3,7 @@
  */
 export interface ChangeLogDocument {
     _id: string;
-    learningObjectId: string;
+    cuid: string;
     logs: Log[];
 }
 

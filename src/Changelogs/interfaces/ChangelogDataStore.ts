@@ -5,7 +5,7 @@ export interface ChangelogDataStore {
      * createChangelog is responsible for orchestrating
      * the creation of a change log in the system.
      * @param {
-     *  learningObjectId string
+     *  cuid string
      *  author {
      *      userId string
      *      name string
@@ -16,7 +16,7 @@ export interface ChangelogDataStore {
      * }
      */
     createChangelog(params: {
-        learningObjectId: string,
+        cuid: string,
         author: {
             userId: string,
             name: string,
@@ -29,19 +29,19 @@ export interface ChangelogDataStore {
     /**
      * getRecentChangelog is responsible for retrieving
      * the newest change log for a given Learning Object
-     * @param { learningObjectId string }
+     * @param { cuid string }
      */
     getRecentChangelog(params: {
-        learningObjectId: string,
+        cuid: string,
     }): Promise<ChangeLogDocument>;
 
     /**
      * fetchAllChangelog is responsible for retrieving
      * all change logs for a given Learning Object
-     * @param { learningObjectId string }
+     * @param { cuid string }
      */
     fetchAllChangelogs(params: {
-        learningObjectId: string,
+        cuid: string,
     }): Promise<ChangeLogDocument[]>;
 
     /**
@@ -49,12 +49,12 @@ export interface ChangelogDataStore {
      * all of the change logs that were created before a given date
      * for a given Learning Object
      * @param {
-     *  learningObjectId string
+     *  cuid string
      *  date string
      * }
      */
     fetchChangelogsBeforeDate(params: {
-        learningObjectId: string,
+        cuid: string,
         date: string,
     }): Promise<ChangeLogDocument[]>;
 
@@ -63,21 +63,21 @@ export interface ChangelogDataStore {
      * the newest change logs that was created before a given date
      * for a given Learning Object
      * @param {
-     *  learningObjectId string
+     *  cuid string
      *  date string
      * }
      */
     fetchRecentChangelogBeforeDate(params: {
-        learningObjectId: string,
+        cuid: string,
         date: string,
     }): Promise<ChangeLogDocument>;
 
     /**
      * deleteChangelog is responsible for deleting
      * a change log for a given Learning Object
-     * @param { learningObjectId string }
+     * @param { cuid string }
      */
     deleteChangelog(params: {
-        learningObjectId: string,
+        cuid: string,
     }): Promise<void>;
 }

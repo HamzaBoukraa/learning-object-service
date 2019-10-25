@@ -224,6 +224,7 @@ export class Stubs {
 
         const learningObject = new LearningObject({
           id: record._id,
+          cuid: record.cuid,
           author,
           name: record.name,
           date: record.date,
@@ -235,6 +236,7 @@ export class Stubs {
           materials,
           contributors,
           outcomes,
+          version: record._version,
           revisionUri: record.revisionUri,
           children,
         });
