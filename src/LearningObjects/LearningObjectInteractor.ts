@@ -49,6 +49,7 @@ import { deleteSubmission } from '../LearningObjectSubmission/interactors/delete
 import { LearningObjectSubmissionGateway } from './interfaces/LearningObjectSubmissionGateway';
 
 import { learningObjectHasRevision } from '../shared/MongoDB/HelperFunctions/learningObjectHasRevision/learningObjectHasRevision';
+import { LibraryDriver } from '../drivers/LibraryDriver';
 const GATEWAY_API = process.env.GATEWAY_API;
 
 namespace Drivers {
@@ -671,6 +672,10 @@ export async function updateLearningObject({
 
         // @ts-ignore isRevision isn't a valid property of LearningObject and is only used in the database for indexing purposes but needs to be flipped here
         await dataStore.editLearningObject({id, updates:  { isRevision: false } });
+
+        // update the Learning Object in libraries
+        const libraryDriver = new LibraryDriver();
+        await libraryDriver.updateObjectInLibraries(releasableObject.cuid, releasableObject.version, releasableObject.author.username);
       }
     }
 
