@@ -690,7 +690,9 @@ async function deleteDuplicateResources(dataStore: DataStore, library: LibraryCo
   const outOfDateObject: LearningObject = objectsForCuid.filter(x => x.version !== currentVersion)[0]; // the array returned by .filter should always be of length 1
 
   // delete the out-of-date Learning Object
-  await deleteLearningObject({ dataStore, library, id: outOfDateObject.id, requester });
+  if (outOfDateObject) {
+    await deleteLearningObject({ dataStore, library, id: outOfDateObject.id, requester });
+  }
 }
 
 /**
