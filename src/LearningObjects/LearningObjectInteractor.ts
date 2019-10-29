@@ -675,7 +675,7 @@ export async function updateLearningObject({
 
         // update the Learning Object in libraries
         const libraryDriver = new LibraryDriver();
-        await libraryDriver.updateObjectInLibraries(releasableObject.cuid, releasableObject.version, releasableObject.author.username);
+        await libraryDriver.updateObjectInLibraries(releasableObject.cuid, releasableObject.version, releasableObject.author.username, requester);
       }
     }
 
