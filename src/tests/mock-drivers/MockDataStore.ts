@@ -30,6 +30,9 @@ import { STUB_CHANGELOG_IDS } from '../../Changelogs/testing/ChangelogStubs';
 import { LearningObjectUpdates } from '../../shared/types/learning-object-updates';
 
 export class MockDataStore implements DataStore, SubmissionDataStore {
+  deleteChangelogsAfterRelease(params: { cuid: string; date: string; }): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
 
   stubs = new Stubs();
   stubChangelogDataStore = new StubChangelogDatastore();
