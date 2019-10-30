@@ -1081,15 +1081,25 @@ export async function deleteLearningObject({
     });
     await Gateways.submission().deletePreviousRelease({ learningObjectId: learningObject.id });
     await dataStore.deleteLearningObject(learningObject.id);
-    dataStore
-      .deleteChangelog({ cuid: learningObject.cuid })
-      .catch(e => {
+    if (learningObject.version > 0) {
+      const objectsForCuid = await dataStore.fetchInternalLearningObjectByCuid(learningObject.cuid);
+      const releasedVersion: LearningObject = objectsForCuid.filter(x => x.status === LearningObject.Status.RELEASED)[0];
+      await dataStore.deleteChangelogsAfterRelease({ cuid: learningObject.cuid, date: releasedVersion.date }).catch(e => {
         reportError(
           new Error(
-            `Problem deleting changelogs for Learning Object${learningObject.id}: ${e}`,
+            `Problem deleting changelogs for Learning Object ${learningObject.id}: ${e}`,
           ),
         );
       });
+    } else {
+      await dataStore.deleteChangelog({ cuid: learningObject.cuid }).catch(e => {
+        reportError(
+          new Error(
+            `Problem deleting changelogs for Learning Object ${learningObject.id}: ${e}`,
+          ),
+        );
+      });
+    }
   } catch (e) {
     handleError(e);
   }
