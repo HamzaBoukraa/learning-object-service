@@ -12,32 +12,6 @@ export async function updateObjectInLibraryForDownload(
     username: string,
     downloadedLearningObject: LearningObject,
 ): Promise<void> {
-    try {
-        const db = MongoConnector.client().db('cart-service');
-        const libraryItem: LibraryItem = {
-            savedOn: Date.now(),
-            savedBy: username,
-            learningObject: downloadedLearningObject,
-            downloaded: true,
-        };
-
-        let currentItem = await db
-        .collection(COLLECTIONS.LIBRARY)
-        .findOne({ savedBy: username, 'learningObject._id': downloadedLearningObject.id });
-
-        if (currentItem) {
-            db
-                .collection(COLLECTIONS.LIBRARY)
-                .findOneAndReplace(currentItem, libraryItem);
-        } else {
-            db
-                .collection(COLLECTIONS.LIBRARY)
-                .insertOne(libraryItem);
-        }
-        return Promise.resolve();
-    } catch (e) {
-        throw new Error(
-        `Problem updating LearningObject in library for download. Error: ${e}`,
-        );
-    }
+    const db = MongoConnector.client().db('cart-service');
+    await db.collection(COLLECTIONS.LIBRARY).updateOne({ savedBy: username, cuid: downloadedLearningObject.cuid }, { $set: {downloaded: true }});
 }
