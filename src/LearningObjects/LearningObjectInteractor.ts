@@ -865,7 +865,6 @@ export async function getLearningObjectSummaryById({
       if (hasRevision) {
         const objectsForCuid = await dataStore.fetchInternalLearningObjectByCuid(learningObject.cuid);
         const latestUnreleasedVersion: LearningObject = objectsForCuid.filter(x => x.status === LearningObject.Status.UNRELEASED)[0];
-        console.log(latestUnreleasedVersion);
         if ((latestUnreleasedVersion && latestUnreleasedVersion.status === LearningObject.Status.UNRELEASED) && (learningObject.author.username === requester.username)) {
           learningObject.attachRevisionUri();
         } else if (latestUnreleasedVersion === undefined) {
@@ -876,7 +875,6 @@ export async function getLearningObjectSummaryById({
     } else {
       throw learningObjectNotFound;
     }
-    console.log('obj', learningObject);
     return mapLearningObjectToSummary(learningObject);
   } catch (e) {
     console.log(e);
