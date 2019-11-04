@@ -434,7 +434,7 @@ export class LearningObject {
   }
 
   attachRevisionUri() {
-    this._revisionUri = `${process.env.GATEWAY_API}/users/${this.author.username}/learning-objects/${this.cuid}/version/${this.version + 1}`;
+    this._revisionUri = `${process.env.GATEWAY_API}/users/${this.author.username}/learning-objects/${this.cuid}?version=${this.version + 1}`;
   }
 
   private _version!: number;
