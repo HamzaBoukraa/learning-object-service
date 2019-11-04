@@ -12,8 +12,8 @@ import { LearningObjectState } from '../../../types';
  */
 export async function learningObjectHasRevision(
   learningObjectCUID: string,
-  learningObjectID: string,
-): Promise<boolean> {
+  learningObjectID?: string,
+): Promise<any> {
   const db = MongoConnector.client().db('onion');
   const revision = await db
     .collection(COLLECTIONS.LEARNING_OBJECTS)
@@ -36,28 +36,28 @@ export async function learningObjectHasRevision(
           },
         },
       },
-      { $unwind: { path: '$workingCopy', preserveNullAndEmptyArrays: true } },
-      {
-        $match: {
-          'workingCopy._id': { $ne: learningObjectID },
-          'workingCopy.status': { $in: LearningObjectState.NOT_RELEASED },
-          'workingCopy.isRevision': true,
-        },
-      },
-      {
-        $replaceRoot: {
-          newRoot: '$workingCopy',
-        },
-      },
+      // { $unwind: { path: '$workingCopy', preserveNullAndEmptyArrays: true } },
+      // {
+      //   $match: {
+      //     'workingCopy._id': { $ne: learningObjectID },
+      //     'workingCopy.status': { $in: LearningObjectState.NOT_RELEASED },
+      //     'workingCopy.isRevision': true,
+      //   },
+      // },
+      // {
+      //   $replaceRoot: {
+      //     newRoot: '$workingCopy',
+      //   },
+      // },
       {
         $project: {
-          _id: 1,
+          status: 1,
         },
       },
     ])
     .toArray();
   if (revision.length > 0) {
-    return true;
+    return revision[0];
   }
-  return false;
+  return null;
 }
