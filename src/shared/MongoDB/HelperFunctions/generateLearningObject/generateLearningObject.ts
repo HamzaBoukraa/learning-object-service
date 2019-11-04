@@ -73,7 +73,7 @@ export async function generateLearningObject(
 
   const hasRevision = await learningObjectHasRevision(learningObject.cuid, learningObject.id);
   console.log(hasRevision);
-  if (hasRevision) {
+  if (hasRevision && this.requester) {
     if (hasRevision && hasRevision.status === LearningObject.Status.UNRELEASED) {
       if ((learningObject.author.username === requester.username)) {
         learningObject.attachRevisionUri();
