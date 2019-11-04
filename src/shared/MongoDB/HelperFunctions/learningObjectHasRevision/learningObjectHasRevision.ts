@@ -17,47 +17,10 @@ export async function learningObjectHasRevision(
   const db = MongoConnector.client().db('onion');
   const revision = await db
     .collection(COLLECTIONS.LEARNING_OBJECTS)
-    .aggregate([
-      {
-        $match: {
-          cuid: learningObjectCUID,
-          status: { $ne: LearningObject.Status.RELEASED },
-        },
-      },
-      {
-        $graphLookup: {
-          from: 'objects',
-          startWith: '$cuid',
-          connectFromField: 'cuid',
-          connectToField: 'cuid',
-          as: 'workingCopy',
-          restrictSearchWithMatch: {
-            status: { $in: LearningObjectState.NOT_RELEASED },
-          },
-        },
-      },
-      // { $unwind: { path: '$workingCopy', preserveNullAndEmptyArrays: true } },
-      // {
-      //   $match: {
-      //     'workingCopy._id': { $ne: learningObjectID },
-      //     'workingCopy.status': { $in: LearningObjectState.NOT_RELEASED },
-      //     'workingCopy.isRevision': true,
-      //   },
-      // },
-      // {
-      //   $replaceRoot: {
-      //     newRoot: '$workingCopy',
-      //   },
-      // },
-      {
-        $project: {
-          status: 1,
-        },
-      },
-    ])
+    .find({ cuid: learningObjectCUID})
     .toArray();
-  if (revision.length > 0) {
-    return revision[0];
+  if (revision.length > 1) {
+    return revision.filter(revised => (LearningObjectState.NOT_RELEASED.includes(revised.status)))[0];
   }
   return null;
 }

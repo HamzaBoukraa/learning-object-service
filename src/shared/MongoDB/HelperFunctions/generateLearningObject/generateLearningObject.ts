@@ -5,6 +5,8 @@ import { MongoConnector } from '../../MongoConnector';
 import { LearningOutcomeMongoDatastore } from '../../../../LearningOutcomes/datastores/LearningOutcomeMongoDatastore';
 import { learningObjectHasRevision } from '../learningObjectHasRevision/learningObjectHasRevision';
 import { DataStore } from '../../../interfaces/DataStore';
+import { ConfigurationServicePlaceholders } from 'aws-sdk/lib/config_service_placeholders';
+import { requesterIsVerified, requesterIsEditor } from '../../../AuthorizationManager';
 
 // TODO: Generating a full learning object should now entail generating files as well since they are an external resource
 /**
@@ -70,6 +72,7 @@ export async function generateLearningObject(
   });
 
   const hasRevision = await learningObjectHasRevision(learningObject.cuid, learningObject.id);
+  console.log(hasRevision);
   if (hasRevision) {
     if (hasRevision && hasRevision.status === LearningObject.Status.UNRELEASED) {
       if ((learningObject.author.username === requester.username)) {
@@ -78,7 +81,12 @@ export async function generateLearningObject(
     } else if (hasRevision.status === LearningObject.Status.PROOFING
                 || hasRevision.status === LearningObject.Status.WAITING
                 || hasRevision.status === LearningObject.Status.REVIEW) {
-      learningObject.attachRevisionUri();
+        if (requester.accessGroups.includes('admin') || requester.accessGroups.includes('editor') 
+            || requester.accessGroups.includes(`curator@${learningObject.collection}`)
+            || requester.accessGroups.includes(`reviewer@${learningObject.collection}`)) {
+
+            learningObject.attachRevisionUri();
+        }
     }
   }
   learningObject.attachResourceUris(process.env.GATEWAY_API);
