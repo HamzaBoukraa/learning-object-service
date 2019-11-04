@@ -69,12 +69,12 @@ export async function generateLearningObject(
     version: record.version,
   });
 
-  console.log('req', requester);
-
   const hasRevision = await learningObjectHasRevision(learningObject.cuid, learningObject.id);
   if (hasRevision) {
-    if ((hasRevision && hasRevision.status === LearningObject.Status.UNRELEASED) && (learningObject.author.username === requester.username)) {
-      learningObject.attachRevisionUri();
+    if (hasRevision && hasRevision.status === LearningObject.Status.UNRELEASED) {
+      if ((learningObject.author.username === requester.username)) {
+        learningObject.attachRevisionUri();
+      }
     } else if (hasRevision.status === LearningObject.Status.PROOFING
                 || hasRevision.status === LearningObject.Status.WAITING
                 || hasRevision.status === LearningObject.Status.REVIEW) {
