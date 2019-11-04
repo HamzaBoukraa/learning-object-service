@@ -863,12 +863,20 @@ export async function getLearningObjectSummaryById({
     if (learningObject) {
       const hasRevision = await mongoHelperFunctions.learningObjectHasRevision(learningObject.cuid, learningObject.id);
       if (hasRevision) {
-       learningObject.attachRevisionUri();
+        const objectsForCuid = await dataStore.fetchInternalLearningObjectByCuid(learningObject.cuid);
+        const latestUnreleasedVersion: LearningObject = objectsForCuid.filter(x => x.status === LearningObject.Status.UNRELEASED)[0];
+        console.log(latestUnreleasedVersion);
+        if ((latestUnreleasedVersion && latestUnreleasedVersion.status === LearningObject.Status.UNRELEASED) && (learningObject.author.username === requester.username)) {
+          learningObject.attachRevisionUri();
+        } else if (latestUnreleasedVersion === undefined) {
+          learningObject.attachRevisionUri();
+        }
       }
       learningObject.attachResourceUris(GATEWAY_API);
     } else {
       throw learningObjectNotFound;
     }
+    console.log('obj', learningObject);
     return mapLearningObjectToSummary(learningObject);
   } catch (e) {
     console.log(e);
