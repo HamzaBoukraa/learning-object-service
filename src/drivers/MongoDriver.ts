@@ -469,6 +469,13 @@ export class MongoDriver implements DataStore {
     });
   }
 
+  async deleteChangelogsAfterRelease(params: {cuid: string, date: string}): Promise<void> {
+    return this.changelogStore.deleteChangelogsAfterRelease({
+      cuid: params.cuid,
+      date: params.date,
+    });
+  }
+
   async fetchAllChangelogs(params: {
     cuid: string;
   }): Promise<ChangeLogDocument[]> {

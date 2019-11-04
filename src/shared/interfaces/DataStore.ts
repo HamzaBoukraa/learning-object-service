@@ -48,6 +48,7 @@ export interface DataStore
     date: string;
   }): Promise<ChangeLogDocument>;
   deleteChangelog(params: { cuid: string }): Promise<void>;
+  deleteChangelogsAfterRelease(params: { cuid: string, date: string }): Promise<void>;
   /*
    * READ Operations
    */

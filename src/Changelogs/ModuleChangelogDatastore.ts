@@ -143,4 +143,19 @@ export class ModuleChangelogDataStore implements ChangelogDataStore {
       .collection(COLLECTIONS.CHANGELOG)
       .remove({ cuid: params.cuid });
   }
+
+  /**
+   * Removes an entire document from the changelogs collection. This function is only triggered when a revision of a learning object
+   * is deleted so that all of the changelogs that were left on the revision.
+   * @param {string} cuid The cuid of the learning object that the requested changelog belongs to.
+   * @param {string} date The date of the last release of the learning object.
+   */
+  async deleteChangelogsAfterRelease(params: {
+    cuid: string,
+    date: string,
+  }): Promise<void> {
+    await this.db
+      .collection(COLLECTIONS.CHANGELOG)
+      .updateOne({cuid: params.cuid}, {$pull: { logs: {date: {$gt: parseInt(params.date, 10) }}}});
+  }
 }

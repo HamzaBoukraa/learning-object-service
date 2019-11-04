@@ -233,6 +233,7 @@ export function initializePrivate({
         library,
         id,
         requester,
+        isReleased: false,
       });
       res.sendStatus(204);
     } catch (e) {

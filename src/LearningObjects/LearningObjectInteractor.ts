@@ -691,7 +691,7 @@ async function deleteDuplicateResources(dataStore: DataStore, library: LibraryCo
 
   // delete the out-of-date Learning Object
   if (outOfDateObject) {
-    await deleteLearningObject({ dataStore, library, id: outOfDateObject.id, requester });
+    await deleteLearningObject({ dataStore, library, id: outOfDateObject.id, requester, isReleased: true });
   }
 }
 
@@ -1057,11 +1057,13 @@ export async function deleteLearningObject({
   library,
   requester,
   id,
+  isReleased,
 }: {
   dataStore: DataStore;
   library: LibraryCommunicator;
   requester: UserToken;
   id: string;
+  isReleased: boolean;
 }): Promise<void> {
   try {
     const learningObject = await dataStore.fetchLearningObject({
@@ -1081,15 +1083,27 @@ export async function deleteLearningObject({
     });
     await Gateways.submission().deletePreviousRelease({ learningObjectId: learningObject.id });
     await dataStore.deleteLearningObject(learningObject.id);
-    dataStore
-      .deleteChangelog({ cuid: learningObject.cuid })
-      .catch(e => {
-        reportError(
-          new Error(
-            `Problem deleting changelogs for Learning Object${learningObject.id}: ${e}`,
-          ),
-        );
-      });
+    const objectsForCuid = await dataStore.fetchInternalLearningObjectByCuid(learningObject.cuid);
+    const latestVersion: LearningObject = objectsForCuid.filter(x => x.status === LearningObject.Status.RELEASED)[0];
+    if (!isReleased) {
+      if (latestVersion.version > 0) {
+        await dataStore.deleteChangelogsAfterRelease({ cuid: learningObject.cuid, date: latestVersion.date }).catch(e => {
+          reportError(
+            new Error(
+              `Problem deleting changelogs for Learning Object ${learningObject.id}: ${e}`,
+            ),
+          );
+        });
+      } else {
+        await dataStore.deleteChangelog({ cuid: learningObject.cuid }).catch(e => {
+          reportError(
+            new Error(
+              `Problem deleting changelogs for Learning Object ${learningObject.id}: ${e}`,
+            ),
+          );
+        });
+      }
+    }
   } catch (e) {
     handleError(e);
   }
