@@ -2,6 +2,7 @@ import {
   LearningObjectSummary,
   CollectionAccessMap,
   ReleasedUserLearningObjectSearchQuery,
+  UserToken,
 } from '../types';
 import { LearningOutcomeDatastore } from '../../LearningOutcomes/datastores/LearningOutcomeDataStore';
 import { LearningObjectStatDatastore } from '../../LearningObjectStats/LearningObjectStatsInteractor';
@@ -112,10 +113,12 @@ export interface DataStore
   findReleasedLearningObject(params: {
     authorId: string;
     cuid: string;
+    requester?: UserToken,
   }): Promise<string>;
   fetchLearningObject(params: {
     id: string;
     full?: boolean;
+    requester?: UserToken;
   }): Promise<LearningObject>;
   fetchReleasedLearningObject(params: {
     id: string;
@@ -191,8 +194,8 @@ export interface DataStore
   deleteChild(parentId: string, childId: string): Promise<void>;
   addToCollection(learningObjectId: string, collection: string): Promise<void>;
 
-  fetchLearningObjectByCuid(cuid: string, version?: number): Promise<LearningObjectSummary[]>;
-  fetchInternalLearningObjectByCuid(cuid: string, version?: number): Promise<LearningObject[]>;
+  fetchLearningObjectByCuid(cuid: string, version?: number, requester?: UserToken): Promise<LearningObjectSummary[]>;
+  fetchInternalLearningObjectByCuid(cuid: string, version?: number, requester?: UserToken): Promise<LearningObject[]>;
 
   /*
    * DELETE Operations

@@ -1,9 +1,10 @@
 import { User, LearningObject, LearningOutcome } from '../../../entity';
-import { LearningObjectDocument } from '../../../types';
+import { LearningObjectDocument, UserToken } from '../../../types';
 import { UserServiceGateway } from '../../../gateways/user-service/UserServiceGateway';
 import { MongoConnector } from '../../MongoConnector';
 import { LearningOutcomeMongoDatastore } from '../../../../LearningOutcomes/datastores/LearningOutcomeMongoDatastore';
 import { learningObjectHasRevision } from '../learningObjectHasRevision/learningObjectHasRevision';
+import { DataStore } from '../../../interfaces/DataStore';
 
 // TODO: Generating a full learning object should now entail generating files as well since they are an external resource
 /**
@@ -20,6 +21,7 @@ export async function generateLearningObject(
   author: User,
   record: LearningObjectDocument,
   full?: boolean,
+  requester?: UserToken,
 ): Promise<LearningObject> {
   const LEARNING_OUTCOME_DATASTORE = new LearningOutcomeMongoDatastore(
     MongoConnector.client().db('onion'),
@@ -67,9 +69,17 @@ export async function generateLearningObject(
     version: record.version,
   });
 
+  console.log('req', requester);
+
   const hasRevision = await learningObjectHasRevision(learningObject.cuid, learningObject.id);
   if (hasRevision) {
-    learningObject.attachRevisionUri();
+    if ((hasRevision && hasRevision.status === LearningObject.Status.UNRELEASED) && (learningObject.author.username === requester.username)) {
+      learningObject.attachRevisionUri();
+    } else if (hasRevision.status === LearningObject.Status.PROOFING
+                || hasRevision.status === LearningObject.Status.WAITING
+                || hasRevision.status === LearningObject.Status.REVIEW) {
+      learningObject.attachRevisionUri();
+    }
   }
   learningObject.attachResourceUris(process.env.GATEWAY_API);
 

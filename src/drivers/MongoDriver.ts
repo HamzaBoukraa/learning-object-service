@@ -10,6 +10,7 @@ import {
   LearningObjectDocument,
   StandardOutcomeDocument,
   LearningObjectSummary,
+  UserToken,
 } from '../shared/types';
 import { UserServiceGateway } from '../shared/gateways/user-service/UserServiceGateway';
 import { LearningOutcomeMongoDatastore } from '../LearningOutcomes/datastores/LearningOutcomeMongoDatastore';
@@ -1009,9 +1010,11 @@ export class MongoDriver implements DataStore {
   async fetchLearningObject({
     id,
     full,
+    requester,
   }: {
     id: string;
     full?: boolean;
+    requester?: UserToken;
   }): Promise<LearningObject> {
     const doc = await this.db
       .collection(COLLECTIONS.LEARNING_OBJECTS)
@@ -1020,18 +1023,18 @@ export class MongoDriver implements DataStore {
       const author = await UserServiceGateway.getInstance().queryUserById(
         doc.authorID,
       );
-      return mongoHelperFunctions.generateLearningObject(author, doc, full);
+      return mongoHelperFunctions.generateLearningObject(author, doc, full, requester);
     }
     return null;
   }
 
-  async fetchLearningObjectByCuid(cuid: string, version?: number): Promise<LearningObjectSummary[]> {
-    const objects = await this.queryLearningObjectByCuid(cuid, version);
+  async fetchLearningObjectByCuid(cuid: string, version?: number, requester?: UserToken): Promise<LearningObjectSummary[]> {
+    const objects = await this.queryLearningObjectByCuid(cuid, version, requester);
     return objects.map(o => mapLearningObjectToSummary(o));
   }
 
-  async fetchInternalLearningObjectByCuid(cuid: string, version?: number): Promise<LearningObject[]> {
-    return await this.queryLearningObjectByCuid(cuid, version);
+  async fetchInternalLearningObjectByCuid(cuid: string, version?: number, requester?: UserToken): Promise<LearningObject[]> {
+    return await this.queryLearningObjectByCuid(cuid, version, requester);
   }
 
   /**
@@ -1042,7 +1045,7 @@ export class MongoDriver implements DataStore {
    * @returns {Promise<LearningObjectSummary[]>}
    * @memberof MongoDriver
    */
-  private async queryLearningObjectByCuid(cuid: string, version?: number): Promise<LearningObject[]> {
+  private async queryLearningObjectByCuid(cuid: string, version?: number, requester?: UserToken): Promise<LearningObject[]> {
     const query: { cuid: string, version?: number } = { cuid };
 
     if (version) {
@@ -1071,7 +1074,7 @@ export class MongoDriver implements DataStore {
 
     return await Promise.all(
       objects.map(
-        async o => await mongoHelperFunctions.generateLearningObject(author, o),
+        async o => await mongoHelperFunctions.generateLearningObject(author, o, false, requester),
       ),
     );
   }

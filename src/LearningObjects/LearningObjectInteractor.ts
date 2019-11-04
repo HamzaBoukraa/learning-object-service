@@ -94,7 +94,7 @@ export async function getLearningObjectByCuid({
   cuid: string;
   version?: number;
 }) {
-  const objects = await dataStore.fetchLearningObjectByCuid(cuid, version);
+  const objects = await dataStore.fetchLearningObjectByCuid(cuid, version, requester);
   let unauthorized: boolean;
 
   const payload = objects.filter(object => {
@@ -144,7 +144,7 @@ export async function getInternalLearningObjectByCuid({
   cuid: string;
   version?: number;
 }) {
-  const objects = await dataStore.fetchInternalLearningObjectByCuid(cuid, version);
+  const objects = await dataStore.fetchInternalLearningObjectByCuid(cuid, version, requester);
   let unauthorized: boolean;
 
   const payload = objects.filter(object => {
@@ -220,7 +220,7 @@ export async function getWorkingLearningObjectSummary({
   id: string;
 }): Promise<LearningObjectSummary> {
   try {
-    const object = await dataStore.fetchLearningObject({ id, full: false });
+    const object = await dataStore.fetchLearningObject({ id, full: false, requester: requester});
     if (!object) {
       throw new ResourceError(
         `Learning Object ${id} does not exist.`,
@@ -309,7 +309,7 @@ export async function getActiveLearningObjectSummary({
     const object =
       (await dataStore.fetchReleasedLearningObject({
         id,
-      })) || (await dataStore.fetchLearningObject({ id, full: false }));
+      })) || (await dataStore.fetchLearningObject({ id, full: false, requester: requester }));
     if (!object) {
       throw new ResourceError(
         `Learning Object ${id} does not exist.`,
@@ -606,6 +606,7 @@ export async function updateLearningObject({
     const learningObject = await dataStore.fetchLearningObject({
       id,
       full: false,
+      requester: requester,
     });
 
     if (!learningObject) {
@@ -713,7 +714,7 @@ export async function generateReleasableLearningObject({
   requester: UserToken;
 }): Promise<HierarchicalLearningObject> {
   const [object, children] = await Promise.all([
-    dataStore.fetchLearningObject({ id, full: true }),
+    dataStore.fetchLearningObject({ id, full: true, requester: requester }),
     loadWorkingParentsReleasedChildObjects({
       dataStore,
       parentId: id,
@@ -782,13 +783,14 @@ export async function getLearningObjectById({
       const learningObjectSummary = await dataStore.fetchLearningObject({
         id,
         full: false,
+        requester: requester,
       });
       if (!learningObjectSummary) {
         throw learningObjectNotFound;
       }
       authorizeReadAccess({ requester, learningObject: learningObjectSummary });
       [learningObject, files] = await Promise.all([
-        dataStore.fetchLearningObject({ id, full: true }),
+        dataStore.fetchLearningObject({ id, full: true, requester: requester }),
         Gateways.fileMetadata().getAllFileMetadata({
           requester,
           learningObjectId: id,
@@ -802,10 +804,6 @@ export async function getLearningObjectById({
     }
 
     learningObject.attachResourceUris(GATEWAY_API);
-    const hasRevision = await mongoHelperFunctions.learningObjectHasRevision(learningObject.cuid, learningObject.id);
-    if (hasRevision) {
-      learningObject.attachRevisionUri();
-    }
 
     return learningObject;
   } catch (e) {
@@ -853,6 +851,7 @@ export async function getLearningObjectSummaryById({
       learningObject = await dataStore.fetchLearningObject({
         id,
         full: false,
+        requester: requester,
       });
       authorizeReadAccess({
         requester,
@@ -861,16 +860,6 @@ export async function getLearningObjectSummaryById({
       loadingReleased = false;
     }
     if (learningObject) {
-      const hasRevision = await mongoHelperFunctions.learningObjectHasRevision(learningObject.cuid, learningObject.id);
-      if (hasRevision) {
-        const objectsForCuid = await dataStore.fetchInternalLearningObjectByCuid(learningObject.cuid);
-        const latestUnreleasedVersion: LearningObject = objectsForCuid.filter(x => x.status === LearningObject.Status.UNRELEASED)[0];
-        if ((latestUnreleasedVersion && latestUnreleasedVersion.status === LearningObject.Status.UNRELEASED) && (learningObject.author.username === requester.username)) {
-          learningObject.attachRevisionUri();
-        } else if (latestUnreleasedVersion === undefined) {
-          learningObject.attachRevisionUri();
-        }
-      }
       learningObject.attachResourceUris(GATEWAY_API);
     } else {
       throw learningObjectNotFound;
@@ -929,7 +918,7 @@ export async function getLearningObjectSummary({
   dataStore: DataStore;
   requester: UserToken;
 }): Promise<LearningObjectSummary> {
-  const learningObject = await dataStore.fetchLearningObject({ id });
+  const learningObject = await dataStore.fetchLearningObject({ id, requester: requester });
   const learningObjectNotFound = new ResourceError(
     `No Learning Object ${id} exists.`,
     ResourceErrorReason.NOT_FOUND,
@@ -1075,6 +1064,7 @@ export async function deleteLearningObject({
     const learningObject = await dataStore.fetchLearningObject({
       id,
       full: false,
+      requester: requester,
     });
     if (!learningObject) {
       throw new ResourceError(
@@ -1210,7 +1200,7 @@ export async function updateReadme(params: {
     if (!object && id) {
       let files: LearningObject.Material.File[] = [];
       [object, files] = await Promise.all([
-        params.dataStore.fetchLearningObject({ id, full: true }),
+        params.dataStore.fetchLearningObject({ id, full: true, requester: params.requester }),
         Gateways.fileMetadata().getAllFileMetadata({
           requester: params.requester,
           learningObjectId: id,
@@ -1285,6 +1275,7 @@ export async function getMaterials({
     const learningObject = await dataStore.fetchLearningObject({
       id,
       full: false,
+      requester: requester,
     });
     if (!learningObject) {
       throw new ResourceError(
