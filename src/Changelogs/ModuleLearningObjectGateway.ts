@@ -19,4 +19,21 @@ export class ModuleLearningObjectGateway implements LearningObjectGateway {
   }): Promise<LearningObjectSummary> {
     return this.adapter.getReleasedLearningObjectSummary(params.id);
   }
+
+  /**
+   * * Proxies `getLearningObjectByCuid` request to LearningObjectAdapter
+   *
+   * @param {{
+   *     requester: Requester,
+   *     cuid: string,
+   *   }} params
+   * @returns
+   * @memberof ModuleLearningObjectGateway
+   */
+  getLearningObjectByCuid(params: {
+    requester: Requester,
+    cuid: string,
+  }) {
+    return this.adapter.getLearningObjectByCuid(params.cuid, params.requester);
+  }
 }

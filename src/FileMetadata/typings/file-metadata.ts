@@ -65,19 +65,19 @@ export interface FileMetadataInsert extends FileMetadata {
    */
   packageable: boolean;
   /**
-   * Revision number the file copy is stored under in S3
+   * Version number the file copy is stored under in S3
    * *** Example ***
-   * Consider the example where we have Learning Object A with an id of exampleId and revision id of 1.
-   * This file, File 1, was first uploaded under revision 1 of Learning Object A
+   * Consider the example where we have Learning Object A with an id of exampleId and version of 1.
+   * This file, File 1, was first uploaded under version 1 of Learning Object A
    * The path of File 1 in S3 might look something like `/exampleID/r1/File 1`
    * The `storageRevision` of File 1 will be `1`
    *
-   * If another revision of Learning Object A is made, the Learning Object's revision id would increment to 2
-   * If this file, File 1 was not overwritten in revision 2 of Learning Object A, the path of File 1 in S3 will still look something like `/exampleID/r1/File 1`
+   * If another version of Learning Object A is made, the Learning Object's version would increment to 2
+   * If this file, File 1 was not overwritten in version 2 of Learning Object A, the path of File 1 in S3 will still look something like `/exampleID/r1/File 1`
    * The `storageRevision` of File 1 will still be `1`, to point to the originally uploaded file
    *
-   * If a third revision of Learning Object A is made, the Learning Object's revision id would increment to 3
-   * If this file, File 1, is overwritten in revision 3 of Learning Object A, the path of File 1 in S3 will now look something like `/exampleID/r3/File 1`
+   * If a third version of Learning Object A is made, the Learning Object's version would increment to 3
+   * If this file, File 1, is overwritten in version 3 of Learning Object A, the path of File 1 in S3 will now look something like `/exampleID/r3/File 1`
    * The `storageRevision` of File 1 will now be `3`, to point to the newly uploaded file
    */
   storageRevision: number;

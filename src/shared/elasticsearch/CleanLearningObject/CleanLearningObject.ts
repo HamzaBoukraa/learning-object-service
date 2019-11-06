@@ -41,7 +41,7 @@ function formatLearningObjectSearchDocument(
     levels: learningObject.levels,
     name: learningObject.name,
     outcomes: learningObject.outcomes,
-    revision: learningObject.revision,
+    version: learningObject.version,
     status: learningObject.status,
   };
   return learningObjectSearchDocument;

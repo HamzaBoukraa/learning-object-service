@@ -31,6 +31,7 @@ import {
 import { LearningObjectSearch } from '../..';
 import { UserLearningObjectDatastore } from '../../interfaces/UserLearningObjectDatastore';
 import { UserGateway } from '../../interfaces/UserGateway';
+import { learningObjectHasRevision } from '../../../shared/MongoDB/HelperFunctions';
 
 namespace Gateways {
   export const userGateway = () =>
@@ -47,7 +48,7 @@ const GATEWAY_API = process.env.GATEWAY_API;
  * *** NOTES ***
  * If the specified user cannot be found, a NotFound ResourceError is thrown.
  * Only the author and privileged users are allowed to view Learning Object drafts.
- * "Drafts" are defined as 'not released' Learning Objects that have never been released or have a `revision` id of `0`, so
+ * "Drafts" are defined as 'not released' Learning Objects that have never been released or have a `version` of `0`, so
  * if the `draftsOnly` filter is specified, the `status` filter must not have a value of `released`.
  * Only authors can see drafts that are not submitted for review; `unreleased` || `rejected`.
  * Admins and editors can see all Learning Objects submitted for review.
@@ -106,7 +107,7 @@ export async function searchUsersObjects({
         );
       }
 
-      searchQuery.revision = 0;
+      searchQuery.version = 0;
     }
 
     const userNotFoundError = `Cannot load Learning Objects for user ${authorUsername}. User ${authorUsername} does not exist.`;
@@ -132,10 +133,18 @@ export async function searchUsersObjects({
         searchQuery,
         user.id,
       );
-      const releasedLearningObjectSummaries = learningObjects.map(objects => {
-        objects.attachResourceUris(GATEWAY_API);
-        return mapLearningObjectToSummary(objects);
-      });
+      const releasedLearningObjectSummaries = await Promise.all(
+        learningObjects.map(async (object) => {
+          object.attachResourceUris(GATEWAY_API);
+          await learningObjectHasRevision(object.cuid, object.id).then(hasRevision => {
+            if (hasRevision) {
+              object.attachRevisionUri();
+            }
+          });
+          return mapLearningObjectToSummary(object);
+        }),
+      );
+
       return releasedLearningObjectSummaries;
     }
 
@@ -167,10 +176,17 @@ export async function searchUsersObjects({
       user.id,
       collectionAccessMap,
     );
-    const learningObjectSummaries = learningObjects.map(objects => {
-      objects.attachResourceUris(GATEWAY_API);
-      return mapLearningObjectToSummary(objects);
-    });
+    const learningObjectSummaries = await Promise.all(
+      learningObjects.map(async object => {
+        object.attachResourceUris(GATEWAY_API);
+        await learningObjectHasRevision(object.cuid, object.id).then(hasRevision => {
+          if (hasRevision) {
+            object.attachRevisionUri();
+          }
+        });
+        return mapLearningObjectToSummary(object);
+      }),
+    );
     return learningObjectSummaries;
   } catch (e) {
     handleError(e);

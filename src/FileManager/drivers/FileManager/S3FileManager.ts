@@ -49,19 +49,19 @@ export class S3FileManager implements FileManager {
    */
   async upload({
     authorUsername,
-    learningObjectId,
-    learningObjectRevisionId,
+    learningObjectCUID,
+    version,
     file,
   }: {
     authorUsername: string;
-    learningObjectId: string;
-    learningObjectRevisionId: number;
+    learningObjectCUID: string;
+    version: number;
     file: FileUpload;
   }): Promise<void> {
     const Key: string = await this.generateObjectPath({
       authorUsername,
-      learningObjectId,
-      learningObjectRevisionId,
+      learningObjectCUID,
+      version,
       path: file.path,
     });
     const uploadParams = {
@@ -82,19 +82,19 @@ export class S3FileManager implements FileManager {
    */
   async delete({
     authorUsername,
-    learningObjectId,
-    learningObjectRevisionId,
+    learningObjectCUID,
+    version,
     path,
   }: {
     authorUsername: string;
-    learningObjectId: string;
-    learningObjectRevisionId: number;
+    learningObjectCUID: string;
+    version: number;
     path: string;
   }): Promise<void> {
     const Key: string = await this.generateObjectPath({
       authorUsername,
-      learningObjectId,
-      learningObjectRevisionId,
+      learningObjectCUID,
+      version,
       path,
     });
     const deleteParams = {
@@ -128,13 +128,13 @@ export class S3FileManager implements FileManager {
    */
   async deleteFolder({
     authorUsername,
-    learningObjectId,
-    learningObjectRevisionId,
+    learningObjectCUID,
+    version,
     path,
   }: {
     authorUsername: string;
-    learningObjectId: string;
-    learningObjectRevisionId: number;
+    learningObjectCUID: string;
+    version: number;
     path: string;
   }): Promise<void> {
     if (path[path.length] !== '/') {
@@ -142,8 +142,8 @@ export class S3FileManager implements FileManager {
     }
     const storagePath: string = (await this.generateObjectPath({
       authorUsername,
-      learningObjectId,
-      learningObjectRevisionId,
+      learningObjectCUID,
+      version,
       path,
     })).replace(/\/\//gi, '/');
 
@@ -169,8 +169,8 @@ export class S3FileManager implements FileManager {
     if (listedObjects.IsTruncated)
       await this.deleteFolder({
         authorUsername,
-        learningObjectId,
-        learningObjectRevisionId,
+        learningObjectCUID,
+        version,
         path,
       });
   }
@@ -181,21 +181,23 @@ export class S3FileManager implements FileManager {
    * @returns {Readable}
    * @memberof S3FileManager
    */
-  async streamFile({
-    authorUsername,
-    learningObjectId,
-    learningObjectRevisionId,
-    path,
-  }: {
+  async streamFile(params: {
     authorUsername: string;
-    learningObjectId: string;
-    learningObjectRevisionId: number;
+    learningObjectCUID: string;
+    version: number;
     path: string;
   }): Promise<Readable> {
+    const {
+      authorUsername,
+      learningObjectCUID,
+      version,
+      path,
+    } = params;
+
     const Key: string = await this.generateObjectPath({
       authorUsername,
-      learningObjectId,
-      learningObjectRevisionId,
+      learningObjectCUID,
+      version,
       path,
     });
     const fetchParams = {
@@ -208,10 +210,51 @@ export class S3FileManager implements FileManager {
       .on('error', (err: AWSError) => {
         // TimeoutError will be thrown if the client cancels the download
         if (err.code !== 'TimeoutError') {
-          reportError({...err, message: path } as Error);
+          reportError({ ...err, message: path } as Error);
         }
       });
     return stream;
+  }
+
+  async copyDirectory(params: {
+    authorUsername: string;
+    learningObjectCUID: string;
+    version: number;
+    newLearningObjectVersion: number;
+  }): Promise<void> {
+    const {
+      authorUsername,
+      learningObjectCUID,
+      version,
+      newLearningObjectVersion,
+    } = params;
+
+    const copyFromPath = await this.generateObjectPath({
+      authorUsername,
+      learningObjectCUID,
+      version: version,
+    });
+
+    const copyToPath = await this.generateObjectPath({
+      authorUsername,
+      learningObjectCUID,
+      version: newLearningObjectVersion,
+    });
+
+    const files = await this.listFiles(copyFromPath);
+
+    await Promise.all(
+      files.map((file: any) => {
+        let fileName = file.Key.split('/').pop();
+
+        return this.copyObject({
+          copyFromPath: `${S3_CONFIG.FILES_BUCKET}/${copyFromPath}/${fileName}`,
+          copyToPath: `${copyToPath}/${
+            file.Key.split('/')[file.Key.split('/').length - 1]
+          }`,
+        });
+      }),
+    );
   }
 
   /**
@@ -236,19 +279,19 @@ export class S3FileManager implements FileManager {
    */
   async hasAccess({
     authorUsername,
-    learningObjectId,
-    learningObjectRevisionId,
+    learningObjectCUID,
+    version,
     path,
   }: {
     authorUsername: string;
-    learningObjectId: string;
-    learningObjectRevisionId: number;
+    learningObjectCUID: string;
+    version: number;
     path: string;
   }): Promise<boolean> {
     const Key: string = await this.generateObjectPath({
       authorUsername,
-      learningObjectId,
-      learningObjectRevisionId,
+      learningObjectCUID,
+      version,
       path,
     });
     const fetchParams = {
@@ -274,7 +317,7 @@ export class S3FileManager implements FileManager {
    * @private
    * @param {string} authorUsername [The Learning Object's author's username]
    * @param {string} learningObjectId [The id of the Learning Object to upload file to]
-   * @param {number} learningObjectRevisionId [The revision id of the Learning Object]
+   * @param {number} version [The version of the Learning Object]
    * @param {string} path [The path of the object]
    *
    * @returns {Promise<string>}
@@ -282,22 +325,55 @@ export class S3FileManager implements FileManager {
    */
   private async generateObjectPath({
     authorUsername,
-    learningObjectId,
-    learningObjectRevisionId,
+    learningObjectCUID,
+    version,
     path,
   }: {
     authorUsername: string;
-    learningObjectId: string;
-    learningObjectRevisionId: number;
-    path: string;
+    learningObjectCUID: string;
+    version: number;
+    path?: string;
   }): Promise<string> {
     try {
       const cognitoId: string = await FileAccessIdentitiesAdapter.getInstance().getFileAccessIdentity(
         authorUsername,
       );
-      return `${cognitoId}/${learningObjectId}/${learningObjectRevisionId}/${path}`;
+
+      if (path) {
+        return `${cognitoId}/${learningObjectCUID}/${version}/${path}`;
+      }
+
+      return `${cognitoId}/${learningObjectCUID}/${version}`;
     } catch (err) {
       reportError(err);
     }
+  }
+
+  private async listFiles(path: string, files: any[] = []): Promise<any> {
+    const listParams = {
+      Bucket: S3_CONFIG.FILES_BUCKET,
+      Prefix: `${path}/`.replace(/\/\//gi, '/'),
+    };
+    const objects = await this.s3.listObjectsV2(listParams).promise();
+    if (objects.IsTruncated) {
+      return this.listFiles(path, objects.Contents);
+    }
+    files = [...files, ...objects.Contents];
+    return files;
+  }
+
+  private async copyObject({
+    copyFromPath,
+    copyToPath,
+  }: {
+    copyFromPath: string;
+    copyToPath: string;
+  }): Promise<void> {
+    const copyParams = {
+      Bucket: S3_CONFIG.FILES_BUCKET,
+      CopySource: encodeURIComponent(copyFromPath),
+      Key: copyToPath,
+    };
+    await this.s3.copyObject(copyParams).promise();
   }
 }

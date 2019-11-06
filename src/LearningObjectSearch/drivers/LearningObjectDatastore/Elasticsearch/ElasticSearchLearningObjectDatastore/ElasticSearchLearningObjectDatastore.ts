@@ -441,7 +441,7 @@ export class ElasticSearchLearningObjectDatastore
    * Appends aggregation stage to filter out duplicate objects and only return furthest along Learning Object by:
    *
    * Grouping results by `id` to place Learning Object copies within the same bucket
-   * Sorting the items within the bucket by `revision` in ascending order
+   * Sorting the items within the bucket by `version` in ascending order
    * Returning only the first item in the sorted bucket
    *
    * *** NOTE ***
@@ -530,7 +530,7 @@ export class ElasticSearchLearningObjectDatastore
                     top_hits: {
                       sort: [
                         {
-                          revision: { order: 'asc' },
+                          version: { order: 'asc' },
                         },
                       ],
                       size: 1,

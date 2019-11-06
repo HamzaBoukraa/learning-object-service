@@ -2,6 +2,7 @@ import {
   LearningObjectSummary,
   CollectionAccessMap,
   ReleasedUserLearningObjectSearchQuery,
+  UserToken,
 } from '../types';
 import { LearningOutcomeDatastore } from '../../LearningOutcomes/datastores/LearningOutcomeDataStore';
 import { LearningObjectStatDatastore } from '../../LearningObjectStats/LearningObjectStatsInteractor';
@@ -24,7 +25,7 @@ export interface DataStore
 
   // Changelog
   createChangelog(params: {
-    learningObjectId: string;
+    cuid: string;
     author: {
       userId: string;
       name: string;
@@ -34,20 +35,21 @@ export interface DataStore
     changelogText: string;
   }): Promise<void>;
   fetchChangelogsBeforeDate(params: {
-    learningObjectId: string;
+    cuid: string;
     date: string;
   }): Promise<ChangeLogDocument[]>;
   fetchAllChangelogs(params: {
-    learningObjectId: string;
+    cuid: string;
   }): Promise<ChangeLogDocument[]>;
   fetchRecentChangelog(params: {
-    learningObjectId: string;
+    cuid: string;
   }): Promise<ChangeLogDocument>;
   fetchRecentChangelogBeforeDate(params: {
-    learningObjectId: string;
+    cuid: string;
     date: string;
   }): Promise<ChangeLogDocument>;
-  deleteChangelog(params: { learningObjectId: string }): Promise<void>;
+  deleteChangelog(params: { cuid: string }): Promise<void>;
+  deleteChangelogsAfterRelease(params: { cuid: string, date: string }): Promise<void>;
   /*
    * READ Operations
    */
@@ -84,31 +86,39 @@ export interface DataStore
    */
   fetchReleasedMaterials(id: string): Promise<LearningObject.Material>;
   /**
-   * Fetches summary of Learning Object by id and revision number
+   * Fetches summary of Learning Object by id and version number
    *
    * @param {string} id [Id of the LearningObject]
-   * @param {number} revision [The revision number of the LearningObject]
+   * @param {number} version [The version number of the LearningObject]
    * @returns {Promise<LearningObjectSummary>}
    * @memberof DataStore
    */
   fetchLearningObjectRevision(params: {
     id: string;
-    revision: number;
+    version: number;
     author?: User;
   }): Promise<LearningObjectSummary>;
   getUserObjects(username: string): Promise<string[]>;
   findLearningObject(params: {
     authorId: string;
-    name: string;
+    cuid: string;
+    version?: number;
     status?: string;
+  }): Promise<string>;
+  findLearningObjectByName(params: {
+    authorId: String;
+    name: string;
+    version?: number;
   }): Promise<string>;
   findReleasedLearningObject(params: {
     authorId: string;
-    name: string;
+    cuid: string;
+    requester?: UserToken,
   }): Promise<string>;
   fetchLearningObject(params: {
     id: string;
     full?: boolean;
+    requester?: UserToken;
   }): Promise<LearningObject>;
   fetchReleasedLearningObject(params: {
     id: string;
@@ -152,7 +162,8 @@ export interface DataStore
     full?: boolean;
   }): Promise<LearningObjectSummary[]>;
   checkLearningObjectExistence(params: {
-    learningObjectId: string;
+    learningObjectId?: string;
+    cuid?: string;
     userId: string;
   }): Promise<LearningObject>;
 
@@ -183,7 +194,8 @@ export interface DataStore
   deleteChild(parentId: string, childId: string): Promise<void>;
   addToCollection(learningObjectId: string, collection: string): Promise<void>;
 
-  fetchLearningObjectByCuid(cuid: string, version?: number): Promise<LearningObjectSummary[]>;
+  fetchLearningObjectByCuid(cuid: string, version?: number, requester?: UserToken): Promise<LearningObjectSummary[]>;
+  fetchInternalLearningObjectByCuid(cuid: string, version?: number, requester?: UserToken): Promise<LearningObject[]>;
 
   /*
    * DELETE Operations

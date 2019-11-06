@@ -19,8 +19,8 @@ const learningObjectSummaryStub: LearningObjectSummary = {
   length: 'test_length',
   levels: ['test'],
   name: 'test_name',
-  hasRevision: false,
-  revision: 0,
+  revisionUri: 'test_uri',
+  version: 0,
   status: 'test_status',
 };
 
@@ -53,7 +53,7 @@ describe('When buildHierarchicalLearningObject is called', () => {
   describe('and the requester provides a valid Learning Object', () => {
     it('should return a complete hierarchy Learning Object', async () => {
       const buildHierarchicalLearningObject = (await import(
-        './buildHierarchicalLearningObject'
+        './buildHierarchicalLearningObject',
       )).buildHierarchicalLearningObject;
       const hierarchy = await buildHierarchicalLearningObject(
         {

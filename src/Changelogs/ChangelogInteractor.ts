@@ -13,7 +13,7 @@ import { UserServiceGateway } from '../shared/gateways/user-service/UserServiceG
  * Instruct the data store to create a new log in the change logs collection
  *
  * @param {DataStore} params.dataStore An instance of DataStore
- * @param {string} params.learningObjectId The id of the learning object that the requested changelog belongs to
+ * @param {string} params.cuid The cuid of the learning object that the requested changelog belongs to
  * @param {string} params.userId The id of the user that wrote the incoming changelog
  * @param {string} params.changelogText The contents of the incoming changelog
  *
@@ -21,14 +21,14 @@ import { UserServiceGateway } from '../shared/gateways/user-service/UserServiceG
  */
 export async function createChangelog(params: {
   dataStore: DataStore,
-  learningObjectId: string,
+  cuid: string,
   user: UserToken,
   userId: string,
   changelogText: string,
 }): Promise<void> {
   const role = await authorizeWriteRequest({
     dataStore: params.dataStore,
-    learningObjectId: params.learningObjectId,
+    cuid: params.cuid,
     userId: params.userId,
     user: params.user,
   });
@@ -41,7 +41,7 @@ export async function createChangelog(params: {
     }),
   };
   await params.dataStore.createChangelog({
-    learningObjectId: params.learningObjectId,
+    cuid: params.cuid,
     author,
     changelogText: params.changelogText,
   });
@@ -52,7 +52,7 @@ export async function createChangelog(params: {
  *
  * @deprecated remove when client routes are updated
  * @param {DataStore} dataStore An instance of DataStore
- * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
+ * @param {string} cuid The cuid of the learning object that the requested changelog belongs to
  * @param {string} userId The id of learning object author
  * @param {UserToken} user information about the requester
  *
@@ -60,17 +60,17 @@ export async function createChangelog(params: {
  */
 export async function getRecentChangelog(params: {
   dataStore: DataStore,
-  learningObjectId: string,
+  cuid: string,
   userId: string,
   user: UserToken,
 }): Promise<ChangeLogDocument> {
   await validateReadRequest({
     dataStore: params.dataStore,
-    learningObjectId: params.learningObjectId,
+    cuid: params.cuid,
     userId: params.userId,
   });
   return await params.dataStore.fetchRecentChangelog({
-    learningObjectId: params.learningObjectId,
+    cuid: params.cuid,
   });
 }
 
@@ -95,7 +95,7 @@ export async function getRecentChangelog(params: {
  *
  * @param {LearningObjectGateway} learningObjectGateway an instance of LearningObjectGateway
  * @param {DataStore} dataStore An instance of DataStore
- * @param {string} learningObjectId The id of the learning object that the requested changelog belongs to
+ * @param {string} cuid The cuid of the learning object that the requested changelog belongs to
  * @param {string} userId The id of learning object author
  * @param {UserToken} user information about the requester
  * @param {optional parameter - boolean} recent if true, return only the most recent
@@ -111,33 +111,36 @@ export async function getRecentChangelog(params: {
 export async function getChangelogs(params: {
   learningObjectGateway: LearningObjectGateway;
   dataStore: DataStore,
-  learningObjectId: string,
+  cuid: string,
   userId: string,
   user: UserToken,
   recent?: boolean,
   minusRevision?: boolean,
 }): Promise<ChangeLogDocument[] | ChangeLogDocument> {
-  const learningObject = await validateReadRequest({
+  await validateReadRequest({
     dataStore: params.dataStore,
-    learningObjectId: params.learningObjectId,
+    cuid: params.cuid,
     userId: params.userId,
   });
+
+  const objectsForCuid = await params.learningObjectGateway.getLearningObjectByCuid({ requester: params.user, cuid: params.cuid  });
+  const releasedLearningObjectCopy = objectsForCuid.find(x => x.status === LearningObject.Status.RELEASED);
+
   /**
    * The Learning Object does not have any revisions and is
    * released. Return all change logs for this Learning Object
    * for all logged in users.
    */
   if (
-    learningObject.revision === 0 &&
-    learningObject.status === LearningObject.Status.RELEASED
+    objectsForCuid.length === 1 && releasedLearningObjectCopy
   ) {
     if (params.recent) {
       return await params.dataStore.fetchRecentChangelog({
-        learningObjectId: params.learningObjectId,
+        cuid: params.cuid,
       });
     } else {
       return await params.dataStore.fetchAllChangelogs({
-        learningObjectId: params.learningObjectId,
+        cuid: params.cuid,
       });
     }
   }
@@ -146,24 +149,22 @@ export async function getChangelogs(params: {
    * not released. Return all change logs for this Learning Object
    * for admins, editors, and Learning Object author.
    */
-
   // tslint:disable-next-line:one-line
   else if (
-    learningObject.revision === 0 &&
-    learningObject.status !== LearningObject.Status.RELEASED
+    objectsForCuid.length === 1
   ) {
     await hasChangelogAccess({
       user: params.user,
       dataStore: params.dataStore,
-      learningObjectId: params.learningObjectId,
+      cuid: params.cuid,
     });
     if (params.recent) {
       return await params.dataStore.fetchRecentChangelog({
-        learningObjectId: params.learningObjectId,
+        cuid: params.cuid,
       });
     } else {
       return await params.dataStore.fetchAllChangelogs({
-        learningObjectId: params.learningObjectId,
+        cuid: params.cuid,
       });
     }
   }
@@ -174,21 +175,18 @@ export async function getChangelogs(params: {
 
   // tslint:disable-next-line:one-line
   else if (
-    learningObject.revision > 0 &&
+    objectsForCuid.length === 2 &&
+    releasedLearningObjectCopy &&
     toBoolean(params.minusRevision)
   ) {
-    const releasedLearningObjectCopy = await params.learningObjectGateway.getReleasedLearningObjectSummary({
-      requester: params.user,
-      id: params.learningObjectId,
-    });
     if (params.recent) {
       return await params.dataStore.fetchRecentChangelogBeforeDate({
-        learningObjectId: params.learningObjectId,
+        cuid: params.cuid,
         date: releasedLearningObjectCopy.date,
       });
     } else {
       return await params.dataStore.fetchChangelogsBeforeDate({
-        learningObjectId: params.learningObjectId,
+        cuid: params.cuid,
         date: releasedLearningObjectCopy.date,
       });
     }
@@ -201,21 +199,22 @@ export async function getChangelogs(params: {
 
   // tslint:disable-next-line:one-line
   else if (
-    learningObject.revision > 0 &&
+    objectsForCuid.length === 2 &&
+    releasedLearningObjectCopy &&
     !toBoolean(params.minusRevision)
   ) {
     await hasChangelogAccess({
       user: params.user,
       dataStore: params.dataStore,
-      learningObjectId: params.learningObjectId,
+      cuid: params.cuid,
     });
     if (params.recent) {
       return await params.dataStore.fetchRecentChangelog({
-        learningObjectId: params.learningObjectId,
+        cuid: params.cuid,
       });
     } else {
       return await params.dataStore.fetchAllChangelogs({
-        learningObjectId: params.learningObjectId,
+        cuid: params.cuid,
       });
     }
   }
@@ -237,18 +236,18 @@ export async function getChangelogs(params: {
  */
 async function authorizeWriteRequest(params: {
   dataStore: DataStore,
-  learningObjectId: string,
+  cuid: string,
   userId: string,
   user: UserToken,
 }): Promise<string> {
   const learningObject = await params.dataStore.checkLearningObjectExistence({
-    learningObjectId: params.learningObjectId,
+    cuid: params.cuid,
     userId: params.userId,
   });
 
   if (!learningObject) {
     throw new ResourceError(
-      `Learning Object ${params.learningObjectId} not found for user ${params.userId}`,
+      `Learning Object ${params.cuid} not found for user ${params.userId}`,
       ResourceErrorReason.NOT_FOUND,
     );
   }
@@ -256,7 +255,7 @@ async function authorizeWriteRequest(params: {
   const role = await hasChangelogAccess({
     user: params.user,
     dataStore: params.dataStore,
-    learningObjectId: params.learningObjectId,
+    cuid: params.cuid,
   });
 
   return role;
@@ -275,17 +274,17 @@ async function authorizeWriteRequest(params: {
  */
 async function validateReadRequest(params: {
   dataStore: DataStore,
-  learningObjectId: string,
+  cuid: string,
   userId: string,
 }): Promise<LearningObject> {
   const learningObject = await params.dataStore.checkLearningObjectExistence({
-    learningObjectId: params.learningObjectId,
+    cuid: params.cuid,
     userId: params.userId,
   });
 
   if (!learningObject) {
     throw new ResourceError(
-      `Learning Object ${params.learningObjectId} not found for user ${params.userId}`,
+      `Learning Object ${params.cuid} not found for user ${params.userId}`,
       ResourceErrorReason.NOT_FOUND,
     );
   }

@@ -2,20 +2,21 @@ import {
   UserToken,
   LearningObjectSummary,
   FileUpload,
-} from '../../shared/types';
-import { FileManagerModule } from '../FileManagerModule';
-import { LearningObjectGateway } from '../interfaces';
-import { LearningObjectFilter } from '../../LearningObjects/typings';
+} from '../../../shared/types';
+import { FileManagerModule } from '../../FileManagerModule';
+import { LearningObjectGateway, FileManager } from '../../interfaces';
+import { LearningObjectFilter } from '../../../LearningObjects/typings';
 import {
   LearningObject,
   HierarchicalLearningObject,
-} from '../../shared/entity';
-import { downloadBundle, DownloadBundleParams } from './downloadBundle';
-import { ResourceErrorReason, ResourceError } from '../../shared/errors';
-import { Gateways } from './shared/dependencies';
-import { Stream } from 'stream';
-import { HierarchyGateway } from '../gateways/HierarchyGateway/ModuleHierarchyGateway';
-import FileManagerModuleErrorMessages from './shared/errors';
+  User,
+} from '../../../shared/entity';
+import { DownloadBundleParams } from './downloadBundle';
+import { Gateways } from '../shared/dependencies';
+import { Stream, Readable } from 'stream';
+import { HierarchyGateway } from '../../gateways/HierarchyGateway/ModuleHierarchyGateway';
+import FileManagerModuleErrorMessages from '../shared/errors';
+import { Stubs } from '../../../tests/stubs';
 
 const requesterStub: UserToken = {
   username: 'test-username',
@@ -25,12 +26,15 @@ const requesterStub: UserToken = {
   emailVerified: true,
   accessGroups: [],
 };
-
+const stubs = new Stubs();
 const downloadBundleParamStub: DownloadBundleParams = {
   requester: requesterStub,
-  learningObjectAuthorUsername: 'unittest',
-  learningObjectId: 'unittest',
-  revision: true,
+  learningObject: stubs.learningObject,
+};
+
+const workingDownloadBundleParamStub: DownloadBundleParams = {
+  requester: requesterStub,
+  learningObject: new LearningObject({ name: 'test', author: new User({ username: 'test' }), status: 'waiting' }),
 };
 
 const LearningObjectStub = {
@@ -39,7 +43,52 @@ const LearningObjectStub = {
   },
 } as LearningObject;
 
+const LearningObjectSummaryStub = {
+  author: {
+    username: '',
+  },
+} as LearningObjectSummary ;
+
+class StubFileManager implements FileManager {
+  upload(params: { authorUsername: string; learningObjectCUID: string; version: number; file: FileUpload; }): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+  delete(params: { authorUsername: string; learningObjectCUID: string; version: number; path: string; }): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+  deleteFolder(params: { authorUsername: string; learningObjectCUID: string; version: number; path: string; }): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+  async streamFile(params: { authorUsername: string; learningObjectCUID: string; version: number; path: string; }): Promise<Readable> {
+    return new Readable();
+  }
+  copyDirectory(params: { authorUsername: string; learningObjectCUID: string; version: number; newLearningObjectVersion: number; }): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+  async hasAccess(params: { authorUsername: string; learningObjectCUID: string; version: number; path: string; }): Promise<boolean> {
+    return true;
+  }
+
+
+}
+
 class LearningObjectGatewayStub implements LearningObjectGateway {
+  getLearningObjectByCuid(params: {
+    username: string;
+    cuid: string;
+    version: number;
+    requester: UserToken;
+  }): Promise<LearningObjectSummary[]> {
+    throw new Error('Method not implemented.');
+  }
+  getInternalLearningObjectByCuid(params: {
+    username: string;
+    cuid: string;
+    version: number;
+    requester: UserToken;
+  }): Promise<LearningObject[]> {
+    throw new Error('Method not implemented.');
+  }
   getReleasedLearningObjectSummary(id: string): Promise<LearningObjectSummary> {
     throw new Error('Method not implemented.');
   }
@@ -59,14 +108,6 @@ class LearningObjectGatewayStub implements LearningObjectGateway {
   getLearningObjectSummary(): Promise<LearningObjectSummary> {
     throw new Error('Method not Implemented');
   }
-  getLearningObjectByName(params: {
-    username: string;
-    learningObjectName: string;
-    requester: UserToken;
-    revision: boolean;
-  }): Promise<LearningObject> {
-    throw new Error('Method not implemented.');
-  }
 }
 
 class HierarchyGatewayStub implements HierarchyGateway {
@@ -80,41 +121,69 @@ class HierarchyGatewayStub implements HierarchyGateway {
 
 function initializeServiceModuleFixtures() {
   FileManagerModule.providers = [
+    { provide: FileManager, useClass: StubFileManager },
     { provide: LearningObjectGateway, useClass: LearningObjectGatewayStub },
     { provide: HierarchyGateway, useClass: HierarchyGatewayStub },
   ];
   FileManagerModule.initialize();
 }
 
-jest.mock('../../LearningObjects/Publishing/Bundler/Interactor', () => ({
-  bundleLearningObject: ({
-    learningObject,
-  }: {
-    learningObject: HierarchicalLearningObject;
-  }) => {
-    return new Stream();
-  },
-}));
+function initializeMocks() {
 
-jest.mock('./Interactor', () => ({
-  uploadFile: ({
-    authorUsername,
-    learningObjectId,
-    learningObjectRevisionId,
-    file,
-  }: {
-    authorUsername: string;
-    learningObjectId: string;
-    learningObjectRevisionId: number;
-    file: FileUpload;
-  }): Promise<void> => {
-    console.log('Stub update file');
-    return;
-  },
-}));
+  jest.mock('node-service-module', () => {
+    return {
+      ExpressServiceModule: class {
+        public static resolveDependency() {
+          return new StubFileManager();
+        }
+      },
+      expressServiceModule: function() {
+        return;
+      },
+      ServiceModule: class {
+        public static resolveDependency() {
+          return new StubFileManager();
+        }
+      },
+      serviceModule: function() {
+        return;
+      },
+    };
+  });
+  jest.mock('../../../shared/MongoDB/HelperFunctions/LearningObjectDownloads/learningObjectLibraryDownload', () => {
+    return {
+      updateObjectInLibraryForDownload (_: string, __: LearningObject): void { return; },
+    };
+  });
+  jest.mock('../../../LearningObjects/Publishing/Bundler/Interactor', () => ({
+    bundleLearningObject: ({
+      learningObject,
+    }: {
+      learningObject: HierarchicalLearningObject;
+    }) => {
+      return new Stream();
+    },
+  }));
+
+  jest.mock('../Interactor', () => ({
+    uploadFile: (_: {
+      authorUsername: string;
+      learningObjectId: string;
+      version: number;
+      file: FileUpload;
+    }): Promise<void> => {
+      console.log('Stub update file');
+      return;
+    },
+  }));
+
+}
+
 
 describe('When downloadBundle is called for a Working Copy', () => {
-  beforeEach(() => {
+  beforeEach(async() => {
+    jest.resetModules();
+    initializeMocks();
     initializeServiceModuleFixtures();
   });
   afterEach(() => {
@@ -123,128 +192,87 @@ describe('When downloadBundle is called for a Working Copy', () => {
   describe('and the requester has download privilege', () => {
     describe('and the requester provided the ID of an existing Learning Object', () => {
       const collection = 'test';
-      let spy: jest.SpyInstance<Promise<LearningObject>>;
-      let requestParams: DownloadBundleParams;
-      let learningObjectGateway: LearningObjectGateway;
-      beforeEach(() => {
-        /* FIXME: LearningObjectGateway setup should only be done once for each of the
-                 test specs below, however the call order of Jest hooks makes this difficult
-              */
-        learningObjectGateway = Gateways.learningObjectGateway();
-        learningObjectGateway.getLearningObjectById = () =>
-          Promise.resolve({
-            ...LearningObjectStub,
-            collection,
-          } as LearningObject);
-        spy = jest.spyOn(learningObjectGateway, 'getLearningObjectByName');
-        requestParams = { ...downloadBundleParamStub };
-      });
-      afterEach(() => {
-        spy = null;
-      });
-      it('should not invoke getLearningObjectByName when the requester is an admin', async () => {
-        requestParams.requester.accessGroups = ['admin'];
-        const adminPromise = downloadBundle(requestParams);
-        await expect(adminPromise).resolves.toBeInstanceOf(Stream);
+      let requestParams: DownloadBundleParams = { ...downloadBundleParamStub };
 
-        expect(spy).not.toHaveBeenCalled();
+      it('should not invoke getLearningObjectByName when the requester is an admin', async () => {
+        // ERRORS Cannot read property 'hasAccess' of undefined
+        const { downloadBundle } = await import('./downloadBundle');
+        requestParams.requester.accessGroups = ['admin'];
+        const response = await downloadBundle(requestParams);
+        expect(response).toBeInstanceOf(Stream);
       });
       it('should not invoke getLearningObjectByName when the requester is an editor', async () => {
+        const { downloadBundle } = await import('./downloadBundle');
         requestParams.requester.accessGroups = ['editor'];
         const editorPromise = downloadBundle(requestParams);
         await expect(editorPromise).resolves.toBeInstanceOf(Stream);
-
-        expect(spy).not.toHaveBeenCalled();
       });
 
       it('should not invoke getLearningObjectByName when the requester is a curator', async () => {
+        const { downloadBundle } = await import('./downloadBundle');
         requestParams.requester.accessGroups = [`curator@${collection}`];
         const curatorPromise = downloadBundle(requestParams);
         await expect(curatorPromise).resolves.toBeInstanceOf(Stream);
-
-        expect(spy).not.toHaveBeenCalled();
       });
 
       it('should not invoke getLearningObjectByName when the requester is a reviewer', async () => {
+        const { downloadBundle } = await import('./downloadBundle');
         requestParams.requester.accessGroups = [`reviewer@${collection}`];
         const reviewerPromise = downloadBundle(requestParams);
         await expect(reviewerPromise).resolves.toBeInstanceOf(Stream);
-
-        expect(spy).not.toHaveBeenCalled();
       });
 
       it('should not invoke getLearningObjectByName when the requester is the author', async () => {
+        const { downloadBundle } = await import('./downloadBundle');
         requestParams.requester.username = requesterStub.username;
         const authorPromise = downloadBundle(requestParams);
         await expect(authorPromise).resolves.toBeInstanceOf(Stream);
-
-        expect(spy).not.toHaveBeenCalled();
       });
     });
     describe('and the requester provided the name of the Learning Object', () => {
       const collection = 'test';
-      let spy: jest.SpyInstance<Promise<LearningObject>>;
-      let requestParams: DownloadBundleParams;
-      let learningObjectGateway: LearningObjectGateway;
-      beforeEach(() => {
-        learningObjectGateway = Gateways.learningObjectGateway();
-        learningObjectGateway.getLearningObjectById = () =>
-          Promise.reject(new ResourceError('', ResourceErrorReason.NOT_FOUND));
-        learningObjectGateway.getLearningObjectByName = () =>
-          Promise.resolve({
-            ...LearningObjectStub,
-            collection,
-          } as LearningObject);
-        spy = jest.spyOn(learningObjectGateway, 'getLearningObjectByName');
-        requestParams = { ...downloadBundleParamStub };
-      });
-      afterEach(() => {
-        spy = null;
-      });
+      let requestParams: DownloadBundleParams = { ...downloadBundleParamStub };
+
       it('should invoke getLearningObjectByName when the requester is an admin', async () => {
+        const { downloadBundle } = await import('./downloadBundle');
         requestParams.requester.accessGroups = ['admin'];
         const adminPromise = downloadBundle(requestParams);
         await expect(adminPromise).resolves.toBeInstanceOf(Stream);
-
-        expect(spy).toHaveBeenCalled();
       });
 
       it('should invoke getLearningObjectByName when the requester is an editor', async () => {
+        const { downloadBundle } = await import('./downloadBundle');
         requestParams.requester.accessGroups = ['editor'];
         const editorPromise = downloadBundle(requestParams);
         await expect(editorPromise).resolves.toBeInstanceOf(Stream);
-
-        expect(spy).toHaveBeenCalled();
       });
 
       it('should invoke getLearningObjectByName when the requester is a curator', async () => {
+        const { downloadBundle } = await import('./downloadBundle');
         requestParams.requester.accessGroups = [`curator@${collection}`];
         const curatorPromise = downloadBundle(requestParams);
         await expect(curatorPromise).resolves.toBeInstanceOf(Stream);
-
-        expect(spy).toHaveBeenCalled();
       });
 
       it('should invoke getLearningObjectByName when the requester is a reviewer', async () => {
+        const { downloadBundle } = await import('./downloadBundle');
         requestParams.requester.accessGroups = [`reviewer@${collection}`];
         const reviewerPromise = downloadBundle(requestParams);
         await expect(reviewerPromise).resolves.toBeInstanceOf(Stream);
-
-        expect(spy).toHaveBeenCalled();
       });
 
       it('should invoke getLearningObjectByName when the requester is the author', async () => {
+        const { downloadBundle } = await import('./downloadBundle');
         requestParams.requester.username = requesterStub.username;
         const authorPromise = downloadBundle(requestParams);
         await expect(authorPromise).resolves.toBeInstanceOf(Stream);
-
-        expect(spy).toHaveBeenCalled();
       });
     });
     describe('and the getLearningObjectById throws an error that is not NOT_FOUND', () => {
       it('should throw the error', async () => {
+        const { downloadBundle } = await import('./downloadBundle');
         await expect(
-          downloadBundle(downloadBundleParamStub),
+          downloadBundle(workingDownloadBundleParamStub),
         ).rejects.toThrowError();
       });
     });
@@ -252,11 +280,12 @@ describe('When downloadBundle is called for a Working Copy', () => {
   describe('and the requester does not have download privilege', () => {
     describe('because the requester does not have any access groups and is not the Learning Object author', () => {
       it('should throw a forbidden error', async () => {
+        const { downloadBundle } = await import('./downloadBundle');
         const learningObjectGateway = Gateways.learningObjectGateway();
         learningObjectGateway.getLearningObjectById = () =>
           Promise.resolve(LearningObjectStub);
 
-        const promise = downloadBundle(downloadBundleParamStub);
+        const promise = downloadBundle(workingDownloadBundleParamStub);
 
         await expect(promise).rejects.toThrowError(
           FileManagerModuleErrorMessages.forbiddenLearningObjectDownload(
@@ -270,6 +299,8 @@ describe('When downloadBundle is called for a Working Copy', () => {
         const requesterCollection = 'requester';
         const learningObjectCollection = 'Learning Object';
 
+        const { downloadBundle } = await import('./downloadBundle');
+
         const learningObjectGateway = Gateways.learningObjectGateway();
         learningObjectGateway.getLearningObjectById = () =>
           Promise.resolve({
@@ -277,7 +308,7 @@ describe('When downloadBundle is called for a Working Copy', () => {
             collection: learningObjectCollection,
           } as LearningObject);
 
-        const curatorRequestParams = { ...downloadBundleParamStub };
+        const curatorRequestParams = { ...workingDownloadBundleParamStub };
         curatorRequestParams.requester.accessGroups = [
           `curator@${requesterCollection}`,
         ];
@@ -293,17 +324,10 @@ describe('When downloadBundle is called for a Working Copy', () => {
     });
     describe('because the requester is a reviewer of another collection', () => {
       it('should throw a forbidden error', async () => {
+        const { downloadBundle } = await import('./downloadBundle');
         const requesterCollection = 'requester';
-        const learningObjectCollection = 'Learning Object';
 
-        const learningObjectGateway = Gateways.learningObjectGateway();
-        learningObjectGateway.getLearningObjectById = () =>
-          Promise.resolve({
-            ...LearningObjectStub,
-            collection: learningObjectCollection,
-          } as LearningObject);
-
-        const reviewerRequestParams = { ...downloadBundleParamStub };
+        const reviewerRequestParams = { ...workingDownloadBundleParamStub };
         reviewerRequestParams.requester.accessGroups = [
           `reviewer@${requesterCollection}`,
         ];

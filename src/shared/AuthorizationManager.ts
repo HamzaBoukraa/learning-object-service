@@ -403,7 +403,7 @@ export function authorizeWriteAccess({
     (isUnreleased || learningObject.status === LearningObject.Status.WAITING);
   const isReleased = learningObject.status === LearningObject.Status.RELEASED;
   const isAdminOrEditor = requesterIsAdminOrEditor(requester);
-  const adminEditorAccess = isAdminOrEditor && !isUnreleased && !isReleased;
+  const adminEditorAccess = isAdminOrEditor && !isUnreleased;
   let reason = getInvalidWriteAccessReason({
     isAuthor,
     isAdminOrEditor,

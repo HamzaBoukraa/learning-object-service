@@ -63,4 +63,14 @@ export class LearningObjectSubmissionAdapter {
       updates,
     });
   }
+
+  async deletePreviousRelease({
+    learningObjectId,
+  }: {
+    learningObjectId: string;
+  }): Promise<void> {
+    return await this.publisher.deletePreviousRelease(learningObjectId);
+  }
 }
+
+

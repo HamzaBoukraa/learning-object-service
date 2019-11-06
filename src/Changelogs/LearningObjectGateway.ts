@@ -14,4 +14,20 @@ export abstract class LearningObjectGateway {
     requester: Requester;
     id: string;
   }): Promise<LearningObjectSummary>;
+
+  /**
+   * Retrieve a list of Learning Objects for a given CUID
+   *
+   * @abstract
+   * @param {{
+   *     requester: Requester,
+   *     cuid: string,
+   *   }} params
+   * @returns {Promise<LearningObjectSummary[]>}
+   * @memberof LearningObjectGateway
+   */
+  abstract getLearningObjectByCuid(params: {
+    requester: Requester,
+    cuid: string,
+  }): Promise<LearningObjectSummary[]>;
 }

@@ -1,8 +1,12 @@
 import { User, LearningObject, LearningOutcome } from '../../../entity';
-import { LearningObjectDocument } from '../../../types';
+import { LearningObjectDocument, UserToken } from '../../../types';
 import { UserServiceGateway } from '../../../gateways/user-service/UserServiceGateway';
 import { MongoConnector } from '../../MongoConnector';
 import { LearningOutcomeMongoDatastore } from '../../../../LearningOutcomes/datastores/LearningOutcomeMongoDatastore';
+import { learningObjectHasRevision } from '../learningObjectHasRevision/learningObjectHasRevision';
+import { DataStore } from '../../../interfaces/DataStore';
+import { ConfigurationServicePlaceholders } from 'aws-sdk/lib/config_service_placeholders';
+import { requesterIsVerified, requesterIsEditor } from '../../../AuthorizationManager';
 
 // TODO: Generating a full learning object should now entail generating files as well since they are an external resource
 /**
@@ -19,6 +23,7 @@ export async function generateLearningObject(
   author: User,
   record: LearningObjectDocument,
   full?: boolean,
+  requester?: UserToken,
 ): Promise<LearningObject> {
   const LEARNING_OUTCOME_DATASTORE = new LearningOutcomeMongoDatastore(
     MongoConnector.client().db('onion'),
@@ -61,11 +66,29 @@ export async function generateLearningObject(
     materials,
     contributors,
     outcomes,
-    hasRevision: record.hasRevision,
+    revisionUri: record.revisionUri,
     children,
-    revision: record.revision,
+    version: record.version,
   });
 
+  const hasRevision = await learningObjectHasRevision(learningObject.cuid, learningObject.id);
+  console.log(hasRevision);
+  if (hasRevision && this.requester) {
+    if (hasRevision && hasRevision.status === LearningObject.Status.UNRELEASED) {
+      if ((learningObject.author.username === requester.username)) {
+        learningObject.attachRevisionUri();
+      }
+    } else if (hasRevision.status === LearningObject.Status.PROOFING
+                || hasRevision.status === LearningObject.Status.WAITING
+                || hasRevision.status === LearningObject.Status.REVIEW) {
+        if (requester.accessGroups.includes('admin') || requester.accessGroups.includes('editor') 
+            || requester.accessGroups.includes(`curator@${learningObject.collection}`)
+            || requester.accessGroups.includes(`reviewer@${learningObject.collection}`)) {
+
+            learningObject.attachRevisionUri();
+        }
+    }
+  }
   learningObject.attachResourceUris(process.env.GATEWAY_API);
 
   return learningObject;

@@ -23,4 +23,6 @@ export interface SubmissionPublisher {
    * @param learningObjectID the ID of the Learning Object being withdrawn
    */
   deleteSubmission(learningObjectID: string): Promise<void>;
+
+  deletePreviousRelease(learningObjectID: string): Promise<void>;
 }
