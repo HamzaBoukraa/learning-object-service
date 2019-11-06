@@ -46,8 +46,8 @@ export async function deleteAllFileMetadata({
     Gateways.fileManager()
       .deleteFolder({
         authorUsername: learningObject.author.username,
-        learningObjectId: learningObject.id,
-        learningObjectRevisionId: learningObject.revision,
+        learningObjectCUID: learningObject.cuid,
+        version: learningObject.version,
         path: '/',
       })
       .catch(reportError);

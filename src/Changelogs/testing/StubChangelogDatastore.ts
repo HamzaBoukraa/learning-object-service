@@ -7,7 +7,7 @@ const stubs = new Stubs();
 
 export class StubChangelogDatastore implements ChangelogDataStore {
     createChangelog(params: {
-        learningObjectId: string;
+        cuid: string;
         author: {
             userId: string;
             name: string;
@@ -20,28 +20,28 @@ export class StubChangelogDatastore implements ChangelogDataStore {
     }
 
     async getRecentChangelog(params: {
-        learningObjectId: string;
+        cuid: string;
     }): Promise<ChangeLogDocument> {
-        switch (params.learningObjectId) {
+        switch (params.cuid) {
             case STUB_CHANGELOG_IDS.RELEASED_NO_REVISIONS:
                 return {
                     ...stubs.changelog,
-                    learningObjectId: STUB_CHANGELOG_IDS.RELEASED_NO_REVISIONS,
+                    cuid: STUB_CHANGELOG_IDS.RELEASED_NO_REVISIONS,
                 };
             case STUB_CHANGELOG_IDS.NOT_RELEASED:
                 return {
                     ...stubs.changelog,
-                    learningObjectId: STUB_CHANGELOG_IDS.NOT_RELEASED,
+                    cuid: STUB_CHANGELOG_IDS.NOT_RELEASED,
                 };
             case STUB_CHANGELOG_IDS.MINUS_REVISION:
                 return {
                     ...stubs.changelog,
-                    learningObjectId: STUB_CHANGELOG_IDS.MINUS_REVISION,
+                    cuid: STUB_CHANGELOG_IDS.MINUS_REVISION,
                 };
             case STUB_CHANGELOG_IDS.PLUS_REVISION:
                 return {
                     ...stubs.changelog,
-                    learningObjectId: STUB_CHANGELOG_IDS.PLUS_REVISION,
+                    cuid: STUB_CHANGELOG_IDS.PLUS_REVISION,
                 };
             default:
                 return stubs.changelog;
@@ -49,28 +49,28 @@ export class StubChangelogDatastore implements ChangelogDataStore {
     }
 
     async fetchAllChangelogs(params: {
-        learningObjectId: string;
+        cuid: string;
     }): Promise<ChangeLogDocument[]> {
-        switch (params.learningObjectId) {
+        switch (params.cuid) {
             case STUB_CHANGELOG_IDS.RELEASED_NO_REVISIONS:
                 return [{
                     ...stubs.changelog,
-                    learningObjectId: STUB_CHANGELOG_IDS.RELEASED_NO_REVISIONS,
+                    cuid: STUB_CHANGELOG_IDS.RELEASED_NO_REVISIONS,
                 }];
             case STUB_CHANGELOG_IDS.NOT_RELEASED:
                 return [{
                     ...stubs.changelog,
-                    learningObjectId: STUB_CHANGELOG_IDS.NOT_RELEASED,
+                    cuid: STUB_CHANGELOG_IDS.NOT_RELEASED,
                 }];
             case STUB_CHANGELOG_IDS.MINUS_REVISION:
                 return [{
                     ...stubs.changelog,
-                    learningObjectId: STUB_CHANGELOG_IDS.MINUS_REVISION,
+                    cuid: STUB_CHANGELOG_IDS.MINUS_REVISION,
                 }];
             case STUB_CHANGELOG_IDS.PLUS_REVISION:
                 return [{
                     ...stubs.changelog,
-                    learningObjectId: STUB_CHANGELOG_IDS.PLUS_REVISION,
+                    cuid: STUB_CHANGELOG_IDS.PLUS_REVISION,
                 }];
             default:
                 return [stubs.changelog];
@@ -78,29 +78,29 @@ export class StubChangelogDatastore implements ChangelogDataStore {
     }
 
     async fetchChangelogsBeforeDate(params: {
-        learningObjectId: string;
+        cuid: string;
         date: string;
     }): Promise<ChangeLogDocument[]> {
-        switch (params.learningObjectId) {
+        switch (params.cuid) {
             case STUB_CHANGELOG_IDS.RELEASED_NO_REVISIONS:
                 return [{
                     ...stubs.changelog,
-                    learningObjectId: STUB_CHANGELOG_IDS.RELEASED_NO_REVISIONS,
+                    cuid: STUB_CHANGELOG_IDS.RELEASED_NO_REVISIONS,
                 }];
             case STUB_CHANGELOG_IDS.NOT_RELEASED:
                 return [{
                     ...stubs.changelog,
-                    learningObjectId: STUB_CHANGELOG_IDS.NOT_RELEASED,
+                    cuid: STUB_CHANGELOG_IDS.NOT_RELEASED,
                 }];
             case STUB_CHANGELOG_IDS.MINUS_REVISION:
                 return [{
                     ...stubs.changelog,
-                    learningObjectId: STUB_CHANGELOG_IDS.MINUS_REVISION,
+                    cuid: STUB_CHANGELOG_IDS.MINUS_REVISION,
                 }];
             case STUB_CHANGELOG_IDS.PLUS_REVISION:
                 return [{
                     ...stubs.changelog,
-                    learningObjectId: STUB_CHANGELOG_IDS.PLUS_REVISION,
+                    cuid: STUB_CHANGELOG_IDS.PLUS_REVISION,
                 }];
             default:
                 return [stubs.changelog];
@@ -108,29 +108,29 @@ export class StubChangelogDatastore implements ChangelogDataStore {
     }
 
     async fetchRecentChangelogBeforeDate(params: {
-        learningObjectId: string;
+        cuid: string;
         date: string;
     }): Promise<ChangeLogDocument> {
-        switch (params.learningObjectId) {
+        switch (params.cuid) {
             case STUB_CHANGELOG_IDS.RELEASED_NO_REVISIONS:
                 return {
                     ...stubs.changelog,
-                    learningObjectId: STUB_CHANGELOG_IDS.RELEASED_NO_REVISIONS,
+                    cuid: STUB_CHANGELOG_IDS.RELEASED_NO_REVISIONS,
                 };
             case STUB_CHANGELOG_IDS.NOT_RELEASED:
                 return {
                     ...stubs.changelog,
-                    learningObjectId: STUB_CHANGELOG_IDS.NOT_RELEASED,
+                    cuid: STUB_CHANGELOG_IDS.NOT_RELEASED,
                 };
             case STUB_CHANGELOG_IDS.MINUS_REVISION:
                 return {
                     ...stubs.changelog,
-                    learningObjectId: STUB_CHANGELOG_IDS.MINUS_REVISION,
+                    cuid: STUB_CHANGELOG_IDS.MINUS_REVISION,
                 };
             case STUB_CHANGELOG_IDS.PLUS_REVISION:
                 return {
                     ...stubs.changelog,
-                    learningObjectId: STUB_CHANGELOG_IDS.PLUS_REVISION,
+                    cuid: STUB_CHANGELOG_IDS.PLUS_REVISION,
                 };
             default:
                 return stubs.changelog;
@@ -138,7 +138,7 @@ export class StubChangelogDatastore implements ChangelogDataStore {
     }
 
     deleteChangelog(params: {
-        learningObjectId: string;
+        cuid: string;
     }): Promise<void> {
         return Promise.resolve();
     }

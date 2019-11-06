@@ -43,7 +43,7 @@ import { LearningObject } from '../shared/entity';
 import { LearningObjectsModule } from '../LearningObjects/LearningObjectsModule';
 import { FileMetadataGateway } from '../LearningObjects/interfaces';
 import { UserServiceGateway } from '../shared/gateways/user-service/UserServiceGateway';
-
+import { learningObjectHasRevision } from '../shared/MongoDB/HelperFunctions';
 namespace Gateways {
   export const fileMetadata = () =>
     LearningObjectsModule.resolveDependency(FileMetadataGateway);
@@ -86,23 +86,26 @@ export class LearningObjectInteractor {
    * @private
    * @param {{
    *     dataStore: DataStore;
-   *     name: string; [Learning Object's name]
+   *     cuid: string; [Learning Object's cuid]
+   *     version: number; [Learning Object's version]
    *     authorId: string [Learning Object's author's id]
    *     authorUsername: string [Learning Object's author's username]
    *   }} params
    * @returns {Promise<string>}
    * @memberof LearningObjectInteractor
    */
-  private static async getLearningObjectIdByAuthorAndName(params: {
+  private static async getLearningObjectIdByAuthorAndCuidVersion(params: {
     dataStore: DataStore;
-    name: string;
     authorId: string;
     authorUsername: string;
+    cuid: string;
+    version: number;
   }): Promise<string> {
-    const { dataStore, name, authorId, authorUsername } = params;
+    const { dataStore, authorId, authorUsername, cuid, version } = params;
     const learningObjectId = await dataStore.findLearningObject({
       authorId,
-      name,
+      cuid,
+      version
     });
     if (!learningObjectId) {
       throw new ResourceError(
@@ -114,33 +117,33 @@ export class LearningObjectInteractor {
   }
 
   /**
-   * Finds released Learning Object's id by name and authorID.
+   * Finds released Learning Object's id by cuid and authorID.
    * If id is not found a ResourceError is thrown
    *
    * @private
    * @param {{
    *     dataStore: DataStore;
-   *     name: string; [Learning Object's name]
+   *     cuid: string; [Learning Object's cuid]
    *     authorId: string [Learning Object's author's id]
    *     authorUsername: string [Learning Object's author's username]
    *   }} params
    * @returns {Promise<string>}
    * @memberof LearningObjectInteractor
    */
-  private static async getReleasedLearningObjectIdByAuthorAndName(params: {
+  private static async getReleasedLearningObjectIdByAuthorAndCuid(params: {
     dataStore: DataStore;
-    name: string;
+    cuid: string;
     authorId: string;
     authorUsername: string;
   }): Promise<string> {
-    const { dataStore, name, authorId, authorUsername } = params;
+    const { dataStore, cuid, authorId, authorUsername } = params;
     const learningObjectId = await dataStore.findReleasedLearningObject({
       authorId,
-      name,
+      cuid,
     });
     if (!learningObjectId) {
       throw new ResourceError(
-        `No released Learning Object with name ${name} by ${authorUsername} exists`,
+        `No released Learning Object with name ${cuid} by ${authorUsername} exists`,
         ResourceErrorReason.NOT_FOUND,
       );
     }
@@ -199,14 +202,15 @@ export class LearningObjectInteractor {
   }
 
   /**
-   * Returns a Learning Object's Id by author's username and Learning Object's name
+   * Returns a Learning Object's Id by author's username and Learning Object's cuid
    * Will attempt to find released and unreleased object's id if authorized
    *
    * @static
    * @param {({
    *     dataStore: DataStore;
    *     username: string;
-   *     learningObjectName: string;
+   *     cuid: string;
+   *     version: number;
    *     userToken: UserToken | ServiceToken;
    *   })} params
    * @returns {Promise<string>}
@@ -215,11 +219,12 @@ export class LearningObjectInteractor {
   public static async getLearningObjectId(params: {
     dataStore: DataStore;
     username: string;
-    learningObjectName: string;
+    cuid: string;
+    version: number;
     userToken: UserToken | ServiceToken;
   }): Promise<string> {
     try {
-      const { dataStore, username, learningObjectName, userToken } = params;
+      const { dataStore, username, cuid, version, userToken } = params;
 
       const authorId = await this.findAuthorIdByUsername({
         dataStore,
@@ -236,23 +241,24 @@ export class LearningObjectInteractor {
       const isService = hasServiceLevelAccess(userToken as ServiceToken);
       const authorizationCases = [isAuthor, isPrivileged, isService];
 
-      let learningObjectID = await this.getReleasedLearningObjectIdByAuthorAndName(
+      let learningObjectID = await this.getReleasedLearningObjectIdByAuthorAndCuid(
         {
           dataStore,
           authorId,
           authorUsername: username,
-          name: learningObjectName,
+          cuid
         },
       ).catch(error =>
         bypassNotFoundResourceErrorIfAuthorized({ error, authorizationCases }),
       );
 
       if (!learningObjectID) {
-        learningObjectID = await this.getLearningObjectIdByAuthorAndName({
+        learningObjectID = await this.getLearningObjectIdByAuthorAndCuidVersion({
           dataStore,
           authorId,
           authorUsername: username,
-          name: learningObjectName,
+          cuid,
+          version
         });
         const [status, collection] = await Promise.all([
           dataStore.fetchLearningObjectStatus(learningObjectID),
@@ -269,14 +275,14 @@ export class LearningObjectInteractor {
     }
   }
   /**
-   * Deletes multiple objects by author's name and Learning Objects' names
+   * Deletes multiple objects by author's name and Learning Objects' cuid
    *
    * @static
    * @param {{
    *     dataStore: DataStore;
    *     fileManager: FileManager;
    *     library: LibraryCommunicator;
-   *     learningObjectNames: string[];
+   *     learningObjectNames: {cuid: string, version?: number}[];
    *     user: UserToken;
    *   }} params
    * @returns {Promise<void>}
@@ -285,19 +291,19 @@ export class LearningObjectInteractor {
   public static async deleteMultipleLearningObjects({
     dataStore,
     library,
-    learningObjectNames,
+    ids,
     user,
   }: {
     dataStore: DataStore;
     library: LibraryCommunicator;
-    learningObjectNames: string[];
+    ids: string[];
     user: UserToken;
   }): Promise<void> {
     try {
       const hasAccess = await hasMultipleLearningObjectWriteAccesses(
         user,
         dataStore,
-        learningObjectNames,
+        ids,
       );
 
       if (!hasAccess) {
@@ -312,15 +318,7 @@ export class LearningObjectInteractor {
         id: string;
         parentIds: string[];
       }[] = await Promise.all(
-        learningObjectNames.map(async (name: string) => {
-          const authorId = await this.findAuthorIdByUsername({
-            dataStore,
-            username: user.username,
-          });
-          const id = await dataStore.findLearningObject({
-            authorId,
-            name,
-          });
+        ids.map(async (id: string) => {
           const parentIds = await dataStore.findParentObjectIds({
             childId: id,
           });
@@ -328,8 +326,6 @@ export class LearningObjectInteractor {
         }),
       );
       const objectIds = objectRefs.map(obj => obj.id);
-      // Remove objects from library
-      await library.cleanObjectsFromLibraries(objectIds);
       await Promise.all(
         objectRefs.map(ref =>
           Gateways.fileMetadata().deleteAllFileMetadata({
@@ -386,6 +382,11 @@ export class LearningObjectInteractor {
       });
       const learningObjectSummaries = learningObjects.map(learningObject => {
         learningObject.attachResourceUris(GATEWAY_API);
+        learningObjectHasRevision(learningObject.cuid, learningObject.id).then(hasRevision => {
+          if (hasRevision) {
+            learningObject.attachRevisionUri();
+          }
+        });
         return mapLearningObjectToSummary(learningObject);
       });
       return learningObjectSummaries;
@@ -596,7 +597,9 @@ export class LearningObjectInteractor {
    *     dataStore: DataStore;
    *     children: string[];
    *     username: string;
-   *     parentName: string;
+   *     cuid: string;
+   *     version: number;
+   *     userToken: UserToken;
    *   }} params
    * @returns {Promise<void>}
    * @memberof LearningObjectInteractor
@@ -604,30 +607,23 @@ export class LearningObjectInteractor {
   public static async setChildren(params: {
     dataStore: DataStore;
     children: string[];
-    parentName: string;
+    id: string;
     username: string;
     userToken: UserToken;
   }): Promise<void> {
-    const { dataStore, children, username, parentName, userToken } = params;
+    const { dataStore, children, username, id, userToken } = params;
 
     try {
-      const authorId = await UserServiceGateway.getInstance().findUser(
-        username,
-      );
-      const parentID = await dataStore.findLearningObject({
-        authorId,
-        name: parentName,
-      });
       const hasAccess = await hasLearningObjectWriteAccess(
         userToken,
         dataStore,
-        parentID,
+        id,
       );
       if (hasAccess) {
-        await dataStore.setChildren(parentID, children);
+        await dataStore.setChildren(id, children);
         await updateObjectLastModifiedDate({
           dataStore,
-          id: parentID,
+          id,
           date: Date.now().toString(),
         });
       } else {
@@ -649,7 +645,9 @@ export class LearningObjectInteractor {
    *     dataStore: DataStore;
    *     childId: string;
    *     username: string;
-   *     parentName: string;
+   *     cuid: string;
+   *     version: number;
+   *     userToken: UserToken;
    *   }} params
    * @returns
    * @memberof LearningObjectInteractor
@@ -657,29 +655,23 @@ export class LearningObjectInteractor {
   public static async removeChild(params: {
     dataStore: DataStore;
     childId: string;
-    parentName: string;
+    id: string;
     username: string;
     userToken: UserToken;
   }) {
-    const { dataStore, childId, username, parentName, userToken } = params;
+    const { dataStore, childId, username, id, userToken } = params;
+    
     try {
-      const authorId = await UserServiceGateway.getInstance().findUser(
-        username,
-      );
-      const parentID = await dataStore.findLearningObject({
-        authorId,
-        name: parentName,
-      });
       const hasAccess = await hasLearningObjectWriteAccess(
         userToken,
         dataStore,
-        parentID,
+        id,
       );
       if (hasAccess) {
-        await dataStore.deleteChild(parentID, childId);
+        await dataStore.deleteChild(id, childId);
         await updateObjectLastModifiedDate({
           dataStore,
-          id: parentID,
+          id,
           date: Date.now().toString(),
         });
       } else {

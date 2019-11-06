@@ -43,15 +43,16 @@ describe('LearningObjectInteractor', () => {
         dataStore,
         ids: [],
       })).resolves.toBeInstanceOf(Array);
-      });
-    });
+     });
+  });
 
   describe('getLearningObjectId', () => {
     it('should find a learning object ID', async () => {
       return expect(interactor.getLearningObjectId({
         dataStore,
         username: stubs.learningObject.author.username,
-        learningObjectName: stubs.learningObject.name,
+        cuid: stubs.learningObject.cuid,
+        version: stubs.learningObject.version,
         userToken: stubs.userToken,
       })).resolves.toBe(stubs.learningObject.id);
     });

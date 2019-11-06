@@ -22,6 +22,6 @@ export interface LearningObjectSearchDocument {
   levels: string[];
   name: string;
   outcomes: LearningOutcome[];
-  revision: number;
+  version: number;
   status: LearningObject.Status;
 }

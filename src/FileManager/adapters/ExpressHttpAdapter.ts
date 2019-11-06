@@ -4,7 +4,9 @@ import { LEARNING_OBJECT_ROUTES } from '../../shared/routes';
 import { mapErrorToResponseData } from '../../shared/errors';
 import { fileNotFound } from '../assets/filenotfound';
 import { DownloadFilter, Requester } from '../typings';
-import { downloadBundle } from '../interactors/downloadBundle';
+import { downloadBundle } from '../interactors/downloadBundle/downloadBundle';
+import { Gateways } from '../interactors/shared/dependencies';
+import { UserToken } from '../../shared/types';
 
 export function buildRouter(): Router {
   const router = Router();
@@ -17,11 +19,11 @@ export function buildRouter(): Router {
     download,
   );
 
-  // FIXME: change learningObjectName to learningObjectId when client is updated
   router.get(
-    '/users/:username/learning-objects/:learningObjectName/bundle',
+    '/users/:username/learning-objects/:cuid/versions/:version/bundle',
     getLearningObjectBundle,
   );
+
   return router;
 }
 
@@ -58,17 +60,13 @@ async function download(req: Request, res: Response) {
 
 async function getLearningObjectBundle(req: Request, res: Response) {
   try {
-    let revision = false;
-    if (req.query.revision === '') {
-      revision = true;
-    }
-    const stream = await downloadBundle({
-      requester: req.user,
-      learningObjectAuthorUsername: req.params.username,
-      learningObjectId: req.params.learningObjectName,
-      revision,
-    });
-    res.header('Content-Disposition', `attachment; filename="${req.params.learningObjectName}.zip"`);
+    const { username, cuid, version } = req.params;
+    const requester: UserToken = req.user;
+
+    const learningObjects = await Gateways.learningObjectGateway().getInternalLearningObjectByCuid({ username, cuid, version: parseInt(version, 10), requester });
+    const stream = await downloadBundle({ learningObject: learningObjects[0], requester });
+
+    res.header('Content-Disposition', `attachment; filename="${learningObjects[0].name}.zip"`);
     stream.pipe(res);
   } catch (e) {
     const { code, message } = mapErrorToResponseData(e);

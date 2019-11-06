@@ -29,6 +29,8 @@ let interactor: any;
 
 const localDatastore = new MockDataStore();
 
+jest.mock('../shared/MongoDB/HelperFunctions');
+
 describe('Interactor: LearningObjectInteractor', () => {
   beforeAll(async () => {
     LearningObjectsModule.providers = [

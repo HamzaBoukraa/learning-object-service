@@ -25,9 +25,9 @@ export interface UserLearningObjectSearchQuery
    */
   status?: string[];
   /**
-   * The revision number the Learning Object should match
+   * The version number the Learning Object should match
    */
-  revision?: number;
+  version?: number;
 }
 
 /**

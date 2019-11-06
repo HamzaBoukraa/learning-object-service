@@ -26,10 +26,17 @@ export abstract class LearningObjectGateway {
     filter?: LearningObjectFilter;
   }): Promise<LearningObject>;
 
-  abstract getLearningObjectByName(params: {
+  abstract getLearningObjectByCuid(params: {
     username: string;
-    learningObjectName: string;
+    cuid: string;
+    version: number;
     requester: UserToken;
-    revision: boolean;
-  }): Promise<LearningObject>;
+  }): Promise<LearningObjectSummary[]>;
+
+  abstract getInternalLearningObjectByCuid(params: {
+    username: string;
+    cuid: string;
+    version: number;
+    requester: UserToken;
+  }): Promise<LearningObject[]>;
 }

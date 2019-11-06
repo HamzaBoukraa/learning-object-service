@@ -25,12 +25,12 @@ export function initialize({
   async function createLog(req: Request, res: Response) {
     try {
       const userId = req.params.userId;
-      const learningObjectId = req.params.learningObjectId;
+      const cuid = req.params.cuid;
       const user: UserToken = req.user;
       const changelogText = req.body.changelogText;
       await ChangelogInteractor.createChangelog({
         dataStore,
-        learningObjectId,
+        cuid,
         user,
         userId,
         changelogText,
@@ -50,10 +50,10 @@ export function initialize({
     try {
       const user = req.user;
       const userId = req.params.userId;
-      const learningObjectId = req.params.learningObjectId;
+      const cuid = req.params.cuid;
       const changelog = await ChangelogInteractor.getRecentChangelog({
         dataStore,
-        learningObjectId,
+        cuid,
         userId,
         user,
       });
@@ -69,13 +69,13 @@ export function initialize({
       const learningObjectGateway = new ModuleLearningObjectGateway();
       const user = req.user;
       const userId = req.params.userId;
-      const learningObjectId = req.params.learningObjectId;
+      const cuid = req.params.cuid;
       const recent = req.query.recent;
       const minusRevision = req.query.minusRevision;
       const changelogs = await ChangelogInteractor.getChangelogs({
         learningObjectGateway,
         dataStore,
-        learningObjectId,
+        cuid,
         userId,
         user,
         recent,
@@ -88,7 +88,7 @@ export function initialize({
     }
   };
 
-  router.post('/users/:userId/learning-objects/:learningObjectId/changelog', createLog);
-  router.get('/users/:userId/learning-objects/:learningObjectId/changelogs', getAllChangelogs);
-  router.get('/users/:userId/learning-objects/:learningObjectId/changelog', getRecentChangelog);
+  router.post('/users/:userId/learning-objects/:cuid/changelog', createLog);
+  router.get('/users/:userId/learning-objects/:cuid/changelogs', getAllChangelogs);
+  router.get('/users/:userId/learning-objects/:cuid/changelog', getRecentChangelog);
 }

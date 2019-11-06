@@ -35,7 +35,7 @@ import { transformFileMetadataToLearningObjectFile } from '../shared/transformFi
  * @export
  * @param {Requester} requester [Information about the requester]
  * @param {string} learningObjectId [Id of the LearningObject the file meta belongs to]
- * @param {number} learningObjectRevision [The revision number of the Learning Object]
+ * @param {number} version [The version number of the Learning Object]
  * @returns {Promise<LearningObjectFile[]>}
  */
 export async function getAllFileMetadata({

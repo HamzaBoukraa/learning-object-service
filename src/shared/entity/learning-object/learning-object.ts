@@ -38,7 +38,7 @@ export class LearningObject {
     }
   }
 
-  private _cuid?: string;
+  private _cuid: string;
 
   /**
    * A CLARK Universal Identifier.
@@ -423,26 +423,30 @@ export class LearningObject {
     }
   }
   /**
-   * @property {boolean} hasRevision
-   * An optional field on a learning object, denoting whether or not the object
-   * has a working copy with a different status in the working collection.
+   * @property {boolean} revisionUri
+   * An optional field on a learning object, which provides the URI for the learning objects
+   * active revision
    */
-  private _hasRevision?: boolean;
+  private _revisionUri?: string;
 
-  get hasRevision(): boolean {
-    return this._hasRevision;
+  get revisionUri(): string {
+    return this._revisionUri;
   }
 
-  private _revision!: number;
+  attachRevisionUri() {
+    this._revisionUri = `${process.env.GATEWAY_API}/users/${this.author.username}/learning-objects/${this.cuid}?version=${this.version + 1}`;
+  }
+
+  private _version!: number;
   /**
-   * @property {string} revision The version number of the Learning Object
+   * @property {string} version The version number of the Learning Object
    *
    */
-  get revision(): number {
-    return this._revision;
+  get version(): number {
+    return this._version;
   }
-  set revision(revision: number) {
-    this._revision = revision;
+  set version(version: number) {
+    this._version = version;
   }
 
   /**
@@ -471,11 +475,11 @@ export class LearningObject {
     // tslint:disable-next-line: max-line-length
     this.resourceUris.materials = `${resourceUriHost}/users/${this.author.username}/learning-objects/${this.id}/materials?status=${this.status !== LearningObject.Status.RELEASED ? LearningObject.Status.UNRELEASED : ''}`;
 
-    this.resourceUris.metrics = `${resourceUriHost}/users/${this.author.username}/learning-objects/${this.id}/metrics`;
+    this.resourceUris.metrics = `${resourceUriHost}/users/${this.author.username}/learning-objects/${this.cuid}/metrics`;
 
     this.resourceUris.parents = `${resourceUriHost}/learning-objects/${this.id}/parents`;
 
-    this.resourceUris.ratings = `${resourceUriHost}/users/${this.author.username}/learning-objects/${this.cuid}/version/${this.revision}/ratings`;
+    this.resourceUris.ratings = `${resourceUriHost}/users/${this.author.username}/learning-objects/${this.cuid}/version/${this.version}/ratings`;
   }
 
   /**
@@ -547,7 +551,7 @@ export class LearningObject {
     this._collection = '';
     this._status = LearningObject.Status.UNRELEASED;
     this._metrics = { saves: 0, downloads: 0 };
-    this._revision = 0;
+    this._version = 0;
     if (object) {
       this.copyObject(object);
     }
@@ -604,11 +608,11 @@ export class LearningObject {
         this.addContributor(contributor),
       );
     }
-    if (object.hasRevision === true) {
-      this._hasRevision = object.hasRevision;
+    if (object.revisionUri !== null) {
+      this._revisionUri = object.revisionUri;
     }
-    if (object.revision != null) {
-      this.revision = object.revision;
+    if (object.version != null) {
+      this.version = object.version;
     }
     this.collection = <string>object.collection || this.collection;
     this.status = <LearningObject.Status>object.status || this.status;
@@ -642,8 +646,8 @@ export class LearningObject {
       collection: this.collection,
       status: this.status,
       metrics: this.metrics,
-      hasRevision: this.hasRevision,
-      revision: this.revision,
+      revisionUri: this.revisionUri,
+      version: this.version,
       resourceUris: this.resourceUris,
     };
     return object;

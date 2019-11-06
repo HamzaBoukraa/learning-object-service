@@ -13,9 +13,9 @@ describe('MongoDriver', () => {
     it('The function should return void', async () => {
         const learningObjectId = 'default_id';
         return expect(driver.deleteChangelog({
-          learningObjectId,
+          cuid: learningObjectId,
         }))
-            .resolves.toBe(undefined);
+          .resolves.toBe(undefined);
     });
   });
 
@@ -29,8 +29,8 @@ describe('MongoDriver', () => {
           profileImage: 'image',
         };
         const changelogText = 'hello world';
-        return expect(driver.createChangelog({learningObjectId, author, changelogText}))
-           .resolves.toBe(undefined);
+        return expect(driver.createChangelog({ cuid: learningObjectId, author, changelogText}))
+          .resolves.toBe(undefined);
     });
   });
 

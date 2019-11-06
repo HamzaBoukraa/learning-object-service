@@ -23,11 +23,6 @@ export class ElasticMongoReleaseRequestDuplicator implements PublishingDataStore
    * @param releasableObject the Learning Object that should be released
    */
   async addToReleased(releasableObject: LearningObject): Promise<void> {
-    try {
-      await this.elasticSearchStore.addToReleased(releasableObject);
-    } catch (e) {
-      reportError(e);
-    }
     return this.mongoStore.addToReleased(releasableObject);
   }
 }

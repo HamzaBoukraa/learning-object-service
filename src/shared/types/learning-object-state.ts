@@ -11,6 +11,13 @@ export const LearningObjectState = {
     LearningObject.Status.PROOFING,
   ],
   RELEASED: [LearningObject.Status.RELEASED],
+  NOT_RELEASED: [
+    LearningObject.Status.REJECTED,
+    LearningObject.Status.UNRELEASED,
+    LearningObject.Status.WAITING,
+    LearningObject.Status.REVIEW,
+    LearningObject.Status.PROOFING,
+  ],
   ALL: [
     LearningObject.Status.REJECTED,
     LearningObject.Status.UNRELEASED,

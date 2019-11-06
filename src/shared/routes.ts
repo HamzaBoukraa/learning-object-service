@@ -24,4 +24,7 @@ export const LIBRARY_ROUTES = {
       ',',
     )}/clean`;
   },
+  UPDATE_OBJECTS(cuid: string) {
+    return `${process.env.CART_API}/libraries?cuid=${encodeURIComponent(cuid)}`;
+  }
 };

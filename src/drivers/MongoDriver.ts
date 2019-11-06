@@ -10,6 +10,7 @@ import {
   LearningObjectDocument,
   StandardOutcomeDocument,
   LearningObjectSummary,
+  UserToken,
 } from '../shared/types';
 import { UserServiceGateway } from '../shared/gateways/user-service/UserServiceGateway';
 import { LearningOutcomeMongoDatastore } from '../LearningOutcomes/datastores/LearningOutcomeMongoDatastore';
@@ -46,6 +47,7 @@ export enum COLLECTIONS {
   MULTIPART_STATUSES = 'multipart-upload-statuses',
   CHANGELOG = 'changelogs',
   SUBMISSIONS = 'submissions',
+  LIBRARY = 'carts',
 }
 
 export class MongoDriver implements DataStore {
@@ -172,14 +174,14 @@ export class MongoDriver implements DataStore {
   /**
    * @inheritdoc
    *
-   * Searches both collections for Learning Object matching the specified id and revision number
+   * Searches both collections for Learning Object matching the specified id and version number
    *
    * *** Example ***
-   * `id`='exampleId', `revision`=1
-   * If revision 1 of Learning Object exampleId was released, it's latest version will be stored in the released objects collection
-   * If revision 1 is still be drafted or is in review, it will only exist in the working objects collection
+   * `id`='exampleId', `version`=1
+   * If version 1 of Learning Object exampleId was released, it's latest version will be stored in the released objects collection
+   * If version 1 is still be drafted or is in review, it will only exist in the working objects collection
    * @param {string} id [Id of the Learning Object]
-   * @param {number} revision [Revision number of the Learning Object]
+   * @param {number} version [Version number of the Learning Object]
    * @param {User} author [User object of Learning Object author]
    * @param {boolean} summary [Boolean indicating whether or not to return a LearningObject or LearningObjectSummary]
    * @returns {Promise<LearningObject | LearningObjectSummary>}
@@ -187,16 +189,16 @@ export class MongoDriver implements DataStore {
    */
   async fetchLearningObjectRevision({
     id,
-    revision,
+    version,
     author,
   }: {
     id: string;
-    revision: number;
+    version: number;
     author?: User;
   }): Promise<LearningObjectSummary> {
     const doc = await this.db
       .collection(COLLECTIONS.LEARNING_OBJECTS)
-      .findOne({ _id: id, revision });
+      .findOne({ _id: id, version });
     if (doc) {
       return mongoHelperFunctions.generateLearningObjectSummary(doc);
     }
@@ -455,24 +457,31 @@ export class MongoDriver implements DataStore {
   }
 
   async fetchRecentChangelog(params: {
-    learningObjectId: string;
+    cuid: string;
   }): Promise<ChangeLogDocument> {
     return this.changelogStore.getRecentChangelog({
-      learningObjectId: params.learningObjectId,
+      cuid: params.cuid,
     });
   }
 
-  async deleteChangelog(params: { learningObjectId: string }): Promise<void> {
+  async deleteChangelog(params: { cuid: string }): Promise<void> {
     return this.changelogStore.deleteChangelog({
-      learningObjectId: params.learningObjectId,
+      cuid: params.cuid,
+    });
+  }
+
+  async deleteChangelogsAfterRelease(params: {cuid: string, date: string}): Promise<void> {
+    return this.changelogStore.deleteChangelogsAfterRelease({
+      cuid: params.cuid,
+      date: params.date,
     });
   }
 
   async fetchAllChangelogs(params: {
-    learningObjectId: string;
+    cuid: string;
   }): Promise<ChangeLogDocument[]> {
     return await this.changelogStore.fetchAllChangelogs({
-      learningObjectId: params.learningObjectId,
+      cuid: params.cuid,
     });
   }
 
@@ -483,17 +492,17 @@ export class MongoDriver implements DataStore {
    * @param {string} date The date the changelog was created
    */
   async fetchChangelogsBeforeDate(params: {
-    learningObjectId: string;
+    cuid: string;
     date: string;
   }): Promise<ChangeLogDocument[]> {
     return await this.changelogStore.fetchChangelogsBeforeDate({
-      learningObjectId: params.learningObjectId,
+      cuid: params.cuid,
       date: params.date,
     });
   }
 
   fetchRecentChangelogBeforeDate(params: {
-    learningObjectId: string;
+    cuid: string;
     date: string;
   }): Promise<ChangeLogDocument> {
     return this.changelogStore.fetchRecentChangelogBeforeDate(params);
@@ -744,10 +753,6 @@ export class MongoDriver implements DataStore {
       .updateOne({ _id: params.id }, { $set: params.updates });
   }
 
-  //////////////////////////////////////////
-  // DELETIONS - will cascade to children //
-  //////////////////////////////////////////
-
   /**
    * Remove a learning object (and its outcomes) from the database.
    * @async
@@ -868,30 +873,68 @@ export class MongoDriver implements DataStore {
   }
 
   /**
-   * Look up a learning object by its author and name.
+   * Look up a learning object by its author and cuid.
    * By default it will perform this query on the objects collection.
    * If collection param is passed then it will perform the query on specified collection
    *
    * @param {{
    *     authorId: string; [Id of the author]
-   *     name: string; [name of the Learning Object]
-   *     collection?: string; [DB collection to perform query on;]
+   *     cuid: string; [cuid of the learning object]
+   *     version?: number; [version of the learning object]
+   *     status?: string; [status of the learning object]
    *   }} params
    * @returns {Promise<string>}
    * @memberof MongoDriver
    */
   async findLearningObject(params: {
     authorId: string;
-    name: string;
+    cuid: string;
+    version?: number;
     status?: string;
   }): Promise<string> {
-    const { authorId, name, status } = params;
+    const { authorId, cuid, version, status } = params;
+    const query: { [x: string]: any } = {
+      authorID: authorId,
+      cuid,
+    };
+    if (status) {
+      query.status = status;
+    }
+    if (version) {
+      query.version = version;
+    }
+    const doc = await this.db
+      .collection(COLLECTIONS.LEARNING_OBJECTS)
+      .findOne<LearningObjectDocument>(query, { projection: { _id: 1 } });
+    if (doc) {
+      return doc._id;
+    }
+    return null;
+  }
+
+  /**
+   * Look up a learning object by its author and name.
+   *
+   * @param {{
+   *   authorId: string; [id of the author]
+   *   cuid: string; [cuid of the learning object]
+   *   version?: number; [version of the learning object]
+   * }} params
+   * @returns {Promise<string>}
+   * @memberof MongoDriver
+   */
+  async findLearningObjectByName(params: {
+    authorId: String;
+    name: string;
+    version?: number;
+  }): Promise<string> {
+    const { authorId, name, version } = params;
     const query: { [x: string]: any } = {
       authorID: authorId,
       name,
     };
-    if (status) {
-      query.status = status;
+    if (version) {
+      query.version = version;
     }
     const doc = await this.db
       .collection(COLLECTIONS.LEARNING_OBJECTS)
@@ -907,14 +950,14 @@ export class MongoDriver implements DataStore {
    *
    * @param {{
    *     authorId: string; [Id of the author]
-   *     name: string; [name of the Learning Object]
+   *     cuid: string; [cuid of the Learning Object]
    *   }} params
    * @returns {Promise<string>}
    * @memberof MongoDriver
    */
   async findReleasedLearningObject(params: {
     authorId: string;
-    name: string;
+    cuid: string;
   }): Promise<string> {
     return this.findLearningObject({
       ...params,
@@ -967,9 +1010,11 @@ export class MongoDriver implements DataStore {
   async fetchLearningObject({
     id,
     full,
+    requester,
   }: {
     id: string;
     full?: boolean;
+    requester?: UserToken;
   }): Promise<LearningObject> {
     const doc = await this.db
       .collection(COLLECTIONS.LEARNING_OBJECTS)
@@ -978,9 +1023,18 @@ export class MongoDriver implements DataStore {
       const author = await UserServiceGateway.getInstance().queryUserById(
         doc.authorID,
       );
-      return mongoHelperFunctions.generateLearningObject(author, doc, full);
+      return mongoHelperFunctions.generateLearningObject(author, doc, full, requester);
     }
     return null;
+  }
+
+  async fetchLearningObjectByCuid(cuid: string, version?: number, requester?: UserToken): Promise<LearningObjectSummary[]> {
+    const objects = await this.queryLearningObjectByCuid(cuid, version, requester);
+    return objects.map(o => mapLearningObjectToSummary(o));
+  }
+
+  async fetchInternalLearningObjectByCuid(cuid: string, version?: number, requester?: UserToken): Promise<LearningObject[]> {
+    return await this.queryLearningObjectByCuid(cuid, version, requester);
   }
 
   /**
@@ -991,30 +1045,43 @@ export class MongoDriver implements DataStore {
    * @returns {Promise<LearningObjectSummary[]>}
    * @memberof MongoDriver
    */
-  async fetchLearningObjectByCuid(cuid: string, version?: number): Promise<LearningObjectSummary[]> {
-    const query: { cuid: string, revision?: number } = { cuid, revision: version };
+  private async queryLearningObjectByCuid(cuid: string, version?: number, requester?: UserToken): Promise<LearningObject[]> {
+    const query: { cuid: string, version?: number } = { cuid };
+
+    if (version) {
+      query.version = version;
+    }
 
     let notFoundError = `No Learning Object found for CUID '${cuid}'`;
 
     if (version !== undefined) {
-      query.revision = version;
+      query.version = version;
       notFoundError += ` with version ${version}`;
     }
 
-    const objects: LearningObjectDocument[] = await this.db.collection('objects').find(query).toArray();
+    const objects: LearningObjectDocument[] = await this.db
+      .collection('objects')
+      .find(query)
+      .toArray();
 
     if (!objects || !objects.length) {
       throw new ResourceError(notFoundError, ResourceErrorReason.NOT_FOUND);
     }
 
-    const author = await UserServiceGateway.getInstance().queryUserById(objects[0].authorID);
+    const author = await UserServiceGateway.getInstance().queryUserById(
+      objects[0].authorID,
+    );
 
-    return Promise.all(objects.map(async o => mapLearningObjectToSummary(await mongoHelperFunctions.generateLearningObject(author, o))));
+    return await Promise.all(
+      objects.map(
+        async o => await mongoHelperFunctions.generateLearningObject(author, o, false, requester),
+      ),
+    );
   }
 
   /**
    * Fetches released object through aggregation pipeline by performing a match based on the object id, finding the duplicate object in the
-   * working collection, then checking the status of the duplicate to determine whether or not to set hasRevision to true or false.
+   * working collection, then checking the status of the duplicate to determine whether or not to set revision to the uri of the revision.
    *
    * The query fetches the specified released learning object and sorts the files by date (newest first)
    * If the query fails, the function throws a 404 Resource Error.
@@ -1053,10 +1120,10 @@ export class MongoDriver implements DataStore {
         // unwind copy from array to object so we can check certain fields.
         { $unwind: { path: '$workingCopy', preserveNullAndEmptyArrays: true } },
         // if the copys' status differs from the released objects status, then the object has a revision.
-        // so we add a the field 'hasRevision' with a true value
+        // so we add a the field 'revision' with the uri
         {
           $addFields: {
-            hasRevision: {
+            revision: {
               $cond: [{ $ne: ['$copy.status', 'released'] }, true, false],
             },
           },
@@ -1088,13 +1155,25 @@ export class MongoDriver implements DataStore {
    * @returns {array}
    */
   async checkLearningObjectExistence(params: {
-    learningObjectId: string;
+    learningObjectId?: string;
     userId: string;
+    cuid?: string;
   }): Promise<LearningObject> {
-    return await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).findOne({
-      _id: params.learningObjectId,
-      authorID: params.userId,
-    });
+    const query: any = { authorID: params.userId };
+
+    if (params.learningObjectId) {
+      query.learningObjectId = params.learningObjectId;
+    }
+
+    if (params.cuid) {
+      query.cuid = params.cuid;
+    }
+
+    if (!query.learningObjectId && !query.cuid) {
+      throw new ResourceError('No Learning Object ID or CUID specified in request!', ResourceErrorReason.BAD_REQUEST);
+    }
+
+    return await this.db.collection(COLLECTIONS.LEARNING_OBJECTS).findOne(query);
   }
 
   /**
@@ -1313,7 +1392,7 @@ export class MongoDriver implements DataStore {
   }
 
   async createChangelog(params: {
-    learningObjectId: string;
+    cuid: string;
     author: {
       userId: string;
       name: string;
@@ -1323,9 +1402,11 @@ export class MongoDriver implements DataStore {
     changelogText: string;
   }): Promise<void> {
     return this.changelogStore.createChangelog({
-      learningObjectId: params.learningObjectId,
+      cuid: params.cuid,
       author: params.author,
       changelogText: params.changelogText,
     });
   }
 }
+
+

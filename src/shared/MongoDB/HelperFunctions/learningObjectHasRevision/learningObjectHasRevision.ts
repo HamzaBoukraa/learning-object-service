@@ -6,55 +6,21 @@ import { LearningObjectState } from '../../../types';
 /**
  * Checks if Learning Object in released collection has a copy in the objects collection that has a status of not released
  *
- * @param {string} learningObjectId [The id of the Learning Object to check for an existing revision of]
+ * @param {string} learningObjectCUID [The cuid of the Learning Object to check for an existing version of]
  * @returns {Promise<boolean>}
  * @memberof MongoDriver
  */
 export async function learningObjectHasRevision(
   learningObjectCUID: string,
-): Promise<boolean> {
+  learningObjectID?: string,
+): Promise<any> {
   const db = MongoConnector.client().db('onion');
-  const revision = db
+  const revision = await db
     .collection(COLLECTIONS.LEARNING_OBJECTS)
-    .aggregate([
-      {
-        $match: {
-          cuid: learningObjectCUID,
-          status: { $ne: LearningObject.Status.RELEASED },
-        },
-      },
-      {
-        $graphLookup: {
-          from: 'objects',
-          startWith: '$cuid',
-          connectFromField: 'cuid',
-          connectToField: 'cuid',
-          as: 'workingCopy',
-          restrictSearchWithMatch: {
-            status: LearningObject.Status.RELEASED,
-          },
-        },
-      },
-      { $unwind: { path: '$workingCopy', preserveNullAndEmptyArrays: true } },
-      {
-        $match: {
-          'workingCopy.status': { $in: LearningObjectState.IN_REVIEW },
-        },
-      },
-      {
-        $replaceRoot: {
-          newRoot: '$workingCopy',
-        },
-      },
-      {
-        $project: {
-          _id: 1,
-        },
-      },
-    ])
+    .find({ cuid: learningObjectCUID})
     .toArray();
-  if (revision) {
-    return true;
+  if (revision.length > 1) {
+    return revision.filter(revised => (LearningObjectState.NOT_RELEASED.includes(revised.status)))[0];
   }
-  return false;
+  return null;
 }

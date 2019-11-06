@@ -26,7 +26,7 @@ export interface AuthorSummary {
 }
 
 /**
- * An interface representation of the full learning object summary with the revision information included.
+ * An interface representation of the full learning object summary with the version information included.
  *
  * @exports
  * @interface LearningObjectSummary
@@ -81,13 +81,13 @@ export interface LearningObjectSummary {
    */
   resourceUris?: LearningObjectResourceUris;
   /**
-   * Flag indicating whether or not a Learning Object has a working copy with dissimilar properties
+   * The URI of the active revision of the object
    */
-  hasRevision: boolean;
+  revisionUri: string;
   /**
    * The version number of the Learning Object
    */
-  revision: number;
+  version: number;
 
   levels: string[];
 }

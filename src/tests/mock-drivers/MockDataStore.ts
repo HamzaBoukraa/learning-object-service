@@ -30,6 +30,10 @@ import { STUB_CHANGELOG_IDS } from '../../Changelogs/testing/ChangelogStubs';
 import { LearningObjectUpdates } from '../../shared/types/learning-object-updates';
 
 export class MockDataStore implements DataStore, SubmissionDataStore {
+  deleteChangelogsAfterRelease(params: { cuid: string; date: string; }): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+
   stubs = new Stubs();
   stubChangelogDataStore = new StubChangelogDatastore();
 
@@ -88,14 +92,19 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
 
   fetchLearningObjectRevision(params: {
     id: string;
-    revision: number;
+    version: number;
     author?: User;
   }): Promise<LearningObjectSummary> {
     return Promise.resolve(
       mapLearningObjectToSummary(this.stubs.learningObject),
     );
   }
-
+  findLearningObjectByName(params: { authorId: String; name: string; version?: number; }): Promise<string> {
+    return Promise.resolve('');
+  }
+  fetchInternalLearningObjectByCuid(cuid: string, version?: number): Promise<LearningObject[]> {
+    return Promise.resolve({} as LearningObject[]) ;
+  }
   fetchLearningObjectAuthorUsername(id: string): Promise<string> {
     return Promise.resolve(this.stubs.learningObject.author.username);
   }
@@ -113,13 +122,16 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
   }
   findLearningObject(params: {
     authorId: string;
-    name: string;
+    cuid: string;
+    version?: number;
+    status?: string;
   }): Promise<string> {
     return Promise.resolve(this.stubs.learningObject.id);
   }
+
   findReleasedLearningObject(params: {
     authorId: string;
-    name: string;
+    cuid: string;
   }): Promise<string> {
     return Promise.resolve(this.stubs.learningObject.id);
   }
@@ -152,56 +164,57 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
   }
 
   async checkLearningObjectExistence(params: {
-    learningObjectId: string;
+    learningObjectId?: string;
     userId: string;
+    cuid?: string;
   }): Promise<any> {
-    switch (params.learningObjectId) {
+    switch (params.cuid) {
       case STUB_CHANGELOG_IDS.RELEASED_NO_REVISIONS:
         return {
           ...this.stubs.learningObject,
           status: LearningObject.Status.RELEASED,
-          revision: 0,
+          version: 0,
         };
       case STUB_CHANGELOG_IDS.NOT_RELEASED:
         return {
           ...this.stubs.learningObject,
           status: LearningObject.Status.WAITING,
-          revision: 0,
+          version: 0,
         };
       case STUB_CHANGELOG_IDS.MINUS_REVISION:
         return {
           ...this.stubs.learningObject,
-          revision: 1,
+          version: 1,
         };
       case STUB_CHANGELOG_IDS.PLUS_REVISION:
         return {
           ...this.stubs.learningObject,
-          revision: 1,
+          version: 1,
         };
       default:
         return this.stubs.learningObject;
     }
   }
 
-  deleteChangelog(params: { learningObjectId: string }): Promise<void> {
+  deleteChangelog(params: { cuid: string }): Promise<void> {
     return this.stubChangelogDataStore.deleteChangelog(params);
   }
 
   fetchAllChangelogs(params: {
-    learningObjectId: string;
+    cuid: string;
   }): Promise<ChangeLogDocument[]> {
     return this.stubChangelogDataStore.fetchAllChangelogs(params);
   }
 
   fetchChangelogsBeforeDate(params: {
-    learningObjectId: string;
+    cuid: string;
     date: string;
   }): Promise<ChangeLogDocument[]> {
     return this.stubChangelogDataStore.fetchChangelogsBeforeDate(params);
   }
 
   fetchRecentChangelogBeforeDate(params: {
-    learningObjectId: string;
+    cuid: string;
     date: string;
   }): Promise<ChangeLogDocument> {
     return this.stubChangelogDataStore.fetchRecentChangelogBeforeDate(params);
@@ -248,7 +261,7 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
     return Promise.resolve();
   }
   updateFileDescription(params: {
-    learningObjectId: string;
+    cuid: string;
     fileId: string;
     description: string;
   }): Promise<LearningObject.Material.File> {
@@ -342,7 +355,7 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
     return Promise.resolve([this.stubs.learningObject]);
   }
   createChangelog(params: {
-    learningObjectId: string;
+    cuid: string;
     author: {
       userId: string;
       name: string;
@@ -355,7 +368,7 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
   }
 
   fetchRecentChangelog(params: {
-    learningObjectId: string;
+    cuid: string;
   }): Promise<ChangeLogDocument> {
     return Promise.resolve(this.stubs.changelog);
   }
@@ -398,15 +411,15 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
 
   fetchSubmission(
     collection: string,
-    learningObjectId: string,
+    cuid: string,
   ): Promise<Submission> {
     return Promise.resolve(this.stubs.submission);
   }
 
-  recordCancellation(learningObjectId: string): Promise<void> {
+  recordCancellation(cuid: string): Promise<void> {
     return Promise.resolve();
   }
-  fetchRecentSubmission(learningObjectId: string): Promise<Submission> {
+  fetchRecentSubmission(cuid: string): Promise<Submission> {
     return Promise.resolve(this.stubs.submission);
   }
   hasSubmission(params: {
@@ -442,19 +455,19 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
     return Promise.resolve('');
   }
 
-  addToCollection(learningObjectId: string, collection: string): Promise<void> {
+  addToCollection(cuid: string, collection: string): Promise<void> {
     return Promise.resolve();
   }
 
   findSingleFile(params: {
-    learningObjectId: string;
+    cuid: string;
     fileId: string;
   }): Promise<LearningObject.Material.File> {
     return Promise.resolve(this.stubs.learningObjectFile);
   }
 
   findParentObjectId(params: { childId: string }): Promise<string> {
-    return Promise.resolve(this.stubs.learningObject.id);
+    return Promise.resolve(this.stubs.learningObject.cuid);
   }
 
   fetchLearningObjectByCuid(cuid: string, version?: number) {
