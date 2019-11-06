@@ -4,6 +4,7 @@ import { UserServiceGateway } from '../../../gateways/user-service/UserServiceGa
 import { MongoConnector } from '../../MongoConnector';
 import { LearningOutcomeMongoDatastore } from '../../../../LearningOutcomes/datastores/LearningOutcomeMongoDatastore';
 
+// TODO: Generating a full learning object should now entail generating files as well since they are an external resource
 /**
  * Generates Learning Object from Document
  *
