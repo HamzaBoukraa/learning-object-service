@@ -1,6 +1,6 @@
 import { FileMetadataGateway } from '../../interfaces';
 import { Requester } from '../../typings';
-import { FileMetadataFilter } from '../../../FileMetadata/typings';
+import { FileMetadataFilter, LearningObjectFile } from '../../../FileMetadata/typings';
 import { LearningObject } from '../../../shared/entity';
 import { FileMetadataModule } from '../../../FileMetadata/FileMetadataModule';
 
@@ -21,5 +21,12 @@ export class ModuleFileMetadataGateway implements FileMetadataGateway {
     filter: FileMetadataFilter;
   }): Promise<LearningObject.Material.File> {
     return FileMetadataModule.getFileMetadata(params);
+  }
+
+  async getAllFileMetadata(params: {
+    requester: Requester;
+    learningObjectId: string;
+  }): Promise<LearningObjectFile[]> {
+    return await FileMetadataModule.getAllFileMetadata(params);
   }
 }

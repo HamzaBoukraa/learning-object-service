@@ -4,6 +4,7 @@ import { ResourceErrorReason, ResourceError } from '../../../shared/errors';
 import {
   requesterIsAdminOrEditor,
   requesterIsAuthor,
+  authorizeReadAccess,
 } from '../../../shared/AuthorizationManager';
 import { LearningObject } from '../../../shared/entity';
 import { Stream } from 'stream';
@@ -49,6 +50,7 @@ async function downloadWorkingCopy(
     requester,
     learningObject,
   );
+
   if (!hasAccess) {
     throw new ResourceError(
       FileManagerModuleErrorMessages.forbiddenLearningObjectDownload(
@@ -114,6 +116,15 @@ async function createBundleStream(
   learningObject: LearningObject,
   requester: UserToken,
 ) {
+  // Attach file metadata to Learning Object before creating bundle
+  let files: LearningObject.Material.File[] = [];
+  authorizeReadAccess({ requester, learningObject });
+  files = await Gateways.fileMetadataGateway().getAllFileMetadata({
+    requester,
+    learningObjectId: learningObject.id,
+  });
+  learningObject.materials.files = files;
+
   const hierarchy = await Gateways.hierarchyGateway().buildHierarchicalLearningObject(
     learningObject,
     requester,

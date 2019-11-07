@@ -20,4 +20,10 @@ export abstract class FileMetadataGateway {
     learningObjectId: string;
     fileId: string;
   }): Promise<LearningObjectFile>;
+
+  abstract getAllFileMetadata(params: {
+    requester: Requester;
+    learningObjectId: string;
+  }): Promise<LearningObjectFile[]>;
 }
+
