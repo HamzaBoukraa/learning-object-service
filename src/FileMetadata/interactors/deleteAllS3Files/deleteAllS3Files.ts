@@ -7,17 +7,17 @@ import { reportError } from '../../../shared/SentryConnector';
 import { handleError } from '../../../shared/errors';
 
 /**
- * Deletes all file metadata documents for a Learning Object
+ * Deletes all files for a Learning Object in S3
  *
- * Only authors, admins, and editors can delete file metadata document
+ * Only authors, admins, and editors can delete files
  *
  * @export
  * @param {Requester} requester [Information about the requester]
- * @param {string} learningObjectId [Id of the LearningObject the file meta belongs to]
+ * @param {string} learningObjectId [Id of the LearningObject the file belongs to]
  *
  * @returns {Promise<void>}
  */
-export async function deleteAllFileMetadata({
+export async function deleteAllFiles({
   requester,
   learningObjectId,
 }: {
@@ -42,8 +42,19 @@ export async function deleteAllFileMetadata({
 
     authorizeWriteAccess({ learningObject, requester });
 
-    await Drivers.datastore().deleteAllFileMetadata(learningObjectId);
+    Gateways.fileManager()
+      .deleteFolder({
+        authorUsername: learningObject.author.username,
+        learningObjectCUID: learningObject.cuid,
+        version: learningObject.version,
+        path: '/',
+      })
+      .catch(reportError);
   } catch (e) {
     handleError(e);
   }
 }
+
+
+
+
