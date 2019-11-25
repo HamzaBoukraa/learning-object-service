@@ -38,7 +38,7 @@ export class  ModuleFileMetadataGateway implements FileMetadataGateway {
   }
   /**
    * @inheritdoc
-   * 
+   *
    *
    * Proxies FileMetadataModule's `deleteAllFileMetadata`
    *
