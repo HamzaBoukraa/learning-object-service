@@ -13,6 +13,7 @@ import {
   getFileMetadata,
   getAllFileMetadata,
   getFilePreviewURL,
+  deleteAllS3Files,
 } from './interactors';
 import { ExpressHttpAdapter } from './adapters';
 import {
@@ -58,4 +59,5 @@ export class FileMetadataModule extends ExpressServiceModule {
   static getFileMetadata = getFileMetadata;
   static getAllFileMetadata = getAllFileMetadata;
   static deleteAllFileMetadata = deleteAllFileMetadata;
+  static deleteAllS3Files = deleteAllS3Files;
 }

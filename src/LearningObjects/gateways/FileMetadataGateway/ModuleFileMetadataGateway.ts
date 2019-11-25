@@ -4,7 +4,7 @@ import { FileMetadataFilter } from '../../../FileMetadata/typings';
 import { LearningObject } from '../../../shared/entity';
 import { FileMetadataModule } from '../../../FileMetadata/FileMetadataModule';
 
-export class ModuleFileMetadataGateway implements FileMetadataGateway {
+export class  ModuleFileMetadataGateway implements FileMetadataGateway {
   /**
    * @inheritdoc
    *
@@ -38,7 +38,7 @@ export class ModuleFileMetadataGateway implements FileMetadataGateway {
   }
   /**
    * @inheritdoc
-   *
+   * 
    *
    * Proxies FileMetadataModule's `deleteAllFileMetadata`
    *
@@ -50,5 +50,18 @@ export class ModuleFileMetadataGateway implements FileMetadataGateway {
     learningObjectId: string;
   }): Promise<void> {
     return FileMetadataModule.deleteAllFileMetadata(params);
+  }
+
+  /**
+   * @inheritdoc
+   *
+   * Proxies FileMetadataModule's `deleteAllS3Files`
+   *
+   */
+  deleteAllS3Files(params: {
+    requester: UserToken;
+    learningObjectId: string;
+  }): Promise<void> {
+    return FileMetadataModule.deleteAllS3Files(params);
   }
 }

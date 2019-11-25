@@ -1,7 +1,7 @@
 import { Requester, LearningObjectSummary } from '../../typings';
 import { validateRequestParams } from '../shared/validateRequestParams/validateRequestParams';
 import * as Validators from '../shared/validators';
-import { Gateways, Drivers } from '../shared/resolvedDependencies';
+import { Gateways } from '../shared/resolvedDependencies';
 import { authorizeWriteAccess } from '../../../shared/AuthorizationManager';
 import { reportError } from '../../../shared/SentryConnector';
 import { handleError } from '../../../shared/errors';
@@ -17,7 +17,7 @@ import { handleError } from '../../../shared/errors';
  *
  * @returns {Promise<void>}
  */
-export async function deleteAllFiles({
+export async function deleteAllS3Files({
   requester,
   learningObjectId,
 }: {
@@ -26,7 +26,7 @@ export async function deleteAllFiles({
 }): Promise<void> {
   try {
     validateRequestParams({
-      operation: 'Delete all file metadata',
+      operation: 'Delete all files from S3',
       values: [
         {
           value: learningObjectId,

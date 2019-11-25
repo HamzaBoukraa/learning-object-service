@@ -2,6 +2,7 @@ import { FileMetadataGateway } from '../../interfaces';
 import { UserToken } from '../../../shared/types';
 import { FileMetadataFilter } from '../../../FileMetadata/typings';
 import { LearningObject } from '../../../shared/entity';
+import { promises } from 'dns';
 
 export class StubFileMetadataGateway implements FileMetadataGateway {
   getFilePreviewUrl(params: {
@@ -19,6 +20,12 @@ export class StubFileMetadataGateway implements FileMetadataGateway {
     return Promise.resolve([]);
   }
   deleteAllFileMetadata(params: {
+    requester: UserToken;
+    learningObjectId: string;
+  }): Promise<void> {
+    return Promise.resolve();
+  }
+  deleteAllS3Files(params: {
     requester: UserToken;
     learningObjectId: string;
   }): Promise<void> {
