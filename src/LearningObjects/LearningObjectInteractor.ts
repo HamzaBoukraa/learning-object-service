@@ -1066,7 +1066,6 @@ export async function deleteLearningObject({
       full: false,
       requester: requester,
     });
-    console.log(learningObject);
     if (!learningObject) {
       throw new ResourceError(
         `Cannot delete Learning Object ${id}. Learning Object does not exist.`,
@@ -1078,6 +1077,13 @@ export async function deleteLearningObject({
       requester,
       learningObjectId: learningObject.id,
     });
+    if (learningObject.version === 0) {
+      // Delete the files from S3 because this object has never been released and the files are no longer need to be stored
+       await Gateways.fileMetadata().deleteAllS3Files({
+        requester,
+        learningObjectId: learningObject.id,
+      });
+    }
     await Gateways.submission().deletePreviousRelease({ learningObjectId: learningObject.id });
     await dataStore.deleteLearningObject(learningObject.id);
     const objectsForCuid = await dataStore.fetchInternalLearningObjectByCuid(learningObject.cuid);
@@ -1090,11 +1096,6 @@ export async function deleteLearningObject({
               `Problem deleting changelogs for Learning Object ${learningObject.id}: ${e}`,
             ),
           );
-        });
-        // Delete the revisions files from S3. We only want to keep files of objects that have been released at some point in time
-        await Gateways.fileMetadata().deleteAllS3Files({
-          requester,
-          learningObjectId: learningObject.id,
         });
       } else {
         await dataStore.deleteChangelog({ cuid: learningObject.cuid }).catch(e => {
