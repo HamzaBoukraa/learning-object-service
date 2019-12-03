@@ -1073,12 +1073,13 @@ export async function deleteLearningObject({
       );
     }
     authorizeWriteAccess({ learningObject, requester });
+    // Delete the files for the learningObject in Mongo
     await Gateways.fileMetadata().deleteAllFileMetadata({
       requester,
       learningObjectId: learningObject.id,
     });
+    // If the learningObject has never been released delete files from S3
     if (learningObject.version === 0) {
-      // Delete the files from S3 because this object has never been released and the files are no longer need to be stored
        await Gateways.fileMetadata().deleteAllS3Files({
         requester,
         learningObjectId: learningObject.id,
