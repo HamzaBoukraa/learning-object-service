@@ -47,17 +47,4 @@ export abstract class FileMetadataGateway {
     requester: UserToken;
     learningObjectId: string;
   }): Promise<void>;
-
-  /**
-   * Deletes all files associated with the Learning Object from S3
-   *
-   * @param {UserToken} requester [Information about the requester]
-   * @param {string} learningObjectId [Id of the learningObject the file belongs to]
-   *
-   * @returns {Promise<void>}
-   */
-  abstract deleteAllS3Files(params: {
-    requester: UserToken;
-    learningObjectId: string;
-  }): Promise<void>;
 }

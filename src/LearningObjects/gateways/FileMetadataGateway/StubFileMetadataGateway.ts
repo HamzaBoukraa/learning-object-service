@@ -25,10 +25,4 @@ export class StubFileMetadataGateway implements FileMetadataGateway {
   }): Promise<void> {
     return Promise.resolve();
   }
-  deleteAllS3Files(params: {
-    requester: UserToken;
-    learningObjectId: string;
-  }): Promise<void> {
-    return Promise.resolve();
-  }
 }

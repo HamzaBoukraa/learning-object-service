@@ -1,7 +1,7 @@
-import { Requester, LearningObjectSummary } from '../../typings';
-import { validateRequestParams } from '../shared/validateRequestParams/validateRequestParams';
-import * as Validators from '../shared/validators';
-import { Gateways } from '../shared/resolvedDependencies';
+import { Requester, LearningObjectSummary } from '../../../FileMetadata/typings';
+import { validateRequestParams } from '../../../FileMetadata/interactors/shared/validateRequestParams/validateRequestParams';
+import * as Validators from '../../../FileMetadata/interactors/shared/validators';
+import { Gateways } from '../../../FileMetadata/interactors/shared/resolvedDependencies';
 import { authorizeWriteAccess } from '../../../shared/AuthorizationManager';
 import { reportError } from '../../../shared/SentryConnector';
 import { handleError } from '../../../shared/errors';
@@ -17,7 +17,7 @@ import { handleError } from '../../../shared/errors';
  *
  * @returns {Promise<void>}
  */
-export async function deleteAllS3Files({
+export async function deleteAllFiles({
   requester,
   learningObjectId,
 }: {

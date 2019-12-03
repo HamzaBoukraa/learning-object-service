@@ -8,6 +8,7 @@ import {
   deleteFile,
   deleteFolder,
   getFileStream,
+  deleteAllFiles,
 } from './interactors/Interactor';
 import {
   FileManager,
@@ -44,4 +45,5 @@ export class FileManagerModule extends ExpressServiceModule {
   static deleteFile = deleteFile;
   static deleteFolder = deleteFolder;
   static duplicateRevisionFiles = duplicateRevisionFiles;
+  static deleteAllFiles = deleteAllFiles;
 }

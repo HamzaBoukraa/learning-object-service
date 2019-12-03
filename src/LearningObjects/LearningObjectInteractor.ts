@@ -1080,7 +1080,7 @@ export async function deleteLearningObject({
     });
     // If the learningObject has never been released delete files from S3
     if (learningObject.version === 0) {
-       await Gateways.fileMetadata().deleteAllS3Files({
+       await Gateways.fileManager().deleteAllFiles({
         requester,
         learningObjectId: learningObject.id,
       });

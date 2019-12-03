@@ -51,17 +51,4 @@ export class  ModuleFileMetadataGateway implements FileMetadataGateway {
   }): Promise<void> {
     return FileMetadataModule.deleteAllFileMetadata(params);
   }
-
-  /**
-   * @inheritdoc
-   *
-   * Proxies FileMetadataModule's `deleteAllS3Files`
-   *
-   */
-  deleteAllS3Files(params: {
-    requester: UserToken;
-    learningObjectId: string;
-  }): Promise<void> {
-    return FileMetadataModule.deleteAllS3Files(params);
-  }
 }
