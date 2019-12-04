@@ -8,7 +8,6 @@ import {
   deleteFile,
   deleteFolder,
   getFileStream,
-  deleteAllFiles,
 } from './interactors/Interactor';
 import {
   FileManager,
@@ -22,6 +21,7 @@ import {
 } from './gateways';
 import { ModuleHierarchyGateway, HierarchyGateway } from './gateways/HierarchyGateway/ModuleHierarchyGateway';
 import { duplicateRevisionFiles } from './interactors/duplicateRevisionFiles/duplicateRevisionFiles';
+import { deleteAllFiles } from './interactors/deleteAllFiles/deleteAllFiles';
 
 /**
  * Module responsible for handling file operations

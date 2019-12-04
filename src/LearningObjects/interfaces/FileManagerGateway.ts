@@ -51,4 +51,8 @@ export abstract class FileManagerGateway {
     version: number;
     path: string;
   }): Promise<void>;
+
+  abstract deleteAllFiles(params: {
+
+  }): Promise<void>;
 }
