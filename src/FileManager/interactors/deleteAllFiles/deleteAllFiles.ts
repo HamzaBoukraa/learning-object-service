@@ -5,6 +5,7 @@ import { Gateways } from '../../../FileMetadata/interactors/shared/resolvedDepen
 import { authorizeWriteAccess } from '../../../shared/AuthorizationManager';
 import { reportError } from '../../../shared/SentryConnector';
 import { handleError } from '../../../shared/errors';
+import { LearningObject } from '../../../shared/entity';
 
 /**
  * Deletes all files for a Learning Object in S3
@@ -19,26 +20,22 @@ import { handleError } from '../../../shared/errors';
  */
 export async function deleteAllFiles({
   requester,
-  learningObjectId,
+  learningObject,
 }: {
   requester: Requester;
-  learningObjectId: string;
+  learningObject: LearningObject;
 }): Promise<void> {
   try {
     validateRequestParams({
       operation: 'Delete all files from S3',
       values: [
         {
-          value: learningObjectId,
+          value: learningObject.id,
           validator: Validators.stringHasContent,
           propertyName: 'Learning Object id',
         },
       ],
     });
-
-    const learningObject: LearningObjectSummary = await Gateways.learningObjectGateway().getLearningObjectSummary(
-      { requester, id: learningObjectId },
-    );
 
     authorizeWriteAccess({ learningObject, requester });
 

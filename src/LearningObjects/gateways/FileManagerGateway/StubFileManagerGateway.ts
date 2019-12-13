@@ -26,7 +26,7 @@ export class StubFileManagerGateway implements FileManagerGateway {
   }
   deleteAllFiles(params: {
     requester: Requester;
-    learningObjectId: string;
+    learningObject: LearningObject;
   }): Promise<void> {
     return Promise.resolve();
   }
