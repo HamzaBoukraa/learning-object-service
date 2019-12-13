@@ -1,6 +1,7 @@
 import { FileManagerGateway } from '../../interfaces';
 import { FileUpload } from '../../../shared/types';
 import { Requester } from '../../../Changelogs/typings';
+import { LearningObject } from '../../../shared/entity';
 
 export class StubFileManagerGateway implements FileManagerGateway {
   uploadFile(params: {
