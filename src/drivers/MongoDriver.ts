@@ -1074,7 +1074,7 @@ export class MongoDriver implements DataStore {
 
     return await Promise.all(
       objects.map(
-        async o => await mongoHelperFunctions.generateLearningObject(author, o, false, requester),
+        async o => await mongoHelperFunctions.generateLearningObject(author, o, true, requester),
       ),
     );
   }
