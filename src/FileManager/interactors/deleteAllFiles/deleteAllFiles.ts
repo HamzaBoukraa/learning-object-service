@@ -48,8 +48,7 @@ export async function deleteAllFiles({
         learningObjectCUID: learningObject.cuid,
         version: learningObject.version,
         path: '/',
-      })
-      .catch(reportError);
+      });
   } catch (e) {
     handleError(e);
   }
