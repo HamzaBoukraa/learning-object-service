@@ -1,5 +1,7 @@
 import { FileManagerGateway } from '../../interfaces';
 import { FileUpload } from '../../../shared/types';
+import { Requester } from '../../../Changelogs/typings';
+import { LearningObject } from '../../../shared/entity';
 
 export class StubFileManagerGateway implements FileManagerGateway {
   uploadFile(params: {
@@ -20,6 +22,12 @@ export class StubFileManagerGateway implements FileManagerGateway {
     authorUsername: string;
     learningObjectCUID: string;
     path: string;
+  }): Promise<void> {
+    return Promise.resolve();
+  }
+  deleteAllFiles(params: {
+    requester: Requester;
+    learningObject: LearningObject;
   }): Promise<void> {
     return Promise.resolve();
   }

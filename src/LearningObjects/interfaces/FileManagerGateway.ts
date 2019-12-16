@@ -1,4 +1,6 @@
 import { FileUpload } from '../../shared/types';
+import { LearningObject } from '../../shared/entity';
+import { Requester } from '../../Changelogs/typings';
 
 export abstract class FileManagerGateway {
   /**
@@ -50,5 +52,10 @@ export abstract class FileManagerGateway {
     learningObjectCUID: string;
     version: number;
     path: string;
+  }): Promise<void>;
+
+  abstract deleteAllFiles(params: {
+    requester: Requester,
+    learningObject: LearningObject,
   }): Promise<void>;
 }

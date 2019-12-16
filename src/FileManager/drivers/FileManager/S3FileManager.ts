@@ -137,7 +137,7 @@ export class S3FileManager implements FileManager {
     version: number;
     path: string;
   }): Promise<void> {
-    if (path[path.length] !== '/') {
+    if (path[path.length - 1] !== '/') {
       throw Error('Path to delete a folder must end with a /');
     }
     const storagePath: string = (await this.generateObjectPath({
@@ -148,7 +148,7 @@ export class S3FileManager implements FileManager {
     })).replace(/\/\//gi, '/');
 
     const listObjectsParams = {
-      Key: storagePath,
+      Prefix: storagePath,
       Bucket: S3_CONFIG.FILES_BUCKET,
     };
     const listedObjects = await this.s3
