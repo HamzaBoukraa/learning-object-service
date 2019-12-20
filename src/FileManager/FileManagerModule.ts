@@ -21,6 +21,7 @@ import {
 } from './gateways';
 import { ModuleHierarchyGateway, HierarchyGateway } from './gateways/HierarchyGateway/ModuleHierarchyGateway';
 import { duplicateRevisionFiles } from './interactors/duplicateRevisionFiles/duplicateRevisionFiles';
+import { deleteAllFiles } from './interactors/deleteAllFiles/deleteAllFiles';
 
 /**
  * Module responsible for handling file operations
@@ -44,4 +45,5 @@ export class FileManagerModule extends ExpressServiceModule {
   static deleteFile = deleteFile;
   static deleteFolder = deleteFolder;
   static duplicateRevisionFiles = duplicateRevisionFiles;
+  static deleteAllFiles = deleteAllFiles;
 }
