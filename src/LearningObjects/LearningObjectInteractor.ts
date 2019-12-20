@@ -1085,26 +1085,26 @@ export async function deleteLearningObject({
         learningObject: learningObject,
       });
     }
-    await Gateways.submission().deletePreviousRelease({ learningObjectId: learningObject.id });
     await dataStore.deleteLearningObject(learningObject.id);
-    const objectsForCuid = await dataStore.fetchInternalLearningObjectByCuid(learningObject.cuid);
-    // LatestVersion refers to the latest released version
-    const latestVersion: LearningObject = objectsForCuid.filter(x => x.status === LearningObject.Status.RELEASED)[0];
-    if (learningObject.version > latestVersion.version) {
-      await Gateways.fileManager().deleteAllFiles({
-        requester,
-        learningObject: learningObject,
-      });
-    }
     if (!isReleased) {
-      if (latestVersion.version > 0) {
-        await dataStore.deleteChangelogsAfterRelease({ cuid: learningObject.cuid, date: latestVersion.date }).catch(e => {
-          reportError(
-            new Error(
-              `Problem deleting changelogs for Learning Object ${learningObject.id}: ${e}`,
-            ),
-          );
-        });
+      if (learningObject.version > 0) {
+        const objectsForCuid = await dataStore.fetchInternalLearningObjectByCuid(learningObject.cuid);
+        // LatestVersion refers to the latest released version
+        const latestVersion: LearningObject = objectsForCuid.filter(x => x.status === LearningObject.Status.RELEASED)[0];
+        if (learningObject.version > latestVersion.version) {
+          await Gateways.submission().deletePreviousRelease({ learningObjectId: learningObject.id });
+          await Gateways.fileManager().deleteAllFiles({
+            requester,
+            learningObject: learningObject,
+          });
+          await dataStore.deleteChangelogsAfterRelease({ cuid: learningObject.cuid, date: latestVersion.date }).catch(e => {
+            reportError(
+              new Error(
+                `Problem deleting changelogs for Learning Object ${learningObject.id}: ${e}`,
+              ),
+            );
+          });
+        }
       } else {
         await dataStore.deleteChangelog({ cuid: learningObject.cuid }).catch(e => {
           reportError(
