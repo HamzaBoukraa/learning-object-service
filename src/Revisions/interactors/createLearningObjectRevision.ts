@@ -8,6 +8,7 @@ import { LearningObject } from '../../shared/entity';
 import { RevisionsDataStore } from '../RevisionsDataStore';
 import { LearningObjectAdapter } from '../../LearningObjects/adapters/LearningObjectAdapter';
 import { FileManagerModule } from '../../FileManager/FileManagerModule';
+import { RevisionsSearchIndex } from '../RevisionsSearchIndex';
 
 export const ERROR_MESSAGES = {
   REVISIONS: {
@@ -41,9 +42,10 @@ export async function createLearningObjectRevision(params: {
   username: string;
   cuid: string;
   dataStore: RevisionsDataStore;
+  searchIndex: RevisionsSearchIndex;
   requester: UserToken;
 }): Promise<string> {
-  const { dataStore, cuid, requester, username } = params;
+  const { dataStore, cuid, requester, username, searchIndex } = params;
 
   let learningObjectsForCUID = await LearningObjectAdapter.getInstance().getInternalLearningObjectByCuid({cuid, username, userToken: requester});
 
@@ -76,6 +78,7 @@ export async function createLearningObjectRevision(params: {
 
   await determineRevisionType({
     dataStore,
+    searchIndex,
     version,
     learningObjectId: learningObject.id,
     requester,
@@ -101,6 +104,7 @@ async function determineRevisionType(params: {
   version: number;
   learningObjectId: string;
   dataStore: RevisionsDataStore;
+  searchIndex: RevisionsSearchIndex;
   requester: UserToken;
 }) {
   const { releasedCopy } = params;
@@ -140,12 +144,14 @@ async function createRevision({
   version,
   dataStore,
   requester,
+  searchIndex,
 }: {
   releasedCopy: LearningObject;
   learningObjectId: string;
   version: number;
   dataStore: RevisionsDataStore;
   requester: UserToken;
+  searchIndex: RevisionsSearchIndex;
 }) {
   await FileManagerModule.duplicateRevisionFiles({
     authorUsername: releasedCopy.author.username,
@@ -174,12 +180,14 @@ async function createRevisionInProofing({
   version,
   dataStore,
   requester,
+  searchIndex,
 }: {
   releasedCopy: LearningObject;
   learningObjectId: string;
   version: number;
   dataStore: RevisionsDataStore;
   requester: UserToken;
+  searchIndex: RevisionsSearchIndex;
 }) {
   await FileManagerModule.duplicateRevisionFiles({
     authorUsername: releasedCopy.author.username,
@@ -187,7 +195,17 @@ async function createRevisionInProofing({
     version: releasedCopy.version,
     newLearningObjectVersion: version,
   });
+
   await dataStore.createRevision(releasedCopy.cuid, version, LearningObject.Status.PROOFING);
+
+  // Insert into search index
+  const learningObjectRevision = await LearningObjectAdapter.getInstance().getInternalLearningObjectByCuid({
+    username: releasedCopy.author.username,
+    cuid: releasedCopy.cuid,
+    version,
+    userToken: requester,
+  });
+  await searchIndex.insertLearningObject(learningObjectRevision[0]);
   return version;
 }
 
