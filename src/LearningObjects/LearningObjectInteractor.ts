@@ -1087,7 +1087,7 @@ export async function deleteLearningObject({
     }
     await dataStore.deleteLearningObject(learningObject.id);
     if (!isReleased) {
-      if (learningObject.version !== 0) {
+      if (learningObject.version > 0) {
         await Gateways.submission().deletePreviousRelease({ learningObjectId: learningObject.id });
         const objectsForCuid = await dataStore.fetchInternalLearningObjectByCuid(learningObject.cuid);
         // LatestVersion refers to the latest released version
