@@ -1,6 +1,8 @@
 import { FileManagerGateway } from '../../interfaces';
 import { FileUpload } from '../../../shared/types';
 import { FileManagerModule } from '../../../FileManager/FileManagerModule';
+import { Requester } from '../../../FileMetadata/typings';
+import { LearningObject } from '../../../shared/entity';
 
 export class ModuleFileManagerGateway implements FileManagerGateway {
   /**
@@ -53,5 +55,20 @@ export class ModuleFileManagerGateway implements FileManagerGateway {
     path: string;
   }): Promise<void> {
     return FileManagerModule.deleteFolder(params);
+  }
+
+  /**
+   * @inheritdoc
+   *
+   * Proxies FileManagerModule's `deleteAllFiles`
+   *
+   * @returns {Promise<void>}
+   * @memberof ModuleFileManagerGateway
+   */
+  deleteAllFiles(params: {
+    requester: Requester;
+    learningObject: LearningObject;
+  }): Promise<void> {
+    return FileManagerModule.deleteAllFiles(params);
   }
 }

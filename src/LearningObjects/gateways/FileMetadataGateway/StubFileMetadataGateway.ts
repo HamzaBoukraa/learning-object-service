@@ -2,6 +2,7 @@ import { FileMetadataGateway } from '../../interfaces';
 import { UserToken } from '../../../shared/types';
 import { FileMetadataFilter } from '../../../FileMetadata/typings';
 import { LearningObject } from '../../../shared/entity';
+import { promises } from 'dns';
 
 export class StubFileMetadataGateway implements FileMetadataGateway {
   getFilePreviewUrl(params: {

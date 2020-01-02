@@ -4,7 +4,7 @@ import { FileMetadataFilter } from '../../../FileMetadata/typings';
 import { LearningObject } from '../../../shared/entity';
 import { FileMetadataModule } from '../../../FileMetadata/FileMetadataModule';
 
-export class ModuleFileMetadataGateway implements FileMetadataGateway {
+export class  ModuleFileMetadataGateway implements FileMetadataGateway {
   /**
    * @inheritdoc
    *

@@ -43,14 +43,6 @@ export async function deleteAllFileMetadata({
     authorizeWriteAccess({ learningObject, requester });
 
     await Drivers.datastore().deleteAllFileMetadata(learningObjectId);
-    Gateways.fileManager()
-      .deleteFolder({
-        authorUsername: learningObject.author.username,
-        learningObjectCUID: learningObject.cuid,
-        version: learningObject.version,
-        path: '/',
-      })
-      .catch(reportError);
   } catch (e) {
     handleError(e);
   }
