@@ -101,7 +101,12 @@ function formatSearchQuery(
     formattedQuery.sortType === 1 || formattedQuery.sortType === -1
       ? formattedQuery.sortType
       : 1;
-
+  if (formattedQuery.guidelines && formattedQuery.guidelines.includes('NICE KSAs')) {
+    formattedQuery.guidelines.push('NCWF KSAs');
+  } else if (formattedQuery.guidelines && formattedQuery.guidelines.includes('NICE Tasks')) {
+    formattedQuery.guidelines.push('NCWF Tasks');
+  }
+  console.log(formattedQuery.guidelines);
   return sanitizeObject({ object: formattedQuery }, false);
 }
 
