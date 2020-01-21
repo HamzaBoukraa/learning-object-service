@@ -106,7 +106,6 @@ function formatSearchQuery(
   } else if (formattedQuery.guidelines && formattedQuery.guidelines.includes('NICE Tasks')) {
     formattedQuery.guidelines.push('NCWF Tasks');
   }
-  console.log(formattedQuery.guidelines);
   return sanitizeObject({ object: formattedQuery }, false);
 }
 
