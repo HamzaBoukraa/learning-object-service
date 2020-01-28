@@ -1,5 +1,6 @@
 import { DataStore } from '../shared/interfaces/DataStore';
 import { LibraryCommunicator } from '../shared/interfaces/interfaces';
+import { connect } from 'amqplib';
 import {
   LearningObjectMetadataUpdates,
   LearningObjectState,
@@ -12,6 +13,7 @@ import {
   ResourceError,
   ResourceErrorReason,
   ServiceError,
+  ServiceErrorReason,
 } from '../shared/errors';
 import { reportError } from '../shared/SentryConnector';
 import { LearningObject, User } from '../shared/entity';
@@ -51,6 +53,9 @@ import { LearningObjectSubmissionGateway } from './interfaces/LearningObjectSubm
 import { learningObjectHasRevision } from '../shared/MongoDB/HelperFunctions/learningObjectHasRevision/learningObjectHasRevision';
 import { LibraryDriver } from '../drivers/LibraryDriver';
 const GATEWAY_API = process.env.GATEWAY_API;
+const AMQP_URL = process.env.AMQP_URL;
+const AMQP_EXCHANGE_NAME = process.env.AMQP_EXCHANGE_NAME;
+const AMQP_REVISION_RELEASE_ROUTING_KEY = process.env.AMQP_REVISION_RELEASE_ROUTING_KEY;
 
 namespace Drivers {
   export const readMeBuilder = () =>
@@ -668,6 +673,38 @@ export async function updateLearningObject({
       });
 
       if (releasableObject.version) {
+        // PublishAMQP message, establishes a channel to a RabbitMQ instance
+        // and sends new messages to a specified queue.
+        interface MQmessage {
+          Category: number;
+          Payload: {
+            Username: string,
+            Author: string,
+            LearningObjectName: string,
+            Version: number,
+            Cuid: string,
+          };
+          Requester: UserToken;
+        }
+        const rabbitMQ = await connect(AMQP_URL);
+        const rabbitMQChannel = await rabbitMQ.createChannel();
+        const obj: MQmessage = {
+          Category: 0,
+          Payload: {
+            Username: learningObject.author.username,
+            Author: learningObject.author.name,
+            LearningObjectName: learningObject.name,
+            Version: learningObject.version,
+            Cuid: learningObject.cuid,
+          },
+          Requester: requester,
+        };
+        const payload = JSON.stringify(obj);
+        await rabbitMQChannel.checkExchange(AMQP_EXCHANGE_NAME);
+        rabbitMQChannel.publish(AMQP_EXCHANGE_NAME, AMQP_REVISION_RELEASE_ROUTING_KEY, Buffer.from(payload));
+        rabbitMQChannel.close();
+        console.log('message was sent to the queue', payload);
+
         // this Learning Object must have a duplicate with a lower revision property
         await deleteDuplicateResources(dataStore, library, releasableObject.cuid, releasableObject.version, requester);
 
