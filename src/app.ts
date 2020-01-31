@@ -1,9 +1,10 @@
+import { connect, Connection, Channel } from 'amqplib';
 import 'dotenv/config';
 import * as http from 'http';
 import * as express from 'express';
 import { reportError } from './shared/SentryConnector';
 
-import { MongoDriver, ExpressDriver } from './drivers/drivers';
+import { MongoDriver, ExpressDriver, RabbitMQConnection } from './drivers/drivers';
 import { LibraryCommunicator, DataStore } from './shared/interfaces/interfaces';
 import { LibraryDriver } from './drivers/LibraryDriver';
 import { MongoConnector } from './shared/MongoDB/MongoConnector';
@@ -69,8 +70,10 @@ const publisher = new ElasticsearchSubmissionPublisher();
  * call to its build function here.
  *
  */
+
 async function startApp() {
   try {
+    await RabbitMQConnection.buildMessageQueue();
     await MongoConnector.open(dburi);
     dataStore = await MongoDriver.build(dburi);
     initModules();

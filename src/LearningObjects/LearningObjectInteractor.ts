@@ -51,13 +51,15 @@ import { deleteSubmission } from '../LearningObjectSubmission/interactors/delete
 import { LearningObjectSubmissionGateway } from './interfaces/LearningObjectSubmissionGateway';
 import { learningObjectHasRevision } from '../shared/MongoDB/HelperFunctions/learningObjectHasRevision/learningObjectHasRevision';
 import { LibraryDriver } from '../drivers/LibraryDriver';
-import { RabbitMQ } from '../drivers/RabbitMQ/rabbitMQMessageQueue';
 import { ServiceEvent } from '../shared/types/index';
+import { MessageQueue } from './interfaces/messageQueue';
 const GATEWAY_API = process.env.GATEWAY_API;
 
 namespace Drivers {
   export const readMeBuilder = () =>
     LearningObjectsModule.resolveDependency(ReadMeBuilder);
+  export const messageQueue = () =>
+    LearningObjectsModule.resolveDependency(MessageQueue);
 }
 namespace Gateways {
   export const fileManager = () =>
@@ -683,9 +685,12 @@ export async function updateLearningObject({
             cuid: learningObject.cuid,
           },
           requester: requester,
-
         };
-        const amqp = await (await RabbitMQ.buildMessageQueue()).sendMessage(serviceEvent);
+
+        const isSuccessful = await Drivers.messageQueue().sendMessage(serviceEvent);
+        if (!isSuccessful) {
+          throw new ServiceError(ServiceErrorReason.INTERNAL);
+        }
 
         // this Learning Object must have a duplicate with a lower revision property
         await deleteDuplicateResources(dataStore, library, releasableObject.cuid, releasableObject.version, requester);
