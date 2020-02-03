@@ -54,6 +54,7 @@ export class ExpressRouteDriver {
         const standardOutcomeIDs = req.query.standardOutcomes;
         const query = Object.assign({}, req.query, { page, limit, standardOutcomeIDs });
 
+        console.log('blah blah', query);
         objectResponse = await LearningObjectInteractor.searchObjects({
             dataStore: this.dataStore,
             query,

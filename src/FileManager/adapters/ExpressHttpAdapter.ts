@@ -69,6 +69,7 @@ async function getLearningObjectBundle(req: Request, res: Response) {
     res.header('Content-Disposition', `attachment; filename="${learningObjects[0].name}.zip"`);
     stream.pipe(res);
   } catch (e) {
+    console.log(e)
     const { code, message } = mapErrorToResponseData(e);
     res.status(code).json({ message });
   }

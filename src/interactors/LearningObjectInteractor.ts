@@ -429,6 +429,7 @@ export class LearningObjectInteractor {
         page,
         limit,
         status,
+        includes,
       } = this.formatSearchQuery(query);
       let response: { total: number; objects: LearningObject[] };
 
@@ -556,6 +557,7 @@ export class LearningObjectInteractor {
       formattedQuery.standardOutcomeIDs,
     );
     formattedQuery.guidelines = toArray(formattedQuery.guidelines);
+    formattedQuery.includes = toArray(formattedQuery.includes);
     formattedQuery.page = toNumber(formattedQuery.page);
     formattedQuery.limit = toNumber(formattedQuery.limit);
     formattedQuery.sortType = <1 | -1>toNumber(formattedQuery.sortType);

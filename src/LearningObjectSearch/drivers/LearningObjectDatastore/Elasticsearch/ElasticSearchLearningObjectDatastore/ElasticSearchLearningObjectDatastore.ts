@@ -226,6 +226,7 @@ export class ElasticSearchLearningObjectDatastore
       status,
       standardOutcomes,
       guidelines,
+      includes,
     } = params;
     const queryFilters = sanitizeObject({
       object: {
@@ -235,6 +236,7 @@ export class ElasticSearchLearningObjectDatastore
         status,
         'outcomes.mappings.id': standardOutcomes,
         'outcomes.mappings.source': guidelines,
+        includes,
       },
     });
     return queryFilters || {};
@@ -580,6 +582,7 @@ export class ElasticSearchLearningObjectDatastore
       termBody[`${objectKey}.keyword`] = filters[objectKey];
       termsQueries.push({ terms: termBody });
     });
+    console.log(termsQueries);
     return termsQueries;
   }
 

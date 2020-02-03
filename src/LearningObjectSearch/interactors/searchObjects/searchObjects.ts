@@ -94,6 +94,7 @@ function formatSearchQuery(
   formattedQuery.collection = toArray(formattedQuery.collection);
   formattedQuery.standardOutcomes = toArray(formattedQuery.standardOutcomes);
   formattedQuery.guidelines = toArray(formattedQuery.guidelines);
+  formattedQuery.includes = toArray(formattedQuery.includes);
   formattedQuery.page = toNumber(formattedQuery.page);
   formattedQuery.limit = toNumber(formattedQuery.limit);
   formattedQuery.sortType = <1 | -1>toNumber(formattedQuery.sortType);
@@ -106,6 +107,7 @@ function formatSearchQuery(
   } else if (formattedQuery.guidelines && formattedQuery.guidelines.includes('NICE Tasks')) {
     formattedQuery.guidelines.push('NCWF Tasks');
   }
+  console.log('Paige', formattedQuery.includes);
   return sanitizeObject({ object: formattedQuery }, false);
 }
 
