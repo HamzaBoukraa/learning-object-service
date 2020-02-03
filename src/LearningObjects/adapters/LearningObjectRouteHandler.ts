@@ -209,7 +209,7 @@ export function initializePrivate({
     try {
       const user: UserToken = req.user;
       const cuid = req.params.cuid;
-      const version = req.params.version;
+      const version = parseInt(req.params.version, 10);
       await LearningObjectInteractor.deleteLearningObjectByCuidVersion({
         dataStore,
         cuid,
