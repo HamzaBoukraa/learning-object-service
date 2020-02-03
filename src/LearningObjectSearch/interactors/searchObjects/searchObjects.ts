@@ -94,6 +94,7 @@ function formatSearchQuery(
   formattedQuery.collection = toArray(formattedQuery.collection);
   formattedQuery.standardOutcomes = toArray(formattedQuery.standardOutcomes);
   formattedQuery.guidelines = toArray(formattedQuery.guidelines);
+  formattedQuery.fileTypes = toArray(formattedQuery.fileTypes);
   formattedQuery.page = toNumber(formattedQuery.page);
   formattedQuery.limit = toNumber(formattedQuery.limit);
   formattedQuery.sortType = <1 | -1>toNumber(formattedQuery.sortType);
