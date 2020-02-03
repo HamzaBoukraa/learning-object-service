@@ -226,6 +226,7 @@ export class ElasticSearchLearningObjectDatastore
       status,
       standardOutcomes,
       guidelines,
+      fileTypes,
     } = params;
     const queryFilters = sanitizeObject({
       object: {
@@ -235,6 +236,7 @@ export class ElasticSearchLearningObjectDatastore
         status,
         'outcomes.mappings.id': standardOutcomes,
         'outcomes.mappings.source': guidelines,
+        fileTypes,
       },
     });
     return queryFilters || {};
