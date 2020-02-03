@@ -21,11 +21,12 @@ export class ElasticsearchDriver implements RevisionsSearchIndex {
   }
 
 async insertLearningObject(learningObject: LearningObject): Promise<void> {
+  const learningObjectSearchDocument = await cleanLearningObjectSearchDocument(learningObject);
     try {
       await this.client.index({
         index: INDEX_NAME,
         type: '_doc',
-        body: cleanLearningObjectSearchDocument(learningObject),
+        body: learningObjectSearchDocument,
       });
     } catch (e) {
       reportError(e);

@@ -35,7 +35,7 @@ export class ElasticSearchPublishingGateway implements PublishingDataStore {
    * @param releasableObject {LearningObject}
    */
   async addToReleased(releasableObject: LearningObject): Promise<void> {
-    const cleanObject = cleanLearningObjectSearchDocument(releasableObject);
+    const cleanObject = await cleanLearningObjectSearchDocument(releasableObject);
     const formattedUpdateParam = formatUpdateQueryParam(cleanObject);
     const updateResponse = await this.client.updateByQuery({
       index: 'learning-objects',

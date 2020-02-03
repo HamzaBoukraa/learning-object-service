@@ -39,7 +39,7 @@ export class ElasticsearchSubmissionPublisher implements SubmissionPublisher {
       await this.client.index({
         index: INDEX_NAME,
         type: '_doc',
-        body: cleanLearningObjectSearchDocument(submission),
+        body: await cleanLearningObjectSearchDocument(submission),
       });
     } catch (e) {
       reportError(e);
