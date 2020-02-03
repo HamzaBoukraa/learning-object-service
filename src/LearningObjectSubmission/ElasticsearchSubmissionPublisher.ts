@@ -4,6 +4,7 @@ import { Client } from '@elastic/elasticsearch';
 import { reportError } from '../shared/SentryConnector';
 import { cleanLearningObjectSearchDocument } from '../shared/elasticsearch/CleanLearningObject/CleanLearningObject';
 import { LearningObjectMetadataUpdates } from '../shared/types';
+import { getFileTypesOnObjects } from '../shared/MongoDB/HelperFunctions';
 
 const INDEX_NAME = 'learning-objects';
 /**
@@ -35,11 +36,12 @@ export class ElasticsearchSubmissionPublisher implements SubmissionPublisher {
    * @inheritdoc
    */
   async publishSubmission(submission: LearningObject): Promise<void> {
+    const fileTypes = await getFileTypesOnObjects(submission);
     try {
       await this.client.index({
         index: INDEX_NAME,
         type: '_doc',
-        body: await cleanLearningObjectSearchDocument(submission),
+        body: cleanLearningObjectSearchDocument(submission, fileTypes),
       });
     } catch (e) {
       reportError(e);

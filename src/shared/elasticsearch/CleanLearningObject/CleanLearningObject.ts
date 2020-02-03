@@ -1,16 +1,15 @@
 import { LearningObject } from '../../entity';
 import { LearningObjectSearchDocument } from '../types/LearningObjectSearchDocument';
-import { getFileTypesOnObjects } from '../../../shared/MongoDB/HelperFunctions';
 /**
  * Prepares a Learning Object for indexing by removing unneeded data and adding the fileTypes on the Learning Object
  *
  * @param learningObject A fully qualified Learning Object where all values
  * are loaded to their correct values (no foreign key IDs)
  */
-export async function cleanLearningObjectSearchDocument(
+export function cleanLearningObjectSearchDocument(
   learningObject: LearningObject,
-): Promise<LearningObjectSearchDocument> {
-  const fileTypes = await getFileTypesOnObjects(learningObject);
+  fileTypes: string[],
+): LearningObjectSearchDocument {
   const learningObjectSearchDocument = formatLearningObjectSearchDocument(
     learningObject,
     fileTypes,
