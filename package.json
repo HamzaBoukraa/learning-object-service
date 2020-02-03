@@ -49,7 +49,6 @@
     "natives": "^1.1.3",
     "node-service-module": "^1.1.0",
     "pdfkit": "^0.9.0",
-    "rabbit-queue": "^4.6.0",
     "request-promise": "^4.2.2",
     "snyk": "^1.189.0",
     "stopword": "^0.1.10",
