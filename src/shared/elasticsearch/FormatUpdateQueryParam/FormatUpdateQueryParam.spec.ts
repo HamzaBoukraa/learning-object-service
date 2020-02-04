@@ -36,6 +36,7 @@ const learningObjectSearchDocumentStub: LearningObjectSearchDocument = {
   outcomes: [learningOutcomeStub],
   version: 0,
   status: LearningObject.Status.UNRELEASED,
+  fileTypes: ['video', 'powerpoint', 'document'],
 };
 
 describe('formatUpdateQueryParam', () => {
