@@ -18,29 +18,29 @@ describe('cleanLearningObject', () => {
       author: new User(stubs.user),
     } as Partial<LearningObject>);
     it('should contain the name property', () => {
-      expect(cleanLearningObjectSearchDocument(stubs.learningObject).name).toBe(stubs.learningObject.name);
+      expect(cleanLearningObjectSearchDocument(stubs.learningObject, stubs.fileTypes).name).toBe(stubs.learningObject.name);
     });
     it('should contain the description property', () => {
-      expect(cleanLearningObjectSearchDocument(stubs.learningObject).description).toBe(stubs.learningObject.description);
+      expect(cleanLearningObjectSearchDocument(stubs.learningObject, stubs.fileTypes).description).toBe(stubs.learningObject.description);
     });
     it('should contain the date property', () => {
-      expect(cleanLearningObjectSearchDocument(stubs.learningObject).date).toBe(stubs.learningObject.date);
+      expect(cleanLearningObjectSearchDocument(stubs.learningObject, stubs.fileTypes).date).toBe(stubs.learningObject.date);
     });
     it('should contain the length property', () => {
-      expect(cleanLearningObjectSearchDocument(stubs.learningObject).length).toBe(stubs.learningObject.length);
+      expect(cleanLearningObjectSearchDocument(stubs.learningObject, stubs.fileTypes).length).toBe(stubs.learningObject.length);
     });
     describe('the author object', () => {
       it('should contain the author\'s username', () => {
-        expect(cleanLearningObjectSearchDocument(stubs.learningObject).author.username).toBe(stubs.learningObject.author.username);
+        expect(cleanLearningObjectSearchDocument(stubs.learningObject, stubs.fileTypes).author.username).toBe(stubs.learningObject.author.username);
       });
       it('should contain the author\'s name', () => {
-        expect(cleanLearningObjectSearchDocument(stubs.learningObject).author.name).toBe(stubs.learningObject.author.name);
+        expect(cleanLearningObjectSearchDocument(stubs.learningObject, stubs.fileTypes).author.name).toBe(stubs.learningObject.author.name);
       });
       it('should contain the author\'s email', () => {
-        expect(cleanLearningObjectSearchDocument(stubs.learningObject).author.email).toBe(stubs.learningObject.author.email);
+        expect(cleanLearningObjectSearchDocument(stubs.learningObject, stubs.fileTypes).author.email).toBe(stubs.learningObject.author.email);
       });
       it('should contain the author\'s organization', () => {
-        expect(cleanLearningObjectSearchDocument(stubs.learningObject).author.organization).toBe(stubs.learningObject.author.organization);
+        expect(cleanLearningObjectSearchDocument(stubs.learningObject, stubs.fileTypes).author.organization).toBe(stubs.learningObject.author.organization);
       });
     });
   });

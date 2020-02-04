@@ -14,7 +14,7 @@ export function cleanLearningObjectSearchDocument(
     learningObject,
     fileTypes,
   );
-  
+
   return learningObjectSearchDocument;
 }
 
