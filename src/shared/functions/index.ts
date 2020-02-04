@@ -152,6 +152,7 @@ export function mapAuthorToSummary(author: Partial<User>): AuthorSummary {
     id: author.id,
     username: author.username,
     name: author.name,
+    email: author.email,
     organization: author.organization,
   };
 }
