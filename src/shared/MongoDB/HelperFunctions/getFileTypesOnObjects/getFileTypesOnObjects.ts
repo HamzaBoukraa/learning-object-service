@@ -11,7 +11,7 @@ import { FileMetadataInsert } from '../../../../FileMetadata/typings/index';
 export async function getFileTypesOnObjects(
     learningObject: LearningObject
 ) {
-    let fileTypes:string[] = [];
+    let fileTypes: string[] = [];
     const db = MongoConnector.client().db('file-service');
 
     const files = await db.collection('files').find({ learningObjectId: learningObject.id }).toArray();
@@ -50,7 +50,7 @@ export async function getFileTypesOnObjects(
                 fileTypes.push('spreadsheet');
             }
         }
-    })
+    });
 
     return fileTypes;
 
