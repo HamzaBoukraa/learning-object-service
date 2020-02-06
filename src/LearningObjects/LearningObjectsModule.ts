@@ -1,3 +1,5 @@
+import { RabbitMQ } from './drivers/rabbitMQMessageQueue';
+import { MessageQueue } from './interfaces/messageQueue';
 import { ServiceModule, serviceModule } from 'node-service-module';
 import {
   FileMetadataGateway,
@@ -20,6 +22,7 @@ import { ModuleLearningObjectSubmissionGateway } from './gateways/LearningObject
     { provide: ReadMeBuilder, useClass: PDFKitReadMeBuilder },
     { provide: UserGateway, useClass: HttpUserGateway },
     { provide: LearningObjectSubmissionGateway, useClass: ModuleLearningObjectSubmissionGateway },
+    { provide: MessageQueue, useClass: RabbitMQ},
   ],
 })
 export class LearningObjectsModule extends ServiceModule {}
