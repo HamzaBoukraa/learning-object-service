@@ -13,15 +13,15 @@ export async function getFileTypesOnObjects(
 ) {
     let fileTypes:string[] = [];
     const db = MongoConnector.client().db('file-service');
-    
+
     const files = await db.collection('files').find({ learningObjectId: learningObject.id }).toArray();
-    
-    if(learningObject.materials.urls.length > 0) {
+
+    if (learningObject.materials.urls.length > 0) {
         learningObject.materials.urls.forEach(url => {
-            if(url.url.includes('youtu.be') || url.url.includes('youtube')) {
+            if (url.url.includes('youtu.be') || url.url.includes('youtube')) {
                 fileTypes.push('video');
             }
-        })
+        });
     }
 
     files.forEach((file: FileMetadataInsert) => {
