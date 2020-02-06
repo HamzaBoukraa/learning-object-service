@@ -23,7 +23,7 @@ export class ElasticsearchDriver implements RevisionsSearchIndex {
 
 async insertLearningObject(learningObject: LearningObject): Promise<void> {
   const fileTypes = await getFileTypesOnObjects(learningObject);
-    try {
+  try {
       await this.client.index({
         index: INDEX_NAME,
         type: '_doc',
