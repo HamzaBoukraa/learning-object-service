@@ -1,15 +1,16 @@
 import { LearningObject } from '../../../entity';
 import { MongoConnector } from '../../MongoConnector';
 import { FileMetadataInsert } from '../../../../FileMetadata/typings/index';
+import e = require('express');
 
 /**
  * Gets all of the files for a learning object and then returns an array of the file types that the object has.
  * @param {LearningObject} learningObject
- * @returns {Promise<string[]>} 
+ * @returns {Promise<string[]>}
  * @memberof MongoDriver
  */
 export async function getFileTypesOnObjects(
-    learningObject: LearningObject
+    learningObject: LearningObject,
 ) {
     let fileTypes: string[] = [];
     const db = MongoConnector.client().db('file-service');
@@ -25,30 +26,27 @@ export async function getFileTypesOnObjects(
     }
 
     files.forEach((file: FileMetadataInsert) => {
-        if (file.extension.includes('pptx') || file.extension.includes('ppt')) {
-            if (!fileTypes.includes('powerpoint')) {
+        switch (true) {
+            case ((file.extension.includes('pptx') || file.extension.includes('ppt')) && !fileTypes.includes('powerpoint')):
                 fileTypes.push('powerpoint');
-            }
-        } else if (file.extension.includes('docx') || file.extension.includes('doc') || file.extension.includes('DOCX')) {
-            if (!fileTypes.includes('wordDocument')) {
-                fileTypes.push('wordDocument');
-            }
-        } else if (file.extension.includes('PNG') || file.extension.includes('ico') || file.extension.includes('svg') || file.extension.includes('jpeg') || file.extension.includes('jpg')) {
-            if (!fileTypes.includes('image')) {
+                break;
+            case ((file.extension.includes('docx') || file.extension.includes('doc') || file.extension.includes('DOCX')) && !fileTypes.includes('document')):
+                fileTypes.push('document');
+                break;
+            case ((file.extension.includes('PNG') || file.extension.includes('ico') || file.extension.includes('svg') || file.extension.includes('jpeg') || file.extension.includes('jpg')) && !fileTypes.includes('image')):
                 fileTypes.push('image');
-            }
-        } else if (file.extension.includes('.mp3')) {
-            if (!fileTypes.includes('audio')) {
+                break;
+            case (file.extension.includes('.mp3') && !fileTypes.includes('audio')):
                 fileTypes.push('audio');
-            }
-        } else if (file.extension.includes('.mp4')) {
-            if (!fileTypes.includes('video')) {
+                break;
+            case ((file.extension.includes('.mp4')) && !fileTypes.includes('video')):
                 fileTypes.push('video');
-            }
-        } else if (file.extension.includes('xlsx')) {
-            if (!fileTypes.includes('spreadsheet')) {
+                break;
+            case ((file.extension.includes('xlsx')) && !fileTypes.includes('spreadsheet')):
                 fileTypes.push('spreadsheet');
-            }
+                break;
+            default:
+                break;
         }
     });
 
