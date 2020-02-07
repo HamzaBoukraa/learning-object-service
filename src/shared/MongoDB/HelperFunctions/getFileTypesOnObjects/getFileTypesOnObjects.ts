@@ -25,7 +25,7 @@ export async function getFileTypesOnObjects(
     }
 
     files.forEach((file: FileMetadataInsert) => {
-        if (file.extension.includes('pptx') || file.extension.includes('ppt')){
+        if (file.extension.includes('pptx') || file.extension.includes('ppt')) {
             if (!fileTypes.includes('powerpoint')) {
                 fileTypes.push('powerpoint');
             }
@@ -39,7 +39,7 @@ export async function getFileTypesOnObjects(
             }
         } else if (file.extension.includes('.mp3')) {
             if (!fileTypes.includes('audio')) {
-                fileTypes.push('audio')
+                fileTypes.push('audio');
             }
         } else if (file.extension.includes('.mp4')) {
             if (!fileTypes.includes('video')) {
