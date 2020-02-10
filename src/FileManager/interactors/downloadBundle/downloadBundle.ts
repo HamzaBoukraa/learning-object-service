@@ -11,7 +11,7 @@ import { Stream } from 'stream';
 import { bundleLearningObject } from '../../../LearningObjects/Publishing/Bundler/Interactor';
 import FileManagerModuleErrorMessages from '../shared/errors';
 import { uploadFile } from '../Interactor';
-import { updateDownloads } from '../../../shared/MongoDB/HelperFunctions/LearningObjectDownloads/learningObjectLibraryDownload';
+import { updateDownloads } from '../../../shared/MongoDB/HelperFunctions/updateDownloads/updateDownloads';
 
 export type DownloadBundleParams = {
   learningObject: LearningObject;

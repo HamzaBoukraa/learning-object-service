@@ -150,9 +150,9 @@ function initializeMocks() {
       },
     };
   });
-  jest.mock('../../../shared/MongoDB/HelperFunctions/LearningObjectDownloads/learningObjectLibraryDownload', () => {
+  jest.mock('../../../shared/MongoDB/HelperFunctions/updateDownloads/updateDownloads', () => {
     return {
-      updateObjectInLibraryForDownload (_: string, __: LearningObject): void { return; },
+      updateDownloads (_: string, __: LearningObject): void { return; },
     };
   });
   jest.mock('../../../LearningObjects/Publishing/Bundler/Interactor', () => ({

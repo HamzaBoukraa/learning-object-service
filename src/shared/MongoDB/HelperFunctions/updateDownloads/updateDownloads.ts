@@ -1,5 +1,5 @@
 import { COLLECTIONS } from '../../../../drivers/MongoDriver';
-import { MongoConnector } from '../../../MongoDB/MongoConnector';
+import { MongoConnector } from '../../MongoConnector';
 import { LearningObject } from '../../../entity';
 import { UserToken } from '../../../types';
 
