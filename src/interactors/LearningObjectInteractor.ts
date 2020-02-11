@@ -80,6 +80,36 @@ export class LearningObjectInteractor {
   }
 
   /**
+   * Finds a learning object CUID given the learning object name and
+   * the author username.
+   * 
+   * @param params {{
+   *     datastore: Datastore;
+   *     username: string; [Learning Object's Author's Username]
+   *     learningObjectName: string; [Learning Object's Name]
+   * }}
+   * @returns {Promise<string>}
+   * @memberof LearningObjectInteractor
+   */
+  public static async getLearningObjectCuidByAuthorAndName(params: {
+    dataStore: DataStore;
+    username: string;
+    learningObjectName: string;
+  }): Promise<string> {
+    const { dataStore, username, learningObjectName } = params;
+    const authID = await this.findAuthorIdByUsername({ dataStore, username: username });
+    const objectID = await dataStore.findLearningObjectByName({authorId: authID, name: learningObjectName});
+    if (!objectID) {
+      throw new ResourceError(
+        `No learning object with author username ${username} and learning object name ${learningObjectName} exists`,
+        ResourceErrorReason.NOT_FOUND
+      );
+    }
+    const object = await dataStore.fetchLearningObject({ id: objectID });
+    return object.cuid;
+  }
+
+  /**
    * Finds Learning Object's id by name and authorID.
    * If id is not found a ResourceError is thrown
    *

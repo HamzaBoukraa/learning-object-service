@@ -42,6 +42,20 @@ export class ExpressRouteDriver {
       });
     });
 
+    router.get('/learning-objects/:username/:learningObjectName', async (req, res) => {
+      try {
+        const cuid = await LearningObjectInteractor.getLearningObjectCuidByAuthorAndName({
+          dataStore: this.dataStore,
+          username: req.params.username,
+          learningObjectName: req.params.learningObjectName
+        });
+        res.status(200).json(cuid);
+      } catch (e) {
+        const { code, message } = mapErrorToResponseData(e);
+        res.status(code).json({ message });
+      }
+    });
+
     router.route('/learning-objects').get(async (req, res) => {
       try {
         let objectResponse: {
