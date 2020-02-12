@@ -1,7 +1,7 @@
 import { Client } from '@elastic/elasticsearch';
 import { LearningObject } from '../shared/entity';
 import { reportError } from '../shared/SentryConnector';
-import { cleanLearningObjectSearchDocument } from '../shared/elasticsearch/CleanLearningObject/CleanLearningObject';
+import { generateLearningObjectSearchDocument } from '../shared/elasticsearch/generateLearningObjectSearchDocument/generateLearningObjectSearchDocument';
 import { RevisionsSearchIndex } from './RevisionsSearchIndex';
 import { getFileTypesOnObjects } from '../shared/MongoDB/HelperFunctions';
 
@@ -27,7 +27,7 @@ async insertLearningObject(learningObject: LearningObject): Promise<void> {
       await this.client.index({
         index: INDEX_NAME,
         type: '_doc',
-        body: cleanLearningObjectSearchDocument(learningObject, fileTypes),
+        body: genreateLearningObjectSearchDocument(learningObject, fileTypes),
       });
     } catch (e) {
       reportError(e);

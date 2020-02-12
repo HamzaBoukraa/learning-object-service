@@ -18,8 +18,8 @@ export async function getFileTypesOnObjects(
     const files = await db.collection('files').find({ learningObjectId: learningObject.id }).toArray();
 
     if (learningObject.materials.urls.length > 0) {
-        learningObject.materials.urls.forEach(url => {
-            if (url.url.includes('youtu.be') || url.url.includes('youtube')) {
+        learningObject.materials.urls.forEach(link => {
+            if (link.url.includes('youtu.be') || link.url.includes('youtube')) {
                 fileTypes.push('video');
             }
         });

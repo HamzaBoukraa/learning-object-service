@@ -1,7 +1,7 @@
 import { PublishingDataStore } from './interactor';
 import { LearningObject } from '../../shared/entity';
 import {
-  cleanLearningObjectSearchDocument,
+  generateLearningObjectSearchDocument,
   formatUpdateQueryParam,
 } from '../../shared/elasticsearch';
 import { Client } from '@elastic/elasticsearch';
@@ -36,8 +36,8 @@ export class ElasticSearchPublishingGateway implements PublishingDataStore {
    * @param releasableObject {LearningObject}
    */
   async addToReleased(releasableObject: LearningObject): Promise<void> {
-    const fileTypes = await getLearningObjectFileTypes(releasableObject);
-    const cleanObject = cleanLearningObjectSearchDocument(releasableObject, fileTypes);
+    const fileTypes = await getFileTypesOnObjects(releasableObject);
+    const cleanObject = generateLearningObjectSearchDocument(releasableObject, fileTypes);
     const formattedUpdateParam = formatUpdateQueryParam(cleanObject);
     const updateResponse = await this.client.updateByQuery({
       index: 'learning-objects',

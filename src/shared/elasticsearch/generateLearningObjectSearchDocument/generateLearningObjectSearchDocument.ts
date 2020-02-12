@@ -6,7 +6,7 @@ import { LearningObjectSearchDocument } from '../types/LearningObjectSearchDocum
  * @param learningObject A fully qualified Learning Object where all values
  * are loaded to their correct values (no foreign key IDs)
  */
-export function cleanLearningObjectSearchDocument(
+export function generateLearningObjectSearchDocument(
   learningObject: LearningObject,
   fileTypes: string[],
 ): LearningObjectSearchDocument {

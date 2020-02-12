@@ -2,7 +2,7 @@ import { LearningObject } from '../shared/entity';
 import { SubmissionPublisher } from './interactors/SubmissionPublisher';
 import { Client } from '@elastic/elasticsearch';
 import { reportError } from '../shared/SentryConnector';
-import { cleanLearningObjectSearchDocument } from '../shared/elasticsearch/CleanLearningObject/CleanLearningObject';
+import { generateLearningObjectSearchDocument } from '../shared/elasticsearch/generateLearningObjectSearchDocument/generateLearningObjectSearchDocument';
 import { LearningObjectMetadataUpdates } from '../shared/types';
 import { getFileTypesOnObjects } from '../shared/MongoDB/HelperFunctions';
 
@@ -41,7 +41,7 @@ export class ElasticsearchSubmissionPublisher implements SubmissionPublisher {
       await this.client.index({
         index: INDEX_NAME,
         type: '_doc',
-        body: cleanLearningObjectSearchDocument(submission, fileTypes),
+        body: generateLearningObjectSearchDocument(submission, fileTypes),
       });
     } catch (e) {
       reportError(e);
