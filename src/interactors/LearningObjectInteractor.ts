@@ -91,6 +91,8 @@ export class LearningObjectInteractor {
    * @returns {Promise<string>}
    * @memberof LearningObjectInteractor
    * @throws {ResourceError} when learning object or user is not found
+   * (404), or when the request does not contain a author username or
+   * learning object name (400)
    */
   public static async getLearningObjectCUID(params: {
     dataStore: DataStore;
@@ -98,6 +100,12 @@ export class LearningObjectInteractor {
     learningObjectName: string;
   }): Promise<string> {
     const { dataStore, username, learningObjectName } = params;
+    if (!username || !learningObjectName) {
+      throw new ResourceError(
+        `No learning object name or author username specified in request`,
+        ResourceErrorReason.BAD_REQUEST
+      );
+    }
     const authID = await this.findAuthorIdByUsername({ dataStore, username: username });
     const objectID = await dataStore.findLearningObjectByName({authorId: authID, name: learningObjectName});
     if (!objectID) {
