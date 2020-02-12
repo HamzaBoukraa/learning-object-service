@@ -90,8 +90,9 @@ export class LearningObjectInteractor {
    * }}
    * @returns {Promise<string>}
    * @memberof LearningObjectInteractor
+   * @throws {ResourceError} when learning object or user is not found
    */
-  public static async getLearningObjectCuidByAuthorAndName(params: {
+  public static async getLearningObjectCUID(params: {
     dataStore: DataStore;
     username: string;
     learningObjectName: string;

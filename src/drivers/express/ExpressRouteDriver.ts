@@ -44,7 +44,7 @@ export class ExpressRouteDriver {
 
     router.get('/learning-objects/:username/:learningObjectName', async (req, res) => {
       try {
-        const cuid = await LearningObjectInteractor.getLearningObjectCuidByAuthorAndName({
+        const cuid = await LearningObjectInteractor.getLearningObjectCUID({
           dataStore: this.dataStore,
           username: req.params.username,
           learningObjectName: req.params.learningObjectName
