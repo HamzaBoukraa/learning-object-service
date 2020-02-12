@@ -46,7 +46,7 @@ export class ExpressRouteDriver {
      * NOTE: This is a legacy route that is only used for getting the
      * CUID of a learning object given the author username and learning
      * object name.  This is to help provide backwards compatability
-     * to articles that used the legacy details page route structure,
+     * to documents that used the legacy details page route structure,
      * '/details/:username/:learningObjectName'.
      */
     router.get('/learning-objects/:username/:learningObjectName', async (req, res) => {
