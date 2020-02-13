@@ -25,6 +25,12 @@ import { LearningObjectSearch } from '../../LearningObjectSearch';
 import { FileMetadataModule } from '../../FileMetadata/FileMetadataModule';
 import { FileManagerModule } from '../../FileManager/FileManagerModule';
 import { FileAccessIdentities } from '../../FileAccessIdentities';
+//@ts-ignore
+import * as swaggerJsdoc from 'swagger-jsdoc';
+//@ts-ignore
+import * as swaggerUi from 'swagger-ui-express';
+
+const version = require('../../../package.json').version;
 
 export class ExpressDriver {
   static app = express();
@@ -41,6 +47,8 @@ export class ExpressDriver {
     this.library = library;
 
     this.attachConfigHandlers();
+
+    this.setUpSwagger();
 
     /**
      * Public Access Routers
@@ -110,5 +118,39 @@ export class ExpressDriver {
     );
     // TODO: Deprecate admin router and middleware in favor of default router with proper authorization logic in interactors
     this.app.use('/admin', ExpressAdminRouteDriver.buildRouter());
+  }
+
+  private static setUpSwagger() {
+    // Swagger set up
+    const options = {
+      swaggerDefinition: {
+        openapi: "3.0.0",
+        info: {
+          title: "Learning Object Service",
+          version: version,
+          description:
+            "Welcome to the Learning Objects' API",
+          license: {
+            name: "ISC",
+            url: "https://www.isc.org/licenses/"
+          },
+          contact: {
+            name: "Sidd Kaza",
+            url: "https://about.clark.center",
+            email: "skaza@towson.edu"
+          }
+        },
+        servers: [
+          {
+            url: "http://localhost:5000"
+          }
+        ]
+      },
+      // @ts-ignore
+      apis: []
+    };
+    const specs = swaggerJsdoc(options);
+    this.app.use("/docs", swaggerUi.serve);
+    this.app.get("/docs", swaggerUi.setup(specs, { explorer: true }));
   }
 }
