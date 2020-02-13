@@ -27,7 +27,7 @@ async insertLearningObject(learningObject: LearningObject): Promise<void> {
       await this.client.index({
         index: INDEX_NAME,
         type: '_doc',
-        body: genreateLearningObjectSearchDocument(learningObject, fileTypes),
+        body: generateLearningObjectSearchDocument(learningObject, fileTypes),
       });
     } catch (e) {
       reportError(e);
