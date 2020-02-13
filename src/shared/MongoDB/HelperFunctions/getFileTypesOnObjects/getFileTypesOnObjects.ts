@@ -1,7 +1,35 @@
 import { LearningObject } from '../../../entity';
 import { MongoConnector } from '../../MongoConnector';
 import { FileMetadataInsert } from '../../../../FileMetadata/typings/index';
-import e = require('express');
+
+// All possible file extensions currently on our system
+export enum EXTENSIONS {
+    YOUTU = 'youtu.be',
+    YOUTUBE = 'youtube',
+    PPTX = 'pptx',
+    PPT = 'ppt',
+    DOC = 'doc',
+    DOCX = 'docx',
+    DOCX2 = 'DOCX',
+    MP3 = 'mp3',
+    MP4 = 'mp4',
+    XLSX = 'xlsx',
+    PNG = 'png',
+    ICO = 'ico',
+    SVG = 'svg',
+    JPEG = 'jpeg',
+    JPG = 'jpg',
+}
+
+// Valid values for the fileTypes array
+export enum FILETYPES {
+    VIDEO = 'video',
+    POWERPOINT = 'powerpoint',
+    DOCUMENT = 'document',
+    IMAGE = 'image',
+    SPREADSHEET = 'spreadsheet',
+    AUDIO = 'audio',
+}
 
 /**
  * Gets all of the files for a learning object and then returns an array of the file types that the object has.
@@ -19,31 +47,39 @@ export async function getFileTypesOnObjects(
 
     if (learningObject.materials.urls.length > 0) {
         learningObject.materials.urls.forEach(link => {
-            if (link.url.includes('youtu.be') || link.url.includes('youtube')) {
-                fileTypes.push('video');
+            if (link.url.includes(EXTENSIONS.YOUTU) || link.url.includes(EXTENSIONS.YOUTUBE)) {
+                fileTypes.push(FILETYPES.VIDEO);
             }
         });
     }
 
     files.forEach((file: FileMetadataInsert) => {
         switch (true) {
-            case ((file.extension.includes('pptx') || file.extension.includes('ppt')) && !fileTypes.includes('powerpoint')):
-                fileTypes.push('powerpoint');
+            case ((file.extension.includes(EXTENSIONS.PPTX) || file.extension.includes(EXTENSIONS.PPT)) && !fileTypes.includes(FILETYPES.VIDEO)):
+                fileTypes.push(FILETYPES.POWERPOINT);
                 break;
-            case ((file.extension.includes('docx') || file.extension.includes('doc') || file.extension.includes('DOCX')) && !fileTypes.includes('document')):
-                fileTypes.push('document');
+            case ((file.extension.includes(EXTENSIONS.DOCX) ||
+                    file.extension.includes(EXTENSIONS.DOC) ||
+                    file.extension.includes(EXTENSIONS.DOCX2)) &&
+                    !fileTypes.includes(FILETYPES.DOCUMENT)):
+                fileTypes.push(FILETYPES.DOCUMENT);
                 break;
-            case ((file.extension.includes('PNG') || file.extension.includes('ico') || file.extension.includes('svg') || file.extension.includes('jpeg') || file.extension.includes('jpg')) && !fileTypes.includes('image')):
-                fileTypes.push('image');
+            case ((file.extension.includes(EXTENSIONS.PNG) ||
+                    file.extension.includes(EXTENSIONS.ICO) ||
+                    file.extension.includes(EXTENSIONS.SVG) ||
+                    file.extension.includes(EXTENSIONS.JPEG) ||
+                    file.extension.includes(EXTENSIONS.JPG)) &&
+                    !fileTypes.includes(FILETYPES.IMAGE)):
+                fileTypes.push(FILETYPES.IMAGE);
                 break;
-            case (file.extension.includes('.mp3') && !fileTypes.includes('audio')):
-                fileTypes.push('audio');
+            case (file.extension.includes(EXTENSIONS.MP3) && !fileTypes.includes(FILETYPES.AUDIO)):
+                fileTypes.push(FILETYPES.AUDIO);
                 break;
-            case ((file.extension.includes('.mp4')) && !fileTypes.includes('video')):
-                fileTypes.push('video');
+            case ((file.extension.includes(EXTENSIONS.MP4)) && !fileTypes.includes(FILETYPES.VIDEO)):
+                fileTypes.push(FILETYPES.VIDEO);
                 break;
-            case ((file.extension.includes('xlsx')) && !fileTypes.includes('spreadsheet')):
-                fileTypes.push('spreadsheet');
+            case ((file.extension.includes(EXTENSIONS.XLSX)) && !fileTypes.includes(FILETYPES.SPREADSHEET)):
+                fileTypes.push(FILETYPES.SPREADSHEET);
                 break;
             default:
                 break;
