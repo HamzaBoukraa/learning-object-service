@@ -29,6 +29,7 @@ import { FileAccessIdentities } from '../../FileAccessIdentities';
 import * as swaggerJsdoc from 'swagger-jsdoc';
 //@ts-ignore
 import * as swaggerUi from 'swagger-ui-express';
+import * as fs from 'fs';
 
 const version = require('../../../package.json').version;
 
@@ -152,6 +153,12 @@ export class ExpressDriver {
       ]
     };
     const specs = swaggerJsdoc(options);
+    // Write file so it can be imported into postman
+    fs.writeFile('swagger.json', JSON.stringify(specs), (err) => {
+      if (err) {
+        console.error(err);
+      }
+    });
     this.app.use('/docs', swaggerUi.serve);
     this.app.get('/docs', swaggerUi.setup(specs, { explorer: true }));
   }
