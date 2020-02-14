@@ -35,6 +35,34 @@ export class ExpressRouteDriver {
   }
 
   private setRoutes(router: Router): void {
+
+    /**
+     * @swagger
+     * tags:
+     *  name: Public
+     *  description: Public learning object API routes
+     */
+
+    /**
+     * @swagger
+     * path:
+     *  /:
+     *    get:
+     *      summary: Get learning object API welcome
+     *      tags: [Public]
+     *      responses:
+     *        "200":
+     *          description: API Version number and welcome message
+     *          content:
+     *            application/json:
+     *              schema:
+     *                type: object
+     *                properties:
+     *                  version:
+     *                    type: string
+     *                  message:
+     *                    type: string
+     */
     router.get('/', async (req, res) => {
       res.json({
         version,
@@ -48,6 +76,39 @@ export class ExpressRouteDriver {
      * object name.  This is to help provide backwards compatability
      * to documents that used the legacy details page route structure,
      * '/details/:username/:learningObjectName'.
+     * 
+     * @swagger
+     * path:
+     *  /learning-objects/{username}/{learningObjectName}:
+     *    get:
+     *      summary: Get a learning object CUID by author username and learning object name
+     *      tags: [Public]
+     *      parameters:
+     *        - in: path
+     *          name: username
+     *          schema:
+     *            type: string
+     *          required: true
+     *          description: Username of learning object author
+     *        - in: path
+     *          name: learningObjectName
+     *          schema:
+     *            type: string
+     *          required: true
+     *          description: Name of learning object
+     *      responses:
+     *        "200":
+     *          description: A learning object CUID
+     *          content:
+     *            application/json:
+     *              schema:
+     *                type: string
+     *        "400":
+     *          description: Bad request, missing author username or learning object name
+     *        "404":
+     *          description: A learning object with a given name and author username was not found
+     *        "5XX":
+     *          description: Unexpected error
      */
     router.get('/learning-objects/:username/:learningObjectName', async (req, res) => {
       try {

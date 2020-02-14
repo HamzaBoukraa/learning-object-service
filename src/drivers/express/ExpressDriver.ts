@@ -124,33 +124,35 @@ export class ExpressDriver {
     // Swagger set up
     const options = {
       swaggerDefinition: {
-        openapi: "3.0.0",
+        openapi: '3.0.0',
         info: {
-          title: "Learning Object Service",
+          title: 'Learning Object Service',
           version: version,
           description:
-            "Welcome to the Learning Objects' API",
+            `Welcome to the Learning Objects' API`,
           license: {
-            name: "ISC",
-            url: "https://www.isc.org/licenses/"
+            name: 'ISC',
+            url: 'https://www.isc.org/licenses/'
           },
           contact: {
-            name: "Sidd Kaza",
-            url: "https://about.clark.center",
-            email: "skaza@towson.edu"
+            name: 'CLARK',
+            url: 'https://about.clark.center',
+            email: 'skaza@towson.edu'
           }
         },
         servers: [
           {
-            url: "http://localhost:5000"
+            url: 'http://localhost:5000',
+            description: 'Development Server'
           }
         ]
       },
-      // @ts-ignore
-      apis: []
+      apis: [
+        './src/drivers/express/ExpressRouteDriver.ts'
+      ]
     };
     const specs = swaggerJsdoc(options);
-    this.app.use("/docs", swaggerUi.serve);
-    this.app.get("/docs", swaggerUi.setup(specs, { explorer: true }));
+    this.app.use('/docs', swaggerUi.serve);
+    this.app.get('/docs', swaggerUi.setup(specs, { explorer: true }));
   }
 }
