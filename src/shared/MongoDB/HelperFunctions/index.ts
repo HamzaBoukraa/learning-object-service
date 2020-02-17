@@ -10,6 +10,7 @@ import { loadChildObjects } from './loadChildObjects/loadChildObjects';
 import { loadReleasedChildObjects } from './loadReleasedChildObjects/loadReleasedChildObjects';
 import { learningObjectHasRevision } from './learningObjectHasRevision/learningObjectHasRevision';
 import { updateObjectInLibraryForDownload } from './LearningObjectDownloads/learningObjectLibraryDownload';
+import { getFileTypesOnObjects } from './getFileTypesOnObjects/getFileTypesOnObjects';
 
 export {
   bulkGenerateLearningObjects,
@@ -24,4 +25,5 @@ export {
   loadReleasedChildObjects,
   validatePageNumber,
   updateObjectInLibraryForDownload,
+  getFileTypesOnObjects,
 };

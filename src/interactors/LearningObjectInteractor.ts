@@ -468,6 +468,7 @@ export class LearningObjectInteractor {
         page,
         limit,
         status,
+        fileTypes,
       } = this.formatSearchQuery(query);
       let response: { total: number; objects: LearningObject[] };
 
@@ -595,6 +596,7 @@ export class LearningObjectInteractor {
       formattedQuery.standardOutcomeIDs,
     );
     formattedQuery.guidelines = toArray(formattedQuery.guidelines);
+    formattedQuery.fileTypes = toArray(formattedQuery.fileTypes);
     formattedQuery.page = toNumber(formattedQuery.page);
     formattedQuery.limit = toNumber(formattedQuery.limit);
     formattedQuery.sortType = <1 | -1>toNumber(formattedQuery.sortType);

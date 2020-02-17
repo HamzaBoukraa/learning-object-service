@@ -1,7 +1,7 @@
-import { cleanLearningObjectSearchDocument } from './CleanLearningObject/CleanLearningObject';
+import { generateLearningObjectSearchDocument } from './generateLearningObjectSearchDocument/generateLearningObjectSearchDocument';
 import { formatUpdateQueryParam } from './FormatUpdateQueryParam/FormatUpdateQueryParam';
 
 export {
-    cleanLearningObjectSearchDocument,
+    generateLearningObjectSearchDocument,
     formatUpdateQueryParam,
 };
