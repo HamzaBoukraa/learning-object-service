@@ -710,7 +710,8 @@ const SEED_OBJECTS = {
     METRICS: {
         saves: 23,
         downloads: 4,
-    }
+    },
+    FILETYPES: ['video', 'powerpoint', 'document'],
 }
 
 module.exports = SEED_OBJECTS;
