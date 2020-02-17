@@ -102,7 +102,7 @@ export class LearningObjectInteractor {
     const { dataStore, username, learningObjectName } = params;
     if (!username || !learningObjectName) {
       throw new ResourceError(
-        `No learning object name or author username specified in request`,
+        `Request does not contain a Learning Object name or author username.`,
         ResourceErrorReason.BAD_REQUEST
       );
     }
@@ -110,7 +110,7 @@ export class LearningObjectInteractor {
     const objectID = await dataStore.findLearningObjectByName({authorId: authID, name: learningObjectName});
     if (!objectID) {
       throw new ResourceError(
-        `No learning object with author username ${username} and learning object name ${learningObjectName} exists`,
+        `No Learning Object with author username ${username} and Learning Object name ${learningObjectName} exists`,
         ResourceErrorReason.NOT_FOUND
       );
     }
