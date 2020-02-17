@@ -19,6 +19,7 @@ export enum EXTENSIONS {
     SVG = 'svg',
     JPEG = 'jpeg',
     JPG = 'jpg',
+    VIMEO = 'vimeo',
 }
 
 // Valid values for the fileTypes array
@@ -47,7 +48,7 @@ export async function getFileTypesOnObjects(
 
     if (learningObject.materials.urls.length > 0) {
         learningObject.materials.urls.forEach(link => {
-            if (link.url.includes(EXTENSIONS.YOUTU) || link.url.includes(EXTENSIONS.YOUTUBE)) {
+            if (link.url.includes(EXTENSIONS.YOUTU) || link.url.includes(EXTENSIONS.YOUTUBE) || link.url.includes(EXTENSIONS.VIMEO)) {
                 fileTypes.push(FILETYPES.VIDEO);
             }
         });
