@@ -14,3 +14,4 @@ test_environment/globalConfig.json
 # Include Launch Config for Debugging
 !/.vscode/launch.json
 swagger.json
+collection.json
