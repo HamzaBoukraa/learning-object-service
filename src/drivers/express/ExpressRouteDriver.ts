@@ -60,8 +60,10 @@ export class ExpressRouteDriver {
      *                properties:
      *                  version:
      *                    type: string
+     *                    example: 3.25.1
      *                  message:
      *                    type: string
+     *                    example: Welcome to the Learning Objects' API v3.25.1
      */
     router.get('/', async (req, res) => {
       res.json({
@@ -90,12 +92,14 @@ export class ExpressRouteDriver {
      *            type: string
      *          required: true
      *          description: Username of learning object author
+     *          example: kkuczynski
      *        - in: path
      *          name: learningObjectName
      *          schema:
      *            type: string
      *          required: true
      *          description: Name of learning object
+     *          example: Principles of Cyber Law and Policy
      *      responses:
      *        "200":
      *          description: A learning object CUID
@@ -103,6 +107,7 @@ export class ExpressRouteDriver {
      *            application/json:
      *              schema:
      *                type: string
+     *                example: 80b8c821-ff5e-4134-bc71-06aa85287f3c
      *        "400":
      *          description: Bad request, missing author username or learning object name
      *        "404":
