@@ -12,6 +12,9 @@ import { bundleLearningObject } from '../../../LearningObjects/Publishing/Bundle
 import FileManagerModuleErrorMessages from '../shared/errors';
 import { uploadFile } from '../Interactor';
 import { updateDownloads } from '../../../shared/MongoDB/HelperFunctions/updateDownloads/updateDownloads';
+import {  UTILITY_SERVICE } from '../../../shared/routes';
+import * as request from 'request-promise';
+import { generateServiceToken } from '../../../drivers/TokenManager';
 
 export type DownloadBundleParams = {
   learningObject: LearningObject;
@@ -71,11 +74,39 @@ async function downloadWorkingCopy(
  * is then streamed to the client.
  * @param { DownloadBundleParams } params
  */
+
+export class UtilityService {
+  private options = {
+    uri: '',
+    json: true,
+    headers: {
+      Authorization: `Bearer ${generateServiceToken()}`,
+    },
+    method: 'GET',
+    body: {},
+  };
+
+public async getUtilityUsers(): Promise<any> {
+  console.log('yeetttttt!');
+  try {
+    const options = { ...this.options };
+    options.uri = UTILITY_SERVICE.USERS();
+    return request(options);
+    // console.log(r.members);
+  } catch (e) {
+    console.log('An Unexpected error has occured');
+  }
+}
+}
+
 async function downloadReleasedCopy(
   params: DownloadBundleParams,
 ): Promise<Stream> {
   const { requester, learningObject } = params;
+  console.log('Paige');
   await updateDownloads(requester, learningObject);
+  const utilityUsers = await new UtilityService().getUtilityUsers();
+  console.log('Waleeeee', utilityUsers);
 
   const fileExists = await Drivers.fileManager().hasAccess({
     authorUsername: learningObject.author.username,
