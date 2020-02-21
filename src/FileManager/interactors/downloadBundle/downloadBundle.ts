@@ -86,27 +86,28 @@ export class UtilityService {
     body: {},
   };
 
-public async getUtilityUsers(): Promise<any> {
-  console.log('yeetttttt!');
-  try {
-    const options = { ...this.options };
-    options.uri = UTILITY_SERVICE.USERS();
-    return request(options);
-    // console.log(r.members);
-  } catch (e) {
-    console.log('An Unexpected error has occured');
+  public async getUtilityUsers(): Promise<any[]> {
+    try {
+      const options = { ...this.options };
+      options.uri = UTILITY_SERVICE.USERS();
+      return request(options);
+    } catch (e) {
+      return Promise.reject(`Unexpected error has occured while trying to get Utility Users ${e}`);
+    }
   }
-}
 }
 
 async function downloadReleasedCopy(
   params: DownloadBundleParams,
 ): Promise<Stream> {
   const { requester, learningObject } = params;
-  console.log('Paige');
-  await updateDownloads(requester, learningObject);
+
   const utilityUsers = await new UtilityService().getUtilityUsers();
-  console.log('Waleeeee', utilityUsers);
+  const payload = utilityUsers.map((r: { username: string; }) => r.username);
+
+  if (!(payload.includes(requester.username))) {
+    await updateDownloads(requester, learningObject);
+  }
 
   const fileExists = await Drivers.fileManager().hasAccess({
     authorUsername: learningObject.author.username,
