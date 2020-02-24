@@ -1,10 +1,11 @@
 import { PublishingDataStore } from './interactor';
 import { LearningObject } from '../../shared/entity';
 import {
-  cleanLearningObjectSearchDocument,
+  generateLearningObjectSearchDocument,
   formatUpdateQueryParam,
 } from '../../shared/elasticsearch';
 import { Client } from '@elastic/elasticsearch';
+import { getFileTypesOnObjects } from '../../shared/MongoDB/HelperFunctions';
 
 /**
  * In the case where the ELASTICSEARCH_DOMAIN is defined in the environment,
@@ -35,7 +36,8 @@ export class ElasticSearchPublishingGateway implements PublishingDataStore {
    * @param releasableObject {LearningObject}
    */
   async addToReleased(releasableObject: LearningObject): Promise<void> {
-    const cleanObject = cleanLearningObjectSearchDocument(releasableObject);
+    const fileTypes = await getFileTypesOnObjects(releasableObject);
+    const cleanObject = generateLearningObjectSearchDocument(releasableObject, fileTypes);
     const formattedUpdateParam = formatUpdateQueryParam(cleanObject);
     const updateResponse = await this.client.updateByQuery({
       index: 'learning-objects',
