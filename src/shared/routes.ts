@@ -29,7 +29,7 @@ export const LIBRARY_ROUTES = {
   },
 };
 
-export const UTILITY_SERVICE = {
+export const UTILITY_SERVICE_ROUTES = {
   USERS() {
     return `${process.env.UTILITY_URI}/utility-users`;
   },

@@ -12,9 +12,7 @@ import { bundleLearningObject } from '../../../LearningObjects/Publishing/Bundle
 import FileManagerModuleErrorMessages from '../shared/errors';
 import { uploadFile } from '../Interactor';
 import { updateDownloads } from '../../../shared/MongoDB/HelperFunctions/updateDownloads/updateDownloads';
-import {  UTILITY_SERVICE } from '../../../shared/routes';
-import * as request from 'request-promise';
-import { generateServiceToken } from '../../../drivers/TokenManager';
+import { UtilityDriver } from '../../../drivers/UtilityDriver';
 
 export type DownloadBundleParams = {
   learningObject: LearningObject;
@@ -75,34 +73,12 @@ async function downloadWorkingCopy(
  * @param { DownloadBundleParams } params
  */
 
-export class UtilityService {
-  private options = {
-    uri: '',
-    json: true,
-    headers: {
-      Authorization: `Bearer ${generateServiceToken()}`,
-    },
-    method: 'GET',
-    body: {},
-  };
-
-  public async getUtilityUsers(): Promise<any[]> {
-    try {
-      const options = { ...this.options };
-      options.uri = UTILITY_SERVICE.USERS();
-      return request(options);
-    } catch (e) {
-      return Promise.reject(`Unexpected error has occured while trying to get Utility Users ${e}`);
-    }
-  }
-}
-
 async function downloadReleasedCopy(
   params: DownloadBundleParams,
 ): Promise<Stream> {
   const { requester, learningObject } = params;
 
-  const utilityUsers = await new UtilityService().getUtilityUsers();
+  const utilityUsers = await new UtilityDriver().getUtilityUsers();
   const payload = utilityUsers.map((r: { username: string; }) => r.username);
 
   if (!(payload.includes(requester.username))) {
