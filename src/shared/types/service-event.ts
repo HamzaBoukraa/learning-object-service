@@ -8,6 +8,7 @@ export type ServiceEvent = {
       learningObjectName: string,
       version: number,
       cuid: string,
+      authorID: string,
     };
     requester: UserToken;
 };

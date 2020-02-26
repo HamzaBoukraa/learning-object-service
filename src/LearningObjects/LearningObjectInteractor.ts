@@ -678,11 +678,12 @@ export async function updateLearningObject({
         const serviceEvent: ServiceEvent = {
           category: 0,
           payload: {
-            username: learningObject.author.username,
-            author: learningObject.author.name,
-            learningObjectName: learningObject.name,
-            version: learningObject.version,
-            cuid: learningObject.cuid,
+            username: releasableObject.author.username,
+            author: releasableObject.author.name,
+            learningObjectName: releasableObject.name,
+            version: releasableObject.version,
+            cuid: releasableObject.cuid,
+            authorID: releasableObject.author.id,
           },
           requester: requester,
         };
