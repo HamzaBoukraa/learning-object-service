@@ -147,6 +147,14 @@ export class ExpressDriver {
           {
             url: 'http://localhost:5000',
             description: 'Development Server'
+          },
+          {
+            url: 'https://api-learning-objects.clark.center',
+            description: 'Learning Object API'
+          },
+          {
+            url: 'https://api-gateway.clark.center',
+            description: 'Gateway API'
           }
         ]
       },
