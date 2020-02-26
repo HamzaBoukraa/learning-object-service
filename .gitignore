@@ -15,3 +15,4 @@ test_environment/globalConfig.json
 !/.vscode/launch.json
 swagger.json
 collection.json
+Learning Object Service.postman_collection.json
