@@ -8,6 +8,20 @@
 	"item": [
 		{
 			"name": "Get learning object API welcome",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "e459968b-ecf3-4dcd-8b8b-6cfd01aa1916",
+						"exec": [
+							"pm.test(\"response should be okay\", () => {",
+							"    pm.response.to.have.status(200);",
+							"})"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"auth": {
 					"type": "noauth"
@@ -56,6 +70,23 @@
 		},
 		{
 			"name": "Get a learning object CUID by author username and learning object name",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "fdf31fe8-da57-4664-8111-007ce093c2a9",
+						"exec": [
+							"pm.test(\"response should be ok\", () => {",
+							"    pm.response.to.not.be.error;",
+							"    pm.response.to.have.status(200);",
+							"    pm.response.to.be.withBody;",
+							"    pm.response.to.be.json;",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"auth": {
 					"type": "noauth"
@@ -75,12 +106,12 @@
 					"variable": [
 						{
 							"key": "username",
-							"value": "<string>",
+							"value": "kkuczynski",
 							"description": "Username of learning object author"
 						},
 						{
 							"key": "learningObjectName",
-							"value": "<string>",
+							"value": "Principles of Cyber Law and Policy",
 							"description": "Name of learning object"
 						}
 					]
