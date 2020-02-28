@@ -17,6 +17,8 @@ import { Stream, Readable } from 'stream';
 import { HierarchyGateway } from '../../gateways/HierarchyGateway/ModuleHierarchyGateway';
 import FileManagerModuleErrorMessages from '../shared/errors';
 import { Stubs } from '../../../tests/stubs';
+import { UtilityUser } from '../../../shared/types/utility-users';
+
 
 const requesterStub: UserToken = {
   username: 'test-username',
@@ -68,8 +70,13 @@ class StubFileManager implements FileManager {
   async hasAccess(params: { authorUsername: string; learningObjectCUID: string; version: number; path: string; }): Promise<boolean> {
     return true;
   }
+}
 
 
+class UtilityDriver {
+  getUtilityUsers(): Promise<UtilityUser[]> {
+    throw new Error('Method not Implemented');
+  }
 }
 
 class LearningObjectGatewayStub implements LearningObjectGateway {
