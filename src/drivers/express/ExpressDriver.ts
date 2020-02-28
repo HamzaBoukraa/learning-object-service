@@ -29,8 +29,6 @@ import { FileAccessIdentities } from '../../FileAccessIdentities';
 import * as swaggerJsdoc from 'swagger-jsdoc';
 //@ts-ignore
 import * as swaggerUi from 'swagger-ui-express';
-//@ts-ignore
-import * as converter from 'openapi-to-postmanv2';
 import * as fs from 'fs';
 
 const version = require('../../../package.json').version;
@@ -164,27 +162,12 @@ export class ExpressDriver {
     };
     const specs = swaggerJsdoc(options);
 
-    // Convert swagger json file to postman collection json file
-    converter.convert({ type: 'json', data: specs },
-      {},
-      (e: any, result: any) => {
-        // Report conversion error
-        if (e) {
-          console.error(e);
-        }
-
-        // Report conversion success
-        if (result.result) {
-          // Write conversion to json file
-          fs.writeFile('collection.json', JSON.stringify(result.output[0]), (err) => {
-            if (err) {
-              console.error(err);
-            }
-          });
-        } else {
-          console.log('Could not convert to postman collection json: ', result.reason);
-        }
-      });
+    // Write swagger specs to it's own file
+    fs.writeFile('swagger.json', JSON.stringify(specs), (err) => {
+      if (err) {
+        console.error(err);
+      }
+    });
 
     this.app.use('/docs', swaggerUi.serve);
     this.app.get('/docs', swaggerUi.setup(specs, { explorer: true }));
