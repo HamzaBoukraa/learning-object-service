@@ -19,7 +19,6 @@ import FileManagerModuleErrorMessages from '../shared/errors';
 import { Stubs } from '../../../tests/stubs';
 import { UtilityUser } from '../../../shared/types/utility-users';
 
-
 const requesterStub: UserToken = {
   username: 'test-username',
   name: 'test-name',
@@ -71,14 +70,6 @@ class StubFileManager implements FileManager {
     return true;
   }
 }
-
-
-class UtilityDriver {
-  getUtilityUsers(): Promise<UtilityUser[]> {
-    throw new Error('Method not Implemented');
-  }
-}
-
 class LearningObjectGatewayStub implements LearningObjectGateway {
   getLearningObjectByCuid(params: {
     username: string;
@@ -157,6 +148,13 @@ function initializeMocks() {
       },
     };
   });
+
+  jest.mock('../../../drivers/UtilityDriver', () => {
+    return {
+      getUtilityUsers (): UtilityUser[] { return; },
+    };
+  });
+
   jest.mock('../../../shared/MongoDB/HelperFunctions/updateDownloads/updateDownloads', () => {
     return {
       updateDownloads (_: string, __: LearningObject): void { return; },
