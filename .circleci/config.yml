@@ -39,8 +39,6 @@ jobs:
   newman-collection-run:
     <<: *defaults
     executor: newman/postman-newman-docker
-    requires:
-      - build
     steps:
       - checkout
       - newman/newman-run:
@@ -90,7 +88,7 @@ jobs:
             sh ./deploy.sh
 
 workflows:
-  version: 2
+  version: 2.1
   build-test:
     jobs:
       - build:
