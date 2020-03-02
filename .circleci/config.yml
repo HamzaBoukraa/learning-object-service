@@ -2,6 +2,7 @@ defaults: &defaults
   working_directory: ~/learning-object-service
   docker:
     - image: cyber4all/circleci-aws:docker-git
+    - image: circleci/node:10
 version: 2
 jobs:
   build:
