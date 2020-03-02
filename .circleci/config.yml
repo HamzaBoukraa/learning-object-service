@@ -10,6 +10,13 @@ jobs:
       - checkout
       - setup_remote_docker
       - run:
+          name: Install Newman and Run Functional Tests
+          command: |
+            npm i
+            npm i -g newman
+            npm start
+            newman run Learning\ Object\ Service.postman_collection.json
+      - run:
           name: Build Image & Unit Test
           command: | 
             docker build -t learning-object-service:$CIRCLE_SHA1 . --build-arg CLARK_DB_URI_TEST=$CLARK_DB_URI_TEST
