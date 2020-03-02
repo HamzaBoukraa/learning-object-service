@@ -37,6 +37,7 @@ jobs:
               - ./deploy.sh
   
   newman-collection-run:
+    <<: *defaults
     executor: newman/postman-newman-docker
     steps:
       - checkout
