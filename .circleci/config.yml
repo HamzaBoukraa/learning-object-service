@@ -38,9 +38,16 @@ jobs:
 
   newman-collection-run:
     <<: *defaults
+    docker:
+      - image: circleci/node:8
     executor: newman/postman-newman-docker
     steps:
       - checkout
+      - run:
+          name: Install Newman
+          command: |
+            npm i
+            sudo npm i -g newman
       - newman/newman-run:
           collection: ./Learning\ Object\ Service.postman_collection.json
               
