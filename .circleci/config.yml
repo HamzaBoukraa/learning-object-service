@@ -15,7 +15,7 @@ jobs:
           name: Install Newman and Run Functional Tests
           command: |
             npm i
-            npm i -g newman
+            sudo npm i -g newman
             npm start
             newman run Learning\ Object\ Service.postman_collection.json
       - run:
