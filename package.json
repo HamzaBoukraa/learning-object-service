@@ -16,7 +16,7 @@
     "deploy": "eb deploy LearningObject-Service-Production --profile clark --label Learning-Object-Service-v$(node -p \"require('./package.json').version\")",
     "snyk-protect": "snyk protect",
     "prepare": "npm run snyk-protect",
-    "ci": "start-server-and-test start http://localhost:5000 newman-test"
+    "ci": "start-test start :5000 newman-test"
   },
   "repository": {
     "type": "git",
