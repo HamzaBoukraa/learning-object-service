@@ -78,7 +78,6 @@ async function downloadReleasedCopy(
   const { requester, learningObject } = params;
 
   const utilityUsers = await Drivers.utility().getUtilityUsers();
-  console.log(utilityUsers);
   const payload = utilityUsers.map((r: { username: string; }) => r.username);
 
   if (!(payload.includes(requester.username))) {
