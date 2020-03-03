@@ -86,10 +86,6 @@ workflows:
           filters:
             branches:
               ignore: /master/
-      - newman-collection-run:
-          filters:
-            branches:
-              ignore: /master/
 
   build-test-create-sentry-release-and-deploy-production:
     jobs:
