@@ -17,7 +17,8 @@ import { Stream, Readable } from 'stream';
 import { HierarchyGateway } from '../../gateways/HierarchyGateway/ModuleHierarchyGateway';
 import FileManagerModuleErrorMessages from '../shared/errors';
 import { Stubs } from '../../../tests/stubs';
-import { UtilityUser } from '../../../shared/types/utility-users';
+import { UtilityDriverAbstract } from '../../UtilityDriverAbstract';
+import { UtilityDriverStub } from './utilityUsersStub';
 
 const requesterStub: UserToken = {
   username: 'test-username',
@@ -27,6 +28,7 @@ const requesterStub: UserToken = {
   emailVerified: true,
   accessGroups: [],
 };
+
 const stubs = new Stubs();
 const downloadBundleParamStub: DownloadBundleParams = {
   requester: requesterStub,
@@ -122,6 +124,7 @@ function initializeServiceModuleFixtures() {
     { provide: FileManager, useClass: StubFileManager },
     { provide: LearningObjectGateway, useClass: LearningObjectGatewayStub },
     { provide: HierarchyGateway, useClass: HierarchyGatewayStub },
+    { provide: UtilityDriverAbstract, useClass: UtilityDriverStub },
   ];
   FileManagerModule.initialize();
 }
@@ -131,7 +134,10 @@ function initializeMocks() {
   jest.mock('node-service-module', () => {
     return {
       ExpressServiceModule: class {
-        public static resolveDependency() {
+        public static resolveDependency(inter: any) {
+          if (inter.name === 'UtilityDriverAbstract') {
+            return new UtilityDriverStub();
+          }
           return new StubFileManager();
         }
       },
@@ -139,19 +145,13 @@ function initializeMocks() {
         return;
       },
       ServiceModule: class {
-        public static resolveDependency() {
-          return new StubFileManager();
+        public static resolveDependency(inter: any) {
+          return new UtilityDriverStub();
         }
       },
       serviceModule: function() {
         return;
       },
-    };
-  });
-
-  jest.mock('../../../drivers/UtilityDriver', () => {
-    return {
-      getUtilityUsers (): UtilityUser[] { return; },
     };
   });
 

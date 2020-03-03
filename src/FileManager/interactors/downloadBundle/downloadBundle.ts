@@ -12,7 +12,6 @@ import { bundleLearningObject } from '../../../LearningObjects/Publishing/Bundle
 import FileManagerModuleErrorMessages from '../shared/errors';
 import { uploadFile } from '../Interactor';
 import { updateDownloads } from '../../../shared/MongoDB/HelperFunctions/updateDownloads/updateDownloads';
-import { UtilityDriver } from '../../../drivers/UtilityDriver';
 
 export type DownloadBundleParams = {
   learningObject: LearningObject;
@@ -78,7 +77,8 @@ async function downloadReleasedCopy(
 ): Promise<Stream> {
   const { requester, learningObject } = params;
 
-  const utilityUsers = await new UtilityDriver().getUtilityUsers();
+  const utilityUsers = await Drivers.utility().getUtilityUsers();
+  console.log(utilityUsers);
   const payload = utilityUsers.map((r: { username: string; }) => r.username);
 
   if (!(payload.includes(requester.username))) {

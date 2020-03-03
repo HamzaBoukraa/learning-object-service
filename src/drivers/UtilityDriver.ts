@@ -2,10 +2,10 @@ import {  UTILITY_SERVICE_ROUTES } from '../shared/routes';
 import * as request from 'request-promise';
 import { generateServiceToken } from './TokenManager';
 import { UtilityUser } from '../shared/types/utility-users';
-import { reportError } from '../shared/SentryConnector';
-import { ResourceError, ResourceErrorReason, ServiceError, ServiceErrorReason} from '../shared/errors';
+import { ResourceError, ResourceErrorReason} from '../shared/errors';
+import { UtilityDriverAbstract } from '../../src/FileManager/UtilityDriverAbstract'
 
-export class UtilityDriver {
+export class UtilityDriver implements UtilityDriverAbstract {
     private options = {
       uri: '',
       json: true,
