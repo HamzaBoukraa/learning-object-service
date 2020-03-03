@@ -12,11 +12,11 @@ jobs:
       - checkout
       - setup_remote_docker
       - run:
-        name: Install Newman and Run Functional Tests
-        command: |
-          npm i
-          sudo npm i -g newman
-          npm run ci
+          name: Install Newman and Run Functional Tests
+          command: |
+            npm i
+            sudo npm i -g newman
+            npm run ci
       - run:
           name: Build Image & Unit Test
           command: | 
