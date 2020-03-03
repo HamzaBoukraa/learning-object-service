@@ -9,12 +9,14 @@
     "serve:debug": "node --inspect=5858 -r ts-node/register ./src/app.ts",
     "build": "node_modules/.bin/gulp tsc",
     "test": "node_modules/.bin/jest",
+    "newman-test": "newman run Learning\\ Object\\ Service.postman_collection.json",
     "gulp-tsc": "node_modules/.bin/gulp start",
     "pack": "npm run build && cp ./package.json ./dist && cp -r ./.ebextensions ./dist && cd ./dist && zip -r ../dist.zip  ./* & cd ..",
     "zip": "cp ./package.json ./dist && cp -r ./.ebextensions ./dist && cd ./dist && zip -r ../dist.zip  ./* & cd ..",
     "deploy": "eb deploy LearningObject-Service-Production --profile clark --label Learning-Object-Service-v$(node -p \"require('./package.json').version\")",
     "snyk-protect": "snyk protect",
-    "prepare": "npm run snyk-protect"
+    "prepare": "npm run snyk-protect",
+    "ci": "start-server-and-test start http://localhost:5000 newman-test"
   },
   "repository": {
     "type": "git",
@@ -81,6 +83,7 @@
     "gulp-typescript": "^5.0.1",
     "jest": "^24.5.0",
     "mongodb-memory-server": "^2.7.4",
+    "start-server-and-test": "^1.10.8",
     "supertest": "^3.3.0",
     "ts-jest": "^24.0.0",
     "ts-node": "^8.0.3",

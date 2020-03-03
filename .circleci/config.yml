@@ -3,21 +3,20 @@ defaults: &defaults
   docker:
     - image: cyber4all/circleci-aws:docker-git
 version: 2.1
-orbs:
-  newman: postman/newman@0.0.2
 jobs:
   build:
     <<: *defaults
+    docker:
+      - image: circleci/node:8
     steps:
       - checkout
       - setup_remote_docker
-      # - run:
-      #     name: Install Newman and Run Functional Tests
-      #     command: |
-      #       npm i
-      #       sudo npm i -g newman
-      #       npm start
-      #       newman run Learning\ Object\ Service.postman_collection.json
+      - run:
+        name: Install Newman and Run Functional Tests
+        command: |
+          npm i
+          sudo npm i -g newman
+          npm run ci
       - run:
           name: Build Image & Unit Test
           command: | 
@@ -35,21 +34,6 @@ jobs:
           paths: 
               - ./package.json
               - ./deploy.sh
-
-  newman-collection-run:
-    <<: *defaults
-    docker:
-      - image: circleci/node:8
-    executor: newman/postman-newman-docker
-    steps:
-      - checkout
-      - run:
-          name: Install Newman
-          command: |
-            npm i
-            sudo npm i -g newman
-      - newman/newman-run:
-          collection: ./Learning\ Object\ Service.postman_collection.json
               
   create-sentry-release:
     <<: *defaults
