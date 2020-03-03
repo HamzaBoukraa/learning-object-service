@@ -17,6 +17,7 @@ jobs:
             npm i
             sudo npm i -g newman
             npm run ci
+          background: true
       - run:
           name: Build Image & Unit Test
           command: | 
