@@ -226,6 +226,7 @@ export interface ReleasedLearningObjectQuery extends Filters {
   text?: string;
   full?: boolean;
   collection?: string[];
+  fileTypes?: string[];
 }
 
 export interface LearningObjectQuery extends ReleasedLearningObjectQuery {
