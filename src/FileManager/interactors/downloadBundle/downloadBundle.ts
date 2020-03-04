@@ -11,7 +11,7 @@ import { Stream } from 'stream';
 import { bundleLearningObject } from '../../../LearningObjects/Publishing/Bundler/Interactor';
 import FileManagerModuleErrorMessages from '../shared/errors';
 import { uploadFile } from '../Interactor';
-import { updateObjectInLibraryForDownload } from '../../../shared/MongoDB/HelperFunctions/LearningObjectDownloads/learningObjectLibraryDownload';
+import { updateDownloads } from '../../../shared/MongoDB/HelperFunctions/updateDownloads/updateDownloads';
 
 export type DownloadBundleParams = {
   learningObject: LearningObject;
@@ -71,11 +71,18 @@ async function downloadWorkingCopy(
  * is then streamed to the client.
  * @param { DownloadBundleParams } params
  */
+
 async function downloadReleasedCopy(
   params: DownloadBundleParams,
 ): Promise<Stream> {
   const { requester, learningObject } = params;
-  await updateObjectInLibraryForDownload(requester.username, learningObject);
+
+  const utilityUsers = await Drivers.utility().getUtilityUsers();
+  const payload = utilityUsers.map((r: { username: string; }) => r.username);
+
+  if (!(payload.includes(requester.username))) {
+    await updateDownloads(requester, learningObject);
+  }
 
   const fileExists = await Drivers.fileManager().hasAccess({
     authorUsername: learningObject.author.username,

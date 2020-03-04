@@ -9,7 +9,7 @@ import { generateLearningObjectSummary } from './generateLearningObjectSummary/g
 import { loadChildObjects } from './loadChildObjects/loadChildObjects';
 import { loadReleasedChildObjects } from './loadReleasedChildObjects/loadReleasedChildObjects';
 import { learningObjectHasRevision } from './learningObjectHasRevision/learningObjectHasRevision';
-import { updateObjectInLibraryForDownload } from './LearningObjectDownloads/learningObjectLibraryDownload';
+import { updateDownloads } from './updateDownloads/updateDownloads';
 import { getFileTypesOnObjects } from './getFileTypesOnObjects/getFileTypesOnObjects';
 
 export {
@@ -24,6 +24,6 @@ export {
   loadChildObjects,
   loadReleasedChildObjects,
   validatePageNumber,
-  updateObjectInLibraryForDownload,
+  updateDownloads,
   getFileTypesOnObjects,
 };
