@@ -26,5 +26,11 @@ export const LIBRARY_ROUTES = {
   },
   UPDATE_OBJECTS(cuid: string) {
     return `${process.env.CART_API}/libraries?cuid=${encodeURIComponent(cuid)}`;
-  }
+  },
+};
+
+export const UTILITY_SERVICE_ROUTES = {
+  USERS() {
+    return `${process.env.UTILITY_URI}/utility-users`;
+  },
 };
