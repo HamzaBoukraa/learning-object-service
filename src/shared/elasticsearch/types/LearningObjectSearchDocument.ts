@@ -24,4 +24,5 @@ export interface LearningObjectSearchDocument {
   outcomes: LearningOutcome[];
   version: number;
   status: LearningObject.Status;
+  fileTypes: string[];
 }

@@ -1,5 +1,6 @@
 import { DataStore } from '../shared/interfaces/DataStore';
 import { LibraryCommunicator } from '../shared/interfaces/interfaces';
+import { connect } from 'amqplib';
 import {
   LearningObjectMetadataUpdates,
   LearningObjectState,
@@ -12,6 +13,7 @@ import {
   ResourceError,
   ResourceErrorReason,
   ServiceError,
+  ServiceErrorReason,
 } from '../shared/errors';
 import { reportError } from '../shared/SentryConnector';
 import { LearningObject, User } from '../shared/entity';
@@ -47,14 +49,17 @@ import { UserServiceGateway } from '../shared/gateways/user-service/UserServiceG
 import * as mongoHelperFunctions from '../shared/MongoDB/HelperFunctions';
 import { deleteSubmission } from '../LearningObjectSubmission/interactors/deleteSubmission';
 import { LearningObjectSubmissionGateway } from './interfaces/LearningObjectSubmissionGateway';
-
 import { learningObjectHasRevision } from '../shared/MongoDB/HelperFunctions/learningObjectHasRevision/learningObjectHasRevision';
 import { LibraryDriver } from '../drivers/LibraryDriver';
+import { ServiceEvent } from '../shared/types/index';
+import { MessageQueue } from './interfaces/messageQueue';
 const GATEWAY_API = process.env.GATEWAY_API;
 
 namespace Drivers {
   export const readMeBuilder = () =>
     LearningObjectsModule.resolveDependency(ReadMeBuilder);
+  export const messageQueue = () =>
+    LearningObjectsModule.resolveDependency(MessageQueue);
 }
 namespace Gateways {
   export const fileManager = () =>
@@ -668,6 +673,26 @@ export async function updateLearningObject({
       });
 
       if (releasableObject.version) {
+        // PublishAMQP message, establishes a channel to a RabbitMQ instance
+        // and sends new messages to a specified queue.
+        const serviceEvent: ServiceEvent = {
+          category: 0,
+          payload: {
+            username: releasableObject.author.username,
+            author: releasableObject.author.name,
+            learningObjectName: releasableObject.name,
+            version: releasableObject.version,
+            cuid: releasableObject.cuid,
+            authorID: releasableObject.author.id,
+          },
+          requester: requester,
+        };
+
+        const isSuccessful = await Drivers.messageQueue().sendMessage(serviceEvent);
+        if (!isSuccessful) {
+          throw new ServiceError(ServiceErrorReason.INTERNAL);
+        }
+
         // this Learning Object must have a duplicate with a lower revision property
         await deleteDuplicateResources(dataStore, library, releasableObject.cuid, releasableObject.version, requester);
 

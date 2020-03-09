@@ -48,6 +48,7 @@ export enum COLLECTIONS {
   CHANGELOG = 'changelogs',
   SUBMISSIONS = 'submissions',
   LIBRARY = 'carts',
+  DOWNLOADS = 'downloads',
 }
 
 export class MongoDriver implements DataStore {

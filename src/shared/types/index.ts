@@ -1,4 +1,5 @@
 import { UserToken } from './user-token';
+import { ServiceEvent } from './service-event';
 import {
   LearningObjectMetadataUpdates,
   VALID_LEARNING_OBJECT_UPDATES,
@@ -49,4 +50,5 @@ export {
   UserLearningObjectSearchQuery,
   LearningObjectState,
   FileUpload,
+  ServiceEvent,
 };

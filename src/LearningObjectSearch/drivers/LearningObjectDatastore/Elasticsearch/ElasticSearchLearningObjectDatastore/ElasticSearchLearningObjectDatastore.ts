@@ -226,6 +226,7 @@ export class ElasticSearchLearningObjectDatastore
       status,
       standardOutcomes,
       guidelines,
+      fileTypes,
     } = params;
     const queryFilters = sanitizeObject({
       object: {
@@ -235,6 +236,7 @@ export class ElasticSearchLearningObjectDatastore
         status,
         'outcomes.mappings.id': standardOutcomes,
         'outcomes.mappings.source': guidelines,
+        fileTypes,
       },
     });
     return queryFilters || {};
@@ -587,7 +589,7 @@ export class ElasticSearchLearningObjectDatastore
    * Executes query on the Learning Object index and returns LearningObjectSearchResult
    *
    * @private
-   * @param {ElasticSearchQuery} query [Query to be performed don the Learning Objects index]
+   * @param {ElasticSearchQuery} query [Query to be performed on the Learning Objects index]
    * @returns {Promise<SearchResponse<Partial<LearningObject>>>}
    * @memberof ElasticSearchDriver
    */

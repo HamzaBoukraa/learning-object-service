@@ -20,6 +20,11 @@ export interface AuthorSummary {
    */
   name: string;
   /**
+   * The email of the author/user
+   *
+   */
+  email?: string;
+  /**
    * The organization of the author/user
    */
   organization: string;
