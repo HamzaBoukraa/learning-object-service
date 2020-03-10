@@ -20,6 +20,7 @@ export function initializePrivate({ router }: { router: Router }) {
 
   const createRevision = async (req: Request, res: Response) => {
     try {
+      // @ts-ignore
       const params: {
         username: string,
         cuid: string, dataStore: RevisionsDataStore, searchIndex: RevisionsSearchIndex, requester: UserToken } = {
