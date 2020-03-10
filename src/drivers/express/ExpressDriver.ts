@@ -95,6 +95,7 @@ export class ExpressDriver {
   private static attachPublicRouters() {
     this.app.use(LearningObjectSearch.expressRouter);
     this.app.use(FileMetadataModule.expressRouter);
+    this.app.use(FileManagerModule.expressRouter);
     this.app.use(
       ExpressRouteDriver.buildRouter(
         this.dataStore,
@@ -110,7 +111,6 @@ export class ExpressDriver {
    */
   private static attachAuthenticatedRouters() {
     this.app.use(enforceAuthenticatedAccess);
-    this.app.use(FileManagerModule.expressRouter);
     this.app.use(
       ExpressAuthRouteDriver.buildRouter(
         this.dataStore,
