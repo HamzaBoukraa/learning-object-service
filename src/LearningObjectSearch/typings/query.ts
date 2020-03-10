@@ -19,6 +19,7 @@ export interface ReleasedLearningObjectSearchQuery extends Filters {
   collection?: string[];
   guidelines?: string[];
   fileTypes?: string[];
+  topic?: string;
 }
 
 export interface LearningObjectSearchQuery

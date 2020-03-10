@@ -43,6 +43,7 @@ const SEARCHABLE_FIELDS = [
   'contributors.email',
   'contributors.organization',
   'outcomes.text',
+  'topic',
 ];
 
 const QUERY_DEFAULTS = {
@@ -76,6 +77,7 @@ export class ElasticSearchLearningObjectDatastore
       params,
     );
     const results = await this.executeQuery(elasticQuery);
+    console.log(results.hits.hits[8]);
     return this.convertHitsToLearningObjectSearchResult(results);
   }
 
@@ -227,6 +229,7 @@ export class ElasticSearchLearningObjectDatastore
       standardOutcomes,
       guidelines,
       fileTypes,
+      topic,
     } = params;
     const queryFilters = sanitizeObject({
       object: {
@@ -237,6 +240,7 @@ export class ElasticSearchLearningObjectDatastore
         'outcomes.mappings.id': standardOutcomes,
         'outcomes.mappings.source': guidelines,
         fileTypes,
+        topic,
       },
     });
     return queryFilters || {};
@@ -579,7 +583,13 @@ export class ElasticSearchLearningObjectDatastore
     const termsQueries: TermsQuery[] = [];
     Object.keys(filters).forEach(objectKey => {
       const termBody: { [property: string]: string[] } = {};
-      termBody[`${objectKey}.keyword`] = filters[objectKey];
+      if (objectKey === 'topic') {
+        termBody[`${objectKey}.keyword`] = [filters[objectKey]];
+        console.log(termBody[`${objectKey}.keyword`]);
+      } else {
+        termBody[`${objectKey}.keyword`] = filters[objectKey];
+      }
+
       termsQueries.push({ terms: termBody });
     });
     return termsQueries;
@@ -660,6 +670,7 @@ export class ElasticSearchLearningObjectDatastore
    * @memberof HttpLearningObjectGateway
    */
   private transformRequestError(e: RequestError, message?: string) {
+    console.log(e);
     if (e instanceof StatusCodeError) {
       switch (e.statusCode) {
         case 400:
