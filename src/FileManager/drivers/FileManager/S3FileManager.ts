@@ -250,9 +250,7 @@ export class S3FileManager implements FileManager {
 
         return this.copyObject({
           copyFromPath: `${S3_CONFIG.FILES_BUCKET}/${copyFromPath}/${fileName}`,
-          copyToPath: `${copyToPath}/${
-            file.Key.split('/')[file.Key.split('/').length - 1]
-          }`,
+          copyToPath: `${copyToPath}/${fileName}`,
         });
       }),
     );
