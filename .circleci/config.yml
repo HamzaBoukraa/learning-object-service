@@ -43,7 +43,6 @@ jobs:
             sentry-cli releases -p ${SENTRY_PROJECT_NAME} new ${SEMVER}
             sentry-cli releases -p ${SENTRY_PROJECT_NAME} set-commits --auto ${SEMVER}
             sentry-cli releases -p ${SENTRY_PROJECT_NAME} finalize ${SEMVER}
-
   deploy-production:
     <<: *defaults
     steps:
@@ -69,7 +68,6 @@ jobs:
             export DOCKER_IMAGE="${DOCKER_USER_ORG}/learning-object-service:${SEMVER}"
             chmod +x ./deploy.sh
             sh ./deploy.sh
-
 workflows:
   version: 2
   build-test:
