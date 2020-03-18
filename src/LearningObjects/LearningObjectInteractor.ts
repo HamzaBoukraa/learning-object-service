@@ -1098,6 +1098,8 @@ export async function deleteLearningObject({
       );
     }
     authorizeWriteAccess({ learningObject, requester });
+
+    await Gateways.submission().deletePreviousRelease({ learningObjectId: learningObject.id });
     // Delete the files for the learningObject in Mongo
     await Gateways.fileMetadata().deleteAllFileMetadata({
       requester,
@@ -1117,7 +1119,6 @@ export async function deleteLearningObject({
         // LatestVersion refers to the latest released version
         const latestVersion: LearningObject = objectsForCuid.filter(x => x.status === LearningObject.Status.RELEASED)[0];
         if (learningObject.version > latestVersion.version) {
-          await Gateways.submission().deletePreviousRelease({ learningObjectId: learningObject.id });
           await Gateways.fileManager().deleteAllFiles({
             requester,
             learningObject: learningObject,
