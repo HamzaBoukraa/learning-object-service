@@ -13,4 +13,4 @@ test_environment/globalConfig.json
 /elasticsearch_testing/coverage
 # Include Launch Config for Debugging
 !/.vscode/launch.json
-
+swagger.json

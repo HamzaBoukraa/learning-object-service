@@ -1,0 +1,281 @@
+{
+	"info": {
+		"_postman_id": "8d59873e-ea8f-41b3-8aaa-c8026ca08238",
+		"name": "Learning Object Service",
+		"description": "Welcome to the Learning Objects' API\n\nContact Support:\n Name: CLARK\n Email: skaza@towson.edu",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Get learning object API welcome",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "e459968b-ecf3-4dcd-8b8b-6cfd01aa1916",
+						"exec": [
+							"pm.test(\"response should be okay\", () => {",
+							"    pm.response.to.have.status(200);",
+							"})"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						""
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "API Version number and welcome message",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								""
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "{\n \"version\": \"3.25.1\",\n \"message\": \"Welcome to the Learning Objects' API v3.25.1\"\n}"
+				}
+			]
+		},
+		{
+			"name": "Get a learning object CUID by author username and learning object name",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "fdf31fe8-da57-4664-8111-007ce093c2a9",
+						"exec": [
+							"pm.test(\"response should be ok\", () => {",
+							"    pm.response.to.not.be.error;",
+							"    pm.response.to.have.status(200);",
+							"    pm.response.to.be.withBody;",
+							"    pm.response.to.be.json;",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/learning-objects/:username/:learningObjectName",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"learning-objects",
+						":username",
+						":learningObjectName"
+					],
+					"variable": [
+						{
+							"key": "username",
+							"value": "kkuczynski",
+							"description": "Username of learning object author"
+						},
+						{
+							"key": "learningObjectName",
+							"value": "Principles of Cyber Law and Policy",
+							"description": "Name of learning object"
+						}
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "Unexpected error",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/learning-objects/:username/:learningObjectName",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"learning-objects",
+								":username",
+								":learningObjectName"
+							],
+							"variable": [
+								{
+									"key": "username"
+								},
+								{
+									"key": "learningObjectName"
+								}
+							]
+						}
+					},
+					"status": "Internal Server Error",
+					"code": 500,
+					"_postman_previewlanguage": "text",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "text/plain"
+						}
+					],
+					"cookie": [],
+					"body": ""
+				},
+				{
+					"name": "A learning object with a given name and author username was not found",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/learning-objects/:username/:learningObjectName",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"learning-objects",
+								":username",
+								":learningObjectName"
+							],
+							"variable": [
+								{
+									"key": "username"
+								},
+								{
+									"key": "learningObjectName"
+								}
+							]
+						}
+					},
+					"status": "Not Found",
+					"code": 404,
+					"_postman_previewlanguage": "text",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "text/plain"
+						}
+					],
+					"cookie": [],
+					"body": ""
+				},
+				{
+					"name": "Bad request, missing author username or learning object name",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/learning-objects/:username/:learningObjectName",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"learning-objects",
+								":username",
+								":learningObjectName"
+							],
+							"variable": [
+								{
+									"key": "username"
+								},
+								{
+									"key": "learningObjectName"
+								}
+							]
+						}
+					},
+					"status": "Bad Request",
+					"code": 400,
+					"_postman_previewlanguage": "text",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "text/plain"
+						}
+					],
+					"cookie": [],
+					"body": ""
+				},
+				{
+					"name": "A learning object CUID",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/learning-objects/:username/:learningObjectName",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"learning-objects",
+								":username",
+								":learningObjectName"
+							],
+							"variable": [
+								{
+									"key": "username"
+								},
+								{
+									"key": "learningObjectName"
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"cookie": [],
+					"body": "\"80b8c821-ff5e-4134-bc71-06aa85287f3c\""
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"id": "baseUrl",
+			"key": "baseUrl",
+			"value": "http://localhost:5000",
+			"type": "string"
+		}
+	],
+	"protocolProfileBehavior": {}
+}

@@ -181,7 +181,7 @@ export class ExpressAuthRouteDriver {
             dataStore: this.dataStore,
             username,
             cuid: req.params.cuid,
-            version: req.params.version,
+            version: Number(req.params.version),
             userToken,
           });
           res.status(200).send(id);

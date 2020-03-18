@@ -245,13 +245,12 @@ export class S3FileManager implements FileManager {
 
     await Promise.all(
       files.map((file: any) => {
-        let fileName = file.Key.split('/').pop();
+        let fileName = file.Key.split(`${copyFromPath}/`).pop();
+
 
         return this.copyObject({
           copyFromPath: `${S3_CONFIG.FILES_BUCKET}/${copyFromPath}/${fileName}`,
-          copyToPath: `${copyToPath}/${
-            file.Key.split('/')[file.Key.split('/').length - 1]
-          }`,
+          copyToPath: `${copyToPath}/${fileName}`,
         });
       }),
     );
