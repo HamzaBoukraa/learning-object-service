@@ -1099,6 +1099,8 @@ export async function deleteLearningObject({
     }
     authorizeWriteAccess({ learningObject, requester });
 
+    // We always want to delete the Elasticsearch document when deleting a Learning Object,
+    // regardless of its revision status
     await Gateways.submission().deletePreviousRelease({ learningObjectId: learningObject.id });
     // Delete the files for the learningObject in Mongo
     await Gateways.fileMetadata().deleteAllFileMetadata({
@@ -1113,6 +1115,8 @@ export async function deleteLearningObject({
       });
     }
     await dataStore.deleteLearningObject(learningObject.id);
+
+    // This conditional handles the specific case of deleting an unreleased revision
     if (!isReleased) {
       if (learningObject.version > 0) {
         const objectsForCuid = await dataStore.fetchInternalLearningObjectByCuid(learningObject.cuid);
