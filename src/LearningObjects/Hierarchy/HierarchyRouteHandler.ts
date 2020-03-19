@@ -28,5 +28,5 @@ export function initializePublic({
       res.status(code).json({ message });
     }
   };
-  router.get('/learning-objects/:id/parents', getParents);
+  router.get('/users/:username/learning-objects/:id/parents', getParents);
 }
