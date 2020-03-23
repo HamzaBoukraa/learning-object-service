@@ -80,6 +80,45 @@ export class LearningObjectInteractor {
   }
 
   /**
+   * Finds a learning object CUID given the learning object name and
+   * the author username.
+   * 
+   * @param params {{
+   *     datastore: Datastore;
+   *     username: string; [Learning Object's Author's Username]
+   *     learningObjectName: string; [Learning Object's Name]
+   * }}
+   * @returns {Promise<string>}
+   * @memberof LearningObjectInteractor
+   * @throws {ResourceError} when learning object or user is not found
+   * (404), or when the request does not contain a author username or
+   * learning object name (400)
+   */
+  public static async getLearningObjectCUID(params: {
+    dataStore: DataStore;
+    username: string;
+    learningObjectName: string;
+  }): Promise<string> {
+    const { dataStore, username, learningObjectName } = params;
+    if (!username || !learningObjectName) {
+      throw new ResourceError(
+        `Request does not contain a Learning Object name or author username.`,
+        ResourceErrorReason.BAD_REQUEST
+      );
+    }
+    const authID = await this.findAuthorIdByUsername({ dataStore, username: username });
+    const objectID = await dataStore.findLearningObjectByName({authorId: authID, name: learningObjectName});
+    if (!objectID) {
+      throw new ResourceError(
+        `No Learning Object with author username ${username} and Learning Object name ${learningObjectName} exists`,
+        ResourceErrorReason.NOT_FOUND
+      );
+    }
+    const object = await dataStore.fetchLearningObject({ id: objectID });
+    return object.cuid;
+  }
+
+  /**
    * Finds Learning Object's id by name and authorID.
    * If id is not found a ResourceError is thrown
    *
@@ -429,6 +468,7 @@ export class LearningObjectInteractor {
         page,
         limit,
         status,
+        fileTypes,
       } = this.formatSearchQuery(query);
       let response: { total: number; objects: LearningObject[] };
 
@@ -556,6 +596,7 @@ export class LearningObjectInteractor {
       formattedQuery.standardOutcomeIDs,
     );
     formattedQuery.guidelines = toArray(formattedQuery.guidelines);
+    formattedQuery.fileTypes = toArray(formattedQuery.fileTypes);
     formattedQuery.page = toNumber(formattedQuery.page);
     formattedQuery.limit = toNumber(formattedQuery.limit);
     formattedQuery.sortType = <1 | -1>toNumber(formattedQuery.sortType);

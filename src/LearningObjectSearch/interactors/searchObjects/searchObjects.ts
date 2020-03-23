@@ -94,6 +94,7 @@ function formatSearchQuery(
   formattedQuery.collection = toArray(formattedQuery.collection);
   formattedQuery.standardOutcomes = toArray(formattedQuery.standardOutcomes);
   formattedQuery.guidelines = toArray(formattedQuery.guidelines);
+  formattedQuery.fileTypes = toArray(formattedQuery.fileTypes);
   formattedQuery.page = toNumber(formattedQuery.page);
   formattedQuery.limit = toNumber(formattedQuery.limit);
   formattedQuery.sortType = <1 | -1>toNumber(formattedQuery.sortType);
@@ -101,7 +102,11 @@ function formatSearchQuery(
     formattedQuery.sortType === 1 || formattedQuery.sortType === -1
       ? formattedQuery.sortType
       : 1;
-
+  if (formattedQuery.guidelines && formattedQuery.guidelines.includes('NICE KSAs')) {
+    formattedQuery.guidelines.push('NCWF KSAs');
+  } else if (formattedQuery.guidelines && formattedQuery.guidelines.includes('NICE Tasks')) {
+    formattedQuery.guidelines.push('NCWF Tasks');
+  }
   return sanitizeObject({ object: formattedQuery }, false);
 }
 

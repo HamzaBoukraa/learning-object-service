@@ -17,6 +17,8 @@ import { Stream, Readable } from 'stream';
 import { HierarchyGateway } from '../../gateways/HierarchyGateway/ModuleHierarchyGateway';
 import FileManagerModuleErrorMessages from '../shared/errors';
 import { Stubs } from '../../../tests/stubs';
+import { UtilityDriverAbstract } from '../../UtilityDriverAbstract';
+import { UtilityDriverStub } from './utilityUsersStub';
 
 const requesterStub: UserToken = {
   username: 'test-username',
@@ -26,6 +28,7 @@ const requesterStub: UserToken = {
   emailVerified: true,
   accessGroups: [],
 };
+
 const stubs = new Stubs();
 const downloadBundleParamStub: DownloadBundleParams = {
   requester: requesterStub,
@@ -68,10 +71,7 @@ class StubFileManager implements FileManager {
   async hasAccess(params: { authorUsername: string; learningObjectCUID: string; version: number; path: string; }): Promise<boolean> {
     return true;
   }
-
-
 }
-
 class LearningObjectGatewayStub implements LearningObjectGateway {
   getLearningObjectByCuid(params: {
     username: string;
@@ -124,6 +124,7 @@ function initializeServiceModuleFixtures() {
     { provide: FileManager, useClass: StubFileManager },
     { provide: LearningObjectGateway, useClass: LearningObjectGatewayStub },
     { provide: HierarchyGateway, useClass: HierarchyGatewayStub },
+    { provide: UtilityDriverAbstract, useClass: UtilityDriverStub },
   ];
   FileManagerModule.initialize();
 }
@@ -133,7 +134,10 @@ function initializeMocks() {
   jest.mock('node-service-module', () => {
     return {
       ExpressServiceModule: class {
-        public static resolveDependency() {
+        public static resolveDependency(inter: any) {
+          if (inter.name === 'UtilityDriverAbstract') {
+            return new UtilityDriverStub();
+          }
           return new StubFileManager();
         }
       },
@@ -141,8 +145,8 @@ function initializeMocks() {
         return;
       },
       ServiceModule: class {
-        public static resolveDependency() {
-          return new StubFileManager();
+        public static resolveDependency(inter: any) {
+          return new UtilityDriverStub();
         }
       },
       serviceModule: function() {
@@ -150,9 +154,10 @@ function initializeMocks() {
       },
     };
   });
-  jest.mock('../../../shared/MongoDB/HelperFunctions/LearningObjectDownloads/learningObjectLibraryDownload', () => {
+
+  jest.mock('../../../shared/MongoDB/HelperFunctions/updateDownloads/updateDownloads', () => {
     return {
-      updateObjectInLibraryForDownload (_: string, __: LearningObject): void { return; },
+      updateDownloads (_: string, __: LearningObject): void { return; },
     };
   });
   jest.mock('../../../LearningObjects/Publishing/Bundler/Interactor', () => ({

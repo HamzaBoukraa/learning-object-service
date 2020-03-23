@@ -477,7 +477,7 @@ export class LearningObject {
 
     this.resourceUris.metrics = `${resourceUriHost}/users/${this.author.username}/learning-objects/${this.cuid}/metrics`;
 
-    this.resourceUris.parents = `${resourceUriHost}/learning-objects/${this.id}/parents`;
+    this.resourceUris.parents = `${resourceUriHost}/users/${this.author.username}/learning-objects/${this.id}/parents`;
 
     this.resourceUris.ratings = `${resourceUriHost}/users/${this.author.username}/learning-objects/${this.cuid}/version/${this.version}/ratings`;
   }

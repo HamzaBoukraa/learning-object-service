@@ -22,6 +22,8 @@ import {
 import { ModuleHierarchyGateway, HierarchyGateway } from './gateways/HierarchyGateway/ModuleHierarchyGateway';
 import { duplicateRevisionFiles } from './interactors/duplicateRevisionFiles/duplicateRevisionFiles';
 import { deleteAllFiles } from './interactors/deleteAllFiles/deleteAllFiles';
+import { UtilityDriver } from '../drivers/UtilityDriver';
+import { UtilityDriverAbstract } from './UtilityDriverAbstract';
 
 /**
  * Module responsible for handling file operations
@@ -37,6 +39,7 @@ import { deleteAllFiles } from './interactors/deleteAllFiles/deleteAllFiles';
     { provide: LearningObjectGateway, useClass: ModuleLearningObjectGateway },
     { provide: FileMetadataGateway, useClass: ModuleFileMetadataGateway },
     { provide: HierarchyGateway, useClass: ModuleHierarchyGateway },
+    { provide: UtilityDriverAbstract, useClass: UtilityDriver },
   ],
 })
 export class FileManagerModule extends ExpressServiceModule {

@@ -43,24 +43,6 @@ jobs:
             sentry-cli releases -p ${SENTRY_PROJECT_NAME} new ${SEMVER}
             sentry-cli releases -p ${SENTRY_PROJECT_NAME} set-commits --auto ${SEMVER}
             sentry-cli releases -p ${SENTRY_PROJECT_NAME} finalize ${SEMVER}
-
-  elasticsearch-smoke-test:
-    <<: *defaults
-    docker:
-      - image: circleci/node:8
-    steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-          name: Clone Elasticsearch Smoke Test Repository
-          command: >-
-            cd .. && git clone https://${github_username}:${github_password}@github.com/nvisal1/Elasticsearch-Smoke-Test-Environment.git
-      - run:
-          name: Run Environment
-          command: |
-            cd ../Elasticsearch-Smoke-Test-Environment
-            docker-compose up --abort-on-container-exit --exit-code-from test-runner
-
   deploy-production:
     <<: *defaults
     steps:
@@ -86,7 +68,6 @@ jobs:
             export DOCKER_IMAGE="${DOCKER_USER_ORG}/learning-object-service:${SEMVER}"
             chmod +x ./deploy.sh
             sh ./deploy.sh
-
 workflows:
   version: 2
   build-test:
@@ -102,15 +83,9 @@ workflows:
           filters:
             branches:
               only: /master/
-      - elasticsearch-smoke-test:
-          requires:
-            - build
-          filters:
-            branches:
-              only: /master/
       - deploy-production:
           requires:
-            - elasticsearch-smoke-test
+            - build
           filters:
             branches:
               only: /master/

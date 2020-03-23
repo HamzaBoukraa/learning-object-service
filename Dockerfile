@@ -1,5 +1,5 @@
 # Anything beyond local dev should pin this to a specific version at https://hub.docker.com/_/node/
-FROM node:8 as builder
+FROM node:9 as builder
 
 ARG UNIT_TEST=0
 
@@ -21,14 +21,11 @@ COPY package.json package-lock.json* jest.config.js tsconfig.json ./
 RUN mkdir test_environment
 COPY test_environment ./test_environment
 RUN npm install && npm cache clean --force
-ENV PATH /opt/node_modules/.bin:$PATH
 
 # copy source code last, since it changes the most often this better utilizes Docker's caching of layers
 WORKDIR /opt/app
 COPY . /opt/app
 
-# Build source and clean up
-RUN npm run build
 
 FROM node:8 as tester
 
@@ -39,7 +36,7 @@ COPY --from=builder . .
 ENV PATH /opt/node_modules/.bin:$PATH
 
 # Swtich working dir to opt to use node_modules for testing
-WORKDIR /opt
+WORKDIR /opt/
 ARG NODE_ENV=development
 RUN npm test
 
@@ -55,6 +52,10 @@ EXPOSE $PORT 5858 9229
 
 WORKDIR /opt
 COPY --from=builder /opt/ .
+
+WORKDIR /opt/app
+ENV PATH /opt/node_modules/.bin:$PATH
+RUN npm run build
 
 # Uninstall dev dependencies for the production image
 WORKDIR /opt
