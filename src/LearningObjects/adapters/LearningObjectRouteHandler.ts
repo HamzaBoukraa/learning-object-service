@@ -92,7 +92,13 @@ export function initializePublic({
       }
 
       const results = await LearningObjectInteractor.getInternalLearningObjectByCuid({ dataStore, requester, authorUsername, cuid, version: version >= 0 ? version : undefined });
-
+      if (results.length > 1) {
+        if (results[0].version < results[1].version) {
+          results[0].attachRevisionUri();
+        } else if (results[1].version < results[0].version) {
+          results[1].attachRevisionUri();
+        }
+      }
       res.json(results.map(r => mapLearningObjectToSummary(r)));
     } catch (e) {
       const { code, message } = mapErrorToResponseData(e);
