@@ -165,10 +165,10 @@ export async function getInternalLearningObjectByCuid({
 
   if (!payload.length && unauthorized && !requester) {
     throw new ResourceError(`Unable to authenticate permission to view Learning Object with CUID: \`${cuid}\``, ResourceErrorReason.INVALID_ACCESS);
-  } else if (!payload.length) {
-    throw new ResourceError(`No Learning Object with CUID \`${cuid}\` and version \`${version}\` exists.`, ResourceErrorReason.NOT_FOUND);
   } else if (!payload.length && unauthorized) {
     throw new ResourceError(`User: ${requester.username} does not have permission to view Learning Object with CUID: \`${cuid}\``, ResourceErrorReason.FORBIDDEN);
+  } else if (!payload.length) {
+    throw new ResourceError(`No Learning Object with CUID \`${cuid}\` and version \`${version}\` exists.`, ResourceErrorReason.NOT_FOUND);
   }
 
   return payload;
