@@ -231,7 +231,7 @@ export class ElasticSearchLearningObjectDatastore
       fileTypes,
       topic,
     } = params;
-    const queryFilters = sanitizeObject({
+    const queryFilters = { ...sanitizeObject({
       object: {
         length,
         levels: level,
@@ -240,9 +240,15 @@ export class ElasticSearchLearningObjectDatastore
         'outcomes.mappings.id': standardOutcomes,
         'outcomes.mappings.source': guidelines,
         fileTypes,
-        topic,
       },
-    });
+    }),
+      topic,
+    }
+
+    if (!queryFilters.topic) {
+      delete queryFilters.topic;
+    }
+
     return queryFilters || {};
   }
 
