@@ -764,6 +764,7 @@ export class MongoDriver implements DataStore {
     try {
       // remove children references to this learning object from parent
       await this.deleteLearningObjectParentReferences(id);
+      // delete learning outcomes for a learning object
       await this.deleteAllLearningOutcomes({ source: id });
 
       // now remove the object
