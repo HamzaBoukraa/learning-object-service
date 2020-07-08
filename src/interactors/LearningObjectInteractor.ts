@@ -364,7 +364,9 @@ export class LearningObjectInteractor {
           return { id, parentIds };
         }),
       );
-      const objectIds = objectRefs.map(obj => obj.id);
+      const objects = objectRefs.map(obj => {
+        return { id: obj.id, user: user.username };
+      });
       await Promise.all(
         objectRefs.map(ref =>
           Gateways.fileMetadata().deleteAllFileMetadata({
@@ -374,7 +376,7 @@ export class LearningObjectInteractor {
         ),
       );
       // Delete objects from datastore
-      await dataStore.deleteMultipleLearningObjects(objectIds);
+      await dataStore.deleteMultipleLearningObjects(objects);
       // For each object id
       objectRefs.forEach(async obj => {
         // Update parents' dates

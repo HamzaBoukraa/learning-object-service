@@ -1116,7 +1116,7 @@ export async function deleteLearningObject({
         learningObject: learningObject,
       });
     }
-    await dataStore.deleteLearningObject(learningObject.id);
+    await dataStore.deleteLearningObject(learningObject.id, requester.username);
 
     // This conditional handles the specific case of deleting an unreleased revision
     if (!isReleased) {
@@ -1210,7 +1210,7 @@ export async function deleteLearningObjectByCuidVersion({
       requester: user,
       learningObjectId: object.id,
     });
-    await dataStore.deleteLearningObject(object.id);
+    await dataStore.deleteLearningObject(object.id, user.username);
     dataStore.deleteChangelog({ cuid: object.cuid }).catch(e => {
       reportError(
         new Error(

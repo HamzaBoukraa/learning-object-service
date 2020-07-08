@@ -760,7 +760,7 @@ export class MongoDriver implements DataStore {
    *
    * @param {LearningObjectID} id which document to delete
    */
-  async deleteLearningObject(id: string): Promise<void> {
+  async deleteLearningObject(id: string, user: string): Promise<void> {
     try {
       // remove children references to this learning object from parent
       await this.deleteLearningObjectParentReferences(id);
@@ -782,11 +782,11 @@ export class MongoDriver implements DataStore {
    *
    * @param {LearningObjectID} id which document to delete
    */
-  async deleteMultipleLearningObjects(ids: string[]): Promise<any> {
+  async deleteMultipleLearningObjects(ids: any[]): Promise<any> {
     // now remove objects from database
     return Promise.all(
       ids.map(async id => {
-        return this.deleteLearningObject(id);
+        return this.deleteLearningObject(id.id, id.user);
       }),
     );
   }

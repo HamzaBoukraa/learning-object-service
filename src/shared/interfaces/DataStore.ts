@@ -202,8 +202,8 @@ export interface DataStore
    */
 
   // Learning Objects
-  deleteLearningObject(id: string): Promise<void>;
-  deleteMultipleLearningObjects(ids: string[]): Promise<void>;
+  deleteLearningObject(id: string, username: string): Promise<void>;
+  deleteMultipleLearningObjects(ids: any[]): Promise<void>;
 }
 
 export { Collection as LearningObjectCollection };

@@ -317,11 +317,11 @@ export class MockDataStore implements DataStore, SubmissionDataStore {
     return Promise.resolve();
   }
 
-  deleteLearningObject(id: string): Promise<void> {
+  deleteLearningObject(id: string, user: string): Promise<void> {
     return Promise.resolve();
   }
 
-  deleteMultipleLearningObjects(ids: string[]): Promise<void> {
+  deleteMultipleLearningObjects(ids: any[]): Promise<void> {
     return Promise.resolve();
   }
 
