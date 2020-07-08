@@ -36,6 +36,7 @@ import { MongoConnector } from '../shared/MongoDB/MongoConnector';
 import { LearningObjectUpdates } from '../shared/types/learning-object-updates';
 import * as mongoHelperFunctions from '../shared/MongoDB/HelperFunctions';
 import { sanitizeRegex, mapLearningObjectToSummary } from '../shared/functions';
+import { OutcomeDriver } from './OutcomeDriver';
 
 export enum COLLECTIONS {
   USERS = 'users',
@@ -56,6 +57,7 @@ export class MongoDriver implements DataStore {
   statStore: LearningObjectStatStore;
   learningObjectStore: LearningObjectDataStore;
   changelogStore: ModuleChangelogDataStore;
+  outcomeDriver: OutcomeDriver;
 
   private mongoClient: MongoClient;
   private db: Db;
@@ -430,8 +432,8 @@ export class MongoDriver implements DataStore {
   deleteLearningOutcome(params: { id: string }): Promise<void> {
     return this.learningOutcomeStore.deleteLearningOutcome(params);
   }
-  deleteAllLearningOutcomes(params: { source: string }): Promise<void> {
-    return this.learningOutcomeStore.deleteAllLearningOutcomes(params);
+  deleteAllLearningOutcomes(params: { source: string, user: string }): Promise<void> {
+    return this.outcomeDriver.deleteAllOutcomes(params.source, params.user);
   }
 
   /////////////
@@ -765,7 +767,7 @@ export class MongoDriver implements DataStore {
       // remove children references to this learning object from parent
       await this.deleteLearningObjectParentReferences(id);
       // delete learning outcomes for a learning object
-      await this.deleteAllLearningOutcomes({ source: id });
+      await this.deleteAllLearningOutcomes({ source: id, user: user });
 
       // now remove the object
       await this.db

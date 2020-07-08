@@ -34,3 +34,9 @@ export const UTILITY_SERVICE_ROUTES = {
     return `${process.env.UTILITY_URI}/utility-users`;
   },
 };
+
+export const OUTCOME_SERVICE_ROUTES = {
+  DELETE_ALL(id: string, username: string) {
+    return `${process.env.OUTCOME_URI}/users/${encodeURIComponent(username)}/learning-objects/${encodeURIComponent(id)}/outcomes`;
+  }
+}
