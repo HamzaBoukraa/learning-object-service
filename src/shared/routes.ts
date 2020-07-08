@@ -37,6 +37,6 @@ export const UTILITY_SERVICE_ROUTES = {
 
 export const OUTCOME_SERVICE_ROUTES = {
   DELETE_ALL(id: string, username: string) {
-    return `${process.env.OUTCOME_URI}/users/${encodeURIComponent(username)}/learning-objects/${encodeURIComponent(id)}/outcomes`;
+    return `${process.env.OUTCOME_API}/users/${encodeURIComponent(username)}/learning-objects/${encodeURIComponent(id)}/outcomes`;
   }
 }

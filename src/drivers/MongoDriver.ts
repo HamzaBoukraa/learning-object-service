@@ -91,6 +91,7 @@ export class MongoDriver implements DataStore {
     this.statStore = new LearningObjectStatStore(this.db);
     this.learningObjectStore = new LearningObjectDataStore(this.db);
     this.changelogStore = new ModuleChangelogDataStore(this.db);
+    this.outcomeDriver = new OutcomeDriver();
   }
 
   /**
