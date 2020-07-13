@@ -4,15 +4,6 @@ import { generateServiceToken } from './TokenManager';
 import { ResourceError, ResourceErrorReason} from '../shared/errors';
 
 export class OutcomeDriver {
-    private options = {
-        uri: '',
-        json: true,
-        headers: {
-            Authorization: `Bearer ${generateServiceToken()}`,
-        },
-        method: 'DELETE',
-        body: {},
-    };
 
     public async deleteAllOutcomes(id: string, username: string): Promise<void> {
         try {
